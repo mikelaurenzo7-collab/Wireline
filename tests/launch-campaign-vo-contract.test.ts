@@ -24,11 +24,17 @@ describe("launch campaign voiceover", () => {
     text: string;
   }>;
 
-  it("renders exactly the three audio deliverables the media kit lists", () => {
+  it("renders exactly the audio deliverables the media kit lists", () => {
     for (const track of tracks) {
       expect(mediaKit, `${track.file} is not listed in the media kit`).toContain(track.file);
     }
-    expect(tracks).toHaveLength(3);
+    expect(tracks).toHaveLength(4);
+  });
+
+  it("covers every launch cut that needs narration", () => {
+    // The media kit's cut table drives the audio set. A cut listed there with
+    // no track is how the Live Video reel ended up needing hand-scored VO.
+    expect(tracks.map((track) => track.id)).toContain("live-video-25s");
   });
 
   it("keeps every voiceover verbatim from the campaign document", () => {

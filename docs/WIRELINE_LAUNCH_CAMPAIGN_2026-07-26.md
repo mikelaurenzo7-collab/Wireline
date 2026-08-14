@@ -103,6 +103,16 @@ File: `wireline-founder-60s.mp3`
 
 > I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan.
 
+### Live Video proof — 25s slot
+
+File: `wireline-live-video-25s.mp3`
+
+> Some conversations deserve a face. Turn on Live Video and your business agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One agent, one place to review the work. Add it to a live plan for nineteen dollars a month.
+
+The narration deliberately claims the **brain**, not the voice. In the default session the presenter speaks through Wireline's own realtime voice rather than the phone voice, so "same voice" would be a claim the picture cannot support. What is identical across phone and screen is the agent: its Training, its rules, and the outcome it logs.
+
+Picture requirements are stricter than any other cut in the set. A static identity badge, a generated avatar concept, or a provider demo is **not** Live Video proof. The cut needs an authenticated exact-production session showing the mint, the presenter answering in sync, an explicit stop, and a truthful allowance state.
+
 Re-measure provider output after every regeneration; pacing can drift even when copy does not.
 
 ## Paid Social Set

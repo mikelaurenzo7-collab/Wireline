@@ -1,14 +1,40 @@
 # Presenter & Presence Catalog Strategy
 
-**Status:** Active (July 2026)  
+**Status:** Active (August 2026)  
 **Audience:** Product, design, engineering  
 **Related:** [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md), `src/lib/video-presenter/`, `src/lib/agent-identity.ts`
 
-Wireline’s differentiation is **trusted AI employee presence**: a real line, a role, a voice, governed actions, proof of outcomes, and—only when it materially helps—a polished on-screen presenter for demos, recaps, explainers, content, kiosks, onboarding, and customer-facing media.
+Wireline’s differentiation is **trusted agent presence**: a real line, a role, a voice, governed actions, proof of outcomes, and—only when it materially helps—a polished on-screen presenter for demos, recaps, explainers, content, kiosks, onboarding, and customer-facing media.
+
+> Copy note: this document previously used “AI employee” as a product noun. The launch campaign guardrails forbid both employee-as-product-noun and pairing “AI” with “agent” in customer-facing copy. The wording here now matches `WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`.
 
 **Launch decision:** keep deterministic Wireline avatars, but only as **in-app identity badges**. They are useful for recognizing agents while using the product—Studio, training, analytics, call logs, mobile surfaces, and fallback states. They are **not** video presenters and should not be marketed as the product’s future face layer.
 
 Customer surfaces must never name vendors. Operators may see **Identity badge**, **Professional Presence**, **Character Presence**, **Custom Presence**, **Live Presence**, **catalog presenter**, or **fallback identity**. Providers stay implementation details.
+
+---
+
+## Decision: can the speech vendor replace the video vendor?
+
+**No — and the question is worth keeping answered, because the answer looks like it should be yes.**
+
+The speech vendor ships an avatar product. It is **pre-rendered**: a script goes in, a finished talking-head video file comes out. That is a genuinely useful tool and it belongs in the creative pipeline. It is not a live conversation — there is no turn-taking, no interruption, no sub-second response, because there is no stream, only a render job.
+
+Live Video is the opposite shape. A caller speaks, the agent answers within a beat, and the caller can cut it off mid-sentence. That needs a real-time renderer, which is what the video vendor is for. The speech vendor’s **own** integration documentation points at exactly that pairing rather than at itself.
+
+So the two vendors are not competing for one slot; they occupy two:
+
+| Job | Vendor | Why |
+| --- | --- | --- |
+| Live, interruptible on-screen conversation | Video vendor (real-time renderer) | Streaming lip-sync is the entire product |
+| The voice and the conversation inside that session | Speech vendor | It orchestrates the audio; the renderer only draws |
+| Pre-rendered creative — reels, explainers, recaps | **Speech vendor’s avatar product** | Script-in/file-out is the right shape, and it removes a render-quota dependency from the launch creative path |
+
+**What this changes in practice.** Consolidating the *creative* renders onto the speech vendor is a real win: the launch reel pack records a Wireline Host concept blocked on the video vendor’s render quota, and that blocker disappears when pre-rendered creative stops competing with live sessions for the same account. Consolidating the *live* session is not available at any price today.
+
+**What to re-check, and what would change the answer.** Real-time avatars from the speech vendor would collapse these two rows into one. Until its own docs describe a streaming, interruptible avatar for its agents — rather than linking out to a rendering partner — assume the split stands. Re-check quarterly with the rest of the vendor pricing review.
+
+The integration Wireline implements is the officially documented pairing: a LITE-mode session where the speech vendor orchestrates audio and the video vendor renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
 
 ---
 
@@ -274,7 +300,7 @@ Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second tur
 
 Until the premium catalog exists, Wireline should say:
 
-> Voice-first AI employees are live today. App avatars help you recognize agents while you train, review, and operate them. Professional video presence is being curated for demos, recaps, explainers, content, and custom approved likenesses.
+> Voice agents are live today. App avatars help you recognize agents while you train, review, and operate them. Professional video presence is being curated for demos, recaps, explainers, content, and custom approved likenesses.
 
 This protects trust while preserving the strategic path to a high-quality Presence Catalog.
 
