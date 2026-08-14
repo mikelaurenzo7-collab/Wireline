@@ -101,8 +101,11 @@ export default function ActivationNudge({ className }: { className?: string }) {
       )
         return;
 
+      // Every read in this 30s poll must be defended: one thrown fetch or
+      // non-JSON body otherwise surfaces as a recurring unhandled rejection
+      // while the banner silently freezes on stale state.
       const [activation, progress] = await Promise.all([
-        fetchActivationStatusFull(),
+        fetchActivationStatusFull().catch(() => null),
         fetchAssistantSetupProgress().catch(() => null),
       ]);
 
@@ -139,7 +142,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
       }
 
       const numbersRes = await authFetch("/api/phone-numbers").catch(() => null);
-      const numbersJson = numbersRes?.ok ? await numbersRes.json() : null;
+      const numbersJson = numbersRes?.ok ? await numbersRes.json().catch(() => null) : null;
       const firstNumber = numbersJson?.numbers?.[0]?.phone_number as string | undefined;
 
       if (cancelled) return;

@@ -60,6 +60,10 @@ export default function BillingSettings() {
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(
     null,
   );
+  // A failed status read must never masquerade as Free Builder: falling back
+  // to the free-tier catalog entry told an active paying customer they were on
+  // the free plan whenever /api/billing/status blipped.
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,13 +93,18 @@ export default function BillingSettings() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: returnedSessionId }),
           }).catch(() => null);
-          if (verifyResponse?.ok) {
-            const verification = (await verifyResponse.json()) as {
-              payment_status?: string;
-              synced?: boolean;
-              credit_granted?: boolean;
-              live_video_enabled?: boolean;
-            };
+          // .catch(null): a non-JSON verify body (proxy error page) must not
+          // abort the whole load — it previously threw past the status and
+          // balance fetches and blanked the page for a customer who just paid.
+          const verification = verifyResponse?.ok
+            ? ((await verifyResponse.json().catch(() => null)) as {
+                payment_status?: string;
+                synced?: boolean;
+                credit_granted?: boolean;
+                live_video_enabled?: boolean;
+              } | null)
+            : null;
+          if (verification) {
             if (verification.payment_status === "unpaid") {
               setCheckoutReturnNotice({
                 tone: "info",
@@ -136,20 +145,33 @@ export default function BillingSettings() {
         if (cancelled) return;
 
         if (statusRes.ok) {
-          const data = (await statusRes.json()) as BillingStatusResponse;
-          setSubscription(data.subscription ?? null);
+          const data = (await statusRes.json().catch(() => null)) as BillingStatusResponse | null;
+          if (data) {
+            setSubscription(data.subscription ?? null);
+            setStatusUnavailable(false);
+          } else {
+            setStatusUnavailable(true);
+            setLoadError("Subscription status is temporarily unavailable.");
+          }
         } else {
+          setStatusUnavailable(true);
           setLoadError("Subscription status is temporarily unavailable.");
         }
 
-        if (balanceRes.ok) {
-          const data = (await balanceRes.json()) as ConversationBalanceResponse;
-          setBalanceUsd(Number(data.balance_usd ?? 0));
+        // Parse defensively: a malformed balance body must degrade only the
+        // balance line, never bubble to the outer catch and flip the whole
+        // page (including a successfully loaded subscription) to unavailable.
+        const balanceData = balanceRes.ok
+          ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
+          : null;
+        if (balanceData) {
+          setBalanceUsd(Number(balanceData.balance_usd ?? 0));
         } else if (statusRes.ok) {
           setLoadError(`${CONVERSATION_BALANCE_COPY.title} is temporarily unavailable.`);
         }
       } catch {
         if (!cancelled) {
+          setStatusUnavailable(true);
           setLoadError("Couldn't load billing details. Check your connection and try again.");
         }
       } finally {
@@ -183,7 +205,9 @@ export default function BillingSettings() {
   const hasSubscription = Boolean(paidPlan && subscription?.has_subscription);
   const canAddBalance =
     paidPlan && (subscription?.status === "active" || subscription?.status === "trialing");
-  const planStatus = subscription?.status?.replace(/_/g, " ") || "free builder";
+  const planStatus = statusUnavailable
+    ? "unavailable"
+    : subscription?.status?.replace(/_/g, " ") || "free builder";
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
 
@@ -272,13 +296,20 @@ export default function BillingSettings() {
                     {/* h2, not h1: this names the current plan inside the card,
                         not the page. The page's h1 is "Billing" above. */}
                     <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
-                      {subscription?.plan_name || plan.name}
+                      {statusUnavailable
+                        ? "Plan details unavailable"
+                        : subscription?.plan_name || plan.name}
                     </h2>
                     <Badge variant={planStatus === "active" ? "success" : "outline"}>
                       {planStatus}
                     </Badge>
                   </div>
-                  {paidPlan ? (
+                  {statusUnavailable ? (
+                    <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
+                      Your plan is unchanged — this page just couldn't reach billing. Reload to try
+                      again.
+                    </p>
+                  ) : paidPlan ? (
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
                       <span>
                         {plan.max_agents} live voice agent{plan.max_agents === 1 ? "" : "s"}

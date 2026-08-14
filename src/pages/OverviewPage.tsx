@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -24,16 +24,10 @@ import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
-import {
-  useAgents,
-  type WorkspaceAgentSummary,
-} from "../contexts/AgentsContext";
+import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
-import {
-  customerAgentLanguage,
-  formatAgentRoleLabel,
-} from "../lib/product-copy";
+import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
@@ -50,6 +44,7 @@ function metricRows(
   highIntentToday: number,
   totalAppointments: number,
   activeWork: number,
+  accountType: "personal" | "business",
 ) {
   return [
     {
@@ -63,7 +58,10 @@ function metricRows(
       label: "High-intent today",
       value: String(highIntentToday),
       tone: highIntentToday > 0 ? ("primary" as const) : ("neutral" as const),
-      href: "/insights",
+      // Insights is a business surface (account-type.ts): a personal account
+      // landing there finds no nav entry and no way back. Their high-intent
+      // conversations live in the inbox.
+      href: accountType === "personal" ? "/inbox" : "/insights",
       icon: Flame,
     },
     {
@@ -96,10 +94,7 @@ function AgentLoadingRows() {
   return (
     <div className="grid gap-2" aria-busy="true" aria-label="Loading agents">
       {Array.from({ length: 3 }, (_, index) => (
-        <div
-          key={index}
-          className="rounded-[10px] border border-border px-3 py-3"
-        >
+        <div key={index} className="rounded-[10px] border border-border px-3 py-3">
           <div className="flex items-center gap-3">
             <Skeleton shape="circle" className="size-8 rounded-lg" />
             <div className="min-w-0 flex-1">
@@ -117,9 +112,7 @@ function AgentLoadingRows() {
 function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
   const language = customerAgentLanguage(posture);
   const steps = [
-    posture === "personal"
-      ? "Choose one personal job"
-      : "Choose one customer job",
+    posture === "personal" ? "Choose one personal job" : "Choose one customer job",
     "Connect your line",
     "Review outcomes",
   ];
@@ -131,10 +124,7 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <h2
-            id="first-run-title"
-            className="text-xl font-semibold text-foreground sm:text-2xl"
-          >
+          <h2 id="first-run-title" className="text-xl font-semibold text-foreground sm:text-2xl">
             Start with one job.
           </h2>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
@@ -164,17 +154,13 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
             <li
               key={step}
               className={`flex items-center gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
-                index === 0
-                  ? "border-primary/35 bg-primary/5"
-                  : "border-border bg-card"
+                index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
               }`}
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
                 {index + 1}
               </span>
-              <span className="text-sm font-semibold text-foreground">
-                {step}
-              </span>
+              <span className="text-sm font-semibold text-foreground">{step}</span>
             </li>
           ))}
         </ol>
@@ -264,9 +250,7 @@ function DemandReadinessCard({
             {state.title}
           </h2>
           {state.detail ? (
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {state.detail}
-            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
           ) : null}
           {connectionsCount > 0 ? (
             <p
@@ -303,9 +287,7 @@ function CompactAgentRow({
   const live = Boolean(agent.phone_number);
   const readiness = agentReadinessLabel(agent, phoneLookupDegraded);
   const enc = encodeURIComponent(agent.id);
-  const language = customerAgentLanguage(
-    agent.is_business_agent ? "business" : "personal",
-  );
+  const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
   return (
     <Link
       to={`/studio?agent=${enc}`}
@@ -322,12 +304,9 @@ function CompactAgentRow({
         className="shrink-0"
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-foreground">
-          {agent.name}
-        </span>
+        <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
         <span className="block truncate text-xs text-muted-foreground">
-          {agent.is_business_agent ? "Business" : "Personal"} ·{" "}
-          {formatAgentRoleLabel(agent.role)}
+          {agent.is_business_agent ? "Business" : "Personal"} · {formatAgentRoleLabel(agent.role)}
         </span>
       </span>
       <span
@@ -368,9 +347,7 @@ function AgentSection({
   phoneLookupDegraded: boolean;
 }) {
   const language = customerAgentLanguage(kind);
-  const heading = language.plural.replace(/^./, (letter) =>
-    letter.toUpperCase(),
-  );
+  const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
 
   return (
@@ -383,11 +360,7 @@ function AgentSection({
       </div>
       <div className="grid min-w-0 gap-2">
         {agents.map((agent) => (
-          <CompactAgentRow
-            key={agent.id}
-            agent={agent}
-            phoneLookupDegraded={phoneLookupDegraded}
-          />
+          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
@@ -400,10 +373,7 @@ function AgentSection({
   );
 }
 
-function formatConversationMeta(
-  createdAt: string,
-  durationSeconds?: number | null,
-) {
+function formatConversationMeta(createdAt: string, durationSeconds?: number | null) {
   if (!createdAt) return "";
   const date = new Date(createdAt);
   const timeStr = date.toLocaleTimeString(undefined, {
@@ -434,17 +404,14 @@ function conversationChannelLabel(channel: RecentConversation["channel"]) {
 export default function OverviewPage() {
   const { user } = useAuth();
   const { accountType } = useAccount();
-  const { agents, loading, degraded, phoneLookupDegraded, refresh } =
-    useAgents();
+  const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
   const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [conversationsToday, setConversationsToday] = useState(0);
   const [highIntentToday, setHighIntentToday] = useState(0);
   const [connectionsCount, setConnectionsCount] = useState(0);
-  const [connectionsDetail, setConnectionsDetail] = useState(
-    "Checking connections…",
-  );
+  const [connectionsDetail, setConnectionsDetail] = useState("Checking connections…");
   const [totalAppointments, setTotalAppointments] = useState(0);
   const [activeWork, setActiveWork] = useState(0);
   const [recentConversations, setRecentConversations] = useState<RecentConversation[]>([]);
@@ -452,11 +419,35 @@ export default function OverviewPage() {
   const [statsUnavailable, setStatsUnavailable] = useState(false);
   const [recentUnavailable, setRecentUnavailable] = useState(false);
 
+  // The roster context refreshes on window focus and returns a NEW array each
+  // time even when nothing changed. Keying this effect on that identity (and
+  // re-arming the skeletons every run) made Home visibly tear down — four
+  // metric tiles and the activity list flashing grey — on every alt-tab back.
+  // Depend on the one derived fact the dashboard actually reads, plus an
+  // explicit debounced focus tick so metrics still refresh when the user
+  // returns — silently, because skeletons only show before the first load.
+  const hasPhoneLine = agents.some((agent) => agent.phone_number);
+  const dashboardLoadedOnceRef = useRef(false);
+  const [dashboardRefreshTick, setDashboardRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let timer: number | null = null;
+    const onFocus = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => setDashboardRefreshTick((tick) => tick + 1), 1_500);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboard() {
-      setLoadingDashboard(true);
+      if (!dashboardLoadedOnceRef.current) setLoadingDashboard(true);
       setStatsUnavailable(false);
       setRecentUnavailable(false);
       const dayBoundary = new Date();
@@ -504,16 +495,14 @@ export default function OverviewPage() {
             ...Object.entries(data as Record<string, { connected?: boolean }>)
               .filter(([, connection]) => connection?.connected)
               .map(([name]) =>
-                name
-                  .replace(/_/g, " ")
-                  .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+                name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
               ),
           );
         }
       }
 
       const coreConnections: string[] = [];
-      if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
+      if (hasPhoneLine) coreConnections.push("Phone");
       if (mailboxRes?.ok) {
         const mailboxData = await mailboxRes.json().catch(() => null);
         if (Array.isArray(mailboxData?.accounts) && mailboxData.accounts.length > 0) {
@@ -532,14 +521,17 @@ export default function OverviewPage() {
       setConnectionsDetail(
         allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
       );
-      if (!cancelled) setLoadingDashboard(false);
+      if (!cancelled) {
+        setLoadingDashboard(false);
+        dashboardLoadedOnceRef.current = true;
+      }
     }
 
     void loadDashboard();
     return () => {
       cancelled = true;
     };
-  }, [agents]);
+  }, [hasPhoneLine, dashboardRefreshTick]);
 
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
@@ -554,9 +546,7 @@ export default function OverviewPage() {
       ? "/studio?create=1&posture=personal"
       : "/studio?create=1&posture=business";
   const founderPairLabel =
-    personalAgents.length === 0
-      ? "Create personal agent"
-      : "Add business voice agent";
+    personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentConversations.length > 0 || conversationsToday > 0;
@@ -577,9 +567,7 @@ export default function OverviewPage() {
         <section
           className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}
         >
-          <div
-            className={`flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}
-          >
+          <div className={`flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}>
             <div className="max-w-2xl">
               <h1 className="wl-preserve-case wl-display-2 text-balance">
                 {isFirstRun
@@ -592,10 +580,7 @@ export default function OverviewPage() {
             >
               {hasAgents ? (
                 <>
-                  <Button
-                    asChild
-                    className="shrink-0 justify-center sm:min-w-[170px]"
-                  >
+                  <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                     <Link to={primaryStudioHref}>
                       <Sparkles aria-hidden="true" size={15} />
                       Manage {language.navLabel.toLowerCase()}
@@ -654,14 +639,13 @@ export default function OverviewPage() {
               aria-label="Customer demand and outcomes"
             >
               {loadingDashboard
-                ? Array.from({ length: 4 }, (_, index) => (
-                    <MetricSkeleton key={index} />
-                  ))
+                ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
                 : metricRows(
                     conversationsToday,
                     highIntentToday,
                     totalAppointments,
                     activeWork,
+                    accountType,
                   ).map((item, index) => {
                     const Icon = item.icon;
                     return (
@@ -692,15 +676,14 @@ export default function OverviewPage() {
 
             {!degraded && phoneLookupDegraded ? (
               <StatusNotice tone="warning" title="Line status unavailable">
-                We could not check which numbers are attached. Your phone lines
-                are unchanged.
+                We could not check which numbers are attached. Your phone lines are unchanged.
               </StatusNotice>
             ) : null}
 
             {statsUnavailable && !loadingDashboard ? (
               <StatusNotice tone="warning" title="Home data partial">
-                We couldn&apos;t load every Home data source. Refresh to try again —
-                affected metrics or recent activity may not be current.
+                We couldn&apos;t load every Home data source. Refresh to try again — affected
+                metrics or recent activity may not be current.
               </StatusNotice>
             ) : null}
 
@@ -720,10 +703,7 @@ export default function OverviewPage() {
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Agents
                   </p>
-                  <Link
-                    to="/studio"
-                    className="text-xs font-semibold text-primary hover:underline"
-                  >
+                  <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
                     Manage →
                   </Link>
                 </div>
@@ -780,20 +760,11 @@ export default function OverviewPage() {
                       aria-label="Loading recent customer conversations"
                     >
                       {Array.from({ length: 3 }, (_, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 py-2"
-                        >
-                          <Skeleton
-                            shape="circle"
-                            className="size-2 rounded-full"
-                          />
+                        <div key={index} className="flex items-center gap-3 py-2">
+                          <Skeleton shape="circle" className="size-2 rounded-full" />
                           <div className="min-w-0 flex-1">
                             <Skeleton shape="text" className="h-4 w-48" />
-                            <Skeleton
-                              shape="text"
-                              className="mt-1.5 h-3 w-32"
-                            />
+                            <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
                           </div>
                         </div>
                       ))}
@@ -816,16 +787,11 @@ export default function OverviewPage() {
                           to={conversationHref(conversation.channel)}
                           className="wl-data-row wl-data-row--divided group"
                         >
-                          <span
-                            className="wl-data-row__leading"
-                            aria-hidden="true"
-                          >
+                          <span className="wl-data-row__leading" aria-hidden="true">
                             <ChannelIcon className="size-3.5 text-primary" />
                           </span>
                           <span className="wl-data-row__main">
-                            <span className="wl-data-row__title">
-                              {conversation.contact}
-                            </span>
+                            <span className="wl-data-row__title">{conversation.contact}</span>
                             <span className="wl-data-row__detail wl-data-row__detail--clamp">
                               {[
                                 conversation.agent_name,
@@ -871,10 +837,7 @@ export default function OverviewPage() {
           </>
         )}
       </WorkspacePageFrame>
-      <OutboundDialDialog
-        open={showOutboundDial}
-        onClose={() => setShowOutboundDial(false)}
-      />
+      <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </WorkspaceShell>
   );
 }

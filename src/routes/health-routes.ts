@@ -278,7 +278,20 @@ router.get(
     });
   },
 );
-router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
+// Every /models request drives three live platform-key OpenAI probes, so this
+// diagnostic must not be reachable by arbitrary tenants: an IP-keyed limiter
+// alone leaves a multi-IP loop free to burn unmetered platform spend. Ops
+// monitors authenticate with the monitor token; humans must be platform admins
+// (same posture as /slos). Named so the authz-matrix scanner sees the
+// requireMonitorToken enforcement in the chain.
+function requireMonitorTokenOrPlatformAdmin(req: Request, res: Response, next: NextFunction) {
+  if (monitorTokenOk(req)) return next();
+  return authenticateUser(req, res, (authError?: unknown) => {
+    if (authError) return next(authError);
+    void requirePlatformAdmin(req, res, next);
+  });
+}
+router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, async (_req, res) => {
   const started = Date.now();
   const [voice, premium, reasoning] = await Promise.all([
     probeOpenAIModelDiagnostic(VAPI_TENANT_DEFAULT_MODEL),

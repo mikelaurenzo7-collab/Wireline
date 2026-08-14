@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- video presenter entitlement and checkout errors remain loosely typed. */
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { motion } from "motion/react";
 import {
   CreditCard,
@@ -79,19 +80,35 @@ export default function StripeBillingCard() {
       const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status"),
         authFetch("/api/billing/plans"),
-        authFetch("/api/video-presenter/entitlement").then((r) => (r.ok ? r.json() : null)),
+        // Optional add-on data must never take down the plan grid — the only
+        // in-product way to pay. A rejection here previously failed the whole
+        // Promise.all and replaced every plan card with "Billing unavailable".
+        authFetch("/api/video-presenter/entitlement")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
       if (!statusRaw.ok || !plansRaw.ok) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
       }
-      const statusRes = (await statusRaw.json()) as BillingStatusResponse;
-      const plansRes = (await plansRaw.json()) as BillingPlansResponse;
+      const statusRes = (await statusRaw.json().catch(() => null)) as BillingStatusResponse | null;
+      const plansRes = (await plansRaw.json().catch(() => null)) as BillingPlansResponse | null;
+      if (!statusRes || !plansRes) {
+        throw new Error("Billing details could not be loaded. Refresh and try again.");
+      }
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
+      // An explicit ?plan= in the URL is a direct ask (the wizard's activation
+      // CTA, auth-redirect's returning-paid-intent path) and outranks derived
+      // signup intent — without this, the activation moment's preselection
+      // never reached the plan grid. Only known paid plan ids qualify.
+      const urlPlan = new URLSearchParams(window.location.search).get("plan");
+      const explicitPaidPlan =
+        urlPlan && ["starter", "team", "business", "enterprise"].includes(urlPlan) ? urlPlan : null;
       const storedIntent = getStoredSignupIntent();
       setSignupPlanInterest(
-        statusRes.signup_intent?.plan_id ||
+        explicitPaidPlan ||
+          statusRes.signup_intent?.plan_id ||
           (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
       );
       setPlans(plansRes.plans || []);
@@ -316,9 +333,21 @@ export default function StripeBillingCard() {
             {liveVideoAddonPitch()} {liveVideoMeteringNote()}
           </p>
           {liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled ? (
-            <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
-              Active on this workspace
-            </p>
+            <div className="space-y-2">
+              <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
+                Active on this workspace
+              </p>
+              {/* The paid entitlement must hand the customer its value path —
+                  "Active" alone left buyers with nowhere to use what they
+                  bought. */}
+              <Link
+                to="/studio/live-video"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
+              >
+                Set up your presenter
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </div>
           ) : liveVideoAddon.liveVideoCheckoutAvailable ? (
             <ShadButton
               type="button"

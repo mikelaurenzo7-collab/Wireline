@@ -22,6 +22,8 @@ import {
 } from "../../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
+import { planById } from "../../lib/plan-catalog";
+import { getStoredSignupIntent, recommendedPlanFromIntent } from "../../lib/signup-intent";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -86,6 +88,10 @@ export default function PostCreateActivationWizard({
   const [loadingPhone, setLoadingPhone] = useState(true);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
+  // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
+  // a customer who just built, trained, and tested an agent. It gets a designed
+  // panel with a direct route to billing, never a bare destructive notice.
+  const [activationNeeded, setActivationNeeded] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
 
   const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"];
@@ -142,6 +148,7 @@ export default function PostCreateActivationWizard({
     if (provisioning) return;
     setProvisioning(true);
     setWireError(null);
+    setActivationNeeded(false);
     try {
       const response = await authFetch("/api/phone-numbers/provision", {
         method: "POST",
@@ -155,7 +162,7 @@ export default function PostCreateActivationWizard({
         code?: string;
       };
       if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
-        setWireError(POST_CREATE_WIZARD_COPY.steps.wire.activationRequired);
+        setActivationNeeded(true);
         return;
       }
       if (!response.ok || body?.ok === false) {
@@ -221,6 +228,16 @@ export default function PostCreateActivationWizard({
   }
 
   const hasLine = Boolean(phoneNumber);
+  const starterPriceUsd = planById("starter")?.price_usd_monthly ?? 19;
+  // Preselect the PAID plan the customer told us about at signup. A Free
+  // Builder signup's stored intent (and the no-intent default) is "personal",
+  // which cannot activate a number — the CTA promising "$19/mo" must land on
+  // Starter, never on the free tier.
+  const activationPlanPath = useMemo(() => {
+    const recommended = recommendedPlanFromIntent(getStoredSignupIntent());
+    const paidPlan = recommended === "personal" ? "starter" : recommended;
+    return `/settings/billing?plan=${encodeURIComponent(paidPlan)}&interval=month`;
+  }, []);
 
   const markWireFunnelEvents = useCallback(() => {
     emitProductEventOnce({ event: "wire_started", agentId: payload.agentId });
@@ -455,7 +472,23 @@ export default function PostCreateActivationWizard({
                 </div>
               )}
 
-              {wireError ? <StatusNotice tone="destructive" title={wireError} /> : null}
+              {activationNeeded ? (
+                <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
+                  <p className="text-sm font-semibold text-foreground">
+                    {POST_CREATE_WIZARD_COPY.steps.wire.activationRequired}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {POST_CREATE_WIZARD_COPY.steps.wire.activationDetail(starterPriceUsd)}
+                  </p>
+                  <Button asChild size="sm" className="mt-3">
+                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("wire")}>
+                      {POST_CREATE_WIZARD_COPY.steps.wire.activationCta}
+                    </Link>
+                  </Button>
+                </div>
+              ) : wireError ? (
+                <StatusNotice tone="destructive" title={wireError} />
+              ) : null}
 
               <div className="flex flex-wrap gap-2">
                 {hasLine ? (

@@ -111,6 +111,9 @@ run("node", ["scripts/check-mcp-http-hardening.mjs"]);
 run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
 run("node", ["scripts/check-resend-webhook-readiness.mjs"]);
+// Syntax-only by design: check-vendor-readiness probes live Stripe/Twilio/Vapi
+// state and must not make network calls during a build. Run it for real via
+// `npm run vendor:readiness` in the release checklist.
 run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
 run("npx", [
   "vitest",

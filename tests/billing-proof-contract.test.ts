@@ -252,7 +252,11 @@ describe("billing proof contract", () => {
     const guard = read("src/lib/voice-wallet-guard.ts");
 
     expect(catalog).toContain('id: "personal"');
-    expect(guard).toContain('planId !== "personal"');
+    // Strengthened: the guard must require a RESOLVED catalog plan, not merely
+    // a plan id that differs from "personal" — a null plan (orphaned stored
+    // id) previously passed `planId !== "personal"` and enabled live voice the
+    // ledger could only price at $0.
+    expect(guard).toContain('!!plan && plan.id !== "personal"');
     expect(guard).toContain('code: "LIVE_PLAN_REQUIRED"');
   });
 

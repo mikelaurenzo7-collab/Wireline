@@ -290,19 +290,29 @@ export default function CrmConnectionCard() {
       endpoint += `?shop=${encodeURIComponent(shop)}`;
     }
     setConnecting(provider);
+    setError(null);
+    const providerLabel = PROVIDERS.find((p) => p.key === provider)?.label || "This integration";
     try {
       const r = await authFetch(endpoint);
       if (!r.ok) {
-        if (provider === "shopify") {
-          const body = await r.json().catch(() => ({}));
-          setShopError(body?.error || "Could not start Shopify connect.");
-        }
+        // Every provider gets a visible failure, not just Shopify — a silent
+        // spinner-stop reads as a dead button during the Wire step.
+        const body = await r.json().catch(() => ({}));
+        const message =
+          typeof body?.error === "string" && body.error
+            ? body.error
+            : `${providerLabel} connect could not start. Try again shortly.`;
+        if (provider === "shopify") setShopError(message);
+        else setError(message);
         setConnecting(null);
         return;
       }
       const { url } = await r.json();
       const popup = window.open(url, `${provider}_oauth`, "width=600,height=700,popup=yes");
       if (!popup) {
+        setError(
+          `Your browser blocked the ${providerLabel} sign-in window. Allow popups for this site and try again.`,
+        );
         setConnecting(null);
         return;
       }
@@ -318,6 +328,9 @@ export default function CrmConnectionCard() {
         }
       }, 500);
     } catch {
+      setError(
+        `${providerLabel} connect failed to reach Wireline. Check your connection and try again.`,
+      );
       setConnecting(null);
     }
   };

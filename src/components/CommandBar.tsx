@@ -36,6 +36,8 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
+import { useAccount } from "../contexts/AccountContext";
+import { isRouteAvailableForAccount } from "../lib/account-type";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
 
@@ -93,8 +95,10 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "phone",
-    label: "Phone",
-    keywords: "calls history outbound campaigns appointments",
+    // "Calls" everywhere: the rail, page titles, and the authenticated 404 all
+    // name /phone "Calls" (constants/navigation.ts) — the palette must match.
+    label: "Calls",
+    keywords: "phone calls history outbound campaigns appointments",
     icon: Phone,
     href: "/phone",
     category: "Workspace",
@@ -207,6 +211,7 @@ export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { accountType } = useAccount();
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -218,15 +223,21 @@ export default function CommandBar() {
   useBodyScrollLock(isOpen);
 
   const filteredCommands = useMemo(() => {
+    // The palette must offer the same surface set as the rail: an unfiltered
+    // list pushed personal accounts to business-only pages (Activity) where no
+    // nav entry exists and there is no way back.
+    const available = WORKSPACE_COMMANDS.filter((command) =>
+      isRouteAvailableForAccount(accountType, command.href),
+    );
     const term = query.trim().toLocaleLowerCase();
-    if (!term) return WORKSPACE_COMMANDS;
-    return WORKSPACE_COMMANDS.filter((command) =>
+    if (!term) return available;
+    return available.filter((command) =>
       [command.label, command.keywords, command.category]
         .join(" ")
         .toLocaleLowerCase()
         .includes(term),
     );
-  }, [query]);
+  }, [accountType, query]);
 
   const close = useCallback(() => {
     setIsOpen(false);

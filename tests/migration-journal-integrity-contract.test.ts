@@ -48,6 +48,27 @@ describe("migration journal integrity contract", () => {
     expect(orphanedTags).toEqual([]);
   });
 
+  it("keeps the newest meta snapshot aligned with the newest journal entry", () => {
+    // `drizzle-kit generate` diffs src/db/schema.ts against the LAST snapshot in
+    // a sorted listing of meta/*.json — not against the journal. With the newest
+    // snapshot 41 migrations stale (the state found on 2026-08-14: only
+    // 0001/0004 existed), a routine `npm run db:generate` produced a
+    // destructive full-create/drop migration that `npm run db:migrate` on the
+    // Vercel build path would then have executed against production. The
+    // snapshot chain was resynced; this pins that the sorted-last snapshot
+    // always carries the same index as the newest journal entry, so a new
+    // journalled migration without its regenerated snapshot fails here instead
+    // of arming that footgun again.
+    const snapshotIndexes = readdirSync(resolve(MIGRATIONS_DIR, "meta"))
+      .filter((name) => /^\d{4}_snapshot\.json$/.test(name))
+      .map((name) => Number(name.slice(0, 4)))
+      .sort((a, b) => a - b);
+    expect(snapshotIndexes.length).toBeGreaterThan(0);
+    const newestSnapshotIdx = snapshotIndexes[snapshotIndexes.length - 1];
+    const newestJournalIdx = Math.max(...journal.entries.map((entry) => entry.idx));
+    expect(newestSnapshotIdx).toBe(newestJournalIdx);
+  });
+
   it("journals every migration at or above the newest journalled migration", () => {
     // Numeric prefixes are reused in this repository (0108, 0118, 0120 and others
     // each name two different migrations), so ordering cannot be derived from the

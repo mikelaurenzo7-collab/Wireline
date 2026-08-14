@@ -1,4 +1,7 @@
-const WORKSPACE_ROUTE_ROOTS = ["/studio", "/connections", "/settings", "/admin"] as const;
+// "/apps" is a ROOT, not an exact route: /apps/command is a real authenticated
+// page, and exact-only matching sent signed-out visitors (expired session,
+// bookmark) to the public marketing 404 instead of sign-in-and-return.
+const WORKSPACE_ROUTE_ROOTS = ["/studio", "/connections", "/settings", "/admin", "/apps"] as const;
 const WORKSPACE_EXACT_ROUTES = new Set([
   "/overview",
   "/agents",
@@ -10,7 +13,6 @@ const WORKSPACE_EXACT_ROUTES = new Set([
   "/insights",
   "/inbox",
   "/approvals",
-  "/apps",
   "/dnc",
   "/audit",
 ]);

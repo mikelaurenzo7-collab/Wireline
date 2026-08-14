@@ -103,11 +103,37 @@ describe("voice-wallet-guard", () => {
     await expect(assertVoiceWalletSolvent("user-1")).resolves.toBeUndefined();
   });
 
+  it("fails closed when the stored plan id no longer resolves in the catalog", async () => {
+    const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+      await loadModules();
+    const { FLAT_OVERAGE_PER_MIN_USD } = await import("../src/lib/plan-catalog");
+    // A catalog rotation that orphans a stored plan id must not pass the old
+    // `planId !== "personal"` check on a null plan: that combination handed
+    // live voice to a tenant whose overage the ledger priced at $0.
+    vi.mocked(drizzle.select).mockImplementation(
+      selectSequence([
+        [{ plan: "retired-plan-id", status: "active" }],
+        [{ used: 0 }],
+        [{ extraAgents: 0 }],
+      ]) as never,
+    );
+    vi.mocked(getCreditBalanceUsd).mockResolvedValue(50);
+
+    const snapshot = await getVoiceWalletSnapshot("user-1");
+    expect(snapshot.live_voice_enabled).toBe(false);
+    expect(snapshot.minute_rate_usd).toBe(FLAT_OVERAGE_PER_MIN_USD);
+    expect(snapshot.sufficient).toBe(false);
+    await expect(assertVoiceWalletSolvent("user-1")).rejects.toMatchObject({
+      status: 402,
+      body: expect.objectContaining({ code: "LIVE_PLAN_REQUIRED" }),
+    });
+  });
+
   it("counts paid extra-agent minutes in the included pool", async () => {
     const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
       await loadModules();
-    // team base = 120 min; each extra agent adds 50. With 2 extra agents the
-    // customer has 220 included, so 75 used still leaves 145 — the call must be
+    // team base = 100 min; each extra agent adds 50. With 2 extra agents the
+    // customer has 200 included, so 75 used still leaves 125 — the call must be
     // allowed even with a zero balance instead of being blocked at the base cap.
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([

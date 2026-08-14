@@ -50,35 +50,37 @@ export default function AgentStudioHome() {
     if (!handoffId || loading) return;
 
     let cancelled = false;
+    // Clear the handoff_id from the URL on success AND every failure mode so a
+    // page refresh doesn't re-fire the redemption (expired handoffs would
+    // otherwise re-toast on every reload until the user manually edits the
+    // URL).
+    const clearHandoffParam = () =>
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete("handoff_id");
+          return next;
+        },
+        { replace: true },
+      );
     void (async () => {
       const response = await authFetch(
         `/api/browser/handoff/redeem?handoff_id=${encodeURIComponent(handoffId)}`,
       );
-      const body = (await response.json()) as {
+      // .catch(null-body): a proxy HTML 502 or gateway page is a non-JSON body,
+      // and an uncaught parse throw here left the rejection unhandled with the
+      // stale handoff_id still in the URL — silently re-failing every refresh.
+      const body = (await response.json().catch(() => null)) as {
         context?: BrowserCommandContext;
         error?: string;
-      };
+      } | null;
       if (cancelled) return;
 
-      // Clear the handoff_id from the URL on both success AND failure so a
-      // page refresh doesn't re-fire the redemption (expired handoffs would
-      // otherwise re-toast on every reload until the user manually edits the
-      // URL).
-      const clearHandoffParam = () =>
-        setParams(
-          (current) => {
-            const next = new URLSearchParams(current);
-            next.delete("handoff_id");
-            return next;
-          },
-          { replace: true },
-        );
-
-      if (!response.ok || !body.context) {
+      if (!response.ok || !body?.context) {
         toast({
           type: "warning",
           title: "Handoff expired",
-          message: body.error || "Open Wireline Command and capture the page again.",
+          message: body?.error || "Open Wireline Command and capture the page again.",
           duration: 10_000,
         });
         clearHandoffParam();
@@ -89,7 +91,18 @@ export default function AgentStudioHome() {
       setSignedBrief(browserCommandBrief(body.context));
       setShowCreate(true);
       clearHandoffParam();
-    })();
+    })().catch(() => {
+      // Network failure/timeout from authFetch itself.
+      if (cancelled) return;
+      toast({
+        type: "warning",
+        title: "Handoff unavailable",
+        message:
+          "The captured page could not be retrieved. Capture it again from Wireline Command.",
+        duration: 10_000,
+      });
+      clearHandoffParam();
+    });
 
     return () => {
       cancelled = true;

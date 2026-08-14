@@ -54,7 +54,7 @@ const max = ratchet.maxLegacyErrorResponses;
 if (count > max) {
   console.error(
     `api-error ratchet FAILED: ${count} legacy error responses without code (max ${max}).\n` +
-      `Migrate to throw AppError or run scripts/migrate-route-errors.mjs --write`,
+      `Migrate the offending responses to \`throw AppError\` (src/lib/api-error.ts).`,
   );
   process.exit(1);
 }

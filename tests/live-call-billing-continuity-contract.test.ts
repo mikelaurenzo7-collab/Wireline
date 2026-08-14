@@ -85,8 +85,11 @@ describe("live-call billing continuity contract", () => {
   it("requires prepaid coverage on every public paid plan", () => {
     const wallet = read("src/lib/voice-wallet-guard.ts");
     const workspace = read("src/lib/workspace-usage-snapshot.ts");
+    // Live voice requires a *resolved* catalog plan: `planId !== "personal"`
+    // alone passed for a null plan (orphaned stored plan id), enabling voice
+    // the ledger could only price at $0.
     expect(wallet).toContain(
-      'const liveVoiceEnabled = activeSubscription && planId !== "personal"',
+      'const liveVoiceEnabled = activeSubscription && !!plan && plan.id !== "personal"',
     );
     expect(wallet).not.toContain("enterpriseContract");
     expect(workspace).not.toContain("enterpriseContract");

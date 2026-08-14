@@ -26,6 +26,9 @@ import {
   mcpToolErrorResult,
 } from "../lib/mcp-transport";
 import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
+import { isHardSpendCapExceeded } from "../lib/spend-guards";
+import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { rateLimit } from "../lib/rate-limit";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import * as schema from "../db/schema";
@@ -560,6 +563,25 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
         );
+      // Web mints run enforceSpendCap BEFORE the quota debit; this JSON-RPC
+      // path must match on both counts — the quota increment below is durable,
+      // so a capped tenant's rejected attempts must not eat the daily
+      // allowance they would need after raising the cap.
+      const capExceeded = await isHardSpendCapExceeded(authed.userId).catch((err: unknown) => {
+        log.error("chatgpt simulation spend-guard unavailable — refusing mint", {
+          userId: authed.userId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw AppError.fromHttpStatus(
+          503,
+          "Live simulation is briefly unavailable. Try again shortly.",
+        );
+      });
+      if (capExceeded)
+        throw AppError.fromHttpStatus(
+          402,
+          "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
+        );
       // Every mint charges a vendor-metered realtime secret on the platform
       // key, so this tool must draw from the same daily simulation-minute
       // quota the web sandbox charges — the hourly limiter alone allowed 8
@@ -604,6 +626,17 @@ router.post("/mcp", async (req, res) => {
         tools: [],
         toolChoice: "none",
         apiKeyPurpose: "chatgpt_demo",
+      });
+      // Same envelope-completeness rule as the web mints: WebRTC audio never
+      // reaches the token audit path, so the mint reserve is the only place
+      // this vendor-metered session becomes visible tenant COGS.
+      await persistPlatformCostRecord({
+        userId: authed.userId,
+        action: "voice.realtime.session",
+        provider: "openai",
+        model: OPENAI_REALTIME_DEFAULT_MODEL,
+        costUsd: platformCostReserveUsd("openai_realtime_session"),
+        requestMeta: { surface: "chatgpt_simulation" },
       });
       return jsonRpc(res, id, {
         content: [{ type: "text", text: "Private voice simulation ready." }],

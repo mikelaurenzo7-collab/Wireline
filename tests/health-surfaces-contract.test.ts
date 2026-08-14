@@ -97,8 +97,18 @@ describe("health surfaces contract", () => {
     expect(routeSource).toContain(
       'import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";',
     );
+    // /models drives three live platform-key OpenAI probes per request, so it
+    // must never be reachable by an arbitrary authenticated tenant: monitor
+    // token for ops, platform admin for humans (same posture as /slos). The
+    // composite is a NAMED middleware so the authz matrix sees it in-chain.
+    const gateStart = routeSource.indexOf("function requireMonitorTokenOrPlatformAdmin");
+    expect(gateStart).toBeGreaterThan(-1);
+    const gate = routeSource.slice(gateStart, routeSource.indexOf("router.get(", gateStart));
+    expect(gate).toContain("monitorTokenOk(req)");
+    expect(gate).toContain("authenticateUser(req, res,");
+    expect(gate).toContain("requirePlatformAdmin(req, res, next)");
     expect(routeSource).toMatch(
-      /router\.get\(\s*"\/models",\s*healthRateLimiter,\s*authenticateUser/,
+      /router\.get\(\s*"\/models",\s*healthRateLimiter,\s*requireMonitorTokenOrPlatformAdmin/,
     );
     expect(probeSource).toContain("const controller = new AbortController()");
     expect(probeSource).toContain('controller.abort(new Error("model probe timed out"))');

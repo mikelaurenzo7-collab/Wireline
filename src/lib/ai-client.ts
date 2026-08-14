@@ -429,8 +429,17 @@ async function callGemini(
   }
   assertNotAborted(options?.signal);
   const text = result.response.text();
-  const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
-  const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
+  const usageMetadata = result.response.usageMetadata as
+    import("./ai-audit").GeminiUsageMetadata | undefined;
+  // Thinking models report reasoning tokens in thoughtsTokenCount, billed at
+  // the output rate but excluded from candidatesTokenCount; context-cache reads
+  // sit inside promptTokenCount at the cache-read rate. Fold both in or every
+  // Gemini fallback call is under-metered by its full reasoning budget.
+  const cacheReadTokens = Math.max(0, usageMetadata?.cachedContentTokenCount ?? 0);
+  const inputTokens = Math.max(0, (usageMetadata?.promptTokenCount || 0) - cacheReadTokens);
+  const outputTokens =
+    (usageMetadata?.candidatesTokenCount || 0) +
+    Math.max(0, usageMetadata?.thoughtsTokenCount ?? 0);
   return tool
     ? message({
         model: modelId,
@@ -446,6 +455,7 @@ async function callGemini(
         stopReason: "tool_use",
         inputTokens,
         outputTokens,
+        cacheReadTokens,
       })
     : message({
         model: modelId,
@@ -453,6 +463,7 @@ async function callGemini(
         stopReason: "end_turn",
         inputTokens,
         outputTokens,
+        cacheReadTokens,
       });
 }
 
