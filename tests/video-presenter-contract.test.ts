@@ -103,6 +103,16 @@ describe("video presenter integration", () => {
     expect(studio).toContain("This stage opened with the Wireline voice.");
   });
 
+  it("gives the paid add-on quiet discovery from the primary surface", () => {
+    // Live Video's only front door used to be inside Studio. The Overview
+    // business roster now links it; the target page owns the entitlement
+    // story, so the row is truthful for subscribed and unsubscribed accounts.
+    const overview = source("src/pages/OverviewPage.tsx");
+    expect(overview).toContain('to="/studio/live-video"');
+    expect(overview).toContain("Live Video — put an agent on screen");
+    expect(overview).toContain('kind === "business"');
+  });
+
   it("meters FULL-mode sessions at their provider credit rate", () => {
     // A FULL session burns 2 provider credits per wall-clock minute against
     // LITE's 1. If the reservation stays flat, the modeled margin and the
