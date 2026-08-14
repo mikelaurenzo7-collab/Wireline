@@ -1,4 +1,12 @@
-import { Cpu, Link as LinkIcon, Loader2, MessageSquareText, Phone, RotateCw, Trash2 } from "lucide-react";
+import {
+  Cpu,
+  Link as LinkIcon,
+  Loader2,
+  MessageSquareText,
+  Phone,
+  RotateCw,
+  Trash2,
+} from "lucide-react";
 
 import { Panel } from "../PageShell";
 import WebhooksManager from "../WebhooksManager";
@@ -104,7 +112,11 @@ function Toggle({
       className={cn(
         "relative h-6 w-11 shrink-0 rounded-full p-0",
         disabled && "cursor-not-allowed opacity-50",
-        checked ? "bg-brand hover:bg-brand" : "bg-black/15",
+        // Off-state track must read on the obsidian panel; bg-black/15 was
+        // indistinguishable from the card behind it.
+        checked
+          ? "bg-brand hover:bg-brand"
+          : "border border-foreground/15 bg-foreground/20 hover:bg-foreground/25",
       )}
     >
       <span
@@ -138,17 +150,20 @@ export function CarrierPanel({
   const managerAlertReady = hasManagerAlertConfig(settings);
   // Honesty: never show ON when send path cannot succeed (mirrors Salesforce disconnect).
   const messagingEnabled = Boolean(settings.twilio_messaging_enabled) && smsSendable;
-  const managerAlertsEnabled =
-    Boolean(settings.twilio_manager_alerts_enabled) && managerAlertReady;
+  const managerAlertsEnabled = Boolean(settings.twilio_manager_alerts_enabled) && managerAlertReady;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto pb-4 xl:grid-cols-2">
       <Panel title="Managed call runtime" hint="RELIABLE BY DEFAULT" icon={Cpu} scroll>
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-            <p className="text-sm font-semibold text-foreground">Wireline manages the live-call stack</p>
+            <p className="text-sm font-semibold text-foreground">
+              Wireline manages the live-call stack
+            </p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity. Carrier and messaging infrastructure stay configured behind the scenes.
+              Wireline manages the phone conversation runtime, voice selection, intelligence
+              routing, and continuity. Carrier and messaging infrastructure stay configured behind
+              the scenes.
             </p>
           </div>
 
@@ -181,7 +196,10 @@ export function CarrierPanel({
                 })
               }
             >
-              <SelectTrigger id="vapi-inbound-agent-id" className="h-auto w-full rounded-md border border-input bg-black/5 py-2 pl-3 text-sm text-foreground">
+              <SelectTrigger
+                id="vapi-inbound-agent-id"
+                className="h-auto w-full rounded-md border border-input bg-black/5 py-2 pl-3 text-sm text-foreground"
+              >
                 <SelectValue placeholder="Oldest voice agent" />
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +239,8 @@ export function CarrierPanel({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-5 text-muted-foreground">
-              Assign each customer line to one voice agent. Add campaign labels only when attribution is useful.
+              Assign each customer line to one voice agent. Add campaign labels only when
+              attribution is useful.
             </p>
             <ShadButton
               type="button"
@@ -230,7 +249,11 @@ export function CarrierPanel({
               variant="outline"
               className="h-auto shrink-0 gap-1.5 px-2 py-1"
             >
-              {isSyncing ? <Loader2 className="size-3 animate-spin" /> : <RotateCw className="size-3" />}
+              {isSyncing ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <RotateCw className="size-3" />
+              )}
               Sync
             </ShadButton>
           </div>
@@ -238,7 +261,9 @@ export function CarrierPanel({
           {phoneNumbers.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
               <p className="text-sm font-semibold text-foreground">No active customer lines</p>
-              <p className="mt-1 text-xs text-muted-foreground">Claim a number above when the voice agent is ready.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Claim a number above when the voice agent is ready.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -279,10 +304,7 @@ export function CarrierPanel({
                       <Select
                         value={number.agent_id || CARRIER_AGENT_UNSET}
                         onValueChange={(value) =>
-                          onUpdateNumberAgent(
-                            number.id,
-                            value === CARRIER_AGENT_UNSET ? "" : value,
-                          )
+                          onUpdateNumberAgent(number.id, value === CARRIER_AGENT_UNSET ? "" : value)
                         }
                       >
                         <SelectTrigger
@@ -427,7 +449,10 @@ export function CarrierPanel({
 
           {settings.byoc_enabled ? (
             <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
-              BYOC inbound SMS webhook: <code className="break-all text-foreground">https://trywireline.com/api/twilio-webhook/sms</code>
+              BYOC inbound SMS webhook:{" "}
+              <code className="break-all text-foreground">
+                https://trywireline.com/api/twilio-webhook/sms
+              </code>
             </div>
           ) : null}
 

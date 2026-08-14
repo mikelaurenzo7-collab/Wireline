@@ -21,10 +21,7 @@ const PRINCIPLES = [
 
 export default function About() {
   return (
-    <MarketingPageFrame
-      className="wl-about-page"
-      mainClassName="!px-0 pb-0 pt-16"
-    >
+    <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="About Wireline | Voice Agents for Calls and Follow up"
         description="Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations."
@@ -33,7 +30,7 @@ export default function About() {
 
       <MarketingHero
         title="Agents that run calls like you would."
-        primaryAction={{ label: "Get started now", to: "/pricing" }}
+        primaryAction={{ label: "Build your Voice Agent", to: "/pricing" }}
         secondaryAction={{
           label: "Contact support",
           to: "/contact",
@@ -43,12 +40,10 @@ export default function About() {
 
       <section className="wl-public-section border-y border-border bg-card">
         <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
-          <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
-            <h2 className="wl-stitch-display text-balance">
-              Independent. Direct line to us.
-            </h2>
+          <div className="bg-card px-5 pb-4 pt-9 text-center sm:px-8 sm:py-12 lg:px-10 lg:py-12">
+            <h2 className="wl-stitch-display text-balance">Independent. Direct line to us.</h2>
           </div>
-          <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
+          <div className="bg-card px-5 pb-9 pt-4 text-center sm:px-8 sm:py-12 lg:px-10 lg:py-12">
             <a
               href="mailto:support@trywireline.com"
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
@@ -64,9 +59,7 @@ export default function About() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto grid max-w-4xl gap-6 text-center">
             <div>
-              <h2 className="wl-stitch-display text-balance">
-                Predictable, trained, brand-safe.
-              </h2>
+              <h2 className="wl-stitch-display text-balance">Predictable, trained, brand-safe.</h2>
             </div>
           </div>
           <div className="mt-10 grid gap-3 md:grid-cols-3">
@@ -98,7 +91,7 @@ export default function About() {
             to="/pricing"
             className="marketing-btn-primary min-h-12 px-6 text-[length:var(--wireline-typography-body-size)] font-semibold"
           >
-            Get started now <ArrowRight className="h-4 w-4" />
+            Build your Voice Agent <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

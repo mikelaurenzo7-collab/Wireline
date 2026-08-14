@@ -56,15 +56,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         </h1>
         <p className="text-caption leading-relaxed max-w-md">
           {location.pathname && location.pathname !== "/" && (
-            <>
+            <span className="mb-1.5 block">
               We couldn't find{" "}
               <code className="wl-code">
                 {location.pathname.length > 32
                   ? location.pathname.slice(0, 32) + "…"
                   : location.pathname}
               </code>
-              .{" "}
-            </>
+            </span>
           )}
           {isPublic ? (
             "Try the demo line, browse pricing, or head home."

@@ -13,6 +13,17 @@
  *
  * Usage:
  *   ELEVENLABS_API_KEY=… node scripts/generate-campaign-vo.mjs [--force] [--voice <id>]
+ *   XAI_API_KEY=… node scripts/generate-campaign-vo.mjs --engine xai [--force]
+ *
+ * Engines: `elevenlabs` (default, canonical deliverables) renders with the
+ * curated runtime Studio voice. `xai` renders the same scripts through the xAI
+ * TTS endpoint (`src/lib/voice/xai-tts-service.ts` documents the request
+ * shape) into an `xai/` subfolder as the second creative engine the voice
+ * doctrine names — reference/alternate reads, never the canonical files.
+ *
+ * Every render is duration-verified by walking the MP3 frames. Tracks with a
+ * hard ceiling (`maxSeconds`) retry at stepped-up speed until the render fits,
+ * because provider pacing drifts between renders even at a fixed speed.
  *
  * Scope: marketing and reference use only. Production phone-call speech goes
  * through the managed voice runtime (src/lib/managed-voice-runtime.ts), never
@@ -36,6 +47,13 @@ export const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
 const MODEL_ID = "eleven_multilingual_v2";
 
 /**
+ * Second-engine default for `--engine xai`: Ara, the provider's "warm and
+ * professional" built-in — closest to the guide's founder-explaining tone.
+ * The xAI renders are alternates for editing/A-B, never the canonical files.
+ */
+export const XAI_VOICE_ID = "ara";
+
+/**
  * Canonical voiceover copy, verbatim from the campaign document. Pinned by
  * tests/launch-campaign-vo-contract.test.ts so the script and the document
  * cannot drift apart.
@@ -53,12 +71,12 @@ export const CAMPAIGN_VO = [
     file: "wireline-missed-call-15s.mp3",
     targetSeconds: 15,
     // The one track with a hard ceiling: the film is 15.0s and the VO must
-    // finish inside it. Provider pacing drifts between renders — speed 1.0
-    // measured 15.41s (2.21 wps, below the guide's 2.3–2.5 band) on 2026-08-10
-    // where an earlier render made 14.39s. 1.07 brings it to ~14.4s and
-    // ~2.36 wps, inside the guide. Re-measure after every render; this is the
-    // only cut where running long is a defect rather than a taste note.
+    // finish inside it. Provider pacing drifts between renders — speed 1.07
+    // measured 15.86s on 2026-08-14 where an earlier render made 14.4s — so
+    // the ceiling is enforced by measuring the render and retrying faster
+    // (`maxSeconds` below), not by trusting any fixed speed value.
     speed: 1.07,
+    maxSeconds: 15,
     text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.",
   },
   {
@@ -106,25 +124,130 @@ export function speakable(text) {
 function parseArgs() {
   const argv = process.argv.slice(2);
   const voiceIndex = argv.indexOf("--voice");
+  const engineIndex = argv.indexOf("--engine");
+  const engine = engineIndex >= 0 ? argv[engineIndex + 1] : "elevenlabs";
+  if (engine !== "elevenlabs" && engine !== "xai") {
+    console.error(`[campaign-vo] Unknown engine "${engine}". Use elevenlabs or xai.`);
+    process.exit(1);
+  }
   return {
     force: argv.includes("--force"),
-    voiceId: voiceIndex >= 0 ? argv[voiceIndex + 1] : DEFAULT_VOICE_ID,
+    engine,
+    voiceId: voiceIndex >= 0 ? argv[voiceIndex + 1] : engine === "xai" ? XAI_VOICE_ID : DEFAULT_VOICE_ID,
   };
 }
 
+/**
+ * Measured duration of a CBR MP3 by walking its frame headers — no ffprobe in
+ * the capture sandboxes, and byte-length estimates drift with ID3 padding.
+ */
+export function mp3DurationSeconds(buffer) {
+  const BITRATES = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+  const RATES = [44100, 48000, 32000];
+  let i = 0;
+  if (buffer.length > 10 && buffer.slice(0, 3).toString("latin1") === "ID3") {
+    const size =
+      ((buffer[6] & 0x7f) << 21) |
+      ((buffer[7] & 0x7f) << 14) |
+      ((buffer[8] & 0x7f) << 7) |
+      (buffer[9] & 0x7f);
+    i = 10 + size;
+  }
+  let seconds = 0;
+  while (i + 4 < buffer.length) {
+    if (buffer[i] === 0xff && (buffer[i + 1] & 0xe0) === 0xe0) {
+      const bitrateIdx = (buffer[i + 2] >> 4) & 0x0f;
+      const rateIdx = (buffer[i + 2] >> 2) & 0x03;
+      if (bitrateIdx === 0 || bitrateIdx === 15 || rateIdx === 3) {
+        i += 1;
+        continue;
+      }
+      const bitrate = BITRATES[bitrateIdx] * 1000;
+      const rate = RATES[rateIdx];
+      const padding = (buffer[i + 2] >> 1) & 1;
+      seconds += 1152 / rate;
+      i += Math.floor((1152 * bitrate) / (8 * rate)) + padding;
+    } else {
+      i += 1;
+    }
+  }
+  return seconds;
+}
+
+async function renderElevenLabs({ apiKey, voiceId, text, speed }) {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: MODEL_ID,
+        // The guide asks for an even, unhurried read that leaves air at the
+        // ends rather than an announcer performance.
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0,
+          use_speaker_boost: true,
+          speed,
+        },
+      }),
+    },
+  );
+  if (!response.ok) {
+    const detail = (await response.text().catch(() => "")).slice(0, 300);
+    throw new Error(`ElevenLabs returned ${response.status}: ${detail}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function renderXai({ apiKey, voiceId, text, speed }) {
+  // Request shape mirrors src/lib/voice/xai-tts-service.ts: voice_id +
+  // language required, output_format is an object, no model field.
+  const response = await fetch("https://api.x.ai/v1/tts", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify({
+      text,
+      voice_id: voiceId,
+      language: "en",
+      output_format: { codec: "mp3", sample_rate: 44100, bit_rate: 128000 },
+      ...(speed && speed !== 1 ? { speed: Math.min(1.5, Math.max(0.7, speed)) } : {}),
+      text_normalization: true,
+    }),
+  });
+  if (!response.ok) {
+    const detail = (await response.text().catch(() => "")).slice(0, 300);
+    throw new Error(`xAI TTS returned ${response.status}: ${detail}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
+}
+
 async function main() {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const { force, engine, voiceId } = parseArgs();
+  const apiKey = engine === "xai" ? process.env.XAI_API_KEY : process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    console.error("[campaign-vo] ELEVENLABS_API_KEY not set.");
+    const name = engine === "xai" ? "XAI_API_KEY" : "ELEVENLABS_API_KEY";
+    console.error(`[campaign-vo] ${name} not set.`);
     console.error("[campaign-vo] Pull it from Vercel or your local .env, then re-run.");
     process.exit(1);
   }
 
-  const { force, voiceId } = parseArgs();
-  await mkdir(OUTPUT_DIR, { recursive: true });
+  const outputDir = engine === "xai" ? resolve(OUTPUT_DIR, "xai") : OUTPUT_DIR;
+  const render = engine === "xai" ? renderXai : renderElevenLabs;
+  await mkdir(outputDir, { recursive: true });
 
   for (const track of CAMPAIGN_VO) {
-    const outputPath = resolve(OUTPUT_DIR, track.file);
+    const outputPath = resolve(outputDir, track.file);
     if (!force) {
       try {
         const info = await stat(outputPath);
@@ -141,40 +264,31 @@ async function main() {
     const words = text.split(/\s+/).filter(Boolean).length;
     console.log(`[campaign-vo] ${track.id}: ${words} words, target ~${track.targetSeconds}s`);
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-          Accept: "audio/mpeg",
-        },
-        body: JSON.stringify({
-          text,
-          model_id: MODEL_ID,
-          // The guide asks for an even, unhurried read that leaves air at the
-          // ends rather than an announcer performance.
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0,
-            use_speaker_boost: true,
-            speed: track.speed ?? 1,
-          },
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const detail = (await response.text().catch(() => "")).slice(0, 300);
-      console.error(`[campaign-vo] ElevenLabs returned ${response.status}: ${detail}`);
-      process.exit(1);
+    // Provider pacing drifts render to render, so a hard-ceiling track is
+    // measured and retried faster instead of trusting its configured speed.
+    const maxAttempts = track.maxSeconds ? 4 : 1;
+    let speed = track.speed ?? 1;
+    let audio = null;
+    let seconds = 0;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      audio = await render({ apiKey, voiceId, text, speed });
+      seconds = mp3DurationSeconds(audio);
+      const rate = seconds > 0 ? (words / seconds).toFixed(2) : "?";
+      console.log(
+        `[campaign-vo]   render ${attempt}: ${seconds.toFixed(2)}s at speed ${speed} (${rate} wps)`,
+      );
+      if (!track.maxSeconds || seconds <= track.maxSeconds) break;
+      if (attempt === maxAttempts) {
+        console.error(
+          `[campaign-vo] ${track.id} still runs ${seconds.toFixed(2)}s after ${maxAttempts} attempts (ceiling ${track.maxSeconds}s).`,
+        );
+        process.exit(1);
+      }
+      speed = Math.min(1.2, Math.round((speed + 0.03) * 100) / 100);
     }
 
-    const audio = Buffer.from(await response.arrayBuffer());
     await writeFile(outputPath, audio);
-    console.log(`[campaign-vo] wrote ${outputPath} (${audio.length} bytes)`);
+    console.log(`[campaign-vo] wrote ${outputPath} (${audio.length} bytes, ${seconds.toFixed(2)}s)`);
   }
 
   console.log("[campaign-vo] Done. official-assets/ is gitignored — do not commit the audio.");

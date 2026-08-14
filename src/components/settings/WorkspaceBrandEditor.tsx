@@ -95,7 +95,7 @@ export default function WorkspaceBrandEditor({
             </div>
           </div>
           <Button type="button" onClick={onSave} disabled={isSaving}>
-            {isSaving ? "Saving…" : "Save brand"}
+            {isSaving ? "Saving…" : "Save branding"}
           </Button>
         </div>
 

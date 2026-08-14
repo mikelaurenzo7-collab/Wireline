@@ -82,5 +82,16 @@ export function resolvePreinstalledChromium(env = process.env) {
  */
 export function chromiumLaunchOptions(env = process.env) {
   const executablePath = resolvePreinstalledChromium(env);
-  return executablePath ? { executablePath } : {};
+  // Chromium does not read HTTPS_PROXY from the environment on its own, so in
+  // sandboxes that force outbound HTTPS through an agent proxy every capture
+  // script silently failed with ERR_CONNECTION_RESET while curl worked.
+  // Wiring the proxy here fixes every `chromium.launch()` in scripts/ at once;
+  // loopback stays direct so local captures never CONNECT to the proxy.
+  const proxyServer = env.WIRELINE_CAPTURE_PROXY ?? env.HTTPS_PROXY ?? env.https_proxy;
+  return {
+    ...(executablePath ? { executablePath } : {}),
+    ...(proxyServer
+      ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } }
+      : {}),
+  };
 }

@@ -56,9 +56,18 @@ type StripeBillingCardProps = {
    * balance + top-up surface when it already has the balance ledger loaded.
    */
   showBalanceTopUp?: boolean;
+  /**
+   * The Stripe/PCI trust row reads as a page footer. Pages that render more
+   * cards after this component suppress it here and place their own footer at
+   * the true end of the page, so the legal row never lands mid-scroll.
+   */
+  showTrustFooter?: boolean;
 };
 
-export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBillingCardProps = {}) {
+export default function StripeBillingCard({
+  showBalanceTopUp = true,
+  showTrustFooter = true,
+}: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
@@ -380,7 +389,9 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
                   <ExternalLink className="size-3.5" aria-hidden="true" />
                 </button>
               ) : !hasGrantedPlanAccess ? (
-                <p className="text-xs text-muted-foreground">Choose a live plan below to continue.</p>
+                <p className="text-xs text-muted-foreground">
+                  Choose a live plan below to continue.
+                </p>
               ) : null}
             </div>
           )}
@@ -410,20 +421,27 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
           onSelectPlan={startCheckout}
         />
       ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
-        <div className="flex items-center gap-2">
-          <Shield className="w-3 h-3" />
-          Stripe · PCI DSS Level 1 · Cancel anytime
-        </div>
-        <div className="flex items-center gap-3">
-          <a href="/privacy" className="hover:text-foreground transition-colors">
-            Privacy
-          </a>
-          <span>·</span>
-          <a href="/terms" className="hover:text-foreground transition-colors">
-            Terms
-          </a>
-        </div>
+      {showTrustFooter ? <BillingTrustFooter /> : null}
+    </div>
+  );
+}
+
+/** Shared Stripe/PCI trust + legal row for billing surfaces. */
+export function BillingTrustFooter() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
+      <div className="flex items-center gap-2">
+        <Shield className="w-3 h-3" />
+        Stripe · PCI DSS Level 1 · Cancel anytime
+      </div>
+      <div className="flex items-center gap-3">
+        <a href="/privacy" className="hover:text-foreground transition-colors">
+          Privacy
+        </a>
+        <span>·</span>
+        <a href="/terms" className="hover:text-foreground transition-colors">
+          Terms
+        </a>
       </div>
     </div>
   );
@@ -671,11 +689,13 @@ function GrantedPlanAccessCard({
             </h3>
             <p className="text-sm font-semibold text-foreground">Plan access is active</p>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Paid-plan access is granted directly to this workspace. No recurring Stripe invoice is scheduled.
+              Paid-plan access is granted directly to this workspace. No recurring Stripe invoice is
+              scheduled.
             </p>
             {sub.max_agents ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
-                {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
+                {agentCount} / {sub.max_agents}{" "}
+                {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
               </p>
             ) : null}
           </div>

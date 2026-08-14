@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  CLIENT_SURFACE_POSTURE,
-  PRODUCT_POSTURE,
-} from "../src/lib/product-copy";
+import { CLIENT_SURFACE_POSTURE, PRODUCT_POSTURE } from "../src/lib/product-copy";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -15,9 +12,7 @@ function relativeLuminance(hex: string): number {
     .replace("#", "")
     .match(/.{2}/g)!
     .map((channel) => Number.parseInt(channel, 16) / 255)
-    .map((channel) =>
-      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-    );
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
@@ -46,9 +41,7 @@ describe("current-state UI contract", () => {
     const commandBar = read("src/components/CommandBar.tsx");
 
     expect(CLIENT_SURFACE_POSTURE.summary).toContain("Launch on the web");
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain(
-      "None are required for the core product",
-    );
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("None are required for the core product");
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.chatgpt.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.claude.status).toBe("Early access");
@@ -86,8 +79,8 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");
     expect(developers).toContain("Private-by-default boundary");
-    expect(developers).toMatch(
-      /this connector cannot place calls,\s+send messages, provision numbers, or launch a live voice agent/,
+    expect(developers.replace(/\s+/g, " ")).toContain(
+      "this connector cannot place calls, send messages, provision numbers, or launch a live voice agent",
     );
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");
@@ -122,9 +115,7 @@ describe("current-state UI contract", () => {
     expect(hero).not.toContain("MARKETING_VOICE.spine.map");
     expect(hero).not.toContain('MARKETING_VOICE.spine.join(", ")');
 
-    expect(auth).toContain(
-      'pathname === "/signup" || pathname === "/get-started"',
-    );
+    expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
     expect(auth).toContain("STRIPE_PLANS.find");
     expect(auth).toContain("plan.price_usd_annual");
     expect(auth).toContain("plan.price_usd_monthly");
@@ -135,12 +126,8 @@ describe("current-state UI contract", () => {
     // workspace-shape question. Choosing "Personal" used to overwrite it with
     // the free tier, discarding the purchase intent that brought them here.
     expect(auth).toContain("statedPaidPlan");
-    expect(auth).toContain(
-      'nextMode === "personal" ? (statedPaidPlan ?? "personal")',
-    );
-    expect(auth).not.toContain(
-      'nextMode === "business" ? "business" : "personal"',
-    );
+    expect(auth).toContain('nextMode === "personal" ? (statedPaidPlan ?? "personal")');
+    expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
   });
 
   it("keeps account entry and shared page headers centered, concise, and wrap-safe", () => {
@@ -160,16 +147,10 @@ describe("current-state UI contract", () => {
     expect(auth).toContain("location.search");
     expect(auth).not.toContain("AuthBrandPanel");
     expect(authCss).toContain("grid-template-columns: minmax(0, 1fr)");
-    expect(authCss).toContain(
-      "@media (min-width: 640px) and (max-height: 900px)",
-    );
-    expect(mobile).toMatch(
-      /\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/,
-    );
+    expect(authCss).toContain("@media (min-width: 640px) and (max-height: 900px)");
+    expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
-    expect(shell).not.toContain(
-      'className="truncate font-[var(--wireline-font-family-display)]',
-    );
+    expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
     for (const step of ["Build", "Train", "Launch", "Improve"]) {
       expect(features).toContain(`step: "${step}"`);
     }
@@ -186,16 +167,12 @@ describe("current-state UI contract", () => {
     const navigation = read("src/constants/navigation.ts");
 
     expect(main).toContain('import "./index.css"');
-    expect(main).not.toMatch(
-      /styles\/(?:foundation|responsive|ruthless-mobile-cleanup)/,
-    );
+    expect(main).not.toMatch(/styles\/(?:foundation|responsive|ruthless-mobile-cleanup)/);
     expect(index).toMatch(
       /system-hardening\.css";[\s\S]*responsive\.css";[\s\S]*ruthless-mobile-cleanup\.css";[\s\S]*agent-tabs-compact\.css";/,
     );
     expect(index).toContain("font-size: 16px");
-    expect(responsive).toContain(
-      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
-    );
+    expect(responsive).toContain("padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));");
     for (const source of [input, select]) {
       expect(source).toContain("h-11");
       expect(source).toContain("text-base");
@@ -210,15 +187,9 @@ describe("current-state UI contract", () => {
 
   it("keeps optional Paper theme tertiary copy at WCAG AA contrast", () => {
     const lightTheme = read("src/styles/theme-light.css");
-    const tertiary = lightTheme.match(
-      /--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
-    const canvas = lightTheme.match(
-      /--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
-    const surface = lightTheme.match(
-      /--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
+    const tertiary = lightTheme.match(/--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i)?.[1];
+    const canvas = lightTheme.match(/--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i)?.[1];
+    const surface = lightTheme.match(/--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i)?.[1];
 
     expect(tertiary).toBeTruthy();
     expect(canvas).toBeTruthy();
@@ -235,9 +206,7 @@ describe("current-state UI contract", () => {
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
       "Your calls. Your texts. Your email. Your outcomes.",
     );
-    expect(copy).toContain(
-      "guardrails, approvals, spend, handoffs, and escalation",
-    );
+    expect(copy).toContain("guardrails, approvals, spend, handoffs, and escalation");
     expect(copy).not.toContain("under the owner's rules");
     expect(copy).toContain("consent rules");
   });

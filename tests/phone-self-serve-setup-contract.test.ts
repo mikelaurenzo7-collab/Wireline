@@ -28,7 +28,10 @@ describe("self-service calling setup", () => {
     expect(setup).toContain('aria-label="Choose the voice agent for this number"');
     expect(setup).toContain('aria-label="Preferred phone number area code"');
     expect(setup).toContain("Activate number");
-    expect(setup).toContain("Paid plan required for activation.");
+    // Active paid workspaces used to read a "Paid plan required" gate that did
+    // not apply to them; the note now states the plan-inclusive truth and the
+    // server-driven recovery path handles the unpaid case.
+    expect(setup).toContain("Every paid plan includes a dedicated number.");
     expect(setup).toContain('import { WL_APP_CLASSES } from "../lib/wireline-design-system"');
     expect(setup).toContain("<p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>");
     expect(setup).not.toContain("Set up the complete call experience before going live.");

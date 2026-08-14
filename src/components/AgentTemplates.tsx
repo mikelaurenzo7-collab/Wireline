@@ -46,7 +46,7 @@ const AGENT_TEMPLATES = [
     category: "Sales & Revenue",
     name: "SDR — Outbound Prospecting",
     description:
-      "Qualifies inbound leads with BANT, books demos, handles objections, and passes hot leads to your CRM.",
+      "Works your outbound queue with BANT qualification, books demos, handles objections, and passes hot leads to your CRM.",
     role: "sales",
     channel: "voice" as const,
     icon: Target,

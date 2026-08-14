@@ -129,7 +129,7 @@ export default function UsageMeter({
           {loadError} Showing last known usage.
         </p>
       ) : null}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">
             <Activity className="w-4.5 h-4.5 wl-accent-text" />
@@ -143,7 +143,9 @@ export default function UsageMeter({
             </p>
           </div>
         </div>
-        <div className="text-right">
+        {/* nowrap keeps the fraction whole in narrow admin columns — it used to
+            break as "0 /" / "100" / "0%" on separate clipped lines at 390px. */}
+        <div className="shrink-0 whitespace-nowrap text-right">
           <div className="text-[length:var(--wireline-typography-overline-size)] font-mono text-foreground/55">
             <span className="text-foreground tabular-nums text-base font-bold">
               {used.toLocaleString()}

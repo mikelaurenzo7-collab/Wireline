@@ -101,8 +101,8 @@ export function AccountsPanel() {
           Keep personal and business work separate.
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Switch personalization and defaults between personal and business context. Agents stay
-          under your user account today — workspace-scoped isolation is the next hardening step.
+          Switch personalization and defaults between personal and business context. Every agent
+          stays under your account, with its own training, rules, and history.
         </p>
       </header>
 

@@ -52,7 +52,7 @@ describe("launch truth contract", () => {
     const security = read("src/components/Security.tsx");
 
     expect(changelog).toContain('date: "Aug 11, 2026"');
-    expect(changelog).toContain('title: "Launch certification hardened"');
+    expect(changelog).toContain('title: "Deeper release checks before anything ships"');
     expect(changelog).toContain("the non-E2E test suite");
     expect(changelog).toContain("Post-promotion health checks verify the live service");
     expect(changelog).not.toContain("the full test suite");

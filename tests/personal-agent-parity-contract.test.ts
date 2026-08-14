@@ -18,8 +18,7 @@ import {
 import { PRODUCT_POSTURE } from "../src/lib/product-copy";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("personal agent parity — create defaults", () => {
   it("defaults personal Fast Start to personal_assistant with concierge overlay", () => {
@@ -50,16 +49,9 @@ describe("personal agent parity — create defaults", () => {
   });
 
   it("seeds role-focused tools while keeping the full catalog selectable", () => {
-    const personalTools = resolveCreateEnabledTools(
-      "personal_assistant",
-      false,
-    );
+    const personalTools = resolveCreateEnabledTools("personal_assistant", false);
     const businessTools = resolveCreateEnabledTools("sales", true);
-    const deviceActions = [
-      "navigate_to",
-      "add_reminder",
-      "play_music",
-    ] as const;
+    const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
 
     expect(personalTools.length).toBeGreaterThan(0);
     for (const tool of personalTools) {
@@ -123,17 +115,11 @@ describe("personal agent parity — presentation and runtime", () => {
     const templates = read("src/components/AgentTemplates.tsx");
     const mobile = read("src/routes/mobile-routes.ts");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
-    expect(templates).toContain(
-      "isBusinessTemplateCategory(modalTemplate.category)",
-    );
-    expect(mobile).toContain(
-      "resolveCreateEnabledTools(role, isBusinessAgent)",
-    );
+    expect(templates).toContain("isBusinessTemplateCategory(modalTemplate.category)");
+    expect(mobile).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
     expect(mobile).toContain("resolveCreatePersonality");
     expect(agentRoutes).toContain("resolveCreatePersonality");
-    expect(agentRoutes).toContain(
-      "resolveCreateEnabledTools(role, isBusinessAgent)",
-    );
+    expect(agentRoutes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
   });
 
   it("uses personal Studio / Overview / Vapi language instead of business-customer defaults", () => {
@@ -147,9 +133,7 @@ describe("personal agent parity — presentation and runtime", () => {
     expect(panel).toContain("composeSetupPersonality");
     expect(toneCompose).toContain("personally discreet");
     expect(studio).not.toContain("Try a private conversation");
-    expect(studio).toContain(
-      "isBusinessAgent={Boolean(active.is_business_agent)}",
-    );
+    expect(studio).toContain("isBusinessAgent={Boolean(active.is_business_agent)}");
     expect(overview).toContain("Choose one personal job");
     expect(overview).not.toContain("First personal-agent workflow");
     expect(vapi).toContain("a personal Wireline agent for your principal");
@@ -164,26 +148,19 @@ describe("personal agent parity — presentation and runtime", () => {
     expect(composed).toContain("elite personal assistant");
     expect(composed).toContain("TEMPLATE SPECIALTY — Personal Concierge");
     expect(composed).toContain("## DELIVERY TONE");
-    expect(composed).toContain(
-      "Warm. Concise, useful, and personally discreet.",
-    );
+    expect(composed).toContain("Warm. Concise, useful, and personally discreet.");
     const again = composeSetupPersonality(composed, "Polished", false);
     expect(again.match(/## DELIVERY TONE/g)?.length).toBe(1);
-    expect(again).toContain(
-      "Polished. Concise, useful, and personally discreet.",
-    );
+    expect(again).toContain("Polished. Concise, useful, and personally discreet.");
     expect(again).not.toContain("Warm. Concise");
   });
 
   it("preserves concise custom personality text when updating delivery tone", () => {
-    const concise =
-      "Never interrupt meetings. Text before transferring unknown callers.";
+    const concise = "Never interrupt meetings. Text before transferring unknown callers.";
     const composed = composeSetupPersonality(concise, "Calm", false);
     expect(composed).toContain(concise);
     expect(composed).toContain("## DELIVERY TONE");
-    expect(composed).toContain(
-      "Calm. Concise, useful, and personally discreet.",
-    );
+    expect(composed).toContain("Calm. Concise, useful, and personally discreet.");
   });
 
   it("softens personal posture copy away from business-employee wording", () => {
@@ -209,9 +186,7 @@ describe("founder dogfood posture integrity", () => {
     // reclassify an agent the owner already placed: a user-created personal
     // agent with a non-"personal_assistant" role was being flipped to business,
     // which hides it from the posture-filtered personal workspace.
-    expect(founderSeed).not.toContain(
-      'isBusinessAgent: row.role !== "personal_assistant"',
-    );
+    expect(founderSeed).not.toContain('isBusinessAgent: row.role !== "personal_assistant"');
     const legacyBackfill = founderSeed.slice(
       founderSeed.indexOf("const ownerAgents = await drizzle"),
     );
@@ -228,9 +203,7 @@ describe("founder dogfood posture integrity", () => {
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(callOps).toContain("humanizeTaxonomy");
-    expect(callOps).not.toContain(
-      '{call.intent_label || call.summary || "Follow up requested"}',
-    );
+    expect(callOps).not.toContain('{call.intent_label || call.summary || "Follow up requested"}');
     expect(workroom).not.toContain('<main className="flex h-full');
     expect(workroom).toContain('aria-label={mode === "test"');
     expect(overview).toContain('coreConnections.push("Phone")');
@@ -245,9 +218,7 @@ describe("founder dogfood posture integrity", () => {
     const billing = read("src/components/StripeBillingCard.tsx");
     const insights = read("src/routes/insights-routes.ts");
 
-    expect(sms).toContain(
-      "SMS conversations will appear here after messaging is connected",
-    );
+    expect(sms).toContain("SMS conversations will appear here after messaging is connected");
     expect(sms).toContain("Review SMS setup");
     expect(sms).not.toContain("Wire a number, then text it from another phone");
 
@@ -259,7 +230,7 @@ describe("founder dogfood posture integrity", () => {
     expect(billing).toContain("hasGrantedPlanAccess");
     expect(billing).toContain("Plan access is active");
     expect(billing).toContain("Paid-plan access is granted directly to this workspace");
-    expect(billing).toContain("No recurring Stripe invoice is scheduled");
+    expect(billing.replace(/\s+/g, " ")).toContain("No recurring Stripe invoice is scheduled");
     expect(billing).toContain("!hasPlanAccess ? (");
 
     expect(insights).toContain("function buildFastFailureModes");
@@ -274,16 +245,15 @@ describe("founder dogfood posture integrity", () => {
     expect(failureModesRoute).toContain("buildFastFailureModes(rows)");
     // The instant path must come before the provider-availability gate: it is
     // local aggregation and has to keep working through a provider outage.
-    expect(
-      failureModesRoute.indexOf("buildFastFailureModes(rows)"),
-    ).toBeLessThan(failureModesRoute.indexOf("isInsightsAiAvailable"));
+    expect(failureModesRoute.indexOf("buildFastFailureModes(rows)")).toBeLessThan(
+      failureModesRoute.indexOf("isInsightsAiAvailable"),
+    );
   });
 });
 
 describe("founder hybrid pricing — Starter Plus pair capacity", () => {
   it("prices Starter Plus as the personal+business founder pair without breaking slot parity", async () => {
-    const { planById, supportsFounderAgentPair } =
-      await import("../src/lib/plan-catalog");
+    const { planById, supportsFounderAgentPair } = await import("../src/lib/plan-catalog");
     const team = planById("team");
     expect(team?.price_usd_monthly).toBe(39);
     expect(team?.price_usd_annual).toBe(390);
@@ -293,12 +263,8 @@ describe("founder hybrid pricing — Starter Plus pair capacity", () => {
     expect(supportsFounderAgentPair("team")).toBe(true);
     expect(supportsFounderAgentPair("starter")).toBe(false);
     const catalog = read("src/lib/plan-catalog.ts");
-    expect(catalog).toContain(
-      "2 live agents — personal Concierge + business voice agent",
-    );
+    expect(catalog).toContain("2 live agents — personal Concierge + business voice agent");
     expect(read("src/pages/Pricing.tsx")).toContain("Founder hybrid");
-    expect(read("src/pages/OverviewPage.tsx")).not.toContain(
-      "Complete your founder pair",
-    );
+    expect(read("src/pages/OverviewPage.tsx")).not.toContain("Complete your founder pair");
   });
 });

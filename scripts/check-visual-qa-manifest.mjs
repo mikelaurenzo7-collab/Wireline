@@ -19,6 +19,10 @@ const P0_KINDS = new Set([
   "control-overflow",
   "redirect",
   "auth",
+  // The capture script records this when #root never mounted — a screenshot of
+  // a proxy/gateway interstitial is not evidence the app rendered, and the
+  // gate must agree with the capture script about what counts as P0.
+  "shell-not-mounted",
 ]);
 
 const manifest = JSON.parse(readFileSync(path.resolve(manifestPath), "utf8"));

@@ -92,12 +92,18 @@ describe("industry-leader audit hardening contracts", () => {
     expect(customization).not.toMatch(/label:\s*"Goals"[\s\S]*?href:\s*"\/knowledge"/);
   });
 
-  it("keeps public changelog on the OpenAI-first runtime truth", () => {
+  it("keeps the public changelog provider-neutral without stale runtime claims", () => {
+    // Vendor and model names belong on the Trust Center subprocessor list,
+    // not in product narrative. The changelog still tells the runtime story —
+    // one managed policy, governed continuity, dedicated calling runtime —
+    // without disclosing the internal provider stack to customers.
     const changelog = read("src/components/PublicChangelog.tsx");
     expect(changelog).not.toContain("Claude Sonnet 4.6");
     expect(changelog).not.toContain("Claude Opus 4.7");
-    expect(changelog).toContain("OpenAI unified for reasoning and live demos");
-    expect(changelog).toContain("OpenAI GPT-5.6 Terra");
+    expect(changelog).toContain("One managed reasoning policy across demos and Studio");
+    expect(changelog).toContain("Voice runtime rebalanced for reliability");
+    expect(changelog).not.toContain("OpenAI GPT-5.6 Terra");
+    expect(changelog).not.toContain("Twilio + Vapi");
     expect(changelog).not.toContain("Grok 4.5 primary");
     expect(changelog).not.toContain("Recaps · Triage · Activity · Cockpit");
   });
