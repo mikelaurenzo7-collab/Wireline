@@ -5,12 +5,13 @@
  * provider credentials never reach the browser. A selected public presenter is
  * stored per agent and remains independent from the always-on in-app identity badge.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { presenterCustomizationMessage } from "../lib/video-presenter/copy";
 import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
+import { Button } from "./atoms";
 
 type CatalogAvatar = {
   id: string;
@@ -55,31 +56,27 @@ export default function AgentPresenceAvatarPicker({
   const customizationNote = presenterCustomizationMessage(presenter);
   const selectedId = presenter.chosenAvatarId || workspaceDefaultAvatarId || null;
 
-  useEffect(() => {
+  const loadCatalog = useCallback(async () => {
     if (!platformConfigured) return;
-    let cancelled = false;
     setLoading(true);
     setError(null);
-
-    void authFetch("/api/video-presenter/avatars")
-      .then(async (response) => {
-        const payload = (await response.json()) as CatalogResponse;
-        if (!response.ok) throw new Error(payload.error || "Presenter catalog could not be loaded.");
-        if (!cancelled) setAvatars(Array.isArray(payload.avatars) ? payload.avatars : []);
-      })
-      .catch((reason) => {
-        if (!cancelled) {
-          setError(reason instanceof Error ? reason.message : "Presenter catalog could not be loaded.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const response = await authFetch("/api/video-presenter/avatars");
+      const payload = (await response.json().catch(() => null)) as CatalogResponse | null;
+      if (!response.ok || !payload) {
+        throw new Error(payload?.error || "Presenter catalog could not be loaded.");
+      }
+      setAvatars(Array.isArray(payload.avatars) ? payload.avatars : []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Presenter catalog could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
   }, [platformConfigured]);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
 
   const visibleAvatars = useMemo(
     () => (expanded ? avatars : avatars.slice(0, INITIAL_VISIBLE_AVATARS)),
@@ -101,13 +98,13 @@ export default function AgentPresenceAvatarPicker({
           body: JSON.stringify({ avatarId }),
         },
       );
-      const payload = (await response.json()) as {
+      const payload = (await response.json().catch(() => null)) as {
         presenter?: AgentVideoPresenterConfig;
         error?: string;
         message?: string;
-      };
-      if (!response.ok || !payload.presenter) {
-        throw new Error(payload.error || payload.message || "Presenter could not be saved.");
+      } | null;
+      if (!response.ok || !payload?.presenter) {
+        throw new Error(payload?.error || payload?.message || "Presenter could not be saved.");
       }
       onUpdated(payload.presenter);
     } catch (reason) {
@@ -177,7 +174,10 @@ export default function AgentPresenceAvatarPicker({
                   <div className="flex min-h-10 items-center justify-between gap-2 px-2.5 py-2">
                     <span className="truncate text-xs font-medium text-foreground">{avatar.name}</span>
                     {saving ? (
-                      <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" aria-hidden="true" />
+                      <Loader2
+                        className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     ) : selected ? (
                       <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)]">
                         <Check className="size-3" aria-hidden="true" />
@@ -205,9 +205,14 @@ export default function AgentPresenceAvatarPicker({
       )}
 
       {error ? (
-        <p className="mt-3 text-xs text-[var(--wireline-color-status-warning)]" role="alert">
-          {error}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3" role="alert">
+          <p className="text-xs text-[var(--wireline-color-status-warning)]">{error}</p>
+          {!savingId ? (
+            <Button type="button" size="sm" variant="secondary" onClick={() => void loadCatalog()}>
+              Retry catalog
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
