@@ -63,10 +63,20 @@ const LiveVideoPresenter = forwardRef<
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<LiveAvatarSession | null>(null);
   const pcmAccumRef = useRef("");
+  const onSpeakingChangeRef = useRef(onSpeakingChange);
+  const onStreamReadyRef = useRef(onStreamReadyChange);
   const [streamReady, setStreamReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [lipSyncActive, setLipSyncActive] = useState(false);
   const layoutClass = layout === "stage" ? "wl-presence-live--stage" : "";
+  const sessionToken = credentials.sessionToken;
+
+  // Parent pages intentionally pass small UI callbacks. Those callbacks can be
+  // recreated during ordinary renders; a paid provider session must not be.
+  // Keep the current callbacks in refs so session lifetime is keyed only to the
+  // minted session token.
+  onSpeakingChangeRef.current = onSpeakingChange;
+  onStreamReadyRef.current = onStreamReadyChange;
 
   const flushAccumulatedPcm = (force = false) => {
     const session = sessionRef.current;
@@ -84,12 +94,12 @@ const LiveVideoPresenter = forwardRef<
     setLipSyncActive(false);
     pcmAccumRef.current = "";
 
-    if (!credentials.sessionToken?.trim()) {
+    if (!sessionToken?.trim()) {
       setFailed(true);
       return;
     }
 
-    const session = new LiveAvatarSession(credentials.sessionToken, {
+    const session = new LiveAvatarSession(sessionToken, {
       voiceChat: false,
     });
     sessionRef.current = session;
@@ -98,19 +108,19 @@ const LiveVideoPresenter = forwardRef<
     const handleStreamReady = () => {
       if (cancelled || !videoRef.current) return;
       setStreamReady(true);
-      onStreamReadyChange?.();
+      onStreamReadyRef.current?.();
       session.attach(videoRef.current);
       videoRef.current.muted = true;
     };
 
     const onSpeakStarted = () => {
       setLipSyncActive(true);
-      onSpeakingChange?.(true);
+      onSpeakingChangeRef.current?.(true);
     };
 
     const onSpeakEnded = () => {
       setLipSyncActive(false);
-      onSpeakingChange?.(false);
+      onSpeakingChangeRef.current?.(false);
     };
 
     session.on(SessionEvent.SESSION_STREAM_READY, handleStreamReady);
@@ -130,9 +140,9 @@ const LiveVideoPresenter = forwardRef<
       session.off(AgentEventsEnum.AVATAR_SPEAK_STARTED, onSpeakStarted);
       session.off(AgentEventsEnum.AVATAR_SPEAK_ENDED, onSpeakEnded);
       void session.stop().catch(() => undefined);
-      sessionRef.current = null;
+      if (sessionRef.current === session) sessionRef.current = null;
     };
-  }, [credentials.sessionToken, onSpeakingChange, onStreamReadyChange]);
+  }, [sessionToken]);
 
   useImperativeHandle(ref, () => ({
     async streamSample(chunks: string[], _eventId: string) {
@@ -175,7 +185,7 @@ const LiveVideoPresenter = forwardRef<
       sessionRef.current = null;
       setStreamReady(false);
       setLipSyncActive(false);
-      onSpeakingChange?.(false);
+      onSpeakingChangeRef.current?.(false);
       await session.stop().catch(() => undefined);
     },
     isControlConnected: () => sessionRef.current?.state === SessionState.CONNECTED,
