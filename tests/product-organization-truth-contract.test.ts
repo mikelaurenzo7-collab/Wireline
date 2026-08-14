@@ -5,6 +5,12 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
+/*
+ * Launch invariant: an unavailable read must never impersonate an empty account,
+ * and each billing job must have one obvious action surface. These are product
+ * truth contracts rather than cosmetic snapshots because false setup CTAs and
+ * duplicate money controls can create real customer/account mistakes.
+ */
 describe("product organization truth contracts", () => {
   it("does not render mailbox status outages as disconnected providers", () => {
     const mailboxes = source("src/components/MailboxConnectionCard.tsx");
