@@ -332,14 +332,11 @@ export default function StripeBillingCard() {
           <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
             {liveVideoAddonPitch()} {liveVideoMeteringNote()}
           </p>
-          {liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled ? (
+          {liveVideoAddon.billingEntitled ? (
             <div className="space-y-2">
               <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
                 Active on this workspace
               </p>
-              {/* The paid entitlement must hand the customer its value path —
-                  "Active" alone left buyers with nowhere to use what they
-                  bought. */}
               <Link
                 to="/studio/live-video"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
@@ -361,9 +358,23 @@ export default function StripeBillingCard() {
               Subscribe · $19/mo
             </ShadButton>
           ) : (
-            <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
-              Contact Wireline to enable live video on this workspace.
-            </p>
+            <div className="space-y-2">
+              <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
+                {liveVideoAddon.reason || "Restore an active paid plan before using live video."}
+              </p>
+              {sub?.has_subscription ? (
+                <button
+                  type="button"
+                  onClick={() => void openPortal()}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
+                >
+                  Manage billing
+                  <ExternalLink className="size-3.5" aria-hidden="true" />
+                </button>
+              ) : (
+                <p className="text-xs text-muted-foreground">Choose a live plan below to continue.</p>
+              )}
+            </div>
           )}
         </div>
       ) : null}
