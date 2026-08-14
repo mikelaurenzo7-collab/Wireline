@@ -244,16 +244,20 @@ describe("authenticated agent flow", () => {
     expect(copy).toContain("channels:");
   });
 
-  it("routes presenter lip-sync samples through HeyGen speech", () => {
+  it("uses the mounted Wireline Realtime PCM stream for Live Video lip sync", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
-    const heygen = read("src/lib/video-presenter/heygen-voice-service.ts");
+    const page = read("src/pages/LiveVideoStudioPage.tsx");
+    const presenter = read("src/components/LiveVideoPresenter.tsx");
+    const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
 
-    expect(heygen).toContain("generatePresenterSpeech");
-    expect(heygen).toContain("assertTrustedHeyGenMediaUrl");
-    expect(routes).toContain('format: "mp3"');
-    expect(routes).toContain('voiceProvider === "presenter"');
-    // The unmounted web preview and its browser decode bridge were removed
-    // 2026-08-13; the server sample route above remains the live contract.
+    expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
+    expect(routes).toContain("res.status(410).json");
+    expect(page).toContain("OpenAILiveVoiceSandbox");
+    expect(page).toContain("presenterRef.current?.feedPcmDelta(base64Pcm)");
+    expect(page).toContain("presenterRef.current?.flushPcm()");
+    expect(presenter).toContain("repeatAudio");
+    expect(sandbox).toContain("const RATE = 24_000");
+    expect(sandbox).toContain("onAgentAudioDelta(floatToBase64Pcm(samples))");
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
     expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
   });
