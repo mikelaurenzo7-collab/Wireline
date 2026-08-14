@@ -19,6 +19,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
 } from "../lib/ai-models";
 import { getHealthModelTiering } from "../lib/health-model-policy";
+import { describeRuntimeChain } from "../lib/ai-client";
 import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -180,16 +181,26 @@ router.get(
     });
   },
 );
+/**
+ * Platform-admin integration payload. `structured_runtime_chain` is the
+ * resolved attempt order (provider names only — never credentials, endpoints,
+ * or model ids), which makes WIRELINE_STRUCTURED_PRIMARY_PROVIDER and the xAI
+ * lane observable instead of trusting env spelunking.
+ */
+const integrationsPayload = () => ({
+  integrations: getIntegrationsStatus(),
+  structured_runtime_chain: describeRuntimeChain(),
+  timestamp: new Date().toISOString(),
+});
 router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
-  res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+  res.json(integrationsPayload()),
 );
 router.get(
   "/integrations",
   healthRateLimiter,
   authenticateUser,
   requirePlatformAdmin,
-  (_req, res) =>
-    res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+  (_req, res) => res.json(integrationsPayload()),
 );
 router.get(
   "/slos",

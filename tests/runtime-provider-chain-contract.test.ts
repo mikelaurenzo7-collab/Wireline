@@ -105,6 +105,16 @@ describe("structured runtime transport", () => {
     }
   });
 
+  it("makes the resolved chain observable on the platform-admin health surface", () => {
+    // The operator toggle is only trustworthy if its effect can be seen.
+    // Names only — the payload builder must never carry credentials or model ids.
+    const health = read("src/routes/health-routes.ts");
+    expect(health).toContain("structured_runtime_chain: describeRuntimeChain()");
+    expect(health).toMatch(
+      /\/integrations",\s*\n\s*healthRateLimiter,\s*\n\s*authenticateUser,\s*\n\s*requirePlatformAdmin/,
+    );
+  });
+
   it("routes primary turns to current explicit OpenAI model IDs", () => {
     expect(client).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(client).toContain(
