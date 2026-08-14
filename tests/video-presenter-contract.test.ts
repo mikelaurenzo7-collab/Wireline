@@ -46,17 +46,10 @@ describe("video presenter integration", () => {
     expect(live).toContain("repeatAudio");
     expect(live).toContain("stop: () => Promise<void>");
     expect(live).toContain("await session.stop().catch(() => undefined)");
-    // The unmounted AgentPresenceLivePreview wrapper was removed;
-    // LiveVideoPresenter itself owns session teardown.
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
   it("mounts a reachable consumption surface for the paid add-on", () => {
-    // The add-on was sellable while LiveVideoPresenter and the avatar picker
-    // had zero importers — a paid entitlement gating APIs no reachable UI
-    // called. This pins the value path end to end: the studio page consumes
-    // both components, the router mounts it ABOVE the /studio/* wildcard,
-    // and the billing card's "Active" state hands the buyer the link.
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain('from "../components/AgentPresenceAvatarPicker"');
     expect(page).toContain('from "../components/LiveVideoPresenter"');
@@ -75,7 +68,7 @@ describe("video presenter integration", () => {
     expect(billingCard).toContain('to="/studio/live-video"');
   });
 
-  it("uses authoritative paid entitlement instead of the webhook cache in the Studio UI", () => {
+  it("uses authoritative paid entitlement instead of the webhook cache across product surfaces", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain("const entitled = addon?.billingEntitled === true");
     expect(page).not.toContain("billingEntitled || addon?.liveVideoAddonEnabled");
@@ -85,10 +78,35 @@ describe("video presenter integration", () => {
     expect(page).toContain("liveVideoMinutesIncluded");
     expect(page).toContain("liveVideoSessionMinutes");
 
+    const billingCard = source("src/components/StripeBillingCard.tsx");
+    expect(billingCard).toContain("liveVideoAddon.billingEntitled ?");
+    expect(billingCard).not.toContain(
+      "liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled",
+    );
+    expect(billingCard).toContain("liveVideoAddon.reason");
+
     const types = source("src/lib/video-presenter/types.ts");
     expect(types).toContain("never use this alone as payment proof");
     expect(types).toContain("liveVideoMinutesIncluded?: number");
     expect(types).toContain("liveVideoSessionMinutes?: number");
+  });
+
+  it("shows reserved usage before spend and lets an account holder disable one agent", () => {
+    const routes = source("src/routes/video-presenter-routes.ts");
+    expect(routes).toContain('"/api/video-presenter/usage"');
+    expect(routes).toContain("getLiveVideoUsageSnapshot(req.user.id)");
+    expect(routes).toContain('"/api/agents/:id/video-presenter/disable"');
+    expect(routes).toContain('videoPresenterProvider: "synthetic"');
+    expect(routes).toContain('videoPresenterConsentStatus: "not_started"');
+    expect(routes).not.toMatch(/videoPresenterProvider: "synthetic"[\s\S]{0,180}videoPresenterAvatarId/);
+
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).toContain('authFetch("/api/video-presenter/usage")');
+    expect(page).toContain("remainingMinutes");
+    expect(page).toContain("sessionReservationMinutes");
+    expect(page).toContain("Turn off for this agent");
+    expect(page).toContain("/video-presenter/disable");
+    expect(page).toContain("presenter choice is saved for later");
   });
 
   it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
@@ -103,9 +121,6 @@ describe("video presenter integration", () => {
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generatePresenterSpeech");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
-    // The old browser mp3→PCM wrapper is gone. The mounted Studio page does
-    // not pretend this optional HeyGen-TTS sample is the LiveAvatar session;
-    // the paid path is the bounded /session route above.
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
     expect(existsSync(resolve(root, "src/lib/voice/decode-browser-audio.ts"))).toBe(false);
     const page = source("src/pages/LiveVideoStudioPage.tsx");
@@ -133,9 +148,6 @@ describe("video presenter integration", () => {
     expect(source("src/routes/video-presenter-routes-base.ts")).toContain(
       "LIVE_VIDEO_UPGRADE_REQUIRED",
     );
-    // The unmounted preview wrapper that once rendered the enable CTA is
-    // gone; StripeBillingCard (asserted below) is the mounted checkout entry,
-    // and the server routes above stay the enforcement path.
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
@@ -157,9 +169,6 @@ describe("video presenter integration", () => {
     expect(schema).toContain('listenUrl: text("listen_url")');
     const vapi = source("src/routes/vapi-v2.ts");
     expect(vapi).toContain("listenUrl");
-    // The unmounted PSTN lip-sync bridge component was removed; the durable
-    // contract is the server side: listenUrl capture, the supervisor stream,
-    // and the listen gate below.
     expect(existsSync(resolve(root, "src/components/AgentPresencePstnBridge.tsx"))).toBe(false);
     const supervisor = source("src/services/supervisor-websocket-service.ts");
     expect(supervisor).toContain("isAllowedVapiListenUrl");
