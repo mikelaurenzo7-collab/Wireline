@@ -42,8 +42,11 @@ export type LiveVideoAddonState = {
   platformConfigured: boolean;
   addonOffered: boolean;
   billingEntitled: boolean;
+  /** Webhook-maintained local cache; never use this alone as payment proof. */
   liveVideoAddonEnabled: boolean;
   liveVideoCheckoutAvailable?: boolean;
+  liveVideoMinutesIncluded?: number;
+  liveVideoSessionMinutes?: number;
   planId: string | null;
   upgradeRequired: boolean;
   reason: string | null;
