@@ -107,7 +107,10 @@ describe("authenticated mobile cleanup", () => {
     expect(voice).toMatch(
       /Browser tests the words\. Place a real call to verify the selected\s+audio\./,
     );
-    expect(inbox).toContain("Connect Gmail or Outlook to sync customer threads.");
+    expect(inbox).toContain("Inbox unavailable");
+    expect(inbox).toContain("No email conversations yet");
+    expect(inbox).toContain("Refresh inbox");
+    expect(inbox).not.toContain("Connect Gmail or Outlook to sync customer threads.");
     expect(inbox).not.toContain("Summary + controls live here.");
   });
 
@@ -117,7 +120,6 @@ describe("authenticated mobile cleanup", () => {
     const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
     const callbacks = read("src/components/outbound/CallbacksPanel.tsx");
     const billing = read("src/components/StripeBillingCard.tsx");
-    const billingSettings = read("src/pages/BillingSettings.tsx");
     const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
     // The rail's agents section keeps the posture-aware plural where it has room
@@ -135,7 +137,8 @@ describe("authenticated mobile cleanup", () => {
     expect(campaigns).toContain('aria-label="Sales playbook"');
     expect(callbacks).not.toContain("description=");
     expect(billing).toContain('"voice agent" : "voice agents"');
-    expect(billingSettings).toContain("live voice agent");
+    expect(billing).toContain("Current plan");
+    expect(billing).toContain("Live video presence");
     // TrialBanner was removed 2026-08-13 (unmounted since activation
     // replaced trials); the activation wizard carries the live language.
     expect(existsSync(resolve(process.cwd(), "src/components/layout/TrialBanner.tsx"))).toBe(false);
