@@ -75,6 +75,22 @@ describe("video presenter integration", () => {
     expect(billingCard).toContain('to="/studio/live-video"');
   });
 
+  it("uses authoritative paid entitlement instead of the webhook cache in the Studio UI", () => {
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).toContain("const entitled = addon?.billingEntitled === true");
+    expect(page).not.toContain("billingEntitled || addon?.liveVideoAddonEnabled");
+    expect(page).toContain("liveVideoCheckoutAvailable === true");
+    expect(page).toContain("addon.reason");
+    expect(page).toContain('to="/settings/billing"');
+    expect(page).toContain("liveVideoMinutesIncluded");
+    expect(page).toContain("liveVideoSessionMinutes");
+
+    const types = source("src/lib/video-presenter/types.ts");
+    expect(types).toContain("never use this alone as payment proof");
+    expect(types).toContain("liveVideoMinutesIncluded?: number");
+    expect(types).toContain("liveVideoSessionMinutes?: number");
+  });
+
   it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
     const routes = source("src/routes/agent-routes-v2.ts");
     expect(routes).toContain("businessAgentVideoPresenterDefaults");
@@ -82,16 +98,18 @@ describe("video presenter integration", () => {
     expect(defaults).toContain('videoPresenterProvider: "synthetic"');
   });
 
-  it("streams agent voice into LiveAvatar LITE via sample route + SDK audio", () => {
+  it("keeps the legacy presenter speech sample separate from the mounted Live Video session path", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generatePresenterSpeech");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
-    // The browser-side mp3→PCM decode pipeline lived only in the unmounted
-    // preview wrapper; both stay deleted while the server sample route and the
-    // SDK feed below remain the live path.
+    // The old browser mp3→PCM wrapper is gone. The mounted Studio page does
+    // not pretend this optional HeyGen-TTS sample is the LiveAvatar session;
+    // the paid path is the bounded /session route above.
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
     expect(existsSync(resolve(root, "src/lib/voice/decode-browser-audio.ts"))).toBe(false);
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).not.toContain("/video-presenter/sample");
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");
     const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
