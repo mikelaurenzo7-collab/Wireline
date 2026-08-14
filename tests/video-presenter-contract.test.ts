@@ -45,6 +45,8 @@ describe("video presenter integration", () => {
     expect(live).toContain("@heygen/liveavatar-web-sdk");
     expect(live).toContain("LiveAvatarSession");
     expect(live).toContain("repeatAudio");
+    expect(live).toContain("const minBytes = 19_200");
+    expect(live).toContain("if (cancelled) await session.stop().catch(() => undefined)");
     expect(live).toContain('layout?: "portrait" | "stage"');
     expect(live).toContain('"wl-presence-live--stage"');
     expect(live).toContain("onSpeakingChangeRef.current = onSpeakingChange");
