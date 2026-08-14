@@ -242,7 +242,7 @@ describe("founder dogfood posture integrity", () => {
   it("keeps audited founder empty states and integration controls truthful and distinguishable", () => {
     const sms = read("src/components/SmsThreads.tsx");
     const connections = read("src/components/CrmConnectionCard.tsx");
-    const billing = read("src/pages/BillingSettings.tsx");
+    const billing = read("src/components/StripeBillingCard.tsx");
     const insights = read("src/routes/insights-routes.ts");
 
     expect(sms).toContain(
@@ -256,8 +256,11 @@ describe("founder dogfood posture integrity", () => {
     expect(connections).toContain("Disconnect ${label}");
     expect(connections).toContain('aria-label="Configure Salesforce"');
 
+    expect(billing).toContain("hasGrantedPlanAccess");
     expect(billing).toContain("Plan access is active");
-    expect(billing).toContain("paid-plan access without a Stripe subscription");
+    expect(billing).toContain("Paid-plan access is granted directly to this workspace");
+    expect(billing).toContain("No recurring Stripe invoice is scheduled");
+    expect(billing).toContain("!hasPlanAccess ? (");
 
     expect(insights).toContain("function buildFastFailureModes");
     expect(insights).toContain('analysis_mode: "fast" as const');
