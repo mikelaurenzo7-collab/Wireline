@@ -41,6 +41,7 @@ const LiveVideoPresenter = forwardRef<
     agentName: string;
     speaking?: boolean;
     className?: string;
+    layout?: "portrait" | "stage";
     onSpeakingChange?: (speaking: boolean) => void;
     onRetry?: () => void;
     onStreamReady?: () => void;
@@ -52,6 +53,7 @@ const LiveVideoPresenter = forwardRef<
     agentName,
     speaking = false,
     className = "",
+    layout = "portrait",
     onSpeakingChange,
     onRetry,
     onStreamReady: onStreamReadyChange,
@@ -64,6 +66,7 @@ const LiveVideoPresenter = forwardRef<
   const [streamReady, setStreamReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [lipSyncActive, setLipSyncActive] = useState(false);
+  const layoutClass = layout === "stage" ? "wl-presence-live--stage" : "";
 
   const flushAccumulatedPcm = (force = false) => {
     const session = sessionRef.current;
@@ -180,25 +183,30 @@ const LiveVideoPresenter = forwardRef<
   }));
 
   const showSpeaking = speaking || lipSyncActive;
+  const frameClass = `wl-presence__frame wl-presence__frame--ink wl-presence-live ${layoutClass} ${className}`.trim();
 
   if (failed) {
     return (
-      <div className={`wl-presence__frame wl-presence__frame--ink ${className}`.trim()}>
+      <div className={frameClass}>
         <div className="wl-presence__face">
           <AgentFace
             seed={fallbackSeed}
-            size={120}
+            size={layout === "stage" ? 168 : 120}
             speaking={showSpeaking}
             title={`${agentName} face`}
           />
+        </div>
+        <div className="wl-presence__live">
+          <span className="wl-presence__live-dot" aria-hidden="true" />
+          Fallback
         </div>
         {onRetry ? (
           <button
             type="button"
             onClick={onRetry}
-            className="absolute bottom-3 left-1/2 z-[2] -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 py-1.5 text-[11px] font-semibold text-foreground hover:border-[var(--wireline-color-action-primary-default)]"
+            className="absolute bottom-3 left-1/2 z-[2] min-h-11 -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-2 text-xs font-semibold text-foreground shadow-sm hover:border-[var(--wireline-color-action-primary-default)]"
           >
-            Retry live presenter
+            Retry presenter
           </button>
         ) : null}
       </div>
@@ -206,9 +214,7 @@ const LiveVideoPresenter = forwardRef<
   }
 
   return (
-    <div
-      className={`wl-presence__frame wl-presence__frame--ink wl-presence-live ${className}`.trim()}
-    >
+    <div className={frameClass}>
       <video
         ref={videoRef}
         autoPlay
@@ -217,11 +223,19 @@ const LiveVideoPresenter = forwardRef<
         className="wl-presence-live__video"
         aria-label={`${agentName} live video presenter`}
       />
-      {!streamReady ? (
-        <div className="wl-presence-live__loading" aria-busy="true">
-          Connecting live presenter…
+      {streamReady ? (
+        <div className="wl-presence__live">
+          <span className="wl-presence__live-dot" aria-hidden="true" />
+          Live
         </div>
-      ) : null}
+      ) : (
+        <div className="wl-presence-live__loading" aria-busy="true">
+          <div className="space-y-2 text-center">
+            <span className="mx-auto block size-5 animate-pulse rounded-full border border-primary/40 bg-primary/15" />
+            <span className="block">Connecting live presenter…</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
