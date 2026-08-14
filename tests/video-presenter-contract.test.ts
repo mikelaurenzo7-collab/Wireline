@@ -138,11 +138,13 @@ describe("video presenter integration", () => {
     expect(defaults).toContain('videoPresenterProvider: "synthetic"');
   });
 
-  it("keeps the legacy presenter speech sample off the mounted Live Video path", () => {
+  it("retires the incompatible MP3 presenter sample instead of feeding it into LiveAvatar", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
-    expect(routes).toContain("/api/agents/:id/video-presenter/sample");
-    expect(routes).toContain("generatePresenterSpeech");
-    expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
+    expect(routes).toContain('"/api/agents/:id/video-presenter/sample"');
+    expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
+    expect(routes).toContain("res.status(410).json");
+    expect(routes).not.toContain("generatePresenterSpeech");
+    expect(routes).not.toContain('format: "mp3"');
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
     expect(existsSync(resolve(root, "src/lib/voice/decode-browser-audio.ts"))).toBe(false);
     const page = source("src/pages/LiveVideoStudioPage.tsx");
