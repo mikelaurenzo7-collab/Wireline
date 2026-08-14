@@ -90,6 +90,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--wireline-color-text-secondary);
+  backdrop-filter: blur(10px);
 }
 
 .wl-presence__live-dot {
@@ -195,11 +196,38 @@
   overflow: hidden;
 }
 
+/* Dedicated product-stage geometry. The portrait constraint above is correct
+   for compact identity slots but made the mounted Live Video Studio render a
+   220px thumbnail even when the page requested a widescreen canvas. */
+.wl-presence-live--stage {
+  aspect-ratio: 16 / 9;
+  max-width: none;
+  width: 100%;
+  min-height: 260px;
+  border-radius: var(--wireline-radius-xl);
+  box-shadow: var(--wireline-elevation-md);
+}
+
+.wl-presence-live--stage .wl-presence__face {
+  width: 100%;
+  height: 100%;
+}
+
+.wl-presence-live--stage .wl-presence__face .wl-agent-face {
+  width: clamp(7rem, 20%, 11rem);
+  height: auto;
+  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.42));
+}
+
 .wl-presence-live__video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   background: color-mix(in srgb, var(--wireline-color-canvas-default) 80%, #000);
+}
+
+.wl-presence-live--stage .wl-presence-live__video {
+  object-position: center 18%;
 }
 
 .wl-presence-live__loading {
@@ -211,7 +239,19 @@
   text-align: center;
   font-size: 11px;
   color: var(--wireline-color-text-secondary);
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 72%, #000);
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 10%, transparent),
+      transparent 38%
+    ),
+    color-mix(in srgb, var(--wireline-color-canvas-default) 72%, #000);
+}
+
+@media (max-width: 767px) {
+  .wl-presence-live--stage {
+    min-height: 210px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
