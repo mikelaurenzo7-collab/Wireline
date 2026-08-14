@@ -81,7 +81,11 @@ const LiveVideoPresenter = forwardRef<
   const flushAccumulatedPcm = (force = false) => {
     const session = sessionRef.current;
     if (!session || session.state !== SessionState.CONNECTED) return;
-    const minBytes = 4_800;
+    // LiveAvatar's own LITE-mode chunker uses a 400 ms first PCM frame at
+    // 24 kHz, signed 16-bit mono: 24_000 * 0.4 * 2 = 19_200 bytes. Matching
+    // that boundary avoids turning every ~100 ms browser audio callback into a
+    // separate speak/speak_end command while keeping lip-sync latency bounded.
+    const minBytes = 19_200;
     if (!force && pcmAccumRef.current.length < minBytes) return;
     if (!pcmAccumRef.current) return;
     session.repeatAudio(pcmAccumRef.current);
@@ -130,9 +134,18 @@ const LiveVideoPresenter = forwardRef<
       if (!cancelled) setFailed(true);
     });
 
-    void session.start().catch(() => {
-      if (!cancelled) setFailed(true);
-    });
+    void (async () => {
+      try {
+        await session.start();
+        // LiveAvatarSession.stop() intentionally no-ops while CONNECTING. If
+        // this component unmounted during start(), cleanup's early stop could
+        // therefore miss the provider session. Close it again after connect so
+        // an abandoned UI can never leave a metered session running.
+        if (cancelled) await session.stop().catch(() => undefined);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
 
     return () => {
       cancelled = true;
