@@ -52,6 +52,9 @@ type PresenterPayload = {
 type SessionUsage = {
   includedMinutes?: number;
   usedMinutes?: number;
+  remainingMinutes?: number;
+  sessionReservationMinutes?: number;
+  exhausted?: boolean;
 };
 
 export default function LiveVideoStudioPage() {
@@ -71,6 +74,7 @@ export default function LiveVideoStudioPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [consentAcknowledged, setConsentAcknowledged] = useState(false);
   const [enabling, setEnabling] = useState(false);
+  const [disabling, setDisabling] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [session, setSession] = useState<{
@@ -89,16 +93,21 @@ export default function LiveVideoStudioPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter`,
-      );
-      const body = (await response.json().catch(() => null)) as PresenterPayload | null;
-      if (!response.ok || !body) {
+      const [presenterResponse, usageResponse] = await Promise.all([
+        authFetch(`/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter`),
+        authFetch("/api/video-presenter/usage").catch(() => null),
+      ]);
+      const body = (await presenterResponse.json().catch(() => null)) as PresenterPayload | null;
+      if (!presenterResponse.ok || !body) {
         setError("Live video status is unavailable right now. Try again shortly.");
         setState(null);
         return;
       }
       setState(body);
+      if (usageResponse?.ok) {
+        const usageBody = (await usageResponse.json().catch(() => null)) as SessionUsage | null;
+        if (usageBody) setUsage(usageBody);
+      }
     } catch {
       setError("Live video status is unavailable right now. Try again shortly.");
       setState(null);
@@ -166,6 +175,34 @@ export default function LiveVideoStudioPage() {
     }
   }
 
+  async function disableLiveVideo() {
+    if (!activeAgentId || disabling) return;
+    setDisabling(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await endPreview();
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/disable`,
+        { method: "POST" },
+      );
+      const body = (await response.json().catch(() => null)) as {
+        disabled?: boolean;
+        error?: string;
+      } | null;
+      if (!response.ok || !body?.disabled) {
+        setError(body?.error || "Live video could not be turned off. Try again shortly.");
+        return;
+      }
+      await loadPresenter();
+      setNotice("Live video is off for this agent. Your presenter choice is saved for later.");
+    } catch {
+      setError("Live video could not be turned off. Try again shortly.");
+    } finally {
+      setDisabling(false);
+    }
+  }
+
   async function startPreview() {
     if (!activeAgentId || sessionBusy) return;
     setSessionBusy(true);
@@ -184,7 +221,8 @@ export default function LiveVideoStudioPage() {
         error?: string;
       } | null;
       if (!response.ok || !body?.live) {
-        setError(body?.error || "Live preview could not start. Try again shortly.");
+        if (body?.error) setError(body.error);
+        else setError("Live preview could not start. Try again shortly.");
         return;
       }
       setUsage(body.usage ?? null);
@@ -212,10 +250,13 @@ export default function LiveVideoStudioPage() {
   const checkoutAvailable = addon?.liveVideoCheckoutAvailable === true;
   const liveVideoOn = presenter?.provider === "liveavatar";
   const hasFacePick = Boolean(presenter?.avatarId);
-  const includedMinutes = addon?.liveVideoMinutesIncluded ?? 60;
-  const sessionMinutes = addon?.liveVideoSessionMinutes ?? 5;
+  const includedMinutes = usage?.includedMinutes ?? addon?.liveVideoMinutesIncluded ?? 60;
+  const sessionMinutes =
+    usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
   const usedMinutes = Math.max(0, usage?.usedMinutes ?? 0);
-  const remainingMinutes = Math.max(0, (usage?.includedMinutes ?? includedMinutes) - usedMinutes);
+  const remainingMinutes =
+    usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
+  const exhausted = usage?.exhausted === true || remainingMinutes < sessionMinutes;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
@@ -272,10 +313,10 @@ export default function LiveVideoStudioPage() {
               {state?.addon?.addonOffered ? (
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                   <span className="rounded-full border border-border px-3 py-1.5">
-                    {includedMinutes} min / month
+                    {remainingMinutes} / {includedMinutes} min left
                   </span>
                   <span className="rounded-full border border-border px-3 py-1.5">
-                    Up to {sessionMinutes} min / session
+                    {sessionMinutes} min reserved / session
                   </span>
                   <span
                     className={`rounded-full border px-3 py-1.5 ${
@@ -304,6 +345,13 @@ export default function LiveVideoStudioPage() {
                 <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {addon?.reason || "Live video is not available on this workspace right now."}
                 </p>
+                {addon?.liveVideoAddonEnabled ? (
+                  <div className="mt-4">
+                    <Button asChild size="sm" variant="secondary">
+                      <Link to="/settings/billing">Manage billing</Link>
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ) : !entitled ? (
               <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-5">
@@ -392,14 +440,14 @@ export default function LiveVideoStudioPage() {
                         <div>
                           <p className="text-sm font-semibold text-foreground">Live preview</p>
                           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                            {hasFacePick
-                              ? `Start a live ${sessionMinutes}-minute session to check framing, motion, and presence.`
-                              : "Choose a presenter above, then start a live preview."}
+                            {exhausted
+                              ? "This month's reserved Live Video allowance is used."
+                              : hasFacePick
+                                ? `Start a live ${sessionMinutes}-minute session to check framing, motion, and presence.`
+                                : "Choose a presenter above, then start a live preview."}
                           </p>
                           <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                            {usage
-                              ? `${remainingMinutes} of ${usage.includedMinutes ?? includedMinutes} reserved minutes remaining`
-                              : `${includedMinutes} reserved minutes each month · ${sessionMinutes} reserved per session`}
+                            {remainingMinutes} of {includedMinutes} reserved minutes remaining
                           </p>
                         </div>
                         {session ? (
@@ -416,7 +464,7 @@ export default function LiveVideoStudioPage() {
                           <Button
                             type="button"
                             size="sm"
-                            disabled={!hasFacePick || sessionBusy}
+                            disabled={!hasFacePick || sessionBusy || exhausted}
                             onClick={() => void startPreview()}
                           >
                             {sessionBusy ? (
@@ -441,6 +489,24 @@ export default function LiveVideoStudioPage() {
                           />
                         </div>
                       ) : null}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-5 py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Presenter choice stays saved if you turn video off for this agent.
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={disabling}
+                        onClick={() => void disableLiveVideo()}
+                      >
+                        {disabling ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : null}
+                        Turn off for this agent
+                      </Button>
                     </div>
                   </>
                 )}
