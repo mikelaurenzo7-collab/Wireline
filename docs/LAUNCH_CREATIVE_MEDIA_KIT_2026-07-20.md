@@ -1,6 +1,6 @@
 # Wireline Launch Creative Media Kit
 
-Updated: 2026-08-11  
+Updated: 2026-08-14  
 Status: **Active delivery and capture kit**  
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`  
 Copy owner: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
@@ -21,6 +21,7 @@ Use:
 - **Personal + Business**
 - calls, texts, email, follow-up, handoff, and logged outcomes
 - real product proof from the production commit being promoted
+- Live Video as a paid business proof layer only when the picture comes from an exact-production authenticated session
 
 Avoid:
 
@@ -28,7 +29,8 @@ Avoid:
 - pairing `AI` with `agent` in customer-facing copy;
 - competing workflow spines;
 - fake dashboards, customer logos, testimonials, adoption counts, or ROI;
-- stale screenshots or footage simply because they are already edited.
+- stale screenshots or footage simply because they are already edited;
+- presenting a static identity badge, generated avatar concept, or provider mock as a real Live Video session.
 
 Legacy filenames containing older provider or positioning language may remain for file compatibility. Filenames are not current launch copy and must not override this doctrine.
 
@@ -39,8 +41,8 @@ Legacy filenames containing older provider or positioning language may remain fo
 | Canvas | Cool near-white or cool obsidian |
 | Accent | Electric violet with restrained platinum wire detail |
 | Mood | Premium, operational, clear, outcome-driven |
-| Product imagery | Call, agent, follow-up, booking/handoff, transcript, outcome |
-| Avoid | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks |
+| Product imagery | Call, agent, follow-up, booking/handoff, transcript, outcome, Live Video presenter state when exact-source and truthful |
+| Avoid | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks, unlabeled synthetic avatar proof |
 
 ## Required Audio Deliverables
 
@@ -58,11 +60,12 @@ Generate with `npm run campaign:vo`. Campaign audio is marketing/reference mater
 | --- | --- | --- | --- |
 | Missed Call | 9:16, 15s | Fast problem -> agent -> outcome -> CTA | Recapture against exact production before publishing |
 | Second Ring | 9:16 / 1:1 / 16:9, ~30s | Primary paid-social voice-quality proof | Needs certified captured call/product picture |
-| Founder / Product Proof | 16:9, 45–60s | Founder-led explanation and product proof | Recapture against exact production before publishing |
+| Founder / Product Proof | 16:9, 45-60s | Founder-led explanation and product proof | Recapture against exact production before publishing |
+| Live Video Proof | 16:9 / 9:16 / 1:1, 20-30s | Paid business add-on proof: voice agent extends to an on-screen presenter | Needs certified authenticated session proof: session mint, voice sync, explicit stop, and truthful allowance state |
 | Two Rings | 6s bumper | Minimal missed-call scroll-stop | Derive from certified captured-call proof |
 | sound-off variants | matching paid formats | Muted-viewer accessibility without UI clutter | Produce from each certified paid cut |
 
-## Creative Status — 2026-08-11
+## Creative Status — 2026-08-14
 
 ### Rejected historical masters
 
@@ -73,6 +76,21 @@ The old 46-second walkthrough and old 15-second missed-call source contain a vis
 The repaired 15s, 22s product-loop, and founder walkthrough derivatives remove the old 404, but their picture is historical. They are **QA/editing drafts only** until recaptured and certified against the exact production commit being promoted.
 
 A clean edit of stale product footage is still stale product footage. Raw output is not release-certified.
+
+### Live Video extension
+
+Live Video creative may be prepared as a launch-adjacent business proof asset, but it must not outrank the main voice-agent wedge or make unsupported real-time presenter claims.
+
+A publishable Live Video cut requires exact-production authenticated capture that proves:
+
+- a business agent enters the Live Video product surface;
+- the presenter session is real, not an identity badge, placeholder, mock, or generated concept frame;
+- voice synchronization is visible or audibly contextualized by real product state;
+- the session is explicitly stopped or exits cleanly;
+- usage, allowance, or entitlement copy remains truthful for the plan being represented;
+- no provider mark, vendor console, secret, token, or unsupported availability claim appears.
+
+Static avatar badges are allowed as product identity UI. They are **not** Live Video proof frames unless the surrounding copy clearly labels them as fallback or setup state.
 
 ## Publish Gate
 
@@ -88,6 +106,7 @@ A finished reel is publishable only when all of the following are true:
 - no unsupported customer, ROI, revenue, adoption, or compliance claim appears;
 - pricing and channel claims match the current plan catalog and launch posture;
 - the real agent voice is heard at **full level** for a meaningful stretch when voice quality is the selling point;
+- Live Video proof uses either a real provider session or a clearly labeled setup/fallback state, never a static badge presented as a live presenter;
 - the end frame is deliberate, readable, and current;
 - platform captions are provided for accessibility without persistent subtitle clutter over legible UI.
 
@@ -134,6 +153,7 @@ The technical scene map can use current product surfaces while still expressing 
 | Train | Knowledge/training facts, rules, voice, and behavior |
 | Launch | Phone/Connections setup and enabled channels |
 | Improve | Call history, transcript, outcome, analytics, or follow-up review |
+| Live Video | Paid business Live Video settings, presenter/session status, real presenter frame or explicitly labeled fallback, and usage evidence after clean stop |
 
 Implementation surface names do not create a second brand narrative.
 
@@ -148,21 +168,37 @@ Before editing:
 - verify dropdowns, dialogs, sheets, and portalled controls remain centered and visible;
 - reject sign-in redirects, 404s, empty states that imply a defect, or transient error notices;
 - reframe vertical video around the active UI rather than shrinking the entire desktop shell;
+- verify Live Video frames do not show setup placeholders as if they were active provider sessions;
 - verify the final edit meets its named duration and end-card contract.
 
 ## Cut Delivery Rules
 
 ### Missed Call — 15s
 
-Follow the campaign pack’s exact timing. The contrast may use **You cannot pick up.** then **Your agent can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `trywireline.com`.
+Follow the campaign pack's exact timing. The contrast may use **You cannot pick up.** then **Your agent can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `trywireline.com`.
 
 ### Second Ring — ~30s
 
 The captured call and agent response are the proof center. Do not fill the whole cut with narration. Preserve silence where the missed-call problem needs it, then let the real agent voice play at full level.
 
-### Founder / Product Proof — 45–60s
+### Founder / Product Proof — 45-60s
 
 Show **Build -> Train -> Launch -> Improve** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
+
+### Live Video Proof — 20-30s
+
+Use Live Video as an extension of the voice-agent story, not a separate product narrative. Start from a useful business context, show the agent's on-screen presenter only after the real product state is established, and keep the session lifecycle visible enough to prove control.
+
+Required beats:
+
+- business agent is already built and trained;
+- Live Video is enabled or opened from the authenticated product surface;
+- a real presenter session is shown or the frame is explicitly labeled setup/fallback;
+- the agent's voice and presenter state are synchronized enough to be understandable;
+- session stop, entitlement, or usage state is clean and truthful;
+- end card returns to **Build your Voice Agent** and **Build free. Go live from $19/mo.**
+
+Do not use a generated avatar, static badge, or external vendor preview as the proof frame.
 
 ### Two Rings — 6s
 
@@ -186,9 +222,13 @@ Use the canonical founder narration from the campaign pack with exact-production
 
 Cut the certified 15-second source to the campaign pack. Real product proof only after any cinematic problem hook. Preserve the agent at full level during its proof beat. End with the current price line and domain.
 
+### Live Video proof edit
+
+Create a restrained business add-on proof cut from exact-production authenticated footage. Show the trained voice agent moving into an on-screen presenter session, the presenter responding in context, and the clean stopped/usage state. Keep vendor UI and generated avatar concepts out of the publishable frame.
+
 ### Launch deck
 
-Six slides maximum: Voice Agents; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; personal + business workflows; product proof; Build free / Go live from $19/mo.
+Six slides maximum: Voice Agents; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; personal + business workflows; product proof; Build free / Go live from $19/mo. Live Video may appear as a one-frame business add-on proof point only after exact-production capture is certified.
 
 ## Asset Organization
 
@@ -198,7 +238,8 @@ Use clear status folders or metadata:
 - `QA Drafts` — useful edits that are not release-current;
 - `Rejected Historical` — known broken/stale masters retained only for provenance;
 - `Audio` — current canonical VO renders;
-- `Copy` — current launch copy pack.
+- `Copy` — current launch copy pack;
+- `Live Video` — exact-source session proof, setup/fallback frames, and rejected provider/mock references kept visibly separated.
 
 Never label a historical edit `final` without also recording whether it is release-current.
 
@@ -211,5 +252,6 @@ Never label a historical edit `final` without also recording whether it is relea
 | X / short social | Missed-call still or short cut | Current price/domain |
 | Meta / LinkedIn paid | Missed Call / Second Ring | Phone + checkout dogfood complete |
 | Reels / TikTok | 9:16 Missed Call / Second Ring | Legible vertical reframe + captions |
+| Sales follow-up / business add-on | Live Video Proof | Authenticated provider session, clean stop, and entitlement truth certified |
 
 Paid acquisition starts only after the workflow being advertised has passed founder dogfood. Creative polish is not a substitute for product evidence.
