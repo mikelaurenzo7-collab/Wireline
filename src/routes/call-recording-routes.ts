@@ -20,9 +20,7 @@ function safeHttpsLocation(value: string | null): string | null {
   if (!value) return null;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password
-      ? url.toString()
-      : null;
+    return url.protocol === "https:" && !url.username && !url.password ? url.toString() : null;
   } catch {
     return null;
   }
@@ -32,15 +30,8 @@ function twilioMediaUrl(value: string | null): string | null {
   if (!value) return null;
   try {
     const url = new URL(value);
-    const trustedHost =
-      url.hostname === "api.twilio.com" || url.hostname.endsWith(".twilio.com");
-    if (
-      url.protocol !== "https:" ||
-      !trustedHost ||
-      url.username ||
-      url.password
-    )
-      return null;
+    const trustedHost = url.hostname === "api.twilio.com" || url.hostname.endsWith(".twilio.com");
+    if (url.protocol !== "https:" || !trustedHost || url.username || url.password) return null;
     if (!/\.(?:mp3|wav)$/i.test(url.pathname)) url.pathname += ".mp3";
     return url.toString();
   } catch {
@@ -48,32 +39,19 @@ function twilioMediaUrl(value: string | null): string | null {
   }
 }
 
-async function pipeAudio(
-  upstream: globalThis.Response,
-  res: Response,
-): Promise<void> {
+async function pipeAudio(upstream: globalThis.Response, res: Response): Promise<void> {
   const contentType = upstream.headers.get("content-type") || "audio/mpeg";
   if (!contentType.toLowerCase().startsWith("audio/")) {
-    throw new Error(
-      `Recording provider returned unexpected content type: ${contentType}`,
-    );
+    throw new Error(`Recording provider returned unexpected content type: ${contentType}`);
   }
   res.status(upstream.status);
   res.setHeader("Content-Type", contentType);
-  for (const header of [
-    "content-length",
-    "content-range",
-    "accept-ranges",
-  ] as const) {
+  for (const header of ["content-length", "content-range", "accept-ranges"] as const) {
     const value = upstream.headers.get(header);
     if (value) res.setHeader(header, value);
   }
-  if (!upstream.body)
-    throw new Error("Recording provider returned an empty body");
-  await pipeline(
-    Readable.from(upstream.body as unknown as AsyncIterable<Uint8Array>),
-    res,
-  );
+  if (!upstream.body) throw new Error("Recording provider returned an empty body");
+  await pipeline(Readable.from(upstream.body as unknown as AsyncIterable<Uint8Array>), res);
 }
 
 /**
@@ -89,16 +67,14 @@ router.get(
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader(
-      "Content-Disposition",
-      'inline; filename="wireline-call.mp3"',
-    );
+    res.setHeader("Content-Disposition", 'inline; filename="wireline-call.mp3"');
 
+    // Bounded like parseDeliveryId: /^\d+$/ alone admits digit strings past
+    // signed-64-bit, which BigInt() happily builds and Postgres then rejects
+    // with an unhandled overflow — a 500 for what is simply a nonexistent id.
     const callId = String(req.params.callId || "");
-    if (!/^\d+$/.test(callId)) {
-      return res
-        .status(404)
-        .json({ code: "NOT_FOUND", error: "Recording not found." });
+    if (!/^[1-9]\d{0,18}$/.test(callId) || BigInt(callId) > 9_223_372_036_854_775_807n) {
+      return res.status(404).json({ code: "NOT_FOUND", error: "Recording not found." });
     }
 
     const [call] = await drizzle
@@ -107,18 +83,11 @@ router.get(
         recordingUrl: schema.callLogs.recordingUrl,
       })
       .from(schema.callLogs)
-      .where(
-        and(
-          eq(schema.callLogs.id, BigInt(callId)),
-          eq(schema.callLogs.userId, req.user.id),
-        ),
-      )
+      .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
       .limit(1);
 
     if (!call) {
-      return res
-        .status(404)
-        .json({ code: "NOT_FOUND", error: "Recording not found." });
+      return res.status(404).json({ code: "NOT_FOUND", error: "Recording not found." });
     }
 
     try {
@@ -173,8 +142,7 @@ router.get(
       );
       if (upstream.status >= 300 && upstream.status < 400) {
         const signedUrl = safeHttpsLocation(upstream.headers.get("location"));
-        if (!signedUrl)
-          throw new Error("Vapi returned an invalid recording redirect");
+        if (!signedUrl) throw new Error("Vapi returned an invalid recording redirect");
         return res.redirect(302, signedUrl);
       }
       if (upstream.ok) {

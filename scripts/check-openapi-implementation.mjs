@@ -65,18 +65,26 @@ function routeCandidates(specPath) {
 }
 
 const methodMap = { get: "get", post: "post", put: "put", patch: "patch", delete: "delete" };
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const problems = [];
 for (const { method, path: specPath } of operations) {
   const methodName = methodMap[method];
   const candidates = routeCandidates(specPath);
-  const hasPath = candidates.some(
-    (candidate) => routeText.includes(`"${candidate}"`) || routeText.includes(`'${candidate}'`),
-  );
-  const hasMethod =
-    methodName && new RegExp(`\\b(?:router|app)\\.${methodName}\\s*\\(`).test(routeText);
-  if (!hasPath || !hasMethod) {
+  // The method must be bound to the path in one registration, not merely
+  // co-resident anywhere in the concatenated route text — `router.post(`
+  // existing SOMEWHERE made the old check pass for every documented method,
+  // so a handler switched to another verb (or deleted while its path string
+  // survived in prose) kept parity green while the operation 404'd.
+  const hasBoundRegistration =
+    methodName &&
+    candidates.some((candidate) =>
+      new RegExp(
+        `\\b(?:router|app)\\.${methodName}\\(\\s*["']${escapeRegExp(candidate)}["']`,
+      ).test(routeText),
+    );
+  if (!hasBoundRegistration) {
     problems.push(
-      `${method.toUpperCase()} ${specPath} is documented in OpenAPI but no matching Express path/method was found.`,
+      `${method.toUpperCase()} ${specPath} is documented in OpenAPI but no matching Express path/method registration was found.`,
     );
   }
 }

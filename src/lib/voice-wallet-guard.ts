@@ -8,7 +8,7 @@
  */
 import { and, eq } from "drizzle-orm";
 import { getCreditBalanceUsd } from "./credit-wallet";
-import { planById } from "./plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { includedVoiceMinutes } from "./voice-usage";
 import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
@@ -71,8 +71,11 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   const plan = planById(sub?.plan ?? "personal");
   const planId = plan?.id ?? null;
   const activeSubscription = !!sub?.plan && (sub.status === "active" || sub.status === "trialing");
-  const liveVoiceEnabled = activeSubscription && planId !== "personal";
-  const minuteRate = plan?.overage_per_min_usd ?? 0.2;
+  // Require a *resolved* catalog plan: an unresolvable stored plan id must fail
+  // closed (402) rather than pass `null !== "personal"` and hand live voice to
+  // a tenant whose overage rate the ledger can no longer price.
+  const liveVoiceEnabled = activeSubscription && !!plan && plan.id !== "personal";
+  const minuteRate = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
   // Include the extra-agent add-on minutes the customer paid for — the usage
   // accounting (voice-usage.ts) already counts them, so the pre-call gate must
   // match or a customer with extra agents is blocked between their base and

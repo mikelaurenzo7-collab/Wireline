@@ -78,6 +78,8 @@ Consequences:
 
    Review generated SQL before committing it. Generated output is not automatically correct for backfills, constraint ordering, RLS, grants, or production data.
 
+   `db:generate` diffs `src/db/schema.ts` against the newest `drizzle/migrations/meta/*_snapshot.json` (sorted listing, not the journal). Commit the regenerated snapshot with every journalled migration and keep its numeric index equal to the newest journal `idx` — `tests/migration-journal-integrity-contract.test.ts` pins this. A stale snapshot chain makes the next `db:generate` emit a destructive full-schema diff that the Vercel build's `db:migrate` would execute.
+
 3. **Add integrity coverage**
 
    Contract-test the migration text when the invariant must never regress. Add behavioral tests when a service or route owns runtime behavior.

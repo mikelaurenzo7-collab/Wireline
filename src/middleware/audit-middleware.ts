@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { drizzle, log, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { runInBackground } from "../lib/background-work";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   createAuditContext,
@@ -99,6 +100,14 @@ export async function persistRuntimeAuditRecords(opts: {
 const PLATFORM_COST_RESERVES = {
   perplexity_request: { env: "WIRELINE_PERPLEXITY_REQUEST_RESERVE_USD", fallback: 0.01 },
   apollo_enrichment: { env: "WIRELINE_APOLLO_ENRICHMENT_RESERVE_USD", fallback: 0.05 },
+  /**
+   * One minted realtime voice session. Browser-to-vendor WebRTC audio never
+   * flows through the token audit path (ai-models.ts documents this), so the
+   * mint is the only place the platform can meter it. Reserve basis: the same
+   * 5 charged minutes simulationMinuteQuota debits per mint, at a conservative
+   * blended GA realtime audio rate.
+   */
+  openai_realtime_session: { env: "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD", fallback: 0.3 },
 } as const;
 
 export function platformCostReserveUsd(kind: keyof typeof PLATFORM_COST_RESERVES): number {
@@ -148,15 +157,22 @@ export function withAudit(actionPrefix: string) {
   return (req: any, res: any, next: any) => {
     const ctx = createAuditContext();
     res.on("finish", () => {
-      if (!ctx.records.length || !req?.user?.id || res.statusCode >= 500) return;
+      // Persist on 5xx too: the provider already billed the model call, so a
+      // handler failure after the model returned must still land in the spend
+      // ledger or the tenant's budget drifts under exactly the retry loops
+      // most likely to burn money.
+      if (!ctx.records.length || !req?.user?.id) return;
       const subpath = req.path.replace(/\//g, ".").replace(/^\.+/, "");
-      void persistRuntimeAuditRecords({
-        userId: req.user.id,
-        action: actionPrefix ? `${actionPrefix}.${subpath}` : subpath,
-        records: ctx.records,
-        requestMeta: { method: req.method, path: req.path },
-      }).catch((error: unknown) =>
-        log.error("Runtime audit persist exception", { error: getErrorMessage(error) }),
+      // runInBackground, not a detached promise: on Vercel the instance can
+      // freeze as soon as the response flushes, and a suspended audit INSERT
+      // is unmetered COGS with no ledger trace.
+      runInBackground("ai spend accounting", () =>
+        persistRuntimeAuditRecords({
+          userId: req.user.id,
+          action: actionPrefix ? `${actionPrefix}.${subpath}` : subpath,
+          records: ctx.records,
+          requestMeta: { method: req.method, path: req.path, status: res.statusCode },
+        }),
       );
     });
     runInAuditContext(ctx, () => next());

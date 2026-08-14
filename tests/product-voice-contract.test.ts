@@ -296,8 +296,25 @@ describe("product voice cohesion", () => {
     expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
     expect(precisionHeader).toContain('to: "/solutions/support"');
     expect(precisionHeader).toContain('path.startsWith("/for/")');
+    // The footer lists EVERY wedge symmetrically with Personal first — broad
+    // entry means no single industry is privileged, not that seven of the
+    // eight built wedge pages (each with its own live demo line) go unlinked.
+    // Signup CTAs and the /for/* fallback below still enforce personal-first.
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
-    expect(footer).not.toContain('label: "Home services"');
+    for (const wedgePath of [
+      "/for/home-services",
+      "/for/insurance",
+      "/for/legal",
+      "/for/medical",
+      "/for/real-estate",
+      "/for/restaurants",
+      "/for/sales",
+    ]) {
+      expect(footer, wedgePath).toContain(`to: "${wedgePath}"`);
+    }
+    expect(footer.indexOf('to: "/for/personal"')).toBeLessThan(
+      footer.indexOf('to: "/for/home-services"'),
+    );
 
     // Generic acquisition promises "free", so they must override any paid
     // signup intent left in local storage from a previous pricing visit.

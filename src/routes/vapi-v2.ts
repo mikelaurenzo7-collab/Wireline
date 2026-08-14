@@ -11,7 +11,7 @@ import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
 import * as schema from "../db/schema";
 import { enqueue } from "../lib/job-queue";
 import { claimLeadEnrichmentSlot } from "../lib/enrichment-debounce";
-import { drizzle, log, tenantStore } from "../lib/server-context";
+import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   buildShowcaseAssistantPayload,
@@ -322,6 +322,34 @@ router.post("/api/vapi-webhook", async (req, res) => {
         if (await inboundConcurrencyExceeded(agent.user_id)) {
           log.warn("Inbound routed to take-a-message assistant — concurrency ceiling", {
             agentId: webhookAgentId,
+          });
+          return res.json({
+            assistant: buildDurableTakeMessageAssistant(
+              webhookAgentId,
+              agentVoiceName,
+              agentComplianceMode,
+              userSettings?.businessName,
+            ),
+          });
+        }
+        // Daily minute ceiling: settlement increments voice_minutes_daily for
+        // inbound too, but only the OUTBOUND path ever read it — so a tenant
+        // whose number gets flooded (or farmed) ran the full assistant at up
+        // to 40 min/call all day with the wallet merely accruing grace debt.
+        // Past the plan's daily minutes, callers still get answered — by the
+        // bounded take-a-message assistant, capping full-assistant COGS at the
+        // same posture as the grace and concurrency gates. Read-only check
+        // (delta 0): the completed call settles its real minutes afterward.
+        // Fail OPEN on tracker error — a DB blip must not degrade a paying
+        // tenant's inbound line.
+        const dailyDecision = await quotaTracker
+          .checkAndIncrement(agent.user_id, "voice_minutes_daily", 0)
+          .catch(() => null);
+        if (dailyDecision && !dailyDecision.allowed) {
+          log.warn("Inbound routed to take-a-message assistant — daily minute ceiling", {
+            agentId: webhookAgentId,
+            used: dailyDecision.used,
+            limit: dailyDecision.limit,
           });
           return res.json({
             assistant: buildDurableTakeMessageAssistant(

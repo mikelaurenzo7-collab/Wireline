@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle, tenantStore } from "../lib/server-context";
 import { validateBody, createIntakeKeySchema, updateIntakeKeySchema } from "../lib/api-validation";
 import * as schema from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
@@ -530,7 +530,10 @@ router.post("/lead", async (req: Request, res: Response) => {
               .update(schema.intakeKeys)
               .set({
                 lastUsedAt: new Date(),
-                useCount: (key.use_count || 0) + 1,
+                // Atomic increment: concurrent leads all read the same stale
+                // snapshot, so `read + 1` under-counts exactly when a public
+                // key is being hammered — the moment the meter matters most.
+                useCount: sql`COALESCE(${schema.intakeKeys.useCount}, 0) + 1`,
               })
               .where(eq(schema.intakeKeys.id, key.id)),
           ),
@@ -619,7 +622,7 @@ router.post("/leads", async (req: Request, res: Response) => {
             .update(schema.intakeKeys)
             .set({
               lastUsedAt: new Date(),
-              useCount: (key.use_count || 0) + successes,
+              useCount: sql`COALESCE(${schema.intakeKeys.useCount}, 0) + ${successes}`,
             })
             .where(eq(schema.intakeKeys.id, key.id)),
         ),

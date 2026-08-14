@@ -6,6 +6,8 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceBrandingSettings from "../components/settings/WorkspaceBrandingSettings";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { useAccount } from "../contexts/AccountContext";
+import { isRouteAvailableForAccount } from "../lib/account-type";
 
 const customizationLinks = [
   {
@@ -47,6 +49,12 @@ const customizationLinks = [
 ] as const;
 
 export default function CustomizationSettings() {
+  const { accountType } = useAccount();
+  // Success targets lives on /insights, a business surface — offering it to a
+  // personal account lands them on a page with no nav entry and no way back.
+  const visibleLinks = customizationLinks.filter(({ href }) =>
+    isRouteAvailableForAccount(accountType, href.split(/[?#]/)[0]),
+  );
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
@@ -59,7 +67,7 @@ export default function CustomizationSettings() {
         <section className="mt-8" aria-label="Customization destinations">
           <p className="wl-eyebrow wl-eyebrow--muted">Customize next</p>
           <ul className="mt-3 divide-y divide-border border-y border-border">
-            {customizationLinks.map(({ label, detail, href, icon: Icon }) => (
+            {visibleLinks.map(({ label, detail, href, icon: Icon }) => (
               <li key={href}>
                 <Link
                   to={href}

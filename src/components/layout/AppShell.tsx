@@ -27,7 +27,11 @@ export default function AppShell() {
   }
 
   if (!user) {
-    const redirect = `${location.pathname}${location.search}`;
+    // Keep the fragment: the browser extension hands page context over as
+    // /studio/handoff#browser-context=<payload>, and this gate runs before
+    // BrowserHandoffBridge ever renders — dropping location.hash here threw
+    // away the captured page for every signed-out handoff.
+    const redirect = `${location.pathname}${location.search}${location.hash}`;
     return <Navigate to={`/signin?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 

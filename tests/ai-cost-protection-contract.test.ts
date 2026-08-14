@@ -232,12 +232,79 @@ describe("AI cost-protection contract", () => {
     expect(mcpSimulation.indexOf("checkAndIncrement")).toBeLessThan(
       mcpSimulation.indexOf("createOpenAIRealtimeClientSecret"),
     );
+
+    // Minute quotas bound COUNT; dollars must be bounded too. Browser-to-vendor
+    // WebRTC audio never reaches the token audit path, so each mint must (a)
+    // respect the tenant AI-spend hard cap and (b) land a platform cost reserve
+    // in the envelope — otherwise a tenant 402'd on text AI keeps minting voice
+    // as invisible COGS.
+    for (const path of [
+      "src/routes/openai-realtime-routes.ts",
+      "src/routes/grok-voice-routes.ts",
+    ]) {
+      const route = read(path);
+      expect(route, path).toContain("enforceSpendCap");
+      expect(route, path).toContain('platformCostReserveUsd("openai_realtime_session")');
+      expect(route, path).toContain('action: "voice.realtime.session"');
+    }
+    expect(mcpSimulation).toContain("isHardSpendCapExceeded(authed.userId)");
+    expect(mcpSimulation).toContain('platformCostReserveUsd("openai_realtime_session")');
+    const middleware = read("src/middleware/audit-middleware.ts");
+    expect(middleware).toContain("openai_realtime_session");
+  });
+
+  it("persists AI spend accounting on every outcome, pinned to the invocation", () => {
+    const middleware = read("src/middleware/audit-middleware.ts");
+    const finishHandler = middleware.slice(middleware.indexOf("export function withAudit"));
+    // The provider bills the model call whether or not the handler later 5xxes,
+    // so the ledger row must land on every outcome — skipping 5xx responses
+    // left unmetered COGS under exactly the retry loops likeliest to burn money.
+    expect(finishHandler).not.toContain("res.statusCode >= 500");
+    // On Vercel the instance can freeze the moment the response flushes; a
+    // detached promise here is a silently lost spend record. The write must ride
+    // waitUntil via runInBackground like every other post-response path.
+    expect(finishHandler).toContain('runInBackground("ai spend accounting"');
+    expect(finishHandler).not.toContain("void persistRuntimeAuditRecords");
+  });
+
+  it("meters Gemini reasoning and cached tokens at their billed rates", async () => {
+    // Thinking models (gemini-2.5/3.x) report reasoning tokens in
+    // thoughtsTokenCount — billed at the output rate but excluded from
+    // candidatesTokenCount — and cache reads inside promptTokenCount. Dropping
+    // either under-meters every Gemini fallback call, exactly when an OpenAI
+    // incident routes the whole fleet through Gemini.
+    const { recordGeminiUsage } = await import("../src/lib/ai-audit");
+    const record = recordGeminiUsage(
+      "gemini-3.6-flash",
+      {
+        promptTokenCount: 1_000,
+        candidatesTokenCount: 200,
+        thoughtsTokenCount: 300,
+        cachedContentTokenCount: 400,
+      },
+      10,
+    );
+    expect(record.output_tokens).toBe(500);
+    expect(record.input_tokens).toBe(600);
+    expect(record.cache_read_tokens).toBe(400);
+
+    // The direct ai-client Gemini path builds its usage from the same metadata
+    // and must fold both buckets in as well.
+    const client = read("src/lib/ai-client.ts");
+    expect(client).toContain("thoughtsTokenCount");
+    expect(client).toContain("cachedContentTokenCount");
   });
 
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
     const webhook = read("src/routes/vapi-v2.ts");
     expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
     expect(webhook).toContain("getVoiceWalletSnapshot");
+    // Inbound must also read the daily minute ceiling settlement increments:
+    // without it, only OUTBOUND consulted voice_minutes_daily, and a flooded
+    // or farmed number ran the full assistant all day on grace debt alone.
+    expect(webhook).toContain('checkAndIncrement(agent.user_id, "voice_minutes_daily", 0)');
+    const dailyGate = webhook.slice(webhook.indexOf('"voice_minutes_daily", 0)'));
+    expect(dailyGate.slice(0, 900)).toContain("buildDurableTakeMessageAssistant");
     // The fallback answers the same tenant line as the full assistant, so it
     // must receive that agent's compliance posture and business identity.
     expect(webhook).toMatch(

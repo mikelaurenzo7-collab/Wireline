@@ -1,4 +1,4 @@
-import { ArrowRight, CircleDollarSign, FileCheck2, LockKeyhole, Route } from "lucide-react";
+import { ArrowRight, FileCheck2, LockKeyhole, Route, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
 const TRUST_POINTS = [
@@ -8,9 +8,15 @@ const TRUST_POINTS = [
     detail: "Build, train, and test before the agent reaches a real conversation.",
   },
   {
-    icon: CircleDollarSign,
-    title: "Visible spend",
-    detail: "Included capacity is used first. Additional provider work stays prepaid.",
+    // The enforced compliance stack (TCPA calling hours, DNC checks before
+    // marketing dials, instant opt-out honoring; see tcpa-calling-hours.ts,
+    // outbound-dial-gate.ts, dnc-failsafe.ts) is a real differentiator that
+    // was hidden a click deep in /trust. The spend story this tile replaced
+    // is already told by the plan cards on the same page.
+    icon: ShieldCheck,
+    title: "Compliant by default",
+    detail:
+      "Calling-hour rules, Do Not Call checks, and instant opt-outs are enforced in the runtime before any dial.",
   },
   {
     icon: Route,

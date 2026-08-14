@@ -63,8 +63,13 @@ export const POST_CREATE_WIZARD_COPY = {
         "Provision a US number so callers reach this agent. A paid plan is required for live number provisioning.",
       primary: "Provision number",
       skip: "Connect later",
-      activationRequired:
-        "Fund live work or choose shared capacity to provision a number — use the activation prompt to continue.",
+      // The highest-intent moment in the product: the customer has built,
+      // trained, and voice-tested an agent and just asked for its number.
+      // Plain language + a direct path to plans — never internal jargon.
+      activationRequired: "Your agent is trained and ready — its live number just needs a plan.",
+      activationDetail: (starterPriceUsd: number) =>
+        `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
+      activationCta: "Choose your plan",
     },
     test: {
       label: "Test",

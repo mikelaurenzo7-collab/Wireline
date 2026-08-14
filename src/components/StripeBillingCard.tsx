@@ -79,13 +79,21 @@ export default function StripeBillingCard() {
       const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status"),
         authFetch("/api/billing/plans"),
-        authFetch("/api/video-presenter/entitlement").then((r) => (r.ok ? r.json() : null)),
+        // Optional add-on data must never take down the plan grid — the only
+        // in-product way to pay. A rejection here previously failed the whole
+        // Promise.all and replaced every plan card with "Billing unavailable".
+        authFetch("/api/video-presenter/entitlement")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
       if (!statusRaw.ok || !plansRaw.ok) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
       }
-      const statusRes = (await statusRaw.json()) as BillingStatusResponse;
-      const plansRes = (await plansRaw.json()) as BillingPlansResponse;
+      const statusRes = (await statusRaw.json().catch(() => null)) as BillingStatusResponse | null;
+      const plansRes = (await plansRaw.json().catch(() => null)) as BillingPlansResponse | null;
+      if (!statusRes || !plansRes) {
+        throw new Error("Billing details could not be loaded. Refresh and try again.");
+      }
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);

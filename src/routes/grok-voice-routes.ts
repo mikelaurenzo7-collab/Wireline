@@ -2,8 +2,11 @@ import express, { type Response } from "express";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate-limits";
+import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+import { enforceSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
 import { AppError } from "../lib/api-error";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import {
   generateCuratedVoicePreview,
   isCuratedPreviewProvider,
@@ -81,12 +84,24 @@ router.post(
   authenticateUser,
   sessionLimiter,
   simulationMinuteQuota,
+  // Same posture as /api/voice/openai/session: the mint spends vendor-metered
+  // realtime audio on platform keys outside the token audit path, so it must
+  // respect the tenant's AI-spend hard cap and land a reserve in the envelope.
+  enforceSpendCap,
   validateBody(sessionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const session = await createOpenAILiveVoiceCall({
       userId: req.user.id,
       agentId: req.body.agentId,
       sdp: req.body.sdp,
+    });
+    await persistPlatformCostRecord({
+      userId: req.user.id,
+      action: "voice.realtime.session",
+      provider: "openai",
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
+      costUsd: platformCostReserveUsd("openai_realtime_session"),
+      requestMeta: { surface: "live_voice_session" },
     });
     res.setHeader("Cache-Control", "no-store");
     res.json(session);

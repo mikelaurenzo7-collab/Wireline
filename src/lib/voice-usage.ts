@@ -221,9 +221,17 @@ async function prepareVoiceUsage(opts: {
     const newOverageTotal = Math.max(0, newUsed - included);
     const incrementalOverageMinutes = Math.max(0, newOverageTotal - previousOverage);
     const overageRateUsd = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
-    const overageCostUsd = plan
-      ? Math.round(incrementalOverageMinutes * overageRateUsd * 100) / 100
-      : 0;
+    // Fail CLOSED on an unresolvable stored plan id: charging $0 here would
+    // hand that tenant unlimited voice minutes on a never-debited wallet while
+    // the UI still displays a charge. A catalog rotation that orphans a plan id
+    // must surface as an alarm plus the published flat rate, never free COGS.
+    if (!plan && planId) {
+      log.error("Voice overage metered at flat rate: stored plan id is unresolvable", {
+        userId,
+        storedPlanId: planId,
+      });
+    }
+    const overageCostUsd = Math.round(incrementalOverageMinutes * overageRateUsd * 100) / 100;
 
     await tx
       .update(voiceUsageEvents)

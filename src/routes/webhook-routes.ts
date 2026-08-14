@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
-import express, { Response } from "express";
+import express, { Response, type NextFunction, type Request } from "express";
 import { AppError } from "../lib/api-error";
 import { log, auditLogger, requirePermission, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -8,11 +8,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, createWebhookSchema, updateWebhookSchema } from "../lib/api-validation";
 import { validateWebhookUrl } from "../lib/webhook-validators";
-import {
-  WEBHOOK_EVENTS,
-  type WebhookEvent,
-  attemptWebhookDelivery,
-} from "../lib/webhook-helpers";
+import { WEBHOOK_EVENTS, type WebhookEvent, attemptWebhookDelivery } from "../lib/webhook-helpers";
 import { encryptSecret, lastFour, isVaultConfigured } from "../lib/secret-vault";
 import { runInBackground } from "../lib/background-work";
 import { webhooksRateLimit } from "../middleware/api-rate-limits";
@@ -32,6 +28,17 @@ function parseDeliveryId(raw: string): bigint {
     throw AppError.fromHttpStatus(400, "Invalid delivery id.");
   }
   return id;
+}
+
+// wireline_webhooks.id is a uuid column: comparing a non-UUID path param
+// raises PG 22P02 inside the handler's generic catch and surfaces as a 500.
+// A malformed id names no resource, so answer 404 before touching the DB.
+const UUID_PARAM_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function requireWebhookUuid(req: Request, res: Response, next: NextFunction) {
+  if (!UUID_PARAM_RE.test(String(req.params.id || ""))) {
+    return res.status(404).json({ error: "Webhook not found.", code: "NOT_FOUND" });
+  }
+  next();
 }
 
 function publicWebhookRecord(row: any) {
@@ -171,6 +178,7 @@ router.post(
 router.patch(
   "/:id",
   authenticateUser,
+  requireWebhookUuid,
   requirePermission("webhooks.manage"),
   webhooksRateLimit,
   validateBody(updateWebhookSchema),
@@ -254,6 +262,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticateUser,
+  requireWebhookUuid,
   requirePermission("webhooks.manage"),
   webhooksRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -287,6 +296,7 @@ router.delete(
 router.get(
   "/:id/deliveries",
   authenticateUser,
+  requireWebhookUuid,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const parsed = parseInt((req.query.limit as string) || "50");

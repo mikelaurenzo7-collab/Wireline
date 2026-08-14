@@ -65,7 +65,14 @@ assert(
   "obsolete server-v2 wrapper must not be reintroduced",
 );
 
-const position = (snippet) => routes.indexOf(snippet);
+// indexOf returns -1 on a miss and `-1 < N` is true, so a renamed router would
+// silently pass every ordering assertion below. A snippet that no longer exists
+// must fail loudly — the invariant is unverifiable, not satisfied.
+const position = (snippet) => {
+  const index = routes.indexOf(snippet);
+  assert(index >= 0, `route registration snippet not found: ${snippet}`);
+  return index;
+};
 assert(
   position("app.use(authOAuthRouter);") < position("app.use(agentRouter);"),
   "OAuth routes must precede agent routes",

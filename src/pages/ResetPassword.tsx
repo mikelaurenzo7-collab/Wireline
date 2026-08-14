@@ -183,7 +183,11 @@ export default function ResetPassword() {
                 type="submit"
                 disableAnimations
                 variant="editorial"
-                disabled={loading || !password || password !== confirm}
+                // Enabled on mismatch/empty on purpose: handleSubmit surfaces
+                // the policy error or "Passwords don't match." inline. Gating
+                // the button made those branches dead code — a typo in the
+                // confirm field showed only a greyed button with no reason.
+                disabled={loading}
                 className="w-full px-5 py-3.5 min-h-[48px] rounded-md text-sm font-medium"
               >
                 {loading ? "Updating…" : "Reset password"}

@@ -951,8 +951,13 @@ export default function AuthPortal() {
 
               <button
                 type="submit"
-                disabled={loading || (isSignUp && !agreedToTerms)}
-                aria-disabled={loading || (isSignUp && !agreedToTerms)}
+                // Enabled without terms consent on purpose: handleAuth surfaces
+                // TERMS_CONSENT_ERROR and focuses the checkbox. A disabled
+                // button made that branch unreachable — the user saw a greyed
+                // control with no explanation (the OAuth buttons already
+                // surface this error; the email path must match).
+                disabled={loading}
+                aria-disabled={loading}
                 className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wireline-color-action-primary-pressed)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (

@@ -112,12 +112,24 @@ router.post(
         isLiveSessionFollowUp: true,
       });
       if (!gate.allowed) {
-        throw AppError.fromHttpStatus(
+        // The specific compliance code must ride the top-level `code` field —
+        // fromHttpStatus's third argument is `details`, which buried it as
+        // details.code under a generic FORBIDDEN, so the client could not
+        // distinguish "federal DNC not configured" (operator action, 503)
+        // from "number is on DNC" (permanent). Mirrors gateResponse in
+        // outbound-dial-atomic-routes.
+        if (gate.reason === "federal_dnc_unconfigured") {
+          throw new AppError(
+            503,
+            gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
+            gate.federalDncMessage || "Federal DNC is not configured for marketing sends.",
+          );
+        }
+        throw new AppError(
           403,
-          gate.federalDncMessage ||
-            gate.reason ||
-            "Outbound SMS blocked by compliance policy for this number.",
-          { code: gate.federalDncCode || gate.reason },
+          "FORBIDDEN",
+          gate.federalDncMessage || "Outbound SMS blocked by compliance policy for this number.",
+          { reason: gate.reason },
         );
       }
 

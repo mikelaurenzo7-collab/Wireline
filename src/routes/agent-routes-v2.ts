@@ -1,7 +1,9 @@
 import { Router, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import type { z } from "zod";
 import { AppError } from "../lib/api-error";
+import { validateBody } from "../lib/api-validation-base";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
@@ -718,11 +720,15 @@ router.patch(
   "/api/agent-config/:id/business",
   authenticateUser,
   agentMutationRateLimit,
+  // safeParse via middleware, not a bare .parse: a raw ZodError has no status,
+  // so the global handler turned every field typo into a 500 INTERNAL_ERROR
+  // with no field details — unactionable for the UI and noise for alerting.
+  validateBody(AgentBusinessProfileSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-    const parsed = AgentBusinessProfileSchema.parse(req.body);
+    const parsed = req.body as z.infer<typeof AgentBusinessProfileSchema>;
 
     await drizzle
       .update(schema.agents)

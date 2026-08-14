@@ -5,12 +5,27 @@ import WirelineMark from "../brand/WirelineMark";
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const PRODUCT_LINKS = [
-  { to: "/for/personal", label: "Personal" },
   { to: "/solutions/sales", label: "Sales" },
   { to: "/solutions/support", label: "Support" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
   { to: "/compare", label: "Compare" },
+] as const;
+
+// Every built wedge, symmetrically: these pages carry the sharpest pain-first
+// copy on the site and each has its own live demo line, yet seven of eight
+// were unlinked. Personal leads and no industry is privileged, preserving the
+// broad-entry posture the product-voice contract pins (signup CTAs and the
+// /for/* fallback stay personal-first).
+const WHO_ITS_FOR_LINKS = [
+  { to: "/for/personal", label: "Personal" },
+  { to: "/for/home-services", label: "Home services" },
+  { to: "/for/insurance", label: "Insurance" },
+  { to: "/for/legal", label: "Legal" },
+  { to: "/for/medical", label: "Medical" },
+  { to: "/for/real-estate", label: "Real estate" },
+  { to: "/for/restaurants", label: "Restaurants" },
+  { to: "/for/sales", label: "Sales teams" },
 ] as const;
 
 const COMPANY_LINKS = [
@@ -70,13 +85,29 @@ export default function MarketingFooter({
             </p>
           </div>
 
-          <div className="marketing-footer-navs grid grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-12">
+          <div className="marketing-footer-navs grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-10">
             <nav
               aria-label="Product"
               className="marketing-footer-nav flex flex-col items-start gap-0.5"
             >
               <p className="wl-overline mb-1">Product</p>
               {PRODUCT_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <nav
+              aria-label="Who it's for"
+              className="marketing-footer-nav flex flex-col items-start gap-0.5"
+            >
+              <p className="wl-overline mb-1">Who it&apos;s for</p>
+              {WHO_ITS_FOR_LINKS.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}

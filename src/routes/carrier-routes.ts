@@ -117,6 +117,19 @@ router.post(
       }
 
       await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
+        // Re-check capacity under the identity advisory lock — two concurrent
+        // binds with distinct numbers both pass the unlocked pre-count (the
+        // 0111 uniqueness index only stops identical numbers). Same treatment
+        // as phone-provisioning.ts's post-buy recount.
+        const [{ held: lockedHeld }] = await tx
+          .select({ held: sql<number>`count(*)` })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, req.user.id));
+        if (Number(lockedHeld || 0) >= slots) {
+          const raceErr = new Error("PHONE_CAPACITY_RACE");
+          (raceErr as Error & { code?: string }).code = "PHONE_CAPACITY_RACE";
+          throw raceErr;
+        }
         await tx.insert(schema.phoneNumbers).values({
           phoneNumber: phone_number,
           vapiNumberId: vapi_number_id,
@@ -126,6 +139,13 @@ router.post(
       res.json({ success: true });
     } catch (err: any) {
       const message = getErrorMessage(err);
+      if ((err as { code?: string })?.code === "PHONE_CAPACITY_RACE") {
+        const slots = await getIncludedPhoneLineSlots(req.user.id).catch(() => 0);
+        return res.status(403).json({
+          code: "PHONE_CAPACITY_REACHED",
+          error: `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+        });
+      }
       if (/duplicate key|unique constraint/i.test(message)) {
         return res.status(409).json({
           code: "NUMBER_ALREADY_BOUND",

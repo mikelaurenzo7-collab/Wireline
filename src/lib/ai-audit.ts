@@ -14,6 +14,14 @@ export interface RuntimeCallMeta {
 export interface GeminiUsageMetadata {
   promptTokenCount?: number;
   candidatesTokenCount?: number;
+  /**
+   * Reasoning tokens on thinking models (gemini-2.5/3.x). Google bills them at
+   * the output rate but reports them OUTSIDE candidatesTokenCount — omitting
+   * them under-meters every thinking-model call by the full reasoning budget.
+   */
+  thoughtsTokenCount?: number;
+  /** Context-cache reads, billed at the cache-read rate. */
+  cachedContentTokenCount?: number;
   totalTokenCount?: number;
 }
 export interface AuditContext {
@@ -36,8 +44,7 @@ export async function withAuditCapture<T>(
   );
 }
 export const createAuditContext = (): AuditContext => ({ records: [] });
-export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T =>
-  auditCtx.run(ctx, fn);
+export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => auditCtx.run(ctx, fn);
 export function estimateCost(
   usage: {
     input_tokens?: number;
@@ -124,17 +131,12 @@ export function recordUsage(
   // Attribute cost to the model that actually served the turn. On provider
   // failover the runtime returns a different model than requested, so pricing
   // and provider attribution must follow the response, not the request.
-  const served =
-    typeof response.model === "string" && response.model
-      ? response.model
-      : model;
+  const served = typeof response.model === "string" && response.model ? response.model : model;
   push({
     model: served,
     provider: providerFor(served),
-    input_tokens:
-      response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
-    output_tokens:
-      response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
+    input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
+    output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
     cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
     cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
     latency_ms: latencyMs,
@@ -145,12 +147,16 @@ export function recordGeminiUsage(
   usage: GeminiUsageMetadata | undefined,
   latencyMs: number,
 ): RuntimeCallMeta {
+  // promptTokenCount INCLUDES cachedContentTokenCount, so subtract the cached
+  // share out of the full-price input bucket rather than double-counting it.
+  const cachedTokens = Math.max(0, usage?.cachedContentTokenCount ?? 0);
+  const promptTokens = Math.max(0, usage?.promptTokenCount ?? 0);
   const record = {
     model,
     provider: "google" as const,
-    input_tokens: usage?.promptTokenCount ?? 0,
-    output_tokens: usage?.candidatesTokenCount ?? 0,
-    cache_read_tokens: 0,
+    input_tokens: Math.max(0, promptTokens - cachedTokens),
+    output_tokens: (usage?.candidatesTokenCount ?? 0) + Math.max(0, usage?.thoughtsTokenCount ?? 0),
+    cache_read_tokens: cachedTokens,
     cache_create_tokens: 0,
     latency_ms: latencyMs,
   };
