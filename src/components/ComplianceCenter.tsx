@@ -117,7 +117,7 @@ export default function ComplianceCenter() {
               {!summary.federal_dnc_configured ? (
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   Marketing dials stay blocked until Wireline completes federal DNC setup. Studio
-                  non-marketing dials still use your tenant DNC list and TCPA consent.{" "}
+                  non-marketing dials still use your workspace DNC list and TCPA consent.{" "}
                   <Link to="/security" className="text-primary underline underline-offset-2">
                     Open Trust / Security
                   </Link>
@@ -126,7 +126,7 @@ export default function ComplianceCenter() {
             </div>
             <div className="rounded-xl border border-border bg-card p-3.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Tenant DNC
+                Workspace DNC
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
                 {summary.dnc_entry_count} suppressed numbers

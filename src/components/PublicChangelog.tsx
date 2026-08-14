@@ -15,10 +15,7 @@ interface ChangelogEntry {
   body: string;
 }
 
-const TAG_META: Record<
-  EntryTag,
-  { label: string; tone: string; icon: typeof Sparkles }
-> = {
+const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Sparkles }> = {
   launch: {
     label: "Launch",
     tone: "bg-brand/10 text-brand border-brand/25",
@@ -50,14 +47,14 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Aug 11, 2026",
     tag: "launch",
-    title: "Launch certification hardened",
-    body: "Deep launch builds now verify TypeScript, lint, production dependency advisories, the non-E2E test suite, and production schema effects. Post-promotion health checks verify the live service. The August 11 launch authority defines the current Build, Train, Launch, Improve story and keeps demo and test evidence separate from customer proof.",
+    title: "Deeper release checks before anything ships",
+    body: "Every release now clears a wider battery of automated checks — code quality, dependency advisories, the full test suite, and database safety — plus live health verification after deploy. Demo and test activity is kept strictly separate from real customer evidence.",
   },
   {
     date: "Jul 25, 2026",
     tag: "infra",
-    title: "OpenAI unified for reasoning and live demos",
-    body: "Managed structured reasoning and every customer-facing live-voice demo (Studio, ChatGPT private simulation, guest previews) now default to OpenAI, with Gemini and the Vercel AI Gateway as ordered continuity. Production PSTN stays on Twilio + Vapi with the managed OpenAI call model. xAI remains optional experiment-only — never the split default for demos or runtime.",
+    title: "One managed reasoning policy across demos and Studio",
+    body: "Structured reasoning and every live-voice demo surface (Studio, private simulation, guest previews) now run on a single managed model policy with governed continuity layers behind it, so behavior is consistent everywhere you try an agent. Production phone calling keeps its own dedicated, carrier-grade runtime — demo surfaces never take over customer calls.",
   },
   {
     date: "Jul 13, 2026",
@@ -134,8 +131,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Voice runtime rebalanced — OpenAI primary, Gemini continuity",
-    body: "Structured reasoning runs OpenAI GPT-5.6 Terra first, with Gemini as direct continuity and Vercel AI Gateway as the governed last route. Studio and guest live-voice demos use OpenAI Realtime. Production PSTN stays on Twilio + Vapi — model shopping is not the product.",
+    title: "Voice runtime rebalanced for reliability",
+    body: "Structured reasoning now runs a managed primary model with ordered continuity behind it, so a provider hiccup degrades gracefully instead of failing a conversation. Studio and guest demos share the same managed live-voice path, while production phone calls keep their dedicated calling runtime.",
   },
   {
     date: "Jan 27, 2026",
@@ -164,7 +161,7 @@ export default function PublicChangelog() {
         path="/changelog"
       />
       <MarketingChrome stickyCta={false}>
-        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 pt-12 pb-8 sm:pt-16 sm:pb-12">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -197,9 +194,7 @@ export default function PublicChangelog() {
                     className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full bg-brand"
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="text-eyebrow !text-[0.625rem]">
-                      {entry.date}
-                    </span>
+                    <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>
                     <span
                       className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
                     >
@@ -219,22 +214,13 @@ export default function PublicChangelog() {
           <div className="mt-12 pt-6 border-t border-border">
             <p className="text-eyebrow mb-2">Under active evaluation</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
-              <li>
-                Mobile controls for monitoring, coaching, and approvals on the
-                go.
-              </li>
-              <li>
-                Reusable workflow recipes with clearer review and publishing
-                controls.
-              </li>
-              <li>
-                Annual performance recaps built from each account's verified
-                activity.
-              </li>
+              <li>Mobile controls for monitoring, coaching, and approvals on the go.</li>
+              <li>Reusable workflow recipes with clearer review and publishing controls.</li>
+              <li>Annual performance recaps built from each account's verified activity.</li>
             </ul>
             <p className="mt-3 text-caption">
-              Roadmap items are not commitments; scope and timing may change as
-              customer evidence improves.
+              Roadmap items are not commitments; scope and timing may change as customer evidence
+              improves.
             </p>
           </div>
         </div>

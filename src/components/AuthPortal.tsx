@@ -282,11 +282,14 @@ function OAuthSignInButtons({
       label: "Yahoo",
       mark: (
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          {/* Yahoo's mark is "Y!" — the Y is narrowed to leave the exclamation its own column. */}
           <path
             d="M2.2 5.6h4.6l3.65 6.55L14.1 5.6h4.5l-6.3 10.85V20.6H8.55v-4.15L2.2 5.6Z"
             fill="#6001D2"
+            transform="scale(0.82 1)"
           />
-          <circle cx="18.7" cy="18.7" r="1.95" fill="#6001D2" />
+          <path d="M17.6 4.2h3.2l-.7 10.4h-1.8L17.6 4.2Z" fill="#6001D2" />
+          <circle cx="19.2" cy="18.6" r="1.95" fill="#6001D2" />
         </svg>
       ),
     },
@@ -845,9 +848,7 @@ export default function AuthPortal() {
                       disabled={loading}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={
-                        isSignUp ? "8+ characters, upper, lower, number" : "Your password"
-                      }
+                      placeholder={isSignUp ? "Create a password" : "Your password"}
                       className="wl-stitch-input h-11"
                       style={{ paddingLeft: "2.5rem", paddingRight: "2.75rem" }}
                       aria-label="Password"

@@ -130,9 +130,9 @@ export function TermsOfService() {
 
       <Section title="2. Service Description">
         <p>
-          Wireline provides AI-powered voice, SMS, and email agent infrastructure for personal and
-          business use. The service includes agent configuration tools, call routing, email triage,
-          outbound dialing campaigns, a DNC manager, and analytics.
+          Wireline provides voice, SMS, and email agent infrastructure for personal and business
+          use. The service includes agent configuration tools, call routing, email triage, outbound
+          dialing campaigns, a DNC manager, and analytics.
         </p>
       </Section>
 

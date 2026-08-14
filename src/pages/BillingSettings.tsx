@@ -3,7 +3,7 @@ import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules/StatusNotice";
-import StripeBillingCard from "../components/StripeBillingCard";
+import StripeBillingCard, { BillingTrustFooter } from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -244,7 +244,7 @@ export default function BillingSettings() {
          * the actual balance ledger below, so the generic duplicate top-up card
          * is intentionally suppressed here.
          */}
-        <StripeBillingCard showBalanceTopUp={false} />
+        <StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />
 
         {!loading && !statusUnavailable && paidPlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -332,6 +332,10 @@ export default function BillingSettings() {
             {actionError}
           </StatusNotice>
         ) : null}
+
+        <div className="mt-8">
+          <BillingTrustFooter />
+        </div>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

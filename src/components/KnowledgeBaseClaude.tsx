@@ -84,19 +84,32 @@ function ruleHeadline(content: string | undefined): string {
 function ruleBody(content: string | undefined, headline: string): string | null {
   const text = (content || "").trim();
   if (!text) return null;
-  if (text.startsWith(headline)) {
-    const rest = text.slice(headline.length).replace(/^:\s*/, "").trim();
+  // A truncated headline ends in an ellipsis and never prefix-matches the raw
+  // text, which used to reprint the same truncated sentence as its own body.
+  const headlinePrefix = headline.endsWith("…") ? headline.slice(0, -1) : headline;
+  if (text.startsWith(headlinePrefix)) {
+    const rest = text.slice(headlinePrefix.length).replace(/^:\s*/, "").trim();
     return rest || null;
   }
   return text;
 }
 
-function entrySubtitle(content: string | undefined): string {
+function entrySubtitle(content: string | undefined, headline: string): string {
   const raw = (content || "").trim();
   if (!raw) return "Empty entry";
   const compact = raw.replace(/\s+/g, " ");
+  // Continue where the headline left off instead of restating it; when the
+  // headline already covers the whole entry, fall back to a size note.
+  const headlinePrefix = headline.endsWith("…") ? headline.slice(0, -1) : headline;
+  const remainder = compact.startsWith(headlinePrefix)
+    ? compact.slice(headlinePrefix.length).trim()
+    : compact;
+  if (remainder && remainder !== compact) {
+    return remainder.length > 87 ? `…${remainder.slice(0, 84)}…` : `…${remainder}`;
+  }
+  if (remainder && compact.length > 90) return `${compact.slice(0, 87)}…`;
   const length = compact.length;
-  return length > 90 ? `${compact.slice(0, 87)}…` : `${length} char${length === 1 ? "" : "s"}`;
+  return `${length} char${length === 1 ? "" : "s"}`;
 }
 
 function readAsDataUrl(file: File) {
@@ -442,7 +455,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                         {entryHeadline(entry.content, entry.source)}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                        {entrySubtitle(entry.content)}
+                        {entrySubtitle(entry.content, entryHeadline(entry.content, entry.source))}
                       </div>
                     </div>
                     <span

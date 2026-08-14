@@ -71,6 +71,17 @@ html.light {
   display: none;
 }
 
+/* Scrollbars are hidden above, so on narrow screens a tab cut mid-word was the
+ * only sign the rail scrolls. A right-edge fade turns that hard clip into a
+ * deliberate "more this way" affordance; content that fits ends before the
+ * fade zone and renders unchanged. */
+@media (max-width: 767px) {
+  :where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
+    mask-image: linear-gradient(to right, black calc(100% - 22px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 22px), transparent);
+  }
+}
+
 /* `any-pointer` includes hybrid laptops whose primary mouse is fine but whose
  * touchscreen still needs comfortable geometry and deliberate scroll snapping. */
 @media (any-pointer: coarse) {

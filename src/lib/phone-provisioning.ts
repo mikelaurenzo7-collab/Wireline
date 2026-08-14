@@ -128,8 +128,13 @@ async function purchaseTwilioLocalNumber(
   const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms#rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000`;
   // Vapi owns the primary voice webhook after import; Twilio still needs a
   // voiceFallbackUrl so carrier-side Vapi SIP/webhook failures reach our
-  // degraded-mode handler instead of a silent hangup.
+  // degraded-mode handler instead of a silent hangup. Twilio rejects a purchase
+  // that sets voiceFallbackUrl with an empty VoiceUrl ("Cannot have an empty
+  // VoiceUrl while VoiceFallbackUrl is set"), so the degraded handler also
+  // answers as the primary voice URL for the seconds between carrier purchase
+  // and the Vapi import overwriting it.
   const voiceFallbackUrl = `${appBaseUrl()}/api/twilio-webhook/voice-fallback`;
+  const voiceUrl = voiceFallbackUrl;
   const searchParams: any = {
     voiceEnabled: true,
     smsEnabled: true,
@@ -152,6 +157,8 @@ async function purchaseTwilioLocalNumber(
       phoneNumber: chosen.phoneNumber,
       smsUrl,
       smsMethod: "POST",
+      voiceUrl,
+      voiceMethod: "POST",
       voiceFallbackUrl,
       voiceFallbackMethod: "POST",
       friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,

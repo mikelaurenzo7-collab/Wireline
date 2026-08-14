@@ -1,8 +1,7 @@
 import React from "react";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { Panel } from "../PageShell";
-import StripeBillingCard from "../StripeBillingCard";
-import { Link } from "react-router";
+import StripeBillingCard, { BillingTrustFooter } from "../StripeBillingCard";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
@@ -27,7 +26,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
 
   return (
     <div className="h-full min-h-0 scroll-viewport space-y-3 pb-4">
-      <StripeBillingCard />
+      <StripeBillingCard showTrustFooter={false} />
 
       <Panel title="Danger Zone" hint="Irreversible actions" icon={AlertTriangle} scroll>
         <div className="space-y-5">
@@ -39,8 +38,9 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
                   Delete account
                 </p>
                 <p className="text-xs text-muted/80">
-                  Schedules permanent deletion after a 30-day grace period. Billing and numbers
-                  continue until purge; contact support to cancel.
+                  Stops future subscription renewal and schedules permanent deletion after a 30-day
+                  grace period. Paid access and numbers may remain through the current billing
+                  period, and you can keep your account any time before the period ends.
                 </p>
               </div>
             </div>
@@ -68,15 +68,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
               </ShadButton>
             </div>
           </div>
-          <div className="flex items-center gap-3 wl-micro-meta border-t border-white/5 pt-3">
-            <Link to="/privacy" className="hover:text-muted">
-              Privacy Policy
-            </Link>
-            <span>·</span>
-            <Link to="/terms" className="hover:text-muted">
-              Terms of Service
-            </Link>
-          </div>
+          <BillingTrustFooter />
         </div>
       </Panel>
     </div>

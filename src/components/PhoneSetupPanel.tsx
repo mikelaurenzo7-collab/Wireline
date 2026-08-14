@@ -277,7 +277,7 @@ export default function PhoneSetupPanel() {
                   }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
-                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/5 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
+                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/5 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/55 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
                 />
               </span>
             </label>
@@ -293,7 +293,8 @@ export default function PhoneSetupPanel() {
               {working ? "Activating…" : "Activate number"}
             </Button>
             <p className="text-xs text-primary-foreground/72 sm:col-span-3">
-              Paid plan required for activation.
+              Every paid plan includes a dedicated number. If yours needs attention, activation
+              points you to Billing.
             </p>
           </div>
         ) : (

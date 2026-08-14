@@ -307,9 +307,9 @@ export default function Status() {
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
               Wireline checks managed voice control-plane access and performs a minimal,
-              non-persistent OpenAI Responses inference for reasoning access. Normal provider
-              results are cached for 120 seconds. During a distributed-cache incident the server
-              may use its last known result for up to five minutes, while edge stale-while-revalidate
+              non-persistent inference against the managed reasoning provider. Normal provider
+              results are cached for 120 seconds. During a distributed-cache incident the server may
+              use its last known result for up to five minutes, while edge stale-while-revalidate
               can briefly extend delivery beyond that. These are provider-access checks—not an
               end-to-end customer call. The timestamp above is the authoritative age of the
               displayed reading.

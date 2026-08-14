@@ -166,18 +166,11 @@ export default function Features() {
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">
-                Every channel, one agent.
-              </h2>
+              <h2 className="wl-public-section-heading">Every channel. One agent.</h2>
             </div>
             <div className="grid gap-3 lg:grid-cols-3">
               {CHANNEL_CAPABILITIES.map(({ icon: Icon, title, body }) => (
-                <FeatureCard
-                  key={title}
-                  icon={Icon}
-                  title={title}
-                  body={body}
-                />
+                <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
             </div>
           </div>
@@ -186,9 +179,7 @@ export default function Features() {
         <section className="wl-public-section border-b border-border bg-card/45">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="wl-public-section-heading">
-                Build. Train. Launch. Improve.
-              </h2>
+              <h2 className="wl-public-section-heading">Build. Train. Launch. Improve.</h2>
             </div>
             <div className="grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
               {OPERATING_LOOP.map(({ title, body }, index) => (
@@ -214,18 +205,11 @@ export default function Features() {
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="wl-public-section-heading">
-                The controls that make it reliable.
-              </h2>
+              <h2 className="wl-public-section-heading">The controls that make it reliable.</h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
-                <FeatureCard
-                  key={title}
-                  icon={Icon}
-                  title={title}
-                  body={body}
-                />
+                <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
             </div>
           </div>
@@ -245,12 +229,8 @@ export default function Features() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
                     <Icon size={18} aria-hidden="true" />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    {label}
-                  </span>
-                  <span className="wl-overline text-muted-foreground">
-                    {status}
-                  </span>
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                  <span className="wl-overline text-muted-foreground">{status}</span>
                 </div>
               ))}
             </div>
@@ -288,20 +268,12 @@ export default function Features() {
 
         <section className="wl-public-section">
           <div className="wl-public-rail text-center">
-            <h2 className="wl-public-section-heading">
-              Train it. Test it. Launch it.
-            </h2>
+            <h2 className="wl-public-section-heading">Train it. Test it. Launch it.</h2>
             <div className="marketing-hero__actions mt-8">
-              <Link
-                to="/signup"
-                className="marketing-btn-primary px-6 text-sm font-semibold"
-              >
+              <Link to="/signup" className="marketing-btn-primary px-6 text-sm font-semibold">
                 Build your voice agent
               </Link>
-              <Link
-                to="/pricing"
-                className="marketing-btn-secondary px-6 text-sm font-semibold"
-              >
+              <Link to="/pricing" className="marketing-btn-secondary px-6 text-sm font-semibold">
                 See plans <ArrowRight size={15} aria-hidden="true" />
               </Link>
             </div>
@@ -331,9 +303,7 @@ function FeatureCard({
         aria-hidden="true"
       />
       <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch]">{title}</h3>
-      <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-6 text-muted-foreground">
-        {body}
-      </p>
+      <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
     </article>
   );
 }

@@ -68,9 +68,11 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             </div>
             <div className="flex items-baseline gap-2 mb-1">
               <span className="text-2xl font-display text-foreground">SOC 2</span>
-              <span className="text-xs font-bold text-brand uppercase tracking-wider">Type II</span>
+              <span className="text-xs font-bold text-brand uppercase tracking-wider">
+                Readiness
+              </span>
             </div>
-            <p className="wl-micro-meta--muted">Continuous monitoring active.</p>
+            <p className="wl-micro-meta--muted">Independent readiness work and audit planning.</p>
           </div>
 
           <div className="p-4 rounded-md wl-panel border border-white/10 bg-white/5">
@@ -78,12 +80,12 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               <Fingerprint className="w-3.5 h-3.5" /> Identity & Access
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-2xl font-display text-foreground">MFA</span>
+              <span className="text-2xl font-display text-foreground">SSO</span>
               <span className="text-xs font-bold text-[var(--wireline-color-status-success)] uppercase tracking-wider">
-                Enforced
+                Supported
               </span>
             </div>
-            <p className="wl-micro-meta--muted">All privileged accounts protected.</p>
+            <p className="wl-micro-meta--muted">Google and Microsoft sign-in with provider MFA.</p>
           </div>
 
           <div className="p-4 rounded-md wl-panel border border-white/10 bg-white/5">
@@ -93,7 +95,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             <div className="flex items-baseline gap-2 mb-1">
               <span className="text-2xl font-display text-foreground">US-East</span>
             </div>
-            <p className="wl-micro-meta--muted">Isolated tenant database active.</p>
+            <p className="wl-micro-meta--muted">Tenant-scoped access controls enforced.</p>
           </div>
         </div>
 
@@ -266,13 +268,13 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
       </div>
 
       <div className="space-y-4">
-        <Panel title="RBAC Policy Ledger" hint="PERMISSIONS" icon={Shield} scroll>
+        <Panel title="Roles & Permissions" hint="PERMISSIONS" icon={Shield} scroll>
           <div className="space-y-3">
             {[
               {
                 label: "Owner",
                 role: "Full Authority",
-                desc: "Complete control over billing, legal, and tenant-wide settings.",
+                desc: "Complete control over billing, legal, and workspace-wide settings.",
                 color: "text-brand",
                 bg: "bg-brand/5 border-brand/20",
               },
@@ -292,7 +294,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               },
               {
                 label: "Auditor",
-                role: "ReadOnly",
+                role: "Read Only",
                 desc: "Secure read-only access to audit logs and compliance ledgers.",
                 color: "text-muted",
                 bg: "bg-surface-container/50 border-white/10",
@@ -331,12 +333,11 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             <KeyRound className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div className="space-y-1.5">
               <p className="text-[length:var(--wireline-typography-overline-size)] font-black text-rose-500 uppercase tracking-widest">
-                Zero-Trust Security Notice
+                Access Revocation
               </p>
               <p className="text-[length:var(--wireline-typography-caption-size)] text-rose-600/80 leading-relaxed font-medium">
-                Revoking access triggers an immediate <strong>Session Invalidation Protocol</strong>
-                . All active JWT tokens and websocket connections for the user will be instantly
-                terminated across the global edge network.
+                Revoking access signs that person out of Wireline everywhere within seconds and
+                closes any live sessions they have open.
               </p>
             </div>
           </div>

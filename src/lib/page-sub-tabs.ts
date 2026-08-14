@@ -72,7 +72,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       {
         id: "performance",
         label: "Performance",
-        shortLabel: "Perf",
+        shortLabel: "Performance",
         ariaLabel: "Performance",
         icon: BarChart3,
       },
@@ -84,7 +84,13 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
         icon: ShieldAlert,
       },
       { id: "quality", label: "Quality", shortLabel: "Quality", ariaLabel: "Quality", icon: Star },
-      { id: "revenue", label: "Revenue", shortLabel: "Rev", ariaLabel: "Revenue", icon: Receipt },
+      {
+        id: "revenue",
+        label: "Revenue",
+        shortLabel: "Revenue",
+        ariaLabel: "Revenue",
+        icon: Receipt,
+      },
     ],
   },
   // /agents (the Studio) intentionally has no sub-tabs: it's one open build

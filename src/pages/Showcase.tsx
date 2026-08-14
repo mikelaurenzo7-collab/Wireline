@@ -32,14 +32,14 @@ export default function Showcase() {
           tone: "secondary",
         }}
         visual={
-          <div className="flex min-h-[19rem] flex-col justify-between text-center">
+          <div className="flex flex-col justify-between text-center lg:min-h-[19rem]">
             <div>
               <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
                 <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
                 Live browser preview
               </div>
             </div>
-            <div className="mt-8 rounded-[16px] border border-border bg-background/70 p-4">
+            <div className="mt-5 rounded-[16px] border border-border bg-background/70 p-4 lg:mt-8">
               <BrowserCallWidget
                 agentName={primaryDemo.name}
                 buttonLabel="Start live demo"
@@ -65,9 +65,7 @@ export default function Showcase() {
       >
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="wl-stitch-display text-balance">
-              Call a live demo line.
-            </h2>
+            <h2 className="wl-stitch-display text-balance">Call a live demo line.</h2>
           </div>
 
           <div className="mt-9 grid gap-3 sm:grid-cols-2">
@@ -83,9 +81,7 @@ export default function Showcase() {
                 <h3 className="mt-5 text-lg font-semibold tracking-[-.025em] text-foreground">
                   {agent.name}
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {agent.role}
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
                 <p className="mt-4 font-mono text-sm font-semibold text-foreground">
                   {agent.display}
                 </p>
@@ -114,8 +110,7 @@ export default function Showcase() {
               to="/signup"
               className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
             >
-              Create an agent{" "}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              Create an agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

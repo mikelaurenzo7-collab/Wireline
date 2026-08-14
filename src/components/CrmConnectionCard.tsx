@@ -447,7 +447,7 @@ export default function CrmConnectionCard() {
             const detail = s.email || s.team || "";
             const betaPill = beta ? (
               <span
-                className="ml-1 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
+                className="ml-1 shrink-0 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
                 title="OAuth is live; Voice agent actions (auto-log calls, push deals) are in active development."
               >
                 Beta
@@ -480,11 +480,15 @@ export default function CrmConnectionCard() {
                     {getIntegrationLogo(key) ?? <span className="wl-label font-bold">{logo}</span>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-[length:var(--wireline-typography-overline-size)] font-semibold text-foreground">
+                    {/* No wrap: the Beta pill stays glued to the name on every card
+                        instead of dropping to its own row under longer labels. */}
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 truncate text-[length:var(--wireline-typography-overline-size)] font-semibold text-foreground">
                         {label}
                       </div>
-                      {s.connected && <CheckCircle2 className={cn("w-3 h-3", styles.check)} />}
+                      {s.connected && (
+                        <CheckCircle2 className={cn("w-3 h-3 shrink-0", styles.check)} />
+                      )}
                       {betaPill}
                     </div>
                     {s.connected ? (

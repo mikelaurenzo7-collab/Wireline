@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Cloud, ExternalLink, FileText, Loader2, RefreshCcw, Send } from "lucide-react";
 
 import { Badge, Button, Skeleton, Switch } from "../components/atoms";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
@@ -189,31 +189,34 @@ export default function SalesforceIntegrationPage() {
   };
 
   return (
-    <WorkspaceShell
-      contentClassName="pt-1 pb-10"
-      action={
-        <div className="flex items-center gap-2">
-          <Badge variant={isConnected ? "success" : "warning"}>
-            {isConnected ? "Connected" : "Connection required"}
-          </Badge>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => void refreshConnection()}
-            disabled={isRefreshing || saveState === "saving"}
-          >
-            {isRefreshing ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <RefreshCcw size={16} />
-            )}
-            Refresh
-          </Button>
-        </div>
-      }
-    >
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
+        {/* Title anchors the header row; without it the badge and Refresh
+            floated alone at the far right with nothing naming the page. */}
+        <WorkspacePageIntro
+          title="Salesforce"
+          action={
+            <div className="flex items-center gap-2">
+              <Badge variant={isConnected ? "success" : "warning"}>
+                {isConnected ? "Connected" : "Connection required"}
+              </Badge>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => void refreshConnection()}
+                disabled={isRefreshing || saveState === "saving"}
+              >
+                {isRefreshing ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <RefreshCcw size={16} />
+                )}
+                Refresh
+              </Button>
+            </div>
+          }
+        />
         {connectionError ? (
           <StatusNotice tone="warning" title="Connection state unavailable">
             {connectionError}
@@ -279,7 +282,7 @@ export default function SalesforceIntegrationPage() {
                   tone="warning"
                   title="Connect Salesforce to control delivery"
                 >
-                  Complete OAuth from Integrations before Wireline can create or pause Salesforce
+                  Complete OAuth from Connections before Wireline can create or pause Salesforce
                   call activities.
                 </StatusNotice>
               ) : null}
