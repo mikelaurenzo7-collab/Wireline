@@ -55,6 +55,8 @@ Legacy filenames containing older provider or positioning language may remain fo
 
 Generate with `npm run campaign:vo`. Campaign audio is marketing/reference material only and never the production phone-call speech path.
 
+The default narration voice is deliberately a **curated runtime Studio voice** (Jessica) — the same catalog customers put on a live phone line — so the voice quality the reels sell is the voice quality the product ships. A contract pins the generator's default to the runtime catalog; do not point it at a marketing-only voice.
+
 ## Required Launch Cuts
 
 | Cut | Format | Purpose | Current posture |
@@ -110,7 +112,7 @@ The cut has one job the voice reels cannot do: prove the presenter is a **sessio
 
 **The interruption at 0:09 is the whole cut.** A rendered talking head can lip-sync a script; it cannot be cut off. Showing the presenter stop mid-word is the single frame that separates a real session from a generated concept video, and it is the reason this brief refuses a pre-rendered stand-in no matter how good the render looks.
 
-**Do not claim voice identity.** In the default session the presenter speaks through Wireline's own realtime voice, not the phone voice. The overlay therefore claims *rules and record*, which is true, and never *same voice*, which the picture cannot support unless the session was configured on the studio-voice engine and the cut says so.
+**Do not claim voice identity — unless the picture proves it.** In the default session the presenter speaks through Wireline's own realtime voice, not the phone voice. The overlay therefore claims *rules and record*, which is true, and never *same voice* — with one now-real exception: Studio exposes a **Presenter voice engine** choice, and on the Studio-voice engine an agent whose phone voice is a PSTN-approved ElevenLabs voice speaks with **that same voice** on screen. A cut may claim *same voice* only when the captured session visibly runs that engine for that agent, and the claim must not generalize to the default engine.
 
 **Sound-off variant:** extend the Studio transcript beat so the muted viewer reads the presenter's words being written live. Do not add a caption bar over the presenter.
 

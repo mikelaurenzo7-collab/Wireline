@@ -26,8 +26,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const OUTPUT_DIR = resolve(REPO_ROOT, "official-assets/audio");
 
-/** Warm, direct, unhurried — the doc's "founder explaining to a friend". */
-const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
+/**
+ * Warm, direct, unhurried — the doc's "founder explaining to a friend".
+ * Deliberately a curated runtime Studio voice (Jessica), so the narration in
+ * every reel is a voice customers can actually put on their phone line.
+ * Pinned by tests/launch-campaign-vo-contract.test.ts.
+ */
+export const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
 const MODEL_ID = "eleven_multilingual_v2";
 
 /**

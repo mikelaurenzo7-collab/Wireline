@@ -34,7 +34,25 @@ So the two vendors are not competing for one slot; they occupy two:
 
 **What to re-check, and what would change the answer.** Real-time avatars from the speech vendor would collapse these two rows into one. Until its own docs describe a streaming, interruptible avatar for its agents — rather than linking out to a rendering partner — assume the split stands. Re-check quarterly with the rest of the vendor pricing review.
 
-The integration Wireline implements is the officially documented pairing: a LITE-mode session where the speech vendor orchestrates audio and the video vendor renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
+Verified against the published documentation on 2026-08-14:
+
+- The speech vendor's avatar product ("Avatars" in its creative suite) is explicitly pre-rendered — a Generate step produces a finished video — and its docs state **"API access: Not available at launch; planned for future release."** There is nothing to integrate at runtime yet; when that API ships, it becomes the supply line for pre-rendered presence clips and animated character identities, not for live sessions.
+- The video vendor's speech-vendor connector requires a **paid** speech-vendor key (free-tier keys are blocked), registers the credential provider-side in exchange for an opaque secret id, outputs PCM 24 kHz, and **rejects per-session language overrides for speech-vendor-backed sessions with a 400** — which is why Wireline's payload builder never sends one.
+
+The integration Wireline implements is the officially documented pairing: a LITE-mode session where the speech vendor orchestrates audio and the video vendor renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. When the agent's own phone voice is a PSTN-approved speech-vendor voice, the session passes it as the connector voice — the presenter speaks the same voice as the agent's live calls. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
+
+### Identity range: realistic through animated
+
+The founder direction is a **range of agent identities, not one look**: deterministic badges for scanability, photoreal presenters where trust demands a human register, and deliberately animated characters where memorability beats realism. That maps onto surfaces that already exist plus one supply line to open:
+
+| Identity register | Today | Supply line |
+| --- | --- | --- |
+| Deterministic badge | Live on every agent surface | Wireline SVG (owned) |
+| Photoreal live presenter | Live Video catalog picker | Video vendor public catalog |
+| Animated / character live presenter | Possible now — curate stylized entries from the same catalog into the Characters tab | Video vendor catalog (curated subset), Tier 4 character pack |
+| Pre-rendered presence clips (any register) | Creative pipeline only | Speech vendor's avatar product; automate when its API ships |
+
+No new vendor is required for any row. The Characters lane is a curation task on the existing catalog plus the Tier 4 commissioning plan below, and the pre-rendered row upgrades from manual tool use to API automation on the speech vendor's published timeline.
 
 ---
 
