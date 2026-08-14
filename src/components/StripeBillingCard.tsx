@@ -52,7 +52,7 @@ const PLAN_ACCENTS: Record<string, string> = {
 type StripeBillingCardProps = {
   /**
    * Some account surfaces do not load the customer's actual balance. Keep the
-   * legacy top-up card there, but let BillingSettings own the single canonical
+   * generic top-up card there, but let BillingSettings own the single canonical
    * balance + top-up surface when it already has the balance ledger loaded.
    */
   showBalanceTopUp?: boolean;
@@ -89,9 +89,6 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
       const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status"),
         authFetch("/api/billing/plans"),
-        // Optional add-on data must never take down the plan grid — the only
-        // in-product way to pay. A rejection here previously failed the whole
-        // Promise.all and replaced every plan card with "Billing unavailable".
         authFetch("/api/video-presenter/entitlement")
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null),
@@ -107,10 +104,6 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
-      // An explicit ?plan= in the URL is a direct ask (the wizard's activation
-      // CTA, auth-redirect's returning-paid-intent path) and outranks derived
-      // signup intent — without this, the activation moment's preselection
-      // never reached the plan grid. Only known paid plan ids qualify.
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
       const explicitPaidPlan =
         urlPlan && ["starter", "team", "business", "enterprise"].includes(urlPlan) ? urlPlan : null;
@@ -189,11 +182,7 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
             });
           }
           if (typeof (window as any).dataLayer?.push === "function") {
-            (window as any).dataLayer.push({
-              event: "checkout_initiated",
-              planId,
-              interval,
-            });
+            (window as any).dataLayer.push({ event: "checkout_initiated", planId, interval });
           }
         } catch (err) {
           console.error("[wireline:analytics] Failed to log checkout initiation:", err);
@@ -387,8 +376,8 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
           )}
         </div>
       ) : null}
-      {showBalanceTopUp && canAddBalance ? (
-        <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />
+      {showBalanceTopUp ? (
+        <>{canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}</>
       ) : null}
       {error && (
         <div
