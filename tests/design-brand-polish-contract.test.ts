@@ -116,14 +116,16 @@ describe("E2E design and brand polish", () => {
     // These surfaces only render in prod (VAPI key set) or on authenticated
     // routes, so the axe CI gate never scans them — a source contract does.
 
-    // 1. The flagship homepage "Start the live demo" primary CTA must use the
-    //    theme-aware onAction foreground like every other primary button, not a
-    //    hardcoded white that fails contrast on the violet action color in dark.
+    // 1. The flagship homepage voice demo must show agent identity rather than
+    //    repeat the Wireline logo, while keeping its primary CTA on the shared
+    //    accessible action tokens.
     const demo = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(demo).toContain('import WirelineMark from "../brand/WirelineMark"');
+    expect(demo).toContain('import AgentFace from "../AgentFace"');
     expect(demo).toContain("<SignalOrbFrame");
-    expect(demo).toContain('<Medallion size="lg" variant="signature"');
-    expect(demo).not.toContain("AgentFace");
+    expect(demo).toContain("<AgentFace");
+    expect(demo).toContain('seed={`public-demo:${agentName}`}');
+    expect(demo).not.toContain("WirelineMark");
+    expect(demo).not.toContain("<Medallion");
     expect(demo).toContain(
       "bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)]",
     );
