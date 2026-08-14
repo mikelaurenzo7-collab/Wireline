@@ -166,8 +166,14 @@ export async function synthesizeXaiSpeech(
     throw AppError.fromHttpStatus(400, "Text is too long for a single render.");
   }
 
-  const voiceId = request.voiceId?.trim().toLowerCase();
-  if (!voiceId) throw AppError.fromHttpStatus(400, "Voice is required.");
+  const requestedVoice = request.voiceId?.trim();
+  if (!requestedVoice) throw AppError.fromHttpStatus(400, "Voice is required.");
+  // Built-in ids are canonical lowercase, so any casing a picker sends still
+  // lands on them. Account-roster ids pass through verbatim — lowercasing
+  // those would corrupt a mixed-case custom voice id before the request.
+  const voiceId = isXaiBuiltinVoiceId(requestedVoice)
+    ? requestedVoice.toLowerCase()
+    : requestedVoice;
 
   const apiKey = requireApiKey();
   const codec = request.outputFormat?.codec ?? "mp3";
@@ -232,9 +238,12 @@ export async function listXaiVoices(fetchImpl: typeof fetch = fetch): Promise<Xa
   if (!xaiTtsConfigured()) return [...XAI_BUILTIN_VOICES];
   if (rosterCache && Date.now() - rosterCache.at < ROSTER_TTL_MS) return rosterCache.voices;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
     const response = await fetchImpl(XAI_VOICES_URL, {
       headers: { Authorization: `Bearer ${requireApiKey()}` },
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error(`voice roster failed (${response.status})`);
 
@@ -260,6 +269,8 @@ export async function listXaiVoices(fetchImpl: typeof fetch = fetch): Promise<Xa
       error: error instanceof Error ? error.message : String(error),
     });
     return [...XAI_BUILTIN_VOICES];
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

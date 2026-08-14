@@ -339,8 +339,10 @@ async function callXAI(
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) throw new Error("XAI_API_KEY not configured");
   const requested = String(body.model || "").trim();
-  // Only forward xAI-native model ids directly. This path is opt-in and never
-  // receives OpenAI or Gemini ids from the managed launch default.
+  // Only forward xAI-native model ids directly. As a continuity lane this path
+  // routinely receives requests that named an OpenAI or Gemini model; those
+  // map onto the configured Grok structured model rather than being sent to a
+  // vendor that cannot serve them.
   const model = /grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
   return callResponsesEndpoint({
     endpoint: XAI_RESPONSES_URL,

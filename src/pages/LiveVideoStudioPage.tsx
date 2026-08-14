@@ -248,6 +248,20 @@ export default function LiveVideoStudioPage() {
     setPresenterReady(false);
     try {
       if (session) await endPreview();
+      // Provider-driven engines converse through the stage itself, so the
+      // microphone must be grantable before any allowance is reserved — a
+      // denied mic would otherwise burn reserved minutes on a deaf session.
+      if (voiceEngine !== DEFAULT_ENGINE) {
+        try {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mic.getTracks().forEach((track) => track.stop());
+        } catch {
+          setError(
+            "This presenter voice engine needs microphone access. Allow the microphone and try again, or switch to the Wireline voice.",
+          );
+          return;
+        }
+      }
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/session`,
         {
@@ -288,7 +302,6 @@ export default function LiveVideoStudioPage() {
   const sessionMinutes = usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
   const usedMinutes = Math.max(0, usage?.usedMinutes ?? 0);
   const remainingMinutes = usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
-  const exhausted = usage?.exhausted === true || remainingMinutes < sessionMinutes;
   const activeAgentName = activeAgent?.name || "Your agent";
   // Only a LITE session on the Wireline voice expects this client to push its
   // own PCM. Every other mode is provider-driven, and a second stream would
@@ -307,6 +320,10 @@ export default function LiveVideoStudioPage() {
     availableEngines.find((engine) => engine.id === DEFAULT_ENGINE) ??
     null;
   const sessionDegraded = Boolean(session?.live.degradedFrom);
+  // A managed (FULL) engine burns provider credits at 2× LITE for the same
+  // wall-clock session, so it reserves proportionally more of the allowance.
+  const reserveMinutes = sessionMinutes * (selectedEngine?.creditsPerMinute ?? 1);
+  const exhausted = usage?.exhausted === true || remainingMinutes < reserveMinutes;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
@@ -509,9 +526,11 @@ export default function LiveVideoStudioPage() {
                       <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                         {exhausted
                           ? "This month's reserved Live Video allowance is used."
-                          : hasFacePick
-                            ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
-                            : "Choose a presenter above before opening the live stage."}
+                          : !hasFacePick
+                            ? "Choose a presenter above before opening the live stage."
+                            : !selectedEngine || selectedEngine.id === DEFAULT_ENGINE
+                              ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
+                              : `Open a ${sessionMinutes}-minute stage and speak with the presenter directly on stage.`}
                       </p>
                       {engineChoiceOffered && !session ? (
                         <div className="mt-4 grid max-w-sm gap-2">
@@ -542,6 +561,9 @@ export default function LiveVideoStudioPage() {
                           {selectedEngine ? (
                             <p className="text-xs leading-5 text-muted-foreground">
                               {selectedEngine.description}
+                              {reserveMinutes > sessionMinutes
+                                ? ` Reserves ${reserveMinutes} minutes of your monthly allowance per session.`
+                                : ""}
                             </p>
                           ) : null}
                         </div>

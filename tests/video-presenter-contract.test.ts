@@ -103,6 +103,32 @@ describe("video presenter integration", () => {
     expect(studio).toContain("This stage opened with the Wireline voice.");
   });
 
+  it("meters FULL-mode sessions at their provider credit rate", () => {
+    // A FULL session burns 2 provider credits per wall-clock minute against
+    // LITE's 1. If the reservation stays flat, the modeled margin and the
+    // pause-at-limit promise silently halve the moment an operator enables
+    // FULL mode — so the allowance must draw down at the resolved rate.
+    const policy = source("src/lib/video-presenter/live-video-policy.ts");
+    expect(policy).toContain("export function liveVideoSessionReservationMinutes");
+    const usage = source("src/lib/video-presenter/live-video-usage.ts");
+    expect(usage).toContain("liveVideoSessionReservationMinutes(options.creditsPerMinute)");
+    expect(usage).toContain("current.remainingMinutes < reservedMinutes");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
+    // The engine resolves before the reservation so the draw-down rate is the
+    // resolved engine's, and a failed mint releases exactly what was reserved.
+    expect(routes.indexOf("const engineResolution = resolveLiveVideoEngine")).toBeLessThan(
+      routes.indexOf("await reserveLiveVideoSessionMinutes(req.user.id"),
+    );
+    expect(routes).toContain("creditsPerMinute: engineResolution.creditsPerMinute");
+    expect(routes).toContain("reservation.reservedMinutes");
+    // The Studio surface tells the truth about the higher draw before minting.
+    const studio = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(studio).toContain(
+      "const reserveMinutes = sessionMinutes * (selectedEngine?.creditsPerMinute ?? 1)",
+    );
+    expect(studio).toContain("remainingMinutes < reserveMinutes");
+  });
+
   it("keeps operator configuration hints off every tenant-facing payload", () => {
     // The per-engine reasons and degrade reasons name workspace env vars.
     // Tenants get availability and the degrade fact; the hints are served only

@@ -123,8 +123,12 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description:
       "Operator opt-out for the xAI structured lane. Unset means the lane is active whenever XAI_API_KEY is configured; set false to disable it",
-    validate: (value) => value === "true" || value === "false",
-    formatHint: "true or false",
+    // Accept exactly the forms the runtime interprets (see
+    // isXAIStructuredLaneEnabled): the disable spellings plus the historical
+    // explicit opt-in. Anything else behaves as "enabled", so flag it here
+    // rather than letting a typo like "flase" silently fail open.
+    validate: (value) => ["true", "false", "0", "off"].includes(value.trim().toLowerCase()),
+    formatHint: "true or false (also accepts 0/off to disable)",
   },
   {
     name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER",
@@ -132,9 +136,13 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description:
       "Operator override for the first structured reasoning lane. Unset keeps the managed OpenAI default; the remaining lanes stay as continuity",
+    // Same acceptance as normalizeReasoningProvider, including the vendor
+    // aliases operators actually type — a working config must not be flagged.
     validate: (value) =>
-      ["openai", "gemini", "gateway", "xai"].includes(value.trim().toLowerCase()),
-    formatHint: "openai, gemini, gateway, or xai",
+      ["openai", "gemini", "gateway", "xai", "grok", "google", "ai-gateway", "vercel"].includes(
+        value.trim().toLowerCase(),
+      ),
+    formatHint: "openai, gemini, gateway, or xai (aliases: grok, google, ai-gateway, vercel)",
   },
   {
     name: "PERPLEXITY_API_KEY",

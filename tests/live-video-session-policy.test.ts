@@ -13,6 +13,10 @@ import {
   type LiveVideoPlatformConfig,
 } from "../src/lib/video-presenter/live-video-session-policy";
 import { sessionExpectsWirelineAudio } from "../src/lib/video-presenter/types";
+import {
+  LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+  liveVideoSessionReservationMinutes,
+} from "../src/lib/video-presenter/live-video-policy";
 
 const bareConfig: LiveVideoPlatformConfig = {
   allowedMode: "lite",
@@ -366,5 +370,28 @@ describe("operator engine listing", () => {
       managedContextId: "context-uuid",
     });
     expect(described.every((option) => option.available)).toBe(true);
+  });
+});
+
+describe("session allowance reservation", () => {
+  it("reserves the base session at LITE's rate", () => {
+    expect(liveVideoSessionReservationMinutes()).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES);
+    expect(liveVideoSessionReservationMinutes(1)).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES);
+  });
+
+  it("doubles the draw for FULL's two-credit rate", () => {
+    expect(liveVideoSessionReservationMinutes(2)).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES * 2);
+  });
+
+  it("clamps malformed rates so metering can never zero out or explode", () => {
+    expect(liveVideoSessionReservationMinutes(0)).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES);
+    expect(liveVideoSessionReservationMinutes(-3)).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES);
+    expect(liveVideoSessionReservationMinutes(Number.NaN)).toBe(
+      LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+    );
+    expect(liveVideoSessionReservationMinutes(99)).toBe(LIVE_VIDEO_SESSION_RESERVATION_MINUTES * 4);
+    expect(liveVideoSessionReservationMinutes(2.7)).toBe(
+      LIVE_VIDEO_SESSION_RESERVATION_MINUTES * 2,
+    );
   });
 });

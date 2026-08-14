@@ -4,7 +4,7 @@ import * as schema from "../../db/schema";
 import { drizzle } from "../server-context";
 import {
   buildLiveVideoUsageSnapshot,
-  LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+  liveVideoSessionReservationMinutes,
   liveVideoUsagePeriodKey,
   type LiveVideoUsageSnapshot,
 } from "./live-video-policy";
@@ -14,6 +14,8 @@ const LIVE_VIDEO_USAGE_DIMENSION = "live_video_reserved_minutes_monthly";
 export type LiveVideoSessionReservation = {
   reserved: boolean;
   usage: LiveVideoUsageSnapshot;
+  /** Allowance minutes this reservation drew; pass back on release. */
+  reservedMinutes: number;
 };
 
 function reservationLockKey(userId: string, periodKey: string): string {
@@ -42,9 +44,13 @@ export async function getLiveVideoUsageSnapshot(
 
 export async function reserveLiveVideoSessionMinutes(
   userId: string,
+  options: { creditsPerMinute?: number } = {},
   now: Date = new Date(),
 ): Promise<LiveVideoSessionReservation> {
   const periodKey = liveVideoUsagePeriodKey(now);
+  // FULL-mode engines burn provider credits at a higher rate for the same
+  // wall-clock session, so the allowance draws down proportionally.
+  const reservedMinutes = liveVideoSessionReservationMinutes(options.creditsPerMinute);
 
   return drizzle.transaction(async (tx) => {
     await tx.execute(
@@ -64,9 +70,11 @@ export async function reserveLiveVideoSessionMinutes(
       .limit(1);
 
     const current = buildLiveVideoUsageSnapshot(Number(row?.used ?? 0), periodKey);
-    if (current.exhausted) return { reserved: false, usage: current };
+    if (current.remainingMinutes < reservedMinutes) {
+      return { reserved: false, usage: current, reservedMinutes: 0 };
+    }
 
-    const nextUsed = current.usedMinutes + LIVE_VIDEO_SESSION_RESERVATION_MINUTES;
+    const nextUsed = current.usedMinutes + reservedMinutes;
     await tx
       .insert(schema.quotaUsage)
       .values({
@@ -88,6 +96,7 @@ export async function reserveLiveVideoSessionMinutes(
     return {
       reserved: true,
       usage: buildLiveVideoUsageSnapshot(nextUsed, periodKey),
+      reservedMinutes,
     };
   });
 }
@@ -95,6 +104,7 @@ export async function reserveLiveVideoSessionMinutes(
 export async function releaseLiveVideoSessionReservation(
   userId: string,
   periodKey: string,
+  reservedMinutes: number = liveVideoSessionReservationMinutes(),
 ): Promise<void> {
   await drizzle.transaction(async (tx) => {
     await tx.execute(
@@ -114,10 +124,7 @@ export async function releaseLiveVideoSessionReservation(
       .limit(1);
 
     if (!row) return;
-    const nextUsed = Math.max(
-      0,
-      Number(row.used ?? 0) - LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
-    );
+    const nextUsed = Math.max(0, Number(row.used ?? 0) - reservedMinutes);
     await tx
       .update(schema.quotaUsage)
       .set({ used: BigInt(nextUsed), updatedAt: new Date() })

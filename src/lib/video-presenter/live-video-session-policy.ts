@@ -59,7 +59,7 @@ export const LIVE_VIDEO_ENGINE_CATALOG: readonly LiveVideoEngineOption[] = [
     mode: "lite",
     label: "Wireline Studio voice",
     description:
-      "Studio speech drives the presenter directly through the provider connector for the lowest first-audio latency.",
+      "Lowest first-audio latency through the Studio speech connector, using this agent's approved phone voice when one exists. The conversation runs on the workspace Studio presenter, not this agent's Training.",
     creditsPerMinute: 1,
   },
   {
@@ -67,7 +67,7 @@ export const LIVE_VIDEO_ENGINE_CATALOG: readonly LiveVideoEngineOption[] = [
     mode: "full",
     label: "Managed presenter",
     description:
-      "The video provider runs listening, reasoning, and speech end to end. Requires a plan that includes managed sessions.",
+      "Listening, reasoning, and speech run end to end on the workspace presenter profile, not this agent's Training. Uses double the session allowance.",
     creditsPerMinute: 2,
   },
 ] as const;

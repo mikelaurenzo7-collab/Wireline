@@ -21,6 +21,10 @@ import {
   isLiveVideoPlatformAvailable,
   isLiveVideoProvider,
 } from "../lib/video-presenter/live-video-addon";
+import {
+  readLiveVideoPlatformConfig,
+  resolveLiveVideoEngine,
+} from "../lib/video-presenter/live-video-session-policy";
 import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
 import { LIVE_VIDEO_MAX_SESSION_SECONDS } from "../lib/video-presenter/live-video-policy";
 import {
@@ -323,7 +327,20 @@ router.post(
       return;
     }
 
-    const reservation = await reserveLiveVideoSessionMinutes(req.user.id);
+    // Resolve the engine before reserving: FULL-mode engines burn provider
+    // credits at 2× LITE for the same wall-clock session, so the allowance
+    // must draw down at the resolved engine's rate. Resolution is a pure
+    // function of the request and env config, so the mint below resolves to
+    // the same engine.
+    const requestedEngine = (req.body as { voiceEngine?: unknown } | undefined)?.voiceEngine;
+    const engineResolution = resolveLiveVideoEngine({
+      requested: requestedEngine,
+      config: readLiveVideoPlatformConfig(),
+    });
+
+    const reservation = await reserveLiveVideoSessionMinutes(req.user.id, {
+      creditsPerMinute: engineResolution.creditsPerMinute,
+    });
     if (!reservation.reserved) {
       throw new AppError(
         429,
@@ -340,7 +357,7 @@ router.post(
         maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
         // Server-owned resolution: an unavailable or unknown engine degrades to
         // the managed Wireline voice rather than failing the session.
-        requestedEngine: (req.body as { voiceEngine?: unknown } | undefined)?.voiceEngine,
+        requestedEngine,
         // Same voice on the phone and on screen: when the agent's phone voice
         // is a PSTN-approved ElevenLabs voice, the Studio-voice presenter
         // speaks with it instead of the workspace default.
@@ -348,7 +365,11 @@ router.post(
       });
     } catch (error) {
       try {
-        await releaseLiveVideoSessionReservation(req.user.id, reservation.usage.periodKey);
+        await releaseLiveVideoSessionReservation(
+          req.user.id,
+          reservation.usage.periodKey,
+          reservation.reservedMinutes,
+        );
       } catch (releaseError) {
         log.error("Live Video reservation release failed after provider mint error", {
           periodKey: reservation.usage.periodKey,

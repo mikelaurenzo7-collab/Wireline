@@ -144,9 +144,10 @@ export async function generateElevenLabsProof(args: {
 /**
  * Output formats Wireline renders.
  *
- * `pcm_24000` is signed 16-bit little-endian at 24 kHz, which is the exact
- * stream shape LiveAvatar LITE's audio control consumes, so a presenter render
- * needs no resampling stage between this client and the lip-sync feed.
+ * `pcm_24000` is signed 16-bit little-endian at 24 kHz — the stream shape
+ * LiveAvatar LITE's audio control consumes. The live stage today lip-syncs
+ * Wireline Realtime PCM; this format exists so a future pre-rendered
+ * presenter lane needs no resampling stage.
  * `ulaw_8000` is the telephony format; it is listed for completeness and is not
  * used by live PSTN, which renders inside Vapi rather than here.
  */

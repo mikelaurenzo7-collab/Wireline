@@ -26,6 +26,20 @@ export function liveVideoUsagePeriodKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 7);
 }
 
+/**
+ * Allowance minutes one session reserves, scaled by the engine's provider
+ * credit rate. A FULL session costs 2 provider credits per wall-clock minute
+ * against LITE's 1, so it must draw the allowance down at 2× or the modeled
+ * margin (and the pause-at-limit promise) silently halves. Clamped so a
+ * malformed rate can never zero out metering or reserve absurd amounts.
+ */
+export function liveVideoSessionReservationMinutes(creditsPerMinute = 1): number {
+  const credits = Number.isFinite(creditsPerMinute)
+    ? Math.min(4, Math.max(1, Math.floor(creditsPerMinute)))
+    : 1;
+  return LIVE_VIDEO_SESSION_RESERVATION_MINUTES * credits;
+}
+
 export function buildLiveVideoUsageSnapshot(
   usedMinutes: number,
   periodKey: string = liveVideoUsagePeriodKey(),
@@ -47,6 +61,5 @@ export function estimatedLiveVideoFullUseMargin(): number {
   const providerCost =
     LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY * LIVE_VIDEO_PROVIDER_COST_PER_MINUTE_USD;
   const commercialFees = estimatedStripeCommercialFeesUsd(LIVE_VIDEO_ADDON_PRICE_USD);
-  return (LIVE_VIDEO_ADDON_PRICE_USD - providerCost - commercialFees) /
-    LIVE_VIDEO_ADDON_PRICE_USD;
+  return (LIVE_VIDEO_ADDON_PRICE_USD - providerCost - commercialFees) / LIVE_VIDEO_ADDON_PRICE_USD;
 }

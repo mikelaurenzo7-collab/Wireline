@@ -35,25 +35,32 @@ test("settings sign-out followed by direct personal signup always enters Fast St
       body: JSON.stringify({ agents: [], accounts: [], data: [] }),
     });
   });
+  // Stateful session mock, matching the real endpoint: signed-out visitors get
+  // 200 { user: null }. A static "always signed in" mock made the app
+  // (correctly) bounce /signup back into the workspace before the form could
+  // be used, which is a mock artifact, not the flow under test.
+  let sessionUser: { id: string; email: string; full_name: string } | null = {
+    id: "existing-user",
+    email: "existing@example.test",
+    full_name: "Existing User",
+  };
   await page.route("**/api/auth/session**", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        user: { id: "existing-user", email: "existing@example.test", full_name: "Existing User" },
-      }),
+      body: JSON.stringify({ user: sessionUser }),
     });
   });
   await page.route("**/api/auth/signout", async (route) => {
+    sessionUser = null;
     await route.fulfill({ status: 204, body: "" });
   });
   await page.route("**/api/auth/signup", async (route) => {
+    sessionUser = { id: "fresh-user", email: "fresh@example.test", full_name: "Fresh User" };
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        user: { id: "fresh-user", email: "fresh@example.test", full_name: "Fresh User" },
-      }),
+      body: JSON.stringify({ user: sessionUser }),
     });
   });
 
