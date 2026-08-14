@@ -49,4 +49,15 @@ describe("product organization truth contracts", () => {
     expect(stripeCard).not.toContain(">Manage plan<");
     expect(stripeCard).not.toContain("Open billing portal");
   });
+
+  it("represents granted paid-plan access without offering a redundant checkout", () => {
+    const stripeCard = source("src/components/StripeBillingCard.tsx");
+    expect(stripeCard).toContain("hasGrantedPlanAccess");
+    expect(stripeCard).toContain("const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess");
+    expect(stripeCard).toContain("GrantedPlanAccessCard");
+    expect(stripeCard).toContain("Plan access is active");
+    expect(stripeCard).toContain("Paid-plan access is granted directly to this workspace");
+    expect(stripeCard).toContain("No recurring Stripe invoice is scheduled");
+    expect(stripeCard).toContain("!hasPlanAccess ? (");
+  });
 });
