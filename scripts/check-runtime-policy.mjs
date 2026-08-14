@@ -38,21 +38,25 @@ if (!client.includes("OpenAI request failed; trying Gemini fallback"))
   fail("OpenAI-to-Gemini fallback order is missing");
 if (!client.includes("Gemini request failed; trying AI Gateway fallback"))
   fail("Gemini-to-AI-Gateway fallback order is missing");
-const openAIPosition = client.indexOf('providers.push({ name: "OpenAI"');
-const geminiPosition = client.indexOf('providers.push({ name: "Gemini"');
-const gatewayPosition = client.indexOf('providers.push({ name: "AI Gateway"');
-const xaiPosition = client.indexOf('providers.push({ name: "xAI"');
+// Eligibility and ordering live in the policy module; the client owns
+// transport only. The default chain is OpenAI -> Gemini -> AI Gateway -> xAI,
+// with OpenAI as the managed default and xAI eligible only when its key is
+// configured (tri-state opt-out preserved for operators who set it).
+const policy = read("src/lib/reasoning-provider-policy.ts");
 if (
-  openAIPosition < 0 ||
-  geminiPosition < 0 ||
-  gatewayPosition < 0 ||
-  !(openAIPosition < geminiPosition && geminiPosition < gatewayPosition)
+  !/REASONING_PROVIDER_ORDER[\s\S]{0,200}"openai",\s*\n\s*"gemini",\s*\n\s*"gateway",\s*\n\s*"xai",/.test(
+    policy,
+  )
 )
-  fail("managed runtime provider chain is not OpenAI -> Gemini -> AI Gateway");
-if (xaiPosition >= 0 && !(gatewayPosition < xaiPosition))
-  fail("optional direct xAI fallback appears before the governed AI Gateway route");
-if (!client.includes("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK"))
-  fail("direct xAI fallback is not protected by an explicit opt-in switch");
+  fail("managed runtime provider chain is not OpenAI -> Gemini -> AI Gateway -> xAI");
+if (!policy.includes('DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "openai"'))
+  fail("managed structured default provider is not OpenAI");
+if (!policy.includes("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK"))
+  fail("xAI lane has lost its operator opt-out switch");
+if (!client.includes("orderReasoningProviders(available, resolveReasoningPreference())"))
+  fail("runtime client does not delegate provider ordering to the policy module");
+if (!client.includes("isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY)"))
+  fail("xAI lane eligibility is not gated on the configured credential and opt-out");
 if (!client.includes("if (isAbortError(error, options?.signal)) throw error"))
   fail("aborted AI requests can still cascade into fallback providers");
 if (!models.includes("export const OPENAI_STRUCTURED_PRIMARY_MODEL"))
@@ -103,8 +107,8 @@ if (prodEnvCheck.includes("ANTHROPIC_API_KEY"))
   fail("production env check still asks for Anthropic");
 if (!prodEnvCheck.includes("Primary managed runtime and OpenAI Realtime sessions"))
   fail("production env check does not name the OpenAI runtime dependency");
-if (!prodEnvCheck.includes("Optional xAI experiments"))
-  fail("production env check does not classify xAI as optional");
+if (!prodEnvCheck.includes("Optional xAI credential") || !prodEnvCheck.includes("OpenAI stays primary"))
+  fail("production env check does not classify xAI as optional with OpenAI primary");
 if (!prodEnvCheck.includes('"ELEVENLABS_API_KEY"'))
   fail("production env check does not require managed studio speech");
 if (

@@ -374,9 +374,9 @@ router.post(
         mode: liveSession.mode,
         voiceEngine: liveSession.engine,
         creditsPerMinute: liveSession.creditsPerMinute,
-        ...(liveSession.degradedFrom
-          ? { degradedFrom: liveSession.degradedFrom, degradeReason: liveSession.degradeReason }
-          : {}),
+        // The configuration hint behind a degrade names workspace env vars;
+        // it is logged server-side at mint time. Tenants get the fact.
+        ...(liveSession.degradedFrom ? { degradedFrom: liveSession.degradedFrom } : {}),
       },
     });
   },

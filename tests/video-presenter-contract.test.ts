@@ -95,14 +95,27 @@ describe("video presenter integration", () => {
     const studio = source("src/pages/LiveVideoStudioPage.tsx");
     // The server owns resolution; the client only expresses a preference.
     expect(studio).toContain("JSON.stringify({ voiceEngine })");
-    // The picker appears only when the workspace really has a choice, and the
-    // operator-facing configuration reasons never render to tenants.
+    // The picker appears only when the workspace really has a choice.
     expect(studio).toContain("engineChoiceOffered = availableEngines.length > 1");
     expect(studio).toContain("Presenter voice engine");
-    expect(studio).not.toContain("engine.reason");
     // A degraded session says so in the UI instead of silently switching voices.
     expect(studio).toContain("sessionDegraded");
     expect(studio).toContain("This stage opened with the Wireline voice.");
+  });
+
+  it("keeps operator configuration hints off every tenant-facing payload", () => {
+    // The per-engine reasons and degrade reasons name workspace env vars.
+    // Tenants get availability and the degrade fact; the hints are served only
+    // on the platform-admin health surface and in server logs.
+    const service = source("src/lib/video-presenter/liveavatar-service.ts");
+    expect(service).toContain("map(({ reason: _reason, ...engine }) => engine)");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
+    expect(routes).not.toContain("degradeReason: liveSession.degradeReason");
+    expect(routes).toContain("{ degradedFrom: liveSession.degradedFrom }");
+    const health = source("src/routes/health-routes.ts");
+    expect(health).toContain(
+      "live_video_engines: describeLiveVideoEngines(readLiveVideoPlatformConfig())",
+    );
   });
 
   it("mounts a reachable, interactive consumption surface for the paid add-on", () => {

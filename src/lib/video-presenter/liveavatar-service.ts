@@ -55,7 +55,10 @@ export function getLiveAvatarStatus() {
     defaultAvatarId: avatarId,
     /** Highest session mode the provider plan allows on this workspace. */
     allowedMode: config.allowedMode,
-    engines: describeLiveVideoEngines(config),
+    // Tenant-safe engine catalog: availability only. The configuration hints
+    // behind an unavailable engine name workspace env vars and belong to the
+    // platform-admin surface (describeLiveVideoEngines), never to tenants.
+    engines: describeLiveVideoEngines(config).map(({ reason: _reason, ...engine }) => engine),
   };
 }
 

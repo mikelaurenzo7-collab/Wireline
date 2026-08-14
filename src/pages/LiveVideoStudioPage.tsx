@@ -52,8 +52,6 @@ type PlatformEngineOption = {
   description: string;
   creditsPerMinute: number;
   available: boolean;
-  /** Operator configuration hint; not rendered to tenants. */
-  reason: string | null;
 };
 
 type PresenterPayload = {

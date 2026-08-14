@@ -45,9 +45,11 @@ export type LiveAvatarSessionCredentials = {
   mode?: LiveVideoMode;
   voiceEngine?: LiveVideoVoiceEngine;
   creditsPerMinute?: number;
-  /** Present when the requested engine could not be honored. */
+  /**
+   * Present when the requested engine could not be honored. The configuration
+   * hint behind the degrade is server-logged, never sent to tenants.
+   */
   degradedFrom?: LiveVideoVoiceEngine;
-  degradeReason?: string;
 };
 
 /**
