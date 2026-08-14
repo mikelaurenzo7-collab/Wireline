@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 382
-**Protected:** 313
+**Routes scanned:** 384
+**Protected:** 315
 **Public (allowlisted):** 69
 **Violations:** 0
 
@@ -448,7 +448,9 @@
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
+| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/disable` | inline | — | — | Protected |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
+| video-presenter-routes.ts | GET | `/api/video-presenter/usage` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |

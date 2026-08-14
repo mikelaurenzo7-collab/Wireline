@@ -123,35 +123,22 @@ export async function deleteElevenLabsVoice(voiceId: string): Promise<void> {
   }
 }
 
+/**
+ * Voice-quality proof for the review/audition surface. A thin wrapper over the
+ * shared synthesis engine below so the proof a reviewer approves and any other
+ * render of the same voice go through one request builder and cannot drift.
+ */
 export async function generateElevenLabsProof(args: {
   voiceId: string;
   text?: string;
 }): Promise<ArrayBuffer> {
-  const response = await providerFetch(
-    "quality proof",
-    `/text-to-speech/${encodeURIComponent(args.voiceId)}?output_format=mp3_44100_128`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text:
-          args.text ||
-          "Hi, this is your Wireline agent. I can answer clearly, take action, and bring in a person whenever you need one.",
-        model_id: ELEVENLABS_REALTIME_MODEL,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0,
-          use_speaker_boost: true,
-        },
-      }),
-    },
-    30_000,
-  );
-  return response.arrayBuffer();
+  const result = await synthesizeElevenLabsSpeech({
+    voiceId: args.voiceId,
+    text:
+      args.text ||
+      "Hi, this is your Wireline agent. I can answer clearly, take action, and bring in a person whenever you need one.",
+  });
+  return result.audio;
 }
 
 /**
