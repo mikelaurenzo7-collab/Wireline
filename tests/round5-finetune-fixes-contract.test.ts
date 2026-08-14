@@ -34,7 +34,7 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(recommendedPlanFromIntent(intent)).toBe("starter");
   });
 
-  it("re-checks live-video billing on session and sample mint", () => {
+  it("re-checks live-video billing on session mint and retires sample behind auth", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
     const sessionIdx = routes.indexOf("/api/agents/:id/video-presenter/session");
     const sampleIdx = routes.indexOf("/api/agents/:id/video-presenter/sample");
@@ -42,8 +42,12 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(sampleIdx).toBeGreaterThan(-1);
     expect(routes.slice(sessionIdx, sampleIdx)).toContain("resolveLiveVideoEntitlement");
     expect(routes.slice(sessionIdx, sampleIdx)).toContain("billingEntitled");
-    expect(routes.slice(sampleIdx)).toContain("resolveLiveVideoEntitlement");
-    expect(routes.slice(sampleIdx)).toContain("billingEntitled");
+    const retiredSample = routes.slice(sampleIdx);
+    expect(retiredSample).toContain("authenticateUser");
+    expect(retiredSample).toContain("sessionLimiter");
+    expect(retiredSample).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
+    expect(retiredSample).toContain("res.status(410).json");
+    expect(retiredSample).not.toContain("mintLiveAvatarLiteSessionToken");
   });
 
   it("clears live-video provider opt-in when the add-on subscription ends", () => {
