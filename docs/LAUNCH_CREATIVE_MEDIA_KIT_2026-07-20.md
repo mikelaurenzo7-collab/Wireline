@@ -70,13 +70,23 @@ The default narration voice is deliberately a **curated runtime Studio voice** (
 
 ## Creative Status — 2026-08-14
 
+### Certified rich-state captures exist
+
+A full `npm run marketing:kit` capture was certified against production commit `40c4d02` on 2026-08-14 with a **seeded, working workspace** (live overview KPIs, populated call history, six-thread inbox, clean knowledge facts) instead of the earlier empty-state picture. Masters, canonical VO, and the release record are mirrored in the `launch-assets` storage bucket under `certified-2026-08-14-40c4d02/` and indexed from the Drive folder "Wireline Launch Assets — Certified 2026-08-14 (40c4d02)".
+
+Two beats still show setup states in that capture and must be recaptured after the next deploy: the outbound dial dialog and phone setup (number activation was blocked by a carrier purchase bug — Twilio rejects a purchase that sets `voiceFallbackUrl` with an empty `VoiceUrl` — fixed in the same release).
+
+### Live Video provider — verified live
+
+A real authenticated production session was driven end to end on 2026-08-14: consent → enable → live stage → session mint → explicit stop, with the full 50-presenter provider catalog loading and the allowance metering truthfully (one 5-minute reservation per stage, 60 → 55 → 50). The provider-activation gate is cleared; the remaining step for the Live Video Proof cut is capturing presenter pixels from a browser environment with WebRTC egress.
+
+### Campaign audio — dual-engine, duration-verified
+
+`npm run campaign:vo` now measures every rendered MP3 by walking its frames and retries the 15-second track at stepped speeds until it fits the 15.0s hard ceiling. `--engine xai` renders the same canonical scripts through the second creative engine (voice "Ara") into `official-assets/audio/xai/` for A/B and edit reference; ElevenLabs (Jessica, curated runtime voice) remains canonical.
+
 ### Rejected historical masters
 
 The old 46-second walkthrough and old 15-second missed-call source contain a visible authenticated 404 and are **not publishable**. Do not recirculate them because they were once called final or published.
-
-### Repaired historical derivatives
-
-The repaired 15s, 22s product-loop, and founder walkthrough derivatives remove the old 404, but their picture is historical. They are **QA/editing drafts only** until recaptured and certified against the exact production commit being promoted.
 
 A clean edit of stale product footage is still stale product footage. Raw output is not release-certified.
 

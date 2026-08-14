@@ -34,7 +34,13 @@ describe("product organization truth contracts", () => {
     const billing = source("src/pages/BillingSettings.tsx");
     const stripeCard = source("src/components/StripeBillingCard.tsx");
 
-    expect(billing).toContain("<StripeBillingCard showBalanceTopUp={false} />");
+    // Billing also suppresses the card's trust footer and renders one shared
+    // BillingTrustFooter at the true end of the page, so the legal row cannot
+    // appear mid-scroll between plan and balance surfaces.
+    expect(billing).toContain(
+      "<StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />",
+    );
+    expect(billing).toContain("<BillingTrustFooter />");
     expect(billing.match(/CONVERSATION_BALANCE_PRESETS_USD\.map/g)).toHaveLength(1);
     expect(billing).toContain("plan.included_phone_numbers");
     expect(billing).not.toContain("Manage in Stripe");
@@ -53,11 +59,13 @@ describe("product organization truth contracts", () => {
   it("represents granted paid-plan access without offering a redundant checkout", () => {
     const stripeCard = source("src/components/StripeBillingCard.tsx");
     expect(stripeCard).toContain("hasGrantedPlanAccess");
-    expect(stripeCard).toContain("const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess");
+    expect(stripeCard).toContain(
+      "const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess",
+    );
     expect(stripeCard).toContain("GrantedPlanAccessCard");
     expect(stripeCard).toContain("Plan access is active");
     expect(stripeCard).toContain("Paid-plan access is granted directly to this workspace");
-    expect(stripeCard).toContain("No recurring Stripe invoice is scheduled");
+    expect(stripeCard.replace(/\s+/g, " ")).toContain("No recurring Stripe invoice is scheduled");
     expect(stripeCard).toContain("!hasPlanAccess ? (");
   });
 });

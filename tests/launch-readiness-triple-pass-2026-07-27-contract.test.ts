@@ -15,8 +15,13 @@ describe("launch readiness triple-pass 2026-07-27", () => {
 
   it("describes admin danger-zone delete as a scheduled purge", () => {
     const panel = read("src/components/admin/SubscriptionPanel.tsx");
-    expect(panel).toContain("30-day grace");
+    // Whitespace-collapsed: Prettier may wrap between "30-day" and "grace".
+    expect(panel.replace(/\s+/g, " ")).toContain("30-day grace");
+    // The admin copy must match the real behavior: scheduling deletion stops
+    // future renewal (deletion cancels the Stripe subscription server-side).
+    expect(panel.replace(/\s+/g, " ")).toContain("Stops future subscription renewal");
     expect(panel).not.toContain("Permanently deletes your account and all associated data.");
+    expect(panel).not.toContain("Billing and numbers continue until purge");
   });
 
   it("honors annual signup intent in TrialGate checkout", () => {

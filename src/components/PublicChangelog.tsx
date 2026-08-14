@@ -48,7 +48,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Aug 11, 2026",
     tag: "launch",
     title: "Deeper release checks before anything ships",
-    body: "Every release now clears a wider battery of automated checks — code quality, dependency advisories, the full test suite, and database safety — plus live health verification after deploy. Demo and test activity is kept strictly separate from real customer evidence.",
+    body: "Every release now clears a wider battery of automated checks — code quality, dependency advisories, the non-E2E test suite, and database safety. Post-promotion health checks verify the live service, and demo or test activity stays strictly separate from real customer evidence.",
   },
   {
     date: "Jul 25, 2026",

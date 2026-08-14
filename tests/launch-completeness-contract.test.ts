@@ -112,7 +112,10 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Server fallback · up to 5m");
     expect(status).toContain("edge stale-while-revalidate");
     expect(status).toContain("timestamp above is the authoritative age");
-    expect(status).toContain("minimal,\n              non-persistent OpenAI Responses inference");
+    // The public page stays provider-neutral; the probe implementation below
+    // still pins the real endpoint, so the neutral copy cannot drift from a
+    // probe that quietly changed providers.
+    expect(status).toContain("non-persistent inference against the managed reasoning provider");
     expect(marketingMeta).toContain(
       "Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
     );
@@ -200,7 +203,9 @@ describe("launch completeness contracts", () => {
       expect(migration).toContain(`CREATE INDEX IF NOT EXISTS ${index}`);
     }
     expect(oauthSecurity).toContain("pruneExpiredMcpOAuthRows");
-    expect(oauthSecurity).toContain("DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()");
+    expect(oauthSecurity).toContain(
+      "DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()",
+    );
   });
 
   it("reconciles only historical rows already covered by the current deletion contract", () => {
