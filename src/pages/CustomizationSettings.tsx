@@ -1,5 +1,14 @@
 import { Link } from "react-router";
-import { ArrowRight, Building2, Mic2, Phone, PlugZap, ShieldCheck, Target } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Mic2,
+  Phone,
+  PlugZap,
+  ShieldCheck,
+  Target,
+  Video,
+} from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -46,14 +55,25 @@ const customizationLinks = [
     href: "/insights?tab=performance&view=goals",
     icon: Target,
   },
+  {
+    label: "Live video presenter",
+    detail: "Optional on-screen face for business agents.",
+    href: "/studio/live-video",
+    icon: Video,
+    businessOnly: true,
+  },
 ] as const;
 
 export default function CustomizationSettings() {
   const { accountType } = useAccount();
   // Success targets lives on /insights, a business surface — offering it to a
   // personal account lands them on a page with no nav entry and no way back.
-  const visibleLinks = customizationLinks.filter(({ href }) =>
-    isRouteAvailableForAccount(accountType, href.split(/[?#]/)[0]),
+  // businessOnly entries (the live video add-on serves business agents) are
+  // likewise offered only in business mode.
+  const visibleLinks = customizationLinks.filter(
+    (link) =>
+      isRouteAvailableForAccount(accountType, link.href.split(/[?#]/)[0]) &&
+      (!("businessOnly" in link && link.businessOnly) || accountType === "business"),
   );
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">

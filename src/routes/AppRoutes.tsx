@@ -6,6 +6,7 @@ import NotFound from "../components/layout/NotFound";
 
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
+const LiveVideoStudioPage = lazy(() => import("../pages/LiveVideoStudioPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const OverviewPage = lazy(() => import("../pages/OverviewPage"));
@@ -65,6 +66,7 @@ export default function AppRoutes() {
 
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
+        <Route path="/studio/live-video" element={<LiveVideoStudioPage />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<AgentsToStudioRedirect />} />

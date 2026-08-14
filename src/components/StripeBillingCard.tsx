@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- video presenter entitlement and checkout errors remain loosely typed. */
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { motion } from "motion/react";
 import {
   CreditCard,
@@ -332,9 +333,21 @@ export default function StripeBillingCard() {
             {liveVideoAddonPitch()} {liveVideoMeteringNote()}
           </p>
           {liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled ? (
-            <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
-              Active on this workspace
-            </p>
+            <div className="space-y-2">
+              <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
+                Active on this workspace
+              </p>
+              {/* The paid entitlement must hand the customer its value path —
+                  "Active" alone left buyers with nowhere to use what they
+                  bought. */}
+              <Link
+                to="/studio/live-video"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
+              >
+                Set up your presenter
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </div>
           ) : liveVideoAddon.liveVideoCheckoutAvailable ? (
             <ShadButton
               type="button"

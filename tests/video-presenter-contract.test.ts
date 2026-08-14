@@ -51,6 +51,30 @@ describe("video presenter integration", () => {
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
+  it("mounts a reachable consumption surface for the paid add-on", () => {
+    // The add-on was sellable while LiveVideoPresenter and the avatar picker
+    // had zero importers — a paid entitlement gating APIs no reachable UI
+    // called. This pins the value path end to end: the studio page consumes
+    // both components, the router mounts it ABOVE the /studio/* wildcard,
+    // and the billing card's "Active" state hands the buyer the link.
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).toContain('from "../components/AgentPresenceAvatarPicker"');
+    expect(page).toContain('from "../components/LiveVideoPresenter"');
+    expect(page).toContain("/video-presenter/enable");
+    expect(page).toContain("/video-presenter/session");
+    expect(page).toContain("consentAcknowledged: true");
+
+    const routes = source("src/routes/AppRoutes.tsx");
+    const liveVideoMount = routes.indexOf('path="/studio/live-video"');
+    const studioWildcard = routes.indexOf('path="/studio/*"');
+    expect(liveVideoMount).toBeGreaterThan(-1);
+    expect(studioWildcard).toBeGreaterThan(-1);
+    expect(liveVideoMount).toBeLessThan(studioWildcard);
+
+    const billingCard = source("src/components/StripeBillingCard.tsx");
+    expect(billingCard).toContain('to="/studio/live-video"');
+  });
+
   it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
     const routes = source("src/routes/agent-routes-v2.ts");
     expect(routes).toContain("businessAgentVideoPresenterDefaults");

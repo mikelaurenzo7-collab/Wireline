@@ -11,10 +11,7 @@ import { ActionItemSchema } from "./action-types";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import {
-  apolloPlatformConfigured,
-  searchLeads as apolloSearch,
-} from "./apollo-service";
+import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
 import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -825,6 +822,23 @@ export async function handleJob(job: JobRow): Promise<void> {
       // even when the DELETE crashed, masking real DB issues from the
       // queue health metrics.
       log.error("sweep_orphan_supervisor_subs failed", { error: err?.message });
+      throw err;
+    }
+  }
+
+  if (job.type === "reclaim_canceled_numbers") {
+    // Daily platform sweep: release carrier numbers held by workspaces whose
+    // Stripe subscription has been canceled past the grace window. All safety
+    // rules (canceled-only, 30-day grace, dual truth-source agreement, per-run
+    // cap, fresh re-verify per release) live in number-reclamation.ts.
+    try {
+      const { runNumberReclamation } = await import("./number-reclamation");
+      const summary = await runNumberReclamation();
+      log.info("reclaim_canceled_numbers completed", { ...summary });
+    } catch (err: any) {
+      // Re-throw so the queue marks the job failed and retries — a silent
+      // success here would hide a recurring platform money leak.
+      log.error("reclaim_canceled_numbers failed", { error: err?.message });
       throw err;
     }
   }

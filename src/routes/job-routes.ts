@@ -310,6 +310,34 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       );
     }
 
+    // Daily 04:30 UTC: reclaim carrier numbers from long-canceled workspaces
+    // (30-day grace, capped per run — see lib/number-reclamation.ts). Without
+    // this, every canceled tenant's numbers billed Wireline ~$1.15/mo forever.
+    if (isWithinUtcWindow(now, 4, 30) && (req._sweepMode === "cron" || !req._sweepMode)) {
+      const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
+      const recentReclaim = await drizzle
+        .select({ id: schema.jobs.id })
+        .from(schema.jobs)
+        .where(
+          and(
+            eq(schema.jobs.type, "reclaim_canceled_numbers"),
+            gte(schema.jobs.createdAt, since23h),
+          ),
+        )
+        .limit(1);
+      if (!recentReclaim.length) {
+        await enqueueJob(drizzle, {
+          userId: SYSTEM_USER_ID,
+          type: "reclaim_canceled_numbers",
+          payload: {},
+        }).catch((e: unknown) =>
+          log.warn("reclaim_canceled_numbers enqueue failed", {
+            error: getErrorMessage(e),
+          }),
+        );
+      }
+    }
+
     if (isWithinUtcWindow(now, 3, 15) && (req._sweepMode === "cron" || !req._sweepMode)) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentOrphanSweep = await drizzle
