@@ -49,7 +49,16 @@ const PLAN_ACCENTS: Record<string, string> = {
   enterprise: BRAND.colors.primary,
 };
 
-export default function StripeBillingCard() {
+type StripeBillingCardProps = {
+  /**
+   * Some account surfaces do not load the customer's actual balance. Keep the
+   * generic top-up card there, but let BillingSettings own the single canonical
+   * balance + top-up surface when it already has the balance ledger loaded.
+   */
+  showBalanceTopUp?: boolean;
+};
+
+export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
@@ -80,9 +89,6 @@ export default function StripeBillingCard() {
       const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status"),
         authFetch("/api/billing/plans"),
-        // Optional add-on data must never take down the plan grid — the only
-        // in-product way to pay. A rejection here previously failed the whole
-        // Promise.all and replaced every plan card with "Billing unavailable".
         authFetch("/api/video-presenter/entitlement")
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null),
@@ -98,10 +104,6 @@ export default function StripeBillingCard() {
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
-      // An explicit ?plan= in the URL is a direct ask (the wizard's activation
-      // CTA, auth-redirect's returning-paid-intent path) and outranks derived
-      // signup intent — without this, the activation moment's preselection
-      // never reached the plan grid. Only known paid plan ids qualify.
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
       const explicitPaidPlan =
         urlPlan && ["starter", "team", "business", "enterprise"].includes(urlPlan) ? urlPlan : null;
@@ -180,11 +182,7 @@ export default function StripeBillingCard() {
             });
           }
           if (typeof (window as any).dataLayer?.push === "function") {
-            (window as any).dataLayer.push({
-              event: "checkout_initiated",
-              planId,
-              interval,
-            });
+            (window as any).dataLayer.push({ event: "checkout_initiated", planId, interval });
           }
         } catch (err) {
           console.error("[wireline:analytics] Failed to log checkout initiation:", err);
@@ -306,23 +304,33 @@ export default function StripeBillingCard() {
     );
   }
 
-  const hasActive =
+  const hasActiveSubscription =
     !!sub?.has_subscription &&
     (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+  const hasGrantedPlanAccess =
+    !!sub &&
+    !sub.has_subscription &&
+    !!sub.plan &&
+    sub.plan !== "personal" &&
+    (sub.status === "active" || sub.status === "trialing");
+  const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess;
   const canAddBalance =
     !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
 
   return (
     <div className="space-y-8">
-      {sub?.has_subscription && (
+      {sub?.has_subscription ? (
         <ActiveSubCard
           sub={sub}
           agentCount={agentCount}
           busy={busy === "portal"}
           onPortal={openPortal}
         />
-      )}
-      {hasActive && <UsageMeter onUpgrade={openPortal} />}
+      ) : hasGrantedPlanAccess ? (
+        <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
+      ) : null}
+      {hasActiveSubscription ? <UsageMeter onUpgrade={openPortal} /> : null}
+      {hasGrantedPlanAccess ? <UsageMeter /> : null}
       {liveVideoAddon?.addonOffered ? (
         <div className="rounded-md wl-panel border border-dashed border-border p-6 md:p-8 space-y-3">
           <WiredEyebrow>Add-on</WiredEyebrow>
@@ -371,14 +379,16 @@ export default function StripeBillingCard() {
                   Manage billing
                   <ExternalLink className="size-3.5" aria-hidden="true" />
                 </button>
-              ) : (
+              ) : !hasGrantedPlanAccess ? (
                 <p className="text-xs text-muted-foreground">Choose a live plan below to continue.</p>
-              )}
+              ) : null}
             </div>
           )}
         </div>
       ) : null}
-      {canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+      {showBalanceTopUp ? (
+        <>{canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}</>
+      ) : null}
       {error && (
         <div
           role="alert"
@@ -390,40 +400,7 @@ export default function StripeBillingCard() {
           </p>
         </div>
       )}
-      {hasActive ? (
-        <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
-          <div className="border-b border-border pb-5">
-            <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-              Manage plan
-            </h3>
-            <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-              Upgrade, downgrade, update payment method, or cancel through the secure Stripe
-              customer portal. Changes apply to your next billing cycle unless noted otherwise.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <ShadButton
-              type="button"
-              disableAnimations
-              variant="outline"
-              onClick={openPortal}
-              disabled={busy === "portal"}
-              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
-            >
-              {busy === "portal" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4" />
-              )}
-              Open billing portal
-            </ShadButton>
-            <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
-              <Shield className="w-3 h-3" />
-              Upgrade · cancel · invoices
-            </span>
-          </div>
-        </div>
-      ) : (
+      {!hasPlanAccess ? (
         <PlanPicker
           plans={plans}
           signupPlanInterest={signupPlanInterest}
@@ -432,7 +409,7 @@ export default function StripeBillingCard() {
           onBillingIntervalChange={setBillingInterval}
           onSelectPlan={startCheckout}
         />
-      )}
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
@@ -657,6 +634,52 @@ function PlanPicker({
               </motion.div>
             );
           })}
+      </div>
+    </div>
+  );
+}
+
+function GrantedPlanAccessCard({
+  sub,
+  agentCount,
+}: {
+  sub: BillingSubscriptionState;
+  agentCount: number;
+}) {
+  const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
+  const Icon = PLAN_ICONS[sub.plan || ""] || Building2;
+  return (
+    <div
+      className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
+      data-accent={accent}
+    >
+      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+            <Icon className="w-8 h-8 wl-accent-text" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="wl-label-muted opacity-70">Current plan</span>
+              <Chip tone="success" dot>
+                Granted access
+              </Chip>
+            </div>
+            <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
+              {sub.plan_name || sub.plan || "Paid plan"}
+            </h3>
+            <p className="text-sm font-semibold text-foreground">Plan access is active</p>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              Paid-plan access is granted directly to this workspace. No recurring Stripe invoice is scheduled.
+            </p>
+            {sub.max_agents ? (
+              <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+                {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

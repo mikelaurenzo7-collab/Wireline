@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
+import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
-import { Badge, Button, Skeleton } from "../components/atoms";
+import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules/StatusNotice";
 import StripeBillingCard from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -34,17 +34,6 @@ function formatUsd(value: number | null) {
   return value < 0 ? `-$${absolute.toFixed(2)}` : `$${absolute.toFixed(2)}`;
 }
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
 function isPaidPlan(planId: string | null | undefined) {
   return Boolean(planId && planId !== "personal");
 }
@@ -53,16 +42,13 @@ export default function BillingSettings() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
-  const [portalBusy, setPortalBusy] = useState(false);
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(
     null,
   );
-  // A failed status read must never masquerade as Free Builder: falling back
-  // to the free-tier catalog entry told an active paying customer they were on
-  // the free plan whenever /api/billing/status blipped.
+  // A failed status read must never masquerade as an unpaid/free workspace.
   const [statusUnavailable, setStatusUnavailable] = useState(false);
 
   useEffect(() => {
@@ -72,11 +58,9 @@ export default function BillingSettings() {
       setLoadError(null);
       setCheckoutReturnNotice(null);
       try {
-        // Returning from a successful Stripe checkout: prove the session
-        // server-side BEFORE reading billing status, so entitlements are
-        // synced even when webhook delivery is late, misconfigured, or
-        // dropped. Best-effort — the webhook remains the primary writer and
-        // the verify endpoint is idempotent against it.
+        // Prove a returning Checkout Session before reading status so the page
+        // is correct even when Stripe webhook delivery is delayed. The webhook
+        // remains the primary writer; verification is idempotent against it.
         const params = new URLSearchParams(window.location.search);
         const returnedSessionId = params.get("session_id");
         const returnFlow =
@@ -93,9 +77,6 @@ export default function BillingSettings() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: returnedSessionId }),
           }).catch(() => null);
-          // .catch(null): a non-JSON verify body (proxy error page) must not
-          // abort the whole load — it previously threw past the status and
-          // balance fetches and blanked the page for a customer who just paid.
           const verification = verifyResponse?.ok
             ? ((await verifyResponse.json().catch(() => null)) as {
                 payment_status?: string;
@@ -158,9 +139,8 @@ export default function BillingSettings() {
           setLoadError("Subscription status is temporarily unavailable.");
         }
 
-        // Parse defensively: a malformed balance body must degrade only the
-        // balance line, never bubble to the outer catch and flip the whole
-        // page (including a successfully loaded subscription) to unavailable.
+        // A malformed balance body degrades only the balance line; it must not
+        // erase a successfully loaded subscription state.
         const balanceData = balanceRes.ok
           ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
           : null;
@@ -196,27 +176,25 @@ export default function BillingSettings() {
   }, []);
 
   const plan = useMemo(
-    () =>
-      STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ??
-      STRIPE_PLANS.find((item) => item.id === "personal")!,
+    () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,
     [subscription?.plan_id],
   );
-  const paidPlan = isPaidPlan(subscription?.plan_id);
-  const hasSubscription = Boolean(paidPlan && subscription?.has_subscription);
+  const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const canAddBalance =
-    paidPlan && (subscription?.status === "active" || subscription?.status === "trialing");
-  const planStatus = statusUnavailable
-    ? "unavailable"
-    : subscription?.status?.replace(/_/g, " ") || "free builder";
+    !statusUnavailable &&
+    paidPlan &&
+    (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
 
   async function addBalance(amountUsd: number) {
     if (!canAddBalance) {
       setActionError(
-        paidPlan
-          ? "Restore your active subscription before adding Runtime Balance."
-          : "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance.",
+        statusUnavailable
+          ? "Billing status is unavailable. Retry before adding Runtime Balance."
+          : paidPlan
+            ? "Restore your active subscription before adding Runtime Balance."
+            : "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance.",
       );
       return;
     }
@@ -237,28 +215,10 @@ export default function BillingSettings() {
     }
   }
 
-  async function openBillingPortal() {
-    setPortalBusy(true);
-    setActionError(null);
-    try {
-      const response = await authFetch("/api/billing/portal", { method: "POST" });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.url)
-        throw new Error(data?.error || "Could not open billing portal.");
-      window.location.href = data.url;
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Could not open billing portal.");
-      setPortalBusy(false);
-    }
-  }
-
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-        {/* The selected Settings tab already reads "Billing"; the heading stays
-            for assistive tech only so the page is not labelled twice on screen.
-            It also gives the page an h1 while the plan card is still loading. */}
         <WorkspacePageIntro title="Billing" titleHidden />
 
         {checkoutReturnNotice ? (
@@ -273,109 +233,35 @@ export default function BillingSettings() {
         ) : null}
 
         {loadError ? (
-          <div
-            className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-            role="alert"
-          >
+          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">
             {loadError}
-          </div>
+          </StatusNotice>
         ) : null}
 
-        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0">
-              <p className="text-eyebrow text-muted-foreground">Current plan</p>
-              {loading ? (
-                <div className="mt-4 space-y-3" aria-busy="true">
-                  <Skeleton shape="text" className="h-10 w-56" />
-                  <Skeleton shape="text" className="h-4 w-full max-w-md" />
-                </div>
-              ) : (
-                <>
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {/* h2, not h1: this names the current plan inside the card,
-                        not the page. The page's h1 is "Billing" above. */}
-                    <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
-                      {statusUnavailable
-                        ? "Plan details unavailable"
-                        : subscription?.plan_name || plan.name}
-                    </h2>
-                    <Badge variant={planStatus === "active" ? "success" : "outline"}>
-                      {planStatus}
-                    </Badge>
-                  </div>
-                  {statusUnavailable ? (
-                    <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
-                      Your plan is unchanged — this page just couldn't reach billing. Reload to try
-                      again.
-                    </p>
-                  ) : paidPlan ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                      <span>
-                        {plan.max_agents} live voice agent{plan.max_agents === 1 ? "" : "s"}
-                      </span>
-                      <span>
-                        {plan.included_phone_numbers} number
-                        {plan.included_phone_numbers === 1 ? "" : "s"}
-                      </span>
-                      <span>{plan.voice_minutes_monthly.toLocaleString()} min/mo</span>
-                    </div>
-                  ) : (
-                    <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
-                      1 draft voice agent. Choose a paid plan for a live number and paid provider
-                      actions.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-
-            {!loading ? (
-              <div className="flex flex-wrap gap-2">
-                {hasSubscription ? (
-                  <Button
-                    type="button"
-                    disableAnimations
-                    variant="secondary"
-                    onClick={() => void openBillingPortal()}
-                    disabled={portalBusy}
-                    className="inline-flex gap-2"
-                  >
-                    {portalBusy ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <ExternalLink className="size-4" aria-hidden="true" />
-                    )}
-                    Manage in Stripe
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
         {/*
-         * Plan selection + Stripe checkout, and the usage meter for anyone
-         * already on a paid plan. This card owns POST /api/billing/checkout.
-         *
-         * It used to be mounted only under /admin, which nothing in the app
-         * links to, while this page offered a "Choose a paid plan" link to the
-         * PUBLIC /pricing page. Every plan card there points at
-         * /signup?plan=..., and an already-authenticated visitor to /signup is
-         * redirected straight to /overview — so every in-product intent to pay
-         * landed back on the dashboard without ever reaching Stripe.
+         * Canonical plan surface: current plan or plan picker, plan usage,
+         * Live Video add-on, invoices/payment/cancel management. Billing owns
+         * the actual balance ledger below, so the generic duplicate top-up card
+         * is intentionally suppressed here.
          */}
-        {!loading ? <StripeBillingCard /> : null}
+        <StripeBillingCard showBalanceTopUp={false} />
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
+        {!loading && !statusUnavailable && paidPlan && plan ? (
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            Plan capacity · {plan.included_phone_numbers} live number
+            {plan.included_phone_numbers === 1 ? "" : "s"} included
+          </p>
+        ) : null}
+
+        <section className="mt-6">
+          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-eyebrow text-muted-foreground">
                   {CONVERSATION_BALANCE_COPY.title}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Funds voice, SMS, and enrichment usage beyond your plan.
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Prepaid coverage for live voice, SMS, and enrichment beyond included plan usage.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -393,12 +279,14 @@ export default function BillingSettings() {
                 >
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {!canAddBalance
-                    ? "Available after a live plan is active."
-                    : balanceDue > 0
-                      ? "A previous call finished after coverage ran out. Restore this amount before another paid action."
-                      : "Extra usage draws only from this balance — never an automatic overage invoice."}
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {statusUnavailable
+                    ? "Billing status could not be verified. No balance action is available until it reloads."
+                    : !canAddBalance
+                      ? "Available after a live plan is active."
+                      : balanceDue > 0
+                        ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
+                        : "Extra usage draws only from this balance — never an automatic overage invoice."}
                 </p>
 
                 {canAddBalance ? (
@@ -437,55 +325,12 @@ export default function BillingSettings() {
               </>
             )}
           </article>
-
-          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
-            <p className="text-eyebrow text-muted-foreground">Subscription</p>
-            {loading ? (
-              <div className="mt-6 flex items-center gap-2 text-muted-foreground" aria-busy="true">
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                <span className="text-sm">Loading subscription…</span>
-              </div>
-            ) : hasSubscription ? (
-              <>
-                <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  {subscription?.cancel_at_period_end ? "Ends " : "Renews "}
-                  {formatDate(subscription?.current_period_end)}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Stripe is the system of record for billing, invoices, and cancellation.
-                </p>
-                <Button
-                  type="button"
-                  disableAnimations
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void openBillingPortal()}
-                  disabled={portalBusy}
-                  className="mt-5 self-start gap-2"
-                >
-                  <ExternalLink className="size-3.5" aria-hidden="true" />
-                  View invoices and payment method
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  {paidPlan ? "Plan access is active" : "No recurring invoice"}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  {paidPlan
-                    ? "This workspace has paid-plan access without a Stripe subscription. No recurring invoice is scheduled."
-                    : "No telephony or subscription charges until you choose a live plan."}
-                </p>
-              </>
-            )}
-          </article>
         </section>
 
         {actionError ? (
-          <p role="alert" className="text-sm text-destructive">
+          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">
             {actionError}
-          </p>
+          </StatusNotice>
         ) : null}
       </WorkspacePageFrame>
     </WorkspaceShell>
