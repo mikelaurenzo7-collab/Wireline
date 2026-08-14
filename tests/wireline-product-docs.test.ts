@@ -119,7 +119,7 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline | Voice agents that get work done");
+    expect(head).toContain("Wireline | Voice agents that get the work done");
     expect(head).toContain("Build one for your business or your life.");
     expect(head).toContain("call, answer, text, email, book, and follow through");
     expect(head).toContain("personal voice agent");
