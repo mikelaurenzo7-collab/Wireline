@@ -226,6 +226,30 @@ describe("live video session token payload", () => {
     expect(body.elevenlabs_agent_config).toMatchObject({ voice_id: "voice_override" });
   });
 
+  it("lets the agent's approved phone voice beat the workspace connector voice", () => {
+    // Same voice on the phone and on screen: the per-agent PSTN-approved
+    // ElevenLabs voice wins over LIVEAVATAR_ELEVENLABS_VOICE_ID.
+    const config = { ...studioConfig, elevenLabsVoiceId: "workspace_voice" };
+    const body = buildLiveVideoSessionTokenBody({
+      ...common,
+      resolution: resolveLiveVideoEngine({ requested: "elevenlabs_agent", config }),
+      config,
+      voiceIdOverride: "agent_phone_voice",
+    });
+    expect(body.elevenlabs_agent_config).toMatchObject({ voice_id: "agent_phone_voice" });
+  });
+
+  it("ignores a blank agent voice override and keeps the workspace voice", () => {
+    const config = { ...studioConfig, elevenLabsVoiceId: "workspace_voice" };
+    const body = buildLiveVideoSessionTokenBody({
+      ...common,
+      resolution: resolveLiveVideoEngine({ requested: "elevenlabs_agent", config }),
+      config,
+      voiceIdOverride: "   ",
+    });
+    expect(body.elevenlabs_agent_config).toMatchObject({ voice_id: "workspace_voice" });
+  });
+
   it("builds the FULL body with a persona when no voice agent is stored", () => {
     const body = buildLiveVideoSessionTokenBody({
       ...common,
@@ -255,7 +279,9 @@ describe("live video session token payload", () => {
       resolution: resolveLiveVideoEngine({ requested: "liveavatar_managed", config }),
       config,
     });
-    expect(body.voice_agent).toEqual({ id: "va_1", language: "es-MX" });
+    // No per-session language on the stored form: the provider rejects
+    // language overrides for ElevenLabs-backed voice agents with a 400.
+    expect(body.voice_agent).toEqual({ id: "va_1" });
     expect(body.avatar_persona).toBeUndefined();
   });
 

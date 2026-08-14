@@ -11,7 +11,10 @@ import {
   SessionState,
 } from "@heygen/liveavatar-web-sdk";
 
-import type { LiveAvatarSessionCredentials } from "../lib/video-presenter/types";
+import {
+  sessionExpectsWirelineAudio,
+  type LiveAvatarSessionCredentials,
+} from "../lib/video-presenter/types";
 import AgentFace from "./AgentFace";
 
 function decodeBase64PcmChunks(chunks: string[]): string {
@@ -68,8 +71,15 @@ const LiveVideoPresenter = forwardRef<
   const [streamReady, setStreamReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [lipSyncActive, setLipSyncActive] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
   const layoutClass = layout === "stage" ? "wl-presence-live--stage" : "";
   const sessionToken = credentials.sessionToken;
+  // In a Wireline-driven LITE session, Wireline's own voice surface captures
+  // the microphone and plays the agent audio; the provider track is lip-sync
+  // only. In provider-driven modes (Studio-voice connector or FULL), the
+  // provider owns both directions: it needs the caller's microphone and its
+  // audio track is the only speech there is.
+  const wirelineDrivesAudio = sessionExpectsWirelineAudio(credentials);
 
   // Parent pages intentionally pass small UI callbacks. Those callbacks can be
   // recreated during ordinary renders; a paid provider session must not be.
@@ -96,6 +106,7 @@ const LiveVideoPresenter = forwardRef<
     setFailed(false);
     setStreamReady(false);
     setLipSyncActive(false);
+    setSoundBlocked(false);
     pcmAccumRef.current = "";
 
     if (!sessionToken?.trim()) {
@@ -104,7 +115,10 @@ const LiveVideoPresenter = forwardRef<
     }
 
     const session = new LiveAvatarSession(sessionToken, {
-      voiceChat: false,
+      // Wireline-driven sessions must not open a second microphone capture —
+      // the Wireline voice surface already owns the mic. Provider-driven
+      // sessions converse on the provider side, so the SDK publishes the mic.
+      voiceChat: !wirelineDrivesAudio,
     });
     sessionRef.current = session;
     let cancelled = false;
@@ -113,8 +127,19 @@ const LiveVideoPresenter = forwardRef<
       if (cancelled || !videoRef.current) return;
       setStreamReady(true);
       onStreamReadyRef.current?.();
-      session.attach(videoRef.current);
-      videoRef.current.muted = true;
+      const element = videoRef.current;
+      session.attach(element);
+      // Wireline-driven: provider track is lip-sync only; agent audio plays
+      // through the Wireline voice surface, so stay muted to avoid doubling.
+      // Provider-driven: the provider track is the only speech — unmute, and
+      // if the browser blocks unmuted playback, offer a tap-to-listen control
+      // instead of a silent presenter.
+      element.muted = wirelineDrivesAudio;
+      if (!wirelineDrivesAudio) {
+        void element.play().catch(() => {
+          if (!cancelled) setSoundBlocked(true);
+        });
+      }
     };
 
     const onSpeakStarted = () => {
@@ -155,7 +180,9 @@ const LiveVideoPresenter = forwardRef<
       void session.stop().catch(() => undefined);
       if (sessionRef.current === session) sessionRef.current = null;
     };
-  }, [sessionToken]);
+    // wirelineDrivesAudio is derived from the same server response as the
+    // token, so for a given token it can never change mid-session.
+  }, [sessionToken, wirelineDrivesAudio]);
 
   useImperativeHandle(ref, () => ({
     async streamSample(chunks: string[], _eventId: string) {
@@ -206,7 +233,8 @@ const LiveVideoPresenter = forwardRef<
   }));
 
   const showSpeaking = speaking || lipSyncActive;
-  const frameClass = `wl-presence__frame wl-presence__frame--ink wl-presence-live ${layoutClass} ${className}`.trim();
+  const frameClass =
+    `wl-presence__frame wl-presence__frame--ink wl-presence-live ${layoutClass} ${className}`.trim();
 
   if (failed) {
     return (
@@ -242,10 +270,25 @@ const LiveVideoPresenter = forwardRef<
         ref={videoRef}
         autoPlay
         playsInline
-        muted
+        muted={wirelineDrivesAudio}
         className="wl-presence-live__video"
         aria-label={`${agentName} live video presenter`}
       />
+      {streamReady && soundBlocked ? (
+        <button
+          type="button"
+          onClick={() => {
+            const element = videoRef.current;
+            if (!element) return;
+            element.muted = false;
+            void element.play().catch(() => undefined);
+            setSoundBlocked(false);
+          }}
+          className="absolute bottom-3 left-1/2 z-[2] min-h-11 -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-2 text-xs font-semibold text-foreground shadow-sm hover:border-[var(--wireline-color-action-primary-default)]"
+        >
+          Tap to hear the presenter
+        </button>
+      ) : null}
       {streamReady ? (
         <div className="wl-presence__live">
           <span className="wl-presence__live-dot" aria-hidden="true" />

@@ -40,6 +40,21 @@ import type {
   LiveAvatarSessionCredentials,
   LiveVideoAddonState,
 } from "../lib/video-presenter/types";
+import type {
+  LiveVideoMode,
+  LiveVideoVoiceEngine,
+} from "../lib/video-presenter/live-video-session-policy";
+
+type PlatformEngineOption = {
+  id: LiveVideoVoiceEngine;
+  mode: LiveVideoMode;
+  label: string;
+  description: string;
+  creditsPerMinute: number;
+  available: boolean;
+  /** Operator configuration hint; not rendered to tenants. */
+  reason: string | null;
+};
 
 type PresenterPayload = {
   presenter: AgentVideoPresenterConfig;
@@ -48,10 +63,14 @@ type PresenterPayload = {
     configured: boolean;
     sandbox: boolean;
     defaultAvatarId?: string | null;
+    allowedMode?: LiveVideoMode;
+    engines?: PlatformEngineOption[];
   };
   addon: LiveVideoAddonState;
   hasVoice: boolean;
 };
+
+const DEFAULT_ENGINE: LiveVideoVoiceEngine = "wireline_realtime";
 
 type SessionUsage = {
   includedMinutes?: number;
@@ -83,6 +102,7 @@ export default function LiveVideoStudioPage() {
   const [sessionBusy, setSessionBusy] = useState(false);
   const [presenterReady, setPresenterReady] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<PresenterCatalogSelection | null>(null);
+  const [voiceEngine, setVoiceEngine] = useState<LiveVideoVoiceEngine>(DEFAULT_ENGINE);
   const [session, setSession] = useState<{
     live: LiveAvatarSessionCredentials;
     fallbackSeed: string;
@@ -129,6 +149,7 @@ export default function LiveVideoStudioPage() {
     setUsage(null);
     setNotice(null);
     setConsentAcknowledged(false);
+    setVoiceEngine(DEFAULT_ENGINE);
     void loadPresenter();
   }, [loadPresenter]);
 
@@ -231,7 +252,13 @@ export default function LiveVideoStudioPage() {
       if (session) await endPreview();
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/session`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // Server-owned resolution: an unavailable engine degrades to the
+          // Wireline voice and reports degradedFrom instead of failing.
+          body: JSON.stringify({ voiceEngine }),
+        },
       );
       const body = (await response.json().catch(() => null)) as {
         configured?: boolean;
@@ -269,6 +296,19 @@ export default function LiveVideoStudioPage() {
   // own PCM. Every other mode is provider-driven, and a second stream would
   // make the presenter talk over itself.
   const wirelineDrivesAudio = session ? sessionExpectsWirelineAudio(session.live) : true;
+  // Engine choice: offered only when the workspace actually has more than one
+  // engine configured. Reasons on unavailable engines are operator hints and
+  // are deliberately not rendered here.
+  const availableEngines = useMemo(
+    () => (state?.platform.engines ?? []).filter((engine) => engine.available),
+    [state?.platform.engines],
+  );
+  const engineChoiceOffered = availableEngines.length > 1;
+  const selectedEngine =
+    availableEngines.find((engine) => engine.id === voiceEngine) ??
+    availableEngines.find((engine) => engine.id === DEFAULT_ENGINE) ??
+    null;
+  const sessionDegraded = Boolean(session?.live.degradedFrom);
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
@@ -454,6 +494,13 @@ export default function LiveVideoStudioPage() {
                   }
                 />
 
+                {sessionDegraded ? (
+                  <StatusNotice tone="info" title="This stage opened with the Wireline voice.">
+                    The engine you picked is not available on this workspace yet, so the session
+                    fell back to the managed default. Your conversation still works normally.
+                  </StatusNotice>
+                ) : null}
+
                 <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
                     <div>
@@ -468,6 +515,39 @@ export default function LiveVideoStudioPage() {
                             ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
                             : "Choose a presenter above before opening the live stage."}
                       </p>
+                      {engineChoiceOffered && !session ? (
+                        <div className="mt-4 grid max-w-sm gap-2">
+                          <label
+                            className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                            htmlFor="live-video-voice-engine"
+                          >
+                            Presenter voice engine
+                          </label>
+                          <Select
+                            value={selectedEngine?.id ?? DEFAULT_ENGINE}
+                            onValueChange={(value) => setVoiceEngine(value as LiveVideoVoiceEngine)}
+                          >
+                            <SelectTrigger
+                              id="live-video-voice-engine"
+                              className="h-auto w-full rounded-md border border-input bg-card py-2 pl-3 text-sm text-foreground"
+                            >
+                              <SelectValue placeholder="Wireline voice" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableEngines.map((engine) => (
+                                <SelectItem key={engine.id} value={engine.id}>
+                                  {engine.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedEngine ? (
+                            <p className="text-xs leading-5 text-muted-foreground">
+                              {selectedEngine.description}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                     {session ? (
                       <Button

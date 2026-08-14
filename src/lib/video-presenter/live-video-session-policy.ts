@@ -211,6 +211,16 @@ export type LiveVideoTokenRequest = {
   language?: string;
   interactivity?: LiveVideoInteractivity;
   videoQuality?: "very_high" | "high" | "medium" | "low";
+  /**
+   * Agent-scoped ElevenLabs voice for the Studio-voice connector, taking
+   * precedence over the workspace-level `LIVEAVATAR_ELEVENLABS_VOICE_ID`.
+   * This is what makes "same voice on the phone and on screen" literally true:
+   * the caller resolves the agent's PSTN-approved ElevenLabs voice (curated or
+   * database-approved clone — the exact rule live calls use) and the presenter
+   * speaks with it. Pass only an approved voice id; this module does not
+   * re-verify approval.
+   */
+  voiceIdOverride?: string | null;
 };
 
 /**
@@ -240,9 +250,11 @@ export function buildLiveVideoSessionTokenBody(
       interactivity_type: request.interactivity ?? "CONVERSATIONAL",
       ...(request.config.managedVoiceAgentId
         ? {
+            // No per-session `language` here: the provider rejects language
+            // overrides on ElevenLabs-backed stored voice agents with a 400,
+            // so the stored agent's own configured language always wins.
             voice_agent: {
               id: request.config.managedVoiceAgentId,
-              ...(request.language ? { language: request.language } : {}),
             },
           }
         : {
@@ -257,6 +269,9 @@ export function buildLiveVideoSessionTokenBody(
     };
   }
 
+  const connectorVoiceId =
+    request.voiceIdOverride?.trim() || request.config.elevenLabsVoiceId || null;
+
   return {
     ...base,
     mode: "LITE",
@@ -267,9 +282,7 @@ export function buildLiveVideoSessionTokenBody(
           elevenlabs_agent_config: {
             secret_id: request.config.elevenLabsSecretId,
             agent_id: request.config.elevenLabsAgentId,
-            ...(request.config.elevenLabsVoiceId
-              ? { voice_id: request.config.elevenLabsVoiceId }
-              : {}),
+            ...(connectorVoiceId ? { voice_id: connectorVoiceId } : {}),
           },
         }
       : {}),

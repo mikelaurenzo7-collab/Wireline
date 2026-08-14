@@ -126,6 +126,12 @@ export async function mintLiveAvatarSessionToken(input: {
   maxSessionDurationSeconds?: number;
   requestedEngine?: unknown;
   language?: string;
+  /**
+   * The agent's PSTN-approved ElevenLabs voice, when the caller verified one.
+   * On the Studio-voice engine this makes the presenter speak the same voice
+   * the agent uses on live phone calls.
+   */
+  agentElevenLabsVoiceId?: string | null;
 }): Promise<{
   sessionToken: string;
   sandbox: boolean;
@@ -158,6 +164,7 @@ export async function mintLiveAvatarSessionToken(input: {
         sandbox,
         maxSessionDurationSeconds: input.maxSessionDurationSeconds,
         language: input.language,
+        voiceIdOverride: input.agentElevenLabsVoiceId ?? null,
       }),
     ),
   });

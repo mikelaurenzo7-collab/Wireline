@@ -33,6 +33,7 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { isOwnerEmail } from "../lib/auth-service";
+import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 
 const router = express.Router();
 
@@ -83,11 +84,42 @@ async function ownedAgent(agentId: string, userId: string) {
       videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
       videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
       voiceId: schema.agents.voiceId,
+      voiceProvider: schema.agents.voiceProvider,
     })
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
   return agent ?? null;
+}
+
+/**
+ * The agent's PSTN-approved ElevenLabs voice, or null.
+ *
+ * Mirrors the live-call rule exactly: the provider must be ElevenLabs and the
+ * voice must be curated or a database-approved clone owned by this tenant.
+ * On the Studio-voice Live Video engine this is what lets the presenter speak
+ * the same voice the agent uses on real phone calls — and an unapproved or
+ * foreign voice id never leaves this function.
+ */
+async function approvedAgentElevenLabsVoice(
+  agent: { voiceId: string | null; voiceProvider: string | null },
+  userId: string,
+): Promise<string | null> {
+  const voiceId = agent.voiceId?.trim();
+  if (!voiceId || agent.voiceProvider !== "11labs") return null;
+  if (isCuratedElevenLabsVoiceId(voiceId)) return voiceId;
+  const [clone] = await drizzle
+    .select({ voiceId: schema.clonedVoices.voiceId })
+    .from(schema.clonedVoices)
+    .where(
+      and(
+        eq(schema.clonedVoices.voiceId, voiceId),
+        eq(schema.clonedVoices.userId, userId),
+        eq(schema.clonedVoices.status, "approved"),
+      ),
+    )
+    .limit(1);
+  return clone ? voiceId : null;
 }
 
 router.get(
@@ -309,6 +341,10 @@ router.post(
         // Server-owned resolution: an unavailable or unknown engine degrades to
         // the managed Wireline voice rather than failing the session.
         requestedEngine: (req.body as { voiceEngine?: unknown } | undefined)?.voiceEngine,
+        // Same voice on the phone and on screen: when the agent's phone voice
+        // is a PSTN-approved ElevenLabs voice, the Studio-voice presenter
+        // speaks with it instead of the workspace default.
+        agentElevenLabsVoiceId: await approvedAgentElevenLabsVoice(agent, req.user.id),
       });
     } catch (error) {
       try {
