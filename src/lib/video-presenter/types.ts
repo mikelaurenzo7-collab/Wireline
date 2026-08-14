@@ -27,25 +27,28 @@ export type AgentVideoPresenterConfig = {
 
 export type LiveAvatarSessionCredentials = {
   provider: "liveavatar";
-  /** Minted server-side; client passes to @heygen/liveavatar-web-sdk */
+  /** Minted server-side; client passes to @heygen/liveavatar-web-sdk. */
   sessionToken: string;
   sessionId?: string;
   livekitUrl?: string;
   livekitClientToken?: string;
   wsUrl?: string | null;
   sandbox: boolean;
-  /** Product/provider ceiling for this session. */
+  /** Hard provider/product ceiling; Studio may end the session sooner. */
   maxSessionSeconds?: number;
 };
 
 export type LiveVideoAddonState = {
   platformConfigured: boolean;
   addonOffered: boolean;
+  /** Authoritative paid-access decision after plan, Stripe, workspace flag, and provider checks. */
   billingEntitled: boolean;
   /** Webhook-maintained local cache; never use this alone as payment proof. */
   liveVideoAddonEnabled: boolean;
   liveVideoCheckoutAvailable?: boolean;
+  /** Reserved monthly provider-session allowance shown before a session is minted. */
   liveVideoMinutesIncluded?: number;
+  /** Minutes reserved atomically each time Studio opens a Live Video session. */
   liveVideoSessionMinutes?: number;
   planId: string | null;
   upgradeRequired: boolean;
