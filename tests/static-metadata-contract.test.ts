@@ -9,7 +9,7 @@ describe("static marketing metadata", () => {
   it("keeps the HTML shell aligned with the current voice agent promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("Wireline | Voice agents that get work done");
+    expect(index).toContain("Wireline | Voice agents that get the work done");
     expect(index).toContain("Build one for your business or your life.");
     expect(index).toContain(
       "call, answer, text, email, book, and follow through",
@@ -68,7 +68,7 @@ describe("static marketing metadata", () => {
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).not.toContain("uppercase leading");
     expect(landing).toContain(
-      'title="Wireline | Voice agents that get work done"',
+      'title="Wireline | Voice agents that get the work done"',
     );
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).not.toContain('title="Wireline —');
