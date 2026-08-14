@@ -12,6 +12,7 @@ import {
   resolveLiveVideoEngine,
   type LiveVideoPlatformConfig,
 } from "../src/lib/video-presenter/live-video-session-policy";
+import { sessionExpectsWirelineAudio } from "../src/lib/video-presenter/types";
 
 const bareConfig: LiveVideoPlatformConfig = {
   allowedMode: "lite",
@@ -288,6 +289,32 @@ describe("live video session token payload", () => {
     });
     const body = buildLiveVideoSessionTokenBody({ ...common, resolution, config: bareConfig });
     expect(body.mode).toBe("LITE");
+  });
+});
+
+describe("client audio ownership", () => {
+  it("drives audio for a LITE session on the Wireline voice", () => {
+    expect(sessionExpectsWirelineAudio({ mode: "lite", voiceEngine: "wireline_realtime" })).toBe(
+      true,
+    );
+  });
+
+  it("stays silent when the provider produces the speech", () => {
+    // Pushing a second stream here would make the presenter talk over itself.
+    expect(sessionExpectsWirelineAudio({ mode: "lite", voiceEngine: "elevenlabs_agent" })).toBe(
+      false,
+    );
+    expect(sessionExpectsWirelineAudio({ mode: "full", voiceEngine: "liveavatar_managed" })).toBe(
+      false,
+    );
+  });
+
+  it("treats FULL as provider-driven even if the engine field is missing", () => {
+    expect(sessionExpectsWirelineAudio({ mode: "full" })).toBe(false);
+  });
+
+  it("keeps a response with no mode on the path it already worked on", () => {
+    expect(sessionExpectsWirelineAudio({})).toBe(true);
   });
 });
 

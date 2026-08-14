@@ -34,6 +34,7 @@ import {
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
+import { sessionExpectsWirelineAudio } from "../lib/video-presenter/types";
 import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
@@ -259,13 +260,15 @@ export default function LiveVideoStudioPage() {
   const liveVideoOn = presenter?.provider === "liveavatar";
   const hasFacePick = Boolean(presenter?.avatarId);
   const includedMinutes = usage?.includedMinutes ?? addon?.liveVideoMinutesIncluded ?? 60;
-  const sessionMinutes =
-    usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
+  const sessionMinutes = usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
   const usedMinutes = Math.max(0, usage?.usedMinutes ?? 0);
-  const remainingMinutes =
-    usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
+  const remainingMinutes = usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
   const exhausted = usage?.exhausted === true || remainingMinutes < sessionMinutes;
   const activeAgentName = activeAgent?.name || "Your agent";
+  // Only a LITE session on the Wireline voice expects this client to push its
+  // own PCM. Every other mode is provider-driven, and a second stream would
+  // make the presenter talk over itself.
+  const wirelineDrivesAudio = session ? sessionExpectsWirelineAudio(session.live) : true;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
@@ -366,7 +369,9 @@ export default function LiveVideoStudioPage() {
               <div className="rounded-2xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-6 shadow-sm">
                 <p className="wl-stitch-label">Live Video</p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                  {checkoutAvailable ? "Add an on-screen presence" : "Live video access needs attention"}
+                  {checkoutAvailable
+                    ? "Add an on-screen presence"
+                    : "Live video access needs attention"}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {checkoutAvailable
@@ -553,7 +558,11 @@ export default function LiveVideoStudioPage() {
                           {remainingMinutes} of {includedMinutes} min remaining
                         </span>
                         <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
-                          {presenterReady ? "Camera connected" : session ? "Camera connecting" : "Stage closed"}
+                          {presenterReady
+                            ? "Camera connected"
+                            : session
+                              ? "Camera connecting"
+                              : "Stage closed"}
                         </span>
                       </div>
                       {session && presenterReady ? (
@@ -568,14 +577,23 @@ export default function LiveVideoStudioPage() {
 
                 {session ? (
                   presenterReady ? (
-                    <OpenAILiveVoiceSandbox
-                      agentId={activeAgentId!}
-                      agentName={activeAgentName}
-                      onAgentAudioDelta={(base64Pcm) =>
-                        presenterRef.current?.feedPcmDelta(base64Pcm)
-                      }
-                      onAgentAudioEnd={() => presenterRef.current?.flushPcm()}
-                    />
+                    wirelineDrivesAudio ? (
+                      <OpenAILiveVoiceSandbox
+                        agentId={activeAgentId!}
+                        agentName={activeAgentName}
+                        onAgentAudioDelta={(base64Pcm) =>
+                          presenterRef.current?.feedPcmDelta(base64Pcm)
+                        }
+                        onAgentAudioEnd={() => presenterRef.current?.flushPcm()}
+                      />
+                    ) : (
+                      // The provider produces speech in this mode. Opening a
+                      // second Wireline audio stream would talk over it.
+                      <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm leading-6 text-muted-foreground shadow-sm">
+                        This presenter answers on the stage itself — speak into your microphone and
+                        it will reply. Wireline is not adding a second audio stream.
+                      </div>
+                    )
                   ) : (
                     <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm text-muted-foreground shadow-sm">
                       The presenter is connecting. Live conversation unlocks as soon as the camera
