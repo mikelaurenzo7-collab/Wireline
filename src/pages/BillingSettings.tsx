@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -8,6 +8,7 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
@@ -174,7 +175,11 @@ export default function BillingSettings() {
     }
   }, []);
 
-  const paidPlan = isPaidPlan(subscription?.plan_id);
+  const plan = useMemo(
+    () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,
+    [subscription?.plan_id],
+  );
+  const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const canAddBalance =
     !statusUnavailable &&
     paidPlan &&
@@ -240,6 +245,13 @@ export default function BillingSettings() {
          * is intentionally suppressed here.
          */}
         <StripeBillingCard showBalanceTopUp={false} />
+
+        {!loading && !statusUnavailable && paidPlan && plan ? (
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            Plan capacity · {plan.included_phone_numbers} live number
+            {plan.included_phone_numbers === 1 ? "" : "s"} included
+          </p>
+        ) : null}
 
         <section className="mt-6">
           <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
