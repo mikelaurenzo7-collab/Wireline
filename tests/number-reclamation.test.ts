@@ -63,6 +63,25 @@ describe("number reclamation", () => {
     expect(summary).toMatchObject({ examined: 1, released: 1, failed: 0, skipped: 0 });
   });
 
+  it("treats a nullable legacy app status as non-active on the fresh safety check", async () => {
+    const { drizzle, releaseTenantNumber, runNumberReclamation } = await loadModule();
+    vi.mocked(drizzle.select)
+      .mockImplementationOnce(() => chain([candidateRow]) as never)
+      .mockImplementationOnce(() => chain([verifyRow({ appStatus: null })]) as never);
+    vi.mocked(releaseTenantNumber).mockResolvedValue({ ok: true });
+
+    const summary = await runNumberReclamation(NOW);
+    expect(releaseTenantNumber).toHaveBeenCalledWith("user-1", "+15550001234");
+    expect(summary).toMatchObject({ examined: 1, released: 1, failed: 0, skipped: 0 });
+  });
+
+  it("keeps the candidate query null-safe for legacy settings rows", () => {
+    const { readFileSync } = require("node:fs") as typeof import("node:fs");
+    const source = readFileSync("src/lib/number-reclamation.ts", "utf8");
+    expect(source).toContain("isNull(schema.settings.subscriptionStatus)");
+    expect(source).toContain("notInArray(schema.settings.subscriptionStatus");
+  });
+
   it("skips when the fresh re-verify shows the tenant resubscribed", async () => {
     const { drizzle, releaseTenantNumber, runNumberReclamation } = await loadModule();
     vi.mocked(drizzle.select)
