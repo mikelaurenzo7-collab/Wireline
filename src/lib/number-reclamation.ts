@@ -23,7 +23,7 @@
  * releaseTenantNumber (phone-provisioning.ts) already fails safe: a carrier
  * error preserves the local ownership row for the next run.
  */
-import { and, asc, eq, lt, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { releaseTenantNumber } from "./phone-provisioning";
@@ -82,7 +82,15 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
     .where(
       and(
         eq(schema.subscriptions.status, "canceled"),
-        notInArray(schema.settings.subscriptionStatus, [...ACTIVE_APP_STATUSES]),
+        // subscriptionStatus is nullable for legacy rows. SQL `NULL NOT IN`
+        // evaluates to UNKNOWN, which would silently exclude those rows from
+        // the sweep even though the fresh re-verify below deliberately treats
+        // a null app status as non-active. Keep candidate selection aligned
+        // with that safety rule while still excluding active/trialing tenants.
+        or(
+          isNull(schema.settings.subscriptionStatus),
+          notInArray(schema.settings.subscriptionStatus, [...ACTIVE_APP_STATUSES]),
+        ),
         lt(
           sql`COALESCE(${schema.subscriptions.currentPeriodEnd}, ${schema.subscriptions.updatedAt})`,
           cutoff,
