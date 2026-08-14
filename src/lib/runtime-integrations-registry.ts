@@ -1,5 +1,6 @@
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
 import { perplexityRuntimeAvailable } from "./platform-integration-flags";
+import { resendWebhookSecretConfigured } from "./resend-webhook-signature";
 
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
@@ -212,6 +213,18 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["RESEND_API_KEY"],
     "A verified production sending domain is also required.",
   ),
+  {
+    ...item(
+      "resend-feedback",
+      "Resend delivery feedback",
+      "Signed bounce, complaint, suppression, failure, and delay feedback for safe email operations.",
+      "infra",
+      false,
+      ["RESEND_WEBHOOK_SECRET"],
+      "Email sending remains available, but provider delivery risk and failure evidence are incomplete.",
+    ),
+    validate: resendWebhookSecretConfigured,
+  },
   item(
     "hubspot",
     "HubSpot",
@@ -354,7 +367,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "Signup degrades open only if the external range endpoint is temporarily unavailable.",
   ),
 ] as const;
-const present = (name: string) => !!process.env[name];
+const present = (name: string) => {
+  const value = process.env[name];
+  return typeof value === "string" && value.trim().length > 0;
+};
 const configured = (entry: IntegrationDescriptor) =>
   entry.envVars.every(present) &&
   (entry.oneOfEnvVars ?? []).every((group) => group.some(present)) &&

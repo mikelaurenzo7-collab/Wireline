@@ -4,8 +4,12 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   RESEND_WEBHOOK_MAX_AGE_SECONDS,
+  resendWebhookSecretConfigured,
   verifyResendWebhookSignature,
 } from "../src/lib/resend-webhook-signature";
+import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
+import { resendOperationalSeverity } from "../src/lib/resend-webhook-observability";
+import { getRuntimeCapabilities } from "../src/lib/runtime-integrations-registry";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -65,6 +69,16 @@ describe("Resend delivery-feedback contract", () => {
     ).toEqual({ ok: false, code: "stale_timestamp" });
   });
 
+  it("does not report a signing secret ready unless the verifier can decode it", () => {
+    expect(resendWebhookSecretConfigured("")).toBe(false);
+    expect(resendWebhookSecretConfigured("whsec_short")).toBe(false);
+    expect(
+      resendWebhookSecretConfigured(
+        `whsec_${Buffer.from("wireline-resend-readiness-secret", "utf8").toString("base64")}`,
+      ),
+    ).toBe(true);
+  });
+
   it("authenticates before parsing or database processing", () => {
     const parser = read("src/lib/body-parsers.ts");
     const route = read("src/routes/resend-webhook-routes.ts");
@@ -108,6 +122,87 @@ describe("Resend delivery-feedback contract", () => {
     );
     expect(permanentBlock).not.toContain("email.delivery_delayed");
     expect(permanentBlock).not.toContain("email.failed");
+  });
+
+  it("turns provider failures into incidents and delays into searchable warnings", () => {
+    expect(resendOperationalSeverity("email.failed")).toBe("error");
+    expect(resendOperationalSeverity("email.delivery_delayed")).toBe("warning");
+    for (const eventType of [
+      "email.bounced",
+      "email.complained",
+      "email.suppressed",
+      "email.delivered",
+      "unknown.event",
+    ]) {
+      expect(resendOperationalSeverity(eventType)).toBeNull();
+    }
+
+    const processor = read("src/lib/resend-webhook.ts");
+    const incidentAt = processor.indexOf('if (operationalSeverity === "error")');
+    const warningAt = processor.indexOf('} else if (operationalSeverity === "warning")');
+    const normalAt = processor.indexOf("} else {", warningAt);
+    const incidentBlock = processor.slice(incidentAt, warningAt);
+
+    expect(incidentAt).toBeGreaterThanOrEqual(0);
+    expect(warningAt).toBeGreaterThan(incidentAt);
+    expect(normalAt).toBeGreaterThan(warningAt);
+    expect(incidentBlock).toContain("log.error");
+    expect(incidentBlock).toContain("reportError");
+    expect(processor.slice(warningAt, normalAt)).toContain("log.warn");
+    for (const privateField of ["rawBody", "recipients", "subject", "html", "text_body"]) {
+      expect(incidentBlock).not.toContain(privateField);
+    }
+  });
+
+  it("emits operational evidence only for the request that wins the receipt claim", () => {
+    const processor = read("src/lib/resend-webhook.ts");
+    const receiptClaimAt = processor.indexOf(".returning({ webhookId:");
+    const duplicateCheckAt = processor.indexOf("if (!inserted)", receiptClaimAt);
+    const observabilityAt = processor.indexOf("const observabilityContext", duplicateCheckAt);
+
+    expect(receiptClaimAt).toBeGreaterThanOrEqual(0);
+    expect(duplicateCheckAt).toBeGreaterThan(receiptClaimAt);
+    expect(observabilityAt).toBeGreaterThan(duplicateCheckAt);
+    expect(processor.slice(duplicateCheckAt, observabilityAt)).toContain("duplicate: true");
+  });
+
+  it("reports delivery feedback readiness without making it a false launch blocker", () => {
+    const saved = {
+      resendKey: process.env.RESEND_API_KEY,
+      webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
+    };
+    try {
+      process.env.RESEND_API_KEY = "re_wireline_readiness_test";
+      delete process.env.RESEND_WEBHOOK_SECRET;
+
+      expect(getRuntimeCapabilities().resend).toBe(true);
+      expect(getRuntimeCapabilities().resend_feedback).toBe(false);
+      const missingFeedback = evaluateLaunchReadiness();
+      expect(
+        missingFeedback.capabilities.find((capability) => capability.id === "email_ready"),
+      ).toMatchObject({
+        label: "Platform email + delivery feedback",
+        level: "degraded",
+        blockers: ["RESEND_WEBHOOK_SECRET"],
+      });
+      expect(missingFeedback.launch_blockers).not.toContain("RESEND_WEBHOOK_SECRET");
+
+      process.env.RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from(
+        "wireline-resend-readiness-secret",
+        "utf8",
+      ).toString("base64")}`;
+      expect(getRuntimeCapabilities().resend_feedback).toBe(true);
+      expect(
+        evaluateLaunchReadiness().capabilities.find(
+          (capability) => capability.id === "email_ready",
+        ),
+      ).toMatchObject({ level: "ready", blockers: [] });
+    } finally {
+      if (saved.resendKey === undefined) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = saved.resendKey;
+      if (saved.webhookSecret === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
+      else process.env.RESEND_WEBHOOK_SECRET = saved.webhookSecret;
+    }
   });
 
   it("keeps provider delivery risk separate from user unsubscribe preference", () => {
