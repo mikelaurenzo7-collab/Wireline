@@ -59,6 +59,7 @@ describe("agent navigation contract", () => {
   const settingsPage = read("src/pages/SettingsPage.tsx");
   const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
   const billingPage = read("src/pages/BillingSettings.tsx");
+  const billingCard = read("src/components/StripeBillingCard.tsx");
   const teamPage = read("src/pages/TeamSettings.tsx");
 
   it("uses a plain-language agent IA with secondary tools out of the primary rail", () => {
@@ -300,9 +301,11 @@ describe("agent navigation contract", () => {
     );
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
-    expect(billingPage).toMatch(/Current plan/);
-    expect(billingPage).toMatch(/Stripe is the system of record for billing/);
-    expect(billingPage).toMatch(/View invoices and payment method/);
+    expect(billingCard).toMatch(/Current plan/);
+    expect(billingCard).toMatch(/Manage subscription/);
+    expect(billingCard).toMatch(/Live video presence/);
+    expect(billingPage).toMatch(/Runtime Balance/);
+    expect(billingPage).toMatch(/showBalanceTopUp=\{false\}/);
     expect(teamPage).toMatch(/Members/);
     expect(
       [connectionsPage, settingsPage, billingPage, teamPage].join("\n"),
