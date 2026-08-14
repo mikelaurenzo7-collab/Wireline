@@ -39,6 +39,11 @@ function decodeSigningSecret(secret: string): Buffer | null {
   }
 }
 
+/** Keep readiness aligned with the verifier's actual credential contract. */
+export function resendWebhookSecretConfigured(secret = process.env.RESEND_WEBHOOK_SECRET): boolean {
+  return typeof secret === "string" && decodeSigningSecret(secret) !== null;
+}
+
 /**
  * Verify Resend's Standard Webhooks/Svix envelope against the untouched body.
  * No JSON parsing or external work may occur before this returns `ok: true`.

@@ -1,10 +1,12 @@
 import { eq } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { normalizeEmail } from "./email-compliance";
+import { reportError } from "./error-reporter";
 import {
   recordProviderDeliverySuppression,
   type ProviderDeliverySuppressionReason,
 } from "./email-delivery-suppression";
+import { resendOperationalSeverity } from "./resend-webhook-observability";
 import { resendWebhookEvents } from "../db/resend-webhook-schema";
 export {
   RESEND_WEBHOOK_MAX_AGE_SECONDS,
@@ -12,6 +14,10 @@ export {
   type ResendWebhookHeaders,
   type ResendWebhookVerification,
 } from "./resend-webhook-signature";
+export {
+  resendOperationalSeverity,
+  type ResendOperationalSeverity,
+} from "./resend-webhook-observability";
 
 const MAX_RECIPIENTS_PER_EVENT = 100;
 const MAX_EVENT_TYPE_LENGTH = 96;
@@ -131,11 +137,13 @@ export async function processVerifiedResendWebhook(
 
   const emailId = boundedText(data.email_id, MAX_PROVIDER_ID_LENGTH);
   const recipients = parseRecipients(data);
+  const recipientCount = recipients.length;
   const reason = resendPermanentSuppressionReason(eventType);
+  const detailCode = resendEventDetailCode(eventType, Boolean(reason));
   let suppressionCount = 0;
 
   if (reason) {
-    if (recipients.length === 0) {
+    if (recipientCount === 0) {
       throw new Error(`Resend ${eventType} webhook has no valid recipient`);
     }
     for (const recipient of recipients) {
@@ -144,32 +152,65 @@ export async function processVerifiedResendWebhook(
     }
   }
 
-  await drizzle
+  const [inserted] = await drizzle
     .insert(resendWebhookEvents)
     .values({
       webhookId,
       eventType,
       emailId,
       occurredAt,
-      recipientCount: recipients.length,
+      recipientCount,
       suppressionCount,
-      detailCode: resendEventDetailCode(eventType, Boolean(reason)),
+      detailCode,
       processedAt: new Date(),
     })
-    .onConflictDoNothing({ target: resendWebhookEvents.webhookId });
+    .onConflictDoNothing({ target: resendWebhookEvents.webhookId })
+    .returning({ webhookId: resendWebhookEvents.webhookId });
 
-  log.info("[resend-webhook] delivery feedback processed", {
+  // A concurrent delivery can pass the optimistic read above. Only the
+  // request that wins the durable receipt claim emits operational evidence;
+  // suppression writes are idempotent and safe if both reached that stage.
+  if (!inserted) {
+    return {
+      duplicate: true,
+      eventType,
+      suppressionCount: 0,
+      recipientCount: 0,
+    };
+  }
+
+  const observabilityContext = {
     eventType,
     emailId,
-    recipientCount: recipients.length,
+    recipientCount,
     suppressionCount,
+    detailCode,
     permanentRecipientRisk: Boolean(reason),
-  });
+  };
+  const operationalSeverity = resendOperationalSeverity(eventType);
+
+  if (operationalSeverity === "error") {
+    log.error("[resend-webhook] provider delivery failed", observabilityContext);
+    reportError(new Error("Resend email delivery failed after provider acceptance"), {
+      tags: {
+        surface: "resend_webhook",
+        provider: "resend",
+        outcome: "delivery_failed",
+      },
+      provider_email_id: emailId,
+      recipient_count: recipientCount,
+      detail_code: detailCode,
+    });
+  } else if (operationalSeverity === "warning") {
+    log.warn("[resend-webhook] provider delivery delayed", observabilityContext);
+  } else {
+    log.info("[resend-webhook] delivery feedback processed", observabilityContext);
+  }
 
   return {
     duplicate: false,
     eventType,
     suppressionCount,
-    recipientCount: recipients.length,
+    recipientCount,
   };
 }

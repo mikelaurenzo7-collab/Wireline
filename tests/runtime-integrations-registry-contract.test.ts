@@ -29,6 +29,20 @@ describe("runtime integrations registry launch policy", () => {
     }
   });
 
+  it("reports signed Resend feedback separately from the required send transport", () => {
+    expect(compactSource).toContain('"resend-feedback", "Resend delivery feedback",');
+    expect(source).toContain("RESEND_WEBHOOK_SECRET");
+    expect(compactSource).toMatch(/item\(\s*"resend-feedback".{0,700}?, false,/);
+    expect(source).toContain("validate: resendWebhookSecretConfigured");
+    expect(source).toContain(
+      "Email sending remains available, but provider delivery risk and failure evidence are incomplete.",
+    );
+  });
+
+  it("treats whitespace-only environment values as missing", () => {
+    expect(source).toContain('typeof value === "string" && value.trim().length > 0');
+  });
+
   it("keeps WhatsApp claims bounded", () => {
     expect(source).toContain("WhatsApp remains private beta");
   });

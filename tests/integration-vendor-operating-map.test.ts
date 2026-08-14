@@ -81,6 +81,7 @@ describe("integration vendor operating map", () => {
         "heygen",
         "stripe",
         "resend",
+        "resend-feedback",
         "docusign",
         "x-ads",
         "chatgpt-mcp",

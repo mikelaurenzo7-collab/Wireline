@@ -80,6 +80,9 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
 
   const emailBlockers: string[] = [];
   if (byId.get("resend")?.status !== "configured") emailBlockers.push("RESEND_API_KEY");
+  if (byId.get("resend-feedback")?.status !== "configured") {
+    emailBlockers.push("RESEND_WEBHOOK_SECRET");
+  }
   const oauthBlockers: string[] = [];
   if (!envPresent("GOOGLE_CLIENT_ID")) oauthBlockers.push("GOOGLE_CLIENT_ID");
   if (!envPresent("MICROSOFT_CLIENT_ID")) oauthBlockers.push("MICROSOFT_CLIENT_ID");
@@ -106,7 +109,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "email_ready",
-      label: "Optional platform email",
+      label: "Platform email + delivery feedback",
       level: levelFromBlockers(emailBlockers),
       blockers: emailBlockers,
     },
