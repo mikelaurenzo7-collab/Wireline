@@ -173,7 +173,10 @@ export function EmptyState({
                     !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
                     !isPrimary &&
                       compact &&
-                      "normal-case tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
+                      // !important to actually beat the Button base uppercase —
+                      // without it the outline sibling rendered UPPERCASE next
+                      // to a sentence-case primary.
+                      "!normal-case !tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
                   )}
                 >
                   {internal ? (
@@ -202,7 +205,7 @@ export function EmptyState({
                   !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
                   !isPrimary &&
                     compact &&
-                    "normal-case tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
+                    "!normal-case !tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
                 )}
               >
                 {actionItem.label}

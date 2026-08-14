@@ -1,19 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Check,
-  Loader2,
-  MessageCircle,
-  Pause,
-  Play,
-  Volume2,
-} from "lucide-react";
+import { Check, Loader2, MessageCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
-import {
-  normalizeApiVoices,
-  VAPI_CURATED_VOICES,
-  type VoiceOption,
-} from "../../lib/voice-catalog";
+import { normalizeApiVoices, VAPI_CURATED_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import { StatusNotice } from "../molecules";
 import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
 
@@ -48,16 +37,10 @@ type VoiceLibraryResponse = {
   privateVoices?: PrivateVoice[];
 };
 
-export default function SimpleVoicePicker({
-  agentId,
-  agentName,
-  onTest,
-}: SimpleVoicePickerProps) {
+export default function SimpleVoicePicker({ agentId, agentName, onTest }: SimpleVoicePickerProps) {
   const includedVoices = useMemo(
     () =>
-      RECOMMENDED_VOICE_IDS.map((id) =>
-        VAPI_CURATED_VOICES.find((voice) => voice.id === id),
-      )
+      RECOMMENDED_VOICE_IDS.map((id) => VAPI_CURATED_VOICES.find((voice) => voice.id === id))
         .filter((voice): voice is VoiceOption => Boolean(voice))
         .map((voice) => ({ ...voice, provider: "vapi" as const })),
     [],
@@ -71,22 +54,17 @@ export default function SimpleVoicePicker({
   const [showStudioVoices, setShowStudioVoices] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingVoiceId, setSavingVoiceId] = useState<string | null>(null);
-  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(
-    null,
-  );
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadVoiceLibrary = useCallback(async () => {
     const response = await authFetch("/api/voices");
-    if (!response.ok)
-      throw new Error("Studio voices are temporarily unavailable.");
+    if (!response.ok) throw new Error("Studio voices are temporarily unavailable.");
     const data = (await response.json()) as VoiceLibraryResponse;
     setStudioVoices(normalizeApiVoices(data.voices));
-    setPrivateVoices(
-      Array.isArray(data.privateVoices) ? data.privateVoices : [],
-    );
+    setPrivateVoices(Array.isArray(data.privateVoices) ? data.privateVoices : []);
     setStudioConfigured(data.configured === true);
     setCanManageVoices(data.canManageVoices === true);
     setError(null);
@@ -98,24 +76,17 @@ export default function SimpleVoicePicker({
     setLoading(true);
     setError(null);
     Promise.all([
-      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`).then(
-        async (response) => {
-          if (!response.ok)
-            throw new Error("Could not load the current voice.");
-          return (await response.json()) as AgentVoiceResponse;
-        },
-      ),
+      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`).then(async (response) => {
+        if (!response.ok) throw new Error("Could not load the current voice.");
+        return (await response.json()) as AgentVoiceResponse;
+      }),
       loadVoiceLibrary().catch((reason) => {
         if (!cancelled) {
           setStudioVoices([]);
           setPrivateVoices([]);
           setStudioConfigured(false);
           setCanManageVoices(false);
-          setError(
-            reason instanceof Error
-              ? reason.message
-              : "Studio voices are unavailable.",
-          );
+          setError(reason instanceof Error ? reason.message : "Studio voices are unavailable.");
         }
       }),
     ])
@@ -126,11 +97,7 @@ export default function SimpleVoicePicker({
       })
       .catch((reason) => {
         if (!cancelled) {
-          setError(
-            reason instanceof Error
-              ? reason.message
-              : "Could not load the current voice.",
-          );
+          setError(reason instanceof Error ? reason.message : "Could not load the current voice.");
         }
       })
       .finally(() => {
@@ -155,27 +122,21 @@ export default function SimpleVoicePicker({
     setNotice(null);
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/agent-config/${encodeURIComponent(agentId)}/voice`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
-        },
-      );
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
+      });
       const body = (await response.json().catch(() => null)) as {
         error?: string;
         voice?: { voiceId?: string | null; provider?: string | null };
       } | null;
-      if (!response.ok)
-        throw new Error(body?.error || "Voice could not be saved.");
+      if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
       setSelectedVoiceId(body?.voice?.voiceId ?? voice.id);
       setSelectedProvider(body?.voice?.provider ?? voice.provider);
       setNotice(`${voice.name} is ready for ${agentName}.`);
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Voice could not be saved.",
-      );
+      setError(reason instanceof Error ? reason.message : "Voice could not be saved.");
     } finally {
       setSavingVoiceId(null);
     }
@@ -210,17 +171,14 @@ export default function SimpleVoicePicker({
   }
 
   function renderVoice(voice: VoiceOption) {
-    const selected =
-      selectedVoiceId === voice.id && selectedProvider === voice.provider;
+    const selected = selectedVoiceId === voice.id && selectedProvider === voice.provider;
     const saving = savingVoiceId === voice.id;
     const previewing = previewingVoiceId === voice.id;
     return (
       <div
         key={`${voice.provider}:${voice.id}`}
         className={`flex min-h-16 items-center gap-2 rounded-xl border px-3 py-2.5 transition-colors ${
-          selected
-            ? "border-primary/40 bg-primary/5"
-            : "border-border bg-background"
+          selected ? "border-primary/40 bg-primary/5" : "border-border bg-background"
         }`}
       >
         <button
@@ -232,9 +190,7 @@ export default function SimpleVoicePicker({
         >
           <span
             className={`grid size-9 shrink-0 place-items-center rounded-full ${
-              selected
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground"
+              selected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
             }`}
           >
             {saving ? (
@@ -246,15 +202,19 @@ export default function SimpleVoicePicker({
             )}
           </span>
           <span className="min-w-0">
+            {/* Catalog names embed the character after an em-dash
+                ("Savannah — Warm & Confident"). One truncating line cut off
+                exactly the half a listener chooses by, so the given name and
+                the descriptor each get their own line. */}
             <span className="block truncate text-sm font-semibold text-foreground">
-              {voice.name}
+              {voice.name.split("—")[0].trim()}
             </span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {selected
                 ? "Live"
                 : voice.category === "cloned"
                   ? "Private"
-                  : "Choose"}
+                  : voice.name.split("—").slice(1).join("—").trim() || "Choose"}
             </span>
           </span>
         </button>
@@ -278,12 +238,10 @@ export default function SimpleVoicePicker({
   }
 
   const selectedIsAvailable = [...includedVoices, ...studioVoices].some(
-    (voice) =>
-      voice.id === selectedVoiceId && voice.provider === selectedProvider,
+    (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
   const selectedStudioVoice = studioVoices.find(
-    (voice) =>
-      voice.id === selectedVoiceId && voice.provider === selectedProvider,
+    (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
   const visibleStudioVoices = showStudioVoices
     ? studioVoices
@@ -330,9 +288,7 @@ export default function SimpleVoicePicker({
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Included
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {includedVoices.map(renderVoice)}
-            </div>
+            <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
           </div>
 
           {studioVoices.length ? (

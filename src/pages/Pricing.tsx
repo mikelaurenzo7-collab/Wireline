@@ -219,9 +219,11 @@ export default function Pricing() {
 
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
-          title="Build free. Launch for $19. Scale when it pays."
+          // The one price story: "Build free. Go live from $19/mo." A bare
+          // "$19." reads as one-time and gave the money line two phrasings.
+          title="Build free. Go live from $19/mo. Scale when it pays."
           primaryAction={{
-            label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
+            label: annual ? "Go live · $190/yr" : "Go live · $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
           }}
           secondaryAction={{

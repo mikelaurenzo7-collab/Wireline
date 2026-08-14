@@ -17,12 +17,7 @@ import { Checkbox } from "../ui/shadcn/Checkbox";
 const CHANNELS = ["voice", "sms", "email"] as const;
 type Channel = (typeof CHANNELS)[number];
 type ProviderStatus =
-  | "not_requested"
-  | "review_requested"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "limited";
+  "not_requested" | "review_requested" | "in_review" | "approved" | "rejected" | "limited";
 
 type IdentityResponse = {
   profile: {
@@ -150,8 +145,7 @@ function statusTone(status: ProviderStatus, ready: boolean) {
   if (status === "approved") {
     return "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground";
   }
-  if (status === "rejected")
-    return "border-destructive/25 bg-destructive/8 text-destructive";
+  if (status === "rejected") return "border-destructive/25 bg-destructive/8 text-destructive";
   if (status === "review_requested" || status === "in_review") {
     return "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground";
   }
@@ -160,8 +154,7 @@ function statusTone(status: ProviderStatus, ready: boolean) {
 }
 
 function reviewSummary(identity: IdentityResponse | null) {
-  if (!identity || identity.profile.requested_channels.length === 0)
-    return null;
+  if (!identity || identity.profile.requested_channels.length === 0) return null;
   const statuses = identity.profile.requested_channels.map(
     (channel) => identity.channels[channel].provider_status,
   );
@@ -227,9 +220,7 @@ function ChannelCard({
           <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/5 text-primary">
             <Icon size={18} aria-hidden="true" />
           </span>
-          <h3 className="min-w-0 text-sm font-semibold text-foreground">
-            {config.title}
-          </h3>
+          <h3 className="min-w-0 text-sm font-semibold text-foreground">{config.title}</h3>
         </div>
         <span
           className={cn(
@@ -283,19 +274,12 @@ export default function CompanyIdentityPack() {
     setError(null);
     try {
       const response = await authFetch("/api/company-identity");
-      const body = (await response
-        .json()
-        .catch(() => null)) as IdentityResponse | null;
+      const body = (await response.json().catch(() => null)) as IdentityResponse | null;
       // `profile` is checked, not just the body: every read below goes through
       // `identity.profile.*`, so a 200 carrying an error envelope or a renamed
       // field threw on the first property access and took the settings page down
       // with it. The existing error path already renders this cleanly.
-      if (
-        !response.ok ||
-        !body ||
-        typeof body.profile !== "object" ||
-        body.profile === null
-      ) {
+      if (!response.ok || !body || typeof body.profile !== "object" || body.profile === null) {
         throw new Error("Company identity is unavailable.");
       }
       setIdentity(body);
@@ -306,9 +290,7 @@ export default function CompanyIdentityPack() {
         );
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Company identity is unavailable.",
-      );
+      setError(err instanceof Error ? err.message : "Company identity is unavailable.");
     } finally {
       setLoading(false);
     }
@@ -321,9 +303,7 @@ export default function CompanyIdentityPack() {
   const selectedChannelCount = form.requested_channels.length;
   const isDirty = useMemo(() => {
     if (!identity) return false;
-    return (
-      formFingerprint(form) !== formFingerprint(formFromIdentity(identity))
-    );
+    return formFingerprint(form) !== formFingerprint(formFromIdentity(identity));
   }, [form, identity]);
   const savedReviewStatuses = identity
     ? identity.profile.requested_channels.map(
@@ -336,10 +316,7 @@ export default function CompanyIdentityPack() {
   const reviewRejected = savedReviewStatuses.includes("rejected");
   const summary = reviewSummary(identity);
 
-  function updateField(
-    field: keyof Omit<IdentityForm, "requested_channels">,
-    value: string,
-  ) {
+  function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -363,9 +340,7 @@ export default function CompanyIdentityPack() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const body = (await response
-        .json()
-        .catch(() => ({}))) as Partial<IdentityResponse> & {
+      const body = (await response.json().catch(() => ({}))) as Partial<IdentityResponse> & {
         error?: string;
       };
       if (!response.ok || !body.profile) {
@@ -380,9 +355,7 @@ export default function CompanyIdentityPack() {
           : "Company identity saved. Existing review state was preserved.",
       );
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not save company identity.",
-      );
+      setError(err instanceof Error ? err.message : "Could not save company identity.");
     } finally {
       setSaving(false);
     }
@@ -397,9 +370,7 @@ export default function CompanyIdentityPack() {
       const response = await authFetch("/api/company-identity/review-request", {
         method: "POST",
       });
-      const body = (await response
-        .json()
-        .catch(() => ({}))) as Partial<IdentityResponse> & {
+      const body = (await response.json().catch(() => ({}))) as Partial<IdentityResponse> & {
         error?: string;
       };
       if (!response.ok || !body.profile) {
@@ -410,11 +381,7 @@ export default function CompanyIdentityPack() {
       setForm(formFromIdentity(reviewed));
       setMessage(reviewed.message || "Verification review requested.");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not request verification review.",
-      );
+      setError(err instanceof Error ? err.message : "Could not request verification review.");
     } finally {
       setRequesting(false);
     }
@@ -427,10 +394,7 @@ export default function CompanyIdentityPack() {
       aria-labelledby="company-identity-title"
     >
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <h2
-          id="company-identity-title"
-          className="text-xl font-semibold text-foreground"
-        >
+        <h2 id="company-identity-title" className="text-xl font-semibold text-foreground">
           Identity
         </h2>
         {summary ? (
@@ -447,9 +411,7 @@ export default function CompanyIdentityPack() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Loading company identity…
-        </p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Loading company identity…</p>
       ) : identity ? (
         <>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -465,18 +427,10 @@ export default function CompanyIdentityPack() {
 
           <div className="mt-6 rounded-2xl border border-border bg-background/55 p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <ShieldCheck
-                size={18}
-                className="mt-0.5 shrink-0 text-primary"
-                aria-hidden="true"
-              />
+              <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  Business profile
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  {identity.guarantee}
-                </p>
+                <h3 className="text-sm font-semibold text-foreground">Business profile</h3>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{identity.guarantee}</p>
               </div>
             </div>
 
@@ -485,9 +439,7 @@ export default function CompanyIdentityPack() {
                 Legal business name
                 <input
                   value={form.business_name}
-                  onChange={(event) =>
-                    updateField("business_name", event.target.value)
-                  }
+                  onChange={(event) => updateField("business_name", event.target.value)}
                   className={FIELD_CLASS}
                   maxLength={120}
                   autoComplete="organization"
@@ -498,9 +450,7 @@ export default function CompanyIdentityPack() {
                 Customer-facing brand name
                 <input
                   value={form.brand_name}
-                  onChange={(event) =>
-                    updateField("brand_name", event.target.value)
-                  }
+                  onChange={(event) => updateField("brand_name", event.target.value)}
                   className={FIELD_CLASS}
                   maxLength={80}
                   placeholder="Laurenzo Services"
@@ -511,10 +461,7 @@ export default function CompanyIdentityPack() {
                 <input
                   value={form.caller_id_name}
                   onChange={(event) =>
-                    updateField(
-                      "caller_id_name",
-                      event.target.value.toUpperCase().slice(0, 15),
-                    )
+                    updateField("caller_id_name", event.target.value.toUpperCase().slice(0, 15))
                   }
                   className={FIELD_CLASS}
                   maxLength={15}
@@ -529,9 +476,7 @@ export default function CompanyIdentityPack() {
                 <input
                   type="url"
                   value={form.website}
-                  onChange={(event) =>
-                    updateField("website", event.target.value)
-                  }
+                  onChange={(event) => updateField("website", event.target.value)}
                   className={FIELD_CLASS}
                   placeholder="https://example.com"
                   autoComplete="url"
@@ -542,34 +487,28 @@ export default function CompanyIdentityPack() {
                 <input
                   type="email"
                   value={form.support_email}
-                  onChange={(event) =>
-                    updateField("support_email", event.target.value)
-                  }
+                  onChange={(event) => updateField("support_email", event.target.value)}
                   className={FIELD_CLASS}
                   placeholder="support@example.com"
                   autoComplete="email"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Email identity review requires this address to match the
-                  company website domain.
+                  Email identity review requires this address to match the company website domain.
                 </span>
               </label>
               <label className="text-xs font-medium text-foreground sm:col-span-2">
                 Physical postal address for commercial email
                 <input
                   value={form.physical_postal_address}
-                  onChange={(event) =>
-                    updateField("physical_postal_address", event.target.value)
-                  }
+                  onChange={(event) => updateField("physical_postal_address", event.target.value)}
                   className={FIELD_CLASS}
                   maxLength={240}
                   placeholder="123 Main St, Suite 200, Chicago, IL 60601"
                   autoComplete="street-address"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Required for commercial email. Use your current street address
-                  or a registered PO/private mailbox that identifies your
-                  business.
+                  Required for commercial email. Use your current street address or a registered
+                  PO/private mailbox that identifies your business.
                 </span>
               </label>
               <label className="text-xs font-medium text-foreground">
@@ -577,9 +516,7 @@ export default function CompanyIdentityPack() {
                 <input
                   type="url"
                   value={form.logo_url}
-                  onChange={(event) =>
-                    updateField("logo_url", event.target.value)
-                  }
+                  onChange={(event) => updateField("logo_url", event.target.value)}
                   className={FIELD_CLASS}
                   placeholder="https://example.com/logo.png"
                 />
@@ -588,16 +525,14 @@ export default function CompanyIdentityPack() {
                 Default call reason
                 <input
                   value={form.default_call_reason}
-                  onChange={(event) =>
-                    updateField("default_call_reason", event.target.value)
-                  }
+                  onChange={(event) => updateField("default_call_reason", event.target.value)}
                   className={FIELD_CLASS}
                   maxLength={64}
                   placeholder="Appointment confirmation"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Enhanced branded calling may show this on supported mobile
-                  networks after approval.
+                  Enhanced branded calling may show this on supported mobile networks after
+                  approval.
                 </span>
               </label>
             </div>
@@ -621,11 +556,7 @@ export default function CompanyIdentityPack() {
                       checked={form.requested_channels.includes(channel)}
                       onChange={() => toggleChannel(channel)}
                     />
-                    {channel === "voice"
-                      ? "Calling"
-                      : channel === "sms"
-                        ? "SMS"
-                        : "Email"}
+                    {channel === "voice" ? "Calling" : channel === "sms" ? "SMS" : "Email"}
                   </label>
                 ))}
               </div>
@@ -644,10 +575,7 @@ export default function CompanyIdentityPack() {
                 variant="secondary"
                 onClick={requestReview}
                 disabled={
-                  requesting ||
-                  !identity.review_eligible ||
-                  isDirty ||
-                  reviewAlreadyRequested
+                  requesting || !identity.review_eligible || isDirty || reviewAlreadyRequested
                 }
               >
                 {requesting
@@ -669,13 +597,11 @@ export default function CompanyIdentityPack() {
               </p>
             ) : reviewRejected ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Update the rejected identity details and save them before
-                requesting another review.
+                Update the rejected identity details and save them before requesting another review.
               </p>
             ) : !identity.review_eligible ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Complete every selected channel requirement before requesting
-                verification review.
+                Complete every selected channel requirement before requesting verification review.
               </p>
             ) : null}
           </div>
@@ -683,22 +609,27 @@ export default function CompanyIdentityPack() {
       ) : null}
 
       {message ? (
-        <StatusNotice
-          tone="info"
-          className="mt-5"
-          title="Company identity updated"
-        >
+        <StatusNotice tone="info" className="mt-5" title="Company identity updated">
           {message}
         </StatusNotice>
       ) : null}
       {error ? (
+        // One sentence and a way forward — not the same sentence twice with a
+        // dead end on a primary setup surface.
         <StatusNotice
           tone="destructive"
           className="mt-5"
-          title="Company identity unavailable"
-        >
-          {error}
-        </StatusNotice>
+          title="Company identity could not load. Your saved details are unchanged."
+          action={
+            <button
+              type="button"
+              onClick={() => void loadIdentity()}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40"
+            >
+              Try again
+            </button>
+          }
+        />
       ) : null}
     </section>
   );

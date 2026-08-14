@@ -168,7 +168,9 @@ export default function ClientAppsPage() {
             id="chatgpt-mcp-heading"
             className="mt-2 font-[var(--wireline-font-family-display)] text-[22px] font-normal tracking-[-0.02em]"
           >
-            Connect ChatGPT, Claude, or Cursor without leaving Wireline
+            {/* The instructions below happen inside those apps, so the honest
+                claim is the inverse of the old headline. */}
+            Use Wireline without leaving ChatGPT, Claude, or Cursor
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> as a remote MCP

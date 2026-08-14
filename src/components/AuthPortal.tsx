@@ -739,7 +739,13 @@ export default function AuthPortal() {
                   className="mt-1"
                 />
                 <span id="auth-terms-label">
-                  <label htmlFor="auth-terms" className="cursor-pointer select-none">
+                  {/* wl-preserve-case: this label opens a running sentence that
+                      continues into the Terms/Privacy links — one sentence,
+                      one case. */}
+                  <label
+                    htmlFor="auth-terms"
+                    className="wl-preserve-case cursor-pointer select-none"
+                  >
                     I agree to the
                   </label>{" "}
                   <Link

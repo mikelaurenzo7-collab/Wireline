@@ -344,7 +344,10 @@
   line-height: 1.25;
 }
 
-:is(.wl-ui-caps, .wl-cased) :is(label, legend, th) {
+/* The system-wide opt-out applies here as everywhere: a label whose text is
+ * the start of a running sentence ("I agree to the … Terms") is prose, and
+ * uppercasing only the label half split one sentence into two type systems. */
+:is(.wl-ui-caps, .wl-cased) :is(label, legend, th):not(.wl-preserve-case) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
 }

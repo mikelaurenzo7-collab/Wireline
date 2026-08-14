@@ -456,6 +456,11 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   );
 
   const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
+    // A failed load must not dress the tabs in confident "(0)" counts beside
+    // an error banner — a zero is a claim about the data, not a placeholder.
+    if (error || loading) {
+      return { id: key, label: BUCKET_LABELS[key], shortLabel: BUCKET_SHORT_LABELS[key] };
+    }
     const count =
       key === "pending"
         ? pendingTasks.length
@@ -499,15 +504,13 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : error ? (
         <StatusNotice
           tone="destructive"
-          title="Approval inbox unavailable"
+          title="Approval inbox could not load. Nothing was changed."
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try again
             </ShadButton>
           }
-        >
-          {error}
-        </StatusNotice>
+        />
       ) : (bucket === "pending" || bucket === "compliance") && tasksUnavailable ? (
         <StatusNotice
           tone="destructive"

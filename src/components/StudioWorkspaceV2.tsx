@@ -282,13 +282,14 @@ export default function StudioWorkspaceV2() {
                 aria-controls={studioPanelId(item.id)}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setSection(item.id)}
+                aria-label={item.label}
                 className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
                   selected
                     ? "border-primary/35 bg-primary/5 text-foreground"
                     : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2 sm:justify-start">
                   <span
                     className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
                       selected
@@ -302,7 +303,17 @@ export default function StudioWorkspaceV2() {
                     className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`}
                     aria-hidden="true"
                   />
-                  <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
+                  {/* A step label that ellipsizes ("REVI…") looks broken; on a
+                      phone, inactive steps show their number and the active
+                      step keeps its full name. aria-label preserves every
+                      step's accessible name at all widths. */}
+                  <span
+                    className={`truncate text-xs font-semibold sm:text-sm ${
+                      selected ? "" : "hidden sm:block"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </span>
               </button>
             );

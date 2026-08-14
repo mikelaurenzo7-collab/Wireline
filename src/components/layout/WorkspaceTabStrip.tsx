@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import { cn } from "../../lib/utils";
@@ -95,12 +95,49 @@ export function WorkspaceTabStrip({
     }
   }, [activeId, tabCount]);
 
+  /*
+   * Edge fades for hidden tabs. The scrollbar is hidden by design, so on a
+   * phone the strip used to clip mid-word with nothing signalling that more
+   * tabs exist — APPOINTMENTS was simply undiscoverable. A mask fades the
+   * clipped edge only while there is actually content past it.
+   */
+  const [edges, setEdges] = useState({ left: false, right: false });
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const update = () => {
+      setEdges((current) => {
+        const next = {
+          left: nav.scrollLeft > 4,
+          right: nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 4,
+        };
+        return next.left === current.left && next.right === current.right ? current : next;
+      });
+    };
+    update();
+    nav.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(nav);
+    return () => {
+      nav.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [tabCount]);
+
+  const edgeMask =
+    edges.left || edges.right
+      ? `linear-gradient(to right, ${edges.left ? "transparent, black 28px" : "black"}, black calc(100% - ${
+          edges.right ? "28px" : "0px"
+        })${edges.right ? ", transparent" : ""})`
+      : undefined;
+
   return (
     <nav
       ref={navRef}
       aria-label={ariaLabel}
       data-density={density}
       data-align={align}
+      style={edgeMask ? { maskImage: edgeMask, WebkitMaskImage: edgeMask } : undefined}
       className={cn(
         "wl-workspace-tabs w-full",
         wrap

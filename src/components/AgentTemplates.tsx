@@ -425,7 +425,9 @@ function TemplateCard({
               {template.channel}
             </span>
             {template.badge && (
-              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-foreground/70">
+              // whitespace-nowrap: a pill that wraps mid-phrase ("PERSONAL ·
+              // MOST / VERSATILE") reads as a broken chip, not a badge.
+              <span className="hidden sm:inline-flex whitespace-nowrap px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-foreground/70">
                 {template.badge}
               </span>
             )}

@@ -709,7 +709,9 @@ export default function OverviewPage() {
               className="wl-paper wl-paper-elevated p-5 sm:p-6"
               aria-label="Customer outcomes"
             >
-              <OutcomeLedger limit={5} showViewAll followUpsHref="/approvals" />
+              {/* A busy line fills five rows before lunch, and the page has
+                  spare room below — give the ledger a real working window. */}
+              <OutcomeLedger limit={12} showViewAll followUpsHref="/approvals" />
             </section>
 
             <section
