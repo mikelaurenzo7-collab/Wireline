@@ -304,23 +304,33 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
     );
   }
 
-  const hasActive =
+  const hasActiveSubscription =
     !!sub?.has_subscription &&
     (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+  const hasGrantedPlanAccess =
+    !!sub &&
+    !sub.has_subscription &&
+    !!sub.plan &&
+    sub.plan !== "personal" &&
+    (sub.status === "active" || sub.status === "trialing");
+  const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess;
   const canAddBalance =
     !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
 
   return (
     <div className="space-y-8">
-      {sub?.has_subscription && (
+      {sub?.has_subscription ? (
         <ActiveSubCard
           sub={sub}
           agentCount={agentCount}
           busy={busy === "portal"}
           onPortal={openPortal}
         />
-      )}
-      {hasActive && <UsageMeter onUpgrade={openPortal} />}
+      ) : hasGrantedPlanAccess ? (
+        <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
+      ) : null}
+      {hasActiveSubscription ? <UsageMeter onUpgrade={openPortal} /> : null}
+      {hasGrantedPlanAccess ? <UsageMeter /> : null}
       {liveVideoAddon?.addonOffered ? (
         <div className="rounded-md wl-panel border border-dashed border-border p-6 md:p-8 space-y-3">
           <WiredEyebrow>Add-on</WiredEyebrow>
@@ -369,9 +379,9 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
                   Manage billing
                   <ExternalLink className="size-3.5" aria-hidden="true" />
                 </button>
-              ) : (
+              ) : !hasGrantedPlanAccess ? (
                 <p className="text-xs text-muted-foreground">Choose a live plan below to continue.</p>
-              )}
+              ) : null}
             </div>
           )}
         </div>
@@ -390,7 +400,7 @@ export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBil
           </p>
         </div>
       )}
-      {!hasActive ? (
+      {!hasPlanAccess ? (
         <PlanPicker
           plans={plans}
           signupPlanInterest={signupPlanInterest}
@@ -624,6 +634,52 @@ function PlanPicker({
               </motion.div>
             );
           })}
+      </div>
+    </div>
+  );
+}
+
+function GrantedPlanAccessCard({
+  sub,
+  agentCount,
+}: {
+  sub: BillingSubscriptionState;
+  agentCount: number;
+}) {
+  const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
+  const Icon = PLAN_ICONS[sub.plan || ""] || Building2;
+  return (
+    <div
+      className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
+      data-accent={accent}
+    >
+      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+            <Icon className="w-8 h-8 wl-accent-text" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="wl-label-muted opacity-70">Current plan</span>
+              <Chip tone="success" dot>
+                Granted access
+              </Chip>
+            </div>
+            <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
+              {sub.plan_name || sub.plan || "Paid plan"}
+            </h3>
+            <p className="text-sm font-semibold text-foreground">Plan access is active</p>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              Paid-plan access is granted directly to this workspace. No recurring Stripe invoice is scheduled.
+            </p>
+            {sub.max_agents ? (
+              <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+                {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
