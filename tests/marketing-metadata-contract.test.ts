@@ -15,9 +15,9 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline | Voice agents that get work done");
+    expect(staticHead).toContain("Wireline | Voice agents that get the work done");
     expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline | Voice agents that get work done"',
+      'const DEFAULT_TITLE = "Wireline | Voice agents that get the work done"',
     );
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain("Build one for your business or your life.");
