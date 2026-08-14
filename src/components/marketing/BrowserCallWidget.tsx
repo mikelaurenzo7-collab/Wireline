@@ -2,9 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import WirelineMark from "../brand/WirelineMark";
+import AgentFace from "../AgentFace";
 import { SignalOrbFrame } from "../ui/SignalOrbFrame";
-import { Medallion } from "../ui/Medallion";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { emitProductEvent } from "../../lib/product-event-client";
 
@@ -172,9 +171,14 @@ export default function BrowserCallWidget({
           callActive && "scale-105",
         )}
       >
-        <Medallion size="lg" variant="signature" withHalo={callActive}>
-          <WirelineMark className="size-7" label={`${agentName} voice agent`} strokeWidth={4.5} />
-        </Medallion>
+        <div className="rounded-[18px] border border-border/80 bg-background p-1.5 shadow-sm">
+          <AgentFace
+            seed={`public-demo:${agentName}`}
+            size={48}
+            speaking={callActive && speakerActive}
+            title={`${agentName} agent avatar`}
+          />
+        </div>
       </SignalOrbFrame>
       <ShadButton
         type="button"
