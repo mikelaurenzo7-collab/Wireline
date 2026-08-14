@@ -10,7 +10,7 @@ import { drizzle, log } from "../lib/server-context";
 import {
   getLiveAvatarStatus,
   listPublicAvatars,
-  mintLiveAvatarLiteSessionToken,
+  mintLiveAvatarSessionToken,
 } from "../lib/video-presenter/liveavatar-service";
 import {
   resolveAvatarDefaultVoice,
@@ -301,11 +301,14 @@ router.post(
       );
     }
 
-    let liveSession: Awaited<ReturnType<typeof mintLiveAvatarLiteSessionToken>>;
+    let liveSession: Awaited<ReturnType<typeof mintLiveAvatarSessionToken>>;
     try {
-      liveSession = await mintLiveAvatarLiteSessionToken({
+      liveSession = await mintLiveAvatarSessionToken({
         avatarId: presenter.avatarId,
         maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+        // Server-owned resolution: an unavailable or unknown engine degrades to
+        // the managed Wireline voice rather than failing the session.
+        requestedEngine: (req.body as { voiceEngine?: unknown } | undefined)?.voiceEngine,
       });
     } catch (error) {
       try {
@@ -329,6 +332,15 @@ router.post(
         sessionToken: liveSession.sessionToken,
         sandbox: liveSession.sandbox,
         maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+        // The client needs the resolved mode to know whether it must stream
+        // PCM itself (LITE + Wireline voice) or only render the provider's
+        // track (FULL, or a provider-side LITE connector).
+        mode: liveSession.mode,
+        voiceEngine: liveSession.engine,
+        creditsPerMinute: liveSession.creditsPerMinute,
+        ...(liveSession.degradedFrom
+          ? { degradedFrom: liveSession.degradedFrom, degradeReason: liveSession.degradeReason }
+          : {}),
       },
     });
   },

@@ -17,10 +17,7 @@ import {
 describe("integration vendor operating map", () => {
   it("keeps authenticated integration UI operational instead of explanatory", () => {
     const source = readFileSync(
-      resolve(
-        process.cwd(),
-        "src/components/integrations/IntegrationOperatingMap.tsx",
-      ),
+      resolve(process.cwd(), "src/components/integrations/IntegrationOperatingMap.tsx"),
       "utf8",
     );
 
@@ -42,9 +39,7 @@ describe("integration vendor operating map", () => {
       expect(entry.guardrail.length).toBeGreaterThan(24);
       expect(entry.nextStep.length).toBeGreaterThan(24);
       expect(entry.capabilities.length).toBeGreaterThan(0);
-      expect(["live", "beta", "planned", "platform"]).toContain(
-        entry.readiness,
-      );
+      expect(["live", "beta", "planned", "platform"]).toContain(entry.readiness);
     }
   });
 
@@ -54,8 +49,7 @@ describe("integration vendor operating map", () => {
     );
 
     const missing = [...toolIntegrations].filter(
-      (integration) =>
-        integration && !workspaceCatalogCoversIntegration(integration),
+      (integration) => integration && !workspaceCatalogCoversIntegration(integration),
     );
 
     expect(missing).toEqual([]);
@@ -90,27 +84,22 @@ describe("integration vendor operating map", () => {
       ]),
     );
 
-    expect(
-      RUNTIME_INTEGRATIONS.find((entry) => entry.id === "drizzle")?.label,
-    ).toBe("Supabase Postgres");
-    expect(
-      RUNTIME_INTEGRATIONS.map((entry) => entry.label).join(" "),
-    ).not.toContain("Vercel Postgres");
-    expect(
-      RUNTIME_INTEGRATIONS.find((entry) => entry.id === "docusign")
-        ?.oneOfEnvVars,
-    ).toEqual([["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"]]);
-    expect(
-      RUNTIME_INTEGRATIONS.find((entry) => entry.id === "ai-gateway")
-        ?.oneOfEnvVars,
-    ).toEqual([["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"]]);
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "drizzle")?.label).toBe(
+      "Supabase Postgres",
+    );
+    expect(RUNTIME_INTEGRATIONS.map((entry) => entry.label).join(" ")).not.toContain(
+      "Vercel Postgres",
+    );
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "docusign")?.oneOfEnvVars).toEqual([
+      ["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"],
+    ]);
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "ai-gateway")?.oneOfEnvVars).toEqual([
+      ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
+    ]);
   });
 
   it("keeps environment and launch gates aligned with the OpenAI-first funded runtime", () => {
-    const envValidator = readFileSync(
-      resolve(process.cwd(), "src/lib/env-validator.ts"),
-      "utf8",
-    );
+    const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
     const launchReadiness = readFileSync(
       resolve(process.cwd(), "src/lib/launch-readiness.ts"),
       "utf8",
@@ -121,10 +110,11 @@ describe("integration vendor operating map", () => {
     expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
     expect(envValidator).toContain('name: "ELEVENLABS_API_KEY"');
     expect(envValidator).toContain("const managedRuntime");
-    expect(envValidator).toContain(
-      "Primary managed reasoning and OpenAI Realtime credential",
-    );
-    expect(envValidator).toContain("Optional xAI experiment credential");
+    expect(envValidator).toContain("Primary managed reasoning and OpenAI Realtime credential");
+    // xAI is a real continuity lane now, but OpenAI must stay the documented
+    // managed default in the same breath the xAI key is described.
+    expect(envValidator).toContain("OpenAI stays the managed default");
+    expect(envValidator).toContain('name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER"');
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
     expect(launchReadiness).toContain("PSTN voice + number stack");
@@ -140,18 +130,15 @@ describe("integration vendor operating map", () => {
       key: process.env.FEDERAL_DNC_API_KEY,
     };
     try {
-      process.env.FEDERAL_DNC_API_URL =
-        "https://www.dncscrub.com/app/main/rpc/scrub";
+      process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
       process.env.FEDERAL_DNC_API_KEY = "vcp_not_a_dnc_credential";
       expect(getRuntimeCapabilities().federal_dnc).toBe(false);
 
       process.env.FEDERAL_DNC_API_KEY = "real-login-id";
-      process.env.FEDERAL_DNC_API_URL =
-        "http://www.dncscrub.com/app/main/rpc/scrub";
+      process.env.FEDERAL_DNC_API_URL = "http://www.dncscrub.com/app/main/rpc/scrub";
       expect(getRuntimeCapabilities().federal_dnc).toBe(false);
 
-      process.env.FEDERAL_DNC_API_URL =
-        "https://www.dncscrub.com/app/main/rpc/scrub";
+      process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
       expect(getRuntimeCapabilities().federal_dnc).toBe(true);
     } finally {
       if (saved.url === undefined) delete process.env.FEDERAL_DNC_API_URL;

@@ -8,6 +8,14 @@
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import {
+  buildLiveVideoSessionTokenBody,
+  describeLiveVideoEngines,
+  readLiveVideoPlatformConfig,
+  resolveLiveVideoEngine,
+  type LiveVideoMode,
+  type LiveVideoVoiceEngine,
+} from "./live-video-session-policy";
 import type { LiveAvatarSessionCredentials } from "./types";
 
 const LIVEAVATAR_API_BASE = "https://api.liveavatar.com";
@@ -39,11 +47,15 @@ export function isLiveAvatarSandbox(): boolean {
 export function getLiveAvatarStatus() {
   const apiKey = liveAvatarApiKey();
   const avatarId = defaultAvatarId();
+  const config = readLiveVideoPlatformConfig();
   return {
     configured: Boolean(apiKey),
     avatarCatalogReady: Boolean(apiKey && avatarId),
     sandbox: isLiveAvatarSandbox(),
     defaultAvatarId: avatarId,
+    /** Highest session mode the provider plan allows on this workspace. */
+    allowedMode: config.allowedMode,
+    engines: describeLiveVideoEngines(config),
   };
 }
 
@@ -101,25 +113,73 @@ async function liveAvatarFetch<T>(
   return body.data;
 }
 
+/**
+ * Mint a session token for the resolved mode.
+ *
+ * The mode and engine decision lives in `live-video-session-policy.ts`; this
+ * function only carries the resulting body to the provider. A caller that
+ * passes no engine preference gets LITE on the Wireline voice, which is the
+ * long-standing default.
+ */
+export async function mintLiveAvatarSessionToken(input: {
+  avatarId: string;
+  maxSessionDurationSeconds?: number;
+  requestedEngine?: unknown;
+  language?: string;
+}): Promise<{
+  sessionToken: string;
+  sandbox: boolean;
+  mode: LiveVideoMode;
+  engine: LiveVideoVoiceEngine;
+  creditsPerMinute: number;
+  degradedFrom: LiveVideoVoiceEngine | null;
+  degradeReason: string | null;
+}> {
+  const sandbox = isLiveAvatarSandbox();
+  const config = readLiveVideoPlatformConfig();
+  const resolution = resolveLiveVideoEngine({ requested: input.requestedEngine, config });
+
+  if (resolution.degradedFrom) {
+    log.warn("Live Video engine degraded to the managed default", {
+      requested: resolution.degradedFrom,
+      resolved: resolution.engine,
+      reason: resolution.reason,
+    });
+  }
+
+  const tokenPayload = await liveAvatarFetch<{ session_token: string }>("/v1/sessions/token", {
+    method: "POST",
+    apiKey: true,
+    body: JSON.stringify(
+      buildLiveVideoSessionTokenBody({
+        avatarId: input.avatarId,
+        resolution,
+        config,
+        sandbox,
+        maxSessionDurationSeconds: input.maxSessionDurationSeconds,
+        language: input.language,
+      }),
+    ),
+  });
+
+  return {
+    sessionToken: tokenPayload.session_token,
+    sandbox,
+    mode: resolution.mode,
+    engine: resolution.engine,
+    creditsPerMinute: resolution.creditsPerMinute,
+    degradedFrom: resolution.degradedFrom,
+    degradeReason: resolution.reason,
+  };
+}
+
+/** @deprecated Use `mintLiveAvatarSessionToken`, which also supports FULL mode. */
 export async function mintLiveAvatarLiteSessionToken(input: {
   avatarId: string;
   maxSessionDurationSeconds?: number;
 }): Promise<{ sessionToken: string; sandbox: boolean }> {
-  const sandbox = isLiveAvatarSandbox();
-  const tokenPayload = await liveAvatarFetch<{ session_token: string }>("/v1/sessions/token", {
-    method: "POST",
-    apiKey: true,
-    body: JSON.stringify({
-      mode: "LITE",
-      avatar_id: input.avatarId,
-      is_sandbox: sandbox,
-      video_settings: { quality: "high" },
-      ...(input.maxSessionDurationSeconds
-        ? { max_session_duration: input.maxSessionDurationSeconds }
-        : {}),
-    }),
-  });
-  return { sessionToken: tokenPayload.session_token, sandbox };
+  const { sessionToken, sandbox } = await mintLiveAvatarSessionToken(input);
+  return { sessionToken, sandbox };
 }
 
 /** @deprecated Prefer mintLiveAvatarLiteSessionToken + client SDK start(). */

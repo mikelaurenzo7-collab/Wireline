@@ -31,7 +31,7 @@ describe("live video economics contract", () => {
     expect(routes).toContain("LIVE_VIDEO_MONTHLY_LIMIT_REACHED");
 
     const reservation = routes.indexOf("const reservation = await reserveLiveVideoSessionMinutes");
-    const mint = routes.indexOf("await mintLiveAvatarLiteSessionToken", reservation);
+    const mint = routes.indexOf("await mintLiveAvatarSessionToken", reservation);
     const release = routes.indexOf("await releaseLiveVideoSessionReservation", mint);
     expect(reservation).toBeGreaterThan(-1);
     expect(mint).toBeGreaterThan(reservation);

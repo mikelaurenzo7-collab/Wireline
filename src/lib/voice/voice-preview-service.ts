@@ -1,11 +1,10 @@
-/** Preview-only audio samples for legacy curated Wireline preview voices. */
+/** Browser audio samples for the curated Wireline Preview voice family. */
 import { AppError } from "../api-error";
-import { log } from "../server-logger";
 import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../voice-catalog";
+import { synthesizeXaiSpeech } from "./xai-tts-service";
 
 export const CURATED_VOICE_PREVIEW_TEXT = "Hello, this is {name}. How can I help you today?";
 
-const XAI_TTS_URL = "https://api.x.ai/v1/tts";
 const XAI_VOICE_IDS = new Set(WIRELINE_LIVE_VOICES.map((voice) => voice.id));
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
@@ -30,10 +29,15 @@ export function isCuratedPreviewProvider(value: string): value is CuratedPreview
 }
 
 /**
- * Generate an MP3 preview for an exact legacy preview voice.
+ * Generate an MP3 preview for an exact curated preview voice.
+ *
  * Vapi does not expose a documented standalone preview endpoint, so its voices
  * are intentionally auditioned during a phone test instead of being faked with
  * a different provider. This path never participates in live call routing.
+ *
+ * The membership check runs before the credential check so an unknown voice id
+ * reports 404 whether or not the workspace has a key, which keeps the endpoint
+ * from confirming credential state to an unauthenticated prober.
  */
 export async function generateCuratedVoicePreview(
   provider: CuratedPreviewProvider,
@@ -49,56 +53,15 @@ export async function generateCuratedVoicePreview(
     throw AppError.fromHttpStatus(404, "Voice preview not available for this selection.");
   }
 
-  const apiKey = process.env.XAI_API_KEY?.trim();
-  if (!apiKey) {
-    throw AppError.fromHttpStatus(503, "Voice previews unavailable.");
-  }
-
   const displayName = resolveDisplayName(provider, normalizedVoiceId);
-  const text = CURATED_VOICE_PREVIEW_TEXT.replace("{name}", displayName);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
-
-  try {
-    const response = await fetchImpl(XAI_TTS_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text,
-        voice_id: normalizedVoiceId,
-        language: "en",
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const detail = (await response.text().catch(() => "")).slice(0, 300);
-      log.warn("[voice-preview] provider TTS request rejected", {
-        provider: "wireline-live",
-        status: response.status,
-        voiceId: normalizedVoiceId,
-        detail,
-      });
-      throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
-    }
-
-    const audio = await response.arrayBuffer();
-    if (audio.byteLength === 0) {
-      log.warn("[voice-preview] provider TTS returned empty audio", {
-        provider: "wireline-live",
-        voiceId: normalizedVoiceId,
-      });
-      throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
-    }
-    return audio;
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
-  } finally {
-    clearTimeout(timeout);
-  }
+  const result = await synthesizeXaiSpeech(
+    {
+      text: CURATED_VOICE_PREVIEW_TEXT.replace("{name}", displayName),
+      voiceId: normalizedVoiceId,
+      language: "en",
+      timeoutMs: 15_000,
+    },
+    fetchImpl as typeof fetch,
+  );
+  return result.audio;
 }

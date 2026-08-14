@@ -1,10 +1,11 @@
 /**
  * Wireline model policy.
  * Managed runtime: OpenAI primary for structured reasoning and Vapi call
- * intelligence, with Gemini as the first automatic fallback and the Vercel AI
- * Gateway as the governed multi-model continuity route. xAI remains available
- * only through explicit opt-in experiments; it is not part of the launch
- * default provider chain.
+ * intelligence, with Gemini as the first automatic fallback, the Vercel AI
+ * Gateway as the governed multi-model continuity route, and xAI closing the
+ * chain whenever XAI_API_KEY is configured. OpenAI remains the launch default;
+ * `reasoning-provider-policy.ts` owns eligibility and ordering, including the
+ * operator-only promotion of a different lane to primary.
  */
 export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
@@ -40,8 +41,7 @@ export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
 /** First automatic fallback if direct OpenAI is unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
-  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() ||
-  GEMINI_MODELS.FLASH_3_6;
+  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_6;
 
 /** The managed structured default the runtime asks for first. */
 export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
@@ -77,9 +77,7 @@ export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_5_6_LUNA;
 /** Cross-provider retry is performed by Wireline after a rejected Gemini request. */
 export const VAPI_VOICE_FALLBACK_PROVIDER = "openai" as const;
 export const VAPI_VOICE_FALLBACK_MODEL = VAPI_OPENAI_FALLBACK_MODEL;
-export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [
-  VAPI_OPENAI_FALLBACK_MODEL,
-];
+export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_OPENAI_FALLBACK_MODEL];
 
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
@@ -90,9 +88,7 @@ export function isXAIModelId(value: unknown): value is string {
 }
 
 export function isGeminiModelId(value: unknown): value is string {
-  return (
-    typeof value === "string" && value.trim().toLowerCase().includes("gemini")
-  );
+  return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
 }
 
 /**
@@ -133,9 +129,7 @@ export function resolveVapiVoiceModelSelection(input?: {
       provider: "openai",
       model,
       fallbackModels:
-        model === VAPI_OPENAI_FALLBACK_MODEL
-          ? undefined
-          : [...VAPI_DEFAULT_FALLBACK_MODELS],
+        model === VAPI_OPENAI_FALLBACK_MODEL ? undefined : [...VAPI_DEFAULT_FALLBACK_MODELS],
       userSelected: false,
     };
   return {
@@ -159,14 +153,8 @@ export function resolveVapiVoiceModelSelection(input?: {
  * tenant second, else the managed default.
  */
 export function resolveCoherentVoiceModel(
-  agent:
-    | { llmProvider?: string | null; llmModel?: string | null }
-    | null
-    | undefined,
-  tenant:
-    | { voiceLlmProvider?: string | null; voiceLlmModel?: string | null }
-    | null
-    | undefined,
+  agent: { llmProvider?: string | null; llmModel?: string | null } | null | undefined,
+  tenant: { voiceLlmProvider?: string | null; voiceLlmModel?: string | null } | null | undefined,
 ): VapiVoiceModelSelection {
   const agentPair =
     agent?.llmProvider && agent?.llmModel
@@ -198,10 +186,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   },
 ] as const;
 
-export function clampVoiceTemperature(
-  value: unknown,
-  fallback: number,
-): number {
+export function clampVoiceTemperature(value: unknown, fallback: number): number {
   if (value == null) return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : fallback;
@@ -311,9 +296,7 @@ type LongContextRule = {
 };
 
 /** Vendor long-context tiers. The higher rate applies to the full request. */
-const MODEL_LONG_CONTEXT_PRICING: Partial<
-  Record<keyof typeof MODEL_PRICING, LongContextRule>
-> = {
+const MODEL_LONG_CONTEXT_PRICING: Partial<Record<keyof typeof MODEL_PRICING, LongContextRule>> = {
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     thresholdTokens: 272_000,
     inclusive: false,
@@ -351,14 +334,10 @@ export function bareModelId(model: string): string {
 }
 
 /** Price the served model and its full prompt size, including cache reads/writes. */
-export function pricingForModel(
-  model: string,
-  totalInputTokens = 0,
-): ModelPricingRow {
+export function pricingForModel(model: string, totalInputTokens = 0): ModelPricingRow {
   const bare = bareModelId(model);
   const key = bare as keyof typeof MODEL_PRICING;
-  const standard =
-    MODEL_PRICING[key] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA];
+  const standard = MODEL_PRICING[key] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA];
   const long = MODEL_LONG_CONTEXT_PRICING[key];
   if (!long) return standard;
   const crossed = long.inclusive
@@ -395,7 +374,5 @@ export function modelLabel(model: string): string {
 export type AdaptiveEffort = "low" | "medium" | "high";
 export function resolveAdaptiveEffort(): AdaptiveEffort {
   const value = process.env.WIRELINE_DEEP_EFFORT?.trim().toLowerCase();
-  return value === "low" || value === "medium" || value === "high"
-    ? value
-    : "medium";
+  return value === "low" || value === "medium" || value === "high" ? value : "medium";
 }
