@@ -49,7 +49,16 @@ const PLAN_ACCENTS: Record<string, string> = {
   enterprise: BRAND.colors.primary,
 };
 
-export default function StripeBillingCard() {
+type StripeBillingCardProps = {
+  /**
+   * Some account surfaces do not load the customer's actual balance. Keep the
+   * legacy top-up card there, but let BillingSettings own the single canonical
+   * balance + top-up surface when it already has the balance ledger loaded.
+   */
+  showBalanceTopUp?: boolean;
+};
+
+export default function StripeBillingCard({ showBalanceTopUp = true }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
@@ -378,7 +387,9 @@ export default function StripeBillingCard() {
           )}
         </div>
       ) : null}
-      {canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+      {showBalanceTopUp && canAddBalance ? (
+        <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />
+      ) : null}
       {error && (
         <div
           role="alert"
@@ -390,40 +401,7 @@ export default function StripeBillingCard() {
           </p>
         </div>
       )}
-      {hasActive ? (
-        <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
-          <div className="border-b border-border pb-5">
-            <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-              Manage plan
-            </h3>
-            <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-              Upgrade, downgrade, update payment method, or cancel through the secure Stripe
-              customer portal. Changes apply to your next billing cycle unless noted otherwise.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <ShadButton
-              type="button"
-              disableAnimations
-              variant="outline"
-              onClick={openPortal}
-              disabled={busy === "portal"}
-              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
-            >
-              {busy === "portal" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4" />
-              )}
-              Open billing portal
-            </ShadButton>
-            <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
-              <Shield className="w-3 h-3" />
-              Upgrade · cancel · invoices
-            </span>
-          </div>
-        </div>
-      ) : (
+      {!hasActive ? (
         <PlanPicker
           plans={plans}
           signupPlanInterest={signupPlanInterest}
@@ -432,7 +410,7 @@ export default function StripeBillingCard() {
           onBillingIntervalChange={setBillingInterval}
           onSelectPlan={startCheckout}
         />
-      )}
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
