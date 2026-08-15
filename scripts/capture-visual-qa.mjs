@@ -593,6 +593,17 @@ if (bypassToken) {
 async function newCapturedContext(options) {
   const context = await browser.newContext(options);
   if (protectionCookies.length) await context.addCookies(protectionCookies);
+  // First-visit privacy notice is a real product surface, but it sits over the
+  // page and makes every marketing screenshot look like the same cookie card.
+  // Acknowledge it for capture so full-length visual QA can see the page.
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("wireline_cookie_consent", "acknowledged");
+      localStorage.setItem("wireline_marketing_measurement_consent", "denied");
+    } catch {
+      /* private contexts may block storage */
+    }
+  });
   return context;
 }
 

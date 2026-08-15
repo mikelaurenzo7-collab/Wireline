@@ -61,5 +61,6 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain("captureInternalScrollEnd");
     expect(visualQa).toContain('file.replace(/\\.png$/, "-end.png")');
     expect(visualQa).toContain("issues.some");
+    expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
   });
 });

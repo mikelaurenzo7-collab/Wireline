@@ -28,7 +28,7 @@ import MarketingChrome from "./marketing/MarketingChrome";
 const SECTIONS = [
   {
     icon: Lock,
-    title: "Encryption — everywhere",
+    title: "Encryption everywhere",
     items: [
       "HTTPS is enforced on public endpoints. HSTS is configured with includeSubDomains and preload.",
       "Passwords are hashed with Node.js scrypt and a random per-user salt. They are never stored in plaintext.",
@@ -57,7 +57,7 @@ const SECTIONS = [
   },
   {
     icon: Eye,
-    title: "What we do — and don't — store",
+    title: "What we store, and what we don't",
     items: [
       "Call transcripts are stored in the managed database with configurable retention per tenant (365-day default; supported range 90–365 days).",
       "Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when intentionally used.",
@@ -220,7 +220,7 @@ export default function Security() {
               <div className="text-center">
                 <h1 className="wl-public-section-heading max-w-[22ch]">
                   {isTrustHub
-                    ? "Trust Center — how Wireline earns live calls."
+                    ? "How Wireline earns live calls."
                     : "How we keep your data safe."}
                 </h1>
               </div>

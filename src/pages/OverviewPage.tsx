@@ -147,7 +147,7 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
               </Link>
             </Button>
             <Button asChild variant="secondary" className="w-full justify-center sm:w-auto">
-              <Link to="/showcase">View demo</Link>
+              <Link to="/showcase">Hear a demo</Link>
             </Button>
           </div>
         </div>
@@ -381,7 +381,7 @@ function AgentSection({
             className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
             <Video size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Live Video — put an agent on screen</span>
+            <span className="min-w-0 flex-1 truncate">Live Video · put an agent on screen</span>
             <ArrowRight
               className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden="true"

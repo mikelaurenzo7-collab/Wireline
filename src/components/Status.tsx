@@ -146,22 +146,40 @@ export default function Status() {
           cache: "no-store",
           signal: controller.signal,
         });
-        if (!res.ok) {
-          /*
-           * Release the body before bailing. Throwing on `!res.ok` left the
-           * response stream unread, and an unread body keeps the request open:
-           * every failed 60s poll leaked another one for the life of the page,
-           * and /status never reached network idle. The server-side probes in
-           * public-health-probe.ts already cancel bodies for the same reason.
-           */
+        /*
+         * Always consume the body. A 503 from /api/health/public is often a
+         * *valid* degraded snapshot (distributed cache required, last-known
+         * probe) — throwing on `!res.ok` after canceling the stream made the
+         * one public surface whose job is honesty read "Status temporarily
+         * unavailable" / UNKNOWN while the payload already had overall and
+         * component state. Parse first; only treat the reading as missing when
+         * the body is unusable.
+         *
+         * `res.text()` consumes the stream so a failed poll cannot leak an
+         * unread body. If even that fails, cancel whatever is left.
+         */
+        let rawText = "";
+        try {
+          rawText = await res.text();
+        } catch {
           await res.body?.cancel().catch(() => undefined);
-          throw new Error(`HTTP ${res.status}`);
+          throw new Error(res.ok ? "Unreadable status payload" : `HTTP ${res.status}`);
         }
-        const json = normalizeHealth(await res.json());
-        if (!json) throw new Error("Unrecognised status payload");
+        let parsed: unknown = null;
+        try {
+          parsed = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          parsed = null;
+        }
+        const json = normalizeHealth(parsed);
+        if (!json) throw new Error(res.ok ? "Unrecognised status payload" : `HTTP ${res.status}`);
         if (!cancelled) {
           setData(json);
-          setError(null);
+          setError(
+            res.ok
+              ? null
+              : "Showing the last reported snapshot while the live probe cache is unavailable.",
+          );
         }
       } catch (_err) {
         if (!cancelled) setError("Status feed temporarily unavailable.");
@@ -310,7 +328,7 @@ export default function Status() {
               non-persistent inference against the managed reasoning provider. Normal provider
               results are cached for 120 seconds. During a distributed-cache incident the server may
               use its last known result for up to five minutes, while edge stale-while-revalidate
-              can briefly extend delivery beyond that. These are provider-access checks—not an
+              can briefly extend delivery beyond that. These are provider-access checks, not an
               end-to-end customer call. The timestamp above is the authoritative age of the
               displayed reading.
             </p>

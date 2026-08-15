@@ -116,7 +116,7 @@ describe("video presenter integration", () => {
     // story, so the row is truthful for subscribed and unsubscribed accounts.
     const overview = source("src/pages/OverviewPage.tsx");
     expect(overview).toContain('to="/studio/live-video"');
-    expect(overview).toContain("Live Video — put an agent on screen");
+    expect(overview).toContain("Live Video · put an agent on screen");
     expect(overview).toContain('kind === "business"');
   });
 
