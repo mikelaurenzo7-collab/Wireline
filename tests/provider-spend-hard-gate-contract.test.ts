@@ -121,7 +121,7 @@ describe("provider spend launch kill switch", () => {
     }
 
     const worker = read("src/lib/job-worker.ts");
-    const dispatcher = worker.slice(worker.indexOf("export async function handleJob"));
+    const dispatcher = worker.slice(worker.indexOf("async function dispatchJob"));
     const baseDispatch = dispatcher.lastIndexOf("await handleBaseJob(job as never)");
     const gate = dispatcher.lastIndexOf("assertLaunchProviderSpendAllowed(job)", baseDispatch);
     expect(gate).toBeGreaterThan(-1);

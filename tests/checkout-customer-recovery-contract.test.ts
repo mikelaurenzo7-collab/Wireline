@@ -9,12 +9,17 @@ const stripeHelpers = readFileSync(
   new URL("../src/lib/stripe-helpers.ts", import.meta.url),
   "utf8",
 );
+const customerBinding = readFileSync(
+  new URL("../src/lib/stripe-customer-binding.ts", import.meta.url),
+  "utf8",
+);
 
 describe("checkout Stripe-customer recovery contract", () => {
   it("validates stored customer ownership and treats deleted or missing resources as stale", () => {
-    expect(source).toContain("stripe.customers.retrieve(customerId)");
-    expect(source).toContain("customer.metadata?.wireline_user_id");
-    expect(source).toContain('"deleted" in customer && customer.deleted');
+    expect(source).toContain("resolveOwnedStripeCustomer({");
+    expect(customerBinding).toContain("stripe.customers.retrieve(customerId)");
+    expect(customerBinding).toContain("customer.metadata?.wireline_user_id");
+    expect(customerBinding).toContain('"deleted" in customer && customer.deleted');
 
     // The missing-resource test now lives in stripe-helpers so every Stripe
     // re-fetch shares one retry posture. This route used to carry a private
@@ -22,8 +27,8 @@ describe("checkout Stripe-customer recovery contract", () => {
     // the API error code on `raw.code` for StripeInvalidRequestError, so that
     // copy missed real resource_missing responses and threw where it should
     // have treated the stored customer as stale.
-    expect(source).toContain("isMissingStripeResource");
-    expect(source).not.toContain("function isMissingStripeResource");
+    expect(customerBinding).toContain("isMissingStripeResource");
+    expect(customerBinding).not.toContain("function isMissingStripeResource");
     expect(stripeHelpers).toContain("export function isMissingStripeResource(error: unknown)");
     expect(stripeHelpers).toContain('stripeError?.code === "resource_missing"');
     expect(stripeHelpers).toContain('stripeError?.raw?.code === "resource_missing"');

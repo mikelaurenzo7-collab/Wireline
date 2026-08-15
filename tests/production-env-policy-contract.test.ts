@@ -6,10 +6,7 @@ import { isProductionDeployment } from "../src/lib/deployment-environment";
 
 const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
 const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mjs"), "utf8");
-const deploymentBoundaryPath = resolve(
-  process.cwd(),
-  "scripts/check-deployment-boundaries.mjs",
-);
+const deploymentBoundaryPath = resolve(process.cwd(), "scripts/check-deployment-boundaries.mjs");
 const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
 const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
@@ -29,9 +26,7 @@ const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
 
 describe("production environment launch policy", () => {
   it("distinguishes production from Vercel preview even though NODE_ENV is production", () => {
-    expect(isProductionDeployment({ VERCEL_ENV: "preview", NODE_ENV: "production" })).toBe(
-      false,
-    );
+    expect(isProductionDeployment({ VERCEL_ENV: "preview", NODE_ENV: "production" })).toBe(false);
     expect(isProductionDeployment({ VERCEL_ENV: "development", NODE_ENV: "production" })).toBe(
       false,
     );
@@ -58,6 +53,8 @@ describe("production environment launch policy", () => {
       expect(prodCheck).toContain(`"${key}"`);
     }
     expect(prodCheck).toContain("deferred checklist until business registration");
+    expect(prodCheck).toContain("/^(?:sk|rk)_(?:test|live)_/");
+    expect(envValidator).toContain("least-privilege rk_live_");
   });
 
   it("promotes the launch-active Live Video provider key to production readiness", () => {
@@ -97,10 +94,16 @@ describe("production environment launch policy", () => {
     expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_DATABASE");
     expect(smokeServer).toContain("delete process.env.DATABASE_POOL_URL");
     expect(smokeServer).toContain("delete process.env.POSTGRES_URL");
-    expect(serverContext).toContain("Database intentionally unavailable for no-database import smoke");
+    expect(serverContext).toContain(
+      "Database intentionally unavailable for no-database import smoke",
+    );
     expect(startup).toContain("Skipping startup env error log during no-database import smoke");
-    expect(startup).toContain("No-database import smoke validated import-safe degraded startup path");
-    expect(startup).not.toContain("No-database import smoke observed missing prod env vars as expected");
+    expect(startup).toContain(
+      "No-database import smoke validated import-safe degraded startup path",
+    );
+    expect(startup).not.toContain(
+      "No-database import smoke observed missing prod env vars as expected",
+    );
   });
 
   it("fails preview builds that inherit production credentials or provider configuration", () => {

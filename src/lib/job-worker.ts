@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { handleJob as handleBaseJob } from "./job-worker-base";
@@ -25,8 +25,14 @@ import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-jo
 import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
-import { DEFAULT_MAX_ATTEMPTS, startWorker, type JobRow } from "./job-queue";
+import {
+  DEFAULT_MAX_ATTEMPTS,
+  startWorker,
+  type JobRow,
+  writeTransactionConfig,
+} from "./job-queue";
 import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
+import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./account-deletion-fence";
 import {
   isPausableProviderSpendJobType,
   ProviderSpendPausedError,
@@ -37,6 +43,23 @@ export * from "./job-worker-base";
 
 const ARTIFACT_FORMATS = new Set<RuntimeArtifactFormat>(["pdf", "docx", "pptx", "xlsx"]);
 const ARTIFACT_DESTINATIONS = new Set(["google_drive", "onedrive"]);
+const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * `post_call_digest` already holds this fence around every local/provider
+ * boundary; wrapping the whole handler would recursively deadlock on a second
+ * database connection. The purge job establishes the terminal marker itself.
+ */
+const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
+  "post_call_digest",
+  "purge_deleted_account",
+]);
+
+/** Carrier acceptance predates deletion, so finish its accounting/history
+ * reconciliation under the fence and let the ensuing local purge erase it. */
+const TERMINAL_DELETION_CLEANUP_JOB_TYPES = new Set<JobRow["type"]>([
+  "twilio_message_reconciliation",
+]);
 
 function attemptNumber(job: JobRow): number {
   const value = Number((job as unknown as { attempts?: number }).attempts || 1);
@@ -270,7 +293,7 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 }
 
 /** Global durable-job dispatcher including launch reporting extensions. */
-export async function handleJob(job: JobRow): Promise<void> {
+async function dispatchJob(job: JobRow): Promise<void> {
   if (job.type === "twilio_message_reconciliation") {
     await handleTwilioMessageReconciliationJob(job);
     return;
@@ -305,6 +328,78 @@ export async function handleJob(job: JobRow): Promise<void> {
   // the policy set, so the kill switch cannot block accounting or cost relief.
   assertLaunchProviderSpendAllowed(job);
   await handleBaseJob(job as never);
+}
+
+/**
+ * Serialize tenant work that can touch providers/PII with irreversible account
+ * deletion. A worker that starts first holds the barrier until its handler
+ * finishes; purge then marks `purging`. A worker that starts afterward sees the
+ * durable marker (or a vanished user) and terminally completes without work.
+ */
+export async function handleJob(job: JobRow): Promise<void> {
+  const userId = jobOwnerId(job);
+  if (!userId || userId === SYSTEM_USER_ID || SELF_MANAGED_DELETION_FENCE_JOB_TYPES.has(job.type)) {
+    await dispatchJob(job);
+    return;
+  }
+
+  await drizzle.transaction(
+    (tx) =>
+      withAccountDeletionFence(tx, userId, async () => {
+        const [liveUser] = await tx
+          .select({ id: schema.users.id })
+          .from(schema.users)
+          .where(eq(schema.users.id, userId))
+          .limit(1);
+        if (!liveUser) {
+          log.warn("tenant job skipped — account already erased", {
+            jobId: job.id,
+            jobType: job.type,
+            userId,
+          });
+          return;
+        }
+
+        if (TERMINAL_DELETION_CLEANUP_JOB_TYPES.has(job.type)) {
+          await dispatchJob(job);
+          return;
+        }
+
+        const outcome = await runTenantJobAfterDeletionCheck({
+          terminalDeletionExists: async () => {
+            const [terminal] = await tx
+              .select({ id: schema.deletionQueue.id })
+              .from(schema.deletionQueue)
+              .where(
+                and(
+                  eq(schema.deletionQueue.userId, userId),
+                  sql`(
+                    ${schema.deletionQueue.status} = 'purging'
+                    OR (
+                      ${schema.deletionQueue.status} = 'pending'
+                      AND (
+                        ${schema.deletionQueue.scheduledPurgeAt} IS NULL
+                        OR ${schema.deletionQueue.scheduledPurgeAt} <= now()
+                      )
+                    )
+                  )`,
+                ),
+              )
+              .limit(1);
+            return Boolean(terminal);
+          },
+          perform: () => dispatchJob(job),
+        });
+        if (!outcome.performed) {
+          log.warn("tenant job skipped — terminal account deletion has begun", {
+            jobId: job.id,
+            jobType: job.type,
+            userId,
+          });
+        }
+      }),
+    writeTransactionConfig(),
+  );
 }
 
 /** Initializes the extended worker outside Vercel serverless. */

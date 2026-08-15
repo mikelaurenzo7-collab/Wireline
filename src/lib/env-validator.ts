@@ -37,7 +37,7 @@ const nonEmpty = (value: string) => value.length > 0;
 const isUrl = (value: string) => /^https?:\/\//.test(value);
 const isHttpsUrl = (value: string) => /^https:\/\//.test(value);
 const isHex32 = (value: string) => /^[a-f0-9]{64}$/i.test(value);
-const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
+const isStripe = (value: string) => /^(?:sk|rk)_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isE164 = (value: string) => /^\+[1-9]\d{6,14}$/.test(value);
 const isTwilioAccountSid = (value: string) => /^AC[a-fA-F0-9]{32}$/.test(value);
@@ -298,7 +298,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     requiredInProd: true,
     description: "Stripe subscriptions, prepaid balances, billing, and portal",
     validate: (value) => !value || isStripe(value),
-    formatHint: "sk_live_... for production",
+    formatHint: "sk_live_... or least-privilege rk_live_... for production",
   },
   {
     name: "STRIPE_WEBHOOK_SECRET",

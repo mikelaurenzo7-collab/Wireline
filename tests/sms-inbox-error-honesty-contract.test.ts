@@ -13,11 +13,13 @@ describe("sms inbox error honesty", () => {
     expect(source).toContain("rethrowIfAppError");
     expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to load SMS threads")');
     expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to load SMS messages")');
-    expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")');
+    expect(source).toContain(
+      'throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")',
+    );
     expect(source).toContain("evaluateOutboundDialGate");
     expect(source).toContain("isLiveSessionFollowUp: true");
-    expect(source).not.toContain('res.json({ threads: [] })');
-    expect(source).not.toContain('res.json({ messages: [] })');
+    expect(source).not.toContain("res.json({ threads: [] })");
+    expect(source).not.toContain("res.json({ messages: [] })");
     expect(source).not.toContain("res.json({ ok: false })");
     expect(source).not.toContain("migration may be pending");
   });
@@ -48,5 +50,22 @@ describe("sms inbox error honesty", () => {
     expect(component).not.toContain("Message delivered to customer");
     expect(component).toContain("if (markReadResponse.ok)");
     expect(component).not.toMatch(/mark-read[^]*?\.catch\(\s*\(\) => \{\}/);
+  });
+
+  it("turns ambiguous carrier outcomes into an explicit non-resend state", () => {
+    const route = read("src/routes/sms-routes.ts");
+    const component = read("src/components/SmsThreads.tsx");
+    const ambiguousStart = component.indexOf('result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS"');
+    const ordinaryFailure = component.indexOf("if (!response.ok || !result.ok)", ambiguousStart);
+    const ambiguousBranch = component.slice(ambiguousStart, ordinaryFailure);
+
+    expect(route).toContain("provider_outcome_ambiguous: result.providerOutcomeAmbiguous");
+    expect(route).toContain("do_not_resend: result.doNotResend");
+    expect(ambiguousStart).toBeGreaterThan(-1);
+    expect(ordinaryFailure).toBeGreaterThan(ambiguousStart);
+    expect(ambiguousBranch).toContain("Do not resend");
+    expect(ambiguousBranch).toContain("message.id !== optimistic.id");
+    expect(ambiguousBranch).not.toContain("setReply(body)");
+    expect(component.indexOf("setReply(body)")).toBeGreaterThan(ordinaryFailure);
   });
 });

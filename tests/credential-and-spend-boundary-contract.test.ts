@@ -134,19 +134,19 @@ describe("the daily AI-token dimension bounds spend instead of only counting it"
     // Enforcement lives in withAudit rather than a sibling middleware so a
     // route that meters its spend respects the ceiling by construction.
     const withAudit = source.slice(source.indexOf("export function withAudit"));
-    expect(withAudit).toContain("aiTokenQuotaExceeded");
+    expect(withAudit).toContain("getAiTokenQuotaExceeded");
     expect(withAudit).toContain("AI_TOKEN_QUOTA_EXCEEDED");
     expect(withAudit).toContain("429");
     // The gate must run before the audit context is established and next() is
     // called, or the model call has already happened.
-    expect(withAudit.indexOf("aiTokenQuotaExceeded")).toBeLessThan(
+    expect(withAudit.indexOf("getAiTokenQuotaExceeded")).toBeLessThan(
       withAudit.indexOf("createAuditContext()"),
     );
   });
 
   it("reads usage without incrementing, leaving the audit path the single writer", () => {
     const check = source.slice(
-      source.indexOf("async function aiTokenQuotaExceeded"),
+      source.indexOf("export async function getAiTokenQuotaExceeded"),
       source.indexOf("export function withAudit"),
     );
     expect(check).toContain("quotaTracker.getUsage");
@@ -155,7 +155,7 @@ describe("the daily AI-token dimension bounds spend instead of only counting it"
 
   it("fails open on a counter-store error rather than taking every tenant offline", () => {
     const check = source.slice(
-      source.indexOf("async function aiTokenQuotaExceeded"),
+      source.indexOf("export async function getAiTokenQuotaExceeded"),
       source.indexOf("export function withAudit"),
     );
     expect(check).toContain("catch");

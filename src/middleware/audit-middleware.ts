@@ -317,7 +317,7 @@ export async function commitPlatformCostReservation(
  * offline on a quota-table blip is the worse failure. The monthly USD cap in
  * `enforceSpendCap` remains the backstop that does fail closed.
  */
-async function aiTokenQuotaExceeded(
+export async function getAiTokenQuotaExceeded(
   userId: string,
 ): Promise<{ limit: number; used: number } | null> {
   try {
@@ -346,7 +346,7 @@ export function withAudit(actionPrefix: string) {
   return async (req: any, res: any, next: any) => {
     const userId = req?.user?.id;
     if (userId) {
-      const exceeded = await aiTokenQuotaExceeded(userId);
+      const exceeded = await getAiTokenQuotaExceeded(userId);
       if (exceeded) {
         res.setHeader("Retry-After", "3600");
         return res.status(429).json({

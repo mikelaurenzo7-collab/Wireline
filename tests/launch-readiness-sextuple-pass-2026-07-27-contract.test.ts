@@ -29,8 +29,10 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     expect(script).toContain('catalogParams.append("expand[]", "data.product")');
     expect(script).toContain("product_name_mismatch");
     expect(script).toContain("product_catalog_version_mismatch");
-    expect(script).toContain('supportEmail === "support@trywireline.com"');
+    expect(script).toContain("supportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL");
     expect(script).toContain("brandingLogo.length > 0");
+    expect(script).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
+    expect(script).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
     expect(script).toContain("managed_configuration_missing");
     expect(script).toContain("plan_switch_prices_mismatch");
     expect(script).toContain('subscription_cancel?.mode === "at_period_end"');

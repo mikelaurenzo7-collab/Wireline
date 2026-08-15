@@ -251,6 +251,21 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       // an AppError and rides `error`. Reading only `reason` collapsed every
       // compliance block into a bare "Send failed", so the account holder had
       // no way to tell "this number opted out" from "try again".
+      if (
+        result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS" ||
+        result.provider_outcome_ambiguous === true
+      ) {
+        const warning =
+          result.reason ||
+          "Delivery status is unknown. The carrier may have accepted this message. Do not resend it; contact support.";
+        // The optimistic bubble is not evidence of carrier acceptance. Remove
+        // it, but deliberately leave the composer empty: restoring the text
+        // would turn the natural next click into a duplicate customer message.
+        setMessages((current) => current.filter((message) => message.id !== optimistic.id));
+        setThreadErr(warning);
+        toastError("SMS status unknown — do not resend", warning);
+        return;
+      }
       if (!response.ok || !result.ok) {
         throw new Error(result.reason || result.error || "Send failed");
       }

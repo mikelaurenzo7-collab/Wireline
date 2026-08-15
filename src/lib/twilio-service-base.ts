@@ -12,6 +12,7 @@ import {
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
 export type TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured";
+export const SMS_PROVIDER_OUTCOME_AMBIGUOUS = "SMS_PROVIDER_OUTCOME_AMBIGUOUS" as const;
 
 interface TwilioTenantSettings {
   messagingEnabled: boolean;
@@ -49,6 +50,10 @@ export interface TwilioSendResult {
   channel?: TwilioMessageChannel;
   /** Carrier accepted; local accounting/history is converging asynchronously. */
   reconciliationPending?: boolean;
+  /** The carrier request may have succeeded even though its response was lost. */
+  providerOutcomeAmbiguous?: boolean;
+  /** Retrying could deliver the same customer message twice. */
+  doNotResend?: boolean;
 }
 
 let cachedClient: ReturnType<typeof twilio> | null | undefined;

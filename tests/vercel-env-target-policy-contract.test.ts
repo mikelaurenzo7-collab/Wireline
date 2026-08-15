@@ -21,6 +21,11 @@ describe("Vercel env target policy stays mutually satisfiable", () => {
     const status = read("scripts/generate-launch-status.mjs");
     expect(status).toContain('const requiredTargets = ["production"];');
     expect(status).toContain("check-deployment-boundaries.mjs");
+    expect(status).toContain("CANONICAL_PROJECT_ID");
+    expect(status).toContain("CANONICAL_TEAM_ID");
+    for (const marker of ["CLIENT_SECRET", "DATA_KEY", "SECRET(?:_KEY)?"]) {
+      expect(status).toContain(marker);
+    }
   });
 
   it("the env health audit requires production coverage only", () => {

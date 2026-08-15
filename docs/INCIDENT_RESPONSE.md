@@ -7,12 +7,12 @@ This is an operator runbook. Response-time language below is prioritization guid
 
 ## 1. Severity
 
-| Level | Criteria | Examples |
-| --- | --- | --- |
+| Level  | Criteria                                                                                               | Examples                                                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | **P0** | Core live-call platform broadly unavailable, active data-integrity risk, or critical security incident | Voice call chain unavailable across tenants, database unavailable, payment/webhook corruption, confirmed cross-tenant exposure |
-| **P1** | Material degradation or meaningful subset of customers affected | One provider degraded with fallback active, sustained webhook/job failures, severe latency, provisioning outage |
-| **P2** | Important but bounded feature failure | Dashboard workflow broken, email delay, billing-portal problem, one integration unavailable |
-| **P3** | Low-impact defect | Cosmetic issue, documentation error, isolated edge case |
+| **P1** | Material degradation or meaningful subset of customers affected                                        | One provider degraded with fallback active, sustained webhook/job failures, severe latency, provisioning outage                |
+| **P2** | Important but bounded feature failure                                                                  | Dashboard workflow broken, email delay, billing-portal problem, one integration unavailable                                    |
+| **P3** | Low-impact defect                                                                                      | Cosmetic issue, documentation error, isolated edge case                                                                        |
 
 ## 2. Detection surfaces that actually exist
 
@@ -96,6 +96,7 @@ Customer impact:
 Detection signal:
 
 ### Timeline
+
 - HH:MM — first verified signal
 - HH:MM — investigation started
 - HH:MM — cause isolated
@@ -103,15 +104,19 @@ Detection signal:
 - HH:MM — recovery verified
 
 ### Root cause
+
 [Evidence-backed cause]
 
 ### What limited impact
+
 - [fallback / guard / fast detection]
 
 ### What failed or was missing
+
 - [technical / process / monitoring gap]
 
 ### Corrective actions
+
 - [ ] [action] — owner / priority
 - [ ] [regression test or monitor]
 - [ ] [runbook/documentation change]

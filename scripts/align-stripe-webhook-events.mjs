@@ -44,9 +44,24 @@ if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project")
 
 const stripe = new Stripe(stripeKey, { apiVersion: API_VERSION });
 const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
-const endpoint = endpoints.data.find((candidate) => candidate.url === WEBHOOK_URL);
-if (!endpoint) {
-  console.error(`No Stripe webhook endpoint found for ${WEBHOOK_URL}.`);
+if (endpoints.has_more) {
+  console.error("Stripe webhook inventory exceeds 100 endpoints; refusing a partial audit.");
+  process.exit(1);
+}
+const canonicalEndpoints = endpoints.data.filter(
+  (candidate) => candidate.url === WEBHOOK_URL && candidate.status === "enabled",
+);
+if (canonicalEndpoints.length !== 1) {
+  console.error(
+    `Expected exactly one enabled live endpoint for ${WEBHOOK_URL}; found ${canonicalEndpoints.length}.`,
+  );
+  process.exit(1);
+}
+const [endpoint] = canonicalEndpoints;
+if (endpoint.livemode !== true || endpoint.api_version !== API_VERSION) {
+  console.error(
+    `Endpoint ${endpoint.id} must be live and pinned to ${API_VERSION}; current version is ${endpoint.api_version || "unset"}. Create a replacement endpoint and rotate its signing secret before disabling this one.`,
+  );
   process.exit(1);
 }
 

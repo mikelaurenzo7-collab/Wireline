@@ -75,10 +75,9 @@ async function assertPromotionCandidate(deploymentId, expectedCommitSha) {
     );
   }
 
-  const deployment = await vercelFetch(
-    `/v13/deployments/${encodeURIComponent(deploymentId)}`,
-    { method: "GET" },
-  );
+  const deployment = await vercelFetch(`/v13/deployments/${encodeURIComponent(deploymentId)}`, {
+    method: "GET",
+  });
   const state = deployment.state || deployment.readyState;
   const projectId = deployment.projectId || deployment.project?.id;
   const commitRef = String(deployment.meta?.githubCommitRef || "");

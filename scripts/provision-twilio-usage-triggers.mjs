@@ -102,7 +102,8 @@ function matchingTrigger(existing, desired) {
       trigger.recurring === desired.Recurring &&
       trigger.usage_category === desired.UsageCategory &&
       triggerValue === desired.TriggerValue &&
-      String(trigger.callback_url || "").endsWith(USAGE_ALERT_PATH)
+      trigger.callback_url === desired.CallbackUrl &&
+      trigger.callback_method === desired.CallbackMethod
     );
   });
 }

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
 
 const run = (command, args) => {
   const result = spawnSync(command, args, {
@@ -19,9 +20,20 @@ const projectHint = [
   .filter(Boolean)
   .join(" ");
 const isDuplicateV0Project = /(^|[\s.-])v0-project([\s.-]|$)/i.test(projectHint);
+const isCanonicalVercelProject =
+  String(process.env.VERCEL_PROJECT_ID || "").trim() === CANONICAL_VERCEL_PROJECT_ID;
 const migrationsForced = process.env.WIRELINE_RUN_MIGRATIONS === "true";
 const migrationsDisabled = process.env.WIRELINE_RUN_MIGRATIONS === "false";
-const isCanonicalProduction = environment === "production" && !isDuplicateV0Project;
+const isCanonicalProduction = environment === "production" && isCanonicalVercelProject;
+
+if (environment === "production" && !isCanonicalProduction) {
+  console.error(
+    "Refusing a production-target build on an unrecognized Vercel project. " +
+      "Production data and provider credentials are pinned to the canonical Wireline project ID; " +
+      "project-name heuristics are not an isolation boundary.",
+  );
+  process.exit(1);
+}
 
 if (isCanonicalProduction && migrationsDisabled) {
   console.error(
@@ -31,10 +43,8 @@ if (isCanonicalProduction && migrationsDisabled) {
   process.exit(1);
 }
 
-const shouldMigrate =
-  !migrationsDisabled &&
-  (migrationsForced || (environment === "production" && !isDuplicateV0Project));
-const shouldVerifyProductionSchema = environment === "production" && !isDuplicateV0Project;
+const shouldMigrate = !migrationsDisabled && (migrationsForced || isCanonicalProduction);
+const shouldVerifyProductionSchema = isCanonicalProduction;
 
 function runLiveVapiSchemaAuditIfRequested() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
@@ -103,9 +113,23 @@ function configurePreviewEnvironment() {
 }
 
 function validateProductionEnvironment() {
-  if (environment !== "production" || isDuplicateV0Project) return;
+  if (!isCanonicalProduction) return;
   console.log("Validating required production environment variables before migration and build.");
   run("node", ["scripts/check-prod-env.mjs"]);
+}
+
+function reconcileStripePortalIfRequested() {
+  if (!isCanonicalProduction) return;
+  if (process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true") {
+    console.error(
+      "Refusing canonical production build without WIRELINE_RECONCILE_STRIPE_PORTAL=true. " +
+        "The managed customer portal must be reconciled and verified on every production release.",
+    );
+    process.exit(1);
+  }
+
+  console.log("Reconciling the canonical Stripe customer portal after build certification.");
+  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts", "--apply"]);
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
@@ -142,6 +166,10 @@ run("npx", [
   "tests/production-promotion-safety-contract.test.ts",
   "tests/provider-spend-hard-gate-contract.test.ts",
   "tests/realtime-spend-reservation-contract.test.ts",
+  "tests/stripe-portal-reconciler-contract.test.ts",
+  "tests/stripe-founder-price-contract.test.ts",
+  "tests/stripe-customer-binding-contract.test.ts",
+  "tests/dogfood-credential-alias-contract.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
@@ -174,11 +202,17 @@ run("npx", [
   "tests/live-video-stripe-races.test.ts",
   "tests/twilio-accepted-reconciliation-behavior.test.ts",
   "tests/lifecycle-notification-durability-contract.test.ts",
+  "tests/post-call-notification-durability.test.ts",
+  "tests/post-call-csat-behavior.test.ts",
+  "tests/post-call-csat-preprovider-refund.test.ts",
+  "tests/account-deletion-post-call-fence.test.ts",
+  "tests/auth-terminal-deletion-gate.test.ts",
   "tests/signin-failure-durability.test.ts",
   "tests/tenant-pool-transaction.test.ts",
   "tests/sms-inbox-error-honesty-contract.test.ts",
   "tests/prelaunch-account-export-and-twilio.test.ts",
   "tests/operational-slo-accuracy.test.ts",
+  "tests/website-knowledge-spend.test.ts",
   "tests/stripe-checkout-branding-contract.test.ts",
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
@@ -265,3 +299,4 @@ run("npx", [
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
 syncShowcaseIfRequested();
+reconcileStripePortalIfRequested();

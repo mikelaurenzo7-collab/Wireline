@@ -47,8 +47,9 @@ describe("post-merge UI and artifact hardening", () => {
     const assets = read("scripts/build-official-assets.mjs");
 
     expect(assets).toContain(
-      'const baseUrl = new URL(process.env.E2E_BASE_URL || "https://trywireline.com")',
+      "const baseUrl = new URL(requireCanonicalCredentialTarget(process.env.E2E_BASE_URL))",
     );
+    expect(assets).toContain("requireCompleteCredentialPair(");
     expect(assets).toContain("url: baseUrl.origin");
     expect(assets).toContain('secure: baseUrl.protocol === "https:"');
     expect(assets).toContain("try {\n    const context = await browser.newContext");

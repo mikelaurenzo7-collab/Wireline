@@ -26,13 +26,15 @@ export interface GeminiUsageMetadata {
 }
 export interface AuditContext {
   records: RuntimeCallMeta[];
+  /** Provider calls that failed after submission and may still be billable. */
+  ambiguousProviderAttempts: number;
 }
 const auditCtx = new AsyncLocalStorage<AuditContext>();
 
 export async function withAuditCapture<T>(
   fn: () => Promise<T>,
 ): Promise<{ result: T; records: RuntimeCallMeta[] }> {
-  const ctx: AuditContext = { records: [] };
+  const ctx: AuditContext = { records: [], ambiguousProviderAttempts: 0 };
   return new Promise((resolve, reject) =>
     auditCtx.run(ctx, async () => {
       try {
@@ -43,7 +45,10 @@ export async function withAuditCapture<T>(
     }),
   );
 }
-export const createAuditContext = (): AuditContext => ({ records: [] });
+export const createAuditContext = (): AuditContext => ({
+  records: [],
+  ambiguousProviderAttempts: 0,
+});
 export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => auditCtx.run(ctx, fn);
 export function estimateCost(
   usage: {
@@ -114,6 +119,10 @@ export function estimateCostDetailed(
 }
 function push(record: RuntimeCallMeta) {
   auditCtx.getStore()?.records.push(record);
+}
+export function recordAmbiguousProviderAttempt(): void {
+  const context = auditCtx.getStore();
+  if (context) context.ambiguousProviderAttempts += 1;
 }
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";

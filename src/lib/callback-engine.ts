@@ -29,6 +29,7 @@ import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { placeOutboundCall } from "./vapi-client";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 /** Deferrals (quiet hours or tenant insolvency) push the callback forward
  *  instead of dropping it, up to MAX_DEFERRALS so a permanently-blocked lead
@@ -230,154 +231,173 @@ export async function tickDueCallbacks({
         .returning({ id: schema.outboundLeads.id });
       if (!claimed.length) continue;
 
-      if (!lead.customerNumber) {
-        skipped++;
-        await finish({
-          callbackScheduledAt: null,
-          summary: "Callback skipped — lead has no phone number.",
-        });
-        continue;
-      }
-
-      let agentId = lead.agentId;
-      if (!agentId) {
-        const [fallbackAgent] = await drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, lead.userId))
-          .orderBy(asc(schema.agents.createdAt))
-          .limit(1);
-        agentId = fallbackAgent?.id || null;
-      }
-      if (!agentId) {
-        skipped++;
-        await finish({
-          callbackScheduledAt: null,
-          summary: "Callback skipped — no agent available to place the call.",
-        });
-        continue;
-      }
-
-      // Read the consumer's request off the lead. Absent it, this is an
-      // ordinary outbound dial and gets the full marketing treatment: federal
-      // DNC, express written consent, the duplicate window, and the spoken
-      // opt-out announcement.
-      const consumerRequested = isConsumerRequestedCallback(metadata);
-
-      const gate = await evaluateOutboundDialGate({
+      // `callback_tick` is system-owned. Fence this concrete lead's tenant
+      // before the federal DNC provider lookup and retain the lock through the
+      // dial plus local evidence writes, so terminal purge can neither race an
+      // export of stale PII nor be followed by a stale write-back.
+      const fencedCallback = await runTenantProviderWorkWithDeletionFence({
         userId: lead.userId,
-        phone: lead.customerNumber,
-        leadId: lead.id,
-        lastCalledAt: lead.lastCalledAt,
-        metadata,
-        isRequestedCallback: consumerRequested,
-      });
+        perform: async (): Promise<"placed" | "deferred" | "skipped"> => {
+          if (!lead.customerNumber) {
+            await finish({
+              callbackScheduledAt: null,
+              summary: "Callback skipped — lead has no phone number.",
+            });
+            return "skipped";
+          }
 
-      if (!gate.allowed) {
-        if (
-          gate.reason === "outside_permitted_calling_hours" ||
-          gate.reason === "self_recent_call_scheduled"
-        ) {
-          // Both reasons expire on their own: quiet hours reopen, and the 24h
-          // duplicate window elapses. Roll forward instead of retiring the
-          // lead. `self_recent_call_scheduled` only became reachable here once
-          // the duplicate window stopped being waived — the "followup" outcome
-          // schedules at exactly lastCalledAt + 24h, so the boundary would
-          // otherwise silently kill every inferred follow-up.
-          (await deferOrDrop(
-            gate.reason === "self_recent_call_scheduled"
-              ? "called within the last 24 hours"
-              : "outside permitted calling hours",
-          )) === "deferred"
-            ? deferred++
-            : skipped++;
-        } else {
-          skipped++;
+          let agentId = lead.agentId;
+          if (!agentId) {
+            const [fallbackAgent] = await drizzle
+              .select({ id: schema.agents.id })
+              .from(schema.agents)
+              .where(eq(schema.agents.userId, lead.userId))
+              .orderBy(asc(schema.agents.createdAt))
+              .limit(1);
+            agentId = fallbackAgent?.id || null;
+          }
+          if (!agentId) {
+            await finish({
+              callbackScheduledAt: null,
+              summary: "Callback skipped — no agent available to place the call.",
+            });
+            return "skipped";
+          }
+
+          // Read the consumer's request off the lead. Absent it, this is an
+          // ordinary outbound dial and gets the full marketing treatment:
+          // federal DNC, express written consent, the duplicate window, and
+          // the spoken opt-out announcement.
+          const consumerRequested = isConsumerRequestedCallback(metadata);
+          const gate = await evaluateOutboundDialGate({
+            userId: lead.userId,
+            phone: lead.customerNumber,
+            leadId: lead.id,
+            lastCalledAt: lead.lastCalledAt,
+            metadata,
+            isRequestedCallback: consumerRequested,
+          });
+
+          if (!gate.allowed) {
+            if (
+              gate.reason === "outside_permitted_calling_hours" ||
+              gate.reason === "self_recent_call_scheduled"
+            ) {
+              // Both reasons expire on their own: quiet hours reopen, and the
+              // 24h duplicate window elapses. The deletion fence changes no
+              // DNC/TCPA disposition; it only prevents post-erasure work.
+              return (await deferOrDrop(
+                gate.reason === "self_recent_call_scheduled"
+                  ? "called within the last 24 hours"
+                  : "outside permitted calling hours",
+              )) === "deferred"
+                ? "deferred"
+                : "skipped";
+            }
+            await finish({
+              callbackScheduledAt: null,
+              summary: `Callback blocked — ${gate.reason}.`,
+              ...(gate.metadataPatch ? { metadata: gate.metadataPatch } : {}),
+            });
+            return "skipped";
+          }
+
+          try {
+            await assertOutboundVoiceAllowed({
+              userId: lead.userId,
+              source: "callback",
+              units: 0,
+            });
+          } catch (err) {
+            // Spend/quota gates are tenant-state, not lead-state — defer
+            // (bounded), so a callback can fire once the tenant is solvent.
+            return (await deferOrDrop(
+              `voice controls: ${err instanceof Error ? err.message : "blocked"}`,
+            )) === "deferred"
+              ? "deferred"
+              : "skipped";
+          }
+
+          const requestedFor = lead.callbackScheduledAt?.toISOString() || "the requested time";
+          // The opening line must match what actually happened. Telling the
+          // model to acknowledge a promise the contact never made is a
+          // scripted lie on a recorded line.
+          const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
+          const res = await placeOutboundCall({
+            userId: lead.userId,
+            agentId,
+            customerName: lead.customerName,
+            customerNumber: lead.customerNumber,
+            context: consumerRequested
+              ? `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`
+              : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call — introduce yourself and state why you are calling.`,
+            callPurpose,
+          });
+
+          if (!res.ok) {
+            await finish({
+              callbackScheduledAt: null,
+              summary: `Callback attempt failed: ${res.error || "call could not be placed"}.`,
+            });
+            return "skipped";
+          }
+
+          // Stamp the dial so the shared gate's 24h duplicate window sees it
+          // and record consent-ledger evidence while the deletion fence is
+          // still held.
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({ lastCalledAt: new Date(), callId: res.callId })
+            .where(eq(schema.outboundLeads.id, lead.id));
+          await drizzle.insert(schema.consentLog).values({
+            userId: lead.userId,
+            customerNumber: lead.customerNumber,
+            callId: res.callId,
+            event: "outbound_call_placed",
+            state: "initiated",
+            metadata: {
+              leadId: String(lead.id),
+              call_purpose: callPurpose,
+              consent_version: OUTBOUND_CONSENT_VERSION,
+              source: "callback",
+              consumer_requested: consumerRequested,
+            },
+          });
           await finish({
             callbackScheduledAt: null,
-            summary: `Callback blocked — ${gate.reason}.`,
-            ...(gate.metadataPatch ? { metadata: gate.metadataPatch } : {}),
+            summary: consumerRequested
+              ? "Requested callback placed automatically."
+              : "Scheduled outbound follow-up placed automatically.",
+            metadata: { ...metadata, callback_deferrals: 0 },
           });
-        }
-        continue;
-      }
-
-      try {
-        await assertOutboundVoiceAllowed({ userId: lead.userId, source: "callback", units: 0 });
-      } catch (err) {
-        // Spend/quota gates are tenant-state, not lead-state — defer (bounded),
-        // so the callback fires once the tenant is solvent again, but a
-        // permanently-cancelled tenant's callbacks eventually stop retrying.
-        (await deferOrDrop(`voice controls: ${err instanceof Error ? err.message : "blocked"}`)) ===
-        "deferred"
-          ? deferred++
-          : skipped++;
-        continue;
-      }
-
-      const requestedFor = lead.callbackScheduledAt?.toISOString() || "the requested time";
-      // The opening line must match what actually happened. Telling the model
-      // to acknowledge a promise the contact never made is a scripted lie on a
-      // recorded line, and `callback` purpose would drop the opt-out
-      // announcement this dial is required to carry.
-      const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
-      const res = await placeOutboundCall({
-        userId: lead.userId,
-        agentId,
-        customerName: lead.customerName,
-        customerNumber: lead.customerNumber,
-        context: consumerRequested
-          ? `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`
-          : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call — introduce yourself and state why you are calling.`,
-        callPurpose,
+          return "placed";
+        },
       });
 
-      if (res.ok) {
-        placed++;
-        // Stamp the dial so the shared gate's 24h duplicate window sees it
-        // (cadence/campaign engines must not also call this lead today) and
-        // record the consent-ledger evidence for the placed call.
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({ lastCalledAt: new Date(), callId: res.callId })
-          .where(eq(schema.outboundLeads.id, lead.id));
-        await drizzle.insert(schema.consentLog).values({
-          userId: lead.userId,
-          customerNumber: lead.customerNumber,
-          callId: res.callId,
-          event: "outbound_call_placed",
-          state: "initiated",
-          metadata: {
-            leadId: String(lead.id),
-            call_purpose: callPurpose,
-            consent_version: OUTBOUND_CONSENT_VERSION,
-            source: "callback",
-            consumer_requested: consumerRequested,
-          },
-        });
-        await finish({
-          callbackScheduledAt: null,
-          summary: consumerRequested
-            ? "Requested callback placed automatically."
-            : "Scheduled outbound follow-up placed automatically.",
-          metadata: { ...metadata, callback_deferrals: 0 },
-        });
-      } else {
+      if (!fencedCallback.performed) {
         skipped++;
-        await finish({
-          callbackScheduledAt: null,
-          summary: `Callback attempt failed: ${res.error || "call could not be placed"}.`,
+        log.warn("callback skipped — account erased or terminal deletion has begun", {
+          leadId: String(lead.id),
+          userId: lead.userId,
         });
+        continue;
       }
+      if (fencedCallback.result === "placed") placed++;
+      else if (fencedCallback.result === "deferred") deferred++;
+      else skipped++;
     } catch (err) {
       skipped++;
       log.error("callback tick lead failed", {
         leadId: String(lead.id),
         error: err instanceof Error ? err.message : String(err),
       });
-      await finish({
-        callbackScheduledAt: null,
-        summary: "Callback failed with an internal error — flagged for manual follow-up.",
+      await runTenantProviderWorkWithDeletionFence({
+        userId: lead.userId,
+        perform: () =>
+          finish({
+            callbackScheduledAt: null,
+            summary: "Callback failed with an internal error — flagged for manual follow-up.",
+          }),
       }).catch(() => {});
     }
   }

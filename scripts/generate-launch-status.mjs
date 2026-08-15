@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import {
+  STRIPE_BRAND_PRIMARY_COLOR,
+  STRIPE_BRAND_SECONDARY_COLOR,
+  STRIPE_PUBLIC_BRAND,
+  STRIPE_PUBLIC_SUPPORT_EMAIL,
+  STRIPE_PUBLIC_SUPPORT_URL,
+} from "./lib/stripe-account-identity.mjs";
 import {
   FOUNDER_CATALOG_VERSION,
   FOUNDER_PRICES,
@@ -10,8 +18,18 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import pg from "pg";
+import {
+  CANONICAL_PROJECT_ID,
+  CANONICAL_TEAM_ID,
+  resolveVercelToken,
+} from "./lib/vercel-project.mjs";
+import {
+  canonicalRuntimeCommitFinding,
+  resolveCanonicalProductionUrl,
+} from "./lib/production-url.mjs";
 
 const { Pool } = pg;
+const PINNED_STRIPE_API_VERSION = "2026-07-29.dahlia";
 const root = resolve(import.meta.dirname, "..");
 const outputArg = process.argv.indexOf("--output");
 const outputPath = resolve(
@@ -20,10 +38,7 @@ const outputPath = resolve(
     ? process.argv[outputArg + 1]
     : "docs/LAUNCH_STATUS.generated.json",
 );
-const productionUrl = (process.env.WIRELINE_PRODUCTION_URL || "https://trywireline.com").replace(
-  /\/+$/,
-  "",
-);
+const productionUrl = resolveCanonicalProductionUrl(process.env.WIRELINE_PRODUCTION_URL);
 
 function git(...args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
@@ -33,7 +48,12 @@ async function jsonFetch(url, init = {}) {
   try {
     const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
     const body = await response.json().catch(() => null);
-    return { ok: response.ok, status: response.status, body };
+    return {
+      ok: response.ok,
+      status: response.status,
+      body,
+      sourceCommit: response.headers.get("x-wireline-source-commit"),
+    };
   } catch (error) {
     return {
       ok: false,
@@ -41,6 +61,23 @@ async function jsonFetch(url, init = {}) {
       body: null,
       error: error instanceof Error ? error.message : String(error),
     };
+  }
+}
+
+function isCanonicalTwilioUsageAlertUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    return (
+      parsed.protocol === "https:" &&
+      parsed.origin === "https://trywireline.com" &&
+      parsed.pathname === "/api/twilio-webhook/usage-alert" &&
+      !parsed.search &&
+      !parsed.hash &&
+      !parsed.username &&
+      !parsed.password
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -71,10 +108,25 @@ async function launchReadiness() {
   };
 }
 
+async function canonicalRuntimeStatus(expectedCommit) {
+  const result = await jsonFetch(`${productionUrl}/api/health/public`);
+  const finding = canonicalRuntimeCommitFinding(result, expectedCommit);
+  return {
+    status: finding ? "blocked" : "ready",
+    http_status: result.status,
+    served_commit: result.sourceCommit || null,
+    expected_commit: expectedCommit,
+    finding,
+  };
+}
+
 async function stripeStatus() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) return { status: "unknown", reason: "STRIPE_SECRET_KEY not supplied" };
-  const headers = { Authorization: `Bearer ${key}` };
+  const headers = {
+    Authorization: `Bearer ${key}`,
+    "Stripe-Version": PINNED_STRIPE_API_VERSION,
+  };
   const publicPlanIds = new Set(PUBLIC_SELF_SERVE_PLAN_IDS);
   const publicCatalogPrices = FOUNDER_PRICES.filter(
     (price) => price.recurring && publicPlanIds.has(price.metadata?.wireline_plan_id),
@@ -138,6 +190,15 @@ async function stripeStatus() {
         `${expected.lookupKey}:interval_${actual.recurring?.interval || "missing"}_expected_${expected.recurring.interval}`,
       );
     }
+    if (actual.billing_scheme !== "per_unit") {
+      catalogFindings.push(`${expected.lookupKey}:billing_scheme_not_per_unit`);
+    }
+    if (actual.recurring?.interval_count !== 1) {
+      catalogFindings.push(`${expected.lookupKey}:interval_count_not_one`);
+    }
+    if (actual.recurring?.trial_period_days != null) {
+      catalogFindings.push(`${expected.lookupKey}:unexpected_price_trial`);
+    }
     if (actual.recurring?.usage_type !== expected.recurring.usage_type) {
       catalogFindings.push(`${expected.lookupKey}:usage_type_not_licensed`);
     }
@@ -153,6 +214,9 @@ async function stripeStatus() {
     if (actual.metadata?.wireline_price_key !== expected.key) {
       catalogFindings.push(`${expected.lookupKey}:price_key_mismatch`);
     }
+    if (!expected.envTarget || String(process.env[expected.envTarget] || "").trim() !== actual.id) {
+      catalogFindings.push(`${expected.lookupKey}:runtime_env_price_id_mismatch`);
+    }
     const expectedProduct = productByKey.get(expected.productKey);
     const actualProduct =
       actual.product && typeof actual.product === "object" ? actual.product : null;
@@ -161,6 +225,9 @@ async function stripeStatus() {
     } else {
       if (actualProduct.active !== true) {
         catalogFindings.push(`${expected.lookupKey}:product_inactive`);
+      }
+      if (actualProduct.livemode !== true) {
+        catalogFindings.push(`${expected.lookupKey}:product_not_livemode`);
       }
       if (actualProduct.name !== expectedProduct.name) {
         catalogFindings.push(`${expected.lookupKey}:product_name_mismatch`);
@@ -180,13 +247,14 @@ async function stripeStatus() {
     (price) => price?.lookup_key === starterAnnualExpected?.lookupKey,
   );
 
-  const publicName = String(
-    accountResult.body?.business_profile?.name ||
-      accountResult.body?.settings?.dashboard?.display_name ||
-      "",
-  ).trim();
+  const publicName = String(accountResult.body?.business_profile?.name || "").trim();
   const statementDescriptor = String(
     accountResult.body?.settings?.payments?.statement_descriptor || "",
+  )
+    .trim()
+    .toUpperCase();
+  const cardStatementDescriptor = String(
+    accountResult.body?.settings?.card_payments?.statement_descriptor_prefix || "",
   )
     .trim()
     .toUpperCase();
@@ -201,37 +269,96 @@ async function stripeStatus() {
   };
   const websiteOrigin = origin(accountResult.body?.business_profile?.url);
   const supportOrigin = origin(accountResult.body?.business_profile?.support_url);
+  const supportUrl = String(accountResult.body?.business_profile?.support_url || "")
+    .trim()
+    .replace(/\/+$/, "");
   const supportEmail = String(accountResult.body?.business_profile?.support_email || "")
     .trim()
     .toLowerCase();
   const brandingLogo = String(accountResult.body?.settings?.branding?.logo || "").trim();
+  const brandingIcon = String(accountResult.body?.settings?.branding?.icon || "").trim();
+  const brandingPrimaryColor = String(
+    accountResult.body?.settings?.branding?.primary_color || "",
+  ).toUpperCase();
+  const brandingSecondaryColor = String(
+    accountResult.body?.settings?.branding?.secondary_color || "",
+  ).toUpperCase();
   const brandReady =
-    /wireline/i.test(publicName) &&
-    statementDescriptor.startsWith("WIRELINE") &&
+    publicName === STRIPE_PUBLIC_BRAND &&
+    statementDescriptor === "WIRELINE" &&
+    cardStatementDescriptor === "WIRELINE" &&
     websiteOrigin === "https://trywireline.com" &&
     supportOrigin === "https://trywireline.com" &&
-    supportEmail === "support@trywireline.com" &&
-    brandingLogo.length > 0;
+    supportUrl === STRIPE_PUBLIC_SUPPORT_URL &&
+    supportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL &&
+    brandingLogo.length > 0 &&
+    brandingIcon.length > 0 &&
+    brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR &&
+    brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR;
 
   const portalConfigurations = Array.isArray(portalResult.body?.data) ? portalResult.body.data : [];
   // Launch certification is stricter than "some active portal exists". The app
   // intentionally creates a Wireline-managed, catalog-versioned configuration;
   // a stale Dashboard default can omit plan switches or cancel immediately.
-  const portalHasCustomerControls = (configuration) =>
-    configuration?.features?.payment_method_update?.enabled === true &&
-    configuration?.features?.invoice_history?.enabled === true &&
-    configuration?.features?.subscription_cancel?.enabled === true &&
-    configuration?.features?.subscription_cancel?.mode === "at_period_end" &&
-    configuration?.features?.subscription_update?.enabled === true;
-  const portalConfiguration = portalConfigurations.find(
+  const expectedCancellationReasons = new Set([
+    "too_expensive",
+    "missing_features",
+    "switched_service",
+    "unused",
+    "other",
+  ]);
+  const portalHasCustomerControls = (configuration) => {
+    const features = configuration?.features;
+    const customerUpdates = new Set(features?.customer_update?.allowed_updates || []);
+    const subscriptionUpdates = new Set(
+      features?.subscription_update?.default_allowed_updates || [],
+    );
+    const cancellationReasons = new Set(
+      features?.subscription_cancel?.cancellation_reason?.options || [],
+    );
+    return (
+      configuration?.livemode === true &&
+      features?.customer_update?.enabled === true &&
+      customerUpdates.size === 2 &&
+      customerUpdates.has("email") &&
+      customerUpdates.has("address") &&
+      features?.payment_method_update?.enabled === true &&
+      features?.invoice_history?.enabled === true &&
+      features?.subscription_cancel?.enabled === true &&
+      features?.subscription_cancel?.mode === "at_period_end" &&
+      features?.subscription_cancel?.proration_behavior === "none" &&
+      features?.subscription_cancel?.cancellation_reason?.enabled === true &&
+      cancellationReasons.size === expectedCancellationReasons.size &&
+      [...expectedCancellationReasons].every((reason) => cancellationReasons.has(reason)) &&
+      features?.subscription_update?.enabled === true &&
+      features?.subscription_update?.proration_behavior === "create_prorations" &&
+      subscriptionUpdates.size === 1 &&
+      subscriptionUpdates.has("price")
+    );
+  };
+  const activeManagedPortalConfigurations = portalConfigurations.filter(
     (configuration) =>
-      configuration?.active === true &&
-      configuration?.metadata?.wireline_managed === "true" &&
+      configuration?.active === true && configuration?.metadata?.wireline_managed === "true",
+  );
+  const managedPortalConfigurations = activeManagedPortalConfigurations.filter(
+    (configuration) =>
       configuration?.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION,
   );
+  const portalConfiguration =
+    activeManagedPortalConfigurations.length === 1 && managedPortalConfigurations.length === 1
+      ? managedPortalConfigurations[0]
+      : null;
   const portalFeatures = portalConfiguration?.features ?? {};
   const portalFindings = [];
-  if (!portalConfiguration) portalFindings.push("managed_configuration_missing");
+  if (portalResult.body?.has_more === true) portalFindings.push("portal_audit_truncated");
+  if (managedPortalConfigurations.length === 0) {
+    portalFindings.push("managed_configuration_missing");
+  } else if (managedPortalConfigurations.length > 1) {
+    portalFindings.push("multiple_managed_configurations");
+  }
+  if (activeManagedPortalConfigurations.length > managedPortalConfigurations.length) {
+    portalFindings.push("stale_managed_configuration_active");
+  }
   if (portalConfiguration && !portalHasCustomerControls(portalConfiguration)) {
     portalFindings.push("customer_controls_incomplete");
   }
@@ -243,8 +370,10 @@ async function stripeStatus() {
   }
   if (
     portalConfiguration &&
-    (portalConfiguration.business_profile?.privacy_policy_url !==
-      "https://trywireline.com/privacy" ||
+    (portalConfiguration.business_profile?.headline !==
+      "Manage your Wireline billing, invoices, and subscription." ||
+      portalConfiguration.business_profile?.privacy_policy_url !==
+        "https://trywireline.com/privacy" ||
       portalConfiguration.business_profile?.terms_of_service_url !==
         "https://trywireline.com/terms")
   ) {
@@ -267,6 +396,17 @@ async function stripeStatus() {
   if (expectedPortalPrices.size !== PUBLIC_SELF_SERVE_PLAN_IDS.length) {
     portalFindings.push("expected_catalog_products_unresolved");
   } else {
+    const expectedFingerprintInput = [...expectedPortalPrices.entries()]
+      .map(([productId, priceIds]) => `${productId}:${[...new Set(priceIds)].sort().join(",")}`)
+      .sort()
+      .join("|");
+    const expectedFingerprint = createHash("sha256")
+      .update(expectedFingerprintInput)
+      .digest("hex")
+      .slice(0, 32);
+    if (portalConfiguration?.metadata?.wireline_portal_products_fp !== expectedFingerprint) {
+      portalFindings.push("products_fingerprint_mismatch");
+    }
     for (const [productId, priceIds] of expectedPortalPrices) {
       const actualIds = actualPortalPrices.get(productId) || [];
       if (actualIds.join(",") !== [...priceIds].sort().join(",")) {
@@ -288,12 +428,13 @@ async function stripeStatus() {
   // reported a correct endpoint as carrying two extra events.
   const expectedWebhookEvents = getHandledStripeWebhookEvents();
   const webhookEndpoints = Array.isArray(webhookResult.body?.data) ? webhookResult.body.data : [];
-  const webhook = webhookEndpoints.find(
+  const canonicalWebhooks = webhookEndpoints.filter(
     (endpoint) =>
       endpoint?.status === "enabled" &&
       String(endpoint?.url || "").replace(/\/+$/, "") ===
         "https://trywireline.com/api/stripe-webhook",
   );
+  const webhook = canonicalWebhooks.length === 1 ? canonicalWebhooks[0] : null;
   const enabledWebhookEvents = Array.isArray(webhook?.enabled_events)
     ? [...webhook.enabled_events].sort()
     : [];
@@ -303,9 +444,19 @@ async function stripeStatus() {
   const extraWebhookEvents = enabledWebhookEvents.filter(
     (event) => event !== "*" && !expectedWebhookEvents.includes(event),
   );
-  const webhookReady = Boolean(
-    webhook && missingWebhookEvents.length === 0 && extraWebhookEvents.length === 0,
-  );
+  const webhookFindings = [];
+  if (!webhookResult.ok) webhookFindings.push("webhook_inventory_unreachable");
+  if (webhookResult.body?.has_more === true) webhookFindings.push("webhook_inventory_truncated");
+  if (canonicalWebhooks.length !== 1) {
+    webhookFindings.push(`canonical_endpoint_count_${canonicalWebhooks.length}`);
+  }
+  if (webhook && webhook.livemode !== true) webhookFindings.push("endpoint_not_livemode");
+  if (webhook && webhook.api_version !== PINNED_STRIPE_API_VERSION) {
+    webhookFindings.push("endpoint_api_version_mismatch");
+  }
+  if (missingWebhookEvents.length > 0) webhookFindings.push("handled_events_missing");
+  if (extraWebhookEvents.length > 0) webhookFindings.push("unhandled_events_enabled");
+  const webhookReady = Boolean(webhook && webhookFindings.length === 0);
   const automaticTaxEnabled = process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true";
   const activeTaxRegistrations = Array.isArray(taxRegistrationsResult.body?.data)
     ? taxRegistrationsResult.body.data.filter((registration) => registration?.status === "active")
@@ -353,11 +504,15 @@ async function stripeStatus() {
     },
     brand: {
       public_name: publicName || null,
-      statement_descriptor_ready: statementDescriptor.startsWith("WIRELINE"),
+      statement_descriptor_ready: hasWirelineDescriptor(statementDescriptor),
+      card_statement_descriptor_ready: hasWirelineDescriptor(cardStatementDescriptor),
       website_origin: websiteOrigin,
       support_origin: supportOrigin,
       support_email: supportEmail || null,
       logo_present: brandingLogo.length > 0,
+      icon_present: brandingIcon.length > 0,
+      brand_color_ready: brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR,
+      accent_color_ready: brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR,
       ready: brandReady,
     },
     customer_portal: {
@@ -371,8 +526,13 @@ async function stripeStatus() {
     },
     webhook: {
       endpoint_present: Boolean(webhook),
+      canonical_endpoint_count: canonicalWebhooks.length,
+      livemode: webhook?.livemode === true,
+      api_version: webhook?.api_version ?? null,
+      expected_api_version: PINNED_STRIPE_API_VERSION,
       missing_events: missingWebhookEvents,
       extra_events: extraWebhookEvents,
+      findings: webhookFindings,
       ready: webhookReady,
     },
     tax: {
@@ -446,18 +606,27 @@ async function twilioStatus() {
           trigger_by: trigger.trigger_by,
           trigger_value: trigger.trigger_value,
           callback_url: trigger.callback_url,
+          callback_method: trigger.callback_method,
         }))
       : [],
   };
 }
 
 async function vercelStatus() {
-  const token = process.env.VERCEL_ACCESS_TOKEN?.trim();
-  const teamId = process.env.VERCEL_TEAM_ID?.trim();
-  const projectId = process.env.VERCEL_PROJECT_ID?.trim();
-  if (!token || !teamId || !projectId) {
+  const token = resolveVercelToken();
+  const configuredTeamId = process.env.VERCEL_TEAM_ID?.trim();
+  const configuredProjectId = process.env.VERCEL_PROJECT_ID?.trim();
+  if (!token) {
     return { status: "unknown", reason: "Vercel read credentials not supplied" };
   }
+  if (
+    (configuredTeamId && configuredTeamId !== CANONICAL_TEAM_ID) ||
+    (configuredProjectId && configuredProjectId !== CANONICAL_PROJECT_ID)
+  ) {
+    return { status: "blocked", reason: "Ambient Vercel project identity is not canonical" };
+  }
+  const teamId = CANONICAL_TEAM_ID;
+  const projectId = CANONICAL_PROJECT_ID;
   const query = new URLSearchParams({ projectId, teamId, target: "production", limit: "10" });
   const headers = { Authorization: `Bearer ${token}` };
   const [deploymentResult, environmentResult] = await Promise.all([
@@ -494,7 +663,8 @@ async function vercelStatus() {
       .filter((target) => !targets.has(target))
       .map((target) => `${key}:${target}`);
   });
-  const secretKeyPattern = /(?:SECRET|TOKEN|PASSWORD|PRIVATE|API_KEY|DATABASE_URL|POSTGRES_URL)$/i;
+  const secretKeyPattern =
+    /(?:^|_)(?:SECRET(?:_KEY)?|TOKEN|PASSWORD|PRIVATE(?:_KEY)?|API_KEY|CLIENT_SECRET|DATA_KEY|ENCRYPTION_KEY|DATABASE_URL|POSTGRES_URL)(?:$|_)/i;
   const potentiallyUnencryptedSecretKeys = environments
     .filter(
       (item) => secretKeyPattern.test(item.key) && !["encrypted", "sensitive"].includes(item.type),
@@ -540,8 +710,9 @@ const worktreeClean = git("status", "--porcelain") === "";
 const [ahead, behind] = git("rev-list", "--left-right", "--count", "HEAD...origin/main")
   .split(/\s+/)
   .map(Number);
-const [readiness, stripe, database, twilio, vercel] = await Promise.all([
+const [readiness, canonicalRuntime, stripe, database, twilio, vercel] = await Promise.all([
   launchReadiness(),
+  canonicalRuntimeStatus(sourceCommit),
   stripeStatus(),
   databaseStatus(),
   twilioStatus(),
@@ -553,6 +724,7 @@ if (sourceBranch !== "main") blockers.push("source_branch_not_main");
 if (!worktreeClean) blockers.push("source_worktree_dirty");
 if (behind !== 0) blockers.push("source_behind_origin_main");
 if (readiness.overall_score !== 100) blockers.push("launch_readiness_below_100");
+if (canonicalRuntime.finding) blockers.push(canonicalRuntime.finding);
 // The probe already computes reachability; nothing consumed it, so an
 // unreadable balance or price (outage, rotated key, missing scope) produced a
 // "blocked" Stripe status and still left the launch gate green.
@@ -592,14 +764,19 @@ if (twilio.status !== "reachable") {
   if (typeof twilio.prepaid_balance_usd !== "number" || twilio.prepaid_balance_usd < 150) {
     blockers.push("twilio_prepaid_balance_below_150");
   }
+  const expectedTriggerValue = new Map([
+    ["daily", Number(process.env.TWILIO_DAILY_USAGE_TRIGGER_USD || 25)],
+    ["monthly", Number(process.env.TWILIO_MONTHLY_USAGE_TRIGGER_USD || 200)],
+  ]);
   const twilioTriggerWindows = new Set(
     (twilio.usage_triggers || [])
       .filter(
         (trigger) =>
           trigger.usage_category === "totalprice" &&
           trigger.trigger_by === "price" &&
-          typeof trigger.callback_url === "string" &&
-          trigger.callback_url.endsWith("/api/twilio-webhook/usage-alert"),
+          trigger.callback_method === "POST" &&
+          isCanonicalTwilioUsageAlertUrl(trigger.callback_url) &&
+          Number(trigger.trigger_value) === expectedTriggerValue.get(trigger.recurring),
       )
       .map((trigger) => trigger.recurring),
   );
@@ -646,7 +823,7 @@ const record = {
     worktree_clean: worktreeClean,
   },
   production: vercel,
-  live_checks: { readiness, stripe, database, twilio },
+  live_checks: { readiness, canonical_runtime: canonicalRuntime, stripe, database, twilio },
   runtime_policy: {
     managed_structured_chain: ["OpenAI", "Gemini", "Vercel AI Gateway"],
     openai:

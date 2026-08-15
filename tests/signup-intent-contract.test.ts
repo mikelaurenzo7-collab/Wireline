@@ -56,17 +56,11 @@ describe("signup intent contract", () => {
     const portal = read("src/components/AuthPortal.tsx");
     expect(portal).toContain("plan.price_usd_annual");
     expect(portal).toContain("candidate.public !== false");
-    expect(portal).toContain(
-      "preferredBillingInterval: attribution.preferredBillingInterval",
-    );
-    expect(portal).toContain(
-      "billing_interval: attribution?.preferredBillingInterval ?? null",
-    );
+    expect(portal).toContain("preferredBillingInterval: attribution.preferredBillingInterval");
+    expect(portal).toContain("billing_interval: attribution?.preferredBillingInterval ?? null");
 
     const validation = read("src/lib/api-validation.ts");
-    expect(validation).toContain(
-      'preferredBillingInterval: z.enum(["month", "year"]).optional()',
-    );
+    expect(validation).toContain('preferredBillingInterval: z.enum(["month", "year"]).optional()');
     expect(validation).toContain("preferredPlanId: publicSignupPlanIdSchema.optional()");
     expect(validation).toContain('["enterprise", "scale", "custom"]');
 

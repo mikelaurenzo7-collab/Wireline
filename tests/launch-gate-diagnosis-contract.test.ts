@@ -63,6 +63,11 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
     ]) {
       expect(stripeBranch).toContain(code);
     }
+    expect(script).toContain('const PINNED_STRIPE_API_VERSION = "2026-07-29.dahlia"');
+    expect(script).toContain("webhookResult.body?.has_more === true");
+    expect(script).toContain("canonicalWebhooks.length !== 1");
+    expect(script).toContain("webhook.livemode !== true");
+    expect(script).toContain("webhook.api_version !== PINNED_STRIPE_API_VERSION");
   });
 });
 

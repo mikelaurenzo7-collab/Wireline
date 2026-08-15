@@ -10,8 +10,12 @@ describe("durable enqueue failure contract", () => {
   it("throws when durable work was not persisted", () => {
     const queue = read("src/lib/job-queue.ts");
     expect(queue).toContain("enforceDurableEnqueueResult");
-    expect(queue).toContain("if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type))");
-    expect(queue).toContain("throw new Error(result.error || `Failed to enqueue ${opts.type} job`)");
+    expect(queue).toContain(
+      "if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type))",
+    );
+    expect(queue).toContain(
+      "throw new Error(result.error || `Failed to enqueue ${opts.type} job`)",
+    );
   });
 
   it("treats only the named scheduler-singleton conflict as a durable no-op", () => {
@@ -23,10 +27,13 @@ describe("durable enqueue failure contract", () => {
     expect(enforceDurableEnqueueResult({ type: "cadence_tick" }, duplicate)).toEqual({ ok: true });
     expect(enforceDurableEnqueueResult({ type: "callback_tick" }, duplicate)).toEqual({ ok: true });
     expect(() =>
-      enforceDurableEnqueueResult({ type: "cadence_tick" }, {
-        ok: false,
-        error: "database unavailable",
-      }),
+      enforceDurableEnqueueResult(
+        { type: "cadence_tick" },
+        {
+          ok: false,
+          error: "database unavailable",
+        },
+      ),
     ).toThrow("database unavailable");
     expect(() => enforceDurableEnqueueResult({ type: "purge_old_data" }, duplicate)).toThrow(
       "uq_jobs_queued_scheduler_tick",
@@ -73,7 +80,9 @@ describe("durable enqueue failure contract", () => {
     const digest = read("src/lib/post-call-digest.ts");
     const worker = read("src/lib/job-worker-base.ts");
     const jobs = read("src/routes/job-routes.ts");
-    expect(digest).toContain("post-call digest: artifact enqueue failed");
+    expect(digest).toContain("await enqueuePostCallChildJob({");
+    expect(digest).toContain("enqueue conflicted without an adoptable child job");
+    expect(digest).toContain("{ retrySafe: true }");
     expect(worker).toContain("Failed to enqueue V2A extraction");
     expect(jobs).toContain("cadence_tick enqueue failed");
     expect(jobs).toContain("callback_tick enqueue failed");
@@ -87,7 +96,9 @@ describe("durable enqueue failure contract", () => {
     );
     const claimJobById = queue.slice(
       queue.indexOf("export async function claimJobById("),
-      queue.indexOf("// ─────────────────────────────────────────────────────────────────\n// Completion helpers"),
+      queue.indexOf(
+        "// ─────────────────────────────────────────────────────────────────\n// Completion helpers",
+      ),
     );
 
     expect(queue).toContain('status: (exhausted ? "dead" : "failed") as JobStatus');

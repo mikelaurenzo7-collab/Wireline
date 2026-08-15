@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,14 +10,21 @@ describe("Stripe account identity guard", () => {
   it("accepts the canonical Wireline customer-facing identity", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
-        name: "Wireline",
+        name: "Try Wireline",
         url: "https://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
       },
       settings: {
         dashboard: { display_name: "Wireline" },
         card_payments: { statement_descriptor_prefix: "WIRELINE" },
         payments: { statement_descriptor: "WIRELINE" },
-        branding: { logo: "file_logo", icon: "file_icon" },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
       },
     });
 
@@ -33,51 +41,104 @@ describe("Stripe account identity guard", () => {
         dashboard: { display_name: "Cadence AI" },
         card_payments: { statement_descriptor_prefix: "CADENCE AI" },
         payments: { statement_descriptor: "CADENCE AI" },
-        branding: { logo: null, icon: null },
+        branding: {
+          logo: null,
+          icon: null,
+          primary_color: "#6D28D9",
+          secondary_color: "#6D28D9",
+        },
       },
     });
 
-    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(4);
-    expect(findings.filter((finding) => finding.level === "warning")).toHaveLength(1);
+    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(10);
+    expect(findings.filter((finding) => finding.level === "warning")).toHaveLength(0);
     expect(findings.map((finding) => finding.message)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/business profile name/i),
         expect.stringMatching(/canonical Wireline domain/i),
         expect.stringMatching(/card statement descriptor/i),
         expect.stringMatching(/payment statement descriptor/i),
-        expect.stringMatching(/no account logo or icon/i),
+        expect.stringMatching(/support URL/i),
+        expect.stringMatching(/support email/i),
+        expect.stringMatching(/no rectangular account logo/i),
+        expect.stringMatching(/no square account icon/i),
+        expect.stringMatching(/brand color/i),
+        expect.stringMatching(/accent color/i),
       ]),
     );
   });
 
-  it("allows a distinct internal Stripe Dashboard label", () => {
+  it("allows the matching Try Wireline Dashboard label", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
-        name: "Wireline",
+        name: "Try Wireline",
         url: "https://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
       },
       settings: {
         dashboard: { display_name: "Try Wireline" },
         card_payments: { statement_descriptor_prefix: "WIRELINE" },
         payments: { statement_descriptor: "WIRELINE" },
-        branding: { logo: "file_logo", icon: null },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
       },
     });
 
     expect(findings).toEqual([]);
   });
 
+  it("rejects the product-only name for the public merchant profile", () => {
+    const findings = stripeAccountIdentityFindings({
+      business_profile: {
+        name: "Wireline",
+        url: "https://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
+      },
+      settings: {
+        dashboard: { display_name: "Try Wireline" },
+        card_payments: { statement_descriptor_prefix: "WIRELINE" },
+        payments: { statement_descriptor: "WIRELINE" },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
+      },
+    });
+
+    expect(findings).toEqual([
+      expect.objectContaining({
+        level: "error",
+        metadata: expect.objectContaining({ expected: "Try Wireline", actual: "Wireline" }),
+      }),
+    ]);
+  });
+
   it("accepts the www domain and a Wireline-prefixed dynamic descriptor", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
-        name: " wireline ",
+        name: " try wireline ",
         url: "https://www.trywireline.com/pricing",
+        support_url: "https://trywireline.com/support/",
+        support_email: " SUPPORT@trywireline.com ",
       },
       settings: {
         dashboard: { display_name: "WIRELINE" },
         card_payments: { statement_descriptor_prefix: "WIRELINE" },
         payments: { statement_descriptor: "WIRELINE*RUNTIME" },
-        branding: { logo: "file_logo", icon: null },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#a78bfa",
+          secondary_color: "#141319",
+        },
       },
     });
 
@@ -87,14 +148,21 @@ describe("Stripe account identity guard", () => {
   it("rejects insecure canonical-domain URLs and descriptor lookalikes", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
-        name: "Wireline",
+        name: "Try Wireline",
         url: "http://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
       },
       settings: {
         dashboard: { display_name: "Wireline" },
         card_payments: { statement_descriptor_prefix: "WIRELINEFAKE" },
         payments: { statement_descriptor: "WIRELINEPAY" },
-        branding: { logo: "file_logo", icon: null },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
       },
     });
 
@@ -111,14 +179,21 @@ describe("Stripe account identity guard", () => {
   it("treats a missing general payment descriptor as identity drift", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
-        name: "Wireline",
+        name: "Try Wireline",
         url: "https://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
       },
       settings: {
         dashboard: { display_name: "Wireline" },
         card_payments: { statement_descriptor_prefix: "WIRELINE" },
         payments: { statement_descriptor: null },
-        branding: { logo: "file_logo", icon: null },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
       },
     });
 
@@ -135,7 +210,7 @@ describe("Stripe account identity guard", () => {
       email: "private@example.com",
       individual: { first_name: "Private" },
       external_accounts: { data: [{ last4: "1234" }] },
-      business_profile: { name: "Wireline", url: "not a URL" },
+      business_profile: { name: "Try Wireline", url: "not a URL" },
       settings: {
         dashboard: { display_name: "Wireline" },
         card_payments: { statement_descriptor_prefix: "WIRELINE" },
@@ -145,7 +220,7 @@ describe("Stripe account identity guard", () => {
     });
 
     expect(summary).toEqual({
-      business_profile_name: "Wireline",
+      business_profile_name: "Try Wireline",
       business_profile_host: null,
       business_profile_protocol: null,
       card_statement_descriptor_prefix: "WIRELINE",
@@ -154,5 +229,30 @@ describe("Stripe account identity guard", () => {
       branding_icon_configured: true,
     });
     expect(JSON.stringify(summary)).not.toMatch(/private|1234/i);
+  });
+
+  it("makes the launch gate consume the exact merchant-identity constants", () => {
+    const launchStatus = readFileSync(
+      new URL("../scripts/generate-launch-status.mjs", import.meta.url),
+      "utf8",
+    );
+
+    for (const constant of [
+      "STRIPE_PUBLIC_BRAND",
+      "STRIPE_PUBLIC_SUPPORT_URL",
+      "STRIPE_PUBLIC_SUPPORT_EMAIL",
+      "STRIPE_BRAND_PRIMARY_COLOR",
+      "STRIPE_BRAND_SECONDARY_COLOR",
+    ]) {
+      expect(launchStatus).toContain(constant);
+    }
+    expect(launchStatus).toContain("supportUrl === STRIPE_PUBLIC_SUPPORT_URL");
+    expect(launchStatus).toContain('statementDescriptor === "WIRELINE"');
+    expect(launchStatus).toContain('cardStatementDescriptor === "WIRELINE"');
+    expect(launchStatus).toContain("brandingIcon.length > 0");
+    expect(launchStatus).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
+    expect(launchStatus).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
+    expect(launchStatus).not.toContain("settings?.dashboard?.display_name");
+    expect(launchStatus).not.toContain('statementDescriptor.startsWith("WIRELINE")');
   });
 });

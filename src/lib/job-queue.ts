@@ -29,7 +29,11 @@ export type {
 } from "./job-queue-base";
 
 export type JobType =
-  base.JobType | "post_call_artifact" | "scheduled_report" | "twilio_message_reconciliation";
+  | base.JobType
+  | "post_call_artifact"
+  | "post_call_digest"
+  | "scheduled_report"
+  | "twilio_message_reconciliation";
 export interface JobRow extends Omit<base.JobRow, "type"> {
   type: JobType;
 }

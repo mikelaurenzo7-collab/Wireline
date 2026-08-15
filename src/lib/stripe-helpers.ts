@@ -18,15 +18,16 @@ import {
   grantSubscriptionRuntimeAllowance,
   type SubscriptionBillingInterval,
 } from "./subscription-welcome-credit";
+import { STRIPE_API_VERSION } from "./stripe-api-version";
 
-export const STRIPE_API_VERSION: Stripe.LatestApiVersion = "2026-07-29.dahlia";
+export { STRIPE_API_VERSION };
 
 const configuredStripeSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
 const previewAllowsLiveProviders =
   process.env.WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW === "true";
 const stripeBlockedInPreview =
   process.env.VERCEL_ENV === "preview" &&
-  configuredStripeSecret.startsWith("sk_live_") &&
+  /^(?:sk|rk)_live_/.test(configuredStripeSecret) &&
   !previewAllowsLiveProviders;
 
 if (stripeBlockedInPreview) {

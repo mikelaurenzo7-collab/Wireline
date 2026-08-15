@@ -25,6 +25,7 @@ import { IntegrationService } from "./integrations";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 import { jsonSafeId, toJsonbSafe } from "./server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -304,7 +305,9 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         .returning({ id: schema.cadenceRuns.id });
       if (!claimed.length) continue;
 
-      const cadenceRow = cadenceById.get(run.cadenceId);
+      const cadenceRowRaw = cadenceById.get(run.cadenceId);
+      const cadenceRow =
+        cadenceRowRaw && cadenceRowRaw.userId === run.userId ? cadenceRowRaw : undefined;
       if (!cadenceRow || cadenceRow.active === false) {
         await drizzle
           .update(schema.cadenceRuns)
@@ -336,7 +339,26 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         continue;
       }
 
-      const stepResult = await executeStep(step, cadenceRow as any, leadRow as any);
+      // `cadence_tick` is system-owned, so the worker-level deletion fence has
+      // no tenant to protect. Fence at the run boundary and retain the lock
+      // across DNC vendor lookup, provider submission, and evidence writes.
+      const fencedStep = await runTenantProviderWorkWithDeletionFence({
+        userId: run.userId,
+        perform: () => executeStep(step, cadenceRow as any, leadRow as any),
+      });
+      if (!fencedStep.performed) {
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            status: "paused",
+            nextDueAt: null,
+            lastResult: "account deletion in progress — provider step cancelled",
+            updatedAt: now,
+          })
+          .where(eq(schema.cadenceRuns.id, run.id));
+        continue;
+      }
+      const stepResult = fencedStep.result;
 
       if (stepResult.defer) {
         // Temporal gate denial: hold the run at this step and retry when the

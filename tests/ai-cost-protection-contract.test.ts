@@ -30,10 +30,10 @@ describe("AI cost-protection contract", () => {
   });
 
   it("meters every AI setup surface and caps the simulation one", () => {
-    // Policy: RECORD cost everywhere a paid model is reached, but only HARD CAP
-    // the simulation surface. The Free Builder budget is a private-simulation
-    // allowance (migration 0134); capping configuration work would strand an
-    // Account Holder mid-onboarding once the allowance is spent.
+    // Policy: RECORD cost everywhere a paid model is reached. Setup routes that
+    // do not reserve a bounded maximum retain post-hoc metering; the website
+    // import has a strict input/output ceiling and therefore reserves that
+    // maximum atomically, then settles to actual usage.
     //
     // withAudit must also sit AFTER the authenticating middleware: it keys the
     // persisted row on req.user.id at "finish", so mounting it earlier silently
@@ -69,11 +69,19 @@ describe("AI cost-protection contract", () => {
       website.indexOf('"/api/agent-config/:id/website"'),
       website.indexOf("async (req: AuthenticatedRequest"),
     );
-    expect(websiteRoute).toContain('withAudit("website-import")');
-    expect(websiteRoute).not.toContain("enforceSpendCap");
+    expect(websiteRoute).toContain("enforceLaunchHardGate");
+    expect(websiteRoute).not.toContain('withAudit("website-import")');
+    expect(website).toContain("runWithWebsiteKnowledgeSpend");
     expect(websiteRoute.indexOf("authenticateUser")).toBeLessThan(
-      websiteRoute.indexOf('withAudit("website-import")'),
+      websiteRoute.indexOf("enforceLaunchHardGate"),
     );
+    const websiteSpend = read("src/lib/website-knowledge-spend.ts");
+    expect(websiteSpend).toContain("reservePlatformCostRecord");
+    expect(websiteSpend).toContain("month_to_date_usd");
+    expect(websiteSpend).toContain('"SPEND_CAP_REACHED"');
+    expect(websiteSpend).toContain('"SPEND_GUARD_UNAVAILABLE"');
+    expect(websiteSpend).toContain('"settled_actual"');
+    expect(websiteSpend).toContain('"settled_with_ambiguous_floor"');
   });
 
   it("caps forced daily-brief composes and meters the cron sweep per tenant", () => {

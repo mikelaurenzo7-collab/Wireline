@@ -11,7 +11,8 @@ describe("production build environment gate", () => {
     const validator = read("scripts/check-prod-env.mjs");
 
     expect(build).toContain("function validateProductionEnvironment()");
-    expect(build).toContain('environment !== "production" || isDuplicateV0Project');
+    expect(build).toContain("if (!isCanonicalProduction) return;");
+    expect(build).toContain("CANONICAL_VERCEL_PROJECT_ID");
     expect(build).toContain('run("node", ["scripts/check-prod-env.mjs"])');
 
     const validationIndex = build.indexOf("validateProductionEnvironment();");
@@ -29,7 +30,7 @@ describe("production build environment gate", () => {
   it("keeps preview builds isolated from production-only credentials", () => {
     const build = read("scripts/vercel-build.mjs");
 
-    expect(build).toContain('if (environment !== "production" || isDuplicateV0Project) return;');
+    expect(build).toContain("if (!isCanonicalProduction) return;");
     expect(build).toContain("configurePreviewEnvironment();\nvalidateProductionEnvironment();");
     expect(build).not.toContain("PRODUCTION_CHECK=1");
   });

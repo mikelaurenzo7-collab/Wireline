@@ -154,6 +154,8 @@ router.post(
           reason: customerSafeSmsFailureReason(result),
           code: result.code,
           recovery_path: result.recovery_path,
+          provider_outcome_ambiguous: result.providerOutcomeAmbiguous ?? false,
+          do_not_resend: result.doNotResend ?? false,
         });
         return;
       }

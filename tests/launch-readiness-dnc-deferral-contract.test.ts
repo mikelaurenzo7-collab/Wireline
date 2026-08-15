@@ -14,7 +14,16 @@ describe("launch readiness DNC deferral", () => {
     expect(readiness).toContain("SCORE_CAPABILITY_IDS");
     expect(readiness).toContain("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
     expect(readiness).toContain("isFederalDncVendorConfigured");
-    expect(readiness).toContain("...coreBlockers, ...billingBlockers, ...voiceBlockers");
+    expect(readiness).toContain("...emailBlockers");
+    const scoredCapabilityBlock = readiness.slice(
+      readiness.indexOf("const SCORE_CAPABILITY_IDS"),
+      readiness.indexOf("]);", readiness.indexOf("const SCORE_CAPABILITY_IDS")) + 3,
+    );
+    expect(scoredCapabilityBlock).toContain('"email_ready"');
+    expect(scoredCapabilityBlock).not.toContain('"oauth_ready"');
+    expect(readiness).toContain(
+      "const campaignReady = launch_blockers.length === 0 && readyCount === scored.length",
+    );
     expect(readiness).not.toContain("...complianceBlockers");
 
     expect(health).toContain("deferred_checklist: report.deferred_checklist");

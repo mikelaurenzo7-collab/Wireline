@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger, serialQueryBatch } from "../lib/server-context";
 import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
 import * as schema from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToCamel, mapObjectToSnake } from "../lib/server-utils";
 import { isOwnerEmail } from "../lib/auth-service";
@@ -668,18 +668,33 @@ router.post(
         throw AppError.fromHttpStatus(404, "No pending deletion request found.");
       }
 
-      if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() <= Date.now()) {
+      if (!existing.scheduledPurgeAt || existing.scheduledPurgeAt.getTime() <= Date.now()) {
         return res.status(410).json({
           code: "GONE",
           error: "Grace period has expired. Deletion can no longer be cancelled.",
-          scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
+          scheduled_purge_at: existing.scheduledPurgeAt?.toISOString() ?? null,
         });
       }
 
-      await drizzle
+      const [cancelled] = await drizzle
         .update(deletionQueue)
         .set({ status: "cancelled", cancelledAt: new Date() })
-        .where(eq(deletionQueue.id, existing.id));
+        .where(
+          and(
+            eq(deletionQueue.id, existing.id),
+            eq(deletionQueue.userId, uid),
+            eq(deletionQueue.status, "pending"),
+            sql`${deletionQueue.scheduledPurgeAt} > now()`,
+          ),
+        )
+        .returning({ id: deletionQueue.id });
+      if (!cancelled) {
+        return res.status(410).json({
+          code: "GONE",
+          error: "Grace period has expired or terminal deletion has begun.",
+          scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
+        });
+      }
 
       const renewal = await resumeRenewalAfterDeletionCancellation(uid);
 

@@ -99,10 +99,11 @@ describe("final e2e bugfix contracts", () => {
     // Lease-based claim (not a null-claim) so a mid-step crash self-heals.
     expect(cadence).toContain("CADENCE_STEP_LEASE_MS");
     const claimAt = cadence.indexOf(".update(schema.cadenceRuns)");
-    const executeAt = cadence.indexOf("await executeStep(");
+    const executeAt = cadence.indexOf("perform: () => executeStep(");
     expect(claimAt).toBeGreaterThan(-1);
     expect(executeAt).toBeGreaterThan(-1);
-    // The claim + `if (!claimed.length) continue;` must precede executeStep.
+    // The claim + `if (!claimed.length) continue;` must precede the fenced
+    // executeStep callback.
     expect(cadence).toContain("if (!claimed.length) continue;");
     expect(cadence.indexOf("if (!claimed.length) continue;")).toBeLessThan(executeAt);
   });

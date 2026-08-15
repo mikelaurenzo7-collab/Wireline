@@ -14,6 +14,8 @@ type ExtractedWebsiteConfig = {
   personality: string;
 };
 
+const WEBSITE_PAGE_TITLE_MAX_CHARS = 500;
+
 export type WebsiteKnowledgeImportResult = {
   sourceUrl: string;
   pageTitle: string | null;
@@ -111,10 +113,14 @@ export async function importWebsiteKnowledge(input: {
   url: string;
 }): Promise<WebsiteKnowledgeImportResult> {
   const fetched = await fetchPublicWebsiteText(input.url);
+  // A hostile page can devote nearly the full 1 MB fetch envelope to <title>.
+  // Bound it independently: visible body text already has a model-input cap,
+  // and title must not become a hidden token-cost or response-size bypass.
+  const pageTitle = cleanText(fetched.title, WEBSITE_PAGE_TITLE_MAX_CHARS) || null;
   const truncated = fetched.text.length > KNOWLEDGE_TEXT_EXTRACT_CHARS;
   const extraction = await extractWebsiteConfig({
     sourceUrl: fetched.finalUrl,
-    title: fetched.title,
+    title: pageTitle,
     text: fetched.text.slice(0, KNOWLEDGE_TEXT_EXTRACT_CHARS),
   });
   const host = sourceHost(fetched.finalUrl);
@@ -141,10 +147,7 @@ export async function importWebsiteKnowledge(input: {
       .select({ content: schema.knowledge.content })
       .from(schema.knowledge)
       .where(
-        and(
-          eq(schema.knowledge.agentId, input.agentId),
-          eq(schema.knowledge.userId, input.userId),
-        ),
+        and(eq(schema.knowledge.agentId, input.agentId), eq(schema.knowledge.userId, input.userId)),
       );
     const existingDirectives = await tx
       .select({ content: schema.directives.content })
@@ -167,7 +170,7 @@ export async function importWebsiteKnowledge(input: {
 
   return {
     sourceUrl: fetched.finalUrl,
-    pageTitle: fetched.title,
+    pageTitle,
     factsAdded: inserted.factsAdded,
     rulesAdded: inserted.rulesAdded,
     truncated,

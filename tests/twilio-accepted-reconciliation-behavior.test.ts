@@ -66,10 +66,11 @@ function installSendMocks(options: {
   const update = vi.fn(() => ({
     set: vi.fn(() => ({ where: updateWhere })),
   }));
+  const insertValues = vi.fn(() => ({
+    onConflictDoNothing: vi.fn(async () => undefined),
+  }));
   const insert = vi.fn(() => ({
-    values: vi.fn(() => ({
-      onConflictDoNothing: vi.fn(async () => undefined),
-    })),
+    values: insertValues,
   }));
   const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
   const tenantStore = {
@@ -92,6 +93,7 @@ function installSendMocks(options: {
     getTwilioClient: () => ({ messages: { create: createMessage } }),
     isTwilioConfigured: () => true,
     lookupTenantPhoneNumber: vi.fn(),
+    SMS_PROVIDER_OUTCOME_AMBIGUOUS: "SMS_PROVIDER_OUTCOME_AMBIGUOUS",
   }));
   vi.doMock("../src/lib/twilio-message-reliability", () => ({
     withTwilioMessageReliability: <T>(payload: T) => payload,
@@ -114,6 +116,7 @@ function installSendMocks(options: {
     refundRuntimeUsage,
     reserveRuntimeUsage,
     updateWhere,
+    insertValues,
     log,
   };
 }
@@ -187,4 +190,80 @@ describe("Twilio accepted-message reliability", () => {
       expect.objectContaining({ status: 400, refundError: "refund ledger unavailable" }),
     );
   });
+
+  it("keeps an exhausted 429 definitive and refundable so a durable caller may retry", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "rejected", status: 429 },
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Definitively rate limited",
+      channel: "sms",
+      idempotencyKey: "post-call-csat/job-1",
+      reservationAttempt: 1,
+    });
+
+    expect(result).toMatchObject({ ok: false });
+    expect(result.code).not.toBe("SMS_PROVIDER_OUTCOME_AMBIGUOUS");
+    expect(result.providerOutcomeAmbiguous).not.toBe(true);
+    expect(mocks.refundRuntimeUsage).toHaveBeenCalledTimes(1);
+    expect(
+      mocks.insertValues.mock.calls.some(
+        ([value]) => value?.action === "twilio.message_provider_outcome_ambiguous",
+      ),
+    ).toBe(false);
+  });
+
+  it.each([0, 503])(
+    "marks provider status %s as ambiguous, retains the reserve, and writes a content-free critical incident",
+    async (status) => {
+      const mocks = installSendMocks({
+        provider: { kind: "rejected", status },
+      });
+      const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+      const result = await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Sensitive customer message that must not reach audit metadata",
+        channel: "sms",
+        idempotencyKey: "manual-reply/thread-1/request-1",
+      });
+
+      expect(result).toMatchObject({
+        ok: false,
+        code: "SMS_PROVIDER_OUTCOME_AMBIGUOUS",
+        providerOutcomeAmbiguous: true,
+        doNotResend: true,
+      });
+      expect(result.reason).toMatch(/may have been accepted/i);
+      expect(result.reason).toMatch(/do not resend/i);
+      expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+
+      const incident = mocks.insertValues.mock.calls
+        .map(([value]) => value)
+        .find((value) => value?.action === "twilio.message_provider_outcome_ambiguous");
+      expect(incident).toMatchObject({
+        eventType: "provider.reconciliation",
+        severity: "critical",
+        provider: "twilio",
+        resourceId: "twilio_message:sms:manual-reply/thread-1/request-1",
+        metadata: {
+          reservation_reference: "twilio_message:sms:manual-reply/thread-1/request-1",
+          destination_suffix: "0123",
+          provider_status: status || null,
+        },
+      });
+      expect(JSON.stringify(incident)).not.toContain("Sensitive customer message");
+      expect(mocks.log.error).toHaveBeenCalledWith(
+        "Twilio message provider outcome is ambiguous",
+        expect.objectContaining({
+          incidentRecorded: true,
+          reservationRetained: true,
+          doNotResend: true,
+        }),
+      );
+    },
+  );
 });

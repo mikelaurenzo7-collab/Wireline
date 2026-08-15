@@ -322,9 +322,15 @@ describe("the retention purge deletes event data, never live configuration", () 
     const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json")) as {
       entries: { idx: number; tag: string }[];
     };
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 47,
+        tag: "0149_retention_purge_fails_closed",
+      }),
+    );
     expect(journal.entries.at(-1)).toMatchObject({
-      idx: 47,
-      tag: "0149_retention_purge_fails_closed",
+      idx: 48,
+      tag: "0150_post_call_digest_job_idempotency",
     });
   });
 });

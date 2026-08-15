@@ -43,7 +43,7 @@ describe("billing proof contract", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
-    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toMatch(/router\.post\(\s*"\/api\/billing\/portal"/);
     expect(portal).toContain("ensureManagedPortalConfiguration");
     expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
     expect(portal).not.toContain("return_url: `${appUrl.url}/admin`");

@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -16,6 +16,9 @@ import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import * as schema from "../db/schema";
 import type { AuthenticatedRequest } from "../types/auth";
 import { emitServerProductEvent } from "../lib/product-event-server";
+import { resolveStrictFounderPriceId } from "../lib/stripe-founder-price";
+import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
+import { findPotentiallyLiveStripeSubscription } from "../lib/stripe-subscription-safety";
 
 const router = Router();
 
@@ -32,53 +35,6 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
   // route is shadowed by the atomic router today, but the sets must not drift.
   "paused",
 ]);
-
-async function resolveLaunchPriceId(
-  planId: string,
-  interval: "month" | "year",
-): Promise<string | null> {
-  const plan = planById(planId);
-  if (!plan) return null;
-
-  const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const envPriceId = envKey ? process.env[envKey]?.trim() : undefined;
-  if (envPriceId) {
-    try {
-      const price = await stripe.prices.retrieve(envPriceId);
-      if (
-        price.active &&
-        price.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
-        price.metadata?.wireline_plan_id === plan.id
-      ) {
-        return price.id;
-      }
-    } catch (error) {
-      log.warn("Configured Stripe price could not be validated; using lookup key", {
-        planId: plan.id,
-        interval,
-        envKey,
-        error: getErrorMessage(error),
-      });
-    }
-  }
-
-  const lookupKey = planLookupKey(plan, interval);
-  if (!lookupKey) return null;
-  const prices = await stripe.prices.list({
-    active: true,
-    lookup_keys: [lookupKey],
-    limit: 1,
-  });
-  const price = prices.data[0];
-  if (
-    !price ||
-    price.metadata?.wireline_plan_id !== plan.id ||
-    price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION
-  ) {
-    return null;
-  }
-  return price.id;
-}
 
 /**
  * Canonical founder-catalog checkout — sole owner of POST /api/billing/checkout.
@@ -137,13 +93,18 @@ router.post(
 
     // Source-of-truth guard: local row can lag the webhook. If Stripe already
     // has a live subscription for this customer, refuse another Checkout.
+    let reusableExistingCustomerId: string | null = null;
     if (existing?.stripeCustomerId) {
-      const remote = await stripe.subscriptions.list({
-        customer: existing.stripeCustomerId,
-        status: "all",
-        limit: 20,
+      const reusable = await resolveOwnedStripeCustomer({
+        customerId: existing.stripeCustomerId,
+        userId: req.user.id,
+        authenticatedEmail: req.user.email,
       });
-      const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
+      reusableExistingCustomerId = reusable?.id || null;
+    }
+
+    if (reusableExistingCustomerId) {
+      const liveRemote = await findPotentiallyLiveStripeSubscription(reusableExistingCustomerId);
       if (liveRemote) {
         return res.status(409).json({
           code: "ALREADY_SUBSCRIBED",
@@ -176,7 +137,16 @@ router.post(
       }).filter(([, value]) => !!value),
     ) as Record<string, string>;
 
-    let customerId = existing?.stripeCustomerId || null;
+    let customerId = reusableExistingCustomerId;
+    if (customerId) {
+      const attributed = await resolveOwnedStripeCustomer({
+        customerId,
+        userId: req.user.id,
+        authenticatedEmail: req.user.email,
+        metadata: attributionMetadata,
+      });
+      customerId = attributed?.id || null;
+    }
     if (!customerId) {
       // Serialize first-time Stripe customer creation per tenant so parallel
       // checkout clicks cannot orphan duplicate Stripe customers.
@@ -187,12 +157,27 @@ router.post(
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.userId, req.user.id))
           .limit(1);
-        if (locked?.stripeCustomerId) return locked.stripeCustomerId;
+        if (locked?.stripeCustomerId) {
+          const reusable = await resolveOwnedStripeCustomer({
+            customerId: locked.stripeCustomerId,
+            userId: req.user.id,
+            authenticatedEmail: req.user.email,
+            metadata: attributionMetadata,
+          });
+          if (reusable) return reusable.id;
+        }
 
-        const customer = await stripe.customers.create({
-          email: req.user.email,
-          metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
-        });
+        const customer = await stripe.customers.create(
+          {
+            email: req.user.email,
+            metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
+          },
+          {
+            idempotencyKey: locked?.stripeCustomerId
+              ? `wireline-customer-recovery-${req.user.id}-${locked.stripeCustomerId}`
+              : `wireline-customer-${req.user.id}`,
+          },
+        );
         await tx
           .insert(schema.subscriptions)
           .values({
@@ -206,13 +191,9 @@ router.post(
           });
         return customer.id;
       });
-    } else if (Object.keys(attributionMetadata).length > 0) {
-      await stripe.customers.update(customerId, {
-        metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
-      });
     }
 
-    const priceId = await resolveLaunchPriceId(plan.id, interval);
+    const priceId = await resolveStrictFounderPriceId(plan.id, interval);
     if (!priceId) {
       return res.status(503).json({
         code: "SERVICE_UNAVAILABLE",

@@ -100,9 +100,7 @@ describe("production schema effects", () => {
 
     expect(migrateAt).toBeGreaterThan(-1);
     expect(verifyAt).toBeGreaterThan(migrateAt);
-    expect(buildSource).toContain(
-      'const shouldVerifyProductionSchema = environment === "production" && !isDuplicateV0Project;',
-    );
+    expect(buildSource).toContain("const shouldVerifyProductionSchema = isCanonicalProduction;");
     expect(buildSource.slice(migrateAt, verifyAt)).toContain("if (shouldVerifyProductionSchema)");
     expect(buildSource.slice(migrateAt, verifyAt)).toContain("Skipping database migrations");
     expect(wrapperSource).toContain("resolveProductionSchemaDatabase");

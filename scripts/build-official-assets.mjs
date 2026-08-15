@@ -13,6 +13,10 @@ import { readFileSync, existsSync } from "node:fs";
 import { mkdir, rm, writeFile, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  requireCanonicalCredentialTarget,
+  requireCompleteCredentialPair,
+} from "./dogfood-credentials.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "official-assets");
@@ -43,19 +47,28 @@ function loadEnv(filePath) {
 
 loadEnv(path.join(repoRoot, ".env.visual-qa"));
 
-const baseUrl = new URL(process.env.E2E_BASE_URL || "https://trywireline.com");
-const email =
-  process.env.DEMO_EMAIL ||
-  process.env.DOGFOOD_EMAIL ||
-  process.env.WIRELINE_E2E_EMAIL ||
-  process.env.E2E_USER_EMAIL ||
-  "";
-const password =
-  process.env.DEMO_PASSWORD ||
-  process.env.DOGFOOD_PASSWORD ||
-  process.env.WIRELINE_E2E_PASSWORD ||
-  process.env.E2E_USER_PASSWORD ||
-  "";
+const baseUrl = new URL(requireCanonicalCredentialTarget(process.env.E2E_BASE_URL));
+const { email, password } = requireCompleteCredentialPair(
+  [
+    { label: "DEMO", email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD },
+    {
+      label: "DOGFOOD",
+      email: process.env.DOGFOOD_EMAIL,
+      password: process.env.DOGFOOD_PASSWORD,
+    },
+    {
+      label: "WIRELINE_E2E",
+      email: process.env.WIRELINE_E2E_EMAIL,
+      password: process.env.WIRELINE_E2E_PASSWORD,
+    },
+    {
+      label: "E2E_USER",
+      email: process.env.E2E_USER_EMAIL,
+      password: process.env.E2E_USER_PASSWORD,
+    },
+  ],
+  "Set DEMO_EMAIL/DEMO_PASSWORD or one complete documented E2E credential pair.",
+);
 
 function appUrl(route) {
   return new URL(route, baseUrl).toString();
@@ -88,12 +101,6 @@ function responseSetCookies(headers) {
 }
 
 async function signIn() {
-  if (!email || !password) {
-    throw new Error(
-      "Set DEMO_EMAIL and DEMO_PASSWORD, or one of the documented E2E credential aliases.",
-    );
-  }
-
   const res = await fetch(appUrl("/api/auth/signin"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },

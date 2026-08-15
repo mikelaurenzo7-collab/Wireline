@@ -12,7 +12,12 @@ import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
 import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
-import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
+import {
+  claimTerminalAccountPurge,
+  purgeAccount,
+  releaseExternalResourcesForPurge,
+} from "./account-deletion";
+import { runTerminalDeletionSequence } from "./account-deletion-fence";
 import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -115,6 +120,12 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
  * Dispatches jobs from the wireline_jobs table.
  */
 export async function handleJob(job: JobRow): Promise<void> {
+  if (job.type === "post_call_digest") {
+    const { handlePostCallDigestJob } = await import("./post-call-digest");
+    await handlePostCallDigestJob(job);
+    return;
+  }
+
   if (job.type === "post_call_enrichment") {
     const p = job.payload as {
       agentId: string;
@@ -462,94 +473,78 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    // Guard: the queue row must still be 'pending' AND past its
-    // scheduled_purge_at. If the user cancelled in the grace window, skip.
-    let queueRow: any = null;
-    if (p.queue_id) {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(eq(schema.deletionQueue.id, p.queue_id))
-        .limit(1);
-      queueRow = data;
-    } else {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(
-          and(
-            eq(schema.deletionQueue.userId, p.user_id),
-            eq(schema.deletionQueue.status, "pending"),
-          ),
-        )
-        .limit(1);
-      queueRow = data;
-    }
+    const sequence = await runTerminalDeletionSequence({
+      establishTerminalState: async () => {
+        const claim = await claimTerminalAccountPurge(
+          { userId: p.user_id, ...(p.queue_id ? { queueId: p.queue_id } : {}) },
+          { db: drizzle },
+        );
+        if (!claim.ready) {
+          log.info("purge_deleted_account skipped — terminal claim unavailable", {
+            jobId: job.id,
+            user_id: p.user_id,
+            reason: claim.reason,
+          });
+          return null;
+        }
+        log.info("purge_deleted_account terminal state established", {
+          jobId: job.id,
+          user_id: p.user_id,
+          resumed: claim.resumed,
+        });
+        return claim.queueRow;
+      },
+      // The durable `purging` commit above drains earlier post-call work and
+      // prevents any later provider delivery before teardown starts.
+      releaseExternalResources: async () => {
+        const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
+        log.info("purge_deleted_account external release", {
+          jobId: job.id,
+          user_id: p.user_id,
+          subscriptions_canceled: release.subscriptionsCanceled,
+          numbers_released: release.numbersReleased,
+          number_errors: release.numberErrors.length,
+          oauth_attempted: release.oauthAttempted,
+          oauth_revoked: release.oauthRevoked,
+        });
+        return release;
+      },
+      purgeLocalAccount: async (queueRow) => {
+        const result = await purgeAccount(p.user_id, { db: drizzle, log });
+        if (!result.ok) {
+          log.error("purge_deleted_account failed", {
+            jobId: job.id,
+            user_id: p.user_id,
+            error: result.error,
+          });
+          throw new Error(result.error ?? "account purge failed");
+        }
 
-    if (!queueRow || queueRow.status !== "pending") {
-      log.info("purge_deleted_account skipped — no pending queue row", {
-        jobId: job.id,
-        user_id: p.user_id,
-      });
-      return;
-    }
-    if (new Date(queueRow.scheduledPurgeAt).getTime() > Date.now()) {
-      log.info("purge_deleted_account skipped — still within grace window", {
-        jobId: job.id,
-        user_id: p.user_id,
-        scheduled_purge_at: queueRow.scheduledPurgeAt,
-      });
-      return;
-    }
+        // Audit BEFORE marking the queue row purged so the audit row is still
+        // owned by a (now-deleted) user — historical record of the action.
+        void auditLogger
+          .logAccountDeletion({
+            userId: p.user_id,
+            tablesTouched: result.tablesTouched,
+            ip: queueRow.ip ?? undefined,
+          })
+          .catch(() => {});
 
-    // Tear down PAID external resources (Stripe subscriptions, Twilio/Vapi
-    // numbers) BEFORE the irreversible row purge — once purgeAccount deletes
-    // wireline_subscriptions/wireline_phone_numbers we lose the ids forever.
-    // A hard Stripe failure throws here so the job retries instead of purging
-    // a still-billing subscription; number-release failures are logged only.
-    const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
-    log.info("purge_deleted_account external release", {
-      jobId: job.id,
-      user_id: p.user_id,
-      subscriptions_canceled: release.subscriptionsCanceled,
-      numbers_released: release.numbersReleased,
-      number_errors: release.numberErrors.length,
-      oauth_attempted: release.oauthAttempted,
-      oauth_revoked: release.oauthRevoked,
+        // The local purge normally deletes this PII-bearing row. This update
+        // documents terminal state for schemas where the row is retained.
+        await drizzle
+          .update(schema.deletionQueue)
+          .set({ status: "purged", purgedAt: new Date() })
+          .where(eq(schema.deletionQueue.id, queueRow.id));
+        return result;
+      },
     });
 
-    const result = await purgeAccount(p.user_id, { db: drizzle, log });
-    if (!result.ok) {
-      log.error("purge_deleted_account failed", {
-        jobId: job.id,
-        user_id: p.user_id,
-        error: result.error,
-      });
-      throw new Error(result.error ?? "account purge failed");
-    }
-
-    // Audit BEFORE marking the queue row purged so the audit row is still
-    // owned by a (now-deleted) user — historical record of the action.
-    void auditLogger
-      .logAccountDeletion({
-        userId: p.user_id,
-        tablesTouched: result.tablesTouched,
-        ip: queueRow.ip ?? undefined,
-      })
-      .catch(() => {});
-
-    // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
-    // would have already removed it when the auth row was deleted, so this
-    // update may affect zero rows — that's fine.
-    await drizzle
-      .update(schema.deletionQueue)
-      .set({ status: "purged", purgedAt: new Date() })
-      .where(eq(schema.deletionQueue.id, queueRow.id));
-
+    if (!sequence.started) return;
     log.info("purge_deleted_account completed", {
       jobId: job.id,
       user_id: p.user_id,
-      tables_touched: result.tablesTouched.length,
+      tables_touched: sequence.purge.tablesTouched.length,
     });
   }
 

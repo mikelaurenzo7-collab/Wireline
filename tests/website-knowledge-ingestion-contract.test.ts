@@ -27,6 +27,10 @@ const importLimits = readFileSync(
   new URL("../src/middleware/website-knowledge-rate-limits.ts", import.meta.url),
   "utf8",
 );
+const spend = readFileSync(
+  new URL("../src/lib/website-knowledge-spend.ts", import.meta.url),
+  "utf8",
+);
 const legacyRoute = readFileSync(
   new URL("../src/routes/legacy-knowledge-crawl-routes.ts", import.meta.url),
   "utf8",
@@ -136,14 +140,16 @@ describe("secure website knowledge ingestion", () => {
 
   it("pins DNS and enforces one deadline across redirects and transfer", () => {
     expect(safeFetch).toContain("resolvePinnedWebhookDestination(rawUrl)");
-    expect(safeFetch).toContain("beforeDeadline(resolvePinnedWebhookDestination(rawUrl), deadlineAt)");
+    expect(safeFetch).toContain(
+      "beforeDeadline(resolvePinnedWebhookDestination(rawUrl), deadlineAt)",
+    );
     expect(safeFetch).toContain("lookup: pinnedLookup(destination)");
     expect(safeFetch).toContain("agent: false");
     expect(safeFetch).toContain('"Accept-Encoding": "identity"');
     expect(safeFetch).toContain("WEBSITE_FETCH_DEADLINE_MS = 10_000");
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_BYTES = 1_000_000");
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_REDIRECTS = 3");
-    expect(safeFetch).toContain("destination.url.port !== \"443\"");
+    expect(safeFetch).toContain('destination.url.port !== "443"');
     expect(safeFetch).toContain("remainingDeadlineMs(deadlineAt)");
     expect(safeFetch).toContain("deadlineAt,");
     expect(safeFetch).not.toContain("fetch(rawUrl");
@@ -188,6 +194,8 @@ describe("secure website knowledge ingestion", () => {
     expect(service).toContain("known.add(key)");
     expect(service).toContain("if (newKnowledge.length)");
     expect(service).toContain("if (newDirectives.length)");
+    expect(service).toContain("WEBSITE_PAGE_TITLE_MAX_CHARS = 500");
+    expect(service).toContain("cleanText(fetched.title, WEBSITE_PAGE_TITLE_MAX_CHARS)");
   });
 
   it("authenticates, bounds vendor spend, and verifies ownership before importing", () => {
@@ -203,6 +211,22 @@ describe("secure website knowledge ingestion", () => {
     expect(importLimits).toContain("windowMs: 24 * 60 * 60 * 1000");
     expect(importLimits).toContain("max: 50");
     expect(importLimits.match(/failClosedOnError: true/g)).toHaveLength(2);
+    expect(route).toContain("enforceLaunchHardGate");
+    expect(route).toContain("runWithWebsiteKnowledgeSpend");
+    expect(route).not.toContain('withAudit("website-import")');
+    expect(spend).toContain("WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD = 0.25");
+    expect(spend).toContain("reservePlatformCostRecord");
+    expect(spend).toContain('accounting_state: "reserved_before_provider"');
+    expect(spend).toContain('"settled_actual"');
+    expect(spend).toContain('"settled_with_ambiguous_floor"');
+    expect(spend).toContain(".update(schema.auditLog)");
+    expect(spend).toContain("eq(schema.auditLog.id, input.reservation.auditId)");
+    expect(spend).toContain("operationError instanceof WebsiteFetchError");
+    expect(spend).toContain("operationError instanceof RuntimeUnavailableError");
+    expect(spend).toContain("operationError instanceof DefiniteProviderRejectionError");
+    expect(spend).toContain("auditContext.ambiguousProviderAttempts === 0");
+    expect(spend).toContain("await dependencies.release(reservation)");
+    expect(spend).toContain("await dependencies.commit(reservation)");
     expect(route).toContain("eq(schema.agents.id, req.params.id)");
     expect(route).toContain("eq(schema.agents.userId, req.user.id)");
     expect(route).toContain('parsed.protocol !== "https:"');
@@ -211,7 +235,9 @@ describe("secure website knowledge ingestion", () => {
   });
 
   it("exposes an honest single-page import surface and refreshes saved knowledge", () => {
-    expect(registry).toContain('import websiteKnowledgeRouter from "../routes/website-knowledge-routes"');
+    expect(registry).toContain(
+      'import websiteKnowledgeRouter from "../routes/website-knowledge-routes"',
+    );
     expect(registry).toContain("app.use(websiteKnowledgeRouter)");
     expect(page).toContain("<WebsiteKnowledgeImport");
     expect(page).toContain("setKnowledgeRevision");

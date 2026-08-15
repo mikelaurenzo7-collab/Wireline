@@ -26,7 +26,7 @@ import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { isHardSpendCapExceeded } from "./spend-guards";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
-import { runPostCallDigest } from "./post-call-digest";
+import { enqueuePostCallDigest } from "./post-call-digest";
 import { QA_SCORE_SOURCE_HEURISTIC } from "./qa-score-provenance";
 import {
   findCallLogByVapiCallId,
@@ -35,7 +35,6 @@ import {
   OUTBOUND_CALL_PLACEHOLDER_SUMMARY,
 } from "./outbound-call-tracking";
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
-import { notifyCallRecap } from "./mobile-push";
 import { emitServerProductEventOnce } from "./product-event-server";
 import {
   resolveVapiCallCostUsd,
@@ -510,6 +509,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       const duplicateCallId = call?.id;
       if (duplicateCallId) {
         const existing = await findCallLogByVapiCallId(duplicateCallId);
+        insertedCallLogId = existing?.id ?? null;
         if (existing && isOutboundCallPlaceholder(existing)) {
           // Atomic finalize-claim: the WHERE re-checks the placeholder markers
           // and the SET clears both (summary replaced, pipelineError nulled),
@@ -637,6 +637,39 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     vapiCallId,
   });
 
+  // Customer follow-up must survive serverless teardown and provider outages.
+  // Enqueue on both the winning delivery and redeliveries: migration 0150 makes
+  // the tenant+call row unique, so a retry repairs a failed enqueue without
+  // ever creating a second owner email/CSAT workflow.
+  if (insertedCallLogId === null) {
+    throw new Error("End-of-call report has no durable call log for post-call follow-up.");
+  }
+  const postCallDigest = await enqueuePostCallDigest({
+    userId,
+    callLogId: insertedCallLogId,
+    agentId: webhookAgentId || null,
+    dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
+    customerNumber: call?.customer?.number || null,
+    customerName: call?.customer?.name || null,
+    agentName: call?.assistant?.name || null,
+    direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+    durationSeconds: duration,
+    summary: analysis?.summary || null,
+    transcript: transcript || null,
+    sentiment: null,
+    intentLabel: null,
+    endedReason,
+    vapiCallType: call?.type || null,
+    demo: false,
+    vapiCallId,
+  });
+  log.info("Post-call digest durably queued", {
+    userId,
+    callId: vapiCallId,
+    jobId: postCallDigest.jobId,
+    deduplicated: postCallDigest.deduplicated,
+  });
+
   if (!insertedFresh) {
     // Duplicate delivery has now repaired optional evidence, legal DNC state,
     // and any unfinished voice accounting. Everything below is one-time work.
@@ -661,41 +694,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
     },
   });
-
-  // Ping the Account Holder's Wireline devices with a tap-to-open recap.
-  // Best-effort and env-gated (no-op without APNs creds); never blocks webhook.
-  void notifyCallRecap(userId, {
-    callId: vapiCallId,
-    agentName: call?.assistant?.name || null,
-    fromNumber: call?.customer?.number || null,
-    summary: analysis?.summary || null,
-  });
-
-  // Post-call digest — classify outcome, log to CRM, email the Account Holder.
-  // Fire-and-forget; never blocks the webhook response.
-  if (insertedCallLogId !== null) {
-    void runPostCallDigest({
-      userId,
-      callLogId: insertedCallLogId,
-      agentId: webhookAgentId || null,
-      dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
-      customerNumber: call?.customer?.number || null,
-      customerName: call?.customer?.name || null,
-      agentName: call?.assistant?.name || null,
-      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-      durationSeconds: duration,
-      summary: analysis?.summary || null,
-      transcript: transcript || null,
-      sentiment: null,
-      intentLabel: null,
-      endedReason,
-      vapiCallType: call?.type || null,
-      demo: false,
-      vapiCallId,
-    }).catch((err: any) =>
-      log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
-    );
-  }
 
   SentryEvents.callCompleted({
     duration_ms: duration * 1000,

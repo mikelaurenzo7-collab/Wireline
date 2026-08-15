@@ -424,8 +424,12 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .from(schema.deletionQueue)
         .where(
           and(
-            eq(schema.deletionQueue.status, "pending"),
-            lte(schema.deletionQueue.scheduledPurgeAt, new Date()),
+            inArray(schema.deletionQueue.status, ["pending", "purging"]),
+            sql`(
+              ${schema.deletionQueue.status} = 'purging'
+              OR ${schema.deletionQueue.scheduledPurgeAt} IS NULL
+              OR ${schema.deletionQueue.scheduledPurgeAt} <= now()
+            )`,
           ),
         )
         .limit(50);
