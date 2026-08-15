@@ -54,26 +54,27 @@ export default function LiveVideoStage() {
   const reducedMotion = useReducedMotion();
   const [speaking, setSpeaking] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(LIVE_VIDEO_MAX_SESSION_SECONDS);
+  const sessionEnded = secondsLeft === 0;
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || sessionEnded) return;
     const id = setTimeout(
       () => setSpeaking((value) => !value),
       speaking ? SPEAKING_MS : LISTENING_MS,
     );
     return () => clearTimeout(id);
-  }, [speaking, reducedMotion]);
+  }, [speaking, reducedMotion, sessionEnded]);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || sessionEnded) return;
     const id = setInterval(() => {
-      setSecondsLeft((value) => (value <= 1 ? LIVE_VIDEO_MAX_SESSION_SECONDS : value - 1));
+      setSecondsLeft((value) => Math.max(0, value - 1));
     }, 1000);
     return () => clearInterval(id);
-  }, [reducedMotion]);
+  }, [reducedMotion, sessionEnded]);
 
   const bars = useMemo(() => Array.from({ length: WAVE_BARS }, (_, index) => index), []);
-  const animating = speaking && !reducedMotion;
+  const animating = speaking && !reducedMotion && !sessionEnded;
 
   return (
     <div className="relative mx-auto w-full max-w-[560px]">
@@ -102,16 +103,18 @@ export default function LiveVideoStage() {
 
         <div className="vr-panel__stage">
           <span className="vr-live">
-            <span className="vr-live__dot" aria-hidden="true" />
-            Live
+            {sessionEnded ? null : <span className="vr-live__dot" aria-hidden="true" />}
+            {sessionEnded ? "Complete" : "Live"}
           </span>
-          <span className="vr-provider" role="timer" aria-label="Time left in this session">
-            {formatClock(secondsLeft)} left
+          <span className="vr-provider" role="timer">
+            {sessionEnded ? "0:00 · ended" : `${formatClock(secondsLeft)} left`}
           </span>
 
           <div className="vr-feed" aria-hidden="true">
             <span className="vr-feed__key" />
-            <span className={`vr-feed__figure${reducedMotion ? "" : " vr-bob"}`} />
+            <span
+              className={`vr-feed__figure${reducedMotion || sessionEnded ? "" : " vr-bob"}`}
+            />
             <span className="vr-feed__rim" />
             <span className="vr-feed__grain" />
           </div>
@@ -122,7 +125,9 @@ export default function LiveVideoStage() {
                 <span key={bar} />
               ))}
             </div>
-            <p className="vr-voice__state">{animating ? "Agent speaking" : "Listening"}</p>
+            <p className="vr-voice__state">
+              {sessionEnded ? "Session complete" : animating ? "Agent speaking" : "Listening"}
+            </p>
           </div>
         </div>
 
@@ -139,7 +144,8 @@ export default function LiveVideoStage() {
 
       <p className="sr-only">
         Illustration of a Wireline Live Video session: the agent takes its turn in a spoken
-        conversation while the {LIVE_VIDEO_MAX_SESSION_SECONDS / 60}-minute session cap counts down.
+        conversation while the {LIVE_VIDEO_MAX_SESSION_SECONDS / 60}-minute session cap counts down
+        and stops at the enforced limit.
       </p>
     </div>
   );
