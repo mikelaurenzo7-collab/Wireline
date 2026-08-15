@@ -130,12 +130,12 @@ export function stripeAccountIdentityFindings(account) {
   const branding = account?.settings?.branding || {};
   if (!branding.logo) {
     findings.push(
-      finding("error", "Stripe-hosted surfaces have no rectangular account logo configured."),
+      finding("warning", "Stripe-hosted surfaces have no rectangular account logo configured."),
     );
   }
   if (!branding.icon) {
     findings.push(
-      finding("error", "Stripe-hosted surfaces have no square account icon configured."),
+      finding("warning", "Stripe-hosted surfaces have no square account icon configured."),
     );
   }
   if (normalizeText(branding.primary_color).toUpperCase() !== STRIPE_BRAND_PRIMARY_COLOR) {

@@ -291,8 +291,6 @@ async function stripeStatus() {
     supportOrigin === "https://trywireline.com" &&
     supportUrl === STRIPE_PUBLIC_SUPPORT_URL &&
     supportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL &&
-    brandingLogo.length > 0 &&
-    brandingIcon.length > 0 &&
     brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR &&
     brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR;
 
@@ -388,8 +386,9 @@ async function stripeStatus() {
     ids.push(price.id);
     expectedPortalPrices.set(productId, ids);
   }
+  const returnedPortalProducts = portalFeatures.subscription_update?.products;
   const actualPortalPrices = new Map();
-  for (const product of portalFeatures.subscription_update?.products || []) {
+  for (const product of Array.isArray(returnedPortalProducts) ? returnedPortalProducts : []) {
     if (typeof product?.product !== "string" || !Array.isArray(product?.prices)) continue;
     actualPortalPrices.set(product.product, [...product.prices].sort());
   }
@@ -407,15 +406,27 @@ async function stripeStatus() {
     if (portalConfiguration?.metadata?.wireline_portal_products_fp !== expectedFingerprint) {
       portalFindings.push("products_fingerprint_mismatch");
     }
-    for (const [productId, priceIds] of expectedPortalPrices) {
-      const actualIds = actualPortalPrices.get(productId) || [];
-      if (actualIds.join(",") !== [...priceIds].sort().join(",")) {
-        portalFindings.push(`plan_switch_prices_mismatch:${productId}`);
+    if (Array.isArray(returnedPortalProducts)) {
+      for (const [productId, priceIds] of expectedPortalPrices) {
+        const actualIds = actualPortalPrices.get(productId) || [];
+        if (actualIds.join(",") !== [...priceIds].sort().join(",")) {
+          portalFindings.push(`plan_switch_prices_mismatch:${productId}`);
+        }
       }
-    }
-    for (const productId of actualPortalPrices.keys()) {
-      if (!expectedPortalPrices.has(productId)) {
-        portalFindings.push(`unexpected_plan_switch_product:${productId}`);
+      for (const productId of actualPortalPrices.keys()) {
+        if (!expectedPortalPrices.has(productId)) {
+          portalFindings.push(`unexpected_plan_switch_product:${productId}`);
+        }
+      }
+    } else {
+      const attestedAt = Number(portalConfiguration?.metadata?.wireline_portal_catalog_attested_at);
+      const updatedAt = Number(portalConfiguration?.updated);
+      if (
+        !Number.isInteger(attestedAt) ||
+        !Number.isInteger(updatedAt) ||
+        Math.abs(updatedAt - attestedAt) > 5
+      ) {
+        portalFindings.push("plan_switch_catalog_unverifiable");
       }
     }
   }

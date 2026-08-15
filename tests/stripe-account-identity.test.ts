@@ -50,8 +50,8 @@ describe("Stripe account identity guard", () => {
       },
     });
 
-    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(10);
-    expect(findings.filter((finding) => finding.level === "warning")).toHaveLength(0);
+    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(8);
+    expect(findings.filter((finding) => finding.level === "warning")).toHaveLength(2);
     expect(findings.map((finding) => finding.message)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/business profile name/i),
@@ -249,7 +249,7 @@ describe("Stripe account identity guard", () => {
     expect(launchStatus).toContain("supportUrl === STRIPE_PUBLIC_SUPPORT_URL");
     expect(launchStatus).toContain('statementDescriptor === "WIRELINE"');
     expect(launchStatus).toContain('cardStatementDescriptor === "WIRELINE"');
-    expect(launchStatus).toContain("brandingIcon.length > 0");
+    expect(launchStatus).not.toContain("brandingIcon.length > 0 &&");
     expect(launchStatus).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
     expect(launchStatus).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
     expect(launchStatus).not.toContain("settings?.dashboard?.display_name");

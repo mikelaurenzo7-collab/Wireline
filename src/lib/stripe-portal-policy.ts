@@ -6,6 +6,8 @@ import { FOUNDER_CATALOG_VERSION } from "./plan-catalog";
 
 export const MANAGED_PORTAL_METADATA_KEY = "wireline_managed";
 export const PORTAL_PRODUCTS_FINGERPRINT_KEY = "wireline_portal_products_fp";
+export const PORTAL_CATALOG_ATTESTED_AT_KEY = "wireline_portal_catalog_attested_at";
+const PORTAL_ATTESTATION_CLOCK_SKEW_SECONDS = 5;
 const PORTAL_HEADLINE = "Manage your Wireline billing, invoices, and subscription.";
 const CANCELLATION_REASONS = [
   "too_expensive",
@@ -49,6 +51,7 @@ export function managedPortalConfigurationParams(
   products: PortalProduct[],
 ): Stripe.BillingPortal.ConfigurationCreateParams {
   const fingerprint = portalProductsFingerprint(products);
+  const catalogAttestedAt = Math.floor(Date.now() / 1000);
   return {
     business_profile: {
       headline: PORTAL_HEADLINE,
@@ -85,6 +88,7 @@ export function managedPortalConfigurationParams(
       [MANAGED_PORTAL_METADATA_KEY]: "true",
       wireline_catalog_version: FOUNDER_CATALOG_VERSION,
       [PORTAL_PRODUCTS_FINGERPRINT_KEY]: fingerprint,
+      [PORTAL_CATALOG_ATTESTED_AT_KEY]: String(catalogAttestedAt),
     },
   };
 }
@@ -169,20 +173,35 @@ export function managedPortalConfigurationFindings(
     findings.push("subscription_update_incomplete");
   }
 
-  const expectedProducts = new Map(
-    normalizedProducts(products).map((product) => [product.product, product.prices.join(",")]),
-  );
-  const actualProducts = new Map(
-    (features.subscription_update?.products || []).map((product) => [
-      product.product,
-      [...product.prices].sort().join(","),
-    ]),
-  );
-  for (const [product, prices] of expectedProducts) {
-    if (actualProducts.get(product) !== prices) findings.push(`plan_switch_mismatch:${product}`);
-  }
-  for (const product of actualProducts.keys()) {
-    if (!expectedProducts.has(product)) findings.push(`unexpected_plan_switch_product:${product}`);
+  const returnedProducts = features.subscription_update?.products;
+  if (Array.isArray(returnedProducts)) {
+    const expectedProducts = new Map(
+      normalizedProducts(products).map((product) => [product.product, product.prices.join(",")]),
+    );
+    const actualProducts = new Map(
+      returnedProducts.map((product) => [product.product, [...product.prices].sort().join(",")]),
+    );
+    for (const [product, prices] of expectedProducts) {
+      if (actualProducts.get(product) !== prices) findings.push(`plan_switch_mismatch:${product}`);
+    }
+    for (const product of actualProducts.keys()) {
+      if (!expectedProducts.has(product)) {
+        findings.push(`unexpected_plan_switch_product:${product}`);
+      }
+    }
+  } else {
+    // Stripe can omit subscription_update.products from a live configuration
+    // read even after accepting the exact catalog on create/update. Bind the
+    // metadata fingerprint to the same write's updated timestamp so a later
+    // Dashboard edit invalidates the attestation instead of silently passing.
+    const catalogAttestedAt = Number(configuration.metadata?.[PORTAL_CATALOG_ATTESTED_AT_KEY]);
+    if (
+      !Number.isInteger(catalogAttestedAt) ||
+      !Number.isInteger(configuration.updated) ||
+      Math.abs(configuration.updated - catalogAttestedAt) > PORTAL_ATTESTATION_CLOCK_SKEW_SECONDS
+    ) {
+      findings.push("plan_switch_catalog_unverifiable");
+    }
   }
 
   return findings;

@@ -118,6 +118,43 @@ describe("Stripe customer portal reconciliation", () => {
     );
   });
 
+  it("accepts Stripe's omitted product readback only when the exact write is freshly attested", () => {
+    const params = managedPortalConfigurationParams("https://trywireline.com", products);
+    const attestedAt = Number(params.metadata?.wireline_portal_catalog_attested_at);
+    const configuration = {
+      id: "bpc_live",
+      object: "billing_portal.configuration",
+      active: true,
+      application: null,
+      business_profile: params.business_profile,
+      created: attestedAt,
+      default_return_url: params.default_return_url,
+      features: {
+        ...params.features,
+        subscription_update: {
+          ...params.features.subscription_update,
+          products: undefined,
+        },
+      },
+      is_default: true,
+      livemode: true,
+      login_page: { enabled: false, url: null },
+      metadata: params.metadata,
+      updated: attestedAt,
+    } as never;
+
+    expect(
+      managedPortalConfigurationFindings(configuration, "https://trywireline.com", products),
+    ).toEqual([]);
+    expect(
+      managedPortalConfigurationFindings(
+        { ...configuration, updated: attestedAt + 30 } as never,
+        "https://trywireline.com",
+        products,
+      ),
+    ).toContain("plan_switch_catalog_unverifiable");
+  });
+
   it("runs only as an explicit live production deploy gate", () => {
     const script = read("scripts/reconcile-stripe-customer-portal.mts");
     const build = read("scripts/vercel-build.mjs");
