@@ -65,9 +65,10 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               </code>
             </span>
           )}
-          {isPublic ? (
-            "Try the demo line, browse pricing, or head home."
-          ) : (
+          {/* Public visitors get no prose line here: the three cards below are
+              Home, the demo line, and Pricing, so "try the demo line, browse
+              pricing, or head home" was that same list read aloud first. */}
+          {isPublic ? null : (
             <>
               The page may have moved.{" "}
               <span className="hidden sm:inline">Use the search bar to jump anywhere, or pick</span>

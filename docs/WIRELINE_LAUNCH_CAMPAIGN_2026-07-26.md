@@ -107,7 +107,7 @@ File: `wireline-founder-60s.mp3`
 
 File: `wireline-live-video-25s.mp3`
 
-> Some conversations deserve a face. Turn on Live Video and your business agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One agent, one place to review the work. Add it to a live plan for nineteen dollars a month.
+> Some conversations deserve a face. Turn on Live Video and your voice agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One place to review the work. Add it to a live plan for nineteen dollars a month.
 
 The narration deliberately claims the **brain**, not the voice. In the default session the presenter speaks through Wireline's own realtime voice rather than the phone voice, so "same voice" would be a claim the picture cannot support. What is identical across phone and screen is the agent: its Training, its rules, and the outcome it logs.
 
@@ -124,7 +124,7 @@ Re-measure provider output after every regeneration; pacing can drift even when 
 - Description: **Build free. Go live from $19/mo.**
 - CTA: **Build your Voice Agent**
 
-### One Agent, Connected Work
+### One Voice Agent, Connected Work
 
 - Primary text: “Build one Wireline voice agent around a real job. Train the rules once, launch it on the channels you enable, then improve it from the outcomes.”
 - Headline: **Calls. Follow-up. Outcomes.**
@@ -202,6 +202,83 @@ A minimal scroll-stop derived from the same captured-call proof. No separate pro
 ### Sound-off variants
 
 Every paid cut should have a sound-off treatment that remains understandable without covering legible product UI. Accessibility captions should be selectable where the platform supports them.
+
+## Out of Home
+
+OOH is the one surface with no sound, no scroll, and no second chance. A driver
+gets roughly six seconds and a pedestrian roughly three, so every board is
+**seven words or fewer above the logo**, and the product is never shown: a phone
+screen at 48 sheets is a grey rectangle. The line does the work.
+
+All boards share one lockup: line, then a hairline wire rule, then the mark,
+the offer, and the domain. Violet on near-black, one accent, never a photograph.
+
+### Board set
+
+| # | Line | Placement logic |
+| --- | --- | --- |
+| 1 | You cannot pick up. Your agent can. | The flagship. The whole product in six words, and the only board that states the problem and the answer together. |
+| 2 | Every missed call tries the next name. | Arterials and commuter rail into trade-heavy metros. Loss framing for owner-operators. |
+| 3 | Answered at 6:47. Booked by 6:49. | Airport and highway, where dwell time is longest and a two-beat line can land. |
+| 4 | It answers. It books. It writes it down. | Transit shelters, read at a stop rather than at speed. |
+| 5 | Your best line, on every line. | Brand board. Runs late, after the category is understood. |
+| 6 | Train it once. It works every call. | Near business parks and supply houses. |
+
+Every board closes on the same three lines, set small and never crowded:
+
+> **WIRELINE**  
+> Build free. Go live from $19/mo.  
+> trywireline.com
+
+### Rules
+
+- No board carries a product screenshot, a QR code that requires stopping, a
+  phone number, or a headshot.
+- The line must be legible at 15% of its final size in greyscale. If it fails
+  that print, it is a paid-social line, not a board.
+- Never run board 5 first. It is a recall asset and reads as noise before the
+  category lands.
+- No customer counts, ratings, or testimonials until real customer evidence
+  supports them, on OOH exactly as everywhere else.
+
+## Hero Film — "The Second Ring" (:60)
+
+The tentpole cut. Same spine as the 30, given room to breathe. It is built on
+one dramatic idea: **we all know the sound of a call we cannot take.**
+
+Sound design carries this film. Ring tone is the only score until 0:38.
+
+| Time | Picture | Audio |
+| --- | --- | --- |
+| 0:00–0:06 | Black. A phone ringing somewhere off frame. | Ring. Nothing else. |
+| 0:06–0:16 | Three working hands that cannot answer: gloves on a pipe fitting, a stylist mid-colour, a contractor on a ladder. No faces. No dialogue. Each shot ends on the phone lighting up unanswered. | Ring continues under room tone. |
+| 0:16–0:22 | The ring stops mid-cycle. Hold on the dark screen. | Silence. A full two seconds of it. |
+| 0:22–0:26 | Cut to text on black: **You cannot pick up.** Beat. **Your agent can.** | Silence, then the second ring begins. |
+| 0:26–0:40 | Real captured Wireline audio at full level. Picture is the real product: the call arriving, the agent handling it, the booking landing. No narration underneath. | Agent voice, alone, unducked. |
+| 0:40–0:50 | The follow-up text sends. The outcome writes itself into the log. Back to the same three workers, still working, phone face-down. | Agent audio tails out. Room tone returns. |
+| 0:50–0:60 | End card. | Narration tail only: the `ai-voice-agent-30s` master. |
+
+### Direction notes
+
+- **The silence at 0:16 is the ad.** It is the only part a viewer will describe
+  to someone else. Do not score it, shorten it, or fill it with a logo sting.
+- Never show a face answering the phone. The moment a person picks up, the
+  product is unnecessary.
+- The agent's voice must be real captured product audio, unducked and
+  unprocessed beyond level. If it needs sweetening to be convincing, the cut is
+  not ready and neither is the claim.
+- The product picture is exact-production capture from the commit being
+  promoted, under the same rules as every other cut. A mockup here would make
+  the most-seen frame of the campaign the least honest one.
+- Cutdowns come out of this master, not the reverse: :30 drops the third
+  worker and the follow-up beat; :15 is the silence, the second ring, and the
+  end card.
+
+### End card
+
+- Build your Voice Agent
+- Build free. Go live from $19/mo.
+- trywireline.com
 
 ## Creative Status
 

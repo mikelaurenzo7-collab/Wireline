@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Wireline social card. Rendered to og-image.png by scripts/render-image-assets.mjs.
+
+  Designed for the size it is actually consumed at, which is not 1200x630. A
+  link preview in Slack, iMessage, X, or LinkedIn lands around 500px wide, so
+  everything here renders at roughly 40%. The previous revision carried a mock
+  product card, two support lines, and a six-word channel strip at 10-13px:
+  4-5px on arrival, i.e. texture rather than text. One headline, one audience
+  line, one offer, one domain — each of which survives the downscale.
+
+  Type is intentionally specified with generic fallbacks: the renderer resolves
+  system fonts, and the brand faces ship as woff2 for the browser only. Weight,
+  size, and tracking carry the brand here, not the exact face.
+-->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
     <linearGradient id="wireRule" x1="0" y1="0" x2="1" y2="0">
@@ -11,6 +25,11 @@
       <stop offset="38%" stop-color="#A78BFA"/>
       <stop offset="72%" stop-color="#6D28D9"/>
       <stop offset="100%" stop-color="#D8B4FE"/>
+    </linearGradient>
+    <linearGradient id="voiceBar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#C084FC" stop-opacity="0.95"/>
+      <stop offset="62%" stop-color="#A78BFA" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#A78BFA" stop-opacity="0.12"/>
     </linearGradient>
     <radialGradient id="softGlow" cx="72%" cy="20%" r="58%">
       <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.38"/>
@@ -28,77 +47,70 @@
   <rect width="1200" height="630" fill="url(#silverGlow)"/>
 
   <g stroke="#201E29" stroke-width="1">
-    <line x1="0" y1="118" x2="1200" y2="118"/>
-    <line x1="0" y1="512" x2="1200" y2="512"/>
-    <line x1="240" y1="0" x2="240" y2="630"/>
-    <line x1="960" y1="0" x2="960" y2="630"/>
+    <line x1="0" y1="132" x2="1200" y2="132"/>
+    <line x1="0" y1="516" x2="1200" y2="516"/>
+    <line x1="820" y1="0" x2="820" y2="630"/>
   </g>
 
-  <text x="80" y="76" font-family="IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" letter-spacing="4" fill="#A78BFA">
-    WIRELINE | TRYWIRELINE.COM
-  </text>
-  <line x1="80" y1="96" x2="430" y2="96" stroke="url(#wireRule)" stroke-width="1.25"/>
-  <circle cx="80" cy="96" r="3" fill="#A78BFA"/>
-  <circle cx="80" cy="96" r="7" fill="#A78BFA" fill-opacity="0.2"/>
-
-  <g transform="translate(790, 54)">
-    <rect width="330" height="40" rx="20" ry="20" fill="#1E1730" stroke="#2E2350" stroke-width="1"/>
-    <circle cx="24" cy="20" r="5.5" fill="#4ADE9A"/>
-    <text x="42" y="26" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="1.2" fill="#A78BFA">
-      NUMBER INCLUDED ON PAID PLANS
-    </text>
-  </g>
-
-  <text x="80" y="216" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="60" font-weight="650" letter-spacing="-2.4" fill="#F5F4F8">
-    Voice agents that
-  </text>
-  <text x="80" y="286" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="60" font-weight="650" letter-spacing="-2.4" fill="#F5F4F8">
-    get the work done.
-  </text>
-
-  <text x="84" y="360" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="26" font-weight="500" fill="#B6B1C6">
-    Build one for business or life.
-  </text>
-  <text x="84" y="404" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="500" fill="#B6B1C6">
-    Calls, answers, texts, emails, books, follows through.
-  </text>
-
-  <g transform="translate(760, 156)">
-    <rect width="360" height="296" rx="26" ry="26" fill="#141319" stroke="#262430" stroke-width="1.5"/>
-    <rect x="24" y="24" width="64" height="56" rx="16" fill="#0A0A0E" stroke="#2E2350" stroke-width="1"/>
-    <g transform="translate(37 41) scale(0.95)" fill="none" stroke="url(#markSignal)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Brand lockup: the wire mark and the wordmark, at a size that still reads
+       as Wireline when the whole card is 500px wide. -->
+  <g transform="translate(80, 58) scale(1.15)">
+    <g fill="none" stroke="url(#markSignal)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 16H11L19 32L24 21L29 32L37 16H44"/>
       <circle cx="4" cy="16" r="3.7" fill="url(#markSignal)" stroke="none"/>
       <circle cx="44" cy="16" r="3.7" fill="url(#markSignal)" stroke="none"/>
     </g>
-    <text x="104" y="48" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#F5F4F8">
-      Voice agent
-    </text>
-    <text x="104" y="72" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.2" fill="#A78BFA">
-      TRAINED FOR YOUR WORK
-    </text>
+  </g>
+  <text x="146" y="90" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="30" font-weight="800" letter-spacing="4.5" fill="#F5F4F8">
+    WIRELINE
+  </text>
 
-    <rect x="24" y="108" width="94" height="38" rx="15" fill="#201E29"/>
-    <text x="44" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Voice</text>
-    <rect x="132" y="108" width="94" height="38" rx="15" fill="#201E29"/>
-    <text x="159" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Text</text>
-    <rect x="240" y="108" width="96" height="38" rx="15" fill="#201E29"/>
-    <text x="266" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Email</text>
-
-    <rect x="24" y="164" width="312" height="48" rx="18" fill="#A78BFA"/>
-    <text x="64" y="194" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#0E0B16">
-      Conversation handled. Work finished.
+  <g transform="translate(806, 58)">
+    <rect width="314" height="44" rx="22" ry="22" fill="#1E1730" stroke="#2E2350" stroke-width="1"/>
+    <circle cx="26" cy="22" r="6" fill="#4ADE9A"/>
+    <text x="46" y="28" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="14" font-weight="700" letter-spacing="0.6" fill="#A78BFA">
+      NUMBER INCLUDED ON PAID PLANS
     </text>
-    <g transform="translate(24, 238)">
-      <rect width="142" height="24" rx="12" fill="#1E1730"/>
-      <text x="16" y="16" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Shared context</text>
-      <rect x="154" width="158" height="24" rx="12" fill="#1C1D22"/>
-      <text x="170" y="16" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C7CCD6">Outcome logged</text>
-    </g>
   </g>
 
-  <line x1="80" y1="588" x2="1120" y2="588" stroke="#A78BFA" stroke-opacity="0.2" stroke-width="1"/>
-  <text x="80" y="612" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="2.2" fill="#8B87A0">
-    VOICE | TEXT | EMAIL | BOOKINGS | FOLLOW UP | CONTROL
+  <text x="80" y="288" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="82" font-weight="700" letter-spacing="-3.2" fill="#F5F4F8">
+    Voice agents that
   </text>
+  <text x="80" y="378" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="82" font-weight="700" letter-spacing="-3.2" fill="#F5F4F8">
+    get the work done.
+  </text>
+
+  <text x="82" y="440" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="500" fill="#B6B1C6">
+    Build one for business or life.
+  </text>
+
+  <!-- A rect, not a <line>: an objectBoundingBox gradient on a horizontal line
+       resolves against a zero-height box, so the stroke rendered as nothing and
+       left the node dot floating on its own. -->
+  <rect x="80" y="477" width="620" height="1.5" fill="url(#wireRule)"/>
+  <circle cx="80" cy="478" r="4" fill="#A78BFA"/>
+  <circle cx="80" cy="478" r="9" fill="#A78BFA" fill-opacity="0.2"/>
+
+  <text x="80" y="562" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.6" fill="#F5F4F8">
+    Build free. Go live from $19/mo.
+  </text>
+  <text x="82" y="600" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="17" font-weight="700" letter-spacing="4" fill="#A78BFA">
+    TRYWIRELINE.COM
+  </text>
+
+  <!-- Voice signature. The product is speech, so the one ornament on the card
+       is a waveform rather than a mock interface: it says "voice" at any scale
+       and carries no text to lose. -->
+  <g transform="translate(872, 315)">
+    <rect x="0" y="-24" width="12" height="48" rx="6" fill="url(#voiceBar)"/>
+    <rect x="24" y="-58" width="12" height="116" rx="6" fill="url(#voiceBar)"/>
+    <rect x="48" y="-96" width="12" height="192" rx="6" fill="url(#voiceBar)"/>
+    <rect x="72" y="-42" width="12" height="84" rx="6" fill="url(#voiceBar)"/>
+    <rect x="96" y="-124" width="12" height="248" rx="6" fill="url(#voiceBar)"/>
+    <rect x="120" y="-70" width="12" height="140" rx="6" fill="url(#voiceBar)"/>
+    <rect x="144" y="-34" width="12" height="68" rx="6" fill="url(#voiceBar)"/>
+    <rect x="168" y="-88" width="12" height="176" rx="6" fill="url(#voiceBar)"/>
+    <rect x="192" y="-50" width="12" height="100" rx="6" fill="url(#voiceBar)"/>
+    <rect x="216" y="-20" width="12" height="40" rx="6" fill="url(#voiceBar)"/>
+  </g>
 </svg>

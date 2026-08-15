@@ -107,7 +107,7 @@ export const CAMPAIGN_VO = [
     // seconds to the session picture itself. Do not speed this up to "fill"
     // the slot — the silence is where the presenter is on screen.
     speed: 1.0,
-    text: "Some conversations deserve a face. Turn on Live Video and your business agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One agent, one place to review the work. Add it to a live plan for nineteen dollars a month.",
+    text: "Some conversations deserve a face. Turn on Live Video and your voice agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One place to review the work. Add it to a live plan for nineteen dollars a month.",
   },
 ];
 
