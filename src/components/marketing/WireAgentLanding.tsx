@@ -202,7 +202,11 @@ export default function WireAgentLanding() {
                 <Volume2 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Live voice demo
               </div>
-              <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4 sm:p-5">
+              {/* The widget carries its own frame (orb, mark, button). Wrapping
+                  it in a second bordered box nested a card inside a card, and
+                  in the phone-fallback state that read as a wide empty panel
+                  with one small button adrift in it. */}
+              <div className="mt-6">
                 <BrowserCallWidget
                   agentName={HERO_DEMO_AGENT.name}
                   buttonLabel="Start the live demo"

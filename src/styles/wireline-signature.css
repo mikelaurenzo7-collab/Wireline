@@ -165,6 +165,13 @@
   position: relative;
 }
 
+/* The cap is symmetric: brightest at the middle, fading to nothing at both
+   ends. It previously ran silver from the left and died into a green tint
+   before the right edge, which read as a hairline someone forgot to finish
+   rather than a designed cap — and it spent the status green, the same token
+   the LIVE dot uses to mean "a session is running", on decoration. Status
+   colors signal status here; the wire is violet and silver like every other
+   wire on the page. */
 .wl-featured-wire::before {
   content: "";
   position: absolute;
@@ -175,15 +182,16 @@
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    var(--wireline-color-action-secondary-default),
-    var(--wireline-color-action-secondary-default) 30%,
-    color-mix(in srgb, var(--wireline-color-status-success) 85%, transparent) 72%,
-    transparent 96%
+    transparent,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 70%, transparent) 18%,
+    var(--wireline-color-action-primary-default) 50%,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 70%, transparent) 82%,
+    transparent
   );
 }
 
-/* Live variant — the closing CTA is the climax, so its wire carries the
-   traveling signal: a slow green pulse runs the cap as you decide. */
+/* Live variant — the closing CTA is the climax, so its wire carries a slow
+   traveling signal along the cap as you decide. */
 .wl-featured-wire--live::after {
   content: "";
   position: absolute;
@@ -194,7 +202,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--wireline-color-status-success) 90%, transparent),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 95%, #fff),
     transparent
   );
   animation: wl-wire-pulse 5.6s var(--wireline-motion-easing-standard) infinite;
