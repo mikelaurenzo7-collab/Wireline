@@ -228,6 +228,59 @@ export async function getPlatformWebhookStats(
   };
 }
 
+/**
+ * Platform-wide AI reliability over the window.
+ *
+ * The per-tenant snapshot has always computed these from `wireline_audit_log`.
+ * The platform snapshot — the one an external monitor reads — returned literal
+ * zeros for all three AND passed `auditErrorsWindow: 0` into the health
+ * evaluator, which makes `ai_errors` a pure function of that input. So the
+ * platform's AI-reliability dimension was hardcoded "ok": no volume of model
+ * errors across the entire fleet could ever move it, and the monitor watching
+ * for exactly that was reading a constant.
+ */
+async function getPlatformAiReliability(
+  db: DrizzleDB,
+  windowHours: number,
+): Promise<{ calls: number; errorSeverity: number; critical: number }> {
+  const since = new Date(Date.now() - windowHours * 3_600_000);
+  const [callsRes, errRes, critRes] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(
+        and(eq(schema.auditLog.eventType, "ai.api_call"), gte(schema.auditLog.createdAt, since)),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(
+        and(
+          inArray(schema.auditLog.severity, ["error", "critical"]),
+          gte(schema.auditLog.createdAt, since),
+        ),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(and(eq(schema.auditLog.severity, "critical"), gte(schema.auditLog.createdAt, since))),
+  ]);
+  return {
+    calls: Number(callsRes[0]?.count ?? 0),
+    errorSeverity: Number(errRes[0]?.count ?? 0),
+    critical: Number(critRes[0]?.count ?? 0),
+  };
+}
+
+/** Webhook deliveries still awaiting a retry right now, fleet-wide. */
+async function getPlatformWebhooksPendingRetry(db: DrizzleDB): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.webhookDeliveries)
+    .where(eq(schema.webhookDeliveries.status, "pending"));
+  return Number(row?.count ?? 0);
+}
+
 export async function getPlatformSloSnapshot(
   db: DrizzleDB,
   windowHours: number = DEFAULT_WINDOW_H,
@@ -238,12 +291,14 @@ export async function getPlatformSloSnapshot(
   const webhooks = await getPlatformWebhookStats(db, windowHours);
   // Windowed, not queue.dead — see getDeadJobsInWindow.
   const deadInWindow = await getDeadJobsInWindow(db, windowHours);
+  const ai = await getPlatformAiReliability(db, windowHours);
+  const pendingRetryNow = await getPlatformWebhooksPendingRetry(db);
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
     deadEnrichmentWindow: deadInWindow,
     webhookAttemptsWindow: webhooks.attempts_in_window,
     webhookSuccessRate: webhooks.success_rate,
-    auditErrorsWindow: 0,
+    auditErrorsWindow: ai.errorSeverity,
   });
   return {
     window_hours: windowHours,
@@ -255,18 +310,18 @@ export async function getPlatformSloSnapshot(
         pending: 0,
         running: 0,
         failed: 0,
-        dead: queue.dead,
+        dead: deadInWindow,
         done_in_window: queue.done_last_hour,
       },
     },
     webhooks: {
       ...webhooks,
-      pending_retry_now: 0,
+      pending_retry_now: pendingRetryNow,
     },
     ai_reliability: {
-      claude_calls_in_window: 0,
-      error_severity_events_in_window: 0,
-      critical_events_in_window: 0,
+      claude_calls_in_window: ai.calls,
+      error_severity_events_in_window: ai.errorSeverity,
+      critical_events_in_window: ai.critical,
     },
     dimensions: {
       jobs_queue: health.jobs_queue,

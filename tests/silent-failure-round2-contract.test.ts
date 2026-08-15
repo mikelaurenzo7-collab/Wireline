@@ -254,9 +254,16 @@ describe("auto-QA failures reach the retry queue", () => {
     expect(block).toContain("throw err;");
   });
 
-  it("keeps the idempotency guard that makes a retry safe", () => {
+  it("keeps an idempotency guard that makes a retry safe", () => {
+    // The guard must exist, but it must key on the RUBRIC having run — not on
+    // `qaScore != null`. The Vapi end-of-call handler writes a provisional
+    // heuristic score on every call before this job is enqueued, so the old
+    // null-check was true every time and the rubric never ran once. See
+    // qa-score-provenance.ts.
     const worker = read("src/lib/job-worker-base.ts");
-    expect(worker).toContain("auto_qa_score skipped — already scored");
+    expect(worker).toContain("qaRubricShouldRun(call.qaBreakdown)");
+    expect(worker).toContain("auto_qa_score skipped — rubric already scored");
+    expect(worker).not.toContain("if (call.qaScore != null) {");
   });
 });
 

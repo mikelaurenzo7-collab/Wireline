@@ -13,6 +13,7 @@ import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
 import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
 import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
+import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -720,6 +721,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         direction: schema.callLogs.direction,
         durationSeconds: schema.callLogs.durationSeconds,
         qaScore: schema.callLogs.qaScore,
+        qaBreakdown: schema.callLogs.qaBreakdown,
         agentRole: schema.agents.role,
       })
       .from(schema.callLogs)
@@ -732,11 +734,18 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    // Idempotency: if the call already has a QA score (e.g. Vapi retried
-    // end-of-call-report and the job ran twice), skip the second pass to
-    // save a Claude API call per duplicate.
-    if (call.qaScore != null) {
-      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
+    // Idempotency: skip only if the RUBRIC has already scored this call (e.g.
+    // Vapi retried end-of-call-report and the job ran twice).
+    //
+    // This used to test `call.qaScore != null`, which was always true: the Vapi
+    // end-of-call handler writes a provisional heuristic score on every single
+    // call before this job is even enqueued. So the guard fired every time, the
+    // five-dimension rubric never ran once, the score account holders read as a
+    // quality assessment was a regex over the coaching note, and the
+    // `adaptive_optimization` job that low rubric scores chain into — the whole
+    // agent-learning loop — was unreachable.
+    if (!qaRubricShouldRun(call.qaBreakdown)) {
+      log.info("auto_qa_score skipped — rubric already scored", { callLogId: p.callLogId });
       return;
     }
 
@@ -769,7 +778,12 @@ export async function handleJob(job: JobRow): Promise<void> {
         ),
       );
 
-      const updates: any = { qaScore: score, qaBreakdown: breakdown as any };
+      const updates: any = {
+        qaScore: score,
+        // Stamped so the guard above can tell a completed rubric from the
+        // provisional heuristic the end-of-call handler leaves behind.
+        qaBreakdown: { ...(breakdown as any), source: QA_SCORE_SOURCE_RUBRIC },
+      };
       if ((breakdown as any)?.coaching_note)
         updates.coachingNote = (breakdown as any).coaching_note;
       await drizzle
@@ -792,7 +806,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       // on the first Claude hiccup, and with it went the call's QA score, its
       // coaching note, and the adaptive_optimization job that low scores chain
       // into — the whole agent-learning loop, silently, with no dead letter to
-      // notice. The `call.qaScore != null` guard above makes a retry that lands
+      // notice. The rubric-provenance guard above makes a retry that lands
       // after a late success a no-op, so this is safe to hand back to the
       // existing backoff and dead-letter path.
       throw err;

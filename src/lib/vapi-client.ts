@@ -61,6 +61,7 @@ import {
   isOpenAIModelId,
   resolveCoherentVoiceModel,
 } from "./ai-models";
+import { phoneSuffixForLog } from "./twilio-webhook-privacy";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
@@ -689,7 +690,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       provider: voiceLlmProvider,
       model: voiceLlmModel,
       ...(voiceSelection.fallbackModels?.length
-        ? { fallbackModels: voiceSelection.fallbackModels } : {}),
+        ? { fallbackModels: voiceSelection.fallbackModels }
+        : {}),
       systemPrompt: finalSystemPrompt,
       temperature: clampVoiceTemperature(agentConfig.llmTemperature, llmTemp),
       tools: outboundTools,
@@ -775,7 +777,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       log.warn("Vapi placeOutboundCall rejected", {
         userId,
         agentId,
-        customerNumber: dialNumber,
+        customerNumber: phoneSuffixForLog(dialNumber),
         status: vapiResponse.status,
         error: errBody.slice(0, 500),
       });

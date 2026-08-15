@@ -27,6 +27,7 @@ import { isHardSpendCapExceeded } from "./spend-guards";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
+import { QA_SCORE_SOURCE_HEURISTIC } from "./qa-score-provenance";
 import {
   findCallLogByVapiCallId,
   isOutboundCallPlaceholder,
@@ -761,6 +762,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         Math.min(100, baseScore + sentimentDelta + intentDelta + missDelta),
       );
       const qaBreakdown = {
+        // Provisional. The `auto_qa_score` job replaces this with the real
+        // five-dimension rubric; without the stamp its idempotency guard reads
+        // this row as "already scored" and the rubric never runs at all.
+        source: QA_SCORE_SOURCE_HEURISTIC,
         base: baseScore,
         sentiment_delta: sentimentDelta,
         intent_delta: intentDelta,

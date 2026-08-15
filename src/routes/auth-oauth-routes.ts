@@ -52,6 +52,7 @@ import {
 } from "../lib/oauth-bridge-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
+import { emailMaskForLog } from "../lib/twilio-webhook-privacy";
 
 const router = Router();
 
@@ -126,7 +127,7 @@ async function findOrCreateUserByEmail(email: string, fullName: string | null): 
     if (created) {
       const { startTrialForUser } = await import("../lib/trial-gate");
       await startTrialForUser(created.id, {}, tx);
-      log.info("auth oauth: created new user", { email: normalized });
+      log.info("auth oauth: created new user", { email: emailMaskForLog(normalized) });
       return created;
     }
 

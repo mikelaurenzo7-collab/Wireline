@@ -46,6 +46,7 @@ import { sseBroadcaster } from "../services/sse-broadcaster";
 
 import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./vapi/showcase-handlers";
 import type { ToolCallContext, ToolCallResult } from "./vapi/types";
+import { conversationShapeForLog } from "../lib/twilio-webhook-privacy";
 
 const router = express.Router();
 
@@ -532,11 +533,15 @@ router.post("/api/vapi-webhook", async (req, res) => {
         confidence,
       );
       if (hasTriggerWord || lowConfidence) {
+        // The decision, not the utterance. `reason` plus the shape is enough to
+        // debug why the handoff fired; the caller's verbatim words in a log line
+        // are outside retention and outside erasure, permanently.
         log.warn("Handoff Logic Engine Triggered", {
           agentId: agent.id,
           callId: callId(payload, message),
           reason,
-          transcript: transcriptText,
+          confidence,
+          transcript: conversationShapeForLog(transcriptText),
         });
         sseBroadcaster.broadcast(
           "handoff_requested",

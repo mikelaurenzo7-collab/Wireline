@@ -27,6 +27,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { sendTenantMessage } from "./twilio-service";
 import { sanitizePhone } from "./vapi-helpers";
+import { phoneSuffixForLog } from "./twilio-webhook-privacy";
 
 /**
  * Send a post-call CSAT SMS to the caller.
@@ -121,7 +122,10 @@ export async function processCsatReply(params: {
       .limit(1);
 
     if (!recent) {
-      log.warn("CSAT reply — no matching call found", { userId, customerNumber: e164 });
+      log.warn("CSAT reply — no matching call found", {
+        userId,
+        customerNumber: phoneSuffixForLog(e164),
+      });
       return false;
     }
 
