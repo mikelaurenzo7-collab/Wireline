@@ -25,7 +25,11 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("fallback=");
     expect(landing).toContain("Live voice demo");
-    expect(landing).toContain("Call live demo");
+    // Assert the mechanism, not the button's wording: the fallback must dial
+    // the demo line. Pinning an exact label made a copy edit look like a
+    // regression while the tel: link it exists to protect went unchecked.
+    expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
+    expect(landing).toMatch(/Call the live demo|Call live demo/);
     expect(landing).toContain('mode: "phone"');
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     // The widget renders the fallback instead of a dead button when the key

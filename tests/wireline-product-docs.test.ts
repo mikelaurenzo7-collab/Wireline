@@ -128,7 +128,10 @@ describe("Wireline product documentation contract", () => {
     expect(head).not.toContain("multichannel AI employee");
     expect(head).not.toContain("—");
     expect(ogImage).toMatch(/Voice agents that[\s\S]*get the work done\./);
-    expect(ogImage).toContain("VOICE | TEXT | EMAIL | BOOKINGS | FOLLOW UP | CONTROL");
+    // The channel strip that used to sit here rendered at ~5px in a link
+    // preview. The offer line carries the card instead; legibility floors are
+    // enforced in static-metadata-contract.
+    expect(ogImage).toContain("Build free. Go live from $19/mo.");
     expect(ogImage).not.toContain("·");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);

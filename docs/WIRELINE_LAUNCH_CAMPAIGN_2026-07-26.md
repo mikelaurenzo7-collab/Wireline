@@ -1,10 +1,10 @@
 # Wireline Launch Campaign — Voice Agents
 
-Updated: 2026-08-11  
-Status: **Active campaign pack**  
+Updated: 2026-08-15  
+Status: **Active founder-launch pack**  
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
-This document owns launch copy, voiceover masters, paid/organic campaign language, and cut briefs. The launch source of truth owns positioning and proof posture. If they disagree, the launch source of truth wins and this file must be corrected.
+This document owns launch copy, voiceover masters, campaign language, and cut briefs. The launch source of truth owns positioning and proof posture. If they disagree, the launch source of truth wins.
 
 ## Campaign Truth
 
@@ -20,6 +20,18 @@ The public operating loop is **Build -> Train -> Launch -> Improve**:
 4. **Improve** it from transcripts, outcomes, and review.
 
 Start with one useful workflow. Add agents or workflow breadth only when real use proves the need.
+
+## Founder Launch Execution Priority
+
+The current release is a controlled production launch, not a broad brand campaign.
+
+1. Recruit **3–5 consented design partners** in appointment-driven or service businesses.
+2. Prove one real `$19` lifecycle: checkout -> signed webhook -> entitlement -> allowance -> portal -> cancel -> refund or reversal.
+3. Prove one clean non-demo production call, its follow-up, and its recorded outcome.
+4. Measure activation, repeated useful calls, follow-up completion, support minutes, gross contribution, and churn reason.
+5. Keep self-serve scale and paid acquisition closed until the cohort repeats the workflow with positive observed contribution.
+
+Founder time and cash go to onboarding, call quality, support, and direct customer learning. Out-of-home media and a commissioned hero film are **not authorized founder-launch spend**. They remain post-proof concepts only.
 
 ## Launch Offer
 
@@ -46,7 +58,7 @@ Start with one useful workflow. Add agents or workflow breadth only when real us
 Use:
 
 - `voice agent`, `business voice agent`, and `personal agent` where context requires it;
-- calls, texts, email, follow-up, handoff, and logged outcomes;
+- calls, texts, email, follow-up, handoff, and logged outcomes when the depicted runtime actually persists them;
 - private simulation before live launch;
 - paid plans include a Wireline number;
 - precise demo/test labeling before real customer evidence exists.
@@ -58,30 +70,20 @@ Avoid:
 - fully autonomous, guaranteed booking, guaranteed revenue, or compliance-safe promises;
 - customer counts, testimonials, ROI claims, or implied adoption before real customer evidence supports them;
 - public WhatsApp claims while it remains outside the launch posture;
+- claiming Live Video history or persisted outcomes until that browser-session path writes them;
 - any workflow spine other than **Build -> Train -> Launch -> Improve**.
 
-## Primary 30-Second Ad — The Second Ring
+## Primary Hook
 
-**Problem:** a recognizable missed-call moment before the product name appears.
-
-**Hook:**  
 “Every missed call is someone trying the next name on the list.”
 
-**Picture:** real Wireline product proof from the exact production commit being promoted. The cut should move from the unanswered-call problem into a trained agent handling the conversation, then show the follow-up or logged outcome.
-
-**Narration:** use the `wireline-ai-voice-agent-30s.mp3` master below only in its briefed tail. Let the real captured agent voice play at **full level** for a meaningful stretch with no narration or music underneath it.
-
-**End card:**
-
-- Build your Voice Agent
-- Build free. Go live from $19/mo.
-- trywireline.com
+The picture must be real Wireline product proof from the exact production commit being promoted. Show the unanswered-call problem, the trained agent handling the conversation, and then the finished follow-up or logged outcome from that same production workflow.
 
 ## AI Voice Generator Audio
 
 These generated tracks are for **marketing/reference use only**. They are not the production phone-call speech path.
 
-`npm run campaign:vo` renders exactly three canonical tracks into the gitignored `official-assets/audio/` directory.
+`npm run campaign:vo` renders exactly four canonical tracks into the gitignored `official-assets/audio/` directory.
 
 ### Missed call — 15s
 
@@ -95,7 +97,7 @@ File: `wireline-ai-voice-agent-30s.mp3`
 
 > Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month.
 
-This narration is intentionally short. The spot belongs to the missed-call moment, real captured agent audio, the finished work, and the end card—not continuous announcer copy.
+This narration enters late. The missed-call moment, real captured agent audio, finished work, and end card carry the cut.
 
 ### Founder explainer — 60s slot
 
@@ -107,46 +109,19 @@ File: `wireline-founder-60s.mp3`
 
 File: `wireline-live-video-25s.mp3`
 
-> Some conversations deserve a face. Turn on Live Video and your business agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One agent, one place to review the work. Add it to a live plan for nineteen dollars a month.
+> Some conversations deserve a face. Turn on Live Video and your voice agent joins on screen using the same Training, operating rules, and approved knowledge. Add it to a paid business agent for nineteen dollars a month.
 
-The narration deliberately claims the **brain**, not the voice. In the default session the presenter speaks through Wireline's own realtime voice rather than the phone voice, so "same voice" would be a claim the picture cannot support. What is identical across phone and screen is the agent: its Training, its rules, and the outcome it logs.
+This script claims only what the current browser runtime proves. Live Video uses the selected agent's identity, Training directives, operating rules, and approved knowledge. It is metered through a reserved allowance and pauses at the session or monthly limit. It does not yet claim cross-channel history or a persisted call-style outcome.
 
-Picture requirements are stricter than any other cut in the set. A static identity badge, a generated avatar concept, or a provider demo is **not** Live Video proof. The cut needs an authenticated exact-production session showing the mint, the presenter answering in sync, an explicit stop, and a truthful allowance state.
+Picture requirements are strict: show an authenticated exact-production session, token mint, presenter speaking in sync, explicit stop, terminal five-minute pause, and truthful allowance state. A static identity badge, generated concept, or provider demo is not product proof.
 
-Re-measure provider output after every regeneration; pacing can drift even when copy does not.
-
-## Paid Social Set
-
-### Missed Call Recovery
-
-- Primary text: “Every missed call is someone trying the next name on the list. Wireline lets you build a voice agent that can handle the call, continue the follow-up, and log the outcome while you stay on the job.”
-- Headline: **Voice Agents**
-- Description: **Build free. Go live from $19/mo.**
-- CTA: **Build your Voice Agent**
-
-### One Agent, Connected Work
-
-- Primary text: “Build one Wireline voice agent around a real job. Train the rules once, launch it on the channels you enable, then improve it from the outcomes.”
-- Headline: **Calls. Follow-up. Outcomes.**
-- Description: **Start with one useful workflow.**
-- CTA: **Build your Voice Agent**
-
-### Personal + Business
-
-- Primary text: “Personal call delegation, front-desk coverage, support triage, lead response, and appointment follow-up—trained privately before live use.”
-- Headline: **Personal or Business**
-- Description: **Build -> Train -> Launch -> Improve**
-- CTA: **Start free**
-
-Do not start paid acquisition before the exact workflow being advertised has passed founder dogfood and checkout/phone readiness.
-
-## Organic Launch Posts
+## Organic and Direct Launch Copy
 
 ### Founder post
 
-I built Wireline because calls are still where real work shows up—and they are still too easy to miss.
+I built Wireline because calls are still where real work shows up, and they are still too easy to miss.
 
-Wireline lets you build voice agents for personal tasks and business conversations. Build one around a real job, train it on your facts and rules, test it privately, then launch it when you are ready. The call, follow-up, and outcome stay in one operating loop you can review and improve.
+Build a voice agent around one useful job. Train it on your facts and rules, test it privately, then launch it when you are ready. Review the call, follow-up, and outcome in one operating loop.
 
 Build free. Go live from $19/mo at trywireline.com.
 
@@ -158,56 +133,69 @@ Build it. Train it. Launch it. Improve it from the work.
 
 Build free. Go live from $19/mo.
 
-### Demo caption
+### Design-partner outreach
 
-Hear the agent handle the conversation, then see the follow-up and outcome land in Wireline. Real product proof beats abstract automation claims.
+Use direct founder outreach, not automated cold volume. Offer a bounded setup around one missed-call or follow-up workflow, disclose the design-partner posture, and ask for permission to review outcomes together.
+
+## Paid Social Set — Hold Until Proof
+
+Do not spend against these concepts until the advertised workflow has passed founder dogfood, production phone readiness, and the real paid lifecycle.
+
+### Missed Call Recovery
+
+- Primary text: “Every missed call is someone trying the next name on the list. Build a Wireline voice agent to handle the call, continue the follow-up, and log the outcome while you stay on the job.”
+- Headline: **Voice Agents**
+- Description: **Build free. Go live from $19/mo.**
+- CTA: **Build your Voice Agent**
+
+### Personal + Business
+
+- Primary text: “Personal call delegation, front-desk coverage, support triage, lead response, and appointment follow-up, trained privately before live use.”
+- Headline: **Personal or Business**
+- Description: **Build -> Train -> Launch -> Improve**
+- CTA: **Start free**
 
 ## Video / Reel Doctrine
 
 Every publishable cut must follow `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md` and the release record produced by `npm run marketing:kit`.
 
-- Real product only for product proof. A cinematic problem hook may establish context, but must never masquerade as Wireline UI.
-- Capture product picture from the exact production source commit being promoted.
-- Reject any frame containing an auth wall, 404, dead route, loading hold, or stale product surface.
-- Reframe around active UI for 9:16 and 1:1; never shrink an unreadable desktop into vertical whitespace.
-- Keep burned-in copy sparse. Prefer platform captions for accessibility.
-- Let the real agent voice play at **full level** with no narration or music underneath it when the cut sells voice quality.
-- Show finished work: follow-up, booking, handoff, transcript, or logged outcome—not only pickup.
-- Never manufacture logos, testimonials, customer counts, or ROI.
-- End deliberately on the current CTA, price line, and domain.
+- Use real product for product proof.
+- Capture from the exact production source commit being promoted.
+- Reject auth walls, 404s, dead routes, loading holds, stale UI, and mock product frames.
+- Let real agent voice play at **full level** with no narration or music underneath it when the cut sells voice quality.
+- Show finished work from the same runtime: follow-up, booking, handoff, transcript, or logged outcome.
+- Keep burned-in copy sparse and provide a sound-off treatment with accessible captions.
+- Never manufacture logos, testimonials, customer counts, ROI, or customer adoption.
+- End on the current CTA, price line, and domain.
 
 ## Three Launch Cuts
 
 ### 1. Missed Call — 15s
 
-0–2s: recognizable missed-call moment.  
-2–6s: real Wireline call/agent proof.  
-6–11s: follow-up or logged outcome.  
+0–2s: missed-call moment.  
+2–6s: real Wireline call proof.  
+6–11s: finished follow-up or logged outcome.  
 11–15s: clean end card.
-
-Required contrast may use sparse overlays: **You cannot pick up.** then **Your agent can.**
 
 ### 2. The Second Ring — 30s
 
-Primary paid-social cut. Use real captured agent audio as the proof center. The narration enters late; silence is allowed to carry the problem.
+Primary proof cut. Use real captured agent audio as the center. Silence may carry the problem; narration enters late.
 
 ### 3. Founder / Product Proof — 45–60s
 
-Explain the same **Build -> Train -> Launch -> Improve** loop with enough time to show the real product, not a sped-up tour of every feature.
+Explain **Build -> Train -> Launch -> Improve** through one working customer job, not a sped-up tour of every feature.
 
 ### Two Rings — 6s bumper
 
-A minimal scroll-stop derived from the same captured-call proof. No separate product story. No fake UI.
+Use the same certified production proof. Do not invent a second product story.
 
-### Sound-off variants
+## Post-proof Brand Concepts
 
-Every paid cut should have a sound-off treatment that remains understandable without covering legible product UI. Accessibility captions should be selectable where the platform supports them.
+OOH and a larger “Second Ring” hero film can be reconsidered only after Wireline has a repeatable paid activation and retention signal. Any later brief must use real production audio and exact-production product capture, with no customer evidence fabricated. This section is a parking lot, not an execution plan.
 
 ## Creative Status
 
-Historical masters that contain the authenticated 404 are rejected. Repaired derivatives created from historical picture are editing/QA drafts only. They become launch masters only after exact-production recapture and release certification.
-
-The current production source of truth, not a Descript share URL or historical filename, determines whether a cut is publishable.
+Historical masters containing authenticated 404s, mock product, stale pricing, or unverified outcomes are rejected. Repaired derivatives become launch masters only after exact-production recapture and release certification.
 
 ## Delivery Guide
 
@@ -215,11 +203,10 @@ The current production source of truth, not a Descript share URL or historical f
 - Speak `trywireline.com` as “try wireline dot com.”
 - Speak prices as words in narration.
 - Preserve room for real agent audio and silence.
-- Do not stretch narration to fill a slot.
 - Regenerate audio whenever canonical copy changes, then re-measure duration.
 
 ## Measurement
 
 Reserved launch measurement key: `wl_launch_ai_voice_agents_v6`.
 
-The identifier is internal analytics plumbing, not customer-facing positioning. Use one launch campaign naming system and measure signup intent, successful private test, paid activation, first useful live outcome, and retained use. Do not optimize ads against demo/test activity as though it were customer conversion evidence.
+Measure signup intent, successful private test, paid activation, first useful live outcome, repeated use, gross contribution, support minutes, and churn reason. Demo/test activity is engineering evidence, not customer conversion, demand, retention, or revenue.

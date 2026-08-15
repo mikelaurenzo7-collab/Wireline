@@ -14,7 +14,7 @@ const PRINCIPLES = [
     copy: "Your knowledge. Your playbook. Your tools. Built in.",
   },
   {
-    title: "One agent, complete context.",
+    title: "One voice agent, complete context.",
     copy: "Handles calls, follows up by text or email, books, and logs your way.",
   },
 ] as const;

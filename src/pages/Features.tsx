@@ -166,7 +166,7 @@ export default function Features() {
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">Every channel. One agent.</h2>
+              <h2 className="wl-public-section-heading">Every channel. One voice agent.</h2>
             </div>
             <div className="grid gap-3 lg:grid-cols-3">
               {CHANNEL_CAPABILITIES.map(({ icon: Icon, title, body }) => (
@@ -302,7 +302,13 @@ function FeatureCard({
         className="text-primary transition group-hover:scale-110"
         aria-hidden="true"
       />
-      <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch]">{title}</h3>
+      {/* Card tier, not section tier. `wl-section-title` clamps up to 2.5rem —
+          a page-section scale that, inside a 3-up card, wrapped "One
+          conversation memory" onto three lines while its neighbours took two,
+          so every body paragraph in the row started on a different baseline. */}
+      {/* Two lines are reserved so every body paragraph in a row starts on the
+          same baseline whether its title wraps once or not. */}
+      <h3 className="wl-card-title mx-auto mt-5 min-h-[2.24em] max-w-[18ch]">{title}</h3>
       <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
     </article>
   );
