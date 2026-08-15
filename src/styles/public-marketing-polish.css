@@ -100,9 +100,20 @@
 }
 
 /* Centering contract: mono labels and headings must share the same visual axis
-   whenever a section explicitly opts into centered marketing content. */
+   whenever a section explicitly opts into centered marketing content.
+
+   The `:not([class*="text-left"])` guard is load-bearing, not decoration. These
+   blanket rules are unlayered, so they outrank Tailwind's `@layer utilities`
+   regardless of specificity — a block written as `text-center lg:text-left`
+   still matched `.text-center` and got hard-centered at every width. The result
+   was the worst of both alignments in one column: eyebrow, chips, and button
+   honored `lg:*` and went left while the heading stayed optically centered
+   inside a left-pinned box. Split layouts that declare a responsive alignment
+   opt out of the blanket entirely and are governed by their own utilities. */
 .marketing-surface
-  :where(.text-center, .wl-marketing-center)
+  :where(.text-center, .wl-marketing-center):not([class*="text-left"]):not(
+    [class*="text-right"]
+  )
   > :where(.wl-overline, .wl-stitch-label, .wl-stitch-eyebrow, .wl-eyebrow) {
   display: block;
   width: 100%;
@@ -125,14 +136,20 @@
    left-aligned above centered content. Keep the wired variant a shrink-wrapped
    centered flex so the strands sit symmetrically around the label and the whole
    unit centers on the same axis as the heading below it. */
-.marketing-surface :where(.text-center, .wl-marketing-center) > .wl-eyebrow--wired {
+.marketing-surface
+  :where(.text-center, .wl-marketing-center):not([class*="text-left"]):not(
+    [class*="text-right"]
+  )
+  > .wl-eyebrow--wired {
   display: inline-flex;
   width: auto;
   justify-content: center;
 }
 
 .marketing-surface
-  :where(.text-center, .wl-marketing-center)
+  :where(.text-center, .wl-marketing-center):not([class*="text-left"]):not(
+    [class*="text-right"]
+  )
   > :where(.wl-public-section-heading, .wl-stitch-display, .wl-display-2, h1, h2) {
   margin-inline: auto;
   text-align: center;

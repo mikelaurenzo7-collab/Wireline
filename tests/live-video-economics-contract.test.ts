@@ -50,14 +50,21 @@ describe("live video economics contract", () => {
 
   it("keeps the public Live Video spotlight aligned with paid add-on economics", () => {
     const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
+    // The allowance and session ceiling moved onto the session stage itself,
+    // where they read as part of the product rather than as a caption. Both
+    // files must still derive every published number from the policy module —
+    // the point of the contract is that no marketing surface can hardcode a
+    // limit the runtime does not enforce.
+    const stage = read("src/components/marketing/LiveVideoStage.tsx");
 
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
     expect(spotlight).toContain("paid business agent");
     expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
-    expect(spotlight).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
-    expect(spotlight).toContain("LIVE_VIDEO_SESSION_RESERVATION_MINUTES");
-    expect(spotlight).toContain("LIVE_VIDEO_FACTS");
+    expect(spotlight).toContain("LiveVideoStage");
+    expect(stage).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
+    expect(stage).toContain("LIVE_VIDEO_MAX_SESSION_SECONDS");
+    expect(stage).not.toMatch(/\b(60|19)\s*(min|\/mo)\b/);
   });
 
   it("keeps the retired browser audio bridge deleted", () => {

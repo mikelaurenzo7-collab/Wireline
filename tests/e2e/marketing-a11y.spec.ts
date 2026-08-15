@@ -38,7 +38,7 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   // loop section's heading. Assert that canonical statement instead of the
   // retired word-mark.
   await expect(
-    page.getByRole("heading", { name: "Build. Train. Launch. Improve.", exact: true }),
+    page.getByRole("heading", { name: "How Wireline works", exact: true }),
   ).toBeVisible();
 
   // Channel proof lives in the Live Video spotlight's "Agent channels" list

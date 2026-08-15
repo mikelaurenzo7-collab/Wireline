@@ -9,8 +9,8 @@ describe("home landing launch clarity", () => {
 
   it("keeps the landing concise", () => {
     expect(landing).not.toContain("REASSURANCES");
-    expect(landing).toContain("Every channel. One agent.");
-    expect(landing).toContain("Build free. Go live from $19/mo.");
+    expect(landing).toContain("Live Video");
+    expect(landing).toContain("Start free.");
   });
 
   it("keeps free and paid capacity distinct", () => {

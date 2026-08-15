@@ -47,7 +47,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
-    title: "One agent for the work between conversations.",
+    title: "A voice agent for the work between conversations.",
     lead: "Keep sales, service, callbacks, scheduling, and CRM updates moving in one visible workflow.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Start with Starter",
@@ -134,7 +134,10 @@ function modePanelId(key: AgentMode) {
 }
 
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
-const LIVE_VIDEO_BRIDGE = "Every channel. One agent.";
+/* Names the feature the section is about. It deliberately does not restate the
+   headline underneath it: the channel row already shows "every channel, one
+   agent" without a label claiming it twice. */
+const LIVE_VIDEO_EYEBROW = "Live Video";
 
 export default function WireAgentLanding() {
   const [mode, setMode] = useState<AgentMode>("outbound");
@@ -192,39 +195,35 @@ export default function WireAgentLanding() {
           }}
           visual={
             <div id="hear-a-demo" className="flex flex-col justify-between text-center">
-              <div>
-                <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
-                  <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Live voice demo
-                </div>
+              {/* One eyebrow names the widget, one button performs it. This
+                  previously stacked a label, a sentence, and a button that all
+                  said "call a live demo". */}
+              <div className="inline-flex items-center justify-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <Volume2 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                Live voice demo
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4 sm:p-5">
                 <BrowserCallWidget
                   agentName={HERO_DEMO_AGENT.name}
                   buttonLabel="Start the live demo"
                   fallback={
-                    <div className="flex flex-col items-center gap-3 text-center">
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        Call a live Wireline agent now.
-                      </p>
-                      <a
-                        href={`tel:${HERO_DEMO_AGENT.tel}`}
-                        className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
-                        onClick={() =>
-                          emitProductEvent({
-                            event: "landing_demo_clicked",
-                            surface: "marketing_web",
-                            metadata: {
-                              agent: HERO_DEMO_AGENT.name,
-                              mode: "phone",
-                            },
-                          })
-                        }
-                      >
-                        <Phone className="h-4 w-4" aria-hidden="true" />
-                        Call live demo
-                      </a>
-                    </div>
+                    <a
+                      href={`tel:${HERO_DEMO_AGENT.tel}`}
+                      className="marketing-btn-secondary mx-auto inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
+                      onClick={() =>
+                        emitProductEvent({
+                          event: "landing_demo_clicked",
+                          surface: "marketing_web",
+                          metadata: {
+                            agent: HERO_DEMO_AGENT.name,
+                            mode: "phone",
+                          },
+                        })
+                      }
+                    >
+                      <Phone className="h-4 w-4" aria-hidden="true" />
+                      Call the live demo
+                    </a>
                   }
                 />
               </div>
@@ -232,11 +231,13 @@ export default function WireAgentLanding() {
           }
         />
 
+        {/* No heading above this row on purpose: the four steps are titled
+            Build, Train, Launch, and Improve, so a "Build. Train. Launch.
+            Improve." headline over them was the same four words at display
+            size. The cards carry the section. */}
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Build. Train. Launch. Improve.</h2>
-            </div>
+            <h2 className="sr-only">How Wireline works</h2>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
               {HERO_LOOP.map((step, index) => (
                 <article
@@ -338,12 +339,12 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <LiveVideoSpotlight bridgeLabel={LIVE_VIDEO_BRIDGE} />
+        <LiveVideoSpotlight eyebrow={LIVE_VIDEO_EYEBROW} />
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Build free. Go live from $19/mo.</h2>
+              <h2 className="wl-display-2">Start free.</h2>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (

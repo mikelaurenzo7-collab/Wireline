@@ -155,9 +155,7 @@ export default function SolutionsPage() {
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[length:var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
-              <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch] text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
-                {title}
-              </h3>
+              <h3 className="wl-card-title mx-auto mt-5 min-h-[2.24em] max-w-[18ch]">{title}</h3>
               <p className="mx-auto mt-3 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                 {copy}
               </p>

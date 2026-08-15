@@ -1,77 +1,248 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Agent presenter stage — the "put a face to your agent" surface.
+   Live Video session panel — the marketing depiction of a presenter session.
 
-   Renders the agent's identity as an on-screen presenter: the deterministic
-   AgentFace is the fallback that always shows, framed as a video stage with
-   a live badge, a speaking waveform, and a caption track. The stage is the
-   slot a consented live provider (HeyGen/Tavus/D-ID) streams into later — the
-   policy comes from lib/agent-identity. All motion is reduced-motion safe.
+   Sole consumer: components/marketing/LiveVideoStage.tsx, on the landing page.
+   An earlier revision of this sheet dressed a retired hero component and sat
+   fully unreferenced; the stage/caption rules that served it were deleted
+   rather than left as decoration. Keep it that way — if a rule here has no
+   consumer in LiveVideoStage, remove it.
+
+   All motion is reduced-motion safe (see the query at the end of the file).
    ════════════════════════════════════════════════════════════════════════ */
 
-.vr {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: clamp(20px, 4vw, 44px);
-  align-items: center;
-}
-@media (max-width: 820px) {
-  .vr {
-    grid-template-columns: 1fr;
-  }
-}
-
-.vr-stage {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  width: 100%;
-  max-width: 380px;
-  margin-inline: auto;
-  border-radius: 22px;
-  overflow: hidden;
-  border: 1px solid var(--wireline-color-border-default);
-  background:
-    radial-gradient(
-      130% 90% at 50% 6%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 22%, transparent),
-      transparent 58%
-    ),
-    color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
-  box-shadow: var(--wireline-elevation-lg);
-}
-
-/* copper wire cap — the stage is a wired panel */
-.vr-stage::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 1.5rem;
-  right: 1.5rem;
-  height: 2px;
-  border-radius: 999px;
-  z-index: 3;
-  background: linear-gradient(
-    90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-status-success) 85%, transparent) 60%,
-    transparent
-  );
-}
-
-.vr-stage__face {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding-bottom: 20%;
-}
-.vr-stage__face .wl-agent-face {
-  width: 60%;
-  max-width: 220px;
-  height: auto;
-  filter: drop-shadow(0 20px 44px rgba(0, 0, 0, 0.55));
-}
 .vr-bob {
   animation: vr-bob 6s ease-in-out infinite;
+}
+
+/* Product chrome first, camera second. What sells Live Video is not a face: it
+   is that the agent is on a metered clock, holding a spoken turn, under a cap
+   that is visible while it runs. So the panel leads with a titlebar, a running
+   session timer, the voice readout, and the allowance strip; the feed behind
+   them only has to read as "a camera is open".
+
+   The feed is a soft-focus head-and-shoulders mass, deliberately not a
+   likeness: the presenter catalog is real human video that this page ships no
+   local asset for. An earlier pass used a hard-edged silhouette icon, which
+   read as a broken image. Blur is what separates "camera" from "icon" here, so
+   it is load-bearing rather than decorative. */
+.vr-panel {
+  overflow: hidden;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 22px;
+  background: var(--wireline-color-surface-default);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+.vr-panel__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--wireline-color-border-default);
+}
+.vr-panel__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-align: left;
+}
+.vr-panel__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 14%, transparent);
+  color: var(--wireline-color-action-primary-default);
+}
+.vr-panel__name {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--wireline-color-text-primary);
+}
+.vr-panel__sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--wireline-color-text-tertiary);
+}
+
+/* 16 / 9 matches the `aspect-video` stage the real Studio session renders. */
+.vr-panel__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 110% at 50% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--wireline-color-canvas-default) 72%, #000);
+}
+.vr-feed {
+  position: absolute;
+  inset: 0;
+}
+/* Backlit silhouette, in three layers: a violet key pool, a dark head-and-
+   shoulders mass in front of it, then a rim highlight along the mass's edge.
+   Lighting the subject instead of the background was the fix — a figure drawn
+   *brighter* than its surroundings read as two glowing smudges, because a
+   camera subject is normally darker than the light behind it. */
+.vr-feed__key {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    38% 62% at 50% 52%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 40%, transparent),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 10%, transparent) 55%,
+    transparent 78%
+  );
+  filter: blur(26px);
+}
+/* Head and shoulders are one continuous mass: two radial stops on a single box,
+   so they cannot drift apart the way two absolutely positioned blobs did. The
+   percentages are gradient *radii*, not widths — reading them as widths is what
+   rendered a head twice life size on the first pass. Head bottom (58%) sits
+   below the shoulder line (55%) so the two always overlap. */
+.vr-feed__figure {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      5.8% 13% at 50% 45%,
+      color-mix(in srgb, var(--wireline-color-canvas-default) 94%, #000) 0 78%,
+      transparent 100%
+    ),
+    radial-gradient(
+      19% 60% at 50% 115%,
+      color-mix(in srgb, var(--wireline-color-canvas-default) 94%, #000) 0 82%,
+      transparent 100%
+    );
+  filter: blur(7px);
+}
+/* Rim light: the violet key wrapping the camera-left edge of the head and
+   shoulder. Kept off `screen` blending, which blew the figure out entirely. */
+.vr-feed__rim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      6.6% 14.5% at 48.4% 44%,
+      transparent 0 76%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 60%, transparent) 88%,
+      transparent 100%
+    ),
+    radial-gradient(
+      20% 61% at 48.6% 114%,
+      transparent 0 80%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent) 90%,
+      transparent 100%
+    );
+  filter: blur(6px);
+}
+.vr-feed__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 46%,
+      color-mix(in srgb, var(--wireline-color-canvas-default) 82%, #000) 100%
+    ),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 3px);
+}
+
+.vr-panel .vr-live,
+.vr-panel .vr-provider {
+  top: 12px;
+}
+.vr-panel .vr-live {
+  left: 12px;
+}
+.vr-panel .vr-provider {
+  right: 12px;
+  color: var(--wireline-color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+/* Voice readout. Live Video is a spoken product, so the waveform is the
+   subject of the stage rather than an accent beside a transcript: the agent
+   takes a turn, the bars move, and the label names the turn. No caption track
+   here on purpose — subtitles make a voice product read as a chat product. */
+.vr-voice {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 4;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.vr-panel .vr-wave {
+  position: static;
+  transform: none;
+  height: 30px;
+  gap: 4px;
+}
+.vr-panel .vr-wave span {
+  width: 4px;
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 88%, transparent);
+}
+/* The base strip is six bars; this one is nine, and bars without a delay
+   pump in unison, which reads as a loading bar rather than speech. */
+.vr-panel .vr-wave span:nth-child(7) {
+  animation-delay: 0.18s;
+}
+.vr-panel .vr-wave span:nth-child(8) {
+  animation-delay: 0.42s;
+}
+.vr-panel .vr-wave span:nth-child(9) {
+  animation-delay: 0.26s;
+}
+.vr-voice__state {
+  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+/* Session limits belong on the product, not in a paragraph beside it. */
+.vr-meter {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-border-default);
+}
+.vr-meter > span {
+  display: flex;
+  min-height: 3.1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 9px 8px;
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-tertiary);
+  font-size: 10.5px;
+  line-height: 1.3;
+  text-align: center;
+}
+.vr-meter strong {
+  color: var(--wireline-color-text-primary);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .vr-live {
@@ -147,43 +318,6 @@
 .vr-wave span:nth-child(5) { animation-delay: 0.4s; }
 .vr-wave span:nth-child(6) { animation-delay: 0.5s; }
 
-.vr-caption {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
-  z-index: 4;
-  padding: 11px 13px;
-  border-radius: var(--wireline-radius-lg);
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 38%, #000);
-  border: 1px solid var(--wireline-color-border-default);
-  backdrop-filter: blur(6px);
-}
-.vr-caption__who {
-  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wireline-color-action-primary-default);
-  margin-bottom: 4px;
-}
-.vr-caption__text {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--wireline-color-text-primary);
-  min-height: 2.9em;
-}
-.vr-caption__text .cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  vertical-align: -0.15em;
-  margin-left: 1px;
-  background: var(--wireline-color-action-secondary-default);
-  animation: vr-cursor 1s steps(2) infinite;
-}
-
 @keyframes vr-live-pulse {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--wireline-color-status-success) 55%, transparent); }
   70% { box-shadow: 0 0 0 7px transparent; }
@@ -197,16 +331,11 @@
   0%, 100% { height: 22%; }
   50% { height: 100%; }
 }
-@keyframes vr-cursor {
-  0%, 50% { opacity: 1; }
-  50.01%, 100% { opacity: 0; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .vr-bob,
   .vr-live__dot,
-  .vr-speaking .vr-wave span,
-  .vr-caption__text .cursor {
+  .vr-speaking .vr-wave span {
     animation: none;
   }
 }

@@ -38,10 +38,10 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put one agent live",
+    eyebrow: "Put your voice agent live",
     tagline: "Your Voice Agent from $19/month.",
     detail:
-      "One focused agent for inbound, outbound, or scheduling, with an included Wireline number.",
+      "One focused voice agent for inbound, outbound, or scheduling, with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -403,7 +403,9 @@ export default function Pricing() {
         <section className="wl-public-section border-y border-border bg-muted/35">
           <div className="wl-public-rail mx-auto max-w-[1400px]">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">One agent. No seat tax. Clear costs.</h2>
+              <h2 className="wl-public-section-heading">
+                One voice agent. No seat tax. Clear costs.
+              </h2>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (

@@ -149,10 +149,15 @@ describe("product voice cohesion", () => {
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const contactAgents = read("src/data/contact-agents.ts");
 
-    expect(landing).toContain("Every channel. One agent.");
+    // "Every channel. One agent." now lives only where it is not immediately
+    // restated: the Features section heading. On the landing it sat as an
+    // eyebrow directly above "One agent. Now on screen.", saying the same
+    // thing twice in two type sizes.
+    expect(read("src/pages/Features.tsx")).toContain("Every channel. One voice agent.");
+    expect(landing).toContain("Live Video");
     expect(landing).toContain("Build your voice agent");
     expect(landing).toContain("Hear it live");
-    expect(landing).toContain("Build free. Go live from $19/mo.");
+    expect(landing).toContain("Start free.");
     expect(about).toContain("Agents that run calls like you would.");
     expect(compare).toContain("Wireline vs. other voice AI.");
     expect(privacy).toContain("voice agent platform");
