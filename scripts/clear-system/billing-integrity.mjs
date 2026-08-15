@@ -156,8 +156,14 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Wireline Starter[\s\S]*Wireline Starter Plus[\s\S]*Wireline Pro[\s\S]*Wireline Business/,
+    /Wireline Starter[\s\S]*Wireline Starter Plus[\s\S]*Wireline Pro[\s\S]*Wireline Scale & Enterprise/,
     "shared product knowledge must match the launch catalog",
+  );
+  mustExclude(
+    "src/data/wireline-knowledge.ts",
+    wirelineKnowledge,
+    /\$159|Wireline Business/,
+    "shared product knowledge must not quote the retired self-serve Business offer",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",

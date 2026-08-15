@@ -7,13 +7,14 @@ import { WebsiteFetchError } from "../lib/safe-public-text-fetch";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { importWebsiteKnowledge } from "../lib/website-knowledge-service";
+import { runWithWebsiteKnowledgeSpend } from "../lib/website-knowledge-spend";
 import { WebsiteKnowledgeExtractionTimeoutError } from "../lib/website-knowledge-timeout";
 import { authenticateUser } from "../middleware/auth";
 import {
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
 } from "../middleware/website-knowledge-rate-limits";
-import { withAudit } from "../middleware/audit-middleware";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -43,11 +44,7 @@ router.post(
   authenticateUser,
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
-  // Metered, not capped: website import is configuration work, and the Free
-  // Builder budget is a private-simulation allowance (migration 0134). Hard
-  // capping setup would strand an Account Holder mid-onboarding; the burst and
-  // daily limiters above already bound this route.
-  withAudit("website-import"),
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
     if (!rawUrl || rawUrl.length > WEBSITE_URL_MAX_CHARS) {
@@ -78,10 +75,15 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
     try {
-      const result = await importWebsiteKnowledge({
-        agentId: req.params.id,
+      const result = await runWithWebsiteKnowledgeSpend({
         userId: req.user.id,
-        url: parsed.toString(),
+        hostname: parsed.hostname,
+        operation: () =>
+          importWebsiteKnowledge({
+            agentId: req.params.id,
+            userId: req.user.id,
+            url: parsed.toString(),
+          }),
       });
       log.info("Website knowledge imported", {
         userId: req.user.id,

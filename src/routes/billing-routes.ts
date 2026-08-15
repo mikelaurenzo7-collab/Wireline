@@ -3,7 +3,7 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, lt, count } from "drizzle-orm";
+import { and, eq, inArray, lt, count, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
@@ -16,6 +16,7 @@ import {
   stripeCheckoutIntegrationIdentifier,
   stripeCheckoutTaxConfig,
   stripeInvoiceIdForCharge,
+  isMissingStripeResource,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
@@ -33,8 +34,77 @@ import {
   failStripeCheckoutSession,
   fulfillStripeCheckoutSession,
 } from "../lib/stripe-checkout-fulfillment";
+import { checkoutOperations } from "../db/security-schema";
+import { listCurrentLiveVideoAddons } from "../lib/stripe-live-video-addon";
 
 const router = express.Router();
+const LIVE_VIDEO_CHECKOUT_TTL_MS = 24 * 60 * 60_000;
+const ACTIVE_CHECKOUT_OPERATION_STATES = ["creating", "open"];
+const LIVE_VIDEO_CHECKOUT_OPERATION_PLAN = "live_video";
+const CHECKOUT_OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
+
+function isAmbiguousStripeCheckoutError(error: unknown): boolean {
+  const candidate = error as { type?: unknown; statusCode?: unknown };
+  const type = typeof candidate?.type === "string" ? candidate.type : "";
+  const statusCode =
+    typeof candidate?.statusCode === "number" && Number.isFinite(candidate.statusCode)
+      ? candidate.statusCode
+      : null;
+  return (
+    type === "StripeConnectionError" ||
+    type === "StripeIdempotencyError" ||
+    statusCode === null ||
+    statusCode === 409 ||
+    statusCode === 429 ||
+    statusCode >= 500
+  );
+}
+
+async function markLiveVideoCheckoutOperation(
+  id: string,
+  values: {
+    status: "creating" | "open" | "completed" | "failed" | "expired";
+    stripeCustomerId?: string | null;
+    stripeCheckoutSessionId?: string | null;
+    checkoutUrl?: string | null;
+    failureCode?: string | null;
+  },
+): Promise<void> {
+  await drizzle
+    .update(checkoutOperations)
+    .set({ ...values, updatedAt: new Date() })
+    .where(eq(checkoutOperations.id, id));
+}
+
+async function failCreatingLiveVideoCheckoutOperation(
+  id: string,
+  stripeCustomerId: string | null,
+): Promise<void> {
+  await drizzle
+    .update(checkoutOperations)
+    .set({
+      status: "failed",
+      stripeCustomerId,
+      failureCode: "stripe_live_video_checkout_failed",
+      updatedAt: new Date(),
+    })
+    .where(and(eq(checkoutOperations.id, id), eq(checkoutOperations.status, "creating")));
+}
+
+async function insertLiveVideoCheckoutOperation(userId: string): Promise<string | null> {
+  const [operation] = await drizzle
+    .insert(checkoutOperations)
+    .values({
+      userId,
+      planId: LIVE_VIDEO_CHECKOUT_OPERATION_PLAN,
+      billingInterval: "month",
+      status: "creating",
+      expiresAt: new Date(Date.now() + LIVE_VIDEO_CHECKOUT_TTL_MS),
+    })
+    .onConflictDoNothing()
+    .returning({ id: checkoutOperations.id });
+  return operation?.id ?? null;
+}
 
 // Refuse to send a customer to Stripe checkout with a price that isn't part of
 // the current founder catalog. Guards against a Vercel env var pointing at a
@@ -77,42 +147,6 @@ function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number 
   if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
   if (creditUsd >= chargedUsd) return grossUsd;
   return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
-}
-
-/**
- * Live live-video add-on subscriptions on a Stripe customer, excluding one id.
- *
- * The add-on is a standalone subscription that shares the customer with the
- * plan, and the only local record of it is `settings.live_video_addon_enabled`
- * — a boolean written solely by the webhook. That makes the flag useless as a
- * duplicate guard during delivery lag, and useless as a "does the customer
- * still have this?" answer when one of two subscriptions is canceled. Both
- * questions have to be asked of Stripe.
- *
- * `subscriptions.list` cannot filter on metadata, so the purpose filter is
- * local. Terminal statuses are excluded: those no longer entitle anything.
- */
-const LIVE_VIDEO_ADDON_TERMINAL_STATUSES = new Set<Stripe.Subscription.Status>([
-  "canceled",
-  "incomplete_expired",
-  "unpaid",
-]);
-
-async function listLiveVideoAddonSubscriptions(
-  customerId: string,
-  excludeSubscriptionId?: string,
-): Promise<Stripe.Subscription[]> {
-  const listed = await stripe.subscriptions.list({
-    customer: customerId,
-    status: "all",
-    limit: 100,
-  });
-  return listed.data.filter(
-    (sub) =>
-      sub.id !== excludeSubscriptionId &&
-      sub.metadata?.purpose === "live_video_addon" &&
-      !LIVE_VIDEO_ADDON_TERMINAL_STATUSES.has(sub.status),
-  );
 }
 
 /**
@@ -452,7 +486,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
             if (disable && customerId) {
               try {
-                const survivors = await listLiveVideoAddonSubscriptions(customerId, sub.id);
+                const survivors = await listCurrentLiveVideoAddons(customerId, sub.id);
                 if (survivors.length > 0) {
                   disable = false;
                   log.info("Live video add-on retained; another subscription is still active", {
@@ -552,31 +586,27 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   /\/+$/,
                   "",
                 );
-                void sendPaymentFailedEmail({
+                const delivery = await sendPaymentFailedEmail({
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
                   updateCardUrl: `${appUrl}/settings/billing`,
-                })
-                  .then((r) => {
-                    if (!r.ok)
-                      log.warn("payment_failed dunning email not sent", {
-                        userId: row.userId,
-                        error: r.error,
-                      });
-                  })
-                  .catch((err) =>
-                    log.warn("payment_failed dunning email send threw", {
-                      userId: row.userId,
-                      error: getErrorMessage(err),
-                    }),
-                  );
+                  idempotencyKey: `stripe-payment-failed/${event.id}`,
+                });
+                if (!delivery.ok && delivery.disposition !== "suppressed") {
+                  log.error("payment_failed dunning email not accepted", {
+                    userId: row.userId,
+                    provider: delivery.provider,
+                    error: delivery.error,
+                  });
+                  throw AppError.fromHttpStatus(503, "Payment-failure notice delivery unavailable");
+                }
               }
             }
           }
         } catch (err) {
-          if (err instanceof AppError) throw err;
           log.error("invoice.payment_failed handler error", { error: getErrorMessage(err) });
+          throw err;
         }
         break;
       }
@@ -1140,10 +1170,13 @@ router.post(
 
       let customerId = row?.stripeCustomerId || null;
       if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: req.user.email,
-          metadata: { wireline_user_id: req.user.id },
-        });
+        const customer = await stripe.customers.create(
+          {
+            email: req.user.email,
+            metadata: { wireline_user_id: req.user.id },
+          },
+          { idempotencyKey: `wireline-live-video-customer-${req.user.id}` },
+        );
         customerId = customer.id;
         await drizzle
           .insert(schema.subscriptions)
@@ -1159,8 +1192,33 @@ router.post(
       // completed checkout. Nothing downstream ever detects or cancels a
       // duplicate, so two subscriptions would bill this customer monthly
       // forever. Stripe is the only authority on what they already have.
-      const existingAddons = await listLiveVideoAddonSubscriptions(customerId);
+      const existingAddons = await listCurrentLiveVideoAddons(customerId);
       if (existingAddons.length > 0) {
+        // Stripe truth can arrive before either our webhook or the success
+        // redirect. Repair the entitlement here as well as refusing another
+        // subscription, otherwise a paid customer with a lost webhook stays
+        // disabled forever while every retry correctly returns 409.
+        const existingOperationId = existingAddons
+          .map((subscription) => subscription.metadata?.wireline_checkout_operation_id?.trim())
+          .find((candidate) => candidate && CHECKOUT_OPERATION_ID.test(candidate));
+        await tenantStore.run(req.user.id, async () => {
+          await drizzle
+            .update(schema.settings)
+            .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
+            .where(eq(schema.settings.userId, req.user.id));
+          if (existingOperationId) {
+            await drizzle
+              .update(checkoutOperations)
+              .set({ status: "completed", failureCode: null, updatedAt: new Date() })
+              .where(
+                and(
+                  eq(checkoutOperations.id, existingOperationId),
+                  eq(checkoutOperations.userId, req.user.id),
+                  inArray(checkoutOperations.status, ACTIVE_CHECKOUT_OPERATION_STATES),
+                ),
+              );
+          }
+        });
         return res.status(409).json({
           code: "LIVE_VIDEO_ALREADY_ENABLED",
           error: "Live video add-on is already active on this workspace.",
@@ -1174,29 +1232,221 @@ router.post(
           .json({ error: "Billing is unavailable: APP_URL is not configured." });
       }
       const base = appUrl.url;
+      await drizzle
+        .update(checkoutOperations)
+        .set({ status: "expired", updatedAt: new Date() })
+        .where(
+          and(
+            eq(checkoutOperations.userId, req.user.id),
+            inArray(checkoutOperations.status, ACTIVE_CHECKOUT_OPERATION_STATES),
+            sql`${checkoutOperations.expiresAt} < clock_timestamp()`,
+          ),
+        );
+
+      let operationId = await insertLiveVideoCheckoutOperation(req.user.id);
+      let operationCustomerId: string | null = null;
+      let resumed = false;
+
+      if (!operationId) {
+        const [active] = await drizzle
+          .select({
+            id: checkoutOperations.id,
+            planId: checkoutOperations.planId,
+            billingInterval: checkoutOperations.billingInterval,
+            status: checkoutOperations.status,
+            stripeCustomerId: checkoutOperations.stripeCustomerId,
+            stripeCheckoutSessionId: checkoutOperations.stripeCheckoutSessionId,
+            checkoutUrl: checkoutOperations.checkoutUrl,
+          })
+          .from(checkoutOperations)
+          .where(
+            and(
+              eq(checkoutOperations.userId, req.user.id),
+              inArray(checkoutOperations.status, ACTIVE_CHECKOUT_OPERATION_STATES),
+            ),
+          )
+          .limit(1);
+        const sameFlow =
+          active?.planId === LIVE_VIDEO_CHECKOUT_OPERATION_PLAN &&
+          active?.billingInterval === "month";
+
+        if (active?.status === "open") {
+          let remoteSession: Stripe.Checkout.Session | null = null;
+          if (active.stripeCheckoutSessionId) {
+            try {
+              remoteSession = await stripe.checkout.sessions.retrieve(
+                active.stripeCheckoutSessionId,
+              );
+            } catch (error) {
+              if (!isMissingStripeResource(error)) throw error;
+            }
+          }
+
+          if (sameFlow && remoteSession?.status === "open" && remoteSession.url) {
+            if (remoteSession.url !== active.checkoutUrl) {
+              await markLiveVideoCheckoutOperation(active.id, {
+                status: "open",
+                stripeCustomerId: active.stripeCustomerId,
+                stripeCheckoutSessionId: remoteSession.id,
+                checkoutUrl: remoteSession.url,
+                failureCode: null,
+              });
+            }
+            return res.json({ url: remoteSession.url, reused: true, operation_id: active.id });
+          }
+
+          if (remoteSession?.status === "open") {
+            return res.status(409).json({
+              code: "CHECKOUT_ALREADY_IN_PROGRESS",
+              error: "Another checkout is already open. Complete or cancel it first.",
+              operation_id: active.id,
+            });
+          }
+
+          await markLiveVideoCheckoutOperation(active.id, {
+            status: remoteSession?.status === "complete" ? "completed" : "expired",
+            failureCode: null,
+          });
+          if (remoteSession?.status === "complete") {
+            return res.status(409).json({
+              code: "LIVE_VIDEO_CHECKOUT_COMPLETED",
+              error: "Live video checkout is already complete and is being reconciled.",
+              operation_id: active.id,
+            });
+          }
+          operationId = await insertLiveVideoCheckoutOperation(req.user.id);
+          if (!operationId) {
+            return res.status(409).json({
+              code: "CHECKOUT_ALREADY_IN_PROGRESS",
+              error: "Another checkout request is being prepared. Try again in a moment.",
+            });
+          }
+        } else if (active?.status === "creating" && sameFlow) {
+          operationId = active.id;
+          operationCustomerId = active.stripeCustomerId || null;
+          resumed = true;
+        } else {
+          return res.status(409).json({
+            code: "CHECKOUT_ALREADY_IN_PROGRESS",
+            error: "Another checkout request is being prepared. Try again after it completes.",
+            operation_id: active?.id,
+          });
+        }
+      }
+
+      const checkoutCustomerId = operationCustomerId || customerId;
+
       const addonMeta = {
         wireline_user_id: req.user.id,
+        wireline_checkout_operation_id: operationId,
         purpose: "live_video_addon",
       };
+      let checkoutAttempted = false;
+      let checkoutResolved = false;
+      let createdSession: { id: string; url: string } | null = null;
 
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        integration_identifier: stripeCheckoutIntegrationIdentifier("live_video"),
-        customer: customerId,
-        line_items: [{ price: priceId, quantity: 1 }],
-        ...stripeCheckoutTaxConfig(),
-        customer_update: { address: "auto", name: "auto" },
-        // Parity with the plan checkout — promo codes work on add-ons too.
-        allow_promotion_codes: true,
-        success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}/settings/billing?live_video=canceled`,
-        metadata: addonMeta,
-        subscription_data: { metadata: addonMeta },
-      });
+      try {
+        await markLiveVideoCheckoutOperation(operationId, {
+          status: "creating",
+          stripeCustomerId: checkoutCustomerId,
+          failureCode: null,
+        });
+        checkoutAttempted = true;
+        const session = await stripe.checkout.sessions.create(
+          {
+            mode: "subscription",
+            integration_identifier: stripeCheckoutIntegrationIdentifier("live_video", operationId),
+            customer: checkoutCustomerId,
+            line_items: [{ price: priceId, quantity: 1 }],
+            ...stripeCheckoutTaxConfig(),
+            customer_update: { address: "auto", name: "auto" },
+            // Parity with the plan checkout — promo codes work on add-ons too.
+            allow_promotion_codes: true,
+            client_reference_id: req.user.id,
+            success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${base}/settings/billing?live_video=canceled`,
+            metadata: addonMeta,
+            subscription_data: { metadata: addonMeta },
+          },
+          { idempotencyKey: `wireline-live-video-checkout-${operationId}` },
+        );
+        checkoutResolved = true;
+        if (!session.url) {
+          await markLiveVideoCheckoutOperation(operationId, {
+            status: "creating",
+            stripeCustomerId: checkoutCustomerId,
+            stripeCheckoutSessionId: session.id,
+            failureCode: "stripe_checkout_url_missing",
+          });
+          return res.status(202).json({
+            code: "CHECKOUT_RECONCILING",
+            error: "Stripe is preparing the hosted checkout. Retry to resume it safely.",
+            operation_id: operationId,
+          });
+        }
+        createdSession = { id: session.id, url: session.url };
+        await markLiveVideoCheckoutOperation(operationId, {
+          status: "open",
+          stripeCustomerId: checkoutCustomerId,
+          stripeCheckoutSessionId: session.id,
+          checkoutUrl: session.url,
+          failureCode: null,
+        });
 
-      res.json({ url: session.url });
+        return res.json({
+          url: session.url,
+          operation_id: operationId,
+          ...(resumed ? { resumed: true } : {}),
+        });
+      } catch (error) {
+        if (createdSession) {
+          await markLiveVideoCheckoutOperation(operationId, {
+            status: "open",
+            stripeCustomerId: checkoutCustomerId,
+            stripeCheckoutSessionId: createdSession.id,
+            checkoutUrl: createdSession.url,
+            failureCode: "post_stripe_persistence_failed",
+          }).catch(() => {});
+          log.error("Live Video Checkout exists but operation persistence failed", {
+            operationId,
+            sessionId: createdSession.id,
+            userId: req.user.id,
+            error: getErrorMessage(error),
+          });
+          return res.json({
+            url: createdSession.url,
+            operation_id: operationId,
+            warning: "Checkout is ready; Wireline is reconciling its local billing record.",
+          });
+        }
+
+        if (checkoutAttempted && !checkoutResolved && isAmbiguousStripeCheckoutError(error)) {
+          await markLiveVideoCheckoutOperation(operationId, {
+            status: "creating",
+            stripeCustomerId: checkoutCustomerId,
+            failureCode: "stripe_checkout_outcome_unknown",
+          }).catch(() => {});
+          log.warn("Live Video Checkout outcome is ambiguous; operation remains resumable", {
+            operationId,
+            userId: req.user.id,
+            error: getErrorMessage(error),
+          });
+          return res.status(202).json({
+            code: "CHECKOUT_RECONCILING",
+            error:
+              "Stripe did not return a definitive result. Retry to resume this checkout safely.",
+            operation_id: operationId,
+          });
+        }
+
+        await failCreatingLiveVideoCheckoutOperation(operationId, checkoutCustomerId).catch(
+          () => {},
+        );
+        throw AppError.fromHttpStatus(502, "Live video checkout could not be prepared.");
+      }
     } catch (e: any) {
       log.error("Live video checkout creation failed", { error: getErrorMessage(e) });
+      if (e instanceof AppError) throw e;
       throw AppError.fromHttpStatus(500, "Live video checkout failed");
     }
   },

@@ -7,8 +7,9 @@ import { isSessionGenerationActive } from "../lib/session-generation";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
 import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
+import { deletionQueue } from "../db/schema";
 import { sessionUsers, secureTeamMembers } from "../db/security-schema";
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 
 interface AuthedReq extends Request {
   user?: User;
@@ -21,6 +22,66 @@ type ActiveSessionUser = {
   sessionRevokedBefore: Date;
   sessionVersion: number;
 };
+
+export type AccountDeletionAuthState = {
+  status: string | null;
+  scheduledPurgeAt: Date | null;
+};
+
+/**
+ * Authentication remains available throughout the reversible grace period,
+ * including the cancellation route. Once the deadline is reached (or the
+ * deadline is malformed/missing) and while the purge is running, every actor
+ * session fails closed before tenant selection or route execution.
+ */
+export function accountDeletionBlocksAuthentication(
+  state: AccountDeletionAuthState,
+  now: Date = new Date(),
+): boolean {
+  if (state.status === "purging") return true;
+  if (state.status !== "pending") return false;
+
+  const scheduledPurgeAt = state.scheduledPurgeAt?.getTime();
+  return (
+    scheduledPurgeAt === undefined ||
+    !Number.isFinite(scheduledPurgeAt) ||
+    scheduledPurgeAt <= now.getTime()
+  );
+}
+
+async function hasTerminalAccountDeletion(userId: string): Promise<boolean> {
+  const states = await tenantStore.run(userId, () =>
+    drizzle
+      .select({
+        status: deletionQueue.status,
+        scheduledPurgeAt: deletionQueue.scheduledPurgeAt,
+      })
+      .from(deletionQueue)
+      .where(
+        and(
+          eq(deletionQueue.userId, userId),
+          inArray(deletionQueue.status, ["pending", "purging"]),
+        ),
+      ),
+  );
+
+  const now = new Date();
+  return states.some((state) => accountDeletionBlocksAuthentication(state, now));
+}
+
+async function enforceAuthenticatedAccountLifecycle(
+  userId: string,
+  res: Response,
+): Promise<boolean> {
+  if (!(await hasTerminalAccountDeletion(userId))) return true;
+
+  res.status(410).json({
+    error: "Account deletion is in progress. This session can no longer be used.",
+    code: "ACCOUNT_DELETION_IN_PROGRESS",
+    requestId: res.locals?.requestId,
+  });
+  return false;
+}
 
 async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSessionUser | null> {
   return tenantStore.run(payload.sub, async () => {
@@ -137,9 +198,7 @@ async function verifyRequestSession(req: Request, res: Response) {
         reason: "invalid_token",
         requestId: res.locals?.requestId,
       })
-      .catch((error: unknown) =>
-        log.warn("audit log failed", { error: getErrorMessage(error) }),
-      );
+      .catch((error: unknown) => log.warn("audit log failed", { error: getErrorMessage(error) }));
     authRequired(res);
     return null;
   }
@@ -149,10 +208,15 @@ async function verifyRequestSession(req: Request, res: Response) {
     authRequired(res, "AUTH_REVOKED");
     return null;
   }
+  if (!(await enforceAuthenticatedAccountLifecycle(activeUser.id, res))) return null;
   return { payload, activeUser };
 }
 
-function attachUser(authedReq: AuthedReq, payload: JwtPayload, activeUser: ActiveSessionUser): void {
+function attachUser(
+  authedReq: AuthedReq,
+  payload: JwtPayload,
+  activeUser: ActiveSessionUser,
+): void {
   authedReq.user = {
     id: activeUser.id,
     email: activeUser.email,
@@ -177,6 +241,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
   try {
     const authedReq = req as AuthedReq;
     if (authedReq.user?.id) {
+      if (!(await enforceAuthenticatedAccountLifecycle(authedReq.user.id, res))) return;
       const tenantId = await resolveTenantId(
         req,
         authedReq.user.id,
@@ -211,6 +276,7 @@ export async function authenticateEventStream(req: Request, res: Response, next:
   try {
     const authedReq = req as AuthedReq;
     if (authedReq.user?.id) {
+      if (!(await enforceAuthenticatedAccountLifecycle(authedReq.user.id, res))) return;
       const tenantId = await resolveTenantId(
         req,
         authedReq.user.id,

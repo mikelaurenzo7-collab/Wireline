@@ -56,7 +56,7 @@ if (isProduction) {
   validHttpsUrl("APP_URL", true);
   validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
 
-  if (value("STRIPE_SECRET_KEY") && !value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
+  if (value("STRIPE_SECRET_KEY") && !/^(?:sk|rk)_live_/.test(value("STRIPE_SECRET_KEY"))) {
     failures.push("STRIPE_SECRET_KEY: production must use a live-mode key");
   }
   if (value("VITE_STRIPE_PUBLIC_KEY") && !value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {

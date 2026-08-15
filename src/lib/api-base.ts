@@ -346,6 +346,15 @@ export async function authFetch(
   const mergedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal;
   try {
     const mergedHeaders = new Headers(headers || {});
+    // A string body is always JSON here, and express.json() only parses a
+    // request that declares it. Callers that forgot the header sent a body
+    // Express discarded, so the route saw `{}` and rejected every attempt —
+    // Insights → Goals and both phone-number POSTs could never succeed.
+    // Defaulted, not forced: an explicit Content-Type still wins, and non-string
+    // bodies (FormData, Blob, URLSearchParams) keep the boundary the browser sets.
+    if (typeof rest.body === "string" && !mergedHeaders.has("Content-Type")) {
+      mergedHeaders.set("Content-Type", "application/json");
+    }
     const response = await fetch(input, {
       ...rest,
       headers: mergedHeaders,

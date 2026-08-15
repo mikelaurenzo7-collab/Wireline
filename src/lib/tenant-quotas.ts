@@ -368,6 +368,35 @@ export class QuotaTracker {
       });
     }
   }
+
+  /**
+   * Return a previously persisted quota reservation after a provider refuses
+   * work before a usable session exists. The update is atomic and floor-bounded
+   * so duplicate cleanup can never mint allowance.
+   */
+  async releaseUsage(
+    userId: string,
+    dimension: QuotaDimension,
+    delta: number,
+    periodKey?: string,
+  ): Promise<void> {
+    if (!Number.isFinite(delta) || delta <= 0) return;
+    const reservedPeriodKey =
+      periodKey || (dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey());
+    await this.deps.drizzle
+      .update(schema.quotaUsage)
+      .set({
+        used: sql`greatest(${schema.quotaUsage.used} - ${BigInt(Math.floor(delta))}, 0)`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.quotaUsage.userId, userId),
+          eq(schema.quotaUsage.dimension, dimension),
+          eq(schema.quotaUsage.periodKey, reservedPeriodKey),
+        ),
+      );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────

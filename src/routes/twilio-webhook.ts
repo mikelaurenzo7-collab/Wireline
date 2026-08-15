@@ -88,7 +88,12 @@ function resolveConsentControl(
   if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)) {
     return { control: "stop", legacy: true };
   }
-  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_IN_KEYWORDS)) {
+  // Exact only. A legacy opt-in is a consent GRANT written to the TCPA ledger,
+  // and this branch also swallows the message (the handler answers the webhook
+  // instead of calling next(), so the base route never stores the inbound SMS).
+  // Leading-word matching turned "Yes please, Tuesday works" into a fabricated
+  // consent record plus a lost customer reply.
+  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_IN_KEYWORDS, "exact")) {
     return { control: "start", legacy: true };
   }
   return { control: null, legacy: false };

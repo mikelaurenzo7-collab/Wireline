@@ -5,18 +5,49 @@
 //
 // Returns 429 with Retry-After header on quota exceeded.
 
+import { createHash } from "node:crypto";
 import { Request, Response, NextFunction } from "express";
 import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from "../lib/rate-limit.js";
 import { AppError } from "../lib/api-error";
 import { log } from "../lib/server-context";
+import { getSessionTokenFromRequest } from "../lib/session-cookie";
 
 // ──────────────────────────────────────────────────────────────────────
 //  Claude rate limiter — shared by server.ts and extracted route files.
-//  Keys by Bearer token first; falls back to IP for unauthenticated edge
-//  cases. Fails CLOSED when the distributed limiter is unavailable.
+//  Keys by authenticated user id; falls back to a session-token digest,
+//  then IP, for the routes that run it ahead of authentication.
+//  Fails CLOSED when the distributed limiter is unavailable.
 // ──────────────────────────────────────────────────────────────────────
 const CLAUDE_RATE_WINDOW_MS = 60_000;
 const CLAUDE_RATE_MAX = 60;
+
+/**
+ * Identity this request should be billed against for model-spend throttling.
+ *
+ * `req.user.id` is the only stable answer, so it comes first. Two fallbacks
+ * exist for the handful of routes that run this limiter before their auth
+ * middleware:
+ *
+ *   - A digest of the session token. The browser authenticates by cookie and
+ *     sends no Authorization header, so reading only the header collapsed
+ *     every cookie-session caller behind one NAT, CDN egress, or carrier CGNAT
+ *     into a single shared 60/min bucket. Reading the cookie too restores
+ *     per-session accounting. It is hashed because the raw value is a live
+ *     credential and the key is written into Upstash, where it would sit in
+ *     plaintext in any key listing or slow-log.
+ *   - IP, for genuinely anonymous callers.
+ *
+ * The digest is still per-session rather than per-user, so token rotation
+ * mints a fresh bucket. That is acceptable only as a fallback; every route
+ * that can authenticate first should, and does.
+ */
+function claudeRateLimitKey(req: Request): string {
+  const userId = (req as Request & { user?: { id?: string } }).user?.id;
+  if (userId) return `user:${userId}`;
+  const token = getSessionTokenFromRequest(req);
+  if (token) return `sess:${createHash("sha256").update(token).digest("base64url").slice(0, 32)}`;
+  return `ip:${req.ip || "anon"}`;
+}
 
 /**
  * Middleware that enforces per-user Claude API rate limits.
@@ -28,8 +59,7 @@ export async function claudeRateLimiter(req: Request, res: Response, next: NextF
   if (!status.ok) {
     return res.status(503).json({ error: status.reason, code: status.code });
   }
-  const token = req.headers.authorization?.split(" ")[1];
-  const key = token || req.ip || "anon";
+  const key = claudeRateLimitKey(req);
   let result;
   try {
     result = await rateLimit(key, {
@@ -94,6 +124,19 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
           "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
       });
     }
+    (
+      req as Request & {
+        wirelineSimulationQuotaReservation?: {
+          userId: string;
+          units: number;
+          periodKey: string;
+        };
+      }
+    ).wirelineSimulationQuotaReservation = {
+      userId,
+      units: 5,
+      periodKey: decision.period_key,
+    };
   } catch (err) {
     // checkAndIncrement already degrades internally; an exception here means
     // the tracker itself is down. Every session mint charges a vendor-metered
@@ -113,6 +156,23 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     });
   }
   next();
+}
+
+/** Return a mint quota debit only when no usable provider session was created. */
+export async function releaseSimulationMinuteQuota(req: Request): Promise<void> {
+  const request = req as Request & {
+    wirelineSimulationQuotaReservation?: { userId: string; units: number; periodKey: string };
+  };
+  const reservation = request.wirelineSimulationQuotaReservation;
+  if (!reservation) return;
+  delete request.wirelineSimulationQuotaReservation;
+  const { quotaTracker } = await import("../lib/server-context");
+  await quotaTracker.releaseUsage(
+    reservation.userId,
+    "simulation_minutes_daily",
+    reservation.units,
+    reservation.periodKey,
+  );
 }
 
 interface RateLimitMiddleware {

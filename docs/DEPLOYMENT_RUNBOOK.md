@@ -17,6 +17,11 @@ The canonical deployment path is GitHub `main` -> Vercel project `revaluate/wire
 
 A green stale deployment is not release evidence. Validation must match the head that is merged.
 
+Never promote a preview artifact directly to production. Preview builds intentionally skip
+database migrations and production-only schema/environment gates; changing its alias does not
+rebuild it. `npm run vercel:promote-production -- <deploymentId> <exactCommitSha>` therefore
+accepts only a READY, `main`, production-target deployment at the expected SHA.
+
 ## Vercel project boundary
 
 Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `trywireline.com` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.
@@ -46,6 +51,9 @@ The production build must:
 - apply committed Drizzle migrations through `npm run db:migrate` unless the deployment is an explicitly identified non-live duplicate;
 - build the production client/server and ChatGPT MCP bundles;
 - pass server import smoke;
+- reconcile and re-read the catalog-fingerprinted Stripe Customer Portal when
+  `WIRELINE_RECONCILE_STRIPE_PORTAL=true`; canonical production fails closed when the switch is
+  absent or the live configuration cannot be verified;
 - finish READY with no alias error and own `trywireline.com`.
 
 After promotion, verify:
@@ -91,6 +99,12 @@ Preview builds must log that migrations were skipped. Production builds run the 
 ## Self-serve billing release control
 
 `WIRELINE_SELF_SERVE_BILLING_ENABLED` is a production release switch, not a provider credential. It defaults closed when unset and must remain `false` in Development and Preview. Checkout opens only when this switch is explicitly affirmative **and** `WIRELINE_LAUNCH_DEMO_MODE=false`; an unset demo-mode value remains fail-closed.
+
+`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. It does
+not open checkout. It makes every canonical Production build reconcile the exact public
+Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method
+updates, invoice history, and legal/return URLs after the application build passes. Preview and
+Development must leave it false/unset.
 
 Set the billing switch to `true` in Production only after all of the following have been certified against the live Wireline Stripe account:
 

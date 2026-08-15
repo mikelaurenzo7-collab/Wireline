@@ -2,11 +2,15 @@ import express, { type Response } from "express";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate-limits";
-import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
 import { AppError } from "../lib/api-error";
-import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
+import {
+  commitRealtimeSessionSpend,
+  releaseRealtimeSessionSpendAfterFailure,
+  reserveRealtimeSessionSpend,
+} from "../lib/realtime-spend-reservation";
 import {
   generateCuratedVoicePreview,
   isCuratedPreviewProvider,
@@ -58,6 +62,7 @@ router.get(
   "/api/voices/curated/preview",
   authenticateUser,
   previewLimiter,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     const provider = typeof req.query.provider === "string" ? req.query.provider : "";
     const voiceId = typeof req.query.voiceId === "string" ? req.query.voiceId.trim() : "";
@@ -83,28 +88,29 @@ router.post(
   "/api/voice/live/session",
   authenticateUser,
   sessionLimiter,
+  enforceLaunchHardGate,
   // Same posture as /api/voice/openai/session: the mint spends vendor-metered
   // realtime audio on platform keys outside the token audit path, so it must
   // respect the tenant's AI-spend hard cap and land a reserve in the envelope.
   // Cap BEFORE quota so a capped tenant's rejections don't consume the
   // durable daily minute debit.
   enforceSpendCap,
-  simulationMinuteQuota,
   validateBody(sessionSchema),
+  simulationMinuteQuota,
   async (req: AuthenticatedRequest, res: Response) => {
-    const session = await createOpenAILiveVoiceCall({
-      userId: req.user.id,
-      agentId: req.body.agentId,
-      sdp: req.body.sdp,
-    });
-    await persistPlatformCostRecord({
-      userId: req.user.id,
-      action: "voice.realtime.session",
-      provider: "openai",
-      model: OPENAI_REALTIME_DEFAULT_MODEL,
-      costUsd: platformCostReserveUsd("openai_realtime_session"),
-      requestMeta: { surface: "live_voice_session" },
-    });
+    const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "live_voice_session");
+    let session: Awaited<ReturnType<typeof createOpenAILiveVoiceCall>>;
+    try {
+      session = await createOpenAILiveVoiceCall({
+        userId: req.user.id,
+        agentId: req.body.agentId,
+        sdp: req.body.sdp,
+      });
+    } catch (error) {
+      await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
+      throw error;
+    }
+    await commitRealtimeSessionSpend(reservation);
     res.setHeader("Cache-Control", "no-store");
     res.json(session);
   },

@@ -179,39 +179,56 @@ export function createAuditStatsHandler(deps: AuditRoutesDeps) {
       const since = new Date();
       since.setDate(since.getDate() - days);
 
-      const events = await drizzle
-        .select()
-        .from(schema.auditLog)
-        .where(and(eq(schema.auditLog.userId, userId), gte(schema.auditLog.createdAt, since)));
+      // Aggregated in Postgres, not in Node.
+      //
+      // This used to `.select()` every column of every matching row — up to a
+      // year of a tenant's audit ledger, one row per AI call, `metadata` jsonb
+      // and all — and then count them in a forEach. The counters it produced
+      // are a handful of integers; the cost of producing them was the whole
+      // table in the function's memory. `idx_audit_log_user_created` already
+      // covers exactly this (user_id, created_at) filter, so the grouped form
+      // is one indexed pass returning a few rows.
+      //
+      // `nullif(…, '')` reproduces the JavaScript truthiness the old code
+      // relied on: both columns are NOT NULL with defaults, so only an empty
+      // string could fall through to the literal fallback.
+      const scope = and(eq(schema.auditLog.userId, userId), gte(schema.auditLog.createdAt, since));
+      const severityExpr = sql<string>`coalesce(nullif(${schema.auditLog.severity}, ''), 'info')`;
+      const typeExpr = sql<string>`coalesce(nullif(${schema.auditLog.eventType}, ''), nullif(${schema.auditLog.action}, ''), 'unknown')`;
 
-      const bySeverity: Record<string, number> = {};
-      const byType: Record<string, number> = {};
-      let totalCost = 0;
-      let apiCalls = 0;
+      const [severityRows, typeRows, [totals]] = await Promise.all([
+        drizzle
+          .select({ key: severityExpr, count: sql<string>`count(*)` })
+          .from(schema.auditLog)
+          .where(scope)
+          .groupBy(severityExpr),
+        drizzle
+          .select({ key: typeExpr, count: sql<string>`count(*)` })
+          .from(schema.auditLog)
+          .where(scope)
+          .groupBy(typeExpr),
+        drizzle
+          .select({
+            total: sql<string>`count(*)`,
+            cost: sql<string>`coalesce(sum(${schema.auditLog.costUsd}), 0)`,
+            apiCalls: sql<string>`count(*) filter (where ${typeExpr} like 'api.%' or ${typeExpr} like 'ai.%')`,
+          })
+          .from(schema.auditLog)
+          .where(scope),
+      ]);
 
-      events.forEach((event: any) => {
-        const sev = event.severity || "info";
-        bySeverity[sev] = (bySeverity[sev] || 0) + 1;
-
-        const type = event.eventType || event.action || "unknown";
-        byType[type] = (byType[type] || 0) + 1;
-
-        if (event.costUsd) {
-          const parsed = parseFloat(String(event.costUsd));
-          if (!isNaN(parsed)) totalCost += parsed;
-        }
-
-        if (typeof type === "string" && (type.startsWith("api.") || type.startsWith("ai."))) {
-          apiCalls++;
-        }
-      });
+      const toCounts = (rows: Array<{ key: string; count: string }>) =>
+        rows.reduce<Record<string, number>>((acc, row) => {
+          acc[row.key] = Number(row.count);
+          return acc;
+        }, {});
 
       res.json({
-        total_events: events.length,
-        by_severity: bySeverity,
-        by_type: byType,
-        total_cost_usd: totalCost,
-        total_api_calls: apiCalls,
+        total_events: Number(totals?.total ?? 0),
+        by_severity: toCounts(severityRows),
+        by_type: toCounts(typeRows),
+        total_cost_usd: Number(totals?.cost ?? 0),
+        total_api_calls: Number(totals?.apiCalls ?? 0),
         period_days: days,
       });
     } catch (e: any) {

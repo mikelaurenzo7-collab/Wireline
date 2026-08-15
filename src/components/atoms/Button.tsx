@@ -5,7 +5,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "relative inline-flex min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+  // `min-h-*` on the primitive, not only on the `button` element rule in
+  // foundation.css: with `asChild` the rendered node is the child — usually a
+  // react-router <Link>, so an <a> that matches neither `button` nor
+  // `[role="button"]` and inherited no floor at all. Every `<Button asChild>`
+  // therefore rendered at its size variant's bare height (36px for the default)
+  // next to real buttons at 40px, most visibly in the Overview action rows.
+  // Carrying the floor here makes the control the same height whatever element
+  // it becomes. The `link` variant opts out below — it is text, not a control.
+  "relative inline-flex min-h-[var(--wireline-interaction-target-minimum,40px)] min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {
@@ -22,7 +30,7 @@ export const buttonVariants = cva(
           "bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-primary)] shadow-[var(--wireline-elevation-xs),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-surface-subtle)]/80 hover:shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-insetRaised)]",
         ghost:
           "text-[var(--wireline-color-text-primary)] hover:bg-[var(--wireline-color-action-primary-container)] hover:text-[var(--wireline-color-text-primary)]",
-        link: "h-auto text-[var(--wireline-color-action-primary-default)] underline-offset-4 hover:underline",
+        link: "h-auto min-h-0 text-[var(--wireline-color-action-primary-default)] underline-offset-4 hover:underline",
         glass:
           "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] text-[var(--wireline-color-text-primary)] hover:border-[var(--wireline-color-border-strong)]/35 hover:bg-[var(--wireline-color-action-primary-container)]",
         chrome:

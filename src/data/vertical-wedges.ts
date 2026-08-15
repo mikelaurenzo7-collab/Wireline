@@ -1,14 +1,3 @@
-import {
-  Clock,
-  Calendar,
-  DollarSign,
-  Shield,
-  Phone,
-  MailCheck,
-  PhoneIncoming,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
 import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy";
 import { signupHrefForWedge } from "../lib/signup-intent";
 
@@ -22,8 +11,31 @@ export type VerticalKey =
   | "restaurants"
   | "sales";
 
+/**
+ * Icons are NAMED here, not imported.
+ *
+ * `server.ts` imports PRERENDERED_MARKETING_ROUTES from marketing-route-meta,
+ * which imports WEDGES from this file for the `/for/:slug` titles. When the
+ * pain icons were `LucideIcon` component references, that one import chain
+ * pulled the whole lucide-react barrel — and React component machinery — into
+ * every serverless cold start, to serve a list of route strings. It also gave
+ * the marketing data its own 26 kB client chunk.
+ *
+ * The mapping from name to component lives in the one React component that
+ * actually renders them, so this module stays plain data.
+ */
+export type PainIconName =
+  | "Calendar"
+  | "Clock"
+  | "DollarSign"
+  | "MailCheck"
+  | "Phone"
+  | "PhoneIncoming"
+  | "Shield"
+  | "Sparkles";
+
 export interface PainPoint {
-  icon: LucideIcon;
+  icon: PainIconName;
   title: string;
   body: string;
 }
@@ -47,29 +59,29 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "Wireline for Home Services | AI Receptionist for Calls and Follow Up",
+    metaTitle: "Wireline for Home Services | Voice Receptionist and Follow Up",
     metaDescription:
       "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
     headline: "Turn after hours calls into scheduled work.",
     pains: [
       {
-        icon: Clock,
+        icon: "Clock",
         title: "24/7 emergency intake",
         body: "Burst pipes don't wait for office hours. Your agent can answer, qualify the urgency, alert the person on call, and text the caller a confirmation.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Books to your calendar",
         body: "Connects to Google Calendar or Outlook. Sees your real availability, offers two slots, books it, sends the customer the appointment.",
       },
       {
-        icon: DollarSign,
+        icon: "DollarSign",
         title: "Quote follow up automation",
         body: "Customer asked for a quote two days ago and never called back? Your agent calls them, references the original request by name, and rebooks.",
       },
       {
-        icon: Shield,
+        icon: "Shield",
         title: "Consent and DNC guardrails",
         body: "Configured disclosures, opt outs, calling windows, attempt caps, and DNC checks are logged and enforced for outbound work.",
       },
@@ -104,29 +116,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   medical: {
     slug: "medical",
-    metaTitle: "Wireline for Medical Practices | AI Intake and Scheduling",
+    metaTitle: "Wireline for Medical Practices | Voice Intake and Scheduling",
     metaDescription:
       "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients on hold become patients on the schedule.",
     pains: [
       {
-        icon: Phone,
+        icon: "Phone",
         title: "No more dropped calls",
         body: "Route overflow or after hours calls to an agent that gathers the visit reason, follows your urgency rules, and offers configured next steps.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Books to your connected calendar",
         body: "Reads connected Google or Outlook availability, respects configured buffers, and can send an SMS confirmation.",
       },
       {
-        icon: MailCheck,
+        icon: "MailCheck",
         title: "Recall + recare follow up",
         body: "Hasn't been in for a cleaning in 8 months? Your agent calls, references their last visit by date, and offers two convenient slots.",
       },
       {
-        icon: Shield,
+        icon: "Shield",
         title: "Compliance aware (not certified)",
         body: "Healthcare sensitive intake controls include consent logging, opt out enforcement, recording off by default, and configurable retention. Do not use Wireline for PHI unless a signed BAA and approved configuration are confirmed in writing.",
       },
@@ -161,29 +173,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "Wireline for Law Firms | AI Intake and Consult Routing",
+    metaTitle: "Wireline for Law Firms | Voice Intake and Consult Routing",
     metaDescription:
       "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
     headline: "Give every routed intake a clear next step.",
     pains: [
       {
-        icon: Phone,
+        icon: "Phone",
         title: "Structured new matter intake",
         body: "Route overflow or after hours calls to an agent that captures matter type, urgency, contact details, and the next approved intake step.",
       },
       {
-        icon: MailCheck,
+        icon: "MailCheck",
         title: "Firm approved intake language",
         body: "Uses the disclaimer and intake language your firm approves. Wireline does not determine whether privilege exists and is configured not to provide legal advice.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Conflict check workflow",
         body: "Captures prospective client and opposing party names, then routes the record for staff conflict review before any workflow you mark as requiring clearance.",
       },
       {
-        icon: DollarSign,
+        icon: "DollarSign",
         title: "Protect valuable intake demand",
         body: "Turn paid and organic call demand into structured, reviewable intake while your team keeps control of qualification and engagement decisions.",
       },
@@ -218,29 +230,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "Wireline for Real Estate | AI Listing Call Qualification",
+    metaTitle: "Wireline for Real Estate | Voice Listing Call Qualification",
     metaDescription:
       "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
     headline: "Work more listing calls without losing control.",
     pains: [
       {
-        icon: Phone,
+        icon: "Phone",
         title: "Listing call concierge",
         body: "Sign call comes in? Your agent picks up, captures the prospect's timeline + budget + preapproval, and texts the listing agent immediately for the hot ones.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Showing scheduler",
         body: "Books showings around the listing agent's real calendar. Adds buffer time. Confirms by SMS. Can update supported calendar events when the connected workflow and your rules allow it.",
       },
       {
-        icon: Sparkles,
+        icon: "Sparkles",
         title: "Cold lead reactivation",
         body: "That lead from 4 months ago who said 'maybe later'? Your agent calls them back at the right cadence — references their original search, asks if anything's changed.",
       },
       {
-        icon: DollarSign,
+        icon: "DollarSign",
         title: "CRM native pipeline",
         body: "Can push qualified leads into connected HubSpot or Salesforce records with the call summary and approved next step task.",
       },
@@ -275,29 +287,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "Wireline for Everyone | Your AI Handles the Calls You Hate",
+    metaTitle: "Wireline for Everyone | A Voice Agent for Calls You Avoid",
     metaDescription:
-      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
+      "A personal voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Hand off the calls you keep avoiding.",
     pains: [
       {
-        icon: Clock,
+        icon: "Clock",
         title: "Authorized billing and collections calls",
         body: "Past due collector keeps calling? Tell your agent the amount, the offer you can afford, and your approved script. The agent dials, stays within those bounds, asks for terms in writing, and reports back without promising a specific outcome.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Appointment booking you keep putting off",
         body: "Doctor's appointment three weeks overdue. Dentist cleaning. Salon. Auto shop. Veterinarian. Restaurant reservation for Saturday. Tell your agent the window that works and the office to call — it handles the back and forth and texts you the confirmation.",
       },
       {
-        icon: DollarSign,
+        icon: "DollarSign",
         title: "Returns, billing disputes, customer service",
         body: "Cable bill suddenly jumped $40. Online order arrived broken. Insurance won't approve the claim. These are the calls that take an hour on hold and end with you frustrated. Your agent waits on hold, escalates politely, and logs whatever resolution the provider offers.",
       },
       {
-        icon: Shield,
+        icon: "Shield",
         title: "Phone anxiety, social avoidance, neurodivergence",
         body: "Phone calls can be especially difficult for autistic and ADHD adults, people with social anxiety, and people with hearing disabilities. Wireline can handle an authorized call and return a readable summary; it is not an emergency or certified accessibility service.",
       },
@@ -306,7 +318,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
-      "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
+      "Your voice agent calls on your behalf. You say what you need; it dials, talks, and reports back. You stay off the call.",
     primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
@@ -337,29 +349,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   insurance: {
     slug: "insurance",
-    metaTitle: "Wireline for Insurance Agencies | AI Quote Intake + Renewal Follow Up",
+    metaTitle: "Wireline for Insurance Agencies | Voice Quote Intake and Renewal Follow Up",
     metaDescription:
       "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
     headline: "Keep quote intake and renewal follow up moving.",
     pains: [
       {
-        icon: Phone,
+        icon: "Phone",
         title: "Quote intake without the wait",
         body: "Caller wants an auto quote after hours? The agent gathers the fields you approve and routes a structured intake for a licensed producer to review.",
       },
       {
-        icon: Clock,
+        icon: "Clock",
         title: "FNOL (first notice of loss) capture",
         body: "After hours claim calls don't have to go to voicemail. Agent captures policy #, date/time/location of loss, parties involved, injuries — texts you immediately if it's serious, emails the desk for routine.",
       },
       {
-        icon: MailCheck,
+        icon: "MailCheck",
         title: "Renewal follow up campaigns",
         body: "Choose the dates, channels, script, and stop conditions for approved renewal outreach. The agent records each attempt and can offer a review slot from the connected calendar.",
       },
       {
-        icon: Shield,
+        icon: "Shield",
         title: "Carrier line compliance hedges",
         body: "Configured rules keep the agent from quoting binding coverage or making coverage promises. Outbound work still requires your approved consent basis, calling windows, DNC policy, and state specific script.",
       },
@@ -394,29 +406,29 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "Wireline for Restaurants | AI Phone Host for Reservations + Takeout",
+    metaTitle: "Wireline for Restaurants | Voice Host for Reservations and Takeout",
     metaDescription:
       "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
     pains: [
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Reservation taking without the hostess",
         body: "Captures party size, name, time, and special requests, then books through a connected calendar or approved reservation workflow. Confirmation timing is configurable.",
       },
       {
-        icon: PhoneIncoming,
+        icon: "PhoneIncoming",
         title: "Takeout orders done right",
         body: "Reads back each item, confirms substitutions, captures pickup time, and routes a structured order summary. Allergy questions are flagged for staff confirmation rather than answered speculatively.",
       },
       {
-        icon: Clock,
+        icon: "Clock",
         title: "After hours and closed Sundays",
         body: "Closed Mondays? Route catering inquiries to a structured intake, then notify the manager through the handoff path you configure.",
       },
       {
-        icon: MailCheck,
+        icon: "MailCheck",
         title: "Private events and catering pipeline",
         body: "Captures party size, date, dietary needs, budget range, and contact details. It can route a structured RFQ and offer approved tasting windows when those actions are configured.",
       },
@@ -458,22 +470,22 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     headline: "Your sales voice agent works the queue while your team works the deals.",
     pains: [
       {
-        icon: Phone,
+        icon: "Phone",
         title: "Governed outbound follow up",
         body: "Work approved lead queues with consent provenance, calling windows, and retry caps. Agent dials, navigates gatekeepers, runs your qualifier script, books the next step meeting, and logs every outcome for review.",
       },
       {
-        icon: Clock,
+        icon: "Clock",
         title: "Fast, governed speed to lead",
         body: "An approved inbound request can enter a monitored queue immediately. The workflow calls within the timing, consent, and retry limits you configure, then qualifies and offers an approved next step.",
       },
       {
-        icon: Calendar,
+        icon: "Calendar",
         title: "Calendar aware booking",
         body: "Reads your reps' real Google/Outlook availability. Offers 2 or 3 specific slots. Books it. Sends calendar invites with prep materials. No back and forth scheduling email tennis.",
       },
       {
-        icon: Shield,
+        icon: "Shield",
         title: "Outbound compliance controls",
         body: "The ledger records configured disclosures, opt outs, and suppression decisions. Workspace calling windows and attempt caps are checked before dial; marketing outreach remains blocked if required platform DNC coverage is not ready.",
       },

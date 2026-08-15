@@ -7,6 +7,7 @@ describe("billing proof contract", () => {
   it("keeps a single founder-catalog checkout owner reachable for new users", () => {
     const registry = read("src/server/register-api-routes.ts");
     const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
+    const atomicCheckout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
     const billingCard = read("src/components/StripeBillingCard.tsx");
 
@@ -16,6 +17,13 @@ describe("billing proof contract", () => {
     expect(launchCheckout).toContain('code: "FREE_PLAN_NO_CHECKOUT"');
     expect(launchCheckout).toContain('code: "ALREADY_SUBSCRIBED"');
     expect(launchCheckout).toContain('code: "LEGACY_PLAN_RETIRED"');
+    for (const checkout of [launchCheckout, atomicCheckout]) {
+      expect(checkout).toContain(
+        "This self-serve plan is no longer offered. Choose Pro for up to five live agents, or contact sales for a Scale rollout.",
+      );
+      expect(checkout).toContain('replacement: "business"');
+      expect(checkout).toContain('contact_sales: "/contact?topic=enterprise"');
+    }
     expect(launchCheckout).toContain("FOUNDER_CATALOG_VERSION");
     expect(launchCheckout).toContain(
       "success_url: `${appUrl.url}/settings/billing?billing=success",
@@ -35,7 +43,7 @@ describe("billing proof contract", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
-    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toMatch(/router\.post\(\s*"\/api\/billing\/portal"/);
     expect(portal).toContain("ensureManagedPortalConfiguration");
     expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
     expect(portal).not.toContain("return_url: `${appUrl.url}/admin`");
@@ -335,6 +343,7 @@ describe("billing proof contract", () => {
   it("bills SMS segments from Conversation Balance via a prepaid reservation", () => {
     const sms = read("src/lib/sms-billing.ts");
     const twilio = read("src/lib/twilio-service.ts");
+    const reconciliation = read("src/lib/twilio-message-reconciliation.ts");
     expect(sms).toContain("SMS_COST_PER_SEGMENT_USD = 0.02");
     // The legacy post-hoc debit path stays deleted: live SMS billing is the
     // prepaid reservation below, and billSmsMessage's swallow-and-return-0
@@ -344,7 +353,8 @@ describe("billing proof contract", () => {
       "export async function debitForVoiceUsage",
     );
     expect(twilio).toContain("reserveRuntimeUsage");
-    expect(twilio).toContain("adjustMessagingReservation");
+    expect(twilio).toContain("finalizeAcceptedTwilioMessage");
+    expect(reconciliation).toContain("adjustAcceptedTwilioReservation");
     expect(twilio).toContain("message.numSegments");
   });
 

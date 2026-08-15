@@ -13,7 +13,9 @@ describe("Stripe Checkout modernization contract", () => {
     expect(packageJson.dependencies?.stripe).toBe("^22.5.0");
 
     const helpers = read("src/lib/stripe-helpers.ts");
-    expect(helpers).toContain('"2026-07-29.dahlia"');
+    const apiVersion = read("src/lib/stripe-api-version.ts");
+    expect(apiVersion).toContain('"2026-07-29.dahlia"');
+    expect(helpers).toContain("export { STRIPE_API_VERSION }");
 
     for (const file of [
       "scripts/deactivate-retired-stripe-default-prices.mjs",

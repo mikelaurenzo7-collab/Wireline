@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { drizzle, log, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { runInBackground } from "../lib/background-work";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -9,7 +10,7 @@ import {
   runInAuditContext,
   type RuntimeCallMeta,
 } from "../lib/ai-audit";
-import { recordDailySpend, evaluateSpend } from "../lib/spend-guards";
+import { clearBudgetCache, recordDailySpend, evaluateSpend } from "../lib/spend-guards";
 
 function estimateAuditRecordCost(record: RuntimeCallMeta): number {
   // estimateCost normalizes gateway-prefixed ids ("xai/grok-4.5") to their bare
@@ -153,8 +154,211 @@ export async function persistPlatformCostRecord(opts: {
   );
 }
 
+export type PlatformCostReservation = {
+  auditId: bigint;
+  userId: string;
+  costUsd: number;
+};
+
+export type PlatformCostReservationDecision =
+  | { reserved: true; reservation: PlatformCostReservation }
+  | {
+      reserved: false;
+      reason: "cap_reached" | "unavailable";
+      period?: string;
+      monthToDateUsd?: number;
+      monthlyLimitUsd?: number;
+    };
+
+/**
+ * Atomically serialize fixed-cost platform reservations on the tenant budget
+ * row, verify fresh month-to-date spend, and write the audit debit before a
+ * browser receives a provider-funded realtime session.
+ */
+export async function reservePlatformCostRecord(opts: {
+  userId: string;
+  action: string;
+  provider: string;
+  model: string;
+  costUsd: number;
+  requestMeta?: Record<string, unknown>;
+}): Promise<PlatformCostReservationDecision> {
+  if (!(opts.costUsd > 0)) return { reserved: false, reason: "unavailable" };
+  const period = new Date().toISOString().slice(0, 7);
+  const periodStart = new Date(`${period}-01T00:00:00.000Z`);
+
+  try {
+    const decision = await drizzle.transaction(async (tx) => {
+      const [budget] = await tx
+        .select({
+          monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
+          hardCap: schema.spendBudgets.hardCap,
+          enabled: schema.spendBudgets.enabled,
+        })
+        .from(schema.spendBudgets)
+        .where(eq(schema.spendBudgets.userId, opts.userId))
+        .limit(1)
+        .for("update");
+
+      if (!budget) {
+        return { reserved: false, reason: "unavailable" } as const;
+      }
+
+      const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
+      const hardCapEnabled = budget.enabled !== false && budget.hardCap === true;
+      if (hardCapEnabled && !(monthlyLimitUsd > 0)) {
+        return { reserved: false, reason: "unavailable" } as const;
+      }
+
+      const [mtd] = await tx
+        .select({
+          costUsd: sql<string>`coalesce(sum(${schema.auditLog.costUsd}), 0)`.mapWith(String),
+        })
+        .from(schema.auditLog)
+        .where(
+          and(eq(schema.auditLog.userId, opts.userId), gte(schema.auditLog.createdAt, periodStart)),
+        );
+      const monthToDateUsd = Number(mtd?.costUsd || 0);
+      if (hardCapEnabled && monthToDateUsd + opts.costUsd > monthlyLimitUsd) {
+        return {
+          reserved: false,
+          reason: "cap_reached",
+          period,
+          monthToDateUsd,
+          monthlyLimitUsd,
+        } as const;
+      }
+
+      const [row] = await tx
+        .insert(schema.auditLog)
+        .values({
+          userId: opts.userId,
+          action: opts.action,
+          provider: opts.provider,
+          model: opts.model,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheCreateTokens: 0,
+          costUsd: String(opts.costUsd),
+          latencyMs: 0,
+          metadata: { ...(opts.requestMeta || {}), accounting_state: "reserved_before_provider" },
+        })
+        .returning({ id: schema.auditLog.id });
+      if (!row) throw new Error("Platform cost reservation insert returned no row.");
+
+      return {
+        reserved: true,
+        reservation: { auditId: row.id, userId: opts.userId, costUsd: opts.costUsd },
+      } as const;
+    });
+    clearBudgetCache(opts.userId);
+    return decision;
+  } catch (error) {
+    log.error("Platform cost reservation failed closed", {
+      userId: opts.userId,
+      action: opts.action,
+      error: getErrorMessage(error),
+    });
+    return { reserved: false, reason: "unavailable" };
+  }
+}
+
+/** Remove a pre-provider reservation after a definitive no-session outcome. */
+export async function releasePlatformCostReservation(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  await drizzle
+    .delete(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.id, reservation.auditId),
+        eq(schema.auditLog.userId, reservation.userId),
+      ),
+    );
+  clearBudgetCache(reservation.userId);
+}
+
+/** Publish telemetry after the already-durable reservation becomes real spend. */
+export async function commitPlatformCostReservation(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  recordDailySpend(reservation.costUsd);
+  await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
+    log.error("Reserved platform cost spend evaluation failed", {
+      userId: reservation.userId,
+      error: getErrorMessage(error),
+    }),
+  );
+}
+
+/**
+ * Daily AI-token ceiling, evaluated BEFORE the model call.
+ *
+ * `claude_tokens_daily` is described in tenant-quotas.ts as a hard cap and is
+ * sized per plan (200k/day on free, 20M on enterprise), but the only code that
+ * ever consulted it was `persistRuntimeAuditRecords` below — which runs after
+ * the provider has already billed, and whose `!allowed` branch writes nothing
+ * but a log line. The dimension counted spend without ever bounding it: a free
+ * tenant could run the 200k/day allowance a hundred times over and the only
+ * trace would be warnings in the server log. The other two vendor-metered
+ * dimensions (`voice_minutes_daily`, `simulation_minutes_daily`) each gate
+ * their route before the spend happens; this closes the same gap for tokens.
+ *
+ * Reads usage without incrementing, so `persistRuntimeAuditRecords` stays the
+ * single writer and the counter keeps tracking real tokens rather than request
+ * count. Because the check is a read of the previous total, the request that
+ * crosses the line still completes — the ceiling bounds the overshoot to one
+ * call, it is not a mid-call kill switch.
+ *
+ * Fails OPEN on a counter-store error, unlike `simulationMinuteQuota`. A
+ * realtime mint is one discrete vendor charge that is trivially deferred; an
+ * assistant reply is the product's core interaction, and taking every tenant
+ * offline on a quota-table blip is the worse failure. The monthly USD cap in
+ * `enforceSpendCap` remains the backstop that does fail closed.
+ */
+export async function getAiTokenQuotaExceeded(
+  userId: string,
+): Promise<{ limit: number; used: number } | null> {
+  try {
+    const [{ profile }, used] = await Promise.all([
+      quotaTracker.getProfile(userId),
+      quotaTracker.getUsage(userId, "claude_tokens_daily"),
+    ]);
+    const limit = profile.claude_tokens_daily;
+    return limit > 0 && used >= limit ? { limit, used } : null;
+  } catch (error) {
+    log.error("AI token quota check failed — allowing request", {
+      user_id: userId,
+      error: getErrorMessage(error),
+    });
+    return null;
+  }
+}
+
+/**
+ * Marks a route as AI-spending: enforces the daily token ceiling on the way in
+ * and persists the resulting spend on the way out. Enforcement lives here
+ * rather than as a separate middleware so the two can never drift — a route
+ * that meters its spend is a route that respects the ceiling, by construction.
+ */
 export function withAudit(actionPrefix: string) {
-  return (req: any, res: any, next: any) => {
+  return async (req: any, res: any, next: any) => {
+    const userId = req?.user?.id;
+    if (userId) {
+      const exceeded = await getAiTokenQuotaExceeded(userId);
+      if (exceeded) {
+        res.setHeader("Retry-After", "3600");
+        return res.status(429).json({
+          code: "AI_TOKEN_QUOTA_EXCEEDED",
+          error:
+            "You've reached today's AI usage limit for your plan. It resets at midnight UTC — scheduled calls and texts are unaffected.",
+          limit: exceeded.limit,
+          used: exceeded.used,
+          recovery_path: "/settings/billing",
+        });
+      }
+    }
     const ctx = createAuditContext();
     res.on("finish", () => {
       // Persist on 5xx too: the provider already billed the model call, so a

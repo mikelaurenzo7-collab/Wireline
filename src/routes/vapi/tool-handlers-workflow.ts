@@ -262,27 +262,60 @@ export async function handleWorkflowToolCall(
         }
       }
 
-      if (agent?.user_id) {
-        // Pass agent.id so per-agent escalation overrides
-        // (escalation_phone / escalation_email) route the
-        // alert to the right human for THIS agent specifically.
-        // Falls back to tenant-wide manager alert number when
-        // overrides aren't set.
-        const notifier = new NotificationService(agent.user_id, agent.id);
-        await notifier.sendUrgentAlert({
-          title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
-          message: warmTransferPhone
-            ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
-            : `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
-          callId: (payload.call as any)?.id || "unknown",
+      if (!agent?.user_id) throw new Error("Escalation tenant could not be resolved");
+
+      // A customer-facing promise is backed by a durable operator task before
+      // best-effort Slack/SMS/email fan-out. Replayed tool calls reuse the
+      // same call/tool source instead of fabricating a second obligation.
+      const escalationSourceId = callId || `tool:${toolCallId}`;
+      const [existingEscalation] = await drizzle
+        .select({ id: schema.followUpTasks.id })
+        .from(schema.followUpTasks)
+        .where(
+          and(
+            eq(schema.followUpTasks.userId, agent.user_id),
+            eq(schema.followUpTasks.sourceType, "phone_call"),
+            eq(schema.followUpTasks.sourceId, escalationSourceId),
+            eq(schema.followUpTasks.taskType, "human_escalation"),
+          ),
+        )
+        .limit(1);
+      if (!existingEscalation) {
+        await drizzle.insert(schema.followUpTasks).values({
+          userId: agent.user_id,
+          agentId: webhookAgentId,
+          sourceType: "phone_call",
+          sourceId: escalationSourceId,
+          targetChannel: warmTransferPhone ? "voice" : "manual",
+          taskType: "human_escalation",
+          description: `Human escalation requested: ${reason || "Caller requested a human."}`,
+          priority: "high",
+          status: "pending",
+          payload: {
+            reason: reason || null,
+            vapi_call_id: callId || null,
+            tool_call_id: toolCallId,
+          },
         });
       }
+
+      // Pass agent.id so per-agent escalation overrides route the alert to the
+      // right human. Channel fan-out improves speed, while the task above is
+      // the durable source of truth if every provider is unavailable.
+      const notifier = new NotificationService(agent.user_id, agent.id);
+      await notifier.sendUrgentAlert({
+        title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
+        message: warmTransferPhone
+          ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
+          : `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
+        callId: callId || "unknown",
+      });
 
       if (warmTransferPhone) {
         // Vapi tool-result schema supports a `destination` field per result.
         // When present, Vapi speaks `result` then transfers the call.
         if (callId && agent?.user_id) {
-          void recordEscalationOutcome({
+          await recordEscalationOutcome({
             vapiCallId: callId,
             userId: agent.user_id,
             succeeded: true,
@@ -300,7 +333,7 @@ export async function handleWorkflowToolCall(
       }
 
       if (callId && agent?.user_id) {
-        void recordEscalationOutcome({
+        await recordEscalationOutcome({
           vapiCallId: callId,
           userId: agent.user_id,
           succeeded: true,
@@ -309,11 +342,11 @@ export async function handleWorkflowToolCall(
       return {
         toolCallId,
         result:
-          "Human supervisors were alerted. Tell the caller the team has been notified, but do not promise a response time or guarantee that someone is immediately available.",
+          "I recorded this escalation for the team. Tell the caller the request is in the team's queue, but do not promise a response time or guarantee that someone is immediately available.",
       };
     } catch {
       if (callId && agent?.user_id) {
-        void recordEscalationOutcome({
+        await recordEscalationOutcome({
           vapiCallId: callId,
           userId: agent.user_id,
           succeeded: false,
@@ -321,7 +354,8 @@ export async function handleWorkflowToolCall(
       }
       return {
         toolCallId,
-        result: "I've noted the escalation. Someone from the team will be in touch shortly.",
+        result:
+          "I couldn't record or send the escalation right now. Please use the business's other contact method or ask me to try again.",
       };
     }
   }

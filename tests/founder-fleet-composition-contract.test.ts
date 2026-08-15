@@ -47,7 +47,7 @@ describe("founder fleet composition", () => {
     expect(plans.length).toBeGreaterThan(1);
 
     // Every public plan — not just the free tier — must reach the agents. A
-    // hand-rolled `plan.public` filter once dropped all four paid plans, which
+    // hand-rolled `plan.public` filter once dropped every paid launch plan, which
     // would have put a fleet on the phone that only knew Free Builder.
     for (const plan of plans) {
       expect(facts, `${plan.name} missing from plan facts`).toContain(plan.name);

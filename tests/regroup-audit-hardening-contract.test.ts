@@ -138,7 +138,7 @@ describe("comms hardening", () => {
     // First-contact thread creation tolerates the unique race on both paths.
     const persistBlock = webhook.slice(webhook.indexOf("const [createdThread]"));
     expect(persistBlock).toContain("onConflictDoNothing()");
-    expect(read("src/lib/twilio-service.ts")).toContain("onConflictDoNothing()");
+    expect(read("src/lib/twilio-message-reconciliation.ts")).toContain("onConflictDoNothing()");
   });
 
   it("every subscribable webhook event has a real producer", () => {

@@ -12,10 +12,14 @@ import {
   claimJobById,
   completeClaimedJob,
   enqueue,
-  failJob,
   getQueueStats,
+  settleClaimedJobError,
 } from "../lib/job-queue";
 import { handleJob } from "../lib/job-worker";
+import {
+  PROVIDER_SPEND_PAUSED_CODE,
+  PROVIDER_SPEND_PAUSE_DELAY_MS,
+} from "../lib/provider-spend-job-pause";
 import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
 import { apolloPlatformConfigured } from "../lib/apollo-service";
 import { KnowledgeIngestionUnavailableError } from "../lib/ai-brains";
@@ -187,14 +191,17 @@ router.post(
         await completeClaimedJob(drizzle, claimed);
       } catch (runErr) {
         if (runErr instanceof AppError) throw runErr;
-        await failJob(drizzle, claimed, getErrorMessage(runErr));
+        const settlement = await settleClaimedJobError(drizzle, claimed, runErr);
         const [failed] = await drizzle
           .select({ status: schema.jobs.status, error: schema.jobs.error })
           .from(schema.jobs)
           .where(eq(schema.jobs.id, jobId))
           .limit(1);
-        return res.status(500).json({
-          code: "INTERNAL_ERROR",
+        if (settlement === "deferred") {
+          res.setHeader("Retry-After", Math.ceil(PROVIDER_SPEND_PAUSE_DELAY_MS / 1000));
+        }
+        return res.status(settlement === "deferred" ? 503 : 500).json({
+          code: settlement === "deferred" ? PROVIDER_SPEND_PAUSED_CODE : "INTERNAL_ERROR",
           ok: false,
           status: failed?.status ?? "failed",
           error: failed?.error ?? getErrorMessage(runErr),
@@ -263,7 +270,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     const {
       claimJob: claim,
       completeClaimedJob: complete,
-      failJob: fail,
+      settleClaimedJobError: settle,
       enqueue: enqueueJob,
       recoverStaleJobs,
     } = await import("../lib/job-queue");
@@ -417,8 +424,12 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .from(schema.deletionQueue)
         .where(
           and(
-            eq(schema.deletionQueue.status, "pending"),
-            lte(schema.deletionQueue.scheduledPurgeAt, new Date()),
+            inArray(schema.deletionQueue.status, ["pending", "purging"]),
+            sql`(
+              ${schema.deletionQueue.status} = 'purging'
+              OR ${schema.deletionQueue.scheduledPurgeAt} IS NULL
+              OR ${schema.deletionQueue.scheduledPurgeAt} <= now()
+            )`,
           ),
         )
         .limit(50);
@@ -494,7 +505,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         await complete(drizzle, job);
         processed++;
       } catch (sweepErr: unknown) {
-        await fail(drizzle, job, getErrorMessage(sweepErr));
+        await settle(drizzle, job, sweepErr);
       }
     }
 

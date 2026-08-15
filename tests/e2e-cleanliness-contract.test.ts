@@ -28,18 +28,19 @@ describe("E2E cleanliness contracts", () => {
   it("self-configures a catalog-aware Stripe customer portal as the sole owner", () => {
     const registry = read("src/server/register-api-routes.ts");
     const portal = read("src/routes/billing-portal-readiness-routes.ts");
+    const portalPolicy = read("src/lib/stripe-portal-policy.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
     expect(registry).toContain("app.use(launchBillingCheckoutRouter)");
     expect(registry).not.toContain("subscriptionCheckoutGuardRouter");
-    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toMatch(/router\.post\(\s*"\/api\/billing\/portal"/);
     expect(portal).toContain("stripe.billingPortal.configurations.create");
     expect(portal).toContain("stripe.billingPortal.sessions.create");
-    expect(portal).toContain(
-      "wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}-${fingerprint}",
+    expect(portalPolicy).toContain(
+      "wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}-${portalProductsFingerprint(products)}",
     );
-    expect(portal).toContain("FOUNDER_CATALOG_VERSION");
+    expect(portalPolicy).toContain("FOUNDER_CATALOG_VERSION");
     expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');

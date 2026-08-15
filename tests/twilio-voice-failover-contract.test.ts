@@ -100,12 +100,13 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toContain("twilio-voicemail:");
     expect(routes).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
     expect(routes).toMatch(
-      /const persisted = await tenantStore\.run[\s\S]*if \(!persisted\) return res\.status\(200\)[\s\S]*Voicemail persisted during Vapi failover[\s\S]*return res\.status\(200\)/,
+      /const persisted = await tenantStore\.run[\s\S]*Duplicate Twilio voicemail callback reusing persisted call[\s\S]*Voicemail persisted during Vapi failover[\s\S]*return res\.status\(200\)/,
     );
     expect(routes).toContain("return res.status(503).send(twimlHangup())");
-    expect(routes).toContain('state: "timed_out"');
-    expect(routes).toContain("3_000");
-    expect(routes).toContain('log.warn("Voicemail owner notify was not accepted"');
+    expect(routes).toContain("idempotencyKey: `voicemail-failover/${recordingKey}`");
+    expect(routes).toContain('notification.disposition !== "suppressed"');
+    expect(routes).toContain("Voicemail owner notification was not accepted");
+    expect(routes).not.toContain("Promise.race([");
   });
 
   it("captures the voicemail transcript via a dedicated transcribeCallback", () => {

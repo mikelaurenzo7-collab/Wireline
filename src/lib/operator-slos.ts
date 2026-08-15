@@ -1,5 +1,5 @@
 import * as schema from "../db/schema";
-import { eq, and, gte, inArray, sql } from "drizzle-orm";
+import { eq, and, gte, inArray, or, sql } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import { getQueueStats, type QueueStats } from "./job-queue";
 import type { WebhookEvent } from "./webhook-helpers";
@@ -50,7 +50,7 @@ const DEFAULT_WINDOW_H = 24;
 export function evaluateAccountHolderSloHealth(input: {
   pendingJobs: number;
   deadEnrichmentWindow: number;
-  webhookAttemptsWindow: number;
+  webhookCompletedWindow: number;
   webhookSuccessRate: number | null;
   auditErrorsWindow: number;
 }): {
@@ -75,7 +75,7 @@ export function evaluateAccountHolderSloHealth(input: {
     input.deadEnrichmentWindow > 5 ? "critical" : input.deadEnrichmentWindow > 0 ? "warn" : "ok";
 
   let webhooks: SloHealth = "ok";
-  if (input.webhookAttemptsWindow >= 10) {
+  if (input.webhookCompletedWindow >= 10) {
     if (input.webhookSuccessRate !== null && input.webhookSuccessRate < 0.85) webhooks = "critical";
     else if (input.webhookSuccessRate !== null && input.webhookSuccessRate < 0.95)
       webhooks = "warn";
@@ -149,6 +149,39 @@ export function getSloWebhookEvents(
   return payloads;
 }
 
+/**
+ * Dead jobs that reached dead-letter INSIDE the window.
+ *
+ * `getQueueStats().dead` is an all-time count, and both snapshots used to hand
+ * it straight to `deadEnrichmentWindow`. Past six lifetime dead jobs the
+ * enrichment dimension pinned itself to "critical" and stayed there until
+ * retention eventually purged the rows — permanently red, firing the same
+ * `enrichment_failures` webhook on every evaluation, describing a window in
+ * which nothing had actually failed. A dimension that is always critical is a
+ * dimension operators stop reading, which is worse than not having it.
+ *
+ * `finishedAt` is the right column: job-queue stamps it exactly when retries
+ * are exhausted and the row flips to "dead".
+ */
+export async function getDeadJobsInWindow(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+  userId?: string,
+): Promise<number> {
+  const since = new Date(Date.now() - windowHours * 3_600_000);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.status, "dead"),
+        gte(schema.jobs.finishedAt, since),
+        userId ? eq(schema.jobs.userId, userId) : undefined,
+      ),
+    );
+  return Number(row?.count ?? 0);
+}
+
 export async function getPlatformWebhookStats(
   db: DrizzleDB,
   windowHours: number = DEFAULT_WINDOW_H,
@@ -195,43 +228,156 @@ export async function getPlatformWebhookStats(
   };
 }
 
+export interface PlatformJobWindowStats {
+  oldest_pending_age_seconds: number | null;
+  enrichment: {
+    pending: number;
+    running: number;
+    failed: number;
+    dead: number;
+    done_in_window: number;
+  };
+}
+
+/**
+ * Fleet-wide job measurements that cannot be derived from the aggregate queue
+ * counters alone.
+ *
+ * These fields used to be published as literal zero/null placeholders by the
+ * external-monitor snapshot. Query the actual enrichment states and requested
+ * completion window, and calculate the oldest pending age from the same
+ * run-at/created-at semantics used by the tenant snapshot.
+ */
+export async function getPlatformJobWindowStats(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+  now: Date = new Date(),
+): Promise<PlatformJobWindowStats> {
+  const since = new Date(now.getTime() - windowHours * 3_600_000);
+  const [row] = await db
+    .select({
+      oldestPendingAt: sql<
+        Date | string | null
+      >`min(coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt})) filter (where ${schema.jobs.status} = 'pending')`,
+      enrichmentPending: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'pending')`,
+      enrichmentRunning: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'running')`,
+      enrichmentFailed: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'failed')`,
+      enrichmentDead: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'dead' and ${schema.jobs.finishedAt} >= ${since})`,
+      enrichmentDone: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'done' and ${schema.jobs.finishedAt} >= ${since})`,
+    })
+    .from(schema.jobs)
+    // The status/run-at and type/created-at indexes can constrain this to the
+    // only two groups used by the filtered aggregate instead of scanning
+    // unrelated terminal job types.
+    .where(or(eq(schema.jobs.status, "pending"), eq(schema.jobs.type, "post_call_enrichment")));
+
+  const oldestPendingAt = row?.oldestPendingAt
+    ? new Date(row.oldestPendingAt).getTime()
+    : Number.NaN;
+
+  return {
+    oldest_pending_age_seconds: Number.isFinite(oldestPendingAt)
+      ? Math.max(0, Math.floor((now.getTime() - oldestPendingAt) / 1000))
+      : null,
+    enrichment: {
+      pending: Number(row?.enrichmentPending ?? 0),
+      running: Number(row?.enrichmentRunning ?? 0),
+      failed: Number(row?.enrichmentFailed ?? 0),
+      dead: Number(row?.enrichmentDead ?? 0),
+      done_in_window: Number(row?.enrichmentDone ?? 0),
+    },
+  };
+}
+
+/**
+ * Platform-wide AI reliability over the window.
+ *
+ * The per-tenant snapshot has always computed these from `wireline_audit_log`.
+ * The platform snapshot — the one an external monitor reads — returned literal
+ * zeros for all three AND passed `auditErrorsWindow: 0` into the health
+ * evaluator, which makes `ai_errors` a pure function of that input. So the
+ * platform's AI-reliability dimension was hardcoded "ok": no volume of model
+ * errors across the entire fleet could ever move it, and the monitor watching
+ * for exactly that was reading a constant.
+ */
+async function getPlatformAiReliability(
+  db: DrizzleDB,
+  windowHours: number,
+): Promise<{ calls: number; errorSeverity: number; critical: number }> {
+  const since = new Date(Date.now() - windowHours * 3_600_000);
+  const [callsRes, errRes, critRes] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(
+        and(eq(schema.auditLog.eventType, "ai.api_call"), gte(schema.auditLog.createdAt, since)),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(
+        and(
+          inArray(schema.auditLog.severity, ["error", "critical"]),
+          gte(schema.auditLog.createdAt, since),
+        ),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.auditLog)
+      .where(and(eq(schema.auditLog.severity, "critical"), gte(schema.auditLog.createdAt, since))),
+  ]);
+  return {
+    calls: Number(callsRes[0]?.count ?? 0),
+    errorSeverity: Number(errRes[0]?.count ?? 0),
+    critical: Number(critRes[0]?.count ?? 0),
+  };
+}
+
+/** Webhook deliveries still awaiting a retry right now, fleet-wide. */
+async function getPlatformWebhooksPendingRetry(db: DrizzleDB): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.webhookDeliveries)
+    .where(eq(schema.webhookDeliveries.status, "pending"));
+  return Number(row?.count ?? 0);
+}
+
 export async function getPlatformSloSnapshot(
   db: DrizzleDB,
   windowHours: number = DEFAULT_WINDOW_H,
 ): Promise<AccountHolderSloSnapshot> {
   const now = new Date();
   const evaluated_at = now.toISOString();
-  const queue = await getQueueStats(db);
-  const webhooks = await getPlatformWebhookStats(db, windowHours);
+  const [queue, jobWindow, webhooks, ai, pendingRetryNow] = await Promise.all([
+    getQueueStats(db),
+    getPlatformJobWindowStats(db, windowHours, now),
+    getPlatformWebhookStats(db, windowHours),
+    getPlatformAiReliability(db, windowHours),
+    getPlatformWebhooksPendingRetry(db),
+  ]);
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
-    deadEnrichmentWindow: queue.dead,
-    webhookAttemptsWindow: webhooks.attempts_in_window,
+    deadEnrichmentWindow: jobWindow.enrichment.dead,
+    webhookCompletedWindow: webhooks.success_in_window + webhooks.terminal_failure_in_window,
     webhookSuccessRate: webhooks.success_rate,
-    auditErrorsWindow: 0,
+    auditErrorsWindow: ai.errorSeverity,
   });
   return {
     window_hours: windowHours,
     evaluated_at,
     jobs: {
       queue,
-      oldest_pending_age_seconds: null,
-      enrichment: {
-        pending: 0,
-        running: 0,
-        failed: 0,
-        dead: queue.dead,
-        done_in_window: queue.done_last_hour,
-      },
+      oldest_pending_age_seconds: jobWindow.oldest_pending_age_seconds,
+      enrichment: jobWindow.enrichment,
     },
     webhooks: {
       ...webhooks,
-      pending_retry_now: 0,
+      pending_retry_now: pendingRetryNow,
     },
     ai_reliability: {
-      claude_calls_in_window: 0,
-      error_severity_events_in_window: 0,
-      critical_events_in_window: 0,
+      claude_calls_in_window: ai.calls,
+      error_severity_events_in_window: ai.errorSeverity,
+      critical_events_in_window: ai.critical,
     },
     dimensions: {
       jobs_queue: health.jobs_queue,
@@ -328,6 +474,10 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.userId, userId),
           eq(schema.jobs.type, "post_call_enrichment"),
           eq(schema.jobs.status, "dead"),
+          // Windowed like the "done" count below it. Without this the
+          // enrichment dimension latches critical on lifetime dead jobs — see
+          // getDeadJobsInWindow.
+          gte(schema.jobs.finishedAt, since),
         ),
       ),
     db
@@ -435,7 +585,7 @@ export async function getAccountHolderSloSnapshot(
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
     deadEnrichmentWindow: enDead,
-    webhookAttemptsWindow: attempts_in_window,
+    webhookCompletedWindow: completed_in_window,
     webhookSuccessRate: success_rate,
     auditErrorsWindow: errSev,
   });

@@ -47,10 +47,11 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
 
   it("fingerprints portal products so plan-switch choices stay current", () => {
     const portal = read("src/routes/billing-portal-readiness-routes.ts");
+    const policy = read("src/lib/stripe-portal-policy.ts");
     expect(portal).toContain("portalProductsFingerprint");
-    expect(portal).toContain("wireline_portal_products_fp");
-    expect(portal).toContain("PORTAL_PRODUCTS_FINGERPRINT_KEY");
-    expect(portal).not.toContain("`wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`");
+    expect(policy).toContain("wireline_portal_products_fp");
+    expect(policy).toContain("PORTAL_PRODUCTS_FINGERPRINT_KEY");
+    expect(policy).not.toContain("`wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`");
   });
 
   it("surfaces CRM disconnect failures instead of silent refresh", () => {

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router";
 import {
   ArrowRight,
-  Building2,
   Check,
   Crosshair,
   Mail,
@@ -76,19 +75,6 @@ const PAID_TIERS = [
     featured: false,
     badge: "Multi agent",
   },
-  {
-    plan: planById.enterprise,
-    publicName: "Business",
-    eyebrow: "For serious operators",
-    tagline: "Full phone coverage for growing teams.",
-    detail: "Up to fifteen purpose built agents with stronger governance and oversight.",
-    ctaMonthly: "Start Business",
-    ctaAnnual: "Start Business annually",
-    ctaPath: "/signup?plan=enterprise",
-    icon: Building2,
-    featured: false,
-    badge: "High capacity",
-  },
 ] as const;
 
 const CHANNEL_RULES = [
@@ -141,7 +127,7 @@ const FAQ = [
   ],
   [
     "What is Live Video?",
-    "Live Video is an optional $19/month add-on for paid business workspaces. It puts a selected business agent on screen with 60 reserved minutes each month, up to five minutes per session, and no automatic overage.",
+    "Live Video is an optional $19/month add-on for paid business workspaces. It puts a selected business agent on screen with 60 reserved allowance minutes each month, a five-minute wall-clock ceiling per session, and no automatic overage. The default Wireline voice reserves five allowance minutes per session; optional presenter-managed modes can reserve ten.",
   ],
   [
     "Why keep live usage prepaid?",
@@ -185,7 +171,7 @@ const pricingJsonLd = {
           price: 19,
           priceCurrency: "USD",
           description:
-            "Optional business-agent Live Video with 60 reserved minutes monthly and five-minute session ceilings.",
+            "Optional business-agent Live Video with 60 reserved allowance minutes monthly, five-minute wall-clock session ceilings, and a disclosed five- or ten-minute allowance reservation depending on voice mode.",
         },
       ],
     },
@@ -407,7 +393,8 @@ export default function Pricing() {
             <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-3 text-center text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Live Video · $19/mo</span>
               <span>60 reserved minutes</span>
-              <span>up to 5 minutes/session</span>
+              <span>5-minute wall-clock session max</span>
+              <span>managed voices may reserve 10 allowance minutes</span>
               <span>no automatic overage</span>
             </div>
           </div>

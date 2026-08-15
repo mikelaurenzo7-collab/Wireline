@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -20,6 +20,9 @@ import * as schema from "../db/schema";
 import type { AuthenticatedRequest } from "../types/auth";
 import { emitServerProductEvent } from "../lib/product-event-server";
 import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment";
+import { resolveStrictFounderPriceId } from "../lib/stripe-founder-price";
+import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
+import { findPotentiallyLiveStripeSubscription } from "../lib/stripe-subscription-safety";
 
 const router = Router();
 const CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -37,48 +40,6 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
   // customer never received entitlements.
   "paused",
 ]);
-
-async function resolveLaunchPriceId(
-  planId: string,
-  interval: "month" | "year",
-): Promise<string | null> {
-  const plan = planById(planId);
-  if (!plan) return null;
-  const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const envPriceId = envKey ? process.env[envKey]?.trim() : undefined;
-  if (envPriceId) {
-    try {
-      const price = await stripe.prices.retrieve(envPriceId);
-      if (
-        price.active &&
-        price.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
-        price.metadata?.wireline_plan_id === plan.id
-      ) {
-        return price.id;
-      }
-    } catch (error) {
-      log.warn("Configured Stripe price could not be validated; using lookup key", {
-        planId: plan.id,
-        interval,
-        envKey,
-        error: getErrorMessage(error),
-      });
-    }
-  }
-
-  const lookupKey = planLookupKey(plan, interval);
-  if (!lookupKey) return null;
-  const prices = await stripe.prices.list({ active: true, lookup_keys: [lookupKey], limit: 1 });
-  const price = prices.data[0];
-  if (
-    !price ||
-    price.metadata?.wireline_plan_id !== plan.id ||
-    price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION
-  ) {
-    return null;
-  }
-  return price.id;
-}
 
 async function markCheckoutOperation(
   id: string,
@@ -115,29 +76,6 @@ async function failCheckoutOperation(
     .where(and(eq(checkoutOperations.id, id), eq(checkoutOperations.status, "creating")));
 }
 
-async function reusableStripeCustomerId(
-  customerId: string,
-  userId: string,
-): Promise<string | null> {
-  try {
-    const customer = await stripe.customers.retrieve(customerId);
-    if ("deleted" in customer && customer.deleted) return null;
-    const boundUserId = customer.metadata?.wireline_user_id?.trim();
-    if (boundUserId && boundUserId !== userId) {
-      log.error("Stored Stripe customer belongs to a different Wireline user", {
-        userId,
-        customerId,
-        boundUserId,
-      });
-      return null;
-    }
-    return customer.id;
-  } catch (error) {
-    if (isMissingStripeResource(error)) return null;
-    throw error;
-  }
-}
-
 async function ensureStripeCustomer(
   userId: string,
   email: string,
@@ -145,25 +83,13 @@ async function ensureStripeCustomer(
   attributionMetadata: Record<string, string>,
 ): Promise<{ id: string; recovered: boolean }> {
   if (existingCustomerId) {
-    const reusableId = await reusableStripeCustomerId(existingCustomerId, userId);
-    if (reusableId) {
-      if (Object.keys(attributionMetadata).length) {
-        try {
-          await stripe.customers.update(reusableId, {
-            metadata: { wireline_user_id: userId, ...attributionMetadata },
-          });
-        } catch (error) {
-          if (!isMissingStripeResource(error)) throw error;
-          // The customer was deleted between validation and update. Fall
-          // through to the deterministic recovery create below.
-        }
-      } else {
-        return { id: reusableId, recovered: false };
-      }
-
-      const stillReusable = await reusableStripeCustomerId(reusableId, userId);
-      if (stillReusable) return { id: stillReusable, recovered: false };
-    }
+    const reusable = await resolveOwnedStripeCustomer({
+      customerId: existingCustomerId,
+      userId,
+      authenticatedEmail: email,
+      metadata: attributionMetadata,
+    });
+    if (reusable) return { id: reusable.id, recovered: false };
   }
 
   const idempotencyKey = existingCustomerId
@@ -220,8 +146,9 @@ router.post(
       return res.status(410).json({
         code: "LEGACY_PLAN_RETIRED",
         error:
-          "This personal subscription is no longer offered. Start free on Builder, then choose Starter or higher for live work.",
-        replacement: "starter",
+          "This self-serve plan is no longer offered. Choose Pro for up to five live agents, or contact sales for a Scale rollout.",
+        replacement: "business",
+        contact_sales: "/contact?topic=enterprise",
       });
     }
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {
@@ -251,18 +178,14 @@ router.post(
       });
     }
     if (existing?.stripeCustomerId) {
-      const reusableCustomerId = await reusableStripeCustomerId(
-        existing.stripeCustomerId,
-        req.user.id,
-      );
-      if (reusableCustomerId) {
+      const reusableCustomer = await resolveOwnedStripeCustomer({
+        customerId: existing.stripeCustomerId,
+        userId: req.user.id,
+        authenticatedEmail: req.user.email,
+      });
+      if (reusableCustomer) {
         try {
-          const remote = await stripe.subscriptions.list({
-            customer: reusableCustomerId,
-            status: "all",
-            limit: 20,
-          });
-          const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
+          const liveRemote = await findPotentiallyLiveStripeSubscription(reusableCustomer.id);
           if (liveRemote) {
             return res.status(409).json({
               code: "ALREADY_SUBSCRIBED",
@@ -301,7 +224,7 @@ router.post(
       }).filter(([, value]) => Boolean(value)),
     ) as Record<string, string>;
 
-    const priceId = await resolveLaunchPriceId(plan.id, interval);
+    const priceId = await resolveStrictFounderPriceId(plan.id, interval);
     if (!priceId) {
       return res.status(503).json({
         code: "SERVICE_UNAVAILABLE",

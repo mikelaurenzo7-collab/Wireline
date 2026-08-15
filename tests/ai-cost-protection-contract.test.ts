@@ -30,10 +30,10 @@ describe("AI cost-protection contract", () => {
   });
 
   it("meters every AI setup surface and caps the simulation one", () => {
-    // Policy: RECORD cost everywhere a paid model is reached, but only HARD CAP
-    // the simulation surface. The Free Builder budget is a private-simulation
-    // allowance (migration 0134); capping configuration work would strand an
-    // Account Holder mid-onboarding once the allowance is spent.
+    // Policy: RECORD cost everywhere a paid model is reached. Setup routes that
+    // do not reserve a bounded maximum retain post-hoc metering; the website
+    // import has a strict input/output ceiling and therefore reserves that
+    // maximum atomically, then settles to actual usage.
     //
     // withAudit must also sit AFTER the authenticating middleware: it keys the
     // persisted row on req.user.id at "finish", so mounting it earlier silently
@@ -69,11 +69,19 @@ describe("AI cost-protection contract", () => {
       website.indexOf('"/api/agent-config/:id/website"'),
       website.indexOf("async (req: AuthenticatedRequest"),
     );
-    expect(websiteRoute).toContain('withAudit("website-import")');
-    expect(websiteRoute).not.toContain("enforceSpendCap");
+    expect(websiteRoute).toContain("enforceLaunchHardGate");
+    expect(websiteRoute).not.toContain('withAudit("website-import")');
+    expect(website).toContain("runWithWebsiteKnowledgeSpend");
     expect(websiteRoute.indexOf("authenticateUser")).toBeLessThan(
-      websiteRoute.indexOf('withAudit("website-import")'),
+      websiteRoute.indexOf("enforceLaunchHardGate"),
     );
+    const websiteSpend = read("src/lib/website-knowledge-spend.ts");
+    expect(websiteSpend).toContain("reservePlatformCostRecord");
+    expect(websiteSpend).toContain("month_to_date_usd");
+    expect(websiteSpend).toContain('"SPEND_CAP_REACHED"');
+    expect(websiteSpend).toContain('"SPEND_GUARD_UNAVAILABLE"');
+    expect(websiteSpend).toContain('"settled_actual"');
+    expect(websiteSpend).toContain('"settled_with_ambiguous_floor"');
   });
 
   it("caps forced daily-brief composes and meters the cron sweep per tenant", () => {
@@ -244,8 +252,8 @@ describe("AI cost-protection contract", () => {
     ]) {
       const route = read(path);
       expect(route, path).toContain("enforceSpendCap");
-      expect(route, path).toContain('platformCostReserveUsd("openai_realtime_session")');
-      expect(route, path).toContain('action: "voice.realtime.session"');
+      expect(route, path).toContain("reserveRealtimeSessionSpend");
+      expect(route, path).toContain("releaseRealtimeSessionSpendAfterFailure");
       // Cap BEFORE quota: simulationMinuteQuota durably debits five minutes,
       // so a capped tenant's rejected attempts must not consume the daily
       // allowance they would still need after raising the cap.
@@ -253,16 +261,30 @@ describe("AI cost-protection contract", () => {
       expect(route.indexOf("enforceSpendCap,"), path).toBeLessThan(
         route.indexOf("simulationMinuteQuota,"),
       );
+      expect(route.indexOf("validateBody("), path).toBeLessThan(
+        route.indexOf("simulationMinuteQuota,"),
+      );
+      expect(
+        route.indexOf("const reservation = await reserveRealtimeSessionSpend"),
+        path,
+      ).toBeLessThan(route.indexOf("session = await createOpenAI"));
     }
-    expect(mcpSimulation).toContain("isHardSpendCapExceeded(authed.userId)");
-    // Same ordering rule for the JSON-RPC path: cap check ahead of the
-    // durable quota increment.
-    expect(mcpSimulation.indexOf("isHardSpendCapExceeded")).toBeLessThan(
-      mcpSimulation.indexOf("checkAndIncrement"),
+    expect(mcpSimulation).toContain("reservePlatformCostRecord({");
+    expect(mcpSimulation.indexOf("reservePlatformCostRecord({")).toBeLessThan(
+      mcpSimulation.indexOf("createOpenAIRealtimeClientSecret({"),
     );
+    // The locked cap reservation happens after the daily-minute debit, so a
+    // cap refusal must return that exact-period quota reservation.
+    expect(mcpSimulation).toContain("quotaTracker.releaseUsage(");
+    expect(mcpSimulation).toContain("quota.period_key");
+    expect(mcpSimulation).toContain("releasePlatformCostReservation(spendDecision.reservation)");
+    expect(mcpSimulation).not.toContain("persistPlatformCostRecord({");
     expect(mcpSimulation).toContain('platformCostReserveUsd("openai_realtime_session")');
     const middleware = read("src/middleware/audit-middleware.ts");
+    const realtimeReserve = read("src/lib/realtime-spend-reservation.ts");
     expect(middleware).toContain("openai_realtime_session");
+    expect(realtimeReserve).toContain('platformCostReserveUsd("openai_realtime_session")');
+    expect(realtimeReserve).toContain('action: "voice.realtime.session"');
   });
 
   it("persists AI spend accounting on every outcome, pinned to the invocation", () => {

@@ -293,7 +293,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         );
     }
 
-    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
+    // Exact only — see matchesCarrierKeyword. Both this branch and the HELP
+    // branch below answer the webhook and return, so a leading-word match on an
+    // ordinary reply ("Yes please, 3pm works", "Help me reschedule") wrote a
+    // consent event the consumer never sent and dropped their message before it
+    // could reach the inbound store further down this handler.
+    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact")) {
       try {
         await drizzle
           .delete(schema.dncList)
@@ -336,7 +341,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
     }
 
-    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS)) {
+    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact")) {
       return res
         .status(200)
         .send(
@@ -367,7 +372,9 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         const [createdThread] = await tx
           .insert(schema.smsThreads)
           .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 0 })
-          .onConflictDoNothing({ target: [schema.smsThreads.userId, schema.smsThreads.customerNumber] })
+          .onConflictDoNothing({
+            target: [schema.smsThreads.userId, schema.smsThreads.customerNumber],
+          })
           .returning({ id: schema.smsThreads.id });
 
         const [thread] = createdThread
@@ -408,10 +415,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
             status: "open",
           })
           .where(
-            and(
-              eq(schema.smsThreads.id, thread.id),
-              eq(schema.smsThreads.userId, tenantUserId),
-            ),
+            and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, tenantUserId)),
           );
       });
     } catch (e: any) {
@@ -558,57 +562,54 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
         .returning({ id: schema.callLogs.id });
 
+      const [existing] = inserted
+        ? [inserted]
+        : await drizzle
+            .select({ id: schema.callLogs.id })
+            .from(schema.callLogs)
+            .where(eq(schema.callLogs.vapiCallId, `twilio-voicemail:${recordingKey}`))
+            .limit(1);
+      const voicemail = inserted ?? existing;
+      if (!voicemail) {
+        throw new Error("Voicemail insert conflicted but the persisted call could not be loaded");
+      }
       if (!inserted) {
-        log.info("Duplicate Twilio voicemail callback ignored", {
+        log.info("Duplicate Twilio voicemail callback reusing persisted call", {
           recording_sid_suffix: opaqueIdSuffixForLog(recordingSid),
         });
-        return false;
       }
 
-      try {
-        const [owner] = await drizzle
-          .select({ email: schema.users.email })
-          .from(schema.users)
-          .where(eq(schema.users.id, tenantUserId))
-          .limit(1);
-        if (owner?.email) {
-          const { sendEmail } = await import("../lib/email-service");
-          const voicemailEmail = buildFailoverVoicemailEmail({
-            from,
-            to,
-            durationSeconds,
-            recordingUrl: publicAssetUrl(`/api/calls/${String(inserted.id)}/recording`),
-            transcription,
-          });
-          const notification = await Promise.race([
-            sendEmail({
-              to: owner.email,
-              subject: "Wireline: voicemail left during call failover",
-              ...voicemailEmail,
-            }).then((result) => ({ state: "settled" as const, result })),
-            new Promise<{ state: "timed_out" }>((resolve) => {
-              const timer = setTimeout(() => resolve({ state: "timed_out" }), 3_000);
-              timer.unref?.();
-            }),
-          ]);
-          if (notification.state === "timed_out") {
-            log.warn("Voicemail owner notify exceeded webhook budget");
-          } else if (!notification.result.ok) {
-            log.warn("Voicemail owner notify was not accepted", {
-              provider: notification.result.provider,
-              error: notification.result.error,
-            });
-          }
-        }
-      } catch (notifyErr) {
-        log.warn("Voicemail owner notify failed", {
-          error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+      const [owner] = await drizzle
+        .select({ email: schema.users.email })
+        .from(schema.users)
+        .where(eq(schema.users.id, tenantUserId))
+        .limit(1);
+      if (owner?.email) {
+        const { sendEmail } = await import("../lib/email-service");
+        const voicemailEmail = buildFailoverVoicemailEmail({
+          from,
+          to,
+          durationSeconds,
+          recordingUrl: publicAssetUrl(`/api/calls/${String(voicemail.id)}/recording`),
+          transcription,
         });
+        const notification = await sendEmail({
+          to: owner.email,
+          subject: "Wireline: voicemail left during call failover",
+          ...voicemailEmail,
+          idempotencyKey: `voicemail-failover/${recordingKey}`,
+        });
+        if (!notification.ok && notification.disposition !== "suppressed") {
+          throw new Error(notification.error || "Voicemail owner notification was not accepted");
+        }
+        if (notification.disposition === "suppressed") {
+          log.warn("Voicemail owner notification suppressed", {
+            provider: notification.provider,
+          });
+        }
       }
-      return true;
+      return { inserted: Boolean(inserted) };
     });
-
-    if (!persisted) return res.status(200).send(twimlHangup());
 
     log.info("Voicemail persisted during Vapi failover", {
       tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
@@ -616,6 +617,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
       to_suffix: phoneSuffixForLog(to),
       has_recording: true,
       has_transcript: Boolean(transcription),
+      duplicate_callback: !persisted.inserted,
     });
     return res.status(200).send(twimlHangup());
   } catch (err) {

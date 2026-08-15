@@ -15,12 +15,13 @@ import {
   bigint,
   jsonb,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0129_audit_log_server_read_policy.sql`.
+// `drizzle/migrations/0150_post_call_digest_job_idempotency.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -1842,11 +1843,24 @@ export const jobs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  () => ({
+  (t) => ({
     statusRunAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_status_run_at ON wireline_jobs USING btree (status, run_at)`,
     userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON wireline_jobs USING btree (user_id, status)`,
     // The sweep's dedup guards all filter WHERE type = $1 AND created_at >= $2.
     typeCreatedAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_type_created_at ON wireline_jobs USING btree (type, created_at)`,
+    // One durable post-call workflow owns every call. The expression keeps the
+    // existing generic JSON payload while making webhook redelivery and worker
+    // recovery converge on the same queue row at the database boundary.
+    postCallDigestPerCallUniq: uniqueIndex("uq_jobs_post_call_digest_call")
+      .on(t.userId, sql`(${t.payload}->>'callLogId')`)
+      .where(sql`${t.type} = 'post_call_digest'`),
+    // Artifact/QA child jobs are safe to enqueue again after a parent worker
+    // crash because both attempts converge on the same parent digest identity.
+    postCallChildPerDigestUniq: uniqueIndex("uq_jobs_post_call_child_per_digest")
+      .on(t.userId, t.type, sql`(${t.payload}->>'postCallDigestJobId')`)
+      .where(
+        sql`${t.type} IN ('post_call_artifact', 'auto_qa_score') AND (${t.payload}->>'postCallDigestJobId') IS NOT NULL`,
+      ),
   }),
 );
 

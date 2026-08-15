@@ -136,6 +136,10 @@ const recommended = [
     "Valid physical postal address required before commercial email can send",
   ],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
+  [
+    "WIRELINE_RECONCILE_STRIPE_PORTAL",
+    "Production release control for idempotent managed Customer Portal reconciliation",
+  ],
 
   // Canonical Founder Early Access catalog. These keys mirror
   // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
@@ -230,7 +234,9 @@ function isValidEnvValue(key, value) {
     if (/^vcp_/i.test(trimmed) || /^vercel_/i.test(trimmed)) return false;
     return trimmed.length >= 8;
   }
-  if (key === "STRIPE_SECRET_KEY") return /^sk_(test|live)_/.test(String(value).trim());
+  if (key === "STRIPE_SECRET_KEY") {
+    return /^(?:sk|rk)_(?:test|live)_/.test(String(value).trim());
+  }
   return true;
 }
 

@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+
+import * as canonicalSchema from "../src/db/schema";
+import * as securitySchema from "../src/db/security-schema";
 
 import {
   ACCOUNT_EXPORT_SECURITY_ONLY_TABLES,
@@ -24,6 +28,8 @@ describe("strict prelaunch account export and Twilio contracts", () => {
       idToken: "oauth-id-token",
       refreshToken: "oauth-refresh",
       password_hash: "password-hash",
+      checkout_url: "https://checkout.stripe.com/c/pay/cs_live_sensitive",
+      stripe_checkout_session_id: "cs_live_sensitive",
       secret: "webhook-secret",
       secret_last_four: "1234",
       input_tokens: 42,
@@ -124,6 +130,80 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).not.toContain("jobsRateLimit");
     expect(route).toContain('source_registry: "ACCOUNT_DELETION_TARGETS"');
     expect(route).toContain("sql.join(predicates, sql` OR `)");
+  });
+
+  it("covers launch operation rows without exporting reusable checkout links", () => {
+    const deletion = read("src/lib/account-deletion.ts");
+    const exportPolicy = read("src/lib/account-export.ts");
+
+    expect(deletion).toContain(
+      '{ table: "wireline_outbound_dial_reservations", userColumns: ["user_id"] }',
+    );
+    expect(deletion).toContain(
+      '{ table: "wireline_checkout_operations", userColumns: ["user_id"] }',
+    );
+    expect(exportPolicy).toContain('"checkout_url"');
+    expect(exportPolicy).toContain('"stripe_checkout_session_id"');
+  });
+
+  it("keeps every directly tenant-owned schema table in the deletion/export registry", () => {
+    const deletion = read("src/lib/account-deletion.ts");
+    const coveredTables = new Set(
+      [...deletion.matchAll(/\{\s*table:\s*"(wireline_[^"]+)"/g)].map((match) => match[1]),
+    );
+    const missing = new Set<string>();
+
+    for (const candidate of [...Object.values(canonicalSchema), ...Object.values(securitySchema)]) {
+      try {
+        const tableName = getTableName(candidate as Parameters<typeof getTableName>[0]);
+        const columns = Object.values(
+          getTableColumns(candidate as Parameters<typeof getTableColumns>[0]),
+        );
+        if (
+          tableName.startsWith("wireline_") &&
+          columns.some((column) => column.name === "user_id") &&
+          !coveredTables.has(tableName)
+        ) {
+          missing.add(tableName);
+        }
+      } catch {
+        // The schema modules also export enums/constants; only table values are relevant.
+      }
+    }
+
+    expect([...missing].sort()).toEqual([]);
+  });
+
+  it("streams the archive instead of materializing the whole account in memory", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // Peak memory used to scale with the tenant's entire history, so the export
+    // 500'd reproducibly for exactly the largest customers — the ones whose
+    // data-portability request matters most.
+    expect(route).toContain("EXPORT_PAGE_ROWS");
+    expect(route).toContain("LIMIT ${EXPORT_PAGE_ROWS} OFFSET ${offset}");
+    expect(route).toContain("ORDER BY ctid");
+    expect(route).toContain("res.write(");
+    // No unbounded whole-table read, and no single json() of the full archive.
+    expect(route).not.toContain("res.status(200).json(exportPackage)");
+    expect(route).not.toMatch(
+      /SELECT \* FROM \$\{sql\.raw\(target\.table\)\} WHERE[^]*?\)\)\s*as ExecuteResult/,
+    );
+  });
+
+  it("validates every ownership predicate before the first byte is written", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // Once bytes are on the wire there is no status code left to send, so the
+    // one error meaning "this code is unsafe" has to surface first.
+    expect(route.indexOf("Unsafe account export target without ownership predicate")).toBeLessThan(
+      route.indexOf("res.write('{\"tables\":{')"),
+    );
+  });
+
+  it("aborts rather than emitting a well-formed but incomplete archive", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // A truncated download is an obvious failure; a parseable document missing
+    // half the tenant's history would be accepted as complete.
+    expect(route).toContain("res.destroy()");
   });
 
   it("keeps the historical training archive in tenant-scoped exports", () => {

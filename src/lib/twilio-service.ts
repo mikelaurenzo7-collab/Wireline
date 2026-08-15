@@ -8,9 +8,11 @@ import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
 import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing";
 import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { isLaunchHardBlocked } from "./launch-readiness";
 import { assertLiveWorkEntitlementForUser } from "./trial-gate";
+import { finalizeAcceptedTwilioMessage } from "./twilio-message-reconciliation";
 import {
   createTwilioMessageWithRateLimitRetry,
   withTwilioMessageReliability,
@@ -19,6 +21,7 @@ import {
   getTwilioClient,
   isTwilioConfigured,
   lookupTenantPhoneNumber,
+  SMS_PROVIDER_OUTCOME_AMBIGUOUS,
   type TwilioMessageChannel,
   type TwilioSendResult,
 } from "./twilio-service-base";
@@ -55,6 +58,20 @@ function money(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+export function twilioMessageReservationReference(input: {
+  channel: TwilioMessageChannel;
+  idempotencyKey?: string;
+  reservationAttempt?: number;
+}): string {
+  const operationKey = String(input.idempotencyKey || "").trim() || randomUUID();
+  const parsedAttempt = Number(input.reservationAttempt);
+  const attemptSuffix =
+    Number.isFinite(parsedAttempt) && parsedAttempt > 0
+      ? `:attempt:${Math.floor(parsedAttempt)}`
+      : "";
+  return `twilio_message:${input.channel}:${operationKey}${attemptSuffix}`;
+}
+
 /** Conservative pre-send segment estimate. Smart Encoding can lower the final Twilio count. */
 export function estimateSmsSegments(body: string): number {
   let gsmUnits = 0;
@@ -70,6 +87,96 @@ export function estimateSmsSegments(body: string): number {
   if (gsm) return gsmUnits <= 160 ? 1 : Math.ceil(gsmUnits / 153);
   const unicodeUnits = body.length;
   return unicodeUnits <= 70 ? 1 : Math.ceil(unicodeUnits / 67);
+}
+
+/**
+ * Repair a reserve left by a failed pre-provider latch before a later durable
+ * attempt creates a new reserve. The burn lookup prevents a speculative refund
+ * from crediting money that was never debited; refundRuntimeUsage makes the
+ * matching credit idempotent when the first cleanup actually succeeded.
+ */
+export async function refundReservedTenantMessageAttempt(input: {
+  userId: string;
+  idempotencyKey: string;
+  reservationAttempt: number;
+  channel?: TwilioMessageChannel;
+}): Promise<boolean> {
+  const channel = input.channel || "sms";
+  const referenceId = twilioMessageReservationReference({
+    channel,
+    idempotencyKey: input.idempotencyKey,
+    reservationAttempt: input.reservationAttempt,
+  });
+  const [burn] = await drizzle
+    .select({
+      id: schema.creditLedger.id,
+      deltaUsd: schema.creditLedger.deltaUsd,
+    })
+    .from(schema.creditLedger)
+    .where(
+      and(
+        eq(schema.creditLedger.userId, input.userId),
+        eq(schema.creditLedger.idempotencyKey, `runtime_usage:${referenceId}`),
+        eq(schema.creditLedger.entryKind, "burn"),
+        eq(schema.creditLedger.refId, referenceId),
+      ),
+    )
+    .limit(1);
+  if (!burn) return false;
+
+  // Use the persisted debit as the refund source of truth. Recomputing from
+  // today's segment/pricing configuration could under- or over-refund a prior
+  // attempt after a deploy or rate change (and WhatsApp may now be disabled).
+  const amountUsd = Math.abs(Number(burn.deltaUsd));
+  if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
+    throw new Error("Cannot reconcile a Twilio reservation with an invalid ledger debit.");
+  }
+  await refundRuntimeUsage({
+    userId: input.userId,
+    amountUsd,
+    referenceId,
+    reason: "Twilio provider attempt did not start",
+    provider: "twilio",
+    source: "twilio",
+    metadata: { channel, pre_provider_reconciliation: true, original_burn_id: String(burn.id) },
+  });
+  return true;
+}
+
+/**
+ * Durable proof that a claimed message attempt was definitely not accepted by
+ * Twilio. Both a pre-provider failure and an explicit provider 4xx write this
+ * refund; ambiguous network/5xx outcomes deliberately retain the debit and do
+ * not produce one. A caller may open a new provider attempt only when this
+ * exact attempt-scoped proof exists.
+ */
+export async function hasDurableTenantMessageAttemptRefund(input: {
+  userId: string;
+  idempotencyKey: string;
+  reservationAttempt: number;
+  channel?: TwilioMessageChannel;
+}): Promise<boolean> {
+  const channel = input.channel || "sms";
+  const referenceId = twilioMessageReservationReference({
+    channel,
+    idempotencyKey: input.idempotencyKey,
+    reservationAttempt: input.reservationAttempt,
+  });
+  const [refund] = await drizzle
+    .select({ id: schema.creditLedger.id, entryKind: schema.creditLedger.entryKind })
+    .from(schema.creditLedger)
+    .where(
+      and(
+        eq(schema.creditLedger.userId, input.userId),
+        eq(schema.creditLedger.entryKind, "refund"),
+        eq(schema.creditLedger.refType, "runtime_usage_refund"),
+        eq(schema.creditLedger.refId, referenceId),
+        eq(schema.creditLedger.idempotencyKey, `runtime_usage_refund:${referenceId}`),
+        eq(schema.creditLedger.provider, "twilio"),
+      ),
+    )
+    .limit(1);
+  return Boolean(refund);
 }
 
 async function settingsFor(userId: string): Promise<MessagingSettings> {
@@ -126,117 +233,31 @@ function whatsappCustomerRate(): number | null {
   return Number.isFinite(rate) && rate > 0 ? money(rate) : null;
 }
 
-async function persistOutbound(input: {
+async function persistAmbiguousTwilioProviderOutcome(input: {
   userId: string;
-  customerNumber: string;
-  body: string;
-  sid: string;
-  agentId?: string;
-}) {
-  try {
-    const current = await existingThread(input.userId, input.customerNumber);
-    let threadId = current?.id;
-    if (current) {
-      await drizzle
-        .update(schema.smsThreads)
-        .set({
-          lastMessageAt: new Date(),
-          status: "open",
-          ...(input.agentId && !current.agentId ? { agentId: input.agentId } : {}),
-        })
-        .where(eq(schema.smsThreads.id, current.id));
-    } else {
-      // First-contact race with the inbound webhook: tolerate the
-      // (user, customer) unique collision and adopt the winner's thread so
-      // the outbound message row is still written.
-      const [created] = await drizzle
-        .insert(schema.smsThreads)
-        .values({
-          userId: input.userId,
-          customerNumber: input.customerNumber,
-          agentId: input.agentId || null,
-          unreadCount: 0,
-        })
-        .onConflictDoNothing()
-        .returning({ id: schema.smsThreads.id });
-      threadId = created?.id;
-      if (!threadId) {
-        const winner = await existingThread(input.userId, input.customerNumber);
-        threadId = winner?.id;
-      }
-    }
-    if (threadId) {
-      await drizzle.insert(schema.smsMessages).values({
-        userId: input.userId,
-        threadId,
-        direction: "out",
-        body: input.body,
-        twilioSid: input.sid,
-        agentId: input.agentId || null,
-      });
-    }
-  } catch (error) {
-    log.warn("Twilio outbound thread persistence failed", { error: getErrorMessage(error) });
-  }
-}
-
-async function adjustMessagingReservation(input: {
-  userId: string;
-  referenceId: string;
-  estimatedUsd: number;
-  actualUsd: number;
-  channel: TwilioMessageChannel;
-  sid: string;
-  actualSegments: number;
+  reservationReference: string;
+  destinationSuffix: string;
+  providerStatus: number | null;
 }): Promise<void> {
-  const difference = money(input.actualUsd - input.estimatedUsd);
-  if (difference === 0) return;
-  const adjustmentReference = `${input.referenceId}:actual`;
-
-  if (difference < 0) {
-    await refundRuntimeUsage({
+  // Exit a possibly failed request transaction so the incident gets an
+  // independent durable write. Message content and the full destination are
+  // deliberately excluded from both the row and its metadata.
+  await tenantStore.exit(() =>
+    drizzle.insert(schema.auditLog).values({
       userId: input.userId,
-      amountUsd: Math.abs(difference),
-      referenceId: adjustmentReference,
-      reason: "Twilio segment estimate adjustment",
+      action: "twilio.message_provider_outcome_ambiguous",
+      eventType: "provider.reconciliation",
+      severity: "critical",
       provider: "twilio",
-      source: "twilio",
+      resourceType: "twilio_message_reservation",
+      resourceId: input.reservationReference,
       metadata: {
-        channel: input.channel,
-        message_sid: input.sid,
-        actual_segments: input.actualSegments,
-        estimated_usd: input.estimatedUsd,
-        actual_usd: input.actualUsd,
+        reservation_reference: input.reservationReference,
+        destination_suffix: input.destinationSuffix,
+        provider_status: input.providerStatus,
       },
-    });
-    return;
-  }
-
-  const adjustment = await reserveRuntimeUsage({
-    userId: input.userId,
-    amountUsd: difference,
-    referenceId: adjustmentReference,
-    reason: "Twilio segment count adjustment",
-    provider: "twilio",
-    source: "twilio",
-    metadata: {
-      channel: input.channel,
-      message_sid: input.sid,
-      actual_segments: input.actualSegments,
-      estimated_usd: input.estimatedUsd,
-      actual_usd: input.actualUsd,
-    },
-  });
-  if (!adjustment.reserved) {
-    log.error("Twilio message exceeded its prepaid reservation", {
-      userId: input.userId,
-      sid: input.sid,
-      channel: input.channel,
-      estimatedUsd: input.estimatedUsd,
-      actualUsd: input.actualUsd,
-      missingUsd: difference,
-    });
-  }
+    }),
+  );
 }
 
 /**
@@ -255,6 +276,15 @@ export async function sendTenantMessage(
     body: string;
     channel?: TwilioMessageChannel;
     agentId?: string;
+    /** Stable internal operation identity for retry-safe Runtime Balance reservation. */
+    idempotencyKey?: string;
+    /** Attempt-scoped reserve; pre-provider failures are refunded before the next attempt. */
+    reservationAttempt?: number;
+    /**
+     * Durable at-most-once latch invoked immediately before the first carrier
+     * request. If it rejects, no Twilio request is made.
+     */
+    beforeProviderAttempt?: () => Promise<void>;
     /** Optional MMS / rich-media URL (Twilio mediaUrl). */
     mediaUrl?: string | string[];
   },
@@ -268,6 +298,20 @@ export async function sendTenantMessage(
       configured: isTwilioConfigured(),
       enabled: false,
       reason: "A destination and message body are required.",
+      channel,
+    };
+  }
+
+  // sendTenantMessage is shared by the inbox, agent tools, cadences, CSAT,
+  // and action workflows. Guard the common carrier-spend boundary as well as
+  // the interactive route so background callers cannot bypass the kill switch.
+  if (isLaunchHardBlocked()) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: "Messaging is temporarily paused while launch readiness is restored.",
+      code: "LAUNCH_NOT_READY",
       channel,
     };
   }
@@ -406,7 +450,11 @@ export async function sendTenantMessage(
     payload.from = cleanPhone(sender);
   }
 
-  const reservationReference = `twilio_message:${channel}:${randomUUID()}`;
+  const reservationReference = twilioMessageReservationReference({
+    channel,
+    idempotencyKey: params.idempotencyKey,
+    reservationAttempt: params.reservationAttempt,
+  });
   const reservation = await reserveRuntimeUsage({
     userId,
     amountUsd: requiredBalance,
@@ -431,8 +479,43 @@ export async function sendTenantMessage(
     };
   }
 
+  // The callback is deliberately after every entitlement/configuration/
+  // balance gate and immediately before the provider boundary. It is outside
+  // the provider catch: a failed durable claim proves Twilio was never called,
+  // so refund this attempt's reserve and reject for a safe queue retry.
   try {
-    const message = await createTwilioMessageWithRateLimitRetry(
+    await params.beforeProviderAttempt?.();
+  } catch (error) {
+    try {
+      await refundRuntimeUsage({
+        userId,
+        amountUsd: requiredBalance,
+        referenceId: reservationReference,
+        reason: "Twilio provider attempt did not start",
+        provider: "twilio",
+        source: "twilio",
+        metadata: { channel, estimated_segments: segments, pre_provider_failure: true },
+      });
+    } catch (refundError) {
+      log.error("Twilio pre-provider reservation refund failed", {
+        userId,
+        channel,
+        reservationReference,
+        preProviderError: getErrorMessage(error),
+        refundError: getErrorMessage(refundError),
+      });
+      const accountingError = new Error(
+        "Twilio was not called, but its pre-provider Runtime Balance refund could not be recorded.",
+      );
+      (accountingError as Error & { cause?: unknown }).cause = refundError;
+      throw accountingError;
+    }
+    throw error;
+  }
+
+  let message: Awaited<ReturnType<typeof client.messages.create>>;
+  try {
+    message = await createTwilioMessageWithRateLimitRetry(
       () => client.messages.create(payload as any),
       {
         onRetry: ({ retryNumber, delayMs }) =>
@@ -444,66 +527,92 @@ export async function sendTenantMessage(
           }),
       },
     );
-    if (channel === "sms") {
-      const actualSegments = Math.max(1, Number(message.numSegments) || segments);
-      const actualCost = money(SMS_COST_PER_SEGMENT_USD * actualSegments);
-      await adjustMessagingReservation({
-        userId,
-        referenceId: reservationReference,
-        estimatedUsd: requiredBalance,
-        actualUsd: actualCost,
-        channel,
-        sid: message.sid,
-        actualSegments,
-      });
-    }
-
-    await persistOutbound({
-      userId,
-      customerNumber: phone,
-      body,
-      sid: message.sid,
-      agentId: params.agentId,
-    });
-
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      sid: message.sid,
-      status: message.status ?? null,
-      to: message.to || payload.to,
-      channel,
-    };
   } catch (error) {
     const status = Number((error as { status?: number } | null)?.status || 0);
     // A Twilio 4xx means the provider definitively rejected the request. Network
     // and 5xx errors are ambiguous: the message may have been accepted before the
     // response was lost, so retain the reservation for reconciliation instead of
     // refunding and potentially funding duplicate carrier spend.
-    if (status >= 400 && status < 500 && !reservation.alreadyReserved) {
-      await refundRuntimeUsage({
-        userId,
-        amountUsd: requiredBalance,
-        referenceId: reservationReference,
-        reason: "Twilio rejected the outbound message",
-        provider: "twilio",
-        source: "twilio",
-        metadata: { channel, status, estimated_segments: segments },
-      }).catch((refundError) =>
+    const definitiveRejection = status >= 400 && status < 500;
+    if (definitiveRejection) {
+      try {
+        // Refund is idempotent on reservationReference, including redelivered
+        // or already-reserved attempts. Never hide a failed accounting write
+        // behind the ordinary provider-rejection response.
+        await refundRuntimeUsage({
+          userId,
+          amountUsd: requiredBalance,
+          referenceId: reservationReference,
+          reason: "Twilio rejected the outbound message",
+          provider: "twilio",
+          source: "twilio",
+          metadata: { channel, status, estimated_segments: segments },
+        });
+      } catch (refundError) {
         log.error("Twilio rejection refund failed", {
           userId,
           channel,
-          error: getErrorMessage(refundError),
-        }),
-      );
+          status,
+          reservationReference,
+          providerError: getErrorMessage(error),
+          refundError: getErrorMessage(refundError),
+        });
+        const accountingError = new Error(
+          "Twilio rejected the message, but its Runtime Balance refund could not be recorded.",
+        );
+        (accountingError as Error & { cause?: unknown }).cause = refundError;
+        throw accountingError;
+      }
     }
+    if (!definitiveRejection) {
+      let incidentRecorded = false;
+      try {
+        await persistAmbiguousTwilioProviderOutcome({
+          userId,
+          reservationReference,
+          destinationSuffix: phone.slice(-4),
+          providerStatus: status || null,
+        });
+        incidentRecorded = true;
+      } catch (auditError) {
+        log.error("Twilio ambiguous provider outcome audit persistence failed", {
+          userId,
+          reservationReference,
+          destinationSuffix: phone.slice(-4),
+          status: status || undefined,
+          auditError: getErrorMessage(auditError),
+        });
+      }
+      log.error("Twilio message provider outcome is ambiguous", {
+        userId,
+        channel,
+        reservationReference,
+        destinationSuffix: phone.slice(-4),
+        status: status || undefined,
+        incidentRecorded,
+        reservationRetained: true,
+        doNotResend: true,
+        error: getErrorMessage(error),
+      });
+      return {
+        ok: false,
+        configured: true,
+        enabled: true,
+        reason:
+          "Delivery status is unknown because the carrier response was interrupted. The message may have been accepted. Do not resend it; contact support with the time and recipient.",
+        code: SMS_PROVIDER_OUTCOME_AMBIGUOUS,
+        channel,
+        providerOutcomeAmbiguous: true,
+        doNotResend: true,
+      };
+    }
+
     log.warn("Twilio message send failed", {
       userId,
       channel,
       segments,
       status: status || undefined,
-      reservationRetained: !(status >= 400 && status < 500),
+      reservationRetained: false,
       error: getErrorMessage(error),
     });
     return {
@@ -514,4 +623,35 @@ export async function sendTenantMessage(
       channel,
     };
   }
+
+  // Twilio accepted the provider request. From this point onward, reporting a
+  // send failure would invite a duplicate customer retry. Local history and
+  // segment true-up failures therefore move to idempotent durable recovery.
+  const actualSegments =
+    channel === "sms" ? Math.max(1, Number(message.numSegments) || segments) : 1;
+  const actualCost =
+    channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * actualSegments) : requiredBalance;
+  const local = await finalizeAcceptedTwilioMessage({
+    userId,
+    customerNumber: phone,
+    body,
+    sid: message.sid,
+    channel,
+    agentId: params.agentId,
+    reservationReference,
+    estimatedUsd: requiredBalance,
+    actualUsd: actualCost,
+    actualSegments,
+  });
+
+  return {
+    ok: true,
+    configured: true,
+    enabled: true,
+    sid: message.sid,
+    status: message.status ?? null,
+    to: message.to || payload.to,
+    channel,
+    reconciliationPending: local.reconciliationPending,
+  };
 }

@@ -232,7 +232,12 @@ describe("public health Vercel function", () => {
       overall: "outage",
       components: { reasoning: "outage" },
     });
-    expect(res.body).not.toContain("403");
+    // Exclude last_checked before the substring check. The public body carries
+    // an ISO timestamp, and its millisecond field can legitimately read "403"
+    // (…:18.403Z) — matching that is a clock coincidence, not a provider-detail
+    // leak, and it reddened this contract at random.
+    const publicBodyWithoutTimestamp = res.body.replace(/"last_checked":"[^"]*"/, "");
+    expect(publicBodyWithoutTimestamp).not.toContain("403");
     expect(res.body).not.toContain("OpenAI model probe failed");
   });
 

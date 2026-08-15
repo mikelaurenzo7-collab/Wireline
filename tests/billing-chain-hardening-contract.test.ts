@@ -142,18 +142,17 @@ describe("the trial gate agrees with the dial layer", () => {
  */
 describe("the live-video add-on asks Stripe what the customer actually has", () => {
   const source = read("src/routes/billing-routes.ts");
+  const authority = read("src/lib/stripe-live-video-addon.ts");
 
   it("checks for an existing add-on subscription before creating a session", () => {
-    const check = source.indexOf("const existingAddons = await listLiveVideoAddonSubscriptions(");
-    const create = source.indexOf(
-      'integration_identifier: stripeCheckoutIntegrationIdentifier("live_video")',
-    );
+    const check = source.indexOf("const existingAddons = await listCurrentLiveVideoAddons(");
+    const create = source.indexOf("stripe.checkout.sessions.create(", check);
     expect(check).toBeGreaterThan(-1);
     expect(create).toBeGreaterThan(check);
   });
 
   it("re-checks for a surviving subscription before resetting every agent", () => {
-    const survivorCheck = source.indexOf("listLiveVideoAddonSubscriptions(customerId, sub.id)");
+    const survivorCheck = source.indexOf("listCurrentLiveVideoAddons(customerId, sub.id)");
     const reset = source.indexOf('videoPresenterProvider: "synthetic"');
     expect(survivorCheck).toBeGreaterThan(-1);
     expect(reset).toBeGreaterThan(survivorCheck);
@@ -163,7 +162,17 @@ describe("the live-video add-on asks Stripe what the customer actually has", () 
   });
 
   it("excludes terminal subscriptions from both answers", () => {
-    expect(source).toContain("LIVE_VIDEO_ADDON_TERMINAL_STATUSES");
-    expect(source).toContain('sub.metadata?.purpose === "live_video_addon"');
+    expect(authority).toContain("LIVE_VIDEO_ADDON_NON_ENTITLING_STATUSES");
+    expect(authority).toContain('subscription.metadata?.purpose === "live_video_addon"');
+  });
+
+  it("deduplicates an open Live Video Checkout before Stripe creates a subscription", () => {
+    const operation = source.indexOf("insertLiveVideoCheckoutOperation(req.user.id)");
+    const create = source.indexOf("stripe.checkout.sessions.create(", operation);
+    expect(operation).toBeGreaterThan(-1);
+    expect(create).toBeGreaterThan(operation);
+    expect(source).toContain("wireline-live-video-checkout-${operationId}");
+    expect(source).toContain("wireline_checkout_operation_id: operationId");
+    expect(source).toContain('remoteSession?.status === "open"');
   });
 });

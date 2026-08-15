@@ -26,11 +26,16 @@ import {
   mcpToolErrorResult,
 } from "../lib/mcp-transport";
 import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
-import { isHardSpendCapExceeded } from "../lib/spend-guards";
-import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+import {
+  commitPlatformCostReservation,
+  platformCostReserveUsd,
+  releasePlatformCostReservation,
+  reservePlatformCostRecord,
+} from "../middleware/audit-middleware";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { rateLimit } from "../lib/rate-limit";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
+import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -553,6 +558,13 @@ router.post("/mcp", async (req, res) => {
     if (name === "start_private_voice_simulation") {
       const authed = requireScope(principal, "demo.voice");
       const draft = await getAgentDraft(authed, text(args.agent_id, 256));
+      if (isLaunchHardBlocked()) {
+        throw new AppError(
+          503,
+          "LAUNCH_NOT_READY",
+          "Private voice simulation is temporarily paused while Wireline restores launch readiness.",
+        );
+      }
       const limit = await rateLimit(`chatgpt-private-simulation:${authed.userId}`, {
         bucket: "chatgpt-private-simulation",
         windowMs: 60 * 60 * 1000,
@@ -562,25 +574,6 @@ router.post("/mcp", async (req, res) => {
       if (!limit.allowed)
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
-        );
-      // Web mints run enforceSpendCap BEFORE the quota debit; this JSON-RPC
-      // path must match on both counts — the quota increment below is durable,
-      // so a capped tenant's rejected attempts must not eat the daily
-      // allowance they would need after raising the cap.
-      const capExceeded = await isHardSpendCapExceeded(authed.userId).catch((err: unknown) => {
-        log.error("chatgpt simulation spend-guard unavailable — refusing mint", {
-          userId: authed.userId,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw AppError.fromHttpStatus(
-          503,
-          "Live simulation is briefly unavailable. Try again shortly.",
-        );
-      });
-      if (capExceeded)
-        throw AppError.fromHttpStatus(
-          402,
-          "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
         );
       // Every mint charges a vendor-metered realtime secret on the platform
       // key, so this tool must draw from the same daily simulation-minute
@@ -619,25 +612,89 @@ router.post("/mcp", async (req, res) => {
           "Live simulation is briefly unavailable. Try again shortly.",
         );
       }
-      const session = await createOpenAIRealtimeClientSecret({
-        userId: authed.userId,
-        agentName: draft.view.name,
-        instructions: draft.runtimeInstructions,
-        tools: [],
-        toolChoice: "none",
-        apiKeyPurpose: "chatgpt_demo",
-      });
-      // Same envelope-completeness rule as the web mints: WebRTC audio never
-      // reaches the token audit path, so the mint reserve is the only place
-      // this vendor-metered session becomes visible tenant COGS.
-      await persistPlatformCostRecord({
-        userId: authed.userId,
-        action: "voice.realtime.session",
-        provider: "openai",
-        model: OPENAI_REALTIME_DEFAULT_MODEL,
-        costUsd: platformCostReserveUsd("openai_realtime_session"),
-        requestMeta: { surface: "chatgpt_simulation" },
-      });
+      // Reserve against a freshly locked tenant budget before the provider.
+      // The prior post-hoc insert let concurrent MCP mints cross the hard cap
+      // and made accounting outages invisible until after OpenAI had charged.
+      const spendDecision = await tenantStore.run(authed.userId, () =>
+        reservePlatformCostRecord({
+          userId: authed.userId,
+          action: "voice.realtime.session",
+          provider: "openai",
+          model: OPENAI_REALTIME_DEFAULT_MODEL,
+          costUsd: platformCostReserveUsd("openai_realtime_session"),
+          requestMeta: { surface: "chatgpt_simulation" },
+        }),
+      );
+      if (!spendDecision.reserved) {
+        await tenantStore
+          .run(authed.userId, () =>
+            quotaTracker.releaseUsage(
+              authed.userId,
+              "simulation_minutes_daily",
+              5,
+              quota.period_key,
+            ),
+          )
+          .catch((error: unknown) =>
+            log.error("chatgpt simulation quota refund failed after spend refusal", {
+              userId: authed.userId,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        if (spendDecision.reason === "cap_reached") {
+          throw new AppError(
+            402,
+            "SPEND_CAP_REACHED",
+            "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
+            {
+              period: spendDecision.period,
+              month_to_date_usd: spendDecision.monthToDateUsd,
+              monthly_limit_usd: spendDecision.monthlyLimitUsd,
+            },
+          );
+        }
+        throw new AppError(
+          503,
+          "SPEND_GUARD_UNAVAILABLE",
+          "Live simulation is briefly unavailable. Try again shortly.",
+        );
+      }
+
+      let session: Awaited<ReturnType<typeof createOpenAIRealtimeClientSecret>>;
+      try {
+        session = await createOpenAIRealtimeClientSecret({
+          userId: authed.userId,
+          agentName: draft.view.name,
+          instructions: draft.runtimeInstructions,
+          tools: [],
+          toolChoice: "none",
+          apiKeyPurpose: "chatgpt_demo",
+        });
+      } catch (error) {
+        // A 502 is an ambiguous network/provider outcome: a usable secret may
+        // exist, so retain both conservative reserves. Explicit/local failures
+        // prove no session was handed out and can safely return the allowance.
+        if (!(error instanceof AppError && error.status === 502)) {
+          await tenantStore.run(authed.userId, async () => {
+            const cleanup = await Promise.allSettled([
+              releasePlatformCostReservation(spendDecision.reservation),
+              quotaTracker.releaseUsage(
+                authed.userId,
+                "simulation_minutes_daily",
+                5,
+                quota.period_key,
+              ),
+            ]);
+            if (cleanup.some((result) => result.status === "rejected")) {
+              log.error("chatgpt simulation reservation cleanup was incomplete", {
+                userId: authed.userId,
+              });
+            }
+          });
+        }
+        throw error;
+      }
+      await commitPlatformCostReservation(spendDecision.reservation);
       return jsonRpc(res, id, {
         content: [{ type: "text", text: "Private voice simulation ready." }],
         structuredContent: { status: "ready", agent_id: draft.view.id },

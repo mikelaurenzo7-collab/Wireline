@@ -19,6 +19,10 @@ import { readFileSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  requireCanonicalCredentialTarget,
+  requireCompleteCredentialPair,
+} from "./dogfood-credentials.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(root, "..");
@@ -44,10 +48,11 @@ loadEnvFileEarly(path.join(repoRoot, ".env.visual-qa"));
 loadEnvFileEarly(path.join(repoRoot, ".env.local"));
 loadEnvFileEarly(path.join(repoRoot, ".env"));
 
-const baseURL = process.env.E2E_BASE_URL || "https://trywireline.com";
-const demoEmail = process.env.DEMO_EMAIL || "composer.demo@trywireline.com";
-const demoPassword = process.env.DEMO_PASSWORD || "";
-const useMocks = process.env.MARKETING_USE_MOCKS === "1" || /localhost|127\.0\.0\.1/i.test(baseURL);
+const requestedBaseURL = process.env.E2E_BASE_URL || "https://trywireline.com";
+const DEFAULT_DEMO_EMAIL = "composer.demo@trywireline.com";
+const useMocks =
+  process.env.MARKETING_USE_MOCKS === "1" || /localhost|127\.0\.0\.1/i.test(requestedBaseURL);
+const baseURL = useMocks ? requestedBaseURL : requireCanonicalCredentialTarget(requestedBaseURL);
 
 const outRoot = path.join(repoRoot, "marketing-kit");
 
@@ -259,18 +264,34 @@ const pages = [
   { id: "billing", route: "/settings/billing", auth: true },
 ];
 
-const resolvedEmail =
-  process.env.DEMO_EMAIL ||
-  process.env.DOGFOOD_EMAIL ||
-  process.env.WIRELINE_E2E_EMAIL ||
-  process.env.E2E_USER_EMAIL ||
-  demoEmail;
-const resolvedPassword =
-  process.env.DEMO_PASSWORD ||
-  process.env.DOGFOOD_PASSWORD ||
-  process.env.WIRELINE_E2E_PASSWORD ||
-  process.env.E2E_USER_PASSWORD ||
-  demoPassword;
+const { email: resolvedEmail, password: resolvedPassword } = useMocks
+  ? { email: DEFAULT_DEMO_EMAIL, password: "" }
+  : requireCompleteCredentialPair(
+      [
+        {
+          label: "DEMO",
+          email:
+            process.env.DEMO_EMAIL || (process.env.DEMO_PASSWORD ? DEFAULT_DEMO_EMAIL : undefined),
+          password: process.env.DEMO_PASSWORD,
+        },
+        {
+          label: "DOGFOOD",
+          email: process.env.DOGFOOD_EMAIL,
+          password: process.env.DOGFOOD_PASSWORD,
+        },
+        {
+          label: "WIRELINE_E2E",
+          email: process.env.WIRELINE_E2E_EMAIL,
+          password: process.env.WIRELINE_E2E_PASSWORD,
+        },
+        {
+          label: "E2E_USER",
+          email: process.env.E2E_USER_EMAIL,
+          password: process.env.E2E_USER_PASSWORD,
+        },
+      ],
+      "Set DEMO_PASSWORD (with optional DEMO_EMAIL) or one complete documented E2E credential pair.",
+    );
 
 function parseSetCookie(header) {
   if (!header) return null;
@@ -291,8 +312,6 @@ function parseSetCookie(header) {
 }
 
 async function fetchSession() {
-  if (!resolvedEmail || !resolvedPassword)
-    throw new Error("Set DEMO_PASSWORD / DOGFOOD_* / WIRELINE_E2E_*");
   const res = await fetch(new URL("/api/auth/signin", baseURL).toString(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },

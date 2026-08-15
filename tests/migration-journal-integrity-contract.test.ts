@@ -69,6 +69,21 @@ describe("migration journal integrity contract", () => {
     expect(newestSnapshotIdx).toBe(newestJournalIdx);
   });
 
+  it("keeps the newest snapshot linked to its predecessor", () => {
+    const snapshotNames = readdirSync(resolve(MIGRATIONS_DIR, "meta"))
+      .filter((name) => /^\d{4}_snapshot\.json$/.test(name))
+      .sort();
+    expect(snapshotNames.length).toBeGreaterThan(1);
+    const previous = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta", snapshotNames.at(-2)!), "utf8"),
+    ) as { id: string };
+    const newest = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta", snapshotNames.at(-1)!), "utf8"),
+    ) as { id: string; prevId: string };
+    expect(newest.id).not.toBe(previous.id);
+    expect(newest.prevId).toBe(previous.id);
+  });
+
   it("journals every migration at or above the newest journalled migration", () => {
     // Numeric prefixes are reused in this repository (0108, 0118, 0120 and others
     // each name two different migrations), so ordering cannot be derived from the

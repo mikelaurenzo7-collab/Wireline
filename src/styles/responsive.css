@@ -173,7 +173,9 @@
     width: 100%;
   }
   .marketing-footer-nav a {
-    min-height: 2.25rem;
+    /* 44px, not 36px. These are the public site's secondary navigation and the
+       compact tier is exactly where a thumb needs the comfortable target. */
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
     font-size: 0.875rem;
   }
   .marketing-footer-legal {

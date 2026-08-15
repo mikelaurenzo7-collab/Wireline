@@ -1,29 +1,34 @@
-import type { CSSProperties, ComponentType } from "react";
-import {
-  BarChart3,
-  Bot,
-  CheckSquare,
-  GraduationCap,
-  Home,
-  Inbox,
-  MoreHorizontal,
-  Phone,
-  Settings,
-  Workflow,
-} from "lucide-react";
+/**
+ * Icons are NAMED here, not imported.
+ *
+ * This module is the single source of truth for navigation IA, which means it
+ * is imported by `src/lib/account-type.ts` for account-mode filtering — and
+ * that is reachable from `server.ts`. While the icons were component
+ * references, every serverless cold start paid a `require("lucide-react")`:
+ * measured at 62 ms and 7.2 MB of heap, to serve API traffic that never renders
+ * an icon.
+ *
+ * The name -> component map lives in `src/components/nav-icons.ts`, next to the
+ * shell components that actually draw them. The IA stays here, undivided.
+ */
+export type NavIconName =
+  | "BarChart3"
+  | "Bot"
+  | "CheckSquare"
+  | "GraduationCap"
+  | "Home"
+  | "Inbox"
+  | "MoreHorizontal"
+  | "Phone"
+  | "Settings"
+  | "Workflow";
 
 /** Canonical shell nav item — single source for rail, dock, and shortcuts. */
 export type ShellNavItem = {
   href: string;
   label: string;
   shortLabel?: string;
-  icon: ComponentType<{
-    className?: string;
-    size?: number | string;
-    strokeWidth?: number;
-    style?: CSSProperties;
-    "aria-hidden"?: boolean | "true" | "false";
-  }>;
+  icon: NavIconName;
   matches?: string[];
 };
 
@@ -66,31 +71,31 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     href: "/overview",
     label: "Overview",
     shortLabel: "Home",
-    icon: Home,
+    icon: "Home",
     matches: ["/overview"],
   },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
-    icon: Bot,
+    icon: "Bot",
     matches: ["/studio", "/agents"],
   },
   {
     href: "/connections",
     label: "Connections",
     shortLabel: "Connect",
-    icon: Workflow,
+    icon: "Workflow",
     matches: ["/connections"],
   },
 ];
 
 /** Daily operating destinations. Approvals and training are secondary tools. */
 export const OPERATE_NAV: ShellNavItem[] = [
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/phone", label: "Calls", icon: Phone },
-  { href: "/insights", label: "Activity", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
+  { href: "/inbox", label: "Inbox", icon: "Inbox" },
+  { href: "/phone", label: "Calls", icon: "Phone" },
+  { href: "/insights", label: "Activity", icon: "BarChart3" },
+  { href: "/settings", label: "Settings", icon: "Settings", matches: ["/settings", "/admin"] },
 ];
 
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
@@ -98,19 +103,19 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
     href: "/overview",
     label: "Overview",
     shortLabel: "Home",
-    icon: Home,
+    icon: "Home",
     matches: ["/overview"],
   },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
-    icon: Bot,
+    icon: "Bot",
     matches: ["/studio", "/agents"],
   },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/phone", label: "Calls", icon: Phone },
-  { href: MOBILE_MORE_HREF, label: "More", icon: MoreHorizontal },
+  { href: "/inbox", label: "Inbox", icon: "Inbox" },
+  { href: "/phone", label: "Calls", icon: "Phone" },
+  { href: MOBILE_MORE_HREF, label: "More", icon: "MoreHorizontal" },
 ];
 
 export const MOBILE_MORE_NAV: ShellNavItem[] = [
@@ -118,19 +123,19 @@ export const MOBILE_MORE_NAV: ShellNavItem[] = [
     href: "/connections",
     label: "Connections",
     shortLabel: "Connect",
-    icon: Workflow,
+    icon: "Workflow",
     matches: ["/connections"],
   },
   {
     href: "/knowledge",
     label: "Knowledge",
     shortLabel: "Train",
-    icon: GraduationCap,
+    icon: "GraduationCap",
     matches: ["/knowledge"],
   },
-  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
-  { href: "/insights", label: "Activity", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
+  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: "CheckSquare" },
+  { href: "/insights", label: "Activity", icon: "BarChart3" },
+  { href: "/settings", label: "Settings", icon: "Settings", matches: ["/settings", "/admin"] },
 ];
 
 function toLegacyItem(item: ShellNavItem, section: string): NavItem {

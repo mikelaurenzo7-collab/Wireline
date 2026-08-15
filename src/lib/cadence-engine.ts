@@ -25,6 +25,7 @@ import { IntegrationService } from "./integrations";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 import { jsonSafeId, toJsonbSafe } from "./server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -59,11 +60,27 @@ function applyVars(template: string, lead: LeadRow): string {
     .replace(/\{\{\s*email\s*\}\}/gi, lead.email || "");
 }
 
+/**
+ * `retryable` marks a failure that is BOTH transient and provably happened
+ * before the provider was asked to do anything.
+ *
+ * That second condition is the important one. `placeOutboundCall` deliberately
+ * disables transport and status retries (see vapi-client.ts) because Vapi
+ * offers no idempotency key on call creation, so a timeout or 5xx can arrive
+ * after the carrier already accepted the dial. A cadence that re-dialed on that
+ * outcome would place a second marketing call to the same consumer — a worse
+ * failure under TCPA than the dropped touch it is trying to avoid. Provider
+ * send failures therefore advance the step, exactly as before.
+ *
+ * Permanent outcomes are likewise never retried: a hard DNC or consent denial
+ * must not be re-attempted, and a lead with no phone or no configured agent
+ * will still have none in fifteen minutes.
+ */
 async function executeStep(
   step: CadenceStep,
   cadence: CadenceRow,
   lead: LeadRow,
-): Promise<{ ok: boolean; result: string; defer?: boolean }> {
+): Promise<{ ok: boolean; result: string; defer?: boolean; retryable?: boolean }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
   // TCPA/federal DNC/express-written-consent: a cadence step is marketing
@@ -95,7 +112,7 @@ async function executeStep(
       log.warn("cadence outbound compliance gate failed — failing closed", {
         error: err?.message,
       });
-      return { ok: false, result: "compliance gate failed (fail-closed)" };
+      return { ok: false, result: "compliance gate failed (fail-closed)", retryable: true };
     }
   }
 
@@ -105,7 +122,11 @@ async function executeStep(
     try {
       await assertOutboundVoiceAllowed({ userId: cadence.userId, source: "cadence", units: 0 });
     } catch (err: any) {
-      return { ok: false, result: `voice control rejected: ${err?.message || "blocked"}` };
+      return {
+        ok: false,
+        result: `voice control rejected: ${err?.message || "blocked"}`,
+        retryable: true,
+      };
     }
     const res = await placeOutboundCall({
       userId: cadence.userId,
@@ -156,6 +177,8 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `call placed ${res.callId}` : `call failed: ${res.error}`,
+      // Not retryable: Vapi call creation has no idempotency key, so a failed
+      // response may still have produced a dial. Advancing is the safe side.
     };
   }
 
@@ -170,6 +193,8 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `sms sent ${res.sid || ""}` : `sms failed: ${res.reason || "unknown"}`,
+      // Not retryable, for the same reason as the call step: message creation
+      // is not idempotent, and a re-send is a second message to a consumer.
     };
   }
 
@@ -186,6 +211,9 @@ async function executeStep(
       body,
       marketing: true,
     });
+    // IntegrationService.sendEmail returns only a boolean, so a transport error,
+    // a suppression, and a partially-delivered send are indistinguishable. Not
+    // retryable: a duplicate marketing email is the worse outcome.
     return { ok, result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)" };
   }
 
@@ -277,7 +305,9 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         .returning({ id: schema.cadenceRuns.id });
       if (!claimed.length) continue;
 
-      const cadenceRow = cadenceById.get(run.cadenceId);
+      const cadenceRowRaw = cadenceById.get(run.cadenceId);
+      const cadenceRow =
+        cadenceRowRaw && cadenceRowRaw.userId === run.userId ? cadenceRowRaw : undefined;
       if (!cadenceRow || cadenceRow.active === false) {
         await drizzle
           .update(schema.cadenceRuns)
@@ -309,7 +339,26 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         continue;
       }
 
-      const stepResult = await executeStep(step, cadenceRow as any, leadRow as any);
+      // `cadence_tick` is system-owned, so the worker-level deletion fence has
+      // no tenant to protect. Fence at the run boundary and retain the lock
+      // across DNC vendor lookup, provider submission, and evidence writes.
+      const fencedStep = await runTenantProviderWorkWithDeletionFence({
+        userId: run.userId,
+        perform: () => executeStep(step, cadenceRow as any, leadRow as any),
+      });
+      if (!fencedStep.performed) {
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            status: "paused",
+            nextDueAt: null,
+            lastResult: "account deletion in progress — provider step cancelled",
+            updatedAt: now,
+          })
+          .where(eq(schema.cadenceRuns.id, run.id));
+        continue;
+      }
+      const stepResult = fencedStep.result;
 
       if (stepResult.defer) {
         // Temporal gate denial: hold the run at this step and retry when the
@@ -325,6 +374,32 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
           })
           .where(eq(schema.cadenceRuns.id, run.id));
         deferred++;
+        continue;
+      }
+
+      if (!stepResult.ok && stepResult.retryable) {
+        // A returned failure is the same event as a thrown one — a provider
+        // outage, a fail-closed gate, a spend control — and until now only the
+        // thrown form was retried. The returned form fell through to the
+        // advance below, so a Twilio 500 or a rejected dial consumed the step
+        // and the customer simply never received that touch. Same single-retry
+        // budget and the same marker the catch block uses, so a run cannot
+        // ping-pong between the two paths.
+        const alreadyRetried = (run.lastResult || "").startsWith(STEP_EXCEPTION_RETRY_PREFIX);
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set(
+            alreadyRetried
+              ? { status: "failed", lastResult: stepResult.result, updatedAt: now }
+              : {
+                  nextDueAt: new Date(Date.now() + CADENCE_EXCEPTION_RETRY_MS),
+                  lastResult: `${STEP_EXCEPTION_RETRY_PREFIX}${stepResult.result}`,
+                  updatedAt: now,
+                },
+          )
+          .where(eq(schema.cadenceRuns.id, run.id));
+        if (alreadyRetried) failed++;
+        else deferred++;
         continue;
       }
 

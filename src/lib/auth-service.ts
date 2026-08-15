@@ -11,7 +11,7 @@ import { promisify } from "node:util";
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { sessionUsers } from "../db/security-schema";
-import { and, eq, gte, isNull } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
@@ -46,7 +46,9 @@ export class AuthConfigurationError extends Error {
 
 function requireBoundedPassword(password: string): void {
   if (!passwordFitsByteLimit(password)) {
-    throw new Error(`PASSWORD_TOO_LONG: passwords are limited to ${MAX_PASSWORD_BYTES} UTF-8 bytes`);
+    throw new Error(
+      `PASSWORD_TOO_LONG: passwords are limited to ${MAX_PASSWORD_BYTES} UTF-8 bytes`,
+    );
   }
 }
 
@@ -368,15 +370,48 @@ export const authService = {
         .returning({ id: schema.users.id });
       if (!changed) return null;
 
+      // Rotate the session generation in the same transaction as the password.
+      //
+      // This used to only READ sessionVersion, which meant a password reset
+      // changed the password and nothing else: every session already open —
+      // including whoever prompted the reset — stayed authenticated on the old
+      // credential, because the fence in isSessionGenerationActive compares the
+      // token's session_version to this row and the row never moved. "Reset my
+      // password because someone else is in my account" has to evict them.
+      //
+      // The token minted below carries the NEW version, so the person doing the
+      // reset stays signed in and everyone else is cut. sessionRevokedBefore is
+      // moved for the same reason, covering pre-0127 tokens that carry no
+      // session_version claim and fall back to the issued-at boundary.
       const [session] = await tx
-        .select({ sessionVersion: sessionUsers.sessionVersion })
-        .from(sessionUsers)
+        .update(sessionUsers)
+        .set({
+          sessionVersion: sql`${sessionUsers.sessionVersion} + 1`,
+          sessionRevokedBefore: now,
+        })
         .where(eq(sessionUsers.id, changed.id))
-        .limit(1);
+        .returning({ sessionVersion: sessionUsers.sessionVersion });
       if (!session) throw new Error("Reset user session state is unavailable");
       return { userId: changed.id, sessionVersion: session.sessionVersion };
     });
     if (!reset) return null;
+
+    // Third-party MCP grants are credentials too, and they outlive the session
+    // fence entirely — chatgpt-mcp-account-routes authorizes a bearer purely on
+    // the access-token row's expires_at, with no reference to sessionVersion.
+    // A reset that leaves them standing hands the attacker a connector with the
+    // account's full tool surface for the rest of the token's life. Best-effort:
+    // the password change itself has already committed and must be reported as
+    // done even if this sweep fails.
+    try {
+      const { revokeAllMcpGrantsForUser } = await import("./mcp-oauth-security");
+      await revokeAllMcpGrantsForUser(reset.userId);
+    } catch (error) {
+      log.error("Password reset could not revoke MCP grants", {
+        user_id: reset.userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     const [user] = await drizzle
       .select()

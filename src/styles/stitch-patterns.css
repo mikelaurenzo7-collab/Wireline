@@ -160,8 +160,9 @@
   box-shadow: 0 0 0 3px var(--ring);
 }
 
+/* See .wl-composer-dock__input::placeholder — a diluted token is below AA. */
 .wl-stitch-input::placeholder {
-  color: color-mix(in srgb, var(--wireline-color-text-secondary) 60%, transparent);
+  color: var(--wireline-color-text-tertiary);
 }
 
 .wl-stitch-auth-divider {

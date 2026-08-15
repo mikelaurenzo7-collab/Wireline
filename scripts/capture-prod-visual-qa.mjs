@@ -514,7 +514,7 @@ try {
           await titleInput.fill("Pricing & Packages");
         }
         await contentTextarea.fill(
-          "Wireline Business uses shared operating capacity, approvals, analytics, CRM sync, roles, and pooled Runtime Balance.",
+          "Wireline Scale is a founder-scoped agreement for larger governed fleets, custom integrations, security review, and committed usage.",
         );
         if (await saveBtn.isVisible().catch(() => false)) {
           await saveBtn.click();

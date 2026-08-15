@@ -5,10 +5,11 @@
 // invoked from the delayed `purge_deleted_account` job after the 30-day grace
 // period. All normal callers should use POST /api/account/delete instead.
 
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
+import { acquireAccountDeletionFence } from "./account-deletion-fence";
 
 type AccountDeletionTarget = {
   table: string;
@@ -61,6 +62,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_sms_messages", userColumns: ["user_id"] },
   { table: "wireline_sms_threads", userColumns: ["user_id"] },
   { table: "wireline_call_logs", userColumns: ["user_id"] },
+  { table: "wireline_outbound_dial_reservations", userColumns: ["user_id"] },
   // Shareable call-recap / weekly-review artifacts (published URLs). Must purge
   // with the account so transcript/summary content cannot outlive deletion.
   { table: "wireline_recap_artifacts", userColumns: ["user_id"] },
@@ -108,6 +110,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_director_artifacts", userColumns: ["user_id"] },
   { table: "wireline_director_artifact_objects", userColumns: ["user_id"] },
   { table: "wireline_director_profile", userColumns: ["user_id"] },
+  { table: "wireline_checkout_operations", userColumns: ["user_id"] },
   { table: "wireline_subscriptions", userColumns: ["user_id"] },
   { table: "wireline_onboarding_progress", userColumns: ["user_id"] },
   { table: "wireline_user_preferences", userColumns: ["user_id"] },
@@ -178,6 +181,115 @@ export interface PurgeAccountResult {
   tablesTouched: string[];
   error?: string;
   authRemoved: boolean;
+}
+
+export interface TerminalAccountPurgeQueueRow {
+  id: string;
+  userId: string;
+  status: "purging";
+  scheduledPurgeAt: Date | null;
+  ip: string | null;
+}
+
+export type TerminalAccountPurgeClaim =
+  | { ready: true; resumed: boolean; queueRow: TerminalAccountPurgeQueueRow }
+  | {
+      ready: false;
+      reason: "queue_row_missing" | "queue_state_changed" | "grace_period_active";
+    };
+
+/**
+ * Establish the irreversible deletion state before provider teardown begins.
+ *
+ * The advisory lock drains any post-call provider boundary that started before
+ * the grace period elapsed. Committing `purging` then makes every later
+ * post-call eligibility check stop terminally, even though Stripe/carrier/Vapi
+ * teardown necessarily runs outside this short database transaction.
+ *
+ * `purging` is intentionally resumable: a worker crash after this commit must
+ * retry provider cleanup/local erasure without reopening customer delivery.
+ */
+export async function claimTerminalAccountPurge(
+  input: { userId: string; queueId?: string },
+  deps: Pick<PurgeAccountDeps, "db">,
+): Promise<TerminalAccountPurgeClaim> {
+  return tenantStore.exit(() =>
+    deps.db.transaction(async (tx) => {
+      await acquireAccountDeletionFence(tx, input.userId);
+
+      const [existing] = await tx
+        .select({
+          id: schema.deletionQueue.id,
+          userId: schema.deletionQueue.userId,
+          status: schema.deletionQueue.status,
+          scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+          ip: schema.deletionQueue.ip,
+        })
+        .from(schema.deletionQueue)
+        .where(
+          and(
+            eq(schema.deletionQueue.userId, input.userId),
+            input.queueId
+              ? eq(schema.deletionQueue.id, input.queueId)
+              : inArray(schema.deletionQueue.status, ["pending", "purging"]),
+          ),
+        )
+        .orderBy(desc(schema.deletionQueue.requestedAt))
+        .limit(1);
+
+      if (!existing) return { ready: false, reason: "queue_row_missing" } as const;
+      if (existing.status === "purging") {
+        return {
+          ready: true,
+          resumed: true,
+          queueRow: { ...existing, status: "purging" },
+        } as const;
+      }
+      if (existing.status !== "pending") {
+        return { ready: false, reason: "queue_state_changed" } as const;
+      }
+      if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() > Date.now()) {
+        return { ready: false, reason: "grace_period_active" } as const;
+      }
+
+      const [claimed] = await tx
+        .update(schema.deletionQueue)
+        .set({ status: "purging" })
+        .where(
+          and(
+            eq(schema.deletionQueue.id, existing.id),
+            eq(schema.deletionQueue.userId, input.userId),
+            eq(schema.deletionQueue.status, "pending"),
+            sql`(
+              ${schema.deletionQueue.scheduledPurgeAt} IS NULL
+              OR ${schema.deletionQueue.scheduledPurgeAt} <= now()
+            )`,
+          ),
+        )
+        .returning({
+          id: schema.deletionQueue.id,
+          userId: schema.deletionQueue.userId,
+          status: schema.deletionQueue.status,
+          scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+          ip: schema.deletionQueue.ip,
+        });
+
+      if (!claimed) {
+        return {
+          ready: false,
+          reason:
+            existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() > Date.now()
+              ? "grace_period_active"
+              : "queue_state_changed",
+        } as const;
+      }
+      return {
+        ready: true,
+        resumed: false,
+        queueRow: { ...claimed, status: "purging" },
+      } as const;
+    }),
+  );
 }
 
 export interface ExternalReleaseSummary {
@@ -495,6 +607,11 @@ async function purgeAccountOutsideTenantContext(
 
   try {
     return await db.transaction(async (tx) => {
+      // A post-call worker may already hold a transcript/phone snapshot. The
+      // shared advisory barrier makes purge wait for any in-flight provider
+      // boundary, while a worker arriving after this lock waits for erasure and
+      // then observes that the user/call no longer exists.
+      await acquireAccountDeletionFence(tx, userId);
       for (const target of ACCOUNT_DELETION_TARGETS) {
         if (!(await tableExists(tx, target.table))) {
           log.warn("account purge skipped missing table", { table: target.table, userId });

@@ -88,7 +88,9 @@ describe("Resend delivery-feedback contract", () => {
     const processAt = route.indexOf("processVerifiedResendWebhook(");
 
     expect(parser).toContain('"/api/webhooks/resend"');
-    expect(parser).toContain('express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT })');
+    expect(parser).toContain(
+      'express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT })',
+    );
     expect(sameOrigin).toContain('"/api/webhooks/resend"');
     expect(verifyAt).toBeGreaterThanOrEqual(0);
     expect(processAt).toBeGreaterThan(verifyAt);
@@ -102,7 +104,7 @@ describe("Resend delivery-feedback contract", () => {
     ]) {
       expect(route).toContain(`code: "${code}"`);
     }
-    expect(authzGenerator).toContain('/^\\/api\\/webhooks\\/resend$/');
+    expect(authzGenerator).toContain("/^\\/api\\/webhooks\\/resend$/");
     expect(authzGenerator).toContain(
       "Resend/Svix timestamped HMAC-SHA256 signature + replay window",
     );
@@ -166,7 +168,7 @@ describe("Resend delivery-feedback contract", () => {
     expect(processor.slice(duplicateCheckAt, observabilityAt)).toContain("duplicate: true");
   });
 
-  it("reports delivery feedback readiness without making it a false launch blocker", () => {
+  it("blocks launch when signed delivery feedback is unavailable", () => {
     const saved = {
       resendKey: process.env.RESEND_API_KEY,
       webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
@@ -185,18 +187,19 @@ describe("Resend delivery-feedback contract", () => {
         level: "degraded",
         blockers: ["RESEND_WEBHOOK_SECRET"],
       });
-      expect(missingFeedback.launch_blockers).not.toContain("RESEND_WEBHOOK_SECRET");
+      expect(missingFeedback.launch_blockers).toContain("RESEND_WEBHOOK_SECRET");
+      expect(missingFeedback.campaign_ready).toBe(false);
 
       process.env.RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from(
         "wireline-resend-readiness-secret",
         "utf8",
       ).toString("base64")}`;
       expect(getRuntimeCapabilities().resend_feedback).toBe(true);
+      const restoredFeedback = evaluateLaunchReadiness();
       expect(
-        evaluateLaunchReadiness().capabilities.find(
-          (capability) => capability.id === "email_ready",
-        ),
+        restoredFeedback.capabilities.find((capability) => capability.id === "email_ready"),
       ).toMatchObject({ level: "ready", blockers: [] });
+      expect(restoredFeedback.launch_blockers).not.toContain("RESEND_WEBHOOK_SECRET");
     } finally {
       if (saved.resendKey === undefined) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = saved.resendKey;
@@ -273,6 +276,10 @@ describe("Resend delivery-feedback contract", () => {
 
     expect(readiness).toContain("RESEND_WEBHOOK_SECRET");
     expect(readiness).toContain("https://trywireline.com/api/webhooks/resend");
+    expect(readiness).toContain("https://api.resend.com/webhooks?limit=100");
+    expect(readiness).toContain('detail?.status !== "enabled"');
+    expect(readiness).toContain("!exactEvents(detail?.events)");
+    expect(readiness).toContain("!sameSecret(detail?.signing_secret, webhookSecret)");
     expect(sync).toContain('const PRODUCTION_TARGET = ["production"]');
     expect(sync).not.toContain("ALL_TARGETS");
     expect(sync).toContain(

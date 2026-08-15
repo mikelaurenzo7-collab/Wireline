@@ -85,6 +85,9 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoSelectedDesktopRef = useRef(false);
+  // Controller for whatever thread is currently open. Switching threads aborts
+  // it, which is what lets the post-send refresh below be superseded too.
+  const activeThreadFetchRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const threadButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -147,14 +150,25 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
           })),
         );
-        await authFetch(`/api/sms/threads/${threadId}/mark-read`, { method: "POST" }).catch(
-          () => {},
-        );
-        setThreads((current) =>
-          current.map((thread) =>
-            thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
-          ),
-        );
+        const markReadResponse = await authFetch(`/api/sms/threads/${threadId}/mark-read`, {
+          method: "POST",
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (markReadResponse.ok) {
+          setThreads((current) =>
+            current.map((thread) =>
+              thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
+            ),
+          );
+        } else {
+          const markReadBody = await markReadResponse.json().catch(() => ({}));
+          toastError(
+            "Unread status not updated",
+            markReadBody.error ||
+              "The conversation is open, but its unread badge could not be cleared.",
+          );
+        }
       } catch (error: any) {
         // A superseded request rejects with AbortError; surfacing it would put an
         // error banner and a toast over the thread the reader actually opened.
@@ -185,8 +199,12 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     setMessages([]);
     if (!activeId) return;
     const controller = new AbortController();
+    activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (activeThreadFetchRef.current === controller) activeThreadFetchRef.current = null;
+    };
   }, [activeId, fetchMessages]);
 
   useEffect(() => {
@@ -201,6 +219,12 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const handleSend = async () => {
     if (!activeId || !reply.trim() || sending) return;
     const threadId = activeId;
+    // Captured NOW, while the ref still holds the controller for the thread
+    // being replied to. Reading the ref after the await would hand this refresh
+    // whichever thread the reader has since opened — a live, un-aborted signal
+    // belonging to a different conversation, which is the exact cross-thread
+    // paint this guard exists to prevent.
+    const sentThreadController = activeThreadFetchRef.current;
     const body = reply.trim();
     const optimistic: SmsMessage = {
       id: `optimistic-${Date.now()}`,
@@ -220,10 +244,36 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
       });
-      const result = await response.json();
-      if (!result.ok) throw new Error(result.reason || "Send failed");
-      success("SMS sent", "Message delivered to customer.");
-      await Promise.all([fetchMessages(threadId), fetchThreads()]);
+      const result = await response.json().catch(() => ({}) as Record<string, string>);
+      // The server always explains WHY a reply did not go out, on one of two
+      // envelopes: a carrier/provider rejection rides `reason` on a 200, while
+      // a compliance stop — number on DNC, federal DNC not configured — throws
+      // an AppError and rides `error`. Reading only `reason` collapsed every
+      // compliance block into a bare "Send failed", so the account holder had
+      // no way to tell "this number opted out" from "try again".
+      if (
+        result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS" ||
+        result.provider_outcome_ambiguous === true
+      ) {
+        const warning =
+          result.reason ||
+          "Delivery status is unknown. The carrier may have accepted this message. Do not resend it; contact support.";
+        // The optimistic bubble is not evidence of carrier acceptance. Remove
+        // it, but deliberately leave the composer empty: restoring the text
+        // would turn the natural next click into a duplicate customer message.
+        setMessages((current) => current.filter((message) => message.id !== optimistic.id));
+        setThreadErr(warning);
+        toastError("SMS status unknown — do not resend", warning);
+        return;
+      }
+      if (!response.ok || !result.ok) {
+        throw new Error(result.reason || result.error || "Send failed");
+      }
+      success("SMS queued", "The carrier accepted the message for delivery.");
+      // Carry the sent thread's own signal, so switching threads aborts this
+      // refresh instead of letting it paint thread A's messages under thread
+      // B's header and mark A read.
+      await Promise.all([fetchMessages(threadId, sentThreadController?.signal), fetchThreads()]);
     } catch (error: any) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
       setReply(body);

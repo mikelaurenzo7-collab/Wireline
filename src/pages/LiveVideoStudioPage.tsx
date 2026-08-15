@@ -6,7 +6,7 @@
  * output into LiveAvatar LITE for lip sync, so video never becomes a second,
  * provider-owned agent brain.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Loader2, Mic2, Play, Square, Video } from "lucide-react";
 
@@ -14,9 +14,7 @@ import AgentFace from "../components/AgentFace";
 import AgentPresenceAvatarPicker, {
   type PresenterCatalogSelection,
 } from "../components/AgentPresenceAvatarPicker";
-import LiveVideoPresenter, {
-  type LiveVideoPresenterHandle,
-} from "../components/LiveVideoPresenter";
+import type { LiveVideoPresenterHandle } from "../components/LiveVideoPresenter";
 import OpenAILiveVoiceSandbox from "../components/OpenAILiveVoiceSandbox";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
@@ -70,6 +68,37 @@ type PresenterPayload = {
 
 const DEFAULT_ENGINE: LiveVideoVoiceEngine = "wireline_realtime";
 
+/**
+ * The presenter pulls in @heygen/liveavatar-web-sdk (which carries its own
+ * WebRTC stack), and it only ever renders once a session has been minted. Held
+ * as a static import it was the largest single contributor to this route's
+ * chunk and every visitor paid for it — including the ones who came to read the
+ * add-on pitch, hit the entitlement gate, and never started anything.
+ *
+ * `warmPresenterBundle` runs at the top of startPreview so the chunk downloads
+ * alongside the mint round trip rather than after it; by the time `session` is
+ * set the module is normally already resolved and Suspense never shows.
+ */
+const LiveVideoPresenter = lazy(() => import("../components/LiveVideoPresenter"));
+
+function warmPresenterBundle() {
+  void import("../components/LiveVideoPresenter");
+}
+
+function PresenterLoadingStage() {
+  return (
+    <div
+      className="grid aspect-video min-h-[240px] place-items-center rounded-2xl border border-border bg-background sm:min-h-[300px]"
+      role="status"
+    >
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        Preparing the live stage…
+      </span>
+    </div>
+  );
+}
+
 type SessionUsage = {
   includedMinutes?: number;
   usedMinutes?: number;
@@ -106,7 +135,11 @@ export default function LiveVideoStudioPage() {
     fallbackSeed: string;
   } | null>(null);
   const [usage, setUsage] = useState<SessionUsage | null>(null);
+  /** Seconds left in the open session, so the cap is never a surprise. */
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const presenterRef = useRef<LiveVideoPresenterHandle>(null);
+  /** Guards the settle call so one session can only be settled once. */
+  const settledReceiptsRef = useRef(new Set<string>());
 
   const loadPresenter = useCallback(async () => {
     if (!activeAgentId) {
@@ -148,8 +181,29 @@ export default function LiveVideoStudioPage() {
     setNotice(null);
     setConsentAcknowledged(false);
     setVoiceEngine(DEFAULT_ENGINE);
+    setSecondsLeft(null);
     void loadPresenter();
   }, [loadPresenter]);
+
+  // Count the session cap down from the moment the presenter is actually on
+  // screen. Anchored to a start timestamp rather than decremented per tick, so
+  // a throttled background tab resumes with the true remaining time instead of
+  // a clock that drifted slow while the provider kept running.
+  useEffect(() => {
+    const capSeconds = session?.live.maxSessionSeconds ?? 0;
+    if (!session || !presenterReady || capSeconds <= 0) {
+      setSecondsLeft(null);
+      return;
+    }
+    const startedAt = Date.now();
+    const tick = () => {
+      const remaining = capSeconds - (Date.now() - startedAt) / 1000;
+      setSecondsLeft(Math.max(0, remaining));
+    };
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [session, presenterReady]);
 
   async function startCheckout() {
     setCheckoutBusy(true);
@@ -202,14 +256,72 @@ export default function LiveVideoStudioPage() {
     }
   }
 
+  /**
+   * Hand back the minutes this session reserved but did not use.
+   *
+   * The allowance is drawn in full when the token is minted, before the browser
+   * has proven it can reach the provider. Settling on close is what stops a
+   * blocked network from spending a whole month of Live Video on sessions that
+   * never showed a frame. Best-effort by design: a failed settle leaves the
+   * tenant exactly where the unsettled behavior already left them.
+   */
+  async function settleSession(
+    live: LiveAvatarSessionCredentials,
+    watchedSeconds: number,
+    agentId: string | null,
+  ) {
+    const receipt = live.settlementReceipt;
+    if (!receipt || !agentId) return;
+    if (settledReceiptsRef.current.has(receipt)) return;
+    settledReceiptsRef.current.add(receipt);
+    try {
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/video-presenter/session/settle`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            receipt,
+            watchedSeconds: Math.max(0, Math.round(watchedSeconds)),
+          }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as {
+        settled?: boolean;
+        refundedMinutes?: number;
+      } | null;
+      // Refresh the allowance so the chip reflects the refund immediately
+      // rather than showing a full session's worth spent until the next load.
+      if (body?.settled && (body.refundedMinutes ?? 0) > 0) await refreshUsage();
+    } catch {
+      // Settlement is an optimization on top of a reservation that already
+      // succeeded; a network failure here must never surface as a session error.
+    }
+  }
+
+  async function refreshUsage() {
+    try {
+      const response = await authFetch("/api/video-presenter/usage");
+      if (!response.ok) return;
+      const body = (await response.json().catch(() => null)) as SessionUsage | null;
+      if (body) setUsage(body);
+    } catch {
+      /* the chip keeps its last known value */
+    }
+  }
+
   async function endPreview() {
+    const closing = session;
+    const watched = presenterRef.current?.watchedSeconds() ?? 0;
     try {
       await presenterRef.current?.stop();
     } catch {
       // Session teardown is best-effort; the bounded provider cap ends it regardless.
     }
     setPresenterReady(false);
+    setSecondsLeft(null);
     setSession(null);
+    if (closing) await settleSession(closing.live, watched, activeAgentId);
   }
 
   async function disableLiveVideo() {
@@ -242,25 +354,29 @@ export default function LiveVideoStudioPage() {
 
   async function startPreview() {
     if (!activeAgentId || sessionBusy) return;
+    // Fetch the presenter chunk in parallel with the mic preflight and the mint
+    // so the lazy boundary below has already resolved by the time it mounts.
+    warmPresenterBundle();
     setSessionBusy(true);
     setError(null);
     setNotice(null);
     setPresenterReady(false);
     try {
       if (session) await endPreview();
-      // Provider-driven engines converse through the stage itself, so the
-      // microphone must be grantable before any allowance is reserved — a
-      // denied mic would otherwise burn reserved minutes on a deaf session.
-      if (voiceEngine !== DEFAULT_ENGINE) {
-        try {
-          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mic.getTracks().forEach((track) => track.stop());
-        } catch {
-          setError(
-            "This presenter voice engine needs microphone access. Allow the microphone and try again, or switch to the Wireline voice.",
-          );
-          return;
-        }
+      // Every engine converses: provider-driven engines capture the microphone
+      // through the stage, and the Wireline voice captures it through the
+      // Realtime surface. The check used to be scoped to non-default engines,
+      // so the default path reserved five minutes of allowance FIRST and only
+      // then discovered the microphone was blocked — a deaf session the
+      // customer still paid for. Preflight before anything is reserved.
+      try {
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mic.getTracks().forEach((track) => track.stop());
+      } catch {
+        setError(
+          "Live video needs microphone access to hold a conversation. Allow the microphone in your browser and start the stage again — no session minutes were used.",
+        );
+        return;
       }
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/session`,
@@ -330,7 +446,7 @@ export default function LiveVideoStudioPage() {
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"
-          description="Put a business agent on screen, then test a real conversation through the same Wireline brain."
+          description="Put a business agent on screen. Wireline voice uses that agent's Training and tools; optional presenter-managed voices use their own workspace profile."
         />
 
         {agentsLoading ? (
@@ -383,7 +499,7 @@ export default function LiveVideoStudioPage() {
                     {remainingMinutes} / {includedMinutes} min left
                   </span>
                   <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
-                    {sessionMinutes} min / session
+                    {sessionMinutes} min wall-clock max
                   </span>
                   <span
                     className={`rounded-full border px-3 py-1.5 font-medium ${
@@ -477,8 +593,9 @@ export default function LiveVideoStudioPage() {
                     className="mt-1"
                   />
                   <span>
-                    I understand this agent will use a catalog presenter and each live session
-                    reserves {sessionMinutes} minutes from the monthly allowance.
+                    I understand this agent will use a catalog presenter. Each session runs for up
+                    to {sessionMinutes} minutes, and the selected voice engine will show its exact
+                    allowance reservation before I start.
                   </span>
                 </label>
                 <Button
@@ -560,10 +677,8 @@ export default function LiveVideoStudioPage() {
                           </Select>
                           {selectedEngine ? (
                             <p className="text-xs leading-5 text-muted-foreground">
-                              {selectedEngine.description}
-                              {reserveMinutes > sessionMinutes
-                                ? ` Reserves ${reserveMinutes} minutes of your monthly allowance per session.`
-                                : ""}
+                              {selectedEngine.description} A {sessionMinutes}-minute session
+                              reserves {reserveMinutes} minutes of your monthly allowance.
                             </p>
                           ) : null}
                         </div>
@@ -598,16 +713,30 @@ export default function LiveVideoStudioPage() {
 
                   <div className="bg-secondary/30 p-3 sm:p-5">
                     {session ? (
-                      <LiveVideoPresenter
-                        ref={presenterRef}
-                        credentials={session.live}
-                        fallbackSeed={session.fallbackSeed}
-                        agentName={activeAgentName}
-                        layout="stage"
-                        className="w-full"
-                        onStreamReady={() => setPresenterReady(true)}
-                        onRetry={() => void startPreview()}
-                      />
+                      <Suspense fallback={<PresenterLoadingStage />}>
+                        <LiveVideoPresenter
+                          ref={presenterRef}
+                          credentials={session.live}
+                          fallbackSeed={session.fallbackSeed}
+                          agentName={activeAgentName}
+                          layout="stage"
+                          className="w-full"
+                          onStreamReady={() => setPresenterReady(true)}
+                          onRetry={() => void startPreview()}
+                          onSessionEnded={({ watchedSeconds }) => {
+                            setPresenterReady(false);
+                            setSecondsLeft(null);
+                            // Settle on EVERY ending, including `stopped`. That
+                            // reason covers component cleanup — switching agents,
+                            // navigating away — where no explicit endPreview runs,
+                            // so skipping it stopped the provider session while
+                            // still charging the tenant the full reservation.
+                            // settleSession is receipt-deduplicated, so the
+                            // endPreview path calling it too is a no-op.
+                            void settleSession(session.live, watchedSeconds, activeAgentId);
+                          }}
+                        />
+                      </Suspense>
                     ) : (
                       <div className="relative grid aspect-video min-h-[240px] place-items-center overflow-hidden rounded-2xl border border-border bg-background shadow-sm sm:min-h-[300px]">
                         {selectedAvatar?.previewImageUrl ? (
@@ -657,6 +786,19 @@ export default function LiveVideoStudioPage() {
                         <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5 tabular-nums">
                           {remainingMinutes} of {includedMinutes} min remaining
                         </span>
+                        {/* The five-minute cap used to arrive unannounced and
+                            read as a failure. Counting it down in the open makes
+                            the ceiling a known part of the session. */}
+                        {secondsLeft != null ? (
+                          <span
+                            className="rounded-full border border-border bg-secondary/50 px-3 py-1.5 tabular-nums"
+                            role="timer"
+                          >
+                            {Math.floor(secondsLeft / 60)}:
+                            {String(Math.floor(secondsLeft % 60)).padStart(2, "0")} left in this
+                            session
+                          </span>
+                        ) : null}
                         <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
                           {presenterReady
                             ? "Camera connected"

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 import { auditLogger, log } from "../lib/server-context";
-import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
+import { rateLimit, peekRateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 
 function isTestEnv() {
   return process.env.NODE_ENV === "test" || process.env.PLAYWRIGHT_TEST === "true";
@@ -115,6 +115,64 @@ function authRateLimitOptions(bucket: string, windowMs: number, max: number) {
   };
 }
 
+/**
+ * Failure-only budgets that bound the two dimensions the per-(email, IP) key
+ * does not.
+ *
+ * That key limits repeat attempts against ONE address from one host. Password
+ * spraying and credential stuffing both vary the email, so every attempt lands
+ * in a fresh bucket and nothing is bounded — one host can try one password
+ * against fifty thousand addresses without ever seeing a 429, and because the
+ * only writer of `rate_limit_exceeded` audit rows is the 429 path, the sweep
+ * leaves no security signal either.
+ *
+ * Counted on FAILURE only. A shared-NAT office whose people sign in correctly
+ * never touches these buckets; an attacker guessing wrong does, immediately.
+ */
+const SIGNIN_IP_FAILURE_MAX = 50;
+const SIGNIN_EMAIL_FAILURE_MAX = 20;
+
+function signinFailureIpKey(ip: string) {
+  return `signin_fail_ip:${ip}`;
+}
+
+function signinFailureEmailKey(email: string) {
+  return `signin_fail_email:${email}`;
+}
+
+/**
+ * Record one failed sign-in against the failure budgets. Called from the 401
+ * path so only wrong credentials cost anything. Best-effort: a limiter outage
+ * must never turn a failed password into a 500.
+ */
+export async function recordSigninFailure(ip: string, email: string): Promise<void> {
+  const normalizedIp = ip || "anon";
+  const normalizedEmail = email.trim().toLowerCase();
+  try {
+    const writes = [
+      rateLimit(
+        signinFailureIpKey(normalizedIp),
+        authRateLimitOptions("signin_fail_ip", SIGNIN_RATE_WINDOW_MS, SIGNIN_IP_FAILURE_MAX),
+      ),
+    ];
+    if (normalizedEmail) {
+      writes.push(
+        rateLimit(
+          signinFailureEmailKey(normalizedEmail),
+          authRateLimitOptions(
+            "signin_fail_email",
+            SIGNIN_RATE_WINDOW_MS,
+            SIGNIN_EMAIL_FAILURE_MAX,
+          ),
+        ),
+      );
+    }
+    await Promise.all(writes);
+  } catch {
+    /* the throttle is defense in depth; never fail the request on it */
+  }
+}
+
 export async function signinRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
   if (refusedForNoDistributedLimiter(res)) return;
@@ -122,6 +180,36 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
   const ip = req.ip || "anon";
   const key = email ? `signin:${email}:${ip}` : `signin:anon:${ip}`;
   try {
+    // Peek, never increment: these budgets are spent by failures only.
+    const [ipBudget, emailBudget] = await Promise.all([
+      peekRateLimit(
+        signinFailureIpKey(ip),
+        authRateLimitOptions("signin_fail_ip", SIGNIN_RATE_WINDOW_MS, SIGNIN_IP_FAILURE_MAX),
+      ),
+      email
+        ? peekRateLimit(
+            signinFailureEmailKey(email),
+            authRateLimitOptions(
+              "signin_fail_email",
+              SIGNIN_RATE_WINDOW_MS,
+              SIGNIN_EMAIL_FAILURE_MAX,
+            ),
+          )
+        : Promise.resolve({ allowed: true, remaining: 0, resetMs: 0 }),
+    ]);
+    if (!ipBudget.allowed || !emailBudget.allowed) {
+      auditRateLimitExceeded({
+        resource: !ipBudget.allowed ? "auth_signin_ip" : "auth_signin_email",
+        ip: req.ip,
+        metadata: email ? { email } : undefined,
+      });
+      res.setHeader("Retry-After", Math.ceil(SIGNIN_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many sign-in attempts. Wait 15 minutes and try again.",
+        code: "SIGNIN_RATE_LIMIT",
+      });
+    }
+
     const result = await rateLimit(
       key,
       authRateLimitOptions("signin", SIGNIN_RATE_WINDOW_MS, SIGNIN_RATE_MAX),

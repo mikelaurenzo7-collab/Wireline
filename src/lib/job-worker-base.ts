@@ -12,7 +12,13 @@ import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
 import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
-import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
+import {
+  claimTerminalAccountPurge,
+  purgeAccount,
+  releaseExternalResourcesForPurge,
+} from "./account-deletion";
+import { runTerminalDeletionSequence } from "./account-deletion-fence";
+import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -114,6 +120,12 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
  * Dispatches jobs from the wireline_jobs table.
  */
 export async function handleJob(job: JobRow): Promise<void> {
+  if (job.type === "post_call_digest") {
+    const { handlePostCallDigestJob } = await import("./post-call-digest");
+    await handlePostCallDigestJob(job);
+    return;
+  }
+
   if (job.type === "post_call_enrichment") {
     const p = job.payload as {
       agentId: string;
@@ -461,94 +473,78 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    // Guard: the queue row must still be 'pending' AND past its
-    // scheduled_purge_at. If the user cancelled in the grace window, skip.
-    let queueRow: any = null;
-    if (p.queue_id) {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(eq(schema.deletionQueue.id, p.queue_id))
-        .limit(1);
-      queueRow = data;
-    } else {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(
-          and(
-            eq(schema.deletionQueue.userId, p.user_id),
-            eq(schema.deletionQueue.status, "pending"),
-          ),
-        )
-        .limit(1);
-      queueRow = data;
-    }
+    const sequence = await runTerminalDeletionSequence({
+      establishTerminalState: async () => {
+        const claim = await claimTerminalAccountPurge(
+          { userId: p.user_id, ...(p.queue_id ? { queueId: p.queue_id } : {}) },
+          { db: drizzle },
+        );
+        if (!claim.ready) {
+          log.info("purge_deleted_account skipped — terminal claim unavailable", {
+            jobId: job.id,
+            user_id: p.user_id,
+            reason: claim.reason,
+          });
+          return null;
+        }
+        log.info("purge_deleted_account terminal state established", {
+          jobId: job.id,
+          user_id: p.user_id,
+          resumed: claim.resumed,
+        });
+        return claim.queueRow;
+      },
+      // The durable `purging` commit above drains earlier post-call work and
+      // prevents any later provider delivery before teardown starts.
+      releaseExternalResources: async () => {
+        const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
+        log.info("purge_deleted_account external release", {
+          jobId: job.id,
+          user_id: p.user_id,
+          subscriptions_canceled: release.subscriptionsCanceled,
+          numbers_released: release.numbersReleased,
+          number_errors: release.numberErrors.length,
+          oauth_attempted: release.oauthAttempted,
+          oauth_revoked: release.oauthRevoked,
+        });
+        return release;
+      },
+      purgeLocalAccount: async (queueRow) => {
+        const result = await purgeAccount(p.user_id, { db: drizzle, log });
+        if (!result.ok) {
+          log.error("purge_deleted_account failed", {
+            jobId: job.id,
+            user_id: p.user_id,
+            error: result.error,
+          });
+          throw new Error(result.error ?? "account purge failed");
+        }
 
-    if (!queueRow || queueRow.status !== "pending") {
-      log.info("purge_deleted_account skipped — no pending queue row", {
-        jobId: job.id,
-        user_id: p.user_id,
-      });
-      return;
-    }
-    if (new Date(queueRow.scheduledPurgeAt).getTime() > Date.now()) {
-      log.info("purge_deleted_account skipped — still within grace window", {
-        jobId: job.id,
-        user_id: p.user_id,
-        scheduled_purge_at: queueRow.scheduledPurgeAt,
-      });
-      return;
-    }
+        // Audit BEFORE marking the queue row purged so the audit row is still
+        // owned by a (now-deleted) user — historical record of the action.
+        void auditLogger
+          .logAccountDeletion({
+            userId: p.user_id,
+            tablesTouched: result.tablesTouched,
+            ip: queueRow.ip ?? undefined,
+          })
+          .catch(() => {});
 
-    // Tear down PAID external resources (Stripe subscriptions, Twilio/Vapi
-    // numbers) BEFORE the irreversible row purge — once purgeAccount deletes
-    // wireline_subscriptions/wireline_phone_numbers we lose the ids forever.
-    // A hard Stripe failure throws here so the job retries instead of purging
-    // a still-billing subscription; number-release failures are logged only.
-    const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
-    log.info("purge_deleted_account external release", {
-      jobId: job.id,
-      user_id: p.user_id,
-      subscriptions_canceled: release.subscriptionsCanceled,
-      numbers_released: release.numbersReleased,
-      number_errors: release.numberErrors.length,
-      oauth_attempted: release.oauthAttempted,
-      oauth_revoked: release.oauthRevoked,
+        // The local purge normally deletes this PII-bearing row. This update
+        // documents terminal state for schemas where the row is retained.
+        await drizzle
+          .update(schema.deletionQueue)
+          .set({ status: "purged", purgedAt: new Date() })
+          .where(eq(schema.deletionQueue.id, queueRow.id));
+        return result;
+      },
     });
 
-    const result = await purgeAccount(p.user_id, { db: drizzle, log });
-    if (!result.ok) {
-      log.error("purge_deleted_account failed", {
-        jobId: job.id,
-        user_id: p.user_id,
-        error: result.error,
-      });
-      throw new Error(result.error ?? "account purge failed");
-    }
-
-    // Audit BEFORE marking the queue row purged so the audit row is still
-    // owned by a (now-deleted) user — historical record of the action.
-    void auditLogger
-      .logAccountDeletion({
-        userId: p.user_id,
-        tablesTouched: result.tablesTouched,
-        ip: queueRow.ip ?? undefined,
-      })
-      .catch(() => {});
-
-    // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
-    // would have already removed it when the auth row was deleted, so this
-    // update may affect zero rows — that's fine.
-    await drizzle
-      .update(schema.deletionQueue)
-      .set({ status: "purged", purgedAt: new Date() })
-      .where(eq(schema.deletionQueue.id, queueRow.id));
-
+    if (!sequence.started) return;
     log.info("purge_deleted_account completed", {
       jobId: job.id,
       user_id: p.user_id,
-      tables_touched: result.tablesTouched.length,
+      tables_touched: sequence.purge.tablesTouched.length,
     });
   }
 
@@ -720,6 +716,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         direction: schema.callLogs.direction,
         durationSeconds: schema.callLogs.durationSeconds,
         qaScore: schema.callLogs.qaScore,
+        qaBreakdown: schema.callLogs.qaBreakdown,
         agentRole: schema.agents.role,
       })
       .from(schema.callLogs)
@@ -732,11 +729,18 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    // Idempotency: if the call already has a QA score (e.g. Vapi retried
-    // end-of-call-report and the job ran twice), skip the second pass to
-    // save a Claude API call per duplicate.
-    if (call.qaScore != null) {
-      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
+    // Idempotency: skip only if the RUBRIC has already scored this call (e.g.
+    // Vapi retried end-of-call-report and the job ran twice).
+    //
+    // This used to test `call.qaScore != null`, which was always true: the Vapi
+    // end-of-call handler writes a provisional heuristic score on every single
+    // call before this job is even enqueued. So the guard fired every time, the
+    // five-dimension rubric never ran once, the score account holders read as a
+    // quality assessment was a regex over the coaching note, and the
+    // `adaptive_optimization` job that low rubric scores chain into — the whole
+    // agent-learning loop — was unreachable.
+    if (!qaRubricShouldRun(call.qaBreakdown)) {
+      log.info("auto_qa_score skipped — rubric already scored", { callLogId: p.callLogId });
       return;
     }
 
@@ -769,7 +773,12 @@ export async function handleJob(job: JobRow): Promise<void> {
         ),
       );
 
-      const updates: any = { qaScore: score, qaBreakdown: breakdown as any };
+      const updates: any = {
+        qaScore: score,
+        // Stamped so the guard above can tell a completed rubric from the
+        // provisional heuristic the end-of-call handler leaves behind.
+        qaBreakdown: { ...(breakdown as any), source: QA_SCORE_SOURCE_RUBRIC },
+      };
       if ((breakdown as any)?.coaching_note)
         updates.coachingNote = (breakdown as any).coaching_note;
       await drizzle
@@ -788,6 +797,14 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
     } catch (err: any) {
       log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
+      // Re-throw so the queue actually retries. Swallowing marked the job done
+      // on the first Claude hiccup, and with it went the call's QA score, its
+      // coaching note, and the adaptive_optimization job that low scores chain
+      // into — the whole agent-learning loop, silently, with no dead letter to
+      // notice. The rubric-provenance guard above makes a retry that lands
+      // after a late success a no-op, so this is safe to hand back to the
+      // existing backoff and dead-letter path.
+      throw err;
     }
   }
 
@@ -858,9 +875,17 @@ export async function handleJob(job: JobRow): Promise<void> {
         to: userRow.email,
         daysLeft: p.daysLeft ?? 3,
         checkoutUrl: `${appUrl}/pricing`,
+        idempotencyKey: `trial-ending-soon/${job.id}`,
       });
       if (!result.ok) {
-        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
+        if (result.disposition === "suppressed") {
+          log.info("trial_ending_soon_email suppressed", {
+            userId: p.userId,
+            reason: result.error,
+          });
+          return;
+        }
+        throw new Error(result.error || "Trial-ending email was not accepted");
       } else {
         log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
       }
@@ -899,19 +924,23 @@ export async function handleJob(job: JobRow): Promise<void> {
     if (count === 0) return;
     const top = await listAtRiskTenants(5);
     const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail) return;
+    if (!ownerEmail) throw new Error("OWNER_EMAIL is required for margin-at-risk alerts");
     const lines = top
       .map(
         (t) =>
           `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "—"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
       )
       .join("\n");
-    await sendEmail({
+    const result = await sendEmail({
       to: ownerEmail,
       subject: `[Wireline] ${count} tenant(s) at margin risk`,
       text: `${count} tenant(s) are below the margin safety threshold this month.\n\n${lines}`,
       html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
+      idempotencyKey: `margin-at-risk/${job.id}`,
     });
+    if (!result.ok) {
+      throw new Error(result.error || "Margin-at-risk alert was not accepted");
+    }
   }
 }
 

@@ -57,14 +57,11 @@ export default function WebsiteKnowledgeImport({
     setError(null);
     setNotice(null);
     try {
-      const response = await authFetch(
-        `/api/agent-config/${encodeURIComponent(agentId)}/website`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: parsed.toString() }),
-        },
-      );
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/website`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: parsed.toString() }),
+      });
       const body = (await safeJson(response)) as ImportResponse | null;
       if (!response.ok) {
         throw new Error(body?.error || "That website page could not be imported.");
@@ -93,7 +90,7 @@ export default function WebsiteKnowledgeImport({
   return (
     <section className="wl-paper wl-paper-elevated p-5" aria-labelledby="website-knowledge-title">
       <div className="flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-[9px] bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-action-primary-default)]">
+        <div className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-action-primary-default)]">
           <Globe2 size={18} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
@@ -126,7 +123,7 @@ export default function WebsiteKnowledgeImport({
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://yourcompany.com/services"
           disabled={importing || !agentId}
-          className="min-h-[40px] min-w-0 flex-1 rounded-[9px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-sm text-[var(--wireline-color-text-primary)] outline-none transition placeholder:text-[var(--wireline-color-text-tertiary)] focus:border-[var(--wireline-color-action-primary-default)] focus:ring-2 focus:ring-[var(--wireline-color-action-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 min-w-0 flex-1 rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-sm text-[var(--wireline-color-text-primary)] outline-none transition placeholder:text-[var(--wireline-color-text-tertiary)] focus:border-[var(--wireline-color-action-primary-default)] focus:ring-2 focus:ring-[var(--wireline-color-action-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
         />
         <Button type="submit" disabled={importing || !agentId || !url.trim()} className="sm:w-auto">
           {importing ? (
@@ -143,7 +140,7 @@ export default function WebsiteKnowledgeImport({
       {error ? (
         <p
           role="alert"
-          className="mt-3 rounded-[8px] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-error)]"
+          className="mt-3 rounded-[var(--wireline-radius-sm)] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-error)]"
         >
           {error}
         </p>
@@ -151,7 +148,11 @@ export default function WebsiteKnowledgeImport({
       {notice ? (
         <p
           role="status"
-          className="mt-3 rounded-[8px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-action-primary-pressed)]"
+          // Success text on the success surface. The violet action token here
+          // was both off-grammar (violet means action, green means success) and
+          // 3.95:1 at 12px — under AA. The status token is 9.7:1, and it
+          // matches how the sibling error notice above already does it.
+          className="mt-3 rounded-[var(--wireline-radius-sm)] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-success)]"
         >
           {notice}
         </p>

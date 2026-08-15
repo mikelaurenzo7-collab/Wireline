@@ -80,9 +80,12 @@ describe("compliance & runtime fix contracts", () => {
 
   it("the Vapi tool-call timeout is caught OUTSIDE the timeout wrapper", () => {
     const route = read("src/routes/vapi-v2.ts");
-    expect(route).toContain(").catch((err) => ({");
-    // the old bug: .catch attached to the inner dispatch IIFE
-    expect(route).not.toContain("}))().catch((err) => ({");
+    // The invariant is WHERE the catch attaches, not how the handler is written:
+    // it must wrap withVapiToolTimeout(...) so the wrapper's own rejection is
+    // caught, and must NOT be attached to the inner dispatch IIFE.
+    expect(route).toContain(").catch((err) => {");
+    expect(route).not.toMatch(/\}\)\)\(\)\.catch\(/);
+    expect(route.indexOf("withVapiToolTimeout(")).toBeLessThan(route.indexOf(").catch((err) => {"));
   });
 
   it("shopify_apply_discount does not fabricate success for the unimplemented stub", () => {

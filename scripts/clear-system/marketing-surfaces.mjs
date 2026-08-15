@@ -4,16 +4,10 @@
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const claritySystemCss = read("src/styles/clarity-system.css");
-  const marketingPageFrame = read(
-    "src/components/layout/MarketingPageFrame.tsx",
-  );
+  const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
-  const publicHeader = read(
-    "src/components/marketing/PrecisionPublicHeader.tsx",
-  );
-  const wireAgentLanding = read(
-    "src/components/marketing/WireAgentLanding.tsx",
-  );
+  const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+  const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -159,13 +153,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /Build\. Train\. Launch\. Improve\./,
     "features must preserve the canonical operating loop",
   );
-  for (const tier of [
-    "Free Builder",
-    "Starter",
-    "Starter Plus",
-    "Pro",
-    "Business",
-  ]) {
+  for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Scale"]) {
     mustInclude(
       "src/pages/Pricing.tsx",
       pricingPage,
@@ -173,6 +161,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       `pricing must expose the ${tier} tier`,
     );
   }
+  mustExclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /\$159|Wireline\s+Business/,
+    "pricing must not revive the retired self-serve Business offer",
+  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,

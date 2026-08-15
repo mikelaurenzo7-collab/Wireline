@@ -178,6 +178,30 @@ function blockedDeliveryReason(reason: WebhookBlockReason): string {
   return "dns_resolution_failed";
 }
 
+/**
+ * Is this block a permanent property of the endpoint, or a bad moment?
+ *
+ * The destination guard returns four reasons and the delivery path used to
+ * treat all four the same: abandon the event outright, `next_attempt_at` null,
+ * attempts frozen at one. That is right for three of them — a private address,
+ * a non-HTTPS scheme, and an unparseable URL are configuration facts that will
+ * not change between now and five minutes from now.
+ *
+ * `dns_resolution_failed` is not in that class. It fires on a resolver blip, a
+ * customer nameserver having a bad minute, or a freshly pointed domain still
+ * propagating, and the consequence was that a single unlucky lookup silently
+ * discarded a real event — while the identical failure occurring one layer
+ * later (as a connect error from `postWebhookSafely`) retried normally through
+ * the backoff ladder. Same underlying condition, opposite outcome, decided by
+ * which side of the guard noticed first.
+ *
+ * So DNS now falls through to the normal attempt ladder: exponential backoff,
+ * `max_attempts`, dead-letter and the Sentry event at the end of it.
+ */
+function blockIsPermanent(reason: WebhookBlockReason): boolean {
+  return reason !== "dns_resolution_failed";
+}
+
 export async function attemptWebhookDelivery(deliveryId: string | number) {
   const deliveryIdBig = BigInt(deliveryId);
   const nextAttempts = await claimWebhookDelivery(deliveryIdBig);
@@ -280,31 +304,37 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
         reason: lastError,
+        retryable: !blockIsPermanent(response.reason),
       });
-      await persistDeliveryOutcome({
-        deliveryId: deliveryIdBig,
-        webhookId: hook.id,
-        status: WEBHOOK_DELIVERY_FAILED,
-        statusCode: null,
-        attempts: nextAttempts,
-        nextAttemptAt: null,
-        deliveredAt: null,
-        lastError,
-      });
-      return;
-    }
-
-    statusCode = response.statusCode;
-    if (response.redirect) {
-      lastError = "redirect_blocked";
-      log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
-        deliveryId: String(deliveryId),
-        webhookId: hook.id,
-        statusCode,
-      });
+      if (blockIsPermanent(response.reason)) {
+        await persistDeliveryOutcome({
+          deliveryId: deliveryIdBig,
+          webhookId: hook.id,
+          status: WEBHOOK_DELIVERY_FAILED,
+          statusCode: null,
+          attempts: nextAttempts,
+          nextAttemptAt: null,
+          deliveredAt: null,
+          lastError,
+        });
+        return;
+      }
+      // Retryable block (DNS): fall through to the shared attempt ladder below
+      // so it backs off, counts attempts, and dead-letters like any other
+      // transient failure. `success` stays false and `statusCode` stays null.
     } else {
-      success = response.ok;
-      lastError = success ? null : `http_${response.statusCode}`;
+      statusCode = response.statusCode;
+      if (response.redirect) {
+        lastError = "redirect_blocked";
+        log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
+          deliveryId: String(deliveryId),
+          webhookId: hook.id,
+          statusCode,
+        });
+      } else {
+        success = response.ok;
+        lastError = success ? null : `http_${response.statusCode}`;
+      }
     }
   } catch (err: unknown) {
     lastError = "request_failed";

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { providerHttpError } from "../provider-http-error";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   buildOpenAIRealtimeInstructions,
@@ -43,6 +44,13 @@ function getOpenAIApiKey(
   }
   return apiKey;
 }
+
+/**
+ * Lifetime of a minted ephemeral client secret, in seconds. The client opens
+ * its WebRTC session immediately after the mint request returns, so this only
+ * needs to cover network + handshake — not the length of the conversation.
+ */
+const OPENAI_REALTIME_SECRET_TTL_SECONDS = 120;
 
 function safetyIdentifierForUser(userId: string): string {
   return createHash("sha256").update(`wireline:${userId}`).digest("hex");
@@ -89,6 +97,14 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
         },
       },
     },
+    // Bound the mint-to-use window. Every mint durably debits five simulation
+    // minutes and books a fixed platform cost reserve BEFORE the secret is
+    // handed out, so an unbounded secret (OpenAI's default is ten minutes) let
+    // a client stockpile paid-for tokens and redeem them long after the debit,
+    // decoupling what a tenant is charged from when the platform key is spent.
+    // A secret is only ever used to open a session immediately after the
+    // request that minted it, so a short window costs nothing legitimate.
+    expires_after: { anchor: "created_at", seconds: OPENAI_REALTIME_SECRET_TTL_SECONDS },
   };
 }
 
@@ -145,10 +161,15 @@ export async function createOpenAIRealtimeClientSecret(
         status: response.status,
         body: typeof text === "string" ? text.slice(0, 500) : undefined,
       });
-      throw AppError.fromHttpStatus(
-        response.status,
-        "OpenAI Realtime session could not be created. Check OpenAI model access and billing.",
-      );
+      // Never reuse OpenAI's status: a 401 here means the PLATFORM key is bad,
+      // and the browser force-signs-out the account holder on any 401.
+      throw providerHttpError({
+        provider: "OpenAI Realtime",
+        path: "/v1/realtime/client_secrets",
+        status: response.status,
+        unavailableMessage:
+          "Live simulation is temporarily unavailable. Wireline has been notified — real phone calls are unaffected.",
+      });
     }
 
     return {

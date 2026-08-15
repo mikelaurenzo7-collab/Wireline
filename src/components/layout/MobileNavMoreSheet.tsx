@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { MOBILE_MORE_NAV, isNavActive, type ShellNavItem } from "../../constants/navigation";
+import { navIcon } from "../nav-icons";
 import { useAccount } from "../../contexts/AccountContext";
 import { isRouteAvailableForAccount } from "../../lib/account-type";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/shadcn/Sheet";
@@ -21,7 +22,7 @@ function MoreNavLink({
   onNavigate: () => void;
 }) {
   const active = isNavActive(pathname, item.href);
-  const Icon = item.icon;
+  const Icon = navIcon(item.icon);
   return (
     <Link
       to={item.href}

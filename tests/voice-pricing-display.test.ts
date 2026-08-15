@@ -10,23 +10,13 @@ import {
 describe("voice-pricing-display", () => {
   it("publishes one prepaid rate for every paid plan", () => {
     const rates = publishedVoiceRates();
-    expect(rates.map((row) => row.planId)).toEqual([
-      "starter",
-      "team",
-      "business",
-      "enterprise",
-    ]);
+    expect(rates.map((row) => row.planId)).toEqual(["starter", "team", "business"]);
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
-    expect(
-      rates.every((row) => row.rateUsd === voiceRateForPlan("starter")),
-    ).toBe(true);
+    expect(rates.every((row) => row.rateUsd === voiceRateForPlan("starter"))).toBe(true);
   });
 
   it("derives the public rate from the catalog", () => {
-    const pricing = readFileSync(
-      resolve(process.cwd(), "src/pages/Pricing.tsx"),
-      "utf8",
-    );
+    const pricing = readFileSync(resolve(process.cwd(), "src/pages/Pricing.tsx"), "utf8");
     expect(pricing).toContain("FLAT_OVERAGE_PER_MIN_USD");
     expect(pricing).toContain("TOPUP_RATE");
     expect(pricing).not.toContain('"$0.22');

@@ -63,7 +63,9 @@ describe("launch readiness triple-pass 2026-07-27", () => {
   it("serializes first Stripe customer creation under an advisory lock", () => {
     const checkout = read("src/routes/launch-billing-checkout-routes.ts");
     expect(checkout).toContain("pg_advisory_xact_lock(hashtext(${req.user.id}))");
-    expect(checkout).toContain("if (locked?.stripeCustomerId) return locked.stripeCustomerId");
+    expect(checkout).toContain("if (locked?.stripeCustomerId)");
+    expect(checkout).toContain("resolveOwnedStripeCustomer({");
+    expect(checkout).toContain("wireline-customer-recovery-${req.user.id}");
   });
 
   it("keeps Runtime Balance naming in agent knowledge plans", () => {

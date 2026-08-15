@@ -46,7 +46,11 @@ describe("video presenter integration", () => {
     expect(live).toContain("LiveAvatarSession");
     expect(live).toContain("repeatAudio");
     expect(live).toContain("const minBytes = 19_200");
-    expect(live).toContain("if (cancelled) await session.stop().catch(() => undefined)");
+    // Also covers a session that connects after the stage gave up on it —
+    // stop() no-ops while CONNECTING, so it has to be re-issued post-connect.
+    expect(live).toContain(
+      "if (cancelled || abandonedAfterDeadline) await session.stop().catch(() => undefined)",
+    );
     expect(live).toContain('layout?: "portrait" | "stage"');
     expect(live).toContain('"wl-presence-live--stage"');
     expect(live).toContain("onSpeakingChangeRef.current = onSpeakingChange");
@@ -74,7 +78,10 @@ describe("video presenter integration", () => {
     expect(live).toContain("element.muted = wirelineDrivesAudio");
     expect(live).toContain("muted={wirelineDrivesAudio}");
     // Blocked unmuted autoplay surfaces a control instead of a silent presenter.
-    expect(live).toContain("Tap to hear the presenter");
+    // ("Turn on sound" rather than "Tap to…": the stage is used on desktop at
+    // least as often as on touch.)
+    expect(live).toContain("Turn on sound");
+    expect(live).toContain("setSoundBlocked(false)");
   });
 
   it("gives the Studio-voice presenter the agent's phone voice only when PSTN-approved", () => {

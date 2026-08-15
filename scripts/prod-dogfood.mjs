@@ -1,22 +1,30 @@
 #!/usr/bin/env node
 /**
- * Production dogfood smoke. Requires explicit local credentials and writes all
- * screenshots/reports outside source control by default.
+ * Production authenticated workspace-render smoke. Requires explicit local
+ * credentials and writes all screenshots/reports outside source control by
+ * default. This does not certify checkout, signed webhooks, the Customer
+ * Portal, cancellation, refunds, or allowance reversal; use the controlled
+ * billing lifecycle in docs/DEPLOYMENT_RUNBOOK.md for that release proof.
  *
  * Usage:
  *   DOGFOOD_EMAIL=... DOGFOOD_PASSWORD=... npm run dogfood:prod
+ *   # WIRELINE_E2E_* and E2E_USER_* are accepted fallback pairs.
  */
 import { chromium } from "playwright";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { requireDogfoodCredentials } from "./dogfood-credentials.mjs";
+import {
+  requireCanonicalCredentialTarget,
+  requireDogfoodCredentials,
+} from "./dogfood-credentials.mjs";
 
-const base = (() => {
+const requestedBase = (() => {
   const index = process.argv.indexOf("--base");
   return index >= 0 ? process.argv[index + 1] : process.env.APP_URL || "https://trywireline.com";
 })();
 const { email, password } = requireDogfoodCredentials();
+const base = requireCanonicalCredentialTarget(requestedBase);
 const out = process.env.DOGFOOD_OUT || path.join(process.cwd(), ".tmp", "wireline-dogfood");
 const screenshots = path.join(out, "screenshots");
 for (const directory of [out, screenshots]) {

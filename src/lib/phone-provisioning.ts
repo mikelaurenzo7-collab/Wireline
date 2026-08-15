@@ -36,6 +36,27 @@ import {
   vapiAccountHeadroom,
 } from "./vapi-phone-numbers";
 
+/**
+ * What a tenant is told when number provisioning fails for a reason that is
+ * ours, not theirs.
+ *
+ * These messages used to be the raw internal cause, rendered straight onto
+ * /settings/phone by PhoneSetupPanel: the literal string
+ * "Vapi not configured on platform (VAPI_PRIVATE_KEY)." named our provider and
+ * our environment variable to any signed-in customer, and the catch arms
+ * returned `getErrorMessage(err)` — whatever the carrier SDK threw, which can
+ * carry account SIDs, internal URLs, and provider account names.
+ *
+ * Neither told the customer anything they could act on, which is the other
+ * half of the problem: the panel offered no recovery path because the error
+ * was not one the customer owns.
+ */
+const NUMBER_PROVISIONING_UNAVAILABLE =
+  "Wireline could not activate a number right now. This is on our side and the team has been notified — your agent still works for texts, email, and follow-up in the meantime.";
+
+const NUMBER_RELEASE_UNAVAILABLE =
+  "Wireline could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
+
 function isAutoProvisioningEnabled(): boolean {
   const flag = process.env.WIRELINE_AUTO_PROVISION_NUMBERS?.toLowerCase().trim();
   if (flag === "false" || flag === "0" || flag === "off") return false;
@@ -302,15 +323,21 @@ export async function provisionTenantNumber(
   userId: string,
   opts: ProvisionOpts = {},
 ): Promise<ProvisionResult> {
+  // Platform-configuration failures are OURS. The customer sees a line they
+  // can act on; the env var name, the provider name, and the switch that is off
+  // go to the operator log where they are useful and where they are not an
+  // information disclosure on a page any signed-in tenant can reach.
   if (!isAutoProvisioningEnabled()) {
-    return {
-      ok: false,
-      error: "Auto-provisioning disabled (non-prod or WIRELINE_AUTO_PROVISION_NUMBERS=false).",
-    };
+    log.error("number provisioning refused — auto-provisioning is disabled", {
+      userId,
+      hint: "non-prod, or WIRELINE_AUTO_PROVISION_NUMBERS=false",
+    });
+    return { ok: false, error: NUMBER_PROVISIONING_UNAVAILABLE };
   }
 
   if (!process.env.VAPI_PRIVATE_KEY?.trim()) {
-    return { ok: false, error: "Vapi not configured on platform (VAPI_PRIVATE_KEY)." };
+    log.error("number provisioning refused — VAPI_PRIVATE_KEY is not set", { userId });
+    return { ok: false, error: NUMBER_PROVISIONING_UNAVAILABLE };
   }
 
   if (opts.agentId) {
@@ -488,11 +515,13 @@ export async function provisionTenantNumber(
 
     return { ok: true, phoneNumber, vapiNumberId, reused: false };
   } catch (err) {
+    // Whatever the carrier SDK threw is operator detail — it can carry account
+    // SIDs, internal URLs, and provider account names. Logged, never returned.
     log.error("provisionTenantNumber failed", {
       userId,
       error: getErrorMessage(err),
     });
-    return { ok: false, error: getErrorMessage(err) };
+    return { ok: false, error: NUMBER_PROVISIONING_UNAVAILABLE };
   }
 }
 
@@ -575,6 +604,7 @@ export async function releaseTenantNumber(
     });
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: getErrorMessage(err) };
+    log.error("releaseTenantNumber failed", { userId, error: getErrorMessage(err) });
+    return { ok: false, error: NUMBER_RELEASE_UNAVAILABLE };
   }
 }

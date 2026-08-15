@@ -43,7 +43,9 @@ const clientReportRateLimiter = createIpRateLimiter({
   message: { error: "Too many client error reports.", code: "RATE_LIMITED" },
 });
 function monitorTokenOk(req: Request): boolean {
-  const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET;
+  const expected = [process.env.HEALTH_MONITOR_TOKEN, process.env.CRON_SECRET].find((value) =>
+    Boolean(value?.trim()),
+  );
   const supplied =
     req.get("x-monitor-token") || (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!expected || !supplied) return false;
@@ -233,17 +235,28 @@ router.get(
         pendingJobs: platformSnapshot.jobs.queue.pending,
         webhookSuccessRate: platformSnapshot.webhooks.success_rate,
         webhookAttempts: platformSnapshot.webhooks.attempts_in_window,
+        webhookCompletedDeliveries:
+          platformSnapshot.webhooks.success_in_window +
+          platformSnapshot.webhooks.terminal_failure_in_window,
         windowHours,
       });
-      const dimensionValues = Object.values(platformSnapshot.dimensions);
+      // The operational evaluator adds database reachability while the
+      // snapshot owns measured enrichment and AI reliability. Preserve both;
+      // spreading `platform` directly used to erase the latter dimensions.
+      const dimensions = { ...platformSnapshot.dimensions, ...platform.dimensions };
+      const dimensionValues = Object.values(dimensions);
       const banner_status = dimensionValues.includes("critical")
         ? "critical"
         : dimensionValues.includes("warn")
           ? "degraded"
           : "healthy";
+      const status = banner_status !== "healthy" ? "degraded" : platform.status;
       return res.json({
         ...platformSnapshot,
         ...platform,
+        status,
+        dimensions,
+        notes: [...platformSnapshot.notes, ...platform.notes],
         banner_status,
         timestamp: evaluated_at,
       });
@@ -270,6 +283,11 @@ router.get(
       : dimensionValues.includes("warn")
         ? "degraded"
         : "healthy";
+    const monitorTokenConfigured = [process.env.HEALTH_MONITOR_TOKEN, process.env.CRON_SECRET].some(
+      (value) => Boolean(value?.trim()),
+    );
+    const ownerContactConfigured = Boolean(process.env.OWNER_EMAIL?.trim());
+    const incidentResponseConfigured = monitorTokenConfigured && ownerContactConfigured;
     return res.json({
       ...snapshot,
       banner_status,
@@ -286,11 +304,12 @@ router.get(
           evidence: { jobs_queue: snapshot.dimensions.jobs_queue },
         },
         incident_response: {
-          configured: !!(process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET),
-          status:
-            process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET
-              ? "ok"
-              : "insufficient_data",
+          configured: incidentResponseConfigured,
+          status: incidentResponseConfigured ? "ok" : "insufficient_data",
+          evidence: {
+            monitor_token_configured: monitorTokenConfigured,
+            owner_contact_configured: ownerContactConfigured,
+          },
         },
       },
       timestamp: evaluated_at,

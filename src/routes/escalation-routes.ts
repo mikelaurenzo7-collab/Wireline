@@ -33,6 +33,7 @@ import { eq } from "drizzle-orm";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 import { sendPlatformOperationalAlert } from "../lib/twilio-service-base";
+import { conversationShapeForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 
 // Targeted, tight rate limit on the public escalation webhook.
 // Real Vapi incidents during a busy period might legitimately produce a handful of escalations.
@@ -104,8 +105,11 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   log.info("Escalation received", {
     urgency,
     agentName,
-    callerPhone: callerPhone.slice(0, 8),
-    summary: summary.slice(0, 80),
+    // slice(0, 8) kept the country code and area code — the identifying half.
+    // The suffix helper masks the identifying part instead, and the summary is
+    // the caller's own words, so only its shape is logged.
+    callerPhone: phoneSuffixForLog(callerPhone),
+    summary: conversationShapeForLog(summary),
     tenantResolved: !!tenantUserId,
   });
 

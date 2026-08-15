@@ -20,6 +20,7 @@ import { normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { isFederalDncVendorConfigured } from "../lib/federal-dnc-service";
+import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 
 const router = Router();
 
@@ -120,7 +121,7 @@ router.post("/api/dnc", authenticateUser, async (req: AuthenticatedRequest, res:
       for (const row of rows) {
         void sentinel.terminateActiveCallsForNumber(row.phone, req.user.id).catch((err) =>
           log.error("sentinel terminate-on-DNC failed", {
-            phone: row.phone,
+            phone: phoneSuffixForLog(row.phone),
             error: getErrorMessage(err),
           }),
         );

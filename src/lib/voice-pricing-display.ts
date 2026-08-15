@@ -21,7 +21,7 @@ export function voiceRateForPlan(planId: StripePlanId): number {
 }
 
 export function publishedVoiceRates(): VoiceRateRow[] {
-  return STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0).map(
+  return STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
     (plan) => ({
       planId: plan.id,
       label: plan.name.replace("Wireline ", ""),

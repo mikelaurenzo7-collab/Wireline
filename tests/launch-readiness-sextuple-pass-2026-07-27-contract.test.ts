@@ -14,10 +14,31 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     expect(continuity).not.toContain("temporary negative Conversation Balance");
   });
 
-  it("gates launch-status Starter annual at catalog v6 $190", () => {
+  it("gates every public monthly and annual price from the canonical catalog", () => {
     const script = read("scripts/generate-launch-status.mjs");
-    expect(script).toContain("unit_amount_usd !== 190");
-    expect(script).toContain("starter_annual_price_not_live_190");
+    const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
+    expect(manifest).toContain('PUBLIC_SELF_SERVE_PLAN_IDS = ["starter", "team", "business"]');
+    expect(script).toContain("FOUNDER_PRICES");
+    expect(script).toContain("FOUNDER_CATALOG_VERSION");
+    expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");
+    expect(script).toContain(
+      "publicCatalogPrices.length === PUBLIC_SELF_SERVE_PLAN_IDS.length * 2",
+    );
+    expect(script).toContain("actual.metadata?.wireline_catalog_version");
+    expect(script).toContain("actual.metadata?.wireline_price_key");
+    expect(script).toContain('catalogParams.append("expand[]", "data.product")');
+    expect(script).toContain("product_name_mismatch");
+    expect(script).toContain("product_catalog_version_mismatch");
+    expect(script).toContain("supportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL");
+    expect(script).toContain("brandingLogo.length > 0");
+    expect(script).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
+    expect(script).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
+    expect(script).toContain("managed_configuration_missing");
+    expect(script).toContain("plan_switch_prices_mismatch");
+    expect(script).toContain('subscription_cancel?.mode === "at_period_end"');
+    expect(script).toContain("catalog_version_mismatch");
+    expect(script).toContain("price_key_mismatch");
+    expect(script).toContain("stripe_public_catalog_not_aligned");
     expect(script).not.toContain("starter_annual_price_not_live_99");
   });
 
@@ -60,7 +81,8 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     const browser = read("src/pages/BrowserCommandInstallPage.tsx");
     expect(blog).toContain("Voice agent");
     expect(blog).not.toContain("AI call agent");
-    expect(pricing).toContain("Full phone coverage for growing teams.");
+    expect(pricing).toContain("Five specialized agents. One supervised workspace.");
+    expect(pricing).not.toContain('publicName: "Business"');
     expect(pricing).not.toContain("AI conversation workforce");
     expect(playbooks).toContain("WhatsApp in private beta");
     expect(aiErrors).toContain("OpenAI, Gemini, or AI Gateway");

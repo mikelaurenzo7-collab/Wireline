@@ -157,8 +157,14 @@
   outline: none;
 }
 
+/* Diluting a text token with transparency drops it straight through the AA
+ * floor: 62% of text-secondary landed at 4.11:1 on the dark card and 2.86:1 in
+ * light mode. That matters most here — the composer's own label is sr-only, so
+ * this placeholder is the only visible instruction on the Studio workroom.
+ * text-tertiary is the token that exists for this tier and holds 5.34:1 dark /
+ * 5.09:1 light. */
 .wl-composer-dock__input::placeholder {
-  color: color-mix(in srgb, var(--wireline-ink-muted) 62%, transparent);
+  color: var(--wireline-color-text-tertiary);
 }
 
 .wl-composer-dock__toolbar {

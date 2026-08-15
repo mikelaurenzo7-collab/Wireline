@@ -108,35 +108,56 @@ export function getPostalAddress(): string | null {
 function requirePostalAddress(): string {
   const address = getPostalAddress();
   if (!address) {
-    throw new Error(
-      "WIRELINE_POSTAL_ADDRESS is required for commercial email",
-    );
+    throw new Error("WIRELINE_POSTAL_ADDRESS is required for commercial email");
   }
   return address;
 }
 
+/**
+ * Why the recipient is being emailed. CAN-SPAM requires the footer to identify
+ * the relationship truthfully, and not every commercial recipient is an account
+ * holder — the demo line emails a prospect who asked for a recap and has no
+ * Wireline account at all.
+ */
+export type ComplianceFooterAudience = "account" | "demo_line_recap";
+
+function footerReasonText(audience: ComplianceFooterAudience, email: string): string {
+  return audience === "demo_line_recap"
+    ? `You're receiving this because you asked for a recap on Wireline's demo line (${email}).`
+    : `You're receiving this because you have a Wireline account (${email}).`;
+}
+
+function footerUnsubscribeLabel(audience: ComplianceFooterAudience): string {
+  return audience === "demo_line_recap" ? "these emails" : "product & billing reminders";
+}
+
 /** Plain-text compliance footer (unsubscribe link + postal address). */
-export function buildComplianceFooterText(email: string): string {
+export function buildComplianceFooterText(
+  email: string,
+  audience: ComplianceFooterAudience = "account",
+): string {
   const lines = [
     "",
     "—",
-    `You're receiving this because you have a Wireline account (${normalizeEmail(email)}).`,
-    `Unsubscribe from product & billing reminders: ${unsubscribeUrl(email)}`,
+    footerReasonText(audience, normalizeEmail(email)),
+    `Unsubscribe from ${footerUnsubscribeLabel(audience)}: ${unsubscribeUrl(email)}`,
   ];
   lines.push(requirePostalAddress());
   return lines.join("\n");
 }
 
 /** HTML compliance footer matching the email design system. */
-export function buildComplianceFooterHtml(email: string): string {
+export function buildComplianceFooterHtml(
+  email: string,
+  audience: ComplianceFooterAudience = "account",
+): string {
   const addr = requirePostalAddress();
-  const safeEmail = escapeBasicHtml(normalizeEmail(email));
   const safeUnsub = escapeBasicHtml(unsubscribeUrl(email));
   return `
     <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.06); margin: 28px 0 16px;" />
     <p style="margin: 0 0 6px; line-height: 1.5; color: #9A9AA8; font-size: 11px;">
-      You're receiving this because you have a Wireline account (${safeEmail}).
-      <a href="${safeUnsub}" style="color: #6B6B7A;">Unsubscribe</a> from product &amp; billing reminders.
+      ${escapeBasicHtml(footerReasonText(audience, normalizeEmail(email)))}
+      <a href="${safeUnsub}" style="color: #6B6B7A;">Unsubscribe</a> from ${escapeBasicHtml(footerUnsubscribeLabel(audience))}.
     </p>
     <p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>
   `;
@@ -213,7 +234,9 @@ export function signTenantUnsubscribeToken(userId: string, email: string): strin
     JSON.stringify({ v: 1, t: userId, e: normalizeEmail(email) }),
     "utf8",
   ).toString("base64url");
-  const sig = createHmac("sha256", unsubKey()).update(`${TENANT_TOKEN_PREFIX}.${payload}`).digest("base64url");
+  const sig = createHmac("sha256", unsubKey())
+    .update(`${TENANT_TOKEN_PREFIX}.${payload}`)
+    .digest("base64url");
   return `${TENANT_TOKEN_PREFIX}.${payload}.${sig}`;
 }
 
@@ -387,4 +410,3 @@ export async function recordTenantEmailSuppression(
     return false;
   }
 }
-

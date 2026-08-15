@@ -23,6 +23,7 @@ import {
   isAIGatewayConfigured,
 } from "./ai-gateway";
 import { normalizeResponsesUsage } from "./ai-usage";
+import { recordAmbiguousProviderAttempt } from "./ai-audit";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -83,6 +84,49 @@ export type RuntimeClient = {
 };
 
 type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
+
+/**
+ * An explicit provider HTTP 4xx means the request was rejected rather than
+ * accepted for generation. Spend wrappers may release a pre-provider hold when
+ * every attempted lane ends this way; 5xx, transport, timeout, parse, and abort
+ * outcomes remain ambiguous or follow their existing cancellation handling.
+ */
+export class DefiniteProviderRejectionError extends Error {
+  constructor(
+    readonly provider: RuntimeProviderName,
+    readonly status: number,
+  ) {
+    super(`${provider} request was rejected (${status})`);
+    this.name = "DefiniteProviderRejectionError";
+  }
+}
+
+function explicitProviderHttpStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const candidate = error as { status?: unknown; statusCode?: unknown };
+  for (const value of [candidate.status, candidate.statusCode]) {
+    const parsed =
+      typeof value === "number"
+        ? value
+        : typeof value === "string" && /^\d{3}$/.test(value.trim())
+          ? Number(value)
+          : NaN;
+    if (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) return parsed;
+  }
+  return null;
+}
+
+function definiteProviderRejection(
+  error: unknown,
+  provider: RuntimeProviderName,
+): DefiniteProviderRejectionError | null {
+  if (error instanceof DefiniteProviderRejectionError) return error;
+  const status = explicitProviderHttpStatus(error);
+  return status !== null && status >= 400 && status < 500
+    ? new DefiniteProviderRejectionError(provider, status)
+    : null;
+}
+
 type RuntimeProvider = {
   name: RuntimeProviderName;
   call: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
@@ -279,12 +323,21 @@ async function callResponsesEndpoint(args: {
   timer.dispose();
 
   if (!response.ok) {
-    const detail = (await response.text()).slice(0, 500);
+    // Preserve the already-known HTTP classification even if the error body
+    // stream itself fails. A broken body read must not turn a definite 401/4xx
+    // rejection into an ambiguous, customer-funded provider attempt.
+    const detail = await response
+      .text()
+      .then((text) => text.slice(0, 500))
+      .catch(() => "response body unavailable");
     log.warn("[ai-runtime] provider request rejected", {
       provider: args.provider,
       status: response.status,
       detail,
     });
+    if (response.status >= 400 && response.status < 500) {
+      throw new DefiniteProviderRejectionError(args.provider, response.status);
+    }
     throw new Error(`${args.provider} Responses request failed (${response.status})`);
   }
 
@@ -618,12 +671,20 @@ async function createWithFallbacks(
       return response;
     } catch (error) {
       if (isAbortError(error, options?.signal)) throw error;
-      provider.breaker?.recordFailure(error);
-      lastError = error;
+      const definiteRejection = definiteProviderRejection(error, provider.name);
+      const providerError = definiteRejection ?? error;
+      if (!definiteRejection) {
+        // The request crossed a provider boundary, but no usage response came
+        // back. It may still be billable (notably Gemini's non-cancelable SDK
+        // timeout), so cost wrappers must retain their conservative hold.
+        recordAmbiguousProviderAttempt();
+      }
+      provider.breaker?.recordFailure(providerError);
+      lastError = providerError;
       const next = nextAvailableProvider(providers, index);
       if (next)
         log.warn(`[ai-runtime] ${fallbackMessage(provider.name, next.name)}`, {
-          error: errorMessage(error),
+          error: errorMessage(providerError),
           breakerState: provider.breaker?.getState() || "NONE",
         });
     }

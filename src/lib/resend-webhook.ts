@@ -34,6 +34,8 @@ type ResendEventData = Record<string, unknown> & {
   created_at?: unknown;
   to?: unknown;
   recipient?: unknown;
+  /** `{ type: "Permanent" | "Transient" | "Undetermined", ... }` on bounce events. */
+  bounce?: unknown;
 };
 
 export type ResendWebhookProcessResult = {
@@ -69,12 +71,44 @@ function parseRecipients(data: ResendEventData): string[] {
   return [...unique];
 }
 
+/**
+ * Resend classifies bounces the way SES does: `data.bounce.type` is
+ * `Permanent`, `Transient`, or `Undetermined`. Only `Permanent` means the
+ * address does not exist.
+ *
+ * Suppression here is forever — `wireline_email_suppressions` has no expiry and
+ * no automatic removal path — so treating every `email.bounced` event as
+ * permanent silently blocked all future mail to recipients whose mailbox was
+ * merely full, greylisted, or behind a temporarily unreachable server. A
+ * customer whose inbox filled up for one afternoon stopped receiving billing
+ * and delivery mail permanently, and nothing in the product could undo it.
+ *
+ * `Undetermined` is treated as transient for the same reason: an unproven
+ * bounce must not spend a permanent suppression. A genuinely dead address keeps
+ * bouncing and Resend escalates it to `email.suppressed`, which is still
+ * honored below.
+ */
+export function resendBounceIsPermanent(data: ResendEventData): boolean {
+  const bounce = data.bounce;
+  const rawType =
+    bounce && typeof bounce === "object"
+      ? (bounce as Record<string, unknown>).type
+      : (data as Record<string, unknown>).bounce_type;
+  if (typeof rawType !== "string") {
+    // No classification on the payload at all: fall back to the conservative
+    // pre-classification behavior rather than dropping a real hard bounce.
+    return true;
+  }
+  return rawType.trim().toLowerCase() === "permanent";
+}
+
 export function resendPermanentSuppressionReason(
   eventType: string,
+  data: ResendEventData = {},
 ): ProviderDeliverySuppressionReason | null {
   switch (eventType) {
     case "email.bounced":
-      return "resend_bounced";
+      return resendBounceIsPermanent(data) ? "resend_bounced" : null;
     case "email.complained":
       return "resend_complained";
     case "email.suppressed":
@@ -86,6 +120,7 @@ export function resendPermanentSuppressionReason(
 
 export function resendEventDetailCode(eventType: string, permanent: boolean): string {
   if (permanent) return "permanent_recipient_risk";
+  if (eventType === "email.bounced") return "transient_bounce_observed";
   if (eventType === "email.delivery_delayed") return "temporary_delivery_delay";
   if (eventType === "email.failed") return "provider_delivery_failure";
   if (eventType.startsWith("email.")) return "observed_email_event";
@@ -138,7 +173,7 @@ export async function processVerifiedResendWebhook(
   const emailId = boundedText(data.email_id, MAX_PROVIDER_ID_LENGTH);
   const recipients = parseRecipients(data);
   const recipientCount = recipients.length;
-  const reason = resendPermanentSuppressionReason(eventType);
+  const reason = resendPermanentSuppressionReason(eventType, data);
   const detailCode = resendEventDetailCode(eventType, Boolean(reason));
   let suppressionCount = 0;
 

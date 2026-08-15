@@ -93,12 +93,14 @@ describe("E2E design and brand polish", () => {
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
     expect(header).toContain("text-sm font-medium");
-    expect(header).toContain("min-h-10 px-4 text-sm font-semibold");
+    // 44px, not 40px: docs/ACCESSIBILITY.md promises the comfortable floor and
+    // this is the primary public conversion target.
+    expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
     expect(header).not.toContain("font-semibold uppercase");
     expect(sticky).toContain('label = "Build your agent"');
     expect(sticky).toContain('secondaryLabel = "Hear it live"');
     expect(sticky).toContain("min-h-[48px]");
-    expect(footer).toContain("min-h-10 items-center");
+    expect(footer).toContain("min-h-11 items-center");
   });
 
   it("keeps status and CTA foregrounds on their accessible design tokens", () => {
@@ -149,7 +151,7 @@ describe("E2E design and brand polish", () => {
     expect(landing).toContain("Build. Train. Launch. Improve.");
     expect(landing).toContain("Choose the outcome.");
     expect(landing).toContain("Put your first voice agent to work.");
-    expect(landing).toContain("Build free. Go live from $19.");
+    expect(landing).toContain("Build free. Go live from $19/mo.");
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");
   });

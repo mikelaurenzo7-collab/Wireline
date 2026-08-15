@@ -3,10 +3,12 @@
  *
  * Usage (PowerShell):
  *   $env:VERCEL_TOKEN = "<token from Vercel dashboard → Tokens>"
- *   node scripts/promote-vercel-production.mjs [deploymentId]
+ *   node scripts/promote-vercel-production.mjs [deploymentId] [expectedCommitSha]
  *
- * If deploymentId is omitted, defaults to the latest READY deployment from `main`
- * (requires VERCEL_TOKEN; uses Vercel REST API).
+ * If deploymentId is omitted, defaults to the latest READY production-target
+ * deployment from `main` (requires VERCEL_TOKEN; uses Vercel REST API).
+ * The expected commit SHA is mandatory via the second argument,
+ * WIRELINE_EXPECTED_COMMIT_SHA, or VERCEL_GIT_COMMIT_SHA.
  *
  * API: POST https://api.vercel.com/v1/projects/{projectId}/promote/{deploymentId}?teamId=...
  * (v10 promote returns 422 for staged main builds on this project.)
@@ -59,17 +61,74 @@ async function latestMainDeploymentId() {
     const ref = d.meta?.githubCommitRef;
     const state = d.state || d.readyState;
     const id = d.uid || d.id;
-    if (ref === "main" && state === "READY" && id) return id;
+    if (ref === "main" && d.target === "production" && state === "READY" && id) return id;
   }
-  throw new Error("No READY deployment from main found in the first page of results.");
+  throw new Error(
+    "No READY production-target deployment from main found in the first page of results.",
+  );
+}
+
+async function assertPromotionCandidate(deploymentId, expectedCommitSha) {
+  if (!/^[0-9a-f]{40}$/i.test(expectedCommitSha)) {
+    throw new Error(
+      "Provide the exact 40-character commit SHA as the second argument or WIRELINE_EXPECTED_COMMIT_SHA.",
+    );
+  }
+
+  const deployment = await vercelFetch(`/v13/deployments/${encodeURIComponent(deploymentId)}`, {
+    method: "GET",
+  });
+  const state = deployment.state || deployment.readyState;
+  const projectId = deployment.projectId || deployment.project?.id;
+  const commitRef = String(deployment.meta?.githubCommitRef || "");
+  const commitSha = String(deployment.meta?.githubCommitSha || "");
+
+  if (projectId !== PROJECT_ID) {
+    throw new Error(`Refusing deployment from another project: ${projectId || "unknown"}.`);
+  }
+  if (state !== "READY" || deployment.aliasError) {
+    throw new Error(`Refusing deployment that is not cleanly READY: ${state || "unknown"}.`);
+  }
+  if (deployment.target !== "production") {
+    throw new Error(
+      "Refusing to promote a preview artifact. Preview builds skip production migrations and production-only release gates; create a production-target build instead.",
+    );
+  }
+  if (commitRef !== "main") {
+    throw new Error(`Refusing non-main deployment from ${commitRef || "unknown branch"}.`);
+  }
+  if (commitSha.toLowerCase() !== expectedCommitSha.toLowerCase()) {
+    throw new Error(
+      `Refusing stale or unexpected deployment SHA ${commitSha || "unknown"}; expected ${expectedCommitSha}.`,
+    );
+  }
+
+  return deployment;
 }
 
 async function main() {
   let deploymentId = process.argv[2];
+  const expectedCommitSha = String(
+    process.argv[3] ||
+      process.env.WIRELINE_EXPECTED_COMMIT_SHA ||
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      "",
+  ).trim();
   if (!deploymentId) {
     deploymentId = await latestMainDeploymentId();
     console.log("Using latest main deployment:", deploymentId);
   }
+
+  const deployment = await assertPromotionCandidate(deploymentId, expectedCommitSha);
+  console.log(
+    "Promotion preflight passed:",
+    JSON.stringify({
+      deploymentId,
+      target: deployment.target,
+      branch: deployment.meta?.githubCommitRef,
+      commitSha: deployment.meta?.githubCommitSha,
+    }),
+  );
 
   const promotePath = `/v1/projects/${encodeURIComponent(PROJECT_ID)}/promote/${encodeURIComponent(deploymentId)}`;
   const result = await vercelFetch(promotePath, { method: "POST" });

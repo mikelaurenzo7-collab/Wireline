@@ -49,8 +49,9 @@
   caret-color: var(--primary);
 }
 
+/* See .wl-composer-dock__input::placeholder — a diluted token is below AA. */
 .wl-studio-operations textarea::placeholder {
-  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  color: var(--wireline-color-text-tertiary);
 }
 
 .wl-studio-operations :focus-visible {

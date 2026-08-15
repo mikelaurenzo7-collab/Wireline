@@ -24,6 +24,10 @@ describe("Twilio usage alert contract", () => {
   it("reads Usage Triggers from Twilio's account Usage API", () => {
     const launchStatus = read("scripts/generate-launch-status.mjs");
     expect(launchStatus).toContain("/Usage/Triggers.json?PageSize=100");
+    expect(launchStatus).toContain("isCanonicalTwilioUsageAlertUrl");
+    expect(launchStatus).toContain('parsed.origin === "https://trywireline.com"');
+    expect(launchStatus).toContain('trigger.callback_method === "POST"');
+    expect(launchStatus).toContain("expectedTriggerValue.get(trigger.recurring)");
     expect(launchStatus).not.toContain("monitor.twilio.com/v1/Monitors/UsageTriggers");
   });
 
@@ -32,5 +36,7 @@ describe("Twilio usage alert contract", () => {
     expect(provisionScript).toContain("/Usage/Triggers.json?PageSize=100");
     expect(provisionScript).toContain("/Usage/Triggers.json");
     expect(provisionScript).toContain("/api/twilio-webhook/usage-alert");
+    expect(provisionScript).toContain("trigger.callback_url === desired.CallbackUrl");
+    expect(provisionScript).not.toContain('callback_url || "").endsWith');
   });
 });

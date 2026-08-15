@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
@@ -11,7 +10,7 @@ describe("home landing launch clarity", () => {
   it("keeps the landing concise", () => {
     expect(landing).not.toContain("REASSURANCES");
     expect(landing).toContain("Every channel. One agent.");
-    expect(landing).toContain("Build free. Go live from $19.");
+    expect(landing).toContain("Build free. Go live from $19/mo.");
   });
 
   it("keeps free and paid capacity distinct", () => {

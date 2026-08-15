@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 384
-**Protected:** 315
+**Routes scanned:** 385
+**Protected:** 316
 **Public (allowlisted):** 69
 **Violations:** 0
 
@@ -444,6 +444,7 @@
 | video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/session/settle` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
 | video-presenter-routes-base.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |

@@ -78,28 +78,28 @@ describe("database connection selection", () => {
     ).toThrow("Database connection is not configured with a valid PostgreSQL URL.");
   });
 });
-
-
 describe("pooled database write readiness", () => {
   it("keeps tenant and queue writes immune to leaked pool session state", () => {
-    const serverContext = read("src/lib/server-context.ts");
-    const tenantCheckout = serverContext.slice(
-      serverContext.indexOf("async function scopeClientToTenant"),
-      serverContext.indexOf("/* eslint-disable @typescript-eslint/no-explicit-any", serverContext.indexOf("async function scopeClientToTenant")),
+    const tenantCheckout = read("src/lib/tenant-pool-transaction.ts");
+    const begin = tenantCheckout.indexOf('promiseQuery(rawQuery, "BEGIN")');
+    const readWrite = tenantCheckout.indexOf(
+      'promiseQuery(rawQuery, "SET TRANSACTION READ WRITE")',
     );
-    const begin = tenantCheckout.indexOf('client.query("BEGIN")');
-    const readWrite = tenantCheckout.indexOf('client.query("SET TRANSACTION READ WRITE")');
-    const tenantRole = tenantCheckout.indexOf('client.query("SET LOCAL ROLE wireline_server")');
+    const tenantRole = tenantCheckout.indexOf(
+      'promiseQuery(rawQuery, "SET LOCAL ROLE wireline_server")',
+    );
 
     expect(begin).toBeGreaterThan(-1);
     expect(readWrite).toBeGreaterThan(begin);
     expect(tenantRole).toBeGreaterThan(readWrite);
-    expect(serverContext).not.toMatch(
+    expect(tenantCheckout).not.toMatch(
       /client\.query\(["'`]SET (?:SESSION CHARACTERISTICS AS TRANSACTION READ ONLY|default_transaction_read_only\s*=\s*on)/i,
     );
 
     const queue = read("src/lib/job-queue-base.ts");
-    expect(queue).toContain('const WRITE_TRANSACTION_CONFIG = { accessMode: "read write" as const };');
+    expect(queue).toContain(
+      'const WRITE_TRANSACTION_CONFIG = { accessMode: "read write" as const };',
+    );
     expect(queue.match(/writeTransactionConfig\(\)/g)?.length ?? 0).toBeGreaterThanOrEqual(7);
 
     const health = read("src/lib/db-health-check.ts");

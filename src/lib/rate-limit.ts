@@ -134,6 +134,58 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
   };
 }
 
+/**
+ * Read a bucket WITHOUT recording a hit.
+ *
+ * `rate-limit` floors `cost` at 1, so there is no way to ask "is this key over
+ * the line?" without pushing it further over. That matters for a failure-only
+ * limiter: the sign-in path has to consult an IP bucket on every attempt but
+ * may only increment it when the attempt actually fails, or a shared-NAT office
+ * signing in correctly would lock itself out.
+ *
+ * Same fail-open / fail-closed posture as `rateLimit`, so a bucket does not
+ * change its production behavior just because it is being peeked at.
+ */
+export async function peekRateLimit(
+  key: string,
+  opts: RateLimiterOptions,
+): Promise<RateLimitResult> {
+  const now = Date.now();
+  const window = Math.floor(now / opts.windowMs);
+  const composite = `wireline:rl:${opts.bucket}:${key}:${window}`;
+  const resetMs = (window + 1) * opts.windowMs - now;
+
+  const r = getRedis();
+  if (r) {
+    try {
+      const raw = (await r.get(composite)) as number | string | null;
+      const count = Number(raw ?? 0) || 0;
+      return { allowed: count < opts.max, remaining: Math.max(0, opts.max - count), resetMs };
+    } catch (err) {
+      if (opts.failClosedOnError) {
+        log.error(`[rate-limit] redis error peeking bucket ${opts.bucket}, failing closed`, {
+          bucket: opts.bucket,
+          error: (err as Error).message,
+        });
+        throw err;
+      }
+      log.warn("[rate-limit] redis error on peek, falling back to memory", {
+        error: (err as Error).message,
+      });
+    }
+  }
+
+  const bucket = memBuckets.get(composite);
+  if (!bucket || bucket.resetAt <= now) {
+    return { allowed: true, remaining: opts.max, resetMs: opts.windowMs };
+  }
+  return {
+    allowed: bucket.count < opts.max,
+    remaining: Math.max(0, opts.max - bucket.count),
+    resetMs: bucket.resetAt - now,
+  };
+}
+
 /** Periodic cleanup of stale in-memory buckets — call once at boot. */
 export function startMemoryCleanup(intervalMs = 5 * 60_000) {
   const id = setInterval(() => {

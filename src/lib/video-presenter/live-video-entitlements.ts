@@ -10,21 +10,16 @@ import * as schema from "../../db/schema";
 import { drizzle, log } from "../server-context";
 import { canonicalPlanId, type StripePlanId } from "../plan-catalog";
 import { stripe, stripeAvailable } from "../stripe-helpers";
+import { isCurrentLiveVideoAddon } from "../stripe-live-video-addon";
 import {
   LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
   LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
 } from "./live-video-policy";
 import { getLiveAvatarStatus } from "./liveavatar-service";
 
-const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
-  "starter",
-  "team",
-  "business",
-  "enterprise",
-]);
+const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>(["starter", "team", "business", "enterprise"]);
 
 const TERMINAL_BASE_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
-const NON_ENTITLING_LIVE_VIDEO_STATUSES = new Set(["canceled", "incomplete_expired", "unpaid"]);
 
 /** Legacy name retained at call sites; semantics are now launch-active unless explicitly killed. */
 export function isLiveVideoCatalogReady(): boolean {
@@ -65,10 +60,7 @@ async function hasCurrentStripeLiveVideoAddon(stripeCustomerId: string | null): 
       status: "all",
       limit: 100,
     })) {
-      if (
-        subscription.metadata?.purpose === "live_video_addon" &&
-        !NON_ENTITLING_LIVE_VIDEO_STATUSES.has(subscription.status)
-      ) {
+      if (isCurrentLiveVideoAddon(subscription)) {
         return true;
       }
     }
@@ -105,19 +97,18 @@ export async function resolveLiveVideoEntitlement(
       liveVideoAddonEnabled: true,
       liveVideoCheckoutAvailable: Boolean(
         platformConfigured &&
-          launchEnabled &&
-          (process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
-            process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID),
+        launchEnabled &&
+        (process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
+          process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID),
       ),
       ...liveVideoAllowance,
       planId: "enterprise",
       upgradeRequired: false,
-      reason:
-        !platformConfigured
-          ? "Live video provider is not configured on this workspace."
-          : !launchEnabled
-            ? "Live video is temporarily disabled by the platform operator."
-            : null,
+      reason: !platformConfigured
+        ? "Live video provider is not configured on this workspace."
+        : !launchEnabled
+          ? "Live video is temporarily disabled by the platform operator."
+          : null,
     };
   }
 
@@ -148,9 +139,7 @@ export async function resolveLiveVideoEntitlement(
   // current. This converts the local flag from authority into the cache it was
   // intended to be and closes the missed-webhook indefinite-grace path.
   const terminalBase =
-    workspaceFlag &&
-    onPaidPlan &&
-    TERMINAL_BASE_SUBSCRIPTION_STATUSES.has(row?.stripeStatus ?? "");
+    workspaceFlag && onPaidPlan && TERMINAL_BASE_SUBSCRIPTION_STATUSES.has(row?.stripeStatus ?? "");
   const terminalPaidPeriodGrace =
     terminalBase && (await hasCurrentStripeLiveVideoAddon(row?.stripeCustomerId ?? null));
   const existingAddonEntitled = baseSubscriptionActive || terminalPaidPeriodGrace;
@@ -158,8 +147,7 @@ export async function resolveLiveVideoEntitlement(
   const addonOffered = platformConfigured && launchEnabled;
   const billingEntitled = addonOffered && workspaceFlag && existingAddonEntitled;
   const priceConfigured = Boolean(
-    process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
-      process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
+    process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID || process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
   );
   const checkoutAvailable = addonOffered && baseSubscriptionActive && priceConfigured;
 

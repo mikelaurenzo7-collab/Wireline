@@ -4,7 +4,7 @@ Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
 **Status:** the "Target commercial structure," "Pricing lock," and "Exact applied Stripe writes"
 sections below are historical records of earlier 2026 catalog experiments. The live self-serve
-catalog is **Founder Early Access v6**: Free Builder plus four paid tiers with guaranteed included
+catalog is **Founder Early Access v6**: Free Builder plus three public paid tiers with guaranteed included
 voice minutes, a recurring monthly Runtime Allowance, flat $0.22/min Runtime Balance top-ups, and a
 licensed extra-agent add-on. **`src/lib/plan-catalog.ts` is the single source of truth** for plan
 ids, prices, included voice minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key
@@ -16,19 +16,22 @@ that file and the live Stripe catalog.
 Wireline sells operating capacity, not template access.
 
 - All templates are unlocked; Personal ("Free Builder") creates, trains, and privately simulates one draft agent at $0.
-- Every paid tier (Starter, Starter Plus, Pro, Business) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`.
+- Every public paid tier (Starter, Starter Plus, Pro) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`. Larger Scale rollouts are sales-assisted.
 - Optional SMS and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment use a separate catalog allowance (`ai_spend_allowance_usd_monthly`), where every platform-funded provider call — model turns, Perplexity research, platform-key Apollo enrichment — is metered per account. The hard floor reserves voice, Runtime Allowance, and AI allowance simultaneously; `npm run economics:report` proves both billing intervals from source.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
 
-| Plan id | Product name | Monthly / Annual | Voice min | Runtime | Managed AI | Max agents | Number slots |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `personal` | Wireline Free Builder | $0 | 0 | $0 | $1.50 simulation | 1 draft | 0 |
-| `starter` | Wireline Starter | $19 / $190 | 50 | $1/mo | $1.50/mo | 1 | 1 |
-| `team` | Wireline Starter Plus | $39 / $390 | 100 | $3/mo | $3/mo | 2 | 2 |
-| `business` | Wireline Pro | $79 / $790 | 190 | $6/mo | $6/mo | 5 | 5 |
-| `enterprise` | Wireline Business | $159 / $1,590 | 350 | $12/mo | $12/mo | 15 | 15 |
+| Plan id    | Product name          | Monthly / Annual | Voice min | Runtime |       Managed AI | Max agents | Number slots |
+| ---------- | --------------------- | ---------------: | --------: | ------: | ---------------: | ---------: | -----------: |
+| `personal` | Wireline Free Builder |               $0 |         0 |      $0 | $1.50 simulation |    1 draft |            0 |
+| `starter`  | Wireline Starter      |       $19 / $190 |        50 |   $1/mo |         $1.50/mo |          1 |            1 |
+| `team`     | Wireline Starter Plus |       $39 / $390 |       100 |   $3/mo |            $3/mo |          2 |            2 |
+| `business` | Wireline Pro          |       $79 / $790 |       190 |   $6/mo |            $6/mo |          5 |            5 |
+
+The legacy `enterprise` / Wireline Business catalog row remains in code and Stripe for historical
+event and entitlement resolution. It is `public: false`: public discovery and self-serve checkout
+stop at Pro, then route larger deployments to a custom Scale agreement.
 
 The August 2026 launch review corrected a reachable split-meter defect before the first
 production subscriber: voice, Runtime Allowance, and AI spend could all be consumed independently,
@@ -51,7 +54,7 @@ automatic postpaid overages. SMS outbound segments still bill Runtime Balance at
 ## Call length vs the "8 second" research timeout (locked 2026-07-20)
 
 **There is no 8-second call-duration budget.** `LIVE_RESEARCH_TIMEOUT_MS` (default `8000`) is only the
-HTTP timeout for mid-call *public web research* (Perplexity → Gemini) so a caller is not held in
+HTTP timeout for mid-call _public web research_ (Perplexity → Gemini) so a caller is not held in
 silence while a lookup runs. PSTN calls continue for as long as the conversation needs.
 
 Commercial protection is minutes + prepaid wallet, not call hard-caps:
@@ -59,7 +62,7 @@ Commercial protection is minutes + prepaid wallet, not call hard-caps:
 1. **Included monthly voice minutes** per paid tier (and +50 min per extra-agent add-on).
 2. **Conversation Balance top-ups** fund overflow at the plan's `overage_per_min_usd` — no silent
    postpaid meter, no surprise invoice.
-3. **Active calls finish normally**; depleted coverage blocks only the *next* new live action.
+3. **Active calls finish normally**; depleted coverage blocks only the _next_ new live action.
 4. Soft near-limit warnings in product UI; hard gate only when coverage is gone.
 
 This is the intentional "happy user + protected margin" model. Do **not** reintroduce artificial
@@ -86,7 +89,7 @@ short call caps for profitability, and do not rebuild the Stripe catalog unless
 Current active products after reconciliation:
 
 - `Conversation Balance`
-- `Wireline Business`
+- `Wireline Scale & Enterprise` (sales-assisted; no self-serve price)
 - `Wireline Enterprise`
 - `Wireline Personal`
 - `Wireline Team`
@@ -139,11 +142,11 @@ Applied historically on the retired Wireline Stripe account `acct_1TXb0SJohDtfy3
 
 ## Pricing lock (Jul 2026) (historical — superseded by Founder Early Access above)
 
-| Offer | Platform | Voice | Extra agent |
-| --- | ---: | ---: | ---: |
-| Personal | $0 | $0.18/min (balance) | — |
-| Team | $29/mo | $0.16/min | $8/mo |
-| Business | $59/mo | $0.16/min | $10/mo |
+| Offer    | Platform |               Voice | Extra agent |
+| -------- | -------: | ------------------: | ----------: |
+| Personal |       $0 | $0.18/min (balance) |           — |
+| Team     |   $29/mo |           $0.16/min |       $8/mo |
+| Business |   $59/mo |           $0.16/min |      $10/mo |
 
 Capacity sells agents, lines, routing, and governance — not bundled minutes.
 
@@ -153,19 +156,19 @@ Vercel envs intentionally keep a few transitional names while Stripe products ca
 Founder Early Access v6 names. Do not infer the plan from the env-var label; resolve through
 `src/lib/plan-catalog.ts`, lookup keys, and Stripe price metadata.
 
-| Env var | Live product / interval |
-| --- | --- |
-| `STRIPE_STARTER_9_PRICE_ID` | Wireline Starter monthly |
-| `STRIPE_STARTER_9_ANNUAL_PRICE_ID` | Wireline Starter annual |
-| `STRIPE_STARTER_PRICE_ID` | Wireline Starter Plus monthly |
-| `STRIPE_STARTER_ANNUAL_PRICE_ID` | Wireline Starter Plus annual |
-| `STRIPE_TEAM_PRICE_ID` | Wireline Pro monthly |
-| `STRIPE_TEAM_ANNUAL_PRICE_ID` | Wireline Pro annual |
-| `STRIPE_BUSINESS_PRICE_ID` | Wireline Business monthly |
-| `STRIPE_BUSINESS_ANNUAL_PRICE_ID` | Wireline Business annual |
-| `STRIPE_EXTRA_AGENT_PRICE_ID` | Extra Agent + 50 Minutes add-on |
-| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` | Live Video add-on |
-| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Live Video monthly alias |
+| Env var                              | Live product / interval         |
+| ------------------------------------ | ------------------------------- |
+| `STRIPE_STARTER_9_PRICE_ID`          | Wireline Starter monthly        |
+| `STRIPE_STARTER_9_ANNUAL_PRICE_ID`   | Wireline Starter annual         |
+| `STRIPE_STARTER_PRICE_ID`            | Wireline Starter Plus monthly   |
+| `STRIPE_STARTER_ANNUAL_PRICE_ID`     | Wireline Starter Plus annual    |
+| `STRIPE_TEAM_PRICE_ID`               | Wireline Pro monthly            |
+| `STRIPE_TEAM_ANNUAL_PRICE_ID`        | Wireline Pro annual             |
+| `STRIPE_BUSINESS_PRICE_ID`           | Wireline Business monthly       |
+| `STRIPE_BUSINESS_ANNUAL_PRICE_ID`    | Wireline Business annual        |
+| `STRIPE_EXTRA_AGENT_PRICE_ID`        | Extra Agent + 50 Minutes add-on |
+| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`   | Live Video add-on               |
+| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Live Video monthly alias        |
 
 Retired zero-included-minutes price env vars and OpenRouter-era runtime assumptions must stay out of
 new deploy guidance. Stripe secrets and webhook secrets are separate credentials and must not be
@@ -210,14 +213,14 @@ Wireline's commercial story is intentionally narrow and repeatable:
 
 These messages must stay aligned across:
 
-| Surface                   | Canonical copy anchor |
-| ------------------------- | --- |
-| `/pricing`                | Founder Early Access v6 from `src/lib/plan-catalog.ts` |
-| Billing settings          | "Start free. Fund live work." |
-| Runtime Balance API       | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts` |
+| Surface                   | Canonical copy anchor                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `/pricing`                | Founder Early Access v6 from `src/lib/plan-catalog.ts`                              |
+| Billing settings          | "Start free. Fund live work."                                                       |
+| Runtime Balance API       | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts`                    |
 | Stripe catalog            | Product names and lookup keys generated by `scripts/lib/stripe-founder-catalog.mjs` |
-| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts` |
-| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json` |
+| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts`             |
+| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json`          |
 
 ## Still required before live rollout
 

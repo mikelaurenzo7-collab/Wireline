@@ -11,14 +11,17 @@ This note is the current launch source for billing operations. Historical billin
 
 ## Founder catalog lock (v6)
 
-| Plan | Monthly | Annual | Billing model |
-| --- | ---: | ---: | --- |
-| Free Builder | $0 | — | No Stripe product |
-| Starter | $19 | $190 | Fixed subscription |
-| Starter Plus | $39 | $390 | Fixed subscription |
-| Pro | $79 | $790 | Fixed subscription |
-| Business | $159 | $1,590 | Fixed subscription |
-| Scale & Enterprise | Custom | Custom | Sales-assisted |
+| Plan               | Monthly | Annual | Billing model      |
+| ------------------ | ------: | -----: | ------------------ |
+| Free Builder       |      $0 |      — | No Stripe product  |
+| Starter            |     $19 |   $190 | Fixed subscription |
+| Starter Plus       |     $39 |   $390 | Fixed subscription |
+| Pro                |     $79 |   $790 | Fixed subscription |
+| Scale & Enterprise |  Custom | Custom | Sales-assisted     |
+
+The retired $159 Business tier remains resolver-compatible for historical Stripe events and
+existing entitlements, but it is not public, returned by the plans API, or accepted by self-serve
+checkout. New customers needing more than Pro use the sales-assisted Scale path.
 
 Add-ons:
 

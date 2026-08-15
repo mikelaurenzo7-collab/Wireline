@@ -20,6 +20,7 @@ import {
 } from "../../lib/vapi-tool-handlers";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+import { phoneSuffixForLog } from "../../lib/twilio-webhook-privacy";
 
 // ─── Knowledge search helpers ────────────────────────────────────────────────
 const MAX_KB_RESULTS = 8;
@@ -720,7 +721,7 @@ export async function handleCoreToolCall(
         })
         .catch((err) =>
           log.warn("audit logDnc(agent_tool) failed", {
-            phone: rawPhone,
+            phone: phoneSuffixForLog(rawPhone),
             error: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -738,7 +739,7 @@ export async function handleCoreToolCall(
         // never fall through to the outer "opt-out was not saved" response.
         termination = { attempted: 0, terminated: 0, failed: 1 };
         log.error("sentinel failed after DNC suppression was persisted", {
-          phone: normalizedPhone,
+          phone: phoneSuffixForLog(normalizedPhone),
           error:
             terminationError instanceof Error ? terminationError.message : String(terminationError),
         });
@@ -746,7 +747,7 @@ export async function handleCoreToolCall(
 
       if (termination.failed > 0) {
         log.error("sentinel could not confirm every DNC call termination", {
-          phone: normalizedPhone,
+          phone: phoneSuffixForLog(normalizedPhone),
           attempted: termination.attempted,
           terminated: termination.terminated,
           failed: termination.failed,

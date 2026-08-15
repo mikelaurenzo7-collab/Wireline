@@ -6,6 +6,11 @@
  */
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
+// The Stripe manifest also retains resolver-compatible products for historical
+// subscriptions. This explicit set is the commercial contract exposed to new
+// self-serve customers at launch.
+export const PUBLIC_SELF_SERVE_PLAN_IDS = ["starter", "team", "business"];
+
 export const FOUNDER_PRODUCTS = [
   {
     key: "starter",

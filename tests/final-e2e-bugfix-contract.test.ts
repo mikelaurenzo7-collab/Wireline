@@ -85,7 +85,12 @@ describe("final e2e bugfix contracts", () => {
     // TCPA ledger row).
     const finalizeAt = handlers.indexOf("isOutboundCallPlaceholder(existing)");
     expect(finalizeAt).toBeGreaterThan(-1);
-    const finalizeBlock = handlers.slice(finalizeAt, finalizeAt + 1800);
+    // Bound the window by the block's own closing check rather than a byte
+    // count, so adding a line to the UPDATE cannot push the invariant out of
+    // view and turn a passing contract into a false failure.
+    const finalizeEnd = handlers.indexOf("if (finalized.length)", finalizeAt);
+    expect(finalizeEnd).toBeGreaterThan(finalizeAt);
+    const finalizeBlock = handlers.slice(finalizeAt, finalizeEnd);
     expect(finalizeBlock).toContain("pipelineError: null");
   });
 
@@ -94,10 +99,11 @@ describe("final e2e bugfix contracts", () => {
     // Lease-based claim (not a null-claim) so a mid-step crash self-heals.
     expect(cadence).toContain("CADENCE_STEP_LEASE_MS");
     const claimAt = cadence.indexOf(".update(schema.cadenceRuns)");
-    const executeAt = cadence.indexOf("await executeStep(");
+    const executeAt = cadence.indexOf("perform: () => executeStep(");
     expect(claimAt).toBeGreaterThan(-1);
     expect(executeAt).toBeGreaterThan(-1);
-    // The claim + `if (!claimed.length) continue;` must precede executeStep.
+    // The claim + `if (!claimed.length) continue;` must precede the fenced
+    // executeStep callback.
     expect(cadence).toContain("if (!claimed.length) continue;");
     expect(cadence.indexOf("if (!claimed.length) continue;")).toBeLessThan(executeAt);
   });

@@ -62,9 +62,10 @@ const LOOP_COPY = [
   "Let it answer, sell, support, book, follow up, and log the result.",
 ] as const;
 
-const planCatalog = Object.fromEntries(
-  STRIPE_PLANS.map((plan) => [plan.id, plan]),
-) as Record<StripePlanId, (typeof STRIPE_PLANS)[number]>;
+const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
+  StripePlanId,
+  (typeof STRIPE_PLANS)[number]
+>;
 
 const PLAN_PREVIEW = [
   {
@@ -148,9 +149,7 @@ export default function WireAgentLanding() {
     });
 
     if (focusAfterSelect) {
-      window.requestAnimationFrame(() =>
-        document.getElementById(modeTabId(key))?.focus(),
-      );
+      window.requestAnimationFrame(() => document.getElementById(modeTabId(key))?.focus());
     }
   };
 
@@ -179,11 +178,7 @@ export default function WireAgentLanding() {
     <div className="marketing-surface wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
 
-      <main
-        id="main-content"
-        className="wl-viewport-scroll pt-16"
-        tabIndex={-1}
-      >
+      <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
         <MarketingHero
           title={MARKETING_VOICE.headline}
           primaryAction={{
@@ -196,16 +191,10 @@ export default function WireAgentLanding() {
             tone: "secondary",
           }}
           visual={
-            <div
-              id="hear-a-demo"
-              className="flex flex-col justify-between text-center"
-            >
+            <div id="hear-a-demo" className="flex flex-col justify-between text-center">
               <div>
                 <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
-                  <Volume2
-                    className="h-4 w-4 text-primary"
-                    aria-hidden="true"
-                  />
+                  <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
                   Live voice demo
                 </div>
               </div>
@@ -243,8 +232,6 @@ export default function WireAgentLanding() {
           }
         />
 
-        <LiveVideoSpotlight bridgeLabel={LIVE_VIDEO_BRIDGE} />
-
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-8 max-w-2xl text-center">
@@ -255,9 +242,7 @@ export default function WireAgentLanding() {
                 <article
                   key={step}
                   className={`wl-wire-step p-7 text-center transition-colors hover:bg-muted/40 ${
-                    index === HERO_LOOP.length - 1
-                      ? "wl-wire-step--settled"
-                      : ""
+                    index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
                   }`}
                 >
                   <div className="wl-wire-step__marker mb-5">
@@ -279,9 +264,7 @@ export default function WireAgentLanding() {
         <section className="wl-public-section border-b border-border bg-card/40">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-display-2 mx-auto max-w-[18ch]">
-                Choose the outcome.
-              </h2>
+              <h2 className="wl-display-2 mx-auto max-w-[18ch]">Choose the outcome.</h2>
               <div
                 className="wl-segmented mx-auto mt-6 flex w-fit max-w-full"
                 role="tablist"
@@ -323,9 +306,7 @@ export default function WireAgentLanding() {
                   {mode === key ? (
                     <div className="space-y-6 text-center">
                       <div>
-                        <h3 className="wl-display-3 mx-auto max-w-[20ch]">
-                          {detail.title}
-                        </h3>
+                        <h3 className="wl-display-3 mx-auto max-w-[20ch]">{detail.title}</h3>
                         <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-[1.65] text-muted-foreground">
                           {detail.lead}
                         </p>
@@ -357,10 +338,12 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
+        <LiveVideoSpotlight bridgeLabel={LIVE_VIDEO_BRIDGE} />
+
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Build free. Go live from $19.</h2>
+              <h2 className="wl-display-2">Build free. Go live from $19/mo.</h2>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (
@@ -380,12 +363,8 @@ export default function WireAgentLanding() {
                   ) : null}
                   <h3 className="wl-display-4">{plan.name}</h3>
                   <div className="mt-5 flex items-baseline justify-center gap-1">
-                    <span className="wl-display-2 leading-none">
-                      {plan.price}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {plan.period}
-                    </span>
+                    <span className="wl-display-2 leading-none">{plan.price}</span>
+                    <span className="text-sm text-muted-foreground">{plan.period}</span>
                   </div>
                   <ul
                     className="wl-info-list mx-auto w-full max-w-[30ch] flex-1"
@@ -398,9 +377,7 @@ export default function WireAgentLanding() {
                   <Link
                     to={plan.ctaPath}
                     className={`mt-6 min-h-11 justify-center text-sm font-semibold ${
-                      plan.highlight
-                        ? "marketing-btn-primary"
-                        : "marketing-btn-secondary"
+                      plan.highlight ? "marketing-btn-primary" : "marketing-btn-secondary"
                     }`}
                   >
                     {plan.cta}
@@ -410,9 +387,8 @@ export default function WireAgentLanding() {
             </div>
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[50ch] text-sm leading-[1.65] text-muted-foreground">
-                Included minutes are used first. Extra voice, SMS, and
-                enrichment draw from prepaid Runtime Balance that you control.
-                There is no surprise postpaid invoice.
+                Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
+                Runtime Balance that you control. There is no surprise postpaid invoice.
               </p>
               <Link
                 to="/pricing"

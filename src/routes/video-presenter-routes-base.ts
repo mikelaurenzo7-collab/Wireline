@@ -1,4 +1,5 @@
 import express, { type Response } from "express";
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -31,9 +32,15 @@ import {
   releaseLiveVideoSessionReservation,
   reserveLiveVideoSessionMinutes,
 } from "../lib/video-presenter/live-video-usage";
+import {
+  settleLiveVideoSession,
+  signLiveVideoSettlementReceipt,
+  verifyLiveVideoSettlementReceipt,
+} from "../lib/video-presenter/live-video-settlement";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { isOwnerEmail } from "../lib/auth-service";
@@ -54,7 +61,11 @@ function throwLiveVideoBillingError(
     402,
     "LIVE_VIDEO_UPGRADE_REQUIRED",
     entitlement.reason ||
-      "Subscribe to the live video add-on or upgrade to Starter Plus to stream photoreal presenters.",
+      // Starter, not Starter Plus. PAID_LIVE_VIDEO_PLANS admits `starter`
+      // upward, and "Starter Plus" is the display name of the `team` plan —
+      // this message was sending eligible Starter customers to buy a tier they
+      // did not need.
+      "Add the live video add-on to your plan to stream a presenter. Available on Starter and above.",
     { plan_id: entitlement.planId },
   );
 }
@@ -277,6 +288,7 @@ router.post(
   "/api/agents/:id/video-presenter/session",
   authenticateUser,
   sessionLimiter,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await ownedAgent(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
@@ -389,6 +401,19 @@ router.post(
         sessionToken: liveSession.sessionToken,
         sandbox: liveSession.sandbox,
         maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+        // Single-use receipt the stage returns when it closes, so the minutes
+        // this session did not actually use go back to the allowance.
+        // issuedAt + the provider cap travel inside the signed receipt so the
+        // refund is bounded by wall-clock time the server can prove, not by a
+        // duration the client reports.
+        settlementReceipt: signLiveVideoSettlementReceipt({
+          userId: req.user.id,
+          periodKey: reservation.usage.periodKey,
+          reservedMinutes: reservation.reservedMinutes,
+          creditsPerMinute: engineResolution.creditsPerMinute,
+          maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+          nonce: randomUUID(),
+        }),
         // The client needs the resolved mode to know whether it must stream
         // PCM itself (LITE + Wireline voice) or only render the provider's
         // track (FULL, or a provider-side LITE connector).
@@ -400,6 +425,51 @@ router.post(
         ...(liveSession.degradedFrom ? { degradedFrom: liveSession.degradedFrom } : {}),
       },
     });
+  },
+);
+
+const settleSessionSchema = z.object({
+  receipt: z.string().min(1).max(2048),
+  // Seconds of presenter the customer actually watched. Bounded to a generous
+  // multiple of the hard cap so a malformed client cannot claim a long session
+  // to avoid a refund — the refund is clamped to the reservation either way.
+  watchedSeconds: z
+    .number()
+    .finite()
+    .min(0)
+    .max(LIVE_VIDEO_MAX_SESSION_SECONDS * 4),
+});
+
+/**
+ * Return the unused slice of a session's reserved minutes.
+ *
+ * The reservation is taken in full at mint time, before the browser has proven
+ * it can reach the provider. Without this route a customer whose network blocks
+ * WebRTC spent five minutes of allowance per attempt and never saw a frame.
+ */
+router.post(
+  "/api/agents/:id/video-presenter/session/settle",
+  authenticateUser,
+  sessionLimiter,
+  validateBody(settleSessionSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await ownedAgent(req.params.id, req.user.id);
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+
+    const claim = verifyLiveVideoSettlementReceipt(req.body.receipt);
+    // A receipt is bound to the tenant it was minted for. An expired or
+    // tampered receipt simply settles nothing — it must never be an error the
+    // stage surfaces to a customer who has already finished their session.
+    if (!claim || claim.userId !== req.user.id) {
+      res.json({ settled: false, refundedMinutes: 0, reason: "receipt_not_settleable" });
+      return;
+    }
+
+    const result = await settleLiveVideoSession({
+      claim,
+      watchedSeconds: Number(req.body.watchedSeconds),
+    });
+    res.json(result);
   },
 );
 
