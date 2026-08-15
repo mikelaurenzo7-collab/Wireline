@@ -95,7 +95,8 @@
     "vapi:replay-pending-webhooks": "node scripts/replay-pending-vapi-webhooks.mjs",
     "economics:report": "node --import tsx scripts/report-plan-economics.mts",
     "lint:strict:candidates": "node scripts/strict-coverage.mjs",
-    "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts"
+    "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts",
+    "db:drift": "node scripts/check-migration-drift.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
