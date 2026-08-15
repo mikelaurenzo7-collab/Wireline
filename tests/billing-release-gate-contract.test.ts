@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   SELF_SERVE_BILLING_BLOCK,
+  SELF_SERVE_BILLING_RELEASE_SHA_ENV,
   selfServeBillingBlockResponse,
   selfServeBillingEnabled,
   selfServeBillingReleaseBlockers,
@@ -10,7 +11,11 @@ import {
 import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
 import { enforceSelfServeBillingRelease } from "../src/middleware/launch-hard-gate";
 
+const DEPLOYMENT_SHA = "a".repeat(40);
+const OTHER_SHA = "b".repeat(40);
 const originalBillingRelease = process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
+const originalBillingReleaseSha = process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV];
+const originalDeploymentSha = process.env.VERCEL_GIT_COMMIT_SHA;
 const originalDemoMode = process.env.WIRELINE_LAUNCH_DEMO_MODE;
 const originalLaunchGate = process.env.LAUNCH_HARD_GATE;
 
@@ -21,31 +26,64 @@ function restoreEnv(name: string, value: string | undefined) {
 
 afterEach(() => {
   restoreEnv("WIRELINE_SELF_SERVE_BILLING_ENABLED", originalBillingRelease);
+  restoreEnv(SELF_SERVE_BILLING_RELEASE_SHA_ENV, originalBillingReleaseSha);
+  restoreEnv("VERCEL_GIT_COMMIT_SHA", originalDeploymentSha);
   restoreEnv("WIRELINE_LAUNCH_DEMO_MODE", originalDemoMode);
   restoreEnv("LAUNCH_HARD_GATE", originalLaunchGate);
 });
 
 describe("self-serve billing release gate", () => {
-  it("defaults closed and requires both an explicit release and live telemetry mode", () => {
+  it("defaults closed and requires release, live telemetry, and exact-head authorization", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
     delete process.env.WIRELINE_LAUNCH_DEMO_MODE;
+    delete process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV];
+    process.env.VERCEL_GIT_COMMIT_SHA = DEPLOYMENT_SHA;
     expect(selfServeBillingEnabled()).toBe(false);
     expect(selfServeBillingReleaseBlockers()).toEqual([
       "WIRELINE_SELF_SERVE_BILLING_ENABLED=true",
       "WIRELINE_LAUNCH_DEMO_MODE=false",
+      `${SELF_SERVE_BILLING_RELEASE_SHA_ENV}=${DEPLOYMENT_SHA}`,
     ]);
 
     process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV] = OTHER_SHA;
     expect(selfServeBillingEnabled()).toBe(false);
-    expect(selfServeBillingReleaseBlockers()).toEqual(["WIRELINE_LAUNCH_DEMO_MODE=false"]);
+    expect(selfServeBillingReleaseBlockers()).toEqual([
+      "WIRELINE_LAUNCH_DEMO_MODE=false",
+      `${SELF_SERVE_BILLING_RELEASE_SHA_ENV}=${DEPLOYMENT_SHA}`,
+    ]);
 
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+    expect(selfServeBillingEnabled()).toBe(false);
+    expect(selfServeBillingReleaseBlockers()).toEqual([
+      `${SELF_SERVE_BILLING_RELEASE_SHA_ENV}=${DEPLOYMENT_SHA}`,
+    ]);
+
+    process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV] = DEPLOYMENT_SHA.toUpperCase();
     for (const value of ["true", "1", "yes", "on", " TRUE "]) {
       process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = value;
       expect(selfServeBillingEnabled()).toBe(true);
       expect(selfServeBillingReleaseBlockers()).toEqual([]);
     }
+  });
+
+  it("fails closed when the deployment identity is unavailable or malformed", () => {
+    process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+    process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV] = DEPLOYMENT_SHA;
+
+    delete process.env.VERCEL_GIT_COMMIT_SHA;
+    expect(selfServeBillingEnabled()).toBe(false);
+    expect(selfServeBillingReleaseBlockers()).toEqual([
+      "VERCEL_GIT_COMMIT_SHA=<40-character deployed Git SHA>",
+    ]);
+
+    process.env.VERCEL_GIT_COMMIT_SHA = "not-a-full-sha";
+    expect(selfServeBillingEnabled()).toBe(false);
+    expect(selfServeBillingReleaseBlockers()).toEqual([
+      "VERCEL_GIT_COMMIT_SHA=<40-character deployed Git SHA>",
+    ]);
   });
 
   it("keeps a stable customer-safe block contract", () => {
@@ -58,7 +96,9 @@ describe("self-serve billing release gate", () => {
 
   it("surfaces the release state and exact blockers in launch readiness", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
+    delete process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV];
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env.VERCEL_GIT_COMMIT_SHA = DEPLOYMENT_SHA;
 
     const blocked = evaluateLaunchReadiness();
     const blockedBilling = blocked.capabilities.find((capability) => capability.id === "billing_ready");
@@ -67,11 +107,13 @@ describe("self-serve billing release gate", () => {
       expect.arrayContaining([
         "WIRELINE_SELF_SERVE_BILLING_ENABLED=true",
         "WIRELINE_LAUNCH_DEMO_MODE=false",
+        `${SELF_SERVE_BILLING_RELEASE_SHA_ENV}=${DEPLOYMENT_SHA}`,
       ]),
     );
 
     process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+    process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV] = DEPLOYMENT_SHA;
     const released = evaluateLaunchReadiness();
     const releasedBilling = released.capabilities.find(
       (capability) => capability.id === "billing_ready",
@@ -79,11 +121,16 @@ describe("self-serve billing release gate", () => {
     expect(released.self_serve_billing_enabled).toBe(true);
     expect(releasedBilling?.blockers).not.toContain("WIRELINE_SELF_SERVE_BILLING_ENABLED=true");
     expect(releasedBilling?.blockers).not.toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
+    expect(releasedBilling?.blockers).not.toContain(
+      `${SELF_SERVE_BILLING_RELEASE_SHA_ENV}=${DEPLOYMENT_SHA}`,
+    );
   });
 
   it("blocks a paid route independently of URL shape and the optional global launch gate", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
+    delete process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV];
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env.VERCEL_GIT_COMMIT_SHA = DEPLOYMENT_SHA;
     delete process.env.LAUNCH_HARD_GATE;
 
     const next = vi.fn();
@@ -97,9 +144,11 @@ describe("self-serve billing release gate", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("allows a paid route only after both release controls align", () => {
+  it("allows a paid route only after all release controls align on the deployed head", () => {
     process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+    process.env.VERCEL_GIT_COMMIT_SHA = DEPLOYMENT_SHA;
+    process.env[SELF_SERVE_BILLING_RELEASE_SHA_ENV] = DEPLOYMENT_SHA;
 
     const next = vi.fn();
     const status = vi.fn();

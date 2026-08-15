@@ -2,7 +2,7 @@
 
 Date: 2026-08-15  
 Anchor: `f95537a480579a6b7121c7cdd49cea946e201a35`  
-Hardening branch: `codex/launch-production-hardening-20260815`  
+Launch merge: `69af285c8a3ec2d0af6e179e91ea8bd9173183c8`  
 Scope: Claude's marketing changes, application architecture, security, billing, data, product truth, unit economics, launch strategy, and live production posture.
 
 ## Executive decision
@@ -10,6 +10,16 @@ Scope: Claude's marketing changes, application architecture, security, billing, 
 Wireline is technically capable of a controlled real-customer release. It is not yet evidence-ready for broad self-serve acquisition or scaled outbound.
 
 The correct next operating mode is a founder-led cohort of **3–5 consented design partners** around one narrow job: answer an inbound call, capture intent, complete an approved follow-up, and leave a reviewable outcome. Self-serve billing and acquisition scale remain gated until the first paid lifecycle and non-demo production workflow are proven end to end.
+
+## Post-review production verification
+
+The reviewed launch work was squash-merged to `main` as signed commit `69af285c8a3ec2d0af6e179e91ea8bd9173183c8` and deployed through the canonical `revaluate/wireline` production target.
+
+- Vercel deployment `dpl_ChXJncaZhBT2p5Yn7WrejXsSQyGf` finished `READY` with no alias error and owns `trywireline.com`.
+- The production build applied and checked the migration/schema boundary, completed the deep launch audit, built the client/server and ChatGPT MCP bundles, prerendered 29 public routes, passed the no-database import smoke, and reconciled the managed Stripe Customer Portal.
+- `GET https://trywireline.com/api/health` returned `200 {"ok":true}` with the expected HSTS, CSP, frame-denial, MIME, permissions, and distributed rate-limit headers.
+- No runtime errors were present after promotion at the time of verification.
+- A pre-auth checkout probe reached authentication and returned `401`, proving that the two coarse project-level billing controls were open even though Stripe had no completed live lifecycle. Exact-head release authorization is therefore a required follow-up before controlled customers: paid checkout must also require `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` to match Vercel's full `VERCEL_GIT_COMMIT_SHA`.
 
 ## Review of the anchored work
 
@@ -58,29 +68,30 @@ Verified in the live account:
 - customer-facing name, website, support details, address, branding, and statement descriptor are aligned to Try Wireline;
 - charges and payouts are enabled;
 - the active Founder Early Access v6 product and price topology is present;
-- one active production webhook targets `https://trywireline.com/api/stripe-webhook` with checkout, subscription, invoice, refund, and dispute events;
+- one active production webhook targets `https://trywireline.com/api/webhooks/stripe` with checkout, subscription, invoice, refund, and dispute events;
 - the active customer portal supports payment methods, invoices, plan changes, period-end cancellation, cancellation reasons, legal links, and return to Wireline;
 - retired duplicate webhook endpoints are disabled.
 
-There are **zero live Stripe subscriptions**. Configuration is ready; transaction-grounded production proof is still missing.
+There are **zero live Stripe subscriptions**, completed Checkout sessions, PaymentIntents, or invoices. Configuration is ready; transaction-grounded production proof is still missing. The two observed live-mode Checkout sessions were expired and unpaid, and the newer one predates the completed Try Wireline branding update. A fresh post-branding session must be exercised as part of the controlled lifecycle.
 
 ### Supabase
 
 The live project is healthy on PostgreSQL 17.6.
 
-- 82 of 82 public tables have RLS enabled.
+- Every public table has RLS enabled and at least one policy.
+- The production Drizzle ledger contains 49 migrations and exactly matches the committed journal through `0150_post_call_digest_job_idempotency`.
 - Aggregate snapshot: 136 users, 137 workspaces, 49 agents, 17 assigned provider-bound phone numbers, and 114 calls.
 - All 114 calls are marked demo; non-demo calls are zero.
 - Stripe-bound subscriptions and checkout operations are zero.
 - Connected email accounts and voice-usage events are zero.
+- The seven local subscription rows reconcile to six explicit demo grants and one manual customer-binding shell; none contains a Stripe subscription or price ID.
+- The sole stored Stripe event is a webhook-rotation probe, not a billing lifecycle event.
 
 The Supabase Auth leaked-password advisor does not describe Wireline's active authentication architecture. Wireline uses its own user table, scrypt hashes, internal session tokens, and the HIBP range API. Production screening is configured to fail closed.
 
 ### Vercel
 
-The hardening SHA completed the full launch audit, production build, 29-route marketing prerender, no-database server import smoke, and preview deployment successfully.
-
-The public health endpoint returns a healthy database posture and the expected CSP, HSTS, cross-origin isolation, permissions, and rate-limit headers. Production must still be verified by exact merged SHA after promotion.
+The exact merged SHA completed the full launch audit, production build, 29-route marketing prerender, no-database server import smoke, managed Stripe Customer Portal reconciliation, canonical alias promotion, public health probe, and post-promotion runtime-error review successfully.
 
 ### Telephony
 
@@ -117,18 +128,21 @@ Until real evidence exists, do not claim customer adoption, ROI, guaranteed book
 
 ## Required production proof sequence
 
-1. Deploy and verify the exact merged source SHA on the production alias.
-2. Prove Twilio/Vapi funding, number state, callbacks, and usage alerts.
-3. Complete one non-demo production inbound call with disclosure, transcript, outcome, and follow-up.
-4. Complete one real $19 lifecycle: checkout -> signed webhook -> entitlement -> allowances -> portal -> cancellation -> refund or reversal.
-5. Confirm billing and usage ledgers reconcile after that lifecycle.
-6. Onboard 3–5 consented design partners into one bounded workflow each.
-7. Review activation, useful-call rate, repeated use, follow-up completion, support minutes, gross contribution, and churn reason weekly.
-8. Enable broader self-serve acquisition only after repeat use and positive observed contribution are demonstrated.
+1. Deploy and verify the exact merged source SHA on the production alias. **Completed for `69af285c8a3ec2d0af6e179e91ea8bd9173183c8`.**
+2. Deploy the exact-head billing authorization guard and verify pre-auth paid routes fail closed with `BILLING_LAUNCH_NOT_APPROVED` while the release SHA is absent or mismatched.
+3. Prove Twilio/Vapi funding, number state, callbacks, and usage alerts.
+4. Authorize only the verified production SHA for a founder-controlled billing certification window while invitations, paid media, and non-founder onboarding remain off.
+5. Complete one real $19 lifecycle: checkout -> signed webhook -> entitlement -> allowances -> portal -> cancellation -> refund or reversal.
+6. Confirm billing, checkout-operation, subscription, allowance, usage, and reversal ledgers reconcile after that lifecycle.
+7. Revoke the exact-head authorization immediately on any failure; on success, retain it only for the bounded design-partner cohort and preserve redacted evidence.
+8. Complete one non-demo production inbound call with disclosure, transcript, outcome, and follow-up.
+9. Onboard 3–5 consented design partners into one bounded workflow each.
+10. Review activation, useful-call rate, repeated use, follow-up completion, support minutes, gross contribution, and churn reason weekly.
+11. Enable broader self-serve acquisition only after repeat use and positive observed contribution are demonstrated.
 
 ## Release posture
 
-**Approved:** controlled design-partner production release after the remaining live telephony and paid-lifecycle proofs.  
+**Approved:** controlled design-partner production release after the exact-head guard, founder billing certification, and remaining live telephony proof.  
 **Not approved:** scaled cold outbound, broad paid acquisition, OOH, commissioned hero-film spend, or traction claims.
 
 No code change can substitute for the remaining real transaction and carrier proofs. They must be executed against production and retained as redacted operator evidence.
