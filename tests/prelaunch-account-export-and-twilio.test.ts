@@ -126,6 +126,38 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).toContain("sql.join(predicates, sql` OR `)");
   });
 
+  it("streams the archive instead of materializing the whole account in memory", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // Peak memory used to scale with the tenant's entire history, so the export
+    // 500'd reproducibly for exactly the largest customers — the ones whose
+    // data-portability request matters most.
+    expect(route).toContain("EXPORT_PAGE_ROWS");
+    expect(route).toContain("LIMIT ${EXPORT_PAGE_ROWS} OFFSET ${offset}");
+    expect(route).toContain("ORDER BY ctid");
+    expect(route).toContain("res.write(");
+    // No unbounded whole-table read, and no single json() of the full archive.
+    expect(route).not.toContain("res.status(200).json(exportPackage)");
+    expect(route).not.toMatch(
+      /SELECT \* FROM \$\{sql\.raw\(target\.table\)\} WHERE[^]*?\)\)\s*as ExecuteResult/,
+    );
+  });
+
+  it("validates every ownership predicate before the first byte is written", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // Once bytes are on the wire there is no status code left to send, so the
+    // one error meaning "this code is unsafe" has to surface first.
+    expect(route.indexOf("Unsafe account export target without ownership predicate")).toBeLessThan(
+      route.indexOf("res.write('{\"tables\":{')"),
+    );
+  });
+
+  it("aborts rather than emitting a well-formed but incomplete archive", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    // A truncated download is an obvious failure; a parseable document missing
+    // half the tenant's history would be accepted as complete.
+    expect(route).toContain("res.destroy()");
+  });
+
   it("keeps the historical training archive in tenant-scoped exports", () => {
     const migration = read("drizzle/migrations/0087_launch_integrity_reconciliation.sql");
     expect(migration).toContain("wireline_training_backup_20260609");
