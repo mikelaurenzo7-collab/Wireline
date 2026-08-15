@@ -85,6 +85,16 @@ html.light {
 /* `any-pointer` includes hybrid laptops whose primary mouse is fine but whose
  * touchscreen still needs comfortable geometry and deliberate scroll snapping. */
 @media (any-pointer: coarse) {
+  /* Every button, not only the icon ones. A text button at the 40px base floor
+   * is still a 40px tap target, and docs/ACCESSIBILITY.md promises 44px for all
+   * of them. Height only: widening every button would break the containment
+   * rules that keep dense rows from overflowing on a phone. */
+  [data-slot="button"],
+  button,
+  [role="button"] {
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
+  }
+
   [data-slot="button"][data-size="icon"] {
     min-width: var(--wireline-interaction-target-comfortable, 44px);
     min-height: var(--wireline-interaction-target-comfortable, 44px);

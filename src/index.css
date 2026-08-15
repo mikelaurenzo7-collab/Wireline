@@ -76,6 +76,21 @@
   --color-amber-500: var(--wireline-color-status-warning);
   --color-amber-600: var(--wireline-color-status-warning);
   --color-amber-800: var(--wireline-color-status-warning);
+
+  /* The same omission the color tokens above document, for the type families.
+   * Wireline defines three faces — Inter Tight for display, Inter for body,
+   * IBM Plex Mono for labels and metadata — and CSS that names them via
+   * `var(--wireline-font-mono)` gets them. But `font-mono` is a Tailwind
+   * utility, and Tailwind v4 resolves it from `--font-mono` in @theme, which
+   * was never registered. So every `font-mono` label in the product — the
+   * Overview eyebrows, the metric-tile labels, the rail state, the presence
+   * chips — rendered in whatever monospace the OS happens to ship, not in the
+   * typeface the design system specifies. Registering the three families here
+   * makes `font-sans`, `font-serif`, and `font-mono` mean what the brand says
+   * they mean, with the same fallback stacks the CSS variables already carry. */
+  --font-sans: var(--wireline-font-sans);
+  --font-serif: var(--wireline-font-display);
+  --font-mono: var(--wireline-font-mono);
 }
 
 /* Wireline — Letterpress design system. This is the sole application CSS

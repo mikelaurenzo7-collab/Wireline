@@ -304,10 +304,23 @@ h4 {
   }
 }
 
-button,
-[role="button"] {
-  min-height: var(--wl-target-minimum);
-  min-width: var(--wl-target-minimum);
+/* The same lesson as the radius reset directly above, which this rule did not
+ * learn. Unlayered, `min-height: 40px` outranked every Tailwind utility, so
+ * every `min-h-11` / `min-h-[44px]` / `min-h-14` written on a button anywhere in
+ * the authenticated product rendered at 40px — the workspace command-palette
+ * button, the mobile More sheet trigger, the Connections accordion header — and
+ * the 44px commitment in docs/ACCESSIBILITY.md was true only for the marketing
+ * button classes. `min-width` did the same to the `min-w-0` that the responsive
+ * containment contract depends on.
+ *
+ * In `@layer base` this stays a floor for bare controls and yields to any
+ * utility that asks for a specific size. */
+@layer base {
+  button,
+  [role="button"] {
+    min-height: var(--wl-target-minimum);
+    min-width: var(--wl-target-minimum);
+  }
 }
 
 ::selection {

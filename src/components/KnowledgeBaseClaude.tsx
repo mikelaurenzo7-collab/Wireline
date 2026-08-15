@@ -47,7 +47,9 @@ type AssetBody = {
   dataUrl?: string;
 };
 
-const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
+// Success text belongs to the success token. The violet action token read
+// 3.95:1 on the green surface at 11px and broke the color grammar.
+const SUCCESS_TEXT = "var(--wireline-color-status-success)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
 // Mirrors the directives cap below — keeps the list readable for customers
 // with hundreds of ingested documents instead of rendering every row.
@@ -329,7 +331,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
+                className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
@@ -355,7 +357,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       type="button"
       onClick={() => fileInputRef.current?.click()}
       disabled={uploading || !agentId}
-      className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[8px] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[var(--wireline-radius-sm)] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: "var(--wireline-color-action-primary-default)",
         color: "var(--wireline-color-text-onAction)",
@@ -402,7 +404,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {error ? (
         <div
           role="alert"
-          className="rounded-[10px] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-status-error)]"
+          className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-status-error)]"
         >
           {error}
         </div>
@@ -410,7 +412,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {notice ? (
         <div
           role="status"
-          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
+          className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
         >
           {notice}
         </div>
@@ -425,7 +427,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           Array.from({ length: 3 }, (_, index) => (
             <div
               key={index}
-              className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
+              className="h-[68px] animate-pulse rounded-[var(--wireline-radius-lg)] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
         ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
@@ -442,11 +444,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                 return (
                   <article
                     key={entry.id ?? `k-${index}`}
-                    className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
+                    className="flex items-center gap-3.5 rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
                   >
                     <div
-                      className="grid size-9 shrink-0 place-items-center rounded-[9px] font-[var(--wireline-font-mono)] text-[11px] font-bold"
-                      style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
+                      className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
+                      style={{ background: SUCCESS_SURFACE, color: SUCCESS_TEXT }}
                     >
                       {badge}
                     </div>
@@ -459,7 +461,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       </div>
                     </div>
                     <span
-                      className="rounded-[5px] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                      className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
                       style={{
                         background: SUCCESS_SURFACE,
                         color: "var(--wireline-color-status-success)",
@@ -490,7 +492,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`flex rounded-[12px] border-2 border-dashed text-center transition-colors ${
+        className={`flex rounded-[var(--wireline-radius-lg)] border-2 border-dashed text-center transition-colors ${
           compactUpload
             ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
             : knowledge.length === 0

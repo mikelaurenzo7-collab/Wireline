@@ -655,6 +655,11 @@ export default function OverviewPage() {
             <section
               className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
               aria-label="Customer demand and outcomes"
+              // The skeletons are aria-hidden, so while these load the region is
+              // simply empty to assistive tech and the numbers then appear with
+              // no announcement. Overview is the post-login destination and this
+              // row is the answer to "what happened while I was away".
+              aria-busy={loadingDashboard}
             >
               {loadingDashboard
                 ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
@@ -685,6 +690,11 @@ export default function OverviewPage() {
                     );
                   })}
             </section>
+            <p className="sr-only" role="status">
+              {loadingDashboard
+                ? "Loading today's numbers."
+                : `${conversationsToday} conversations today, ${highIntentToday} high intent, ${totalAppointments} appointments booked, ${activeWork} needing attention.`}
+            </p>
 
             {degraded ? (
               <StatusNotice tone="warning" title="Status partial">

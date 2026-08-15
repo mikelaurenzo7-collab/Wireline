@@ -74,7 +74,10 @@ describe("video presenter integration", () => {
     expect(live).toContain("element.muted = wirelineDrivesAudio");
     expect(live).toContain("muted={wirelineDrivesAudio}");
     // Blocked unmuted autoplay surfaces a control instead of a silent presenter.
-    expect(live).toContain("Tap to hear the presenter");
+    // ("Turn on sound" rather than "Tap to…": the stage is used on desktop at
+    // least as often as on touch.)
+    expect(live).toContain("Turn on sound");
+    expect(live).toContain("setSoundBlocked(false)");
   });
 
   it("gives the Studio-voice presenter the agent's phone voice only when PSTN-approved", () => {

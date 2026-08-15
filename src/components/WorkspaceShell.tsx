@@ -53,10 +53,7 @@ function userInitial(name?: string | null, email?: string | null) {
   return source.charAt(0).toUpperCase() || "W";
 }
 
-function contextualNavItem(
-  item: ShellNavItem,
-  posture: "personal" | "business",
-): ShellNavItem {
+function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
   if (item.href !== "/studio") return item;
   const language = customerAgentLanguage(posture);
   return { ...item, label: language.navLabel, shortLabel: language.navShort };
@@ -106,9 +103,7 @@ function MobileDockLink({
   onMore: () => void;
 }) {
   const isMore = item.href === MOBILE_MORE_HREF;
-  const active = isMore
-    ? isMobileMoreActive(pathname)
-    : isNavActive(pathname, item.href);
+  const active = isMore ? isMobileMoreActive(pathname) : isNavActive(pathname, item.href);
   const Icon = item.icon;
 
   if (isMore) {
@@ -138,7 +133,15 @@ function MobileDockLink({
   return (
     <Link
       to={item.href}
-      aria-label={item.label}
+      // WCAG 2.5.3 Label in Name: the accessible name must contain the visible
+      // one. The Overview tab renders "Home" and was named "Overview", so
+      // "tap Home" — the literal words on screen — did nothing for anyone
+      // driving the app by voice, on the first tab of the primary navigation.
+      aria-label={
+        item.shortLabel && item.shortLabel !== item.label
+          ? `${item.shortLabel} — ${item.label}`
+          : item.label
+      }
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
@@ -164,30 +167,20 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const matchesPosture = (agent: (typeof agents)[number]) =>
-    accountType === "business"
-      ? Boolean(agent.is_business_agent)
-      : !agent.is_business_agent;
+    accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
   // The agent the workspace is currently on always belongs in its own roster.
   // Scoping the rail to the account posture otherwise dropped the open agent
   // out of the list whenever its posture differed — the sidebar showed "no
   // agents" (or someone else) on the very page that agent owns.
-  const activeAgent = resolvedId
-    ? agents.find((agent) => agent.id === resolvedId)
-    : undefined;
+  const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
   const postureAgents = agents.filter(
     (agent) => matchesPosture(agent) || agent.id === activeAgent?.id,
   );
   const orderedAgents = activeAgent
-    ? [
-        activeAgent,
-        ...postureAgents.filter((agent) => agent.id !== activeAgent.id),
-      ]
+    ? [activeAgent, ...postureAgents.filter((agent) => agent.id !== activeAgent.id)]
     : postureAgents;
   const visibleAgents = orderedAgents.slice(0, 3);
-  const hiddenAgentCount = Math.max(
-    orderedAgents.length - visibleAgents.length,
-    0,
-  );
+  const hiddenAgentCount = Math.max(orderedAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (
@@ -200,7 +193,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         aria-label="Wireline"
         className="mb-1.5 flex items-center gap-2.5 px-1.5"
       >
-        <span className="grid size-7 place-items-center rounded-[7px] bg-primary text-primary-foreground">
+        <span className="grid size-7 place-items-center rounded-[var(--wireline-radius-sm)] bg-primary text-primary-foreground">
           <WirelineMark className="size-7" />
         </span>
         <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
@@ -211,10 +204,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <button
         type="button"
         aria-label="Open command palette"
-        className="mb-3 flex min-h-[44px] w-full items-center gap-2 rounded-[10px] border border-border bg-muted/40 px-2.5 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-        onClick={() =>
-          window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))
-        }
+        className="mb-3 flex min-h-[44px] w-full items-center gap-2 rounded-[var(--wireline-radius-md)] border border-border bg-muted/40 px-2.5 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+        onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
       >
         <Search size={14} strokeWidth={2} aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate">Search</span>
@@ -231,9 +222,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
               key={item.href}
               item={item}
               pathname={pathname}
-              activeOverride={
-                secondaryRouteParent === item.href ? true : undefined
-              }
+              activeOverride={secondaryRouteParent === item.href ? true : undefined}
             />
           );
         })}
@@ -264,19 +253,15 @@ function DesktopRail({ pathname }: { pathname: string }) {
            * getting hard-clipped by the sidebar instead of ellipsizing. The
            * `truncate` on the labels below only works once the track is bounded.
            */}
-          <nav
-            className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5"
-            aria-label={language.plural}
-          >
+          <nav className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5" aria-label={language.plural}>
             {visibleAgents.map((agent) => {
-              const active =
-                isNavActive(pathname, "/studio") && resolvedId === agent.id;
+              const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (
                 <Link
                   key={agent.id}
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
                   aria-current={active ? "page" : undefined}
-                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[10px] px-2 py-1.5 transition-colors ${
+                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[var(--wireline-radius-md)] px-2 py-1.5 transition-colors ${
                     active
                       ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -302,7 +287,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
             {hiddenAgentCount > 0 ? (
               <Link
                 to="/studio"
-                className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[var(--wireline-radius-md)] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <span>All {language.plural}</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
@@ -317,18 +302,16 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <div className="min-h-3 flex-1" />
 
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        {OPERATE_NAV.filter((item) =>
-          isRouteAvailableForAccount(accountType, item.href),
-        ).map((item) => (
-          <RailLink
-            key={item.href}
-            item={item}
-            pathname={pathname}
-            activeOverride={
-              secondaryRouteParent === item.href ? true : undefined
-            }
-          />
-        ))}
+        {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
+          (item) => (
+            <RailLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              activeOverride={secondaryRouteParent === item.href ? true : undefined}
+            />
+          ),
+        )}
       </nav>
 
       <Link
@@ -380,11 +363,7 @@ function MobileDock({
           })}
         </div>
       </nav>
-      <MobileNavMoreSheet
-        open={moreOpen}
-        onOpenChange={onMoreOpen}
-        pathname={pathname}
-      />
+      <MobileNavMoreSheet open={moreOpen} onOpenChange={onMoreOpen} pathname={pathname} />
     </>
   );
 }
@@ -452,23 +431,27 @@ export default function WorkspaceShell({
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
-          <div className="mx-3 sm:mx-6">
-            <EmailVerifyBanner />
-          </div>
-          <ActivationNudge className="mx-3 sm:mx-6" />
+          {/* Banners live INSIDE the scroller. html/body/#root are all
+              `overflow: hidden`, so this is the only scrollable region on the
+              page — a banner mounted as its sibling permanently subtracts its
+              height from the workspace with no document scroll to recover it.
+              At 200% zoom an unverified-email account could be left with a
+              sliver of content and no way to reach the rest. Scrolling them
+              with the content also means a dismissible notice stops competing
+              with the work once the reader moves past it. */}
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
           >
+            <div className="mx-3 sm:mx-6">
+              <EmailVerifyBanner />
+            </div>
+            <ActivationNudge className="mx-3 sm:mx-6" />
             <div className={contentInner}>{children}</div>
           </div>
         </main>
       </div>
       {!nativeAppShell ? <MobileBrowserUtilities /> : null}
-      <MobileDock
-        pathname={location.pathname}
-        moreOpen={moreOpen}
-        onMoreOpen={setMoreOpen}
-      />
+      <MobileDock pathname={location.pathname} moreOpen={moreOpen} onMoreOpen={setMoreOpen} />
     </div>
   );
 }

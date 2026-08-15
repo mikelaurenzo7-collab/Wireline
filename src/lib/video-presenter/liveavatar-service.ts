@@ -243,14 +243,50 @@ export async function createLiveAvatarLiteSession(input: {
   }
 }
 
-export async function listPublicAvatars(): Promise<
-  Array<{
-    id: string;
-    name: string;
-    previewImageUrl?: string | null;
-    defaultVoiceId?: string | null;
-  }>
-> {
+export type PublicAvatar = {
+  id: string;
+  name: string;
+  previewImageUrl?: string | null;
+  defaultVoiceId?: string | null;
+};
+
+/**
+ * The public avatar catalog is a global, slowly-changing vendor list — the same
+ * fifty rows for every tenant. It was fetched from the provider on every load
+ * of the presenter picker by every authenticated account, entitled or not, so
+ * ordinary browsing drove vendor API volume that no customer had bought.
+ *
+ * Cached in process with a short TTL and in-flight de-duplication, so a burst
+ * of page loads collapses to one upstream call. Deliberately not Redis: the
+ * value is small, identical for everyone, and a per-instance cache is enough to
+ * flatten the load without adding a dependency to a browse path.
+ */
+const PUBLIC_AVATAR_CACHE_TTL_MS = 10 * 60 * 1000;
+let publicAvatarCache: { expiresAt: number; avatars: PublicAvatar[] } | null = null;
+let publicAvatarInFlight: Promise<PublicAvatar[]> | null = null;
+
+export function resetLiveAvatarCatalogCacheForTests(): void {
+  publicAvatarCache = null;
+  publicAvatarInFlight = null;
+}
+
+export async function listPublicAvatars(): Promise<PublicAvatar[]> {
+  const now = Date.now();
+  if (publicAvatarCache && publicAvatarCache.expiresAt > now) return publicAvatarCache.avatars;
+  if (publicAvatarInFlight) return publicAvatarInFlight;
+
+  publicAvatarInFlight = fetchPublicAvatars()
+    .then((avatars) => {
+      publicAvatarCache = { expiresAt: Date.now() + PUBLIC_AVATAR_CACHE_TTL_MS, avatars };
+      return avatars;
+    })
+    .finally(() => {
+      publicAvatarInFlight = null;
+    });
+  return publicAvatarInFlight;
+}
+
+async function fetchPublicAvatars(): Promise<PublicAvatar[]> {
   const data = await liveAvatarFetch<{
     results?: Array<{
       id?: string;

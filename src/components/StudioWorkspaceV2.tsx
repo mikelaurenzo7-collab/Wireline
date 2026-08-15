@@ -78,7 +78,12 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
           id="studio-brief"
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 sm:resize-y md:text-[15px]"
+          // Matches the shared Input/Textarea primitives: a full-opacity focus
+          // border plus a 2px ring. The previous hand-rolled 1px ring at 40%
+          // primary computed to 2.10:1 against the card — under the 3:1 floor
+          // for a UI boundary, on the highest-intent input in the activation
+          // funnel — and keyed off `focus:` rather than `focus-visible:`.
+          className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
           placeholder={
             posture === "business"
               ? "Answer missed calls, qualify leads, book appointments, and follow up by text…"

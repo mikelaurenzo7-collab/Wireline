@@ -38,6 +38,11 @@ export type LiveAvatarSessionCredentials = {
   /** Hard provider/product ceiling; Studio may end the session sooner. */
   maxSessionSeconds?: number;
   /**
+   * Single-use receipt for `POST .../session/settle`. The stage returns it with
+   * the seconds actually watched so the unused reserved minutes go back.
+   */
+  settlementReceipt?: string;
+  /**
    * Resolved session mode. The client must only stream its own audio when the
    * session is LITE on the Wireline voice; in every other mode the provider
    * produces the speech and a second stream would talk over it.

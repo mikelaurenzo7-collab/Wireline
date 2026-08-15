@@ -85,7 +85,10 @@
   border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 80%, transparent);
   background: color-mix(in srgb, var(--wireline-color-canvas-default) 88%, #000);
   font-family: var(--wireline-font-mono);
-  font-size: 9px;
+  /* 11px is the product's smallest legible tier. At 9px with positive tracking
+     this chip — which carries the session's actual state — was roughly a 6px
+     x-height. */
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -99,6 +102,81 @@
   border-radius: 999px;
   background: var(--wireline-color-status-success);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-success) 28%, transparent);
+}
+
+/* An ended or failed session must not keep flying a success-green dot. */
+.wl-presence-live--ended .wl-presence__live-dot {
+  background: var(--wireline-color-status-neutral);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-neutral) 24%, transparent);
+}
+
+.wl-presence-live--offline .wl-presence__live-dot {
+  background: var(--wireline-color-status-error);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-error) 24%, transparent);
+}
+
+/**
+ * End-of-session panel. Anchored to the bottom of the frame behind a scrim
+ * rather than floated over the presenter's face, so the explanation and its
+ * action read as stage furniture instead of an overlay on the person.
+ */
+.wl-presence-live__ending,
+.wl-presence-live__actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem 1rem;
+  text-align: center;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--wireline-color-canvas-default) 92%, #000),
+    transparent
+  );
+}
+
+.wl-presence-live__ending-title {
+  margin: 0;
+  font-size: var(--wireline-typography-body-size, 14px);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-presence-live__ending-detail {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 12px;
+  line-height: 1.45;
+  /* text-tertiary, not a diluted secondary: this sits on a dark scrim and has
+     to stay above 4.5:1 in both themes. */
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-presence-live__action {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--wireline-radius-md);
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wireline-color-text-primary);
+  box-shadow: var(--wireline-elevation-card, 0 1px 2px rgb(0 0 0 / 0.2));
+}
+
+.wl-presence-live__action:hover {
+  border-color: var(--wireline-color-action-primary-default);
+}
+
+.wl-presence-live__action:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
 }
 
 .wl-presence__strip {
