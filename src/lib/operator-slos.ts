@@ -149,6 +149,39 @@ export function getSloWebhookEvents(
   return payloads;
 }
 
+/**
+ * Dead jobs that reached dead-letter INSIDE the window.
+ *
+ * `getQueueStats().dead` is an all-time count, and both snapshots used to hand
+ * it straight to `deadEnrichmentWindow`. Past six lifetime dead jobs the
+ * enrichment dimension pinned itself to "critical" and stayed there until
+ * retention eventually purged the rows — permanently red, firing the same
+ * `enrichment_failures` webhook on every evaluation, describing a window in
+ * which nothing had actually failed. A dimension that is always critical is a
+ * dimension operators stop reading, which is worse than not having it.
+ *
+ * `finishedAt` is the right column: job-queue stamps it exactly when retries
+ * are exhausted and the row flips to "dead".
+ */
+export async function getDeadJobsInWindow(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+  userId?: string,
+): Promise<number> {
+  const since = new Date(Date.now() - windowHours * 3_600_000);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.status, "dead"),
+        gte(schema.jobs.finishedAt, since),
+        userId ? eq(schema.jobs.userId, userId) : undefined,
+      ),
+    );
+  return Number(row?.count ?? 0);
+}
+
 export async function getPlatformWebhookStats(
   db: DrizzleDB,
   windowHours: number = DEFAULT_WINDOW_H,
@@ -203,9 +236,11 @@ export async function getPlatformSloSnapshot(
   const evaluated_at = now.toISOString();
   const queue = await getQueueStats(db);
   const webhooks = await getPlatformWebhookStats(db, windowHours);
+  // Windowed, not queue.dead — see getDeadJobsInWindow.
+  const deadInWindow = await getDeadJobsInWindow(db, windowHours);
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
-    deadEnrichmentWindow: queue.dead,
+    deadEnrichmentWindow: deadInWindow,
     webhookAttemptsWindow: webhooks.attempts_in_window,
     webhookSuccessRate: webhooks.success_rate,
     auditErrorsWindow: 0,
@@ -328,6 +363,10 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.userId, userId),
           eq(schema.jobs.type, "post_call_enrichment"),
           eq(schema.jobs.status, "dead"),
+          // Windowed like the "done" count below it. Without this the
+          // enrichment dimension latches critical on lifetime dead jobs — see
+          // getDeadJobsInWindow.
+          gte(schema.jobs.finishedAt, since),
         ),
       ),
     db

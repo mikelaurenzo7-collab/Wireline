@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { providerHttpError } from "../provider-http-error";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   buildOpenAIRealtimeInstructions,
@@ -160,10 +161,15 @@ export async function createOpenAIRealtimeClientSecret(
         status: response.status,
         body: typeof text === "string" ? text.slice(0, 500) : undefined,
       });
-      throw AppError.fromHttpStatus(
-        response.status,
-        "OpenAI Realtime session could not be created. Check OpenAI model access and billing.",
-      );
+      // Never reuse OpenAI's status: a 401 here means the PLATFORM key is bad,
+      // and the browser force-signs-out the account holder on any 401.
+      throw providerHttpError({
+        provider: "OpenAI Realtime",
+        path: "/v1/realtime/client_secrets",
+        status: response.status,
+        unavailableMessage:
+          "Live simulation is temporarily unavailable. Wireline has been notified — real phone calls are unaffected.",
+      });
     }
 
     return {

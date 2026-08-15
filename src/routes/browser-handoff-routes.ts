@@ -128,8 +128,10 @@ function normalizeExchangeBody(body: z.infer<typeof exchangeSchema>): BrowserCom
 
 router.post(
   "/api/browser/handoff/exchange",
-  claudeRateLimiter,
+  // Authenticate first so the limiter keys on the user id rather than a
+  // per-session digest — otherwise rotating the session mints a fresh bucket.
   authenticateUser,
+  claudeRateLimiter,
   validate({ body: exchangeSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     const context = normalizeExchangeBody(req.body);
@@ -164,8 +166,8 @@ router.post(
 
 router.get(
   "/api/browser/handoff/redeem",
-  claudeRateLimiter,
   authenticateUser,
+  claudeRateLimiter,
   validate({ query: redeemQuerySchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     await ensureBrowserHandoffSchema();

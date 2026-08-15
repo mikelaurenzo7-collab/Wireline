@@ -6,7 +6,7 @@
  * output into LiveAvatar LITE for lip sync, so video never becomes a second,
  * provider-owned agent brain.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Loader2, Mic2, Play, Square, Video } from "lucide-react";
 
@@ -14,9 +14,7 @@ import AgentFace from "../components/AgentFace";
 import AgentPresenceAvatarPicker, {
   type PresenterCatalogSelection,
 } from "../components/AgentPresenceAvatarPicker";
-import LiveVideoPresenter, {
-  type LiveVideoPresenterHandle,
-} from "../components/LiveVideoPresenter";
+import type { LiveVideoPresenterHandle } from "../components/LiveVideoPresenter";
 import OpenAILiveVoiceSandbox from "../components/OpenAILiveVoiceSandbox";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
@@ -69,6 +67,37 @@ type PresenterPayload = {
 };
 
 const DEFAULT_ENGINE: LiveVideoVoiceEngine = "wireline_realtime";
+
+/**
+ * The presenter pulls in @heygen/liveavatar-web-sdk (which carries its own
+ * WebRTC stack), and it only ever renders once a session has been minted. Held
+ * as a static import it was the largest single contributor to this route's
+ * chunk and every visitor paid for it — including the ones who came to read the
+ * add-on pitch, hit the entitlement gate, and never started anything.
+ *
+ * `warmPresenterBundle` runs at the top of startPreview so the chunk downloads
+ * alongside the mint round trip rather than after it; by the time `session` is
+ * set the module is normally already resolved and Suspense never shows.
+ */
+const LiveVideoPresenter = lazy(() => import("../components/LiveVideoPresenter"));
+
+function warmPresenterBundle() {
+  void import("../components/LiveVideoPresenter");
+}
+
+function PresenterLoadingStage() {
+  return (
+    <div
+      className="grid aspect-video min-h-[240px] place-items-center rounded-2xl border border-border bg-background sm:min-h-[300px]"
+      role="status"
+    >
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        Preparing the live stage…
+      </span>
+    </div>
+  );
+}
 
 type SessionUsage = {
   includedMinutes?: number;
@@ -325,6 +354,9 @@ export default function LiveVideoStudioPage() {
 
   async function startPreview() {
     if (!activeAgentId || sessionBusy) return;
+    // Fetch the presenter chunk in parallel with the mic preflight and the mint
+    // so the lazy boundary below has already resolved by the time it mounts.
+    warmPresenterBundle();
     setSessionBusy(true);
     setError(null);
     setNotice(null);
@@ -682,28 +714,30 @@ export default function LiveVideoStudioPage() {
 
                   <div className="bg-secondary/30 p-3 sm:p-5">
                     {session ? (
-                      <LiveVideoPresenter
-                        ref={presenterRef}
-                        credentials={session.live}
-                        fallbackSeed={session.fallbackSeed}
-                        agentName={activeAgentName}
-                        layout="stage"
-                        className="w-full"
-                        onStreamReady={() => setPresenterReady(true)}
-                        onRetry={() => void startPreview()}
-                        onSessionEnded={({ watchedSeconds }) => {
-                          setPresenterReady(false);
-                          setSecondsLeft(null);
-                          // Settle on EVERY ending, including `stopped`. That
-                          // reason covers component cleanup — switching agents,
-                          // navigating away — where no explicit endPreview runs,
-                          // so skipping it stopped the provider session while
-                          // still charging the tenant the full reservation.
-                          // settleSession is receipt-deduplicated, so the
-                          // endPreview path calling it too is a no-op.
-                          void settleSession(session.live, watchedSeconds, activeAgentId);
-                        }}
-                      />
+                      <Suspense fallback={<PresenterLoadingStage />}>
+                        <LiveVideoPresenter
+                          ref={presenterRef}
+                          credentials={session.live}
+                          fallbackSeed={session.fallbackSeed}
+                          agentName={activeAgentName}
+                          layout="stage"
+                          className="w-full"
+                          onStreamReady={() => setPresenterReady(true)}
+                          onRetry={() => void startPreview()}
+                          onSessionEnded={({ watchedSeconds }) => {
+                            setPresenterReady(false);
+                            setSecondsLeft(null);
+                            // Settle on EVERY ending, including `stopped`. That
+                            // reason covers component cleanup — switching agents,
+                            // navigating away — where no explicit endPreview runs,
+                            // so skipping it stopped the provider session while
+                            // still charging the tenant the full reservation.
+                            // settleSession is receipt-deduplicated, so the
+                            // endPreview path calling it too is a no-op.
+                            void settleSession(session.live, watchedSeconds, activeAgentId);
+                          }}
+                        />
+                      </Suspense>
                     ) : (
                       <div className="relative grid aspect-video min-h-[240px] place-items-center overflow-hidden rounded-2xl border border-border bg-background shadow-sm sm:min-h-[300px]">
                         {selectedAvatar?.previewImageUrl ? (

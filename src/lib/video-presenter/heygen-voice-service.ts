@@ -12,6 +12,7 @@
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { providerHttpError } from "../provider-http-error";
 
 const HEYGEN_API_BASE = "https://api.heygen.com";
 
@@ -101,12 +102,17 @@ async function heygenFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
   const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
   if (!response.ok) {
-    const detail =
-      (typeof body?.message === "string" && body.message) ||
-      (typeof body?.error === "string" && body.error) ||
-      `HeyGen request failed (${response.status})`;
-    log.warn("HeyGen API error", { path, status: response.status, detail });
-    throw AppError.fromHttpStatus(response.status >= 500 ? 502 : response.status, detail);
+    throw providerHttpError({
+      provider: "HeyGen",
+      path,
+      status: response.status,
+      detail:
+        (typeof body?.message === "string" && body.message) ||
+        (typeof body?.error === "string" && body.error) ||
+        undefined,
+      unavailableMessage:
+        "Presenter voices are temporarily unavailable. Wireline has been notified — your agent's other channels are unaffected.",
+    });
   }
   return body as T;
 }

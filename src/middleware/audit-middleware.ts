@@ -153,8 +153,73 @@ export async function persistPlatformCostRecord(opts: {
   );
 }
 
+/**
+ * Daily AI-token ceiling, evaluated BEFORE the model call.
+ *
+ * `claude_tokens_daily` is described in tenant-quotas.ts as a hard cap and is
+ * sized per plan (200k/day on free, 20M on enterprise), but the only code that
+ * ever consulted it was `persistRuntimeAuditRecords` below — which runs after
+ * the provider has already billed, and whose `!allowed` branch writes nothing
+ * but a log line. The dimension counted spend without ever bounding it: a free
+ * tenant could run the 200k/day allowance a hundred times over and the only
+ * trace would be warnings in the server log. The other two vendor-metered
+ * dimensions (`voice_minutes_daily`, `simulation_minutes_daily`) each gate
+ * their route before the spend happens; this closes the same gap for tokens.
+ *
+ * Reads usage without incrementing, so `persistRuntimeAuditRecords` stays the
+ * single writer and the counter keeps tracking real tokens rather than request
+ * count. Because the check is a read of the previous total, the request that
+ * crosses the line still completes — the ceiling bounds the overshoot to one
+ * call, it is not a mid-call kill switch.
+ *
+ * Fails OPEN on a counter-store error, unlike `simulationMinuteQuota`. A
+ * realtime mint is one discrete vendor charge that is trivially deferred; an
+ * assistant reply is the product's core interaction, and taking every tenant
+ * offline on a quota-table blip is the worse failure. The monthly USD cap in
+ * `enforceSpendCap` remains the backstop that does fail closed.
+ */
+async function aiTokenQuotaExceeded(
+  userId: string,
+): Promise<{ limit: number; used: number } | null> {
+  try {
+    const [{ profile }, used] = await Promise.all([
+      quotaTracker.getProfile(userId),
+      quotaTracker.getUsage(userId, "claude_tokens_daily"),
+    ]);
+    const limit = profile.claude_tokens_daily;
+    return limit > 0 && used >= limit ? { limit, used } : null;
+  } catch (error) {
+    log.error("AI token quota check failed — allowing request", {
+      user_id: userId,
+      error: getErrorMessage(error),
+    });
+    return null;
+  }
+}
+
+/**
+ * Marks a route as AI-spending: enforces the daily token ceiling on the way in
+ * and persists the resulting spend on the way out. Enforcement lives here
+ * rather than as a separate middleware so the two can never drift — a route
+ * that meters its spend is a route that respects the ceiling, by construction.
+ */
 export function withAudit(actionPrefix: string) {
-  return (req: any, res: any, next: any) => {
+  return async (req: any, res: any, next: any) => {
+    const userId = req?.user?.id;
+    if (userId) {
+      const exceeded = await aiTokenQuotaExceeded(userId);
+      if (exceeded) {
+        res.setHeader("Retry-After", "3600");
+        return res.status(429).json({
+          code: "AI_TOKEN_QUOTA_EXCEEDED",
+          error:
+            "You've reached today's AI usage limit for your plan. It resets at midnight UTC — scheduled calls and texts are unaffected.",
+          limit: exceeded.limit,
+          used: exceeded.used,
+          recovery_path: "/settings/billing",
+        });
+      }
+    }
     const ctx = createAuditContext();
     res.on("finish", () => {
       // Persist on 5xx too: the provider already billed the model call, so a

@@ -16,7 +16,7 @@
  */
 import { Router, Response } from "express";
 import { randomUUID } from "node:crypto";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, or, ne, sql, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
@@ -566,30 +566,61 @@ router.post(
       const { device_id, apns_voip_token, apns_alert_token, fcm_token, platform, app_version } =
         req.body;
       const now = new Date();
-      await drizzle
-        .insert(schema.mobileDevices)
-        .values({
-          userId: req.user.id,
-          deviceId: device_id,
-          apnsVoipToken: apns_voip_token ?? null,
-          apnsAlertToken: apns_alert_token ?? null,
-          fcmToken: fcm_token ?? null,
-          platform,
-          appVersion: app_version ?? null,
-          lastSeenAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [schema.mobileDevices.userId, schema.mobileDevices.deviceId],
-          set: {
+
+      // A push token addresses a PHONE, not an account, but the unique key is
+      // (user_id, device_id) — so when a second person signs in on the same
+      // handset the upsert simply adds a row and leaves the previous owner's
+      // row intact, still holding these exact tokens. Every inbound-call push
+      // for that former account then rings this phone and puts the caller's
+      // name and number on its lock screen. Claim the device and its tokens for
+      // the authenticated user in the same transaction as the upsert so a
+      // handset can only ever be registered to one account at a time.
+      const claimedTokens = [apns_voip_token, apns_alert_token, fcm_token].filter(
+        (token): token is string => typeof token === "string" && token.length > 0,
+      );
+
+      await drizzle.transaction(async (tx: typeof drizzle) => {
+        const tokenMatches = claimedTokens.flatMap((token) => [
+          eq(schema.mobileDevices.apnsVoipToken, token),
+          eq(schema.mobileDevices.apnsAlertToken, token),
+          eq(schema.mobileDevices.fcmToken, token),
+        ]);
+        await tx
+          .delete(schema.mobileDevices)
+          .where(
+            and(
+              ne(schema.mobileDevices.userId, req.user.id),
+              tokenMatches.length
+                ? or(eq(schema.mobileDevices.deviceId, device_id), ...tokenMatches)
+                : eq(schema.mobileDevices.deviceId, device_id),
+            ),
+          );
+
+        await tx
+          .insert(schema.mobileDevices)
+          .values({
+            userId: req.user.id,
+            deviceId: device_id,
             apnsVoipToken: apns_voip_token ?? null,
             apnsAlertToken: apns_alert_token ?? null,
             fcmToken: fcm_token ?? null,
             platform,
             appVersion: app_version ?? null,
             lastSeenAt: now,
-            updatedAt: now,
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: [schema.mobileDevices.userId, schema.mobileDevices.deviceId],
+            set: {
+              apnsVoipToken: apns_voip_token ?? null,
+              apnsAlertToken: apns_alert_token ?? null,
+              fcmToken: fcm_token ?? null,
+              platform,
+              appVersion: app_version ?? null,
+              lastSeenAt: now,
+              updatedAt: now,
+            },
+          });
+      });
       res.json({ success: true });
     } catch (err) {
       log.error("POST /api/mobile/devices failed", { error: getErrorMessage(err) });

@@ -8,6 +8,7 @@
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { providerHttpError } from "../provider-http-error";
 import {
   buildLiveVideoSessionTokenBody,
   describeLiveVideoEngines,
@@ -103,11 +104,14 @@ async function liveAvatarFetch<T>(
 
   const body = (await response.json().catch(() => null)) as LiveAvatarEnvelope<T> | null;
   if (!response.ok) {
-    const detail =
-      (typeof body?.message === "string" && body.message) ||
-      `LiveAvatar request failed (${response.status})`;
-    log.warn("LiveAvatar API error", { path, status: response.status, detail });
-    throw AppError.fromHttpStatus(response.status >= 500 ? 502 : response.status, detail);
+    throw providerHttpError({
+      provider: "LiveAvatar",
+      path,
+      status: response.status,
+      detail: typeof body?.message === "string" ? body.message : undefined,
+      unavailableMessage:
+        "Live video is temporarily unavailable. Wireline has been notified — calls, texts, and follow-up are unaffected.",
+    });
   }
 
   if (!body?.data) {

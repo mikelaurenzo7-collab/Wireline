@@ -37,6 +37,28 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
   return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
 }
 
+/**
+ * Did /api/train/extract actually store anything?
+ *
+ * It answers 200 whether the extractor pulled out ten facts or none, so the
+ * status alone cannot tell the panel whether it is safe to clear the box. The
+ * `readiness` counts are the honest signal. An unreadable body is treated as
+ * "captured" — the same posture as the 200 itself — so a response-shape change
+ * can't strand a Account Holder who really did save.
+ */
+async function extractionPersistedSomething(response: Response): Promise<boolean> {
+  try {
+    const body = (await response.json()) as {
+      readiness?: { rules?: number; facts?: number; tone?: boolean };
+    };
+    const readiness = body?.readiness;
+    if (!readiness) return true;
+    return Boolean(readiness.rules) || Boolean(readiness.facts) || Boolean(readiness.tone);
+  } catch {
+    return true;
+  }
+}
+
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
@@ -148,6 +170,7 @@ export default function StudioAgentWorkspacePanel({
         greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
         GREETING_PREFIX,
       );
+      let knowledgeCaptured = true;
       if (knowledgeTrimmed) {
         const knowledgeResponse = await authFetch("/api/train/extract", {
           method: "POST",
@@ -161,10 +184,25 @@ export default function StudioAgentWorkspacePanel({
               : "Personal preferences could not be saved.",
           );
         }
-        if (isCurrentAgent()) setSetupKnowledge("");
+        // /api/train/extract answers 200 even when the extractor decided the
+        // text was too unclear to store anything — its prompt tells it to
+        // return empty arrays when in doubt. Clearing the box on that reply
+        // threw the Account Holder's typing away and still claimed the setup
+        // was saved. Only clear once the server reports something persisted.
+        knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
+        if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
       }
 
       if (isCurrentAgent()) {
+        if (!knowledgeCaptured) {
+          setSetupNotice(null);
+          setSetupError(
+            isBusinessAgent
+              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts — hours, pricing, service area, what to do with a lead — and apply again."
+              : "Tone and greeting were saved, but nothing concrete could be pulled out of your preferences. Rewrite them as short, specific statements and apply again.",
+          );
+          return;
+        }
         setSetupNotice(
           isBusinessAgent
             ? "Run a customer test before connecting live traffic."

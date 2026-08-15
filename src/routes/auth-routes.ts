@@ -11,6 +11,7 @@ import { log, drizzle, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import {
+  recordSigninFailure,
   signinRateLimiter,
   signupRateLimiter,
   forgotPasswordRateLimiter,
@@ -72,8 +73,15 @@ function sendPasswordRejected(res: Response, error: PasswordRejectedError) {
 
 /**
  * POST /api/auth/signin
- * Authenticate a user and return a JWT. Rate-limited 5 attempts / 15 min
- * per (email, IP) pair to slow credential stuffing.
+ * Authenticate a user and return a JWT.
+ *
+ * Three limits, because the per-(email, IP) key alone bounds neither spraying
+ * nor stuffing — both vary the email, so every attempt lands in a fresh bucket:
+ *   - 5 attempts / 15 min per (email, IP) — repeat guesses at one address.
+ *   - 50 FAILURES / 15 min per IP — one host sweeping many addresses.
+ *   - 20 FAILURES / 15 min per email — many hosts converging on one address.
+ * The failure budgets are spent only by `recordSigninFailure` below, so a
+ * shared-NAT office signing in correctly never touches them.
  */
 router.post(
   "/api/auth/signin",
@@ -91,6 +99,9 @@ router.post(
         SIGNIN_MIN_DURATION_MS,
       );
       if (!result) {
+        // Spend the failure budgets. Fire-and-forget: the throttle is defense
+        // in depth and must not delay or convert the 401.
+        void recordSigninFailure(req.ip || "", email);
         throw AppError.fromHttpStatus(401, "Invalid email or password");
       }
 
