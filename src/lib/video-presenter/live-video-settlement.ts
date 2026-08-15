@@ -37,6 +37,11 @@ let redis: Redis | null = null;
 const developmentClaims = new Set<string>();
 
 function getRedis(): Redis | null {
+  // Unit tests must never claim production settlement nonces merely because a
+  // hosted build injects the real Upstash credentials. The Vercel deep-audit
+  // subprocess explicitly runs with NODE_ENV=test; keep that boundary
+  // authoritative even if this module previously cached a client.
+  if (process.env.NODE_ENV === "test") return null;
   if (redis) return redis;
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();

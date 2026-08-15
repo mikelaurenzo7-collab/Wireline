@@ -60,9 +60,11 @@ describe("production build environment gate", () => {
 
   it("runs Vitest with a deterministic test runtime inside Vercel builds", () => {
     const build = read("scripts/vercel-build.mjs");
+    const liveVideoSettlement = read("src/lib/video-presenter/live-video-settlement.ts");
 
     expect(build).toContain(
       'run("npm", ["run", "test:run"], { env: { NODE_ENV: "test", VERCEL: "0" } })',
     );
+    expect(liveVideoSettlement).toContain('if (process.env.NODE_ENV === "test") return null;');
   });
 });
