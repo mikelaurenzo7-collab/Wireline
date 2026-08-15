@@ -691,15 +691,17 @@ export default function LiveVideoStudioPage() {
                         className="w-full"
                         onStreamReady={() => setPresenterReady(true)}
                         onRetry={() => void startPreview()}
-                        onSessionEnded={({ reason, watchedSeconds }) => {
+                        onSessionEnded={({ watchedSeconds }) => {
                           setPresenterReady(false);
                           setSecondsLeft(null);
-                          // The stage stays mounted on its ended/failed card so
-                          // the customer can read what happened and choose to
-                          // start another session; only the allowance settles.
-                          if (reason !== "stopped") {
-                            void settleSession(session.live, watchedSeconds, activeAgentId);
-                          }
+                          // Settle on EVERY ending, including `stopped`. That
+                          // reason covers component cleanup — switching agents,
+                          // navigating away — where no explicit endPreview runs,
+                          // so skipping it stopped the provider session while
+                          // still charging the tenant the full reservation.
+                          // settleSession is receipt-deduplicated, so the
+                          // endPreview path calling it too is a no-op.
+                          void settleSession(session.live, watchedSeconds, activeAgentId);
                         }}
                       />
                     ) : (

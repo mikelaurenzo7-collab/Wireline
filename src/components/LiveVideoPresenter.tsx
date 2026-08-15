@@ -207,8 +207,16 @@ const LiveVideoPresenter = forwardRef<
       setFirstFrame(true);
     };
 
+    // Set when the deadline fires, so the still-pending start() knows the stage
+    // has given up. LiveAvatarSession.stop() no-ops while CONNECTING, so the
+    // stop below can miss a session that connects a moment later — without this
+    // flag that session would stay open and metered behind the failure card
+    // until the provider cap, having already been settled as zero watched time.
+    let abandonedAfterDeadline = false;
+
     const connectDeadline = window.setTimeout(() => {
       if (cancelled || watchStartedAtRef.current != null) return;
+      abandonedAfterDeadline = true;
       setFailure("connect_timeout");
       reportSessionEnd("failed");
       void session.stop().catch(() => undefined);
@@ -274,10 +282,11 @@ const LiveVideoPresenter = forwardRef<
       try {
         await session.start();
         // LiveAvatarSession.stop() intentionally no-ops while CONNECTING. If
-        // this component unmounted during start(), cleanup's early stop could
-        // therefore miss the provider session. Close it again after connect so
-        // an abandoned UI can never leave a metered session running.
-        if (cancelled) await session.stop().catch(() => undefined);
+        // this component unmounted during start() — or the connect deadline
+        // already gave up on it — the earlier stop could therefore miss the
+        // provider session. Close it again after connect so an abandoned UI can
+        // never leave a metered session running.
+        if (cancelled || abandonedAfterDeadline) await session.stop().catch(() => undefined);
       } catch {
         if (!cancelled) {
           setFailure("start_failed");

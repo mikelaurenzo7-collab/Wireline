@@ -45,11 +45,30 @@ function getRedis(): Redis | null {
   return redis;
 }
 
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+}
+
+/**
+ * Fails closed in production rather than falling back to a public constant.
+ *
+ * The receipt authorizes a write against the allowance ledger. Signing it with
+ * a well-known development string would let any authenticated tenant forge
+ * current-period claims with fresh nonces and refund itself without ever
+ * minting a matching reservation — the allowance cap would stop existing.
+ */
 function receiptKey(): string {
-  const base = isVaultConfigured()
-    ? getDataKey().toString("base64")
-    : "wireline-dev-live-video-settlement";
-  return createHmac("sha256", base).update(RECEIPT_LABEL).digest("hex");
+  if (!isVaultConfigured()) {
+    if (isProductionRuntime()) {
+      throw new Error(
+        "WIRELINE_DATA_KEY is required to sign Live Video settlement receipts in production",
+      );
+    }
+    return createHmac("sha256", "wireline-dev-live-video-settlement")
+      .update(RECEIPT_LABEL)
+      .digest("hex");
+  }
+  return createHmac("sha256", getDataKey().toString("base64")).update(RECEIPT_LABEL).digest("hex");
 }
 
 export type LiveVideoSettlementClaim = {
@@ -58,6 +77,10 @@ export type LiveVideoSettlementClaim = {
   reservedMinutes: number;
   creditsPerMinute: number;
   nonce: string;
+  /** Server mint time. The floor on how much of the session really elapsed. */
+  issuedAtMs: number;
+  /** Provider hard cap, so a late settle cannot be charged past the session. */
+  maxSessionSeconds: number;
   expiresAtMs: number;
 };
 
@@ -67,11 +90,12 @@ export type LiveVideoSettlementClaim = {
  * and the server re-checks that ownership before refunding anything.
  */
 export function signLiveVideoSettlementReceipt(
-  claim: Omit<LiveVideoSettlementClaim, "expiresAtMs">,
+  claim: Omit<LiveVideoSettlementClaim, "expiresAtMs" | "issuedAtMs">,
   nowMs: number = Date.now(),
 ): string {
   const payload: LiveVideoSettlementClaim = {
     ...claim,
+    issuedAtMs: nowMs,
     expiresAtMs: nowMs + RECEIPT_TTL_SECONDS * 1000,
   };
   const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
@@ -109,6 +133,7 @@ export function verifyLiveVideoSettlementReceipt(
     if (!Number.isFinite(parsed.expiresAtMs) || (parsed.expiresAtMs as number) <= nowMs) {
       return null;
     }
+    if (!Number.isFinite(parsed.issuedAtMs) || (parsed.issuedAtMs as number) > nowMs) return null;
     return {
       userId: parsed.userId,
       periodKey: parsed.periodKey,
@@ -120,6 +145,10 @@ export function verifyLiveVideoSettlementReceipt(
         ? Math.min(4, Math.max(1, Math.floor(parsed.creditsPerMinute as number)))
         : 1,
       nonce: parsed.nonce,
+      issuedAtMs: parsed.issuedAtMs as number,
+      maxSessionSeconds: Number.isFinite(parsed.maxSessionSeconds)
+        ? Math.max(0, Math.floor(parsed.maxSessionSeconds as number))
+        : 0,
       expiresAtMs: parsed.expiresAtMs as number,
     };
   } catch {
@@ -128,7 +157,39 @@ export function verifyLiveVideoSettlementReceipt(
 }
 
 /**
- * Allowance minutes to hand back for a session that ran `watchedSeconds`.
+ * Seconds this session must be charged for.
+ *
+ * The client's own figure is a claim, not evidence: a modified client could
+ * report 0 immediately after minting, take the whole reservation back, and keep
+ * talking to a provider session that is still running — repeating that per
+ * receipt would remove the monthly cap entirely. The server knows when it
+ * minted the token, so wall-clock elapsed time since then is a hard floor on
+ * how much of the session can possibly have been used.
+ *
+ * Charged = max(client-reported, server-elapsed), clamped to the provider cap
+ * because the session cannot outlive it. Settling promptly — which the stage
+ * does — makes the two agree; settling late only ever charges more, which is
+ * the same conservative direction as not refunding at all.
+ */
+export function liveVideoChargeableSeconds(input: {
+  clientWatchedSeconds: number;
+  issuedAtMs: number;
+  maxSessionSeconds: number;
+  nowMs?: number;
+}): number {
+  const now = input.nowMs ?? Date.now();
+  const claimed = Number.isFinite(input.clientWatchedSeconds)
+    ? Math.max(0, input.clientWatchedSeconds)
+    : 0;
+  const elapsed = Number.isFinite(input.issuedAtMs)
+    ? Math.max(0, (now - input.issuedAtMs) / 1000)
+    : 0;
+  const cap = input.maxSessionSeconds > 0 ? input.maxSessionSeconds : Number.POSITIVE_INFINITY;
+  return Math.min(cap, Math.max(claimed, elapsed));
+}
+
+/**
+ * Allowance minutes to hand back for a session that consumed `chargedSeconds`.
  *
  * Whole minutes only, rounded UP in the tenant's disfavour so a 61-second
  * session is charged the two minutes it really occupied, and scaled by the
@@ -136,14 +197,14 @@ export function verifyLiveVideoSettlementReceipt(
  */
 export function liveVideoRefundMinutes(
   reservedMinutes: number,
-  watchedSeconds: number,
+  chargedSeconds: number,
   creditsPerMinute = 1,
 ): number {
   const credits = Number.isFinite(creditsPerMinute)
     ? Math.min(4, Math.max(1, Math.floor(creditsPerMinute)))
     : 1;
-  const watched = Number.isFinite(watchedSeconds) ? Math.max(0, watchedSeconds) : 0;
-  const consumed = Math.ceil(watched / 60) * credits;
+  const charged = Number.isFinite(chargedSeconds) ? Math.max(0, chargedSeconds) : 0;
+  const consumed = Math.ceil(charged / 60) * credits;
   return Math.max(0, Math.min(reservedMinutes, reservedMinutes - consumed));
 }
 
@@ -170,12 +231,31 @@ export async function claimLiveVideoSettlementOnce(
       return "unavailable";
     }
   }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+  if (isProductionRuntime()) {
     return "unavailable";
   }
   if (developmentClaims.has(nonce)) return "duplicate";
   developmentClaims.add(nonce);
   return "claimed";
+}
+
+/**
+ * Hand a claim back when the ledger write it guarded did not happen.
+ *
+ * The claim and the quota update cannot share a transaction — one is in Redis
+ * and one is in Postgres. Without this, a refund whose UPDATE threw would leave
+ * the nonce burned for a full day and every retry answering "already settled",
+ * so the tenant could never recover minutes they genuinely did not use. The
+ * asymmetry is deliberate: releasing a claim can only ever permit a retry of a
+ * refund that has not been applied.
+ */
+async function releaseLiveVideoSettlementClaim(nonce: string): Promise<void> {
+  const store = getRedis();
+  if (store) {
+    await store.del(`${CLAIM_KEY_PREFIX}${nonce}`).catch(() => undefined);
+    return;
+  }
+  developmentClaims.delete(nonce);
 }
 
 export type LiveVideoSettlementResult = {
@@ -188,10 +268,18 @@ export type LiveVideoSettlementResult = {
 export async function settleLiveVideoSession(input: {
   claim: LiveVideoSettlementClaim;
   watchedSeconds: number;
+  nowMs?: number;
 }): Promise<LiveVideoSettlementResult> {
+  // Server-anchored, not client-reported — see liveVideoChargeableSeconds.
+  const chargedSeconds = liveVideoChargeableSeconds({
+    clientWatchedSeconds: input.watchedSeconds,
+    issuedAtMs: input.claim.issuedAtMs,
+    maxSessionSeconds: input.claim.maxSessionSeconds,
+    nowMs: input.nowMs,
+  });
   const refundedMinutes = liveVideoRefundMinutes(
     input.claim.reservedMinutes,
-    input.watchedSeconds,
+    chargedSeconds,
     input.claim.creditsPerMinute,
   );
   if (refundedMinutes <= 0) {
@@ -212,11 +300,19 @@ export async function settleLiveVideoSession(input: {
     return { settled: false, refundedMinutes: 0, reason: "claim_unavailable" };
   }
 
-  await releaseLiveVideoSessionReservation(
-    input.claim.userId,
-    input.claim.periodKey,
-    refundedMinutes,
-  );
+  try {
+    await releaseLiveVideoSessionReservation(
+      input.claim.userId,
+      input.claim.periodKey,
+      refundedMinutes,
+    );
+  } catch (error) {
+    // The claim guarded a write that did not land. Give it back so a retry can
+    // still recover minutes the tenant genuinely did not use, instead of the
+    // nonce sitting burned for a day answering "already settled".
+    await releaseLiveVideoSettlementClaim(input.claim.nonce);
+    throw error;
+  }
   return { settled: true, refundedMinutes, reason: "settled" };
 }
 

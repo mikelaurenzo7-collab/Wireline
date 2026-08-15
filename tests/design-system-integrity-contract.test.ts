@@ -54,6 +54,22 @@ describe("touch targets are not capped by an unlayered rule", () => {
     expect(coarse).toContain('[data-slot="button"],');
   });
 
+  it("does not let a stylesheet quietly undercut the public footer targets", () => {
+    // Measured, not assumed: the footer links carried `min-h-11` in their class
+    // list while two unlayered rules pinned them to 36px and 40px, so the
+    // utility was decorative and the rendered target never changed. Both rules
+    // now resolve through the comfortable-target token.
+    const responsive = read("src/styles/responsive.css");
+    const footerNav = responsive.slice(responsive.indexOf(".marketing-footer-nav a {"));
+    expect(footerNav.slice(0, 300)).toContain("--wireline-interaction-target-comfortable");
+    expect(footerNav.slice(0, 300)).not.toContain("min-height: 2.25rem");
+
+    const cta = read("src/styles/cta-readability.css");
+    const footerLink = cta.slice(cta.indexOf(".marketing-surface footer a {"));
+    expect(footerLink.slice(0, 300)).toContain("--wireline-interaction-target-comfortable");
+    expect(footerLink.slice(0, 300)).not.toContain("min-height: 40px");
+  });
+
   it("carries the floor on the Button primitive so `asChild` links match real buttons", () => {
     const button = read("src/components/atoms/Button.tsx");
     // With asChild the rendered node is an <a>, which matches neither `button`

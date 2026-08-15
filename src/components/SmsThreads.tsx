@@ -208,6 +208,12 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const handleSend = async () => {
     if (!activeId || !reply.trim() || sending) return;
     const threadId = activeId;
+    // Captured NOW, while the ref still holds the controller for the thread
+    // being replied to. Reading the ref after the await would hand this refresh
+    // whichever thread the reader has since opened — a live, un-aborted signal
+    // belonging to a different conversation, which is the exact cross-thread
+    // paint this guard exists to prevent.
+    const sentThreadController = activeThreadFetchRef.current;
     const body = reply.trim();
     const optimistic: SmsMessage = {
       id: `optimistic-${Date.now()}`,
@@ -238,14 +244,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         throw new Error(result.reason || result.error || "Send failed");
       }
       success("SMS sent", "Message delivered to customer.");
-      // Carry the open thread's signal. Without it this refresh was the one
-      // unguarded caller of fetchMessages: send in thread A, open thread B while
-      // it is in flight, and A's rows painted under B's header (and marked A
-      // read). Aborting on thread switch drops the superseded result instead.
-      await Promise.all([
-        fetchMessages(threadId, activeThreadFetchRef.current?.signal),
-        fetchThreads(),
-      ]);
+      // Carry the sent thread's own signal, so switching threads aborts this
+      // refresh instead of letting it paint thread A's messages under thread
+      // B's header and mark A read.
+      await Promise.all([fetchMessages(threadId, sentThreadController?.signal), fetchThreads()]);
     } catch (error: any) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
       setReply(body);

@@ -95,7 +95,7 @@ export default function MarketingFooter({
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -111,7 +111,7 @@ export default function MarketingFooter({
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -127,7 +127,7 @@ export default function MarketingFooter({
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -143,7 +143,7 @@ export default function MarketingFooter({
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -159,7 +159,7 @@ export default function MarketingFooter({
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-10 items-center transition-colors hover:text-foreground"
+                className="inline-flex min-h-11 items-center transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -167,7 +167,7 @@ export default function MarketingFooter({
             <button
               type="button"
               data-compact="true"
-              className="inline-flex min-h-10 items-center transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center transition-colors hover:text-foreground"
               onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
             >
               Privacy choices

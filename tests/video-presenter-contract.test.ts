@@ -46,7 +46,11 @@ describe("video presenter integration", () => {
     expect(live).toContain("LiveAvatarSession");
     expect(live).toContain("repeatAudio");
     expect(live).toContain("const minBytes = 19_200");
-    expect(live).toContain("if (cancelled) await session.stop().catch(() => undefined)");
+    // Also covers a session that connects after the stage gave up on it —
+    // stop() no-ops while CONNECTING, so it has to be re-issued post-connect.
+    expect(live).toContain(
+      "if (cancelled || abandonedAfterDeadline) await session.stop().catch(() => undefined)",
+    );
     expect(live).toContain('layout?: "portrait" | "stage"');
     expect(live).toContain('"wl-presence-live--stage"');
     expect(live).toContain("onSpeakingChangeRef.current = onSpeakingChange");

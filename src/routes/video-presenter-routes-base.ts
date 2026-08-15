@@ -401,11 +401,15 @@ router.post(
         maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
         // Single-use receipt the stage returns when it closes, so the minutes
         // this session did not actually use go back to the allowance.
+        // issuedAt + the provider cap travel inside the signed receipt so the
+        // refund is bounded by wall-clock time the server can prove, not by a
+        // duration the client reports.
         settlementReceipt: signLiveVideoSettlementReceipt({
           userId: req.user.id,
           periodKey: reservation.usage.periodKey,
           reservedMinutes: reservation.reservedMinutes,
           creditsPerMinute: engineResolution.creditsPerMinute,
+          maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
           nonce: randomUUID(),
         }),
         // The client needs the resolved mode to know whether it must stream

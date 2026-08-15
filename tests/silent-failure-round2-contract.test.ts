@@ -156,7 +156,10 @@ describe("SMS inbox never paints one thread's messages under another's header", 
   it("passes the open thread's abort signal to the post-send refresh", () => {
     const component = read("src/components/SmsThreads.tsx");
     expect(component).toContain("activeThreadFetchRef");
-    expect(component).toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
+    // Captured at send time. Reading the ref after the await would hand this
+    // refresh a live signal belonging to whichever thread was opened since.
+    expect(component).toContain("const sentThreadController = activeThreadFetchRef.current;");
+    expect(component).toContain("fetchMessages(threadId, sentThreadController?.signal)");
     // The selection effect owns the controller and must publish it to the ref.
     expect(component).toContain("activeThreadFetchRef.current = controller");
   });
@@ -233,7 +236,11 @@ describe("a cadence retries a failed touch instead of consuming the step", () =>
     );
     expect(step).toContain('return { ok: false, result: "no phone number on lead" }');
     expect(step).toContain('return { ok: false, result: "no email on lead" }');
-    expect(step).toContain('retryable: !res.ok && !/opted out/i.test(res.reason || "")');
+    // Provider sends are never retried either: neither Vapi call creation nor
+    // Twilio message creation is idempotent, so a retry can double-contact a
+    // consumer — worse under TCPA than the dropped touch it would recover.
+    expect(step).not.toContain("retryable: !res.ok");
+    expect(step).not.toContain("retryable: !ok");
   });
 });
 

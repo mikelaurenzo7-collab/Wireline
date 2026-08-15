@@ -48,6 +48,13 @@ import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./vapi/show
 import type { ToolCallContext, ToolCallResult } from "./vapi/types";
 
 const router = express.Router();
+
+/**
+ * Grace window for usage recorded by a tool that outlived the 8s wrapper
+ * timeout. Bounded: the point is to catch a slow model call that settles a few
+ * seconds late, not to hold a serverless instance open indefinitely.
+ */
+const LATE_TOOL_AUDIT_GRACE_MS = 20_000;
 let _warnedAboutVapiSecret = false;
 
 const callId = (payload: any, message: any) => payload?.call?.id || message?.call?.id || "";
@@ -419,6 +426,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
       // AI envelope was spent invisibly. The end-of-call arm has always done
       // this (vapi-handlers.ts); the live-call arm had not.
       const toolAuditContext = createAuditContext();
+      let anyToolTimedOut = false;
       const toolCallRows = await runInAuditContext(toolAuditContext, () =>
         runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
           // The .catch MUST wrap withVapiToolTimeout(...) — the timeout rejects
@@ -438,30 +446,47 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 drizzle,
                 log,
               }))(),
-          ).catch((err) => ({
-            toolCallId: toolCall.id,
-            result:
-              (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
+          ).catch((err) => {
+            const timedOut = (err as Error)?.message === "VAPI_TOOL_TIMEOUT";
+            if (timedOut) anyToolTimedOut = true;
+            return {
+              toolCallId: toolCall.id,
+              result: timedOut
                 ? "That action is taking longer than expected and may still be processing. Do not repeat it or claim success or failure. Tell the caller the outcome cannot yet be confirmed and offer to create a durable follow-up task."
                 : "The action did not complete successfully. Do not claim success or repeat it automatically. Tell the caller what could not be confirmed and offer a durable follow-up task or safe alternative.",
-          })),
+            };
+          }),
         ),
       );
-      if (toolAuditContext.records.length && agent?.user_id) {
+      if (agent?.user_id && (toolAuditContext.records.length || anyToolTimedOut)) {
         // Background, not awaited: Vapi drops the tool result if this response
         // is slow, and the ledger write must not sit in front of a live call.
         // runInBackground (not a bare promise) so Vercel keeps the instance
         // alive past the response instead of freezing the INSERT away.
         const auditUserId = agent.user_id;
-        const auditRecords = toolAuditContext.records;
-        runInBackground("vapi tool-call ai spend accounting", () =>
-          persistRuntimeAuditRecords({
+        const toolCallCount = toolCalls.length;
+        runInBackground("vapi tool-call ai spend accounting", async () => {
+          // A tool that blew the 8s wrapper timeout returned early while its
+          // provider promise kept running — and records its usage only when it
+          // finally settles. Snapshotting here would miss exactly the slowest,
+          // most expensive calls. When that happened, wait a bounded grace
+          // window so those late records land in the ledger too.
+          if (anyToolTimedOut) {
+            await new Promise((resolve) => setTimeout(resolve, LATE_TOOL_AUDIT_GRACE_MS));
+          }
+          const records = toolAuditContext.records.slice();
+          if (!records.length) return;
+          await persistRuntimeAuditRecords({
             userId: auditUserId,
             action: "vapi.tool-calls",
-            records: auditRecords,
-            requestMeta: { agent_id: webhookAgentId, tool_calls: toolCalls.length },
-          }),
-        );
+            records,
+            requestMeta: {
+              agent_id: webhookAgentId,
+              tool_calls: toolCallCount,
+              ...(anyToolTimedOut ? { included_late_tool_usage: true } : {}),
+            },
+          });
+        });
       }
       const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
       const id = callId(payload, message);

@@ -1,11 +1,4 @@
-import {
-  ArrowRight,
-  Mail,
-  MessageSquareText,
-  PhoneCall,
-  UserRound,
-  Video,
-} from "lucide-react";
+import { ArrowRight, Mail, MessageSquareText, PhoneCall, UserRound, Video } from "lucide-react";
 import { Link } from "react-router";
 import {
   LIVE_VIDEO_ADDON_PRICE_USD,
@@ -31,9 +24,7 @@ type LiveVideoSpotlightProps = {
   bridgeLabel: string;
 };
 
-export default function LiveVideoSpotlight({
-  bridgeLabel,
-}: LiveVideoSpotlightProps) {
+export default function LiveVideoSpotlight({ bridgeLabel }: LiveVideoSpotlightProps) {
   return (
     <section className="wl-public-section overflow-hidden border-b border-border">
       <div className="wl-public-rail">
@@ -63,7 +54,7 @@ export default function LiveVideoSpotlight({
                 <span
                   key={label}
                   role="listitem"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm"
                 >
                   <Icon className="size-3.5 text-primary" aria-hidden="true" />
                   {label}
@@ -145,9 +136,7 @@ export default function LiveVideoSpotlight({
                         key={slot}
                         role="listitem"
                         className={`relative grid size-12 place-items-center overflow-hidden rounded-xl border bg-background shadow-sm sm:size-14 ${
-                          index === 0
-                            ? "border-primary ring-2 ring-primary/20"
-                            : "border-border"
+                          index === 0 ? "border-primary ring-2 ring-primary/20" : "border-border"
                         }`}
                       >
                         <UserRound

@@ -126,7 +126,9 @@ button[aria-label="Back to workspace"] {
   }
 
   .marketing-surface footer a {
-    min-height: 40px;
+    /* Was 40px, which quietly outranked every `min-h-11` written on a footer
+       link — the class was there, the target was not. */
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
   }
 }
 

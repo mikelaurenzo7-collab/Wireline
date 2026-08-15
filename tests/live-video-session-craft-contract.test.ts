@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   claimLiveVideoSettlementOnce,
+  liveVideoChargeableSeconds,
   liveVideoRefundMinutes,
   resetLiveVideoSettlementClaimsForTests,
   settleLiveVideoSession,
@@ -50,6 +51,58 @@ describe("unused reserved minutes come back", () => {
   });
 });
 
+describe("the charged duration cannot be talked down by the client", () => {
+  const issuedAtMs = 1_000_000_000_000;
+
+  it("bills wall-clock time since the mint when the client under-reports", () => {
+    // The attack: settle immediately with 0 watched while the provider session
+    // keeps running, take the whole reservation back, repeat per receipt.
+    // Four minutes have really elapsed, so four minutes are charged.
+    const charged = liveVideoChargeableSeconds({
+      clientWatchedSeconds: 0,
+      issuedAtMs,
+      maxSessionSeconds: 300,
+      nowMs: issuedAtMs + 240_000,
+    });
+    expect(charged).toBe(240);
+    expect(liveVideoRefundMinutes(5, charged)).toBe(1);
+  });
+
+  it("still refunds a session that genuinely never connected", () => {
+    // Settled promptly after a blocked connection: almost no time has passed,
+    // so the honest full refund survives the server-side floor.
+    const charged = liveVideoChargeableSeconds({
+      clientWatchedSeconds: 0,
+      issuedAtMs,
+      maxSessionSeconds: 300,
+      nowMs: issuedAtMs + 1_500,
+    });
+    expect(liveVideoRefundMinutes(5, charged)).toBe(4);
+  });
+
+  it("takes the client's figure when it is the larger one", () => {
+    expect(
+      liveVideoChargeableSeconds({
+        clientWatchedSeconds: 200,
+        issuedAtMs,
+        maxSessionSeconds: 300,
+        nowMs: issuedAtMs + 10_000,
+      }),
+    ).toBe(200);
+  });
+
+  it("never charges past the provider cap, however late the settle arrives", () => {
+    expect(
+      liveVideoChargeableSeconds({
+        clientWatchedSeconds: 0,
+        issuedAtMs,
+        maxSessionSeconds: 300,
+        nowMs: issuedAtMs + 86_400_000,
+      }),
+    ).toBe(300);
+  });
+});
+
 describe("settlement receipts are signed, bound, and single-use", () => {
   beforeEach(() => {
     resetLiveVideoSettlementClaimsForTests();
@@ -60,6 +113,7 @@ describe("settlement receipts are signed, bound, and single-use", () => {
     periodKey: "2026-08",
     reservedMinutes: 5,
     creditsPerMinute: 1,
+    maxSessionSeconds: 300,
     nonce: "nonce-a",
   };
 
@@ -74,7 +128,12 @@ describe("settlement receipts are signed, bound, and single-use", () => {
     const receipt = signLiveVideoSettlementReceipt(claim);
     const [payload, signature] = receipt.split(".");
     const forged = Buffer.from(
-      JSON.stringify({ ...claim, reservedMinutes: 500, expiresAtMs: Date.now() + 60_000 }),
+      JSON.stringify({
+        ...claim,
+        reservedMinutes: 500,
+        issuedAtMs: Date.now(),
+        expiresAtMs: Date.now() + 60_000,
+      }),
       "utf8",
     ).toString("base64url");
     expect(verifyLiveVideoSettlementReceipt(`${forged}.${signature}`)).toBeNull();
@@ -113,6 +172,28 @@ describe("settlement receipts are signed, bound, and single-use", () => {
     // An unavailable claim store declines the refund rather than risking a
     // double credit — the conservative direction.
     expect(settle).toContain('reason: "claim_unavailable"');
+  });
+
+  it("hands the claim back when the ledger write it guarded did not land", () => {
+    const source = read("src/lib/video-presenter/live-video-settlement.ts");
+    const settle = source.slice(source.indexOf("export async function settleLiveVideoSession"));
+    // Redis and Postgres cannot share a transaction. Without this the nonce
+    // stays burned for a day and every retry answers "already settled", so the
+    // tenant can never recover minutes they did not use.
+    expect(settle).toContain("await releaseLiveVideoSettlementClaim(input.claim.nonce)");
+    expect(settle).toContain("throw error;");
+  });
+
+  it("refuses to sign with the development key in production", () => {
+    const source = read("src/lib/video-presenter/live-video-settlement.ts");
+    const key = source.slice(
+      source.indexOf("function receiptKey()"),
+      source.indexOf("export type LiveVideoSettlementClaim"),
+    );
+    // A publicly known signing constant would let any authenticated tenant
+    // forge receipts and refund itself without minting reservations.
+    expect(key).toContain("isProductionRuntime()");
+    expect(key).toContain("WIRELINE_DATA_KEY is required");
   });
 });
 
@@ -215,6 +296,18 @@ describe("the stage spends the allowance honestly", () => {
     expect(page).toContain("onSessionEnded={");
   });
 
+  it("settles on every ending, including component cleanup", () => {
+    const handler = page.slice(
+      page.indexOf("onSessionEnded={"),
+      page.indexOf("onSessionEnded={") + 900,
+    );
+    // `stopped` covers unmount — switching agents or navigating away — where no
+    // explicit endPreview runs. Skipping it stopped the provider session while
+    // still charging the tenant the whole reservation.
+    expect(handler).not.toContain('reason !== "stopped"');
+    expect(handler).toContain("void settleSession(session.live, watchedSeconds, activeAgentId)");
+  });
+
   it("counts the session cap down in the open", () => {
     expect(page).toContain('role="timer"');
     expect(page).toContain("left in this\n                            session");
@@ -247,5 +340,52 @@ describe("presenter state is legible", () => {
     const action = css.slice(css.indexOf(".wl-presence-live__action {"));
     expect(action).toContain("min-height: 44px");
     expect(css).toContain(".wl-presence-live__action:focus-visible");
+  });
+});
+
+describe("review-hardening: the fixes Codex found in the first pass", () => {
+  it("stops a session that connects after the stage gave up on it", () => {
+    const presenter = read("src/components/LiveVideoPresenter.tsx");
+    // stop() no-ops while CONNECTING, so a late connection would stay open and
+    // metered behind the failure card after being settled as zero watched time.
+    expect(presenter).toContain("abandonedAfterDeadline = true");
+    expect(presenter).toContain("if (cancelled || abandonedAfterDeadline) await session.stop()");
+  });
+
+  it("binds the SMS post-send refresh to the thread that was replied to", () => {
+    const sms = read("src/components/SmsThreads.tsx");
+    // Reading the ref AFTER the await hands this refresh whichever thread the
+    // reader has since opened — a live signal belonging to another conversation.
+    expect(sms).toContain("const sentThreadController = activeThreadFetchRef.current;");
+    expect(sms).toContain("fetchMessages(threadId, sentThreadController?.signal)");
+    expect(sms).not.toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
+  });
+
+  it("never re-dials an outbound call whose provider outcome is ambiguous", () => {
+    const engine = read("src/lib/cadence-engine.ts");
+    const step = engine.slice(
+      engine.indexOf("async function executeStep"),
+      engine.indexOf("const CADENCE_STEP_LEASE_MS"),
+    );
+    // Vapi call creation has no idempotency key, so a failed response may still
+    // have produced a dial. Retrying it is a second marketing call.
+    expect(step).not.toContain("retryable: !res.ok");
+    // Only failures that provably precede any provider contact stay retryable.
+    expect(step).toContain('result: "compliance gate failed (fail-closed)", retryable: true');
+    expect(step).toContain("voice control rejected");
+  });
+
+  it("persists tool usage that lands after the wrapper timeout", () => {
+    const route = read("src/routes/vapi-v2.ts");
+    const arm = route.slice(
+      route.indexOf('if (message?.type === "tool-calls")'),
+      route.indexOf('if (message?.type === "speech-update")'),
+    );
+    expect(arm).toContain("anyToolTimedOut");
+    expect(arm).toContain("LATE_TOOL_AUDIT_GRACE_MS");
+    // The snapshot must be taken after the grace window, not before it.
+    expect(arm.indexOf("LATE_TOOL_AUDIT_GRACE_MS")).toBeLessThan(
+      arm.indexOf("toolAuditContext.records.slice()"),
+    );
   });
 });

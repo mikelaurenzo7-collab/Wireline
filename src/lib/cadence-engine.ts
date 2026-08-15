@@ -60,11 +60,20 @@ function applyVars(template: string, lead: LeadRow): string {
 }
 
 /**
- * `retryable` marks a failure that a later attempt could plausibly resolve —
- * a provider outage, a fail-closed compliance lookup, a spend control that a
- * top-up clears. It is deliberately NOT set for permanent outcomes: a hard DNC
- * or consent denial must never be re-attempted, and a lead with no phone or no
- * configured agent will still have none in fifteen minutes.
+ * `retryable` marks a failure that is BOTH transient and provably happened
+ * before the provider was asked to do anything.
+ *
+ * That second condition is the important one. `placeOutboundCall` deliberately
+ * disables transport and status retries (see vapi-client.ts) because Vapi
+ * offers no idempotency key on call creation, so a timeout or 5xx can arrive
+ * after the carrier already accepted the dial. A cadence that re-dialed on that
+ * outcome would place a second marketing call to the same consumer — a worse
+ * failure under TCPA than the dropped touch it is trying to avoid. Provider
+ * send failures therefore advance the step, exactly as before.
+ *
+ * Permanent outcomes are likewise never retried: a hard DNC or consent denial
+ * must not be re-attempted, and a lead with no phone or no configured agent
+ * will still have none in fifteen minutes.
  */
 async function executeStep(
   step: CadenceStep,
@@ -167,7 +176,8 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `call placed ${res.callId}` : `call failed: ${res.error}`,
-      retryable: !res.ok,
+      // Not retryable: Vapi call creation has no idempotency key, so a failed
+      // response may still have produced a dial. Advancing is the safe side.
     };
   }
 
@@ -182,8 +192,8 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `sms sent ${res.sid || ""}` : `sms failed: ${res.reason || "unknown"}`,
-      // An opted-out contact is a permanent stop, not a transient send failure.
-      retryable: !res.ok && !/opted out/i.test(res.reason || ""),
+      // Not retryable, for the same reason as the call step: message creation
+      // is not idempotent, and a re-send is a second message to a consumer.
     };
   }
 
@@ -200,15 +210,10 @@ async function executeStep(
       body,
       marketing: true,
     });
-    // IntegrationService.sendEmail returns only a boolean, so a transport error
-    // and a suppression are indistinguishable here. One retry is the safe
-    // reading: a suppressed address is re-checked and denied again inside
-    // sendEmail (nothing is sent), while a real outage gets its second chance.
-    return {
-      ok,
-      result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)",
-      retryable: !ok,
-    };
+    // IntegrationService.sendEmail returns only a boolean, so a transport error,
+    // a suppression, and a partially-delivered send are indistinguishable. Not
+    // retryable: a duplicate marketing email is the worse outcome.
+    return { ok, result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)" };
   }
 
   return { ok: false, result: `unknown step type ${step.type}` };
