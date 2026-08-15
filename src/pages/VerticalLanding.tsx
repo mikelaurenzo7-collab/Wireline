@@ -1,10 +1,38 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Clock,
+  DollarSign,
+  MailCheck,
+  Phone,
+  PhoneIncoming,
+  Shield,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import MarketingHero from "../components/marketing/MarketingHero";
-import { type VerticalKey, WEDGES } from "../data/vertical-wedges";
+import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
+
+/**
+ * Name -> component, kept here rather than in the wedge data so that module
+ * stays free of lucide-react. See the note on PainIconName: the data module is
+ * reachable from server.ts, and importing icon components there put the whole
+ * icon barrel into every serverless cold start.
+ */
+const PAIN_ICONS: Record<PainIconName, LucideIcon> = {
+  Calendar,
+  Clock,
+  DollarSign,
+  MailCheck,
+  Phone,
+  PhoneIncoming,
+  Shield,
+  Sparkles,
+};
 
 function isExternalHref(href: string): boolean {
   return /^(tel:|mailto:|https?:)/.test(href);
@@ -41,8 +69,7 @@ const PERSONAL_PAIN_TITLES: Record<string, string> = {
 };
 
 const PERSONAL_FAQ_TITLES: Record<string, string> = {
-  "Is it actually legal for an AI to make calls on my behalf?":
-    "Can AI call for me?",
+  "Is it actually legal for an AI to make calls on my behalf?": "Can AI call for me?",
   "Can it really negotiate debt? Won't the collector just hang up on a robot?":
     "Can it negotiate debt?",
   "What about voicemail / hold music / phone trees? Doesn't that break it?":
@@ -113,10 +140,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
-            const Icon = pain.icon;
-            const title = isPersonal
-              ? PERSONAL_PAIN_TITLES[pain.title] || pain.title
-              : pain.title;
+            const Icon = PAIN_ICONS[pain.icon];
+            const title = isPersonal ? PERSONAL_PAIN_TITLES[pain.title] || pain.title : pain.title;
             return (
               <article
                 key={pain.title}
@@ -129,9 +154,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                   <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
                     {title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                    {pain.body}
-                  </p>
+                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{pain.body}</p>
                 </div>
               </article>
             );
@@ -162,21 +185,14 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <section className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
-            {isPersonal
-              ? "Questions before you hand off a call."
-              : "Questions before you go live."}
+            {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
           {cfg.faqs.map((faq) => {
-            const question = isPersonal
-              ? PERSONAL_FAQ_TITLES[faq.q] || faq.q
-              : faq.q;
+            const question = isPersonal ? PERSONAL_FAQ_TITLES[faq.q] || faq.q : faq.q;
             return (
-              <details
-                key={faq.q}
-                className="group wl-stitch-card overflow-hidden"
-              >
+              <details key={faq.q} className="group wl-stitch-card overflow-hidden">
                 <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
                   <span>{question}</span>
                   <span

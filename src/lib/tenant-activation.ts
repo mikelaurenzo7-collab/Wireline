@@ -2,7 +2,7 @@
  * Tenant activation — north-star metric: time from signup to first live,
  * useful production conversation (not wizard completion or browser test).
  */
-import { and, eq, gte, isNull, or, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { isSalesAgentRole } from "./sales-integration-policy";
 import { drizzle, log } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
@@ -83,19 +83,43 @@ export function isUsefulProductionCall(input: ActivationCallInput): boolean {
   return transcriptLen >= ACTIVATION_MIN_TRANSCRIPT_CHARS && duration >= 45;
 }
 
+/**
+ * The task type post-call-digest writes for itself on EVERY completed call.
+ *
+ * That row is born `status: "completed"`, `sourceType: "call_log"`,
+ * `sourceId: <the call log id>`, and `resolutionNotes: <the AI summary>`. It
+ * represents the machine writing down what happened, not a person deciding
+ * anything, so it can never be evidence of an approved next action.
+ */
+const MACHINE_POST_CALL_TASK_TYPE = "post_call_note";
+
+/**
+ * Phase B of the north-star: did a HUMAN approve a next action after the
+ * tenant's first useful call?
+ *
+ * This used to OR three clauses together — an "Approved" note, OR
+ * `source_type = 'call_log'`, OR `source_id = <the activation call>`. The last
+ * two were meant to scope the search and instead became alternatives, and the
+ * post-call digest row above satisfies BOTH of them by construction, on every
+ * call, with status already "completed". So `activationWithApprovedAction` was
+ * true for every activated tenant, always: the metric was a second, more
+ * expensive way of computing `activated`, and it reported to the business that
+ * customers were approving agent work when nothing of the kind had happened.
+ *
+ * The only writer of a genuine approval is the approve-and-execute path in
+ * fleet-routes, which stamps "Approved and executed by Account Holder" and
+ * emits `first_next_action_approved`. That stamp is the signal; the machine's
+ * own task type is excluded so an AI summary that happens to contain the word
+ * "approved" cannot forge one.
+ *
+ * Deliberately NOT scoped to the activation call. Phase B is "first useful call
+ * plus at least one approved next action" — the approval does not have to be on
+ * that same call, and requiring it would undercount real activations.
+ */
 export async function hasApprovedActivationAction(
   userId: string,
   activatedAt: Date,
-  firstActivationCallId?: string | null,
 ): Promise<boolean> {
-  const approvalClauses = [
-    sql`${schema.followUpTasks.resolutionNotes} ILIKE '%Approved%'`,
-    eq(schema.followUpTasks.sourceType, "call_log"),
-  ];
-  if (firstActivationCallId) {
-    approvalClauses.push(eq(schema.followUpTasks.sourceId, firstActivationCallId));
-  }
-
   const [row] = await drizzle
     .select({ count: sql<number>`count(*)::int` })
     .from(schema.followUpTasks)
@@ -104,11 +128,11 @@ export async function hasApprovedActivationAction(
         eq(schema.followUpTasks.userId, userId),
         eq(schema.followUpTasks.status, "completed"),
         gte(schema.followUpTasks.createdAt, activatedAt),
-        or(...approvalClauses),
+        sql`coalesce(${schema.followUpTasks.taskType}, '') <> ${MACHINE_POST_CALL_TASK_TYPE}`,
+        sql`${schema.followUpTasks.resolutionNotes} ILIKE '%Approved%'`,
       ),
     );
-  const approved = Number(row?.count ?? 0) > 0;
-  return approved;
+  return Number(row?.count ?? 0) > 0;
 }
 
 export async function getTenantActivationStatus(userId: string): Promise<TenantActivationStatus> {
@@ -143,13 +167,7 @@ export async function getTenantActivationStatus(userId: string): Promise<TenantA
   }
 
   const activationWithApprovedAction =
-    row.activatedAt != null
-      ? await hasApprovedActivationAction(
-          userId,
-          row.activatedAt,
-          row.firstActivationCallId?.toString() ?? null,
-        )
-      : false;
+    row.activatedAt != null ? await hasApprovedActivationAction(userId, row.activatedAt) : false;
 
   return {
     activated: row.activatedAt != null,

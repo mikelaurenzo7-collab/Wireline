@@ -111,11 +111,24 @@ function toView(id: string, profile: AgentCustomizationProfile): AgentDraftView 
   };
 }
 
+/**
+ * `db` is the transaction handle, never the pool.
+ *
+ * This read used to go straight to `drizzle` while its caller was already
+ * inside `drizzle.transaction` holding a connection AND a per-user advisory
+ * lock. Every capacity check therefore checked out a SECOND connection from the
+ * same small pool while pinning the first. MCP tool calls arrive in parallel by
+ * design, so pool-size concurrent creates would each hold one connection and
+ * block waiting for one that only another of them could release — a self-inflicted
+ * deadlock that resolves by acquisition timeout, with the advisory lock held the
+ * whole way.
+ */
 async function assertAgentCapacity(
+  db: Pick<typeof drizzle, "select">,
   principal: AgentDraftPrincipal,
   existingCount: number,
 ): Promise<void> {
-  const [setting] = await drizzle
+  const [setting] = await db
     .select({
       planId: schema.subscriptions.plan,
       subscriptionStatus: schema.settings.subscriptionStatus,
@@ -162,7 +175,7 @@ export async function createAgentDraft(
         .from(schema.agents)
         .where(eq(schema.agents.userId, principal.userId));
       existingCount = Number(count || 0);
-      await assertAgentCapacity(principal, existingCount);
+      await assertAgentCapacity(tx, principal, existingCount);
 
       await tx.insert(schema.agents).values({
         id,

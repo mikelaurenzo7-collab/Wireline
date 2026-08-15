@@ -25,6 +25,7 @@ import {
   isNavActive,
   type ShellNavItem,
 } from "../constants/navigation";
+import { navIcon } from "./nav-icons";
 import { isRouteAvailableForAccount } from "../lib/account-type";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
@@ -69,7 +70,7 @@ function RailLink({
   activeOverride?: boolean;
 }) {
   const active = activeOverride ?? isNavActive(pathname, item.href);
-  const Icon = item.icon;
+  const Icon = navIcon(item.icon);
   const hint = NAV_SHORTCUT_HINTS[item.href];
   return (
     <Link
@@ -104,7 +105,7 @@ function MobileDockLink({
 }) {
   const isMore = item.href === MOBILE_MORE_HREF;
   const active = isMore ? isMobileMoreActive(pathname) : isNavActive(pathname, item.href);
-  const Icon = item.icon;
+  const Icon = navIcon(item.icon);
 
   if (isMore) {
     return (
