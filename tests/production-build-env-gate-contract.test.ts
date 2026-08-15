@@ -49,12 +49,20 @@ describe("production build environment gate", () => {
       deepAudit.indexOf('run("npm", ["run", "security:audit"])'),
     );
     expect(deepAudit.indexOf('run("npm", ["run", "security:audit"])')).toBeLessThan(
-      deepAudit.indexOf('run("npm", ["run", "test:run"])'),
+      deepAudit.indexOf('run("npm", ["run", "test:run"]'),
     );
 
     expect(audit).toContain('execSync("npm audit --json --omit=dev"');
     expect(audit).toContain('!["high", "critical"].includes(vuln.severity)');
     expect(audit).toContain("Security audit gate FAILED");
     expect(audit).toContain("const ACCEPTED = []");
+  });
+
+  it("runs Vitest with a deterministic test runtime inside Vercel builds", () => {
+    const build = read("scripts/vercel-build.mjs");
+
+    expect(build).toContain(
+      'run("npm", ["run", "test:run"], { env: { NODE_ENV: "test", VERCEL: "0" } })',
+    );
   });
 });

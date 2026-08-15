@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const run = (command, args) => {
+const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
     stdio: "inherit",
     shell: process.platform === "win32",
-    env: process.env,
+    env: { ...process.env, ...(options.env || {}) },
   });
   if (result.status !== 0) process.exit(result.status ?? 1);
 };
@@ -76,7 +76,13 @@ function runDeepLaunchAuditIfRequested() {
   // GitHub runners remain externally unavailable: TypeScript, zero-warning
   // ESLint, advisory gating, and the complete non-E2E suite all execute here.
   run("npm", ["run", "security:audit"]);
-  run("npm", ["run", "test:run"]);
+  // Vercel sets NODE_ENV=production and VERCEL=1 for its build process. Vitest
+  // only supplies NODE_ENV=test when the variable is absent, so inheriting the
+  // build flags makes unit tests take live-production secret/Redis paths. Keep
+  // the audit exhaustive while giving the test subprocess its intended,
+  // deterministic runtime identity; deployment-boundary checks above still run
+  // under the real Preview/Production environment.
+  run("npm", ["run", "test:run"], { env: { NODE_ENV: "test", VERCEL: "0" } });
 }
 
 function syncShowcaseIfRequested() {
