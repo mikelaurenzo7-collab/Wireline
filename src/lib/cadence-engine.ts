@@ -59,11 +59,18 @@ function applyVars(template: string, lead: LeadRow): string {
     .replace(/\{\{\s*email\s*\}\}/gi, lead.email || "");
 }
 
+/**
+ * `retryable` marks a failure that a later attempt could plausibly resolve —
+ * a provider outage, a fail-closed compliance lookup, a spend control that a
+ * top-up clears. It is deliberately NOT set for permanent outcomes: a hard DNC
+ * or consent denial must never be re-attempted, and a lead with no phone or no
+ * configured agent will still have none in fifteen minutes.
+ */
 async function executeStep(
   step: CadenceStep,
   cadence: CadenceRow,
   lead: LeadRow,
-): Promise<{ ok: boolean; result: string; defer?: boolean }> {
+): Promise<{ ok: boolean; result: string; defer?: boolean; retryable?: boolean }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
   // TCPA/federal DNC/express-written-consent: a cadence step is marketing
@@ -95,7 +102,7 @@ async function executeStep(
       log.warn("cadence outbound compliance gate failed — failing closed", {
         error: err?.message,
       });
-      return { ok: false, result: "compliance gate failed (fail-closed)" };
+      return { ok: false, result: "compliance gate failed (fail-closed)", retryable: true };
     }
   }
 
@@ -105,7 +112,11 @@ async function executeStep(
     try {
       await assertOutboundVoiceAllowed({ userId: cadence.userId, source: "cadence", units: 0 });
     } catch (err: any) {
-      return { ok: false, result: `voice control rejected: ${err?.message || "blocked"}` };
+      return {
+        ok: false,
+        result: `voice control rejected: ${err?.message || "blocked"}`,
+        retryable: true,
+      };
     }
     const res = await placeOutboundCall({
       userId: cadence.userId,
@@ -156,6 +167,7 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `call placed ${res.callId}` : `call failed: ${res.error}`,
+      retryable: !res.ok,
     };
   }
 
@@ -170,6 +182,8 @@ async function executeStep(
     return {
       ok: res.ok,
       result: res.ok ? `sms sent ${res.sid || ""}` : `sms failed: ${res.reason || "unknown"}`,
+      // An opted-out contact is a permanent stop, not a transient send failure.
+      retryable: !res.ok && !/opted out/i.test(res.reason || ""),
     };
   }
 
@@ -186,7 +200,15 @@ async function executeStep(
       body,
       marketing: true,
     });
-    return { ok, result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)" };
+    // IntegrationService.sendEmail returns only a boolean, so a transport error
+    // and a suppression are indistinguishable here. One retry is the safe
+    // reading: a suppressed address is re-checked and denied again inside
+    // sendEmail (nothing is sent), while a real outage gets its second chance.
+    return {
+      ok,
+      result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)",
+      retryable: !ok,
+    };
   }
 
   return { ok: false, result: `unknown step type ${step.type}` };
@@ -325,6 +347,32 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
           })
           .where(eq(schema.cadenceRuns.id, run.id));
         deferred++;
+        continue;
+      }
+
+      if (!stepResult.ok && stepResult.retryable) {
+        // A returned failure is the same event as a thrown one — a provider
+        // outage, a fail-closed gate, a spend control — and until now only the
+        // thrown form was retried. The returned form fell through to the
+        // advance below, so a Twilio 500 or a rejected dial consumed the step
+        // and the customer simply never received that touch. Same single-retry
+        // budget and the same marker the catch block uses, so a run cannot
+        // ping-pong between the two paths.
+        const alreadyRetried = (run.lastResult || "").startsWith(STEP_EXCEPTION_RETRY_PREFIX);
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set(
+            alreadyRetried
+              ? { status: "failed", lastResult: stepResult.result, updatedAt: now }
+              : {
+                  nextDueAt: new Date(Date.now() + CADENCE_EXCEPTION_RETRY_MS),
+                  lastResult: `${STEP_EXCEPTION_RETRY_PREFIX}${stepResult.result}`,
+                  updatedAt: now,
+                },
+          )
+          .where(eq(schema.cadenceRuns.id, run.id));
+        if (alreadyRetried) failed++;
+        else deferred++;
         continue;
       }
 

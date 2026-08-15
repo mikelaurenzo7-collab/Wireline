@@ -29,10 +29,12 @@ function inferPersonality(value: string | undefined) {
   return PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ?? "Clear";
 }
 
+/** Marks the single directive row that holds this agent's opening greeting. */
+const GREETING_PREFIX = "Opening greeting:";
+
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
-  const prefix = "Opening greeting:";
-  const match = directives?.find((directive) => directive.content?.startsWith(prefix));
-  return match?.content?.slice(prefix.length).trim() ?? "";
+  const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
+  return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
 }
 
 export default function StudioAgentWorkspacePanel({
@@ -104,11 +106,15 @@ export default function StudioAgentWorkspacePanel({
     };
   }, [agentId, reloadKey]);
 
-  async function saveManual(type: "personality" | "directive", content: string) {
+  async function saveManual(
+    type: "personality" | "directive",
+    content: string,
+    replacePrefix?: string,
+  ) {
     const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, content }),
+      body: JSON.stringify(replacePrefix ? { type, content, replacePrefix } : { type, content }),
     });
     if (!response.ok) {
       throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
@@ -133,9 +139,15 @@ export default function StudioAgentWorkspacePanel({
 
       await saveManual("personality", personalityText);
       if (isCurrentAgent()) setLoadedPersonality(personalityText);
-      if (greetingTrimmed) {
-        await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
-      }
+      // Always sent, and sent as a replace. Appending made every re-save leave
+      // the previous greeting live alongside the new one, and skipping the call
+      // on an empty field meant clearing the box removed nothing while the panel
+      // still reported the setup as saved.
+      await saveManual(
+        "directive",
+        greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
+        GREETING_PREFIX,
+      );
       if (knowledgeTrimmed) {
         const knowledgeResponse = await authFetch("/api/train/extract", {
           method: "POST",

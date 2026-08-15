@@ -11,12 +11,13 @@ const read = (path: string) =>
 describe("SMS opt-in cannot clear manual/legal DNC rows", () => {
   it("scopes the base-route resubscribe delete to SMS-created suppressions", () => {
     const base = read("src/routes/twilio-webhook-base.ts");
-    // The interceptor in twilio-webhook.ts only catches EXACT keyword bodies;
-    // "yes please" falls through to the base route via matchesCarrierKeyword's
-    // leading-word match — so the base delete must carry the same scope.
+    // Both the twilio-webhook.ts interceptor and this base route catch opt-in
+    // on an EXACT keyword body ("yes please" now reaches the inbound store
+    // instead), but either can be the one that runs, so the base delete must
+    // carry the same scope as the interceptor's.
     const optInBlock = base.slice(
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)"),
-      base.indexOf("matchesCarrierKeyword(trimmed, HELP_KEYWORDS)"),
+      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS"),
+      base.indexOf("matchesCarrierKeyword(trimmed, HELP_KEYWORDS"),
     );
     expect(optInBlock).toContain('eq(schema.dncList.reason, "opt-out")');
     expect(optInBlock).toContain('eq(schema.dncList.source, "twilio_advanced_opt_out")');
@@ -29,8 +30,8 @@ describe("SMS opt-in cannot clear manual/legal DNC rows", () => {
     expect(base).toContain("We couldn't process your resubscribe request just now.");
     // STOP persistence failure pages ops instead of vanishing into a log line.
     const optOutBlock = base.slice(
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS)"),
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)"),
+      base.indexOf("matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS"),
+      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS"),
     );
     expect(optOutBlock).toContain("reportError(");
     const interceptor = read("src/routes/twilio-webhook.ts");
@@ -70,9 +71,7 @@ describe("email unsubscribe endpoints honor the write result", () => {
 
   it("the human GET page never renders success over a failed write", () => {
     const routes = read("src/routes/email-unsubscribe-routes.ts");
-    expect(routes).toContain(
-      'const recorded = await recordTarget(target, "link_unsubscribe")',
-    );
+    expect(routes).toContain('const recorded = await recordTarget(target, "link_unsubscribe")');
     expect(routes).toContain("We couldn't process that just now");
   });
 });

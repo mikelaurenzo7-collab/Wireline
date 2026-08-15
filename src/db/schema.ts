@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0147_active_subscription_provenance_guard.sql`.
+ * Latest committed migration: `drizzle/migrations/0148_retention_purge_spares_live_configuration.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,

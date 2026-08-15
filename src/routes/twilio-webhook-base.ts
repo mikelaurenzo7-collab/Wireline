@@ -293,7 +293,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         );
     }
 
-    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
+    // Exact only — see matchesCarrierKeyword. Both this branch and the HELP
+    // branch below answer the webhook and return, so a leading-word match on an
+    // ordinary reply ("Yes please, 3pm works", "Help me reschedule") wrote a
+    // consent event the consumer never sent and dropped their message before it
+    // could reach the inbound store further down this handler.
+    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact")) {
       try {
         await drizzle
           .delete(schema.dncList)
@@ -336,7 +341,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
     }
 
-    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS)) {
+    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact")) {
       return res
         .status(200)
         .send(
@@ -367,7 +372,9 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         const [createdThread] = await tx
           .insert(schema.smsThreads)
           .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 0 })
-          .onConflictDoNothing({ target: [schema.smsThreads.userId, schema.smsThreads.customerNumber] })
+          .onConflictDoNothing({
+            target: [schema.smsThreads.userId, schema.smsThreads.customerNumber],
+          })
           .returning({ id: schema.smsThreads.id });
 
         const [thread] = createdThread
@@ -408,10 +415,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
             status: "open",
           })
           .where(
-            and(
-              eq(schema.smsThreads.id, thread.id),
-              eq(schema.smsThreads.userId, tenantUserId),
-            ),
+            and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, tenantUserId)),
           );
       });
     } catch (e: any) {

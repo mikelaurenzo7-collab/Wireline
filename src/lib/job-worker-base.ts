@@ -788,6 +788,14 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
     } catch (err: any) {
       log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
+      // Re-throw so the queue actually retries. Swallowing marked the job done
+      // on the first Claude hiccup, and with it went the call's QA score, its
+      // coaching note, and the adaptive_optimization job that low scores chain
+      // into — the whole agent-learning loop, silently, with no dead letter to
+      // notice. The `call.qaScore != null` guard above makes a retry that lands
+      // after a late success a no-op, so this is safe to hand back to the
+      // existing backoff and dead-letter path.
+      throw err;
     }
   }
 

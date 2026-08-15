@@ -16,6 +16,7 @@ import {
 } from "./openai-post-call-artifact";
 import {
   currentScheduledReportPreferences,
+  ensureNextScheduledReport,
   generateScheduledOperatingReport,
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
@@ -214,10 +215,26 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 
   const format = validateFormat(payload.format);
   const destination = validateDestination(payload.destination);
-  if (!(await currentScheduledReportPreferences({ ...payload, format, destination }))) {
+  const preferences = await currentScheduledReportPreferences({ ...payload, format, destination });
+  if (!preferences) {
     await persistJobResult(job.id, { skipped: true, reason: "schedule_changed" });
     return;
   }
+
+  // Chain the next occurrence BEFORE the reservation, not inside the operation.
+  // generateScheduledOperatingReport re-schedules before its own external work,
+  // but withRuntimeReservation throws on an insufficient Runtime Balance before
+  // the operation ever runs — so a tenant who dipped below the reserve on one
+  // send lost every future report permanently, and topping the balance back up
+  // did not bring them back because nothing was left to enqueue. Idempotent:
+  // it no-ops when a pending job already exists for this schedule version, and
+  // this job is already claimed as `running` so it cannot match itself.
+  const nextOccurrenceFrom = new Date(new Date(payload.scheduledFor).getTime() + 60_000);
+  await ensureNextScheduledReport(
+    userId,
+    preferences,
+    Number.isNaN(nextOccurrenceFrom.getTime()) ? new Date(Date.now() + 60_000) : nextOccurrenceFrom,
+  );
 
   await withRuntimeReservation(
     job,

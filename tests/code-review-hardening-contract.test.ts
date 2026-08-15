@@ -242,7 +242,10 @@ describe("code review hardening contracts", () => {
       expect(source, pane.path).toContain("signal?: AbortSignal");
       expect(source, pane.path).toContain("{ signal }");
       expect(source, pane.path).toContain("const controller = new AbortController();");
-      expect(source, pane.path).toContain("return () => controller.abort();");
+      // The effect cleanup must abort. Shape-tolerant so a cleanup that also
+      // clears a published ref (SmsThreads shares its controller with the
+      // post-send refresh) still satisfies the invariant being pinned.
+      expect(source, pane.path).toMatch(/return \(\) => \{?\s*controller\.abort\(\);/);
 
       // Every write path must respect the abort — the result, the error banner,
       // and the loading flag the newer request already owns. Asserting the guard

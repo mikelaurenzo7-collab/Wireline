@@ -39,6 +39,9 @@ import {
   recordToolCallBatch,
 } from "../lib/call-reliability-capture";
 import { dispatchAgentToolCall } from "../lib/agent-tool-dispatch";
+import { createAuditContext, runInAuditContext } from "../lib/ai-audit";
+import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import { runInBackground } from "../lib/background-work";
 import { sseBroadcaster } from "../services/sse-broadcaster";
 
 import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./vapi/showcase-handlers";
@@ -407,32 +410,59 @@ router.post("/api/vapi-webhook", async (req, res) => {
         id: tc.id,
         function: { name: tc.name, arguments: tc.arguments },
       }));
-      const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
-        // The .catch MUST wrap withVapiToolTimeout(...) — the timeout rejects
-        // from the wrapper, not the inner dispatch. Catching only the inner
-        // promise lets a >8s tool reject the whole batch (HTTP 500, all tool
-        // results lost mid-call). The underlying provider promise may continue,
-        // so timeout language must forbid an automatic retry.
-        withVapiToolTimeout(
-          (async () =>
-            dispatchToolCall(toolCall.function?.name || "", toolCall.function?.arguments || {}, {
-              toolCallId: toolCall.id,
-              payload,
-              message,
-              agent,
-              webhookAgentId,
-              agentVoiceName,
-              drizzle,
-              log,
-            }))(),
-        ).catch((err) => ({
-          toolCallId: toolCall.id,
-          result:
-            (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
-              ? "That action is taking longer than expected and may still be processing. Do not repeat it or claim success or failure. Tell the caller the outcome cannot yet be confirmed and offer to create a durable follow-up task."
-              : "The action did not complete successfully. Do not claim success or repeat it automatically. Tell the caller what could not be confirmed and offer a durable follow-up task or safe alternative.",
-        })),
+      // Mid-call tools reach platform-funded models: send_email and send_sms run
+      // every outgoing message through the supervisor, and gemini_ground falls
+      // back to a grounded Gemini search. Both meter through recordUsage, which
+      // is `auditCtx.getStore()?.records.push(...)` — a silent no-op with no
+      // context on the stack. The webhook opened a tenant scope but never an
+      // audit context, so that COGS never reached the ledger and the tenant's
+      // AI envelope was spent invisibly. The end-of-call arm has always done
+      // this (vapi-handlers.ts); the live-call arm had not.
+      const toolAuditContext = createAuditContext();
+      const toolCallRows = await runInAuditContext(toolAuditContext, () =>
+        runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
+          // The .catch MUST wrap withVapiToolTimeout(...) — the timeout rejects
+          // from the wrapper, not the inner dispatch. Catching only the inner
+          // promise lets a >8s tool reject the whole batch (HTTP 500, all tool
+          // results lost mid-call). The underlying provider promise may continue,
+          // so timeout language must forbid an automatic retry.
+          withVapiToolTimeout(
+            (async () =>
+              dispatchToolCall(toolCall.function?.name || "", toolCall.function?.arguments || {}, {
+                toolCallId: toolCall.id,
+                payload,
+                message,
+                agent,
+                webhookAgentId,
+                agentVoiceName,
+                drizzle,
+                log,
+              }))(),
+          ).catch((err) => ({
+            toolCallId: toolCall.id,
+            result:
+              (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
+                ? "That action is taking longer than expected and may still be processing. Do not repeat it or claim success or failure. Tell the caller the outcome cannot yet be confirmed and offer to create a durable follow-up task."
+                : "The action did not complete successfully. Do not claim success or repeat it automatically. Tell the caller what could not be confirmed and offer a durable follow-up task or safe alternative.",
+          })),
+        ),
       );
+      if (toolAuditContext.records.length && agent?.user_id) {
+        // Background, not awaited: Vapi drops the tool result if this response
+        // is slow, and the ledger write must not sit in front of a live call.
+        // runInBackground (not a bare promise) so Vercel keeps the instance
+        // alive past the response instead of freezing the INSERT away.
+        const auditUserId = agent.user_id;
+        const auditRecords = toolAuditContext.records;
+        runInBackground("vapi tool-call ai spend accounting", () =>
+          persistRuntimeAuditRecords({
+            userId: auditUserId,
+            action: "vapi.tool-calls",
+            records: auditRecords,
+            requestMeta: { agent_id: webhookAgentId, tool_calls: toolCalls.length },
+          }),
+        );
+      }
       const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
       const id = callId(payload, message);
       if (id && agent?.user_id && toolCalls.length > 0) {

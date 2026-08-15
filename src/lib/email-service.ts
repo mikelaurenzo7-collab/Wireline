@@ -540,10 +540,11 @@ export async function sendTrialEndingSoonEmail(opts: {
     };
   }
 
-  // This is the one clearly *commercial* (upsell) email Wireline sends, so it
-  // gets the full CAN-SPAM + bulk-sender treatment: honor opt-outs, RFC 8058
-  // one-click unsubscribe headers, and a footer with a working unsubscribe
-  // link + physical postal address. (Transactional mail above is exempt.)
+  // Commercial (upsell) mail, so it gets the full CAN-SPAM + bulk-sender
+  // treatment: honor opt-outs, RFC 8058 one-click unsubscribe headers, and a
+  // footer with a working unsubscribe link + physical postal address.
+  // (Transactional mail above is exempt.) The demo-line recap in
+  // lib/demo-funnel.ts is the other commercial sender and mirrors this shape.
   if (await isEmailSuppressed(opts.to)) {
     log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
       ...emailLogContext(opts.to),

@@ -546,7 +546,19 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const type = cleanText(req.body?.type, 32);
     const content = cleanText(req.body?.content, 12000);
-    if (!content) throw AppError.fromHttpStatus(400, "Content is required");
+    // Single-valued directives (today: the opening greeting) are edited, not
+    // appended. Without this the directive arm was an unconditional INSERT, so
+    // every re-save left the previous version in place and the agent ran on two
+    // contradictory "Opening greeting:" rules while the setup panel — which
+    // reads the first match — showed only one. `replacePrefix` makes the write
+    // an atomic replace, and lets empty content mean "clear it", which is the
+    // only way the panel could ever remove a greeting it had already saved.
+    const replacePrefix = cleanText(req.body?.replacePrefix, 120);
+    const isPrefixReplace = type === "directive" && replacePrefix.length > 0;
+    if (!content && !isPrefixReplace) throw AppError.fromHttpStatus(400, "Content is required");
+    if (isPrefixReplace && content && !content.startsWith(replacePrefix)) {
+      throw AppError.fromHttpStatus(400, "Content must start with replacePrefix");
+    }
     if (type === "personality") {
       await drizzle
         .insert(schema.personality)
@@ -556,12 +568,34 @@ router.post(
           set: { userId: req.user.id, content },
         });
     } else if (type === "directive") {
-      await drizzle.insert(schema.directives).values({
-        agentId: req.params.id,
-        userId: req.user.id,
-        content,
-        priority: 5,
-      });
+      if (isPrefixReplace) {
+        await drizzle.transaction(async (tx: typeof drizzle) => {
+          await tx.delete(schema.directives).where(
+            and(
+              eq(schema.directives.agentId, req.params.id),
+              eq(schema.directives.userId, req.user.id),
+              // left(...) rather than LIKE: the prefix is caller-supplied, and
+              // this needs no wildcard escaping to stay correct.
+              sql`left(${schema.directives.content}, ${replacePrefix.length}) = ${replacePrefix}`,
+            ),
+          );
+          if (content) {
+            await tx.insert(schema.directives).values({
+              agentId: req.params.id,
+              userId: req.user.id,
+              content,
+              priority: 5,
+            });
+          }
+        });
+      } else {
+        await drizzle.insert(schema.directives).values({
+          agentId: req.params.id,
+          userId: req.user.id,
+          content,
+          priority: 5,
+        });
+      }
     } else if (type === "knowledge") {
       await drizzle
         .insert(schema.knowledge)

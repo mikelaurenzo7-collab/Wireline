@@ -85,6 +85,9 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoSelectedDesktopRef = useRef(false);
+  // Controller for whatever thread is currently open. Switching threads aborts
+  // it, which is what lets the post-send refresh below be superseded too.
+  const activeThreadFetchRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const threadButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -185,8 +188,12 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     setMessages([]);
     if (!activeId) return;
     const controller = new AbortController();
+    activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (activeThreadFetchRef.current === controller) activeThreadFetchRef.current = null;
+    };
   }, [activeId, fetchMessages]);
 
   useEffect(() => {
@@ -231,7 +238,14 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         throw new Error(result.reason || result.error || "Send failed");
       }
       success("SMS sent", "Message delivered to customer.");
-      await Promise.all([fetchMessages(threadId), fetchThreads()]);
+      // Carry the open thread's signal. Without it this refresh was the one
+      // unguarded caller of fetchMessages: send in thread A, open thread B while
+      // it is in flight, and A's rows painted under B's header (and marked A
+      // read). Aborting on thread switch drops the superseded result instead.
+      await Promise.all([
+        fetchMessages(threadId, activeThreadFetchRef.current?.signal),
+        fetchThreads(),
+      ]);
     } catch (error: any) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
       setReply(body);
