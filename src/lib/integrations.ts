@@ -11,6 +11,29 @@ import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from
 
 const MAX_CALENDAR_PAGES = 20;
 
+export type InboxMessagePreview = {
+  messageId: string;
+  threadId?: string;
+  from: string;
+  subject: string;
+  snippet: string;
+  receivedAt: Date;
+  provider: "google" | "microsoft" | "yahoo" | "icloud";
+};
+
+/** A connected mailbox whose fetch failed: dead token, revoked grant, outage. */
+export type InboxFetchFailure = { provider: string; error: string };
+
+/**
+ * Inbox fetch result. `failures` is what makes an empty `messages` readable:
+ * empty + no failures means the mailbox really is up to date, empty + failures
+ * means we could not reach it and must say so rather than report success.
+ */
+export type InboxFetchResult = {
+  messages: InboxMessagePreview[];
+  failures: InboxFetchFailure[];
+};
+
 type ConnectedMailboxSendParams = {
   to: string;
   subject: string;
@@ -212,32 +235,31 @@ export class IntegrationService {
       /** Only return messages received after this ISO timestamp. */
       sinceIso?: string;
     } = {},
-  ): Promise<
-    {
-      messageId: string;
-      threadId?: string;
-      from: string;
-      subject: string;
-      snippet: string;
-      receivedAt: Date;
-      provider: "google" | "microsoft" | "yahoo" | "icloud";
-    }[]
-  > {
+  ): Promise<InboxFetchResult> {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
+    const failures: InboxFetchFailure[] = [];
     try {
       const accounts = await this.getAccounts("mail");
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
-      if (mailAccounts.length === 0) return [];
+      if (mailAccounts.length === 0) return { messages: [], failures };
 
       // Fan out across every connected mail account the tenant has.
       // Most tenants have 1 mailbox; some have one per channel.
+      //
+      // A per-account failure is REPORTED, not just logged. Swallowing it and
+      // returning [] made a dead mailbox — expired refresh token, revoked
+      // OAuth grant, provider outage — indistinguishable from an empty inbox,
+      // so the account holder saw a cheerful "No new inbox messages found."
+      // every time while mail piled up unreachable behind a broken connection.
       const perAccount = await Promise.all(
         mailAccounts.map((account: any) =>
           this.fetchFromAccount(account, { limit, sinceIso: opts.sinceIso }).catch((err) => {
+            const error = getErrorMessage(err);
             log.warn("fetchInboxMessages failed for one account", {
               provider: account.provider,
-              error: getErrorMessage(err),
+              error,
             });
+            failures.push({ provider: String(account.provider ?? "unknown"), error });
             return [];
           }),
         ),
@@ -246,13 +268,12 @@ export class IntegrationService {
       // Merge + sort newest-first, then cap to the caller's limit.
       const merged = perAccount.flat();
       merged.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
-      return merged.slice(0, limit);
+      return { messages: merged.slice(0, limit), failures };
     } catch (err) {
-      log.error("fetchInboxMessages failed", {
-        userId: this.userId,
-        error: getErrorMessage(err),
-      });
-      return [];
+      const error = getErrorMessage(err);
+      log.error("fetchInboxMessages failed", { userId: this.userId, error });
+      failures.push({ provider: "unknown", error });
+      return { messages: [], failures };
     }
   }
 
@@ -680,7 +701,10 @@ export class IntegrationService {
     return true;
   }
 
-  private async sendGoogleEmail(account: any, params: ConnectedMailboxSendParams): Promise<boolean> {
+  private async sendGoogleEmail(
+    account: any,
+    params: ConnectedMailboxSendParams,
+  ): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });

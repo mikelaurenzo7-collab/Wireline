@@ -464,6 +464,13 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // the only one allowed past the post-metering duplicate return.
   let insertedFresh = false;
   let insertedCallLogId: bigint | null = null;
+  // Escalation truth as persisted on the call-log row, read back from the same
+  // INSERT/UPDATE that wrote it (no extra query). This is what drives the
+  // call.escalated webhook and the Slack escalation alert below.
+  let escalationOutcome: { attempted: boolean; succeeded: boolean } = {
+    attempted: false,
+    succeeded: false,
+  };
   const vapiCallId = call?.id || "unknown";
   const stagedReliability = await takeStagedReliabilityMetrics(vapiCallId);
   try {
@@ -486,9 +493,17 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         escalationAttempted: stagedReliability?.escalationAttempted ?? false,
         escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
       })
-      .returning({ id: schema.callLogs.id });
+      .returning({
+        id: schema.callLogs.id,
+        escalationAttempted: schema.callLogs.escalationAttempted,
+        escalationSucceeded: schema.callLogs.escalationSucceeded,
+      });
     insertedFresh = true;
     insertedCallLogId = inserted[0]?.id ?? null;
+    escalationOutcome = {
+      attempted: inserted[0]?.escalationAttempted ?? false,
+      succeeded: inserted[0]?.escalationSucceeded ?? false,
+    };
   } catch (logErr: any) {
     if (logErr?.code === "23505" || /duplicate key/i.test(logErr?.message || "")) {
       const duplicateCallId = call?.id;
@@ -500,6 +515,23 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           // so when two workers process duplicate end-of-call jobs concurrently
           // exactly one RETURNING comes back non-empty. Only that winner fires
           // one-time downstream side effects after metering.
+          // Reliability columns MERGE here, they do not overwrite. An outbound
+          // call already has its placeholder row at dial time, so
+          // recordToolCallBatch/recordEscalationOutcome write live counters
+          // straight onto that row and never reach the staging table. Setting
+          // these columns to `staged ?? 0/false` therefore erased every tool
+          // call and escalation captured during the call — outbound tool
+          // reliability and escalation rates read zero for every tenant.
+          // Adding the staged deltas (and OR-ing the flags) is correct in both
+          // directions; when nothing was staged the columns are left alone.
+          const reliabilityPatch = stagedReliability
+            ? {
+                toolCallsTotal: sql<number>`COALESCE(${schema.callLogs.toolCallsTotal}, 0) + ${stagedReliability.toolCallsTotal}`,
+                toolCallsFailed: sql<number>`COALESCE(${schema.callLogs.toolCallsFailed}, 0) + ${stagedReliability.toolCallsFailed}`,
+                escalationAttempted: sql<boolean>`COALESCE(${schema.callLogs.escalationAttempted}, false) OR ${stagedReliability.escalationAttempted}`,
+                escalationSucceeded: sql<boolean>`COALESCE(${schema.callLogs.escalationSucceeded}, false) OR ${stagedReliability.escalationSucceeded}`,
+              }
+            : {};
           const finalized = await drizzle
             .update(schema.callLogs)
             .set({
@@ -509,19 +541,24 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               transcript,
               recordingUrl: recordingUrl,
               endedReason,
-              toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
-              toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
-              escalationAttempted: stagedReliability?.escalationAttempted ?? false,
-              escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
+              ...reliabilityPatch,
               pipelineError: null,
             })
             .where(
               sql`${schema.callLogs.vapiCallId} = ${duplicateCallId} AND (${schema.callLogs.pipelineError} = ${OUTBOUND_CALL_DIALING_MARKER} OR ${schema.callLogs.summary} = ${OUTBOUND_CALL_PLACEHOLDER_SUMMARY})`,
             )
-            .returning({ id: schema.callLogs.id });
+            .returning({
+              id: schema.callLogs.id,
+              escalationAttempted: schema.callLogs.escalationAttempted,
+              escalationSucceeded: schema.callLogs.escalationSucceeded,
+            });
           if (finalized.length) {
             insertedFresh = true;
             insertedCallLogId = finalized[0].id;
+            escalationOutcome = {
+              attempted: finalized[0].escalationAttempted ?? false,
+              succeeded: finalized[0].escalationSucceeded ?? false,
+            };
             log.info("Outbound placeholder call log finalized from end-of-call-report", {
               callId: duplicateCallId,
             });
@@ -803,10 +840,19 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     }
   }
 
-  const intent = (enrichment?.intent_label || "").toLowerCase();
-  if (intent === "escalation" || intent === "escalate") {
+  // Escalation fires off the RECORDED escalation outcome, not off intent_label.
+  // intent_label is a constrained enum ("high" | "medium" | "low" | "none"), so
+  // the previous comparison against the literal escalation labels could never
+  // be true — the documented call.escalated webhook and the Slack escalation
+  // alert were both unreachable for every tenant since they shipped, and no
+  // amount of real escalations would have produced one. escalationAttempted is set
+  // by recordEscalationOutcome the moment the agent tries to hand off, and a
+  // FAILED handoff is exactly the case an operator most needs to see, so the
+  // alert fires on attempted and reports whether it connected.
+  if (escalationOutcome.attempted) {
     void dispatchWebhook(userId, "call.escalated", {
       vapi_call_id: call?.id,
+      escalation_succeeded: escalationOutcome.succeeded,
       intent_label: enrichment?.intent_label,
       customer_number: baseOutcome.customer_number,
     });
@@ -816,7 +862,9 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         await slackPostMessage(
           userId,
           ch,
-          `🚨 *Call escalation*\nCaller: ${baseOutcome.customer_number || "unknown"}\nIntent: ${enrichment?.intent_label || "escalation"}\nCall: ${call?.id || ""}`,
+          `🚨 *Call escalation*\nCaller: ${baseOutcome.customer_number || "unknown"}\nHandoff: ${
+            escalationOutcome.succeeded ? "connected" : "did not connect"
+          }\nCall: ${call?.id || ""}`,
         );
       }
     })();

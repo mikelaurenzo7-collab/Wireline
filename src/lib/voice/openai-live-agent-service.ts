@@ -54,7 +54,8 @@ const LIVE_DEMO_TOOLS: OpenAIRealtimeToolDefinition[] = [
       properties: {
         query: {
           type: "string",
-          description: "The exact policy, product, service, price, or procedure question to verify.",
+          description:
+            "The exact policy, product, service, price, or procedure question to verify.",
         },
       },
       required: ["query"],
@@ -110,7 +111,9 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 export function normalizeLiveVoiceProfile(value: unknown): WirelineLiveVoiceProfile | null {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
   return (WIRELINE_LIVE_VOICE_PROFILES as readonly string[]).includes(normalized)
     ? (normalized as WirelineLiveVoiceProfile)
     : null;
@@ -167,7 +170,8 @@ function buildInstructions(
     .filter(Boolean)
     .join("\n");
   const tone =
-    trimLine(personality, 1_500) || (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
+    trimLine(personality, 1_500) ||
+    (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return [
     identity,
     customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
@@ -364,8 +368,7 @@ export async function createOpenAILiveVoiceCall(input: {
       model: OPENAI_REALTIME_DEFAULT_MODEL,
       voice,
       greeting:
-        runtime.agent.firstMessage?.trim() ||
-        `Hi, this is ${runtime.agent.name}. How can I help?`,
+        runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
       wireline: {
         provider: "openai_realtime",
         agentId: runtime.agent.id,
@@ -387,7 +390,42 @@ export async function createOpenAILiveVoiceCall(input: {
 }
 
 function tokens(value: string): string[] {
-  return value.toLowerCase().match(/[a-z0-9]{2,}/g)?.slice(0, 16) || [];
+  return (
+    value
+      .toLowerCase()
+      .match(/[a-z0-9]{2,}/g)
+      ?.slice(0, 16) || []
+  );
+}
+
+/** Longest excerpt a single live-voice knowledge match is allowed to speak from. */
+const MAX_LIVE_KB_RESULT_CHARS = 900;
+
+/**
+ * Return the window of an entry AROUND the caller's match, not its opening
+ * characters.
+ *
+ * Live-voice entries used to be truncated to MAX_LIVE_KB_RESULT_CHARS before
+ * scoring, which made every entry unsearchable past its first 900 characters.
+ * A caller asking about something documented in the second half of a page
+ * scored zero, was dropped from the results, and the agent said it had no
+ * approved answer while the answer sat in its own Training. The Vapi phone
+ * path fixed this in excerptAroundMatch; this is the same fix for the live
+ * browser/mobile path. The excerpt is a presentation concern only.
+ */
+function excerptAroundMatch(content: string, queryTokens: string[]): string {
+  if (content.length <= MAX_LIVE_KB_RESULT_CHARS) return content;
+  const lower = content.toLowerCase();
+  let hit = -1;
+  for (const token of queryTokens) {
+    const index = lower.indexOf(token);
+    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
+  }
+  if (hit < 0) return `${content.slice(0, MAX_LIVE_KB_RESULT_CHARS)}…`;
+  // Leave a third of the window as lead-in so the match keeps its context.
+  const start = Math.max(0, hit - Math.floor(MAX_LIVE_KB_RESULT_CHARS / 3));
+  const end = start + MAX_LIVE_KB_RESULT_CHARS;
+  return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
 }
 
 export async function runOpenAILiveVoiceTool(input: {
@@ -407,11 +445,16 @@ export async function runOpenAILiveVoiceTool(input: {
   const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
   const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
+  // Full content — the excerpt window is applied on OUTPUT, never before
+  // scoring. See excerptAroundMatch above.
   const snippets: Snippet[] = [
-    ...directives.map((item) => ({ source: "rule" as const, content: trimLine(item.content, 900) })),
+    ...directives.map((item) => ({
+      source: "rule" as const,
+      content: typeof item.content === "string" ? item.content.trim() : "",
+    })),
     ...knowledge.map((item) => ({
       source: "knowledge" as const,
-      content: trimLine(item.content, 900),
+      content: typeof item.content === "string" ? item.content.trim() : "",
     })),
   ].filter((item) => item.content);
   const matches = snippets
@@ -426,7 +469,10 @@ export async function runOpenAILiveVoiceTool(input: {
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map((row) => row.item);
+    .map((row) => ({
+      source: row.item.source,
+      content: excerptAroundMatch(row.item.content, queryTokens),
+    }));
   return matches.length
     ? { found: true, query, matches }
     : {
@@ -450,7 +496,10 @@ export function getOpenAILiveVoiceStatus() {
 
 export async function getOpenAILiveVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadAgentRuntime(agentId, userId);
-  const profile = resolveLiveVoiceProfile(runtime.agent.role, storedProfile(runtime.agent.businessVariables));
+  const profile = resolveLiveVoiceProfile(
+    runtime.agent.role,
+    storedProfile(runtime.agent.businessVariables),
+  );
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,

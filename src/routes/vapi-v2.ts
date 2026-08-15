@@ -284,7 +284,21 @@ router.post("/api/vapi-webhook", async (req, res) => {
           },
         });
       }
-      return res.status(403).json({ code: "ERROR", error: "Access Denied" });
+      // end-of-call-report is deliberately NOT denied. A suspended line still
+      // answers (with the suspension assistant above), so a real call really
+      // happened — and 403-ing its report threw away the call log, the
+      // transcript DNC/opt-out capture, and the TCPA compliance evidence for
+      // that call. A legal opt-out is not conditional on the tenant's billing
+      // state, and a tenant who reactivates must not find a hole in their
+      // history. Every other message type stays denied: a suspended line must
+      // not run tools, transfers, or live enrichment.
+      if (message?.type !== "end-of-call-report") {
+        return res.status(403).json({ code: "ERROR", error: "Access Denied" });
+      }
+      log.info("Suspended tenant end-of-call-report accepted for logging and compliance", {
+        agentId: webhookAgentId,
+        subscriptionStatus,
+      });
     }
 
     if (message?.type === "assistant-request") {

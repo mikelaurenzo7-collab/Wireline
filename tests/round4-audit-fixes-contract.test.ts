@@ -26,7 +26,13 @@ describe("round-4 audit fix contracts", () => {
     // decides the winner; insertedFresh only flips for the winner.
     expect(claim.slice(0, 3000)).toContain("OUTBOUND_CALL_DIALING_MARKER");
     expect(claim.slice(0, 3000)).toContain("OUTBOUND_CALL_PLACEHOLDER_SUMMARY");
-    expect(claim.slice(0, 3000)).toContain(".returning({ id: schema.callLogs.id })");
+    // RETURNING may carry extra columns (the escalation outcome is read back
+    // from this same write); what matters is that the claim returns rows at
+    // all, so exactly one concurrent worker sees a non-empty result.
+    const finalizeEnd = claim.indexOf("if (finalized.length)");
+    expect(finalizeEnd).toBeGreaterThan(-1);
+    expect(claim.slice(0, finalizeEnd)).toContain(".returning({");
+    expect(claim.slice(0, finalizeEnd)).toContain("id: schema.callLogs.id,");
     expect(claim.slice(0, 3400)).toContain("if (finalized.length)");
   });
 
@@ -93,9 +99,7 @@ describe("round-4 audit fix contracts", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
     expect(handlers).toContain('? "disclosure_not_detected"');
     expect(handlers).toContain(': "disclosure_unverifiable"');
-    expect(handlers).not.toContain(
-      'disclosure.found || !hasTranscript ? "disclosure_played"',
-    );
+    expect(handlers).not.toContain('disclosure.found || !hasTranscript ? "disclosure_played"');
   });
 
   it("every curated Vapi voice a picker offers is accepted at runtime", () => {

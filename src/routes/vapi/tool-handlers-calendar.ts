@@ -97,6 +97,39 @@ export async function handleCalendarToolCall(
         agentId: agent.id,
       });
       if (success) {
+        // Persist the booking to wireline_appointments. The calendar write
+        // above only reaches the tenant's Google/Microsoft calendar — nothing
+        // wrote the row that every in-product booking surface reads, so the
+        // dashboard's appointment count, the goals tracker, the daily brief,
+        // and the scheduled report all reported zero bookings no matter how
+        // many the agent actually made. `date` and `time` are already
+        // validated as YYYY-MM-DD / HH:mm by localDateTimeToUtcIso above, and
+        // match the format the manual /api/appointments route stores.
+        // Best-effort: a booking is confirmed to the caller either way, so a
+        // write failure must never turn into a tool error.
+        try {
+          await context.drizzle.insert(schema.appointments).values({
+            userId: agent.user_id,
+            agentId: agent.id,
+            callId: (message.call as { id?: string } | undefined)?.id ?? null,
+            date: String(date).trim(),
+            time: String(time).trim(),
+            customerName: customer_name.trim(),
+            serviceType: service_type.trim(),
+            status: "Scheduled",
+            notes: `Booked by voice agent. Confirmed timezone: ${timeZone}. ${displayTime}`,
+            phoneNumber:
+              (message.call as { customer?: { number?: string } } | undefined)?.customer?.number ??
+              null,
+          });
+        } catch (persistError) {
+          context.log.warn("Voice booking calendar write succeeded but appointment row failed", {
+            userId: agent.user_id,
+            agentId: agent.id,
+            error: persistError instanceof Error ? persistError.message : String(persistError),
+          });
+        }
+
         void dispatchWebhook(agent.user_id, "appointment.booked", {
           agent_id: agent.id,
           title,

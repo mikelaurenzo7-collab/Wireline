@@ -220,8 +220,16 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
       });
-      const result = await response.json();
-      if (!result.ok) throw new Error(result.reason || "Send failed");
+      const result = await response.json().catch(() => ({}) as Record<string, string>);
+      // The server always explains WHY a reply did not go out, on one of two
+      // envelopes: a carrier/provider rejection rides `reason` on a 200, while
+      // a compliance stop — number on DNC, federal DNC not configured — throws
+      // an AppError and rides `error`. Reading only `reason` collapsed every
+      // compliance block into a bare "Send failed", so the account holder had
+      // no way to tell "this number opted out" from "try again".
+      if (!response.ok || !result.ok) {
+        throw new Error(result.reason || result.error || "Send failed");
+      }
       success("SMS sent", "Message delivered to customer.");
       await Promise.all([fetchMessages(threadId), fetchThreads()]);
     } catch (error: any) {

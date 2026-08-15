@@ -63,7 +63,23 @@ router.post(
       }
 
       const service = new IntegrationService(req.user.id);
-      const messages = await service.fetchInboxMessages({ limit, sinceIso });
+      const { messages, failures } = await service.fetchInboxMessages({ limit, sinceIso });
+
+      // A mailbox we could not reach is not an empty mailbox. When every
+      // connected account failed there is nothing to sync and nothing true to
+      // say except that the connection is broken — reporting "No new inbox
+      // messages found." there left account holders watching a healthy-looking
+      // inbox while mail piled up behind a revoked or expired OAuth grant.
+      if (failures.length > 0 && messages.length === 0) {
+        return res.status(502).json({
+          ok: false,
+          code: "EMAIL_MAILBOX_UNREACHABLE",
+          failed_providers: Array.from(new Set(failures.map((failure) => failure.provider))),
+          error:
+            "Your connected mailbox could not be reached. Reconnect it in Integrations, then refresh again.",
+        });
+      }
+
       const latestThreadMessage = new Map<string, InboxMessage>();
 
       for (const message of messages) {
@@ -173,13 +189,21 @@ router.post(
           }),
         );
       }
+      // Partial reach: at least one mailbox answered, at least one did not.
+      // Say so — a silent partial sync reads as a complete one.
+      const failedProviders = Array.from(new Set(failures.map((failure) => failure.provider)));
       res.json({
         ok: true,
         fetched: messages.length,
         threads_upserted: threadRows.length,
         messages_saved: messagesSaved,
         providers: Array.from(new Set(messages.map((message) => message.provider))),
-        message: messages.length ? "Inbox refreshed." : "No new inbox messages found.",
+        ...(failedProviders.length > 0 ? { failed_providers: failedProviders } : {}),
+        message: failedProviders.length
+          ? `Inbox partially refreshed. Reconnect ${failedProviders.join(", ")} in Integrations to sync the rest.`
+          : messages.length
+            ? "Inbox refreshed."
+            : "No new inbox messages found.",
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
