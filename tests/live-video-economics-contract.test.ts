@@ -77,6 +77,11 @@ describe("live video economics contract", () => {
     for (const source of [spotlight, campaignSection, generatorSection]) {
       expect(source).not.toMatch(/same logged outcome/i);
       expect(source).not.toMatch(/outcome it logs/i);
+    }
+    // The internal campaign guardrail may name the prohibited claim while
+    // documenting that it is not supported. Customer-facing copy and generated
+    // narration must not make it.
+    for (const source of [spotlight, generatorSection]) {
       expect(source).not.toMatch(/cross-channel history/i);
     }
     expect(campaignSection).toContain("approved knowledge");
