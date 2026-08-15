@@ -129,19 +129,20 @@ Until real evidence exists, do not claim customer adoption, ROI, guaranteed book
 ## Required production proof sequence
 
 1. Deploy and verify the exact merged source SHA on the production alias. **Completed for `69af285c8a3ec2d0af6e179e91ea8bd9173183c8`.**
-2. Deploy the exact-head billing authorization guard and verify pre-auth paid routes fail closed with `BILLING_LAUNCH_NOT_APPROVED` until the exact production SHA is authorized.
+2. Deploy the exact-head billing authorization guard and verify pre-auth paid routes fail closed with `BILLING_LAUNCH_NOT_APPROVED` while the release SHA is absent or mismatched.
 3. Prove Twilio/Vapi funding, number state, callbacks, and usage alerts.
-4. Complete one non-demo production inbound call with disclosure, transcript, outcome, and follow-up.
+4. Authorize only the verified production SHA for a founder-controlled billing certification window while invitations, paid media, and non-founder onboarding remain off.
 5. Complete one real $19 lifecycle: checkout -> signed webhook -> entitlement -> allowances -> portal -> cancellation -> refund or reversal.
-6. Confirm billing and usage ledgers reconcile after that lifecycle.
-7. Authorize self-serve billing for only the certified production SHA.
-8. Onboard 3–5 consented design partners into one bounded workflow each.
-9. Review activation, useful-call rate, repeated use, follow-up completion, support minutes, gross contribution, and churn reason weekly.
-10. Enable broader self-serve acquisition only after repeat use and positive observed contribution are demonstrated.
+6. Confirm billing, checkout-operation, subscription, allowance, usage, and reversal ledgers reconcile after that lifecycle.
+7. Revoke the exact-head authorization immediately on any failure; on success, retain it only for the bounded design-partner cohort and preserve redacted evidence.
+8. Complete one non-demo production inbound call with disclosure, transcript, outcome, and follow-up.
+9. Onboard 3–5 consented design partners into one bounded workflow each.
+10. Review activation, useful-call rate, repeated use, follow-up completion, support minutes, gross contribution, and churn reason weekly.
+11. Enable broader self-serve acquisition only after repeat use and positive observed contribution are demonstrated.
 
 ## Release posture
 
-**Approved:** controlled design-partner production release after exact-head billing closure and the remaining live telephony and paid-lifecycle proofs.  
+**Approved:** controlled design-partner production release after the exact-head guard, founder billing certification, and remaining live telephony proof.  
 **Not approved:** scaled cold outbound, broad paid acquisition, OOH, commissioned hero-film spend, or traction claims.
 
 No code change can substitute for the remaining real transaction and carrier proofs. They must be executed against production and retained as redacted operator evidence.

@@ -113,24 +113,29 @@ Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellati
 updates, invoice history, and legal/return URLs after the application build passes. Preview and
 Development must leave it false/unset.
 
-Authorize the exact release SHA only after all of the following have been certified against the live Wireline Stripe account and that exact production deployment:
+Before opening an exact-SHA certification window, verify all of the following against the live Wireline Stripe account and the deployed artifact:
 
 - Public business identity, support email/URL, statement descriptor, and tax posture display Wireline rather than a historical product identity.
 - `STRIPE_AUTOMATIC_TAX_ENABLED` remains `false` unless Stripe Tax settings and at least one applicable live registration are active. Registration and nexus decisions require qualified tax advice; the application must never infer them.
 - The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `trywireline.com`.
-- A controlled lifecycle succeeds end to end: checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund, and allowance reversal.
 - Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.
-- The exact production deployment SHA and launch-readiness response are recorded. `billing_ready` must list none of the three billing release controls after authorization.
+- The exact production deployment SHA, migrations, aliases, health response, affected routes, and runtime-error stream are recorded and clean.
+- Broad invitations, paid media, cold outbound, and non-founder customer onboarding remain off during certification.
+
+The controlled checkout lifecycle necessarily requires the gate to be open for the founder-controlled account performing it. Exact-head authorization is therefore a narrow certification window, not proof by itself. A successful window must still demonstrate checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund or reversal, and ledger reconciliation.
 
 Valid Stripe credentials, a reconciled portal, and a previously enabled boolean never authorize a new deployment by themselves.
 
-### Opening paid checkout
+### Opening a controlled certification window
 
-1. Promote the reviewed commit through the normal `main` production build.
-2. Verify the exact production SHA, migrations, aliases, health endpoint, affected routes, and runtime logs while checkout remains closed.
-3. Complete the controlled live lifecycle against that exact production artifact.
-4. Set `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` to the full `VERCEL_GIT_COMMIT_SHA` and redeploy Production without changing source.
-5. Verify the redeployment SHA is unchanged, launch readiness reports `self_serve_billing_enabled: true`, and an authenticated checkout can create the intended branded Stripe session.
+1. Promote the reviewed commit through the normal `main` production build with the release SHA absent or mismatched.
+2. Verify the exact production SHA, migrations, aliases, health endpoint, affected routes, runtime logs, and the customer-safe pre-auth 503 `BILLING_LAUNCH_NOT_APPROVED` response.
+3. Set `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` to that deployment's full `VERCEL_GIT_COMMIT_SHA` and redeploy Production without changing source.
+4. Verify the redeployment uses the same Git SHA, launch readiness reports `self_serve_billing_enabled: true`, and a founder-controlled authenticated checkout creates the intended post-branding Stripe session.
+5. Complete the full live lifecycle and reconcile the Stripe, subscription, allowance, checkout-operation, usage, cancellation, and refund/reversal records.
+6. On any failure, revoke the release SHA immediately and complete the closing procedure. On success, retain the exact authorization only for the bounded design-partner cohort and preserve redacted evidence.
+
+Do not send acquisition traffic merely because the exact-head gate is open. Public acquisition remains a separate business decision after repeated use and observed contribution are demonstrated.
 
 ### Closing paid checkout
 
