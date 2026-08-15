@@ -60,11 +60,26 @@ describe("live video economics contract", () => {
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
     expect(spotlight).toContain("paid business agent");
+    expect(spotlight).toContain("same Training and tools");
+    expect(spotlight).not.toMatch(/\bhistory\b/i);
     expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
     expect(spotlight).toContain("LiveVideoStage");
     expect(stage).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
     expect(stage).toContain("LIVE_VIDEO_MAX_SESSION_SECONDS");
     expect(stage).not.toMatch(/\b(60|19)\s*(min|\/mo)\b/);
+  });
+
+  it("depicts the hard session cap as a terminal pause instead of a looping timer", () => {
+    const stage = read("src/components/marketing/LiveVideoStage.tsx");
+
+    expect(stage).toContain("Math.max(0, value - 1)");
+    expect(stage).not.toContain(
+      "value <= 1 ? LIVE_VIDEO_MAX_SESSION_SECONDS : value - 1",
+    );
+    expect(stage).toContain('sessionEnded ? "Paused" : "Live"');
+    expect(stage).toContain('sessionEnded ? "Session paused"');
+    expect(stage).not.toContain('aria-label="Time left in this session"');
+    expect(stage).toContain('aria-label={`${clock} left in this session');
   });
 
   it("keeps the retired browser audio bridge deleted", () => {

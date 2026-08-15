@@ -54,26 +54,28 @@ export default function LiveVideoStage() {
   const reducedMotion = useReducedMotion();
   const [speaking, setSpeaking] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(LIVE_VIDEO_MAX_SESSION_SECONDS);
+  const sessionEnded = secondsLeft <= 0;
+  const clock = formatClock(secondsLeft);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || sessionEnded) return;
     const id = setTimeout(
       () => setSpeaking((value) => !value),
       speaking ? SPEAKING_MS : LISTENING_MS,
     );
     return () => clearTimeout(id);
-  }, [speaking, reducedMotion]);
+  }, [speaking, reducedMotion, sessionEnded]);
 
   useEffect(() => {
-    if (reducedMotion) return;
-    const id = setInterval(() => {
-      setSecondsLeft((value) => (value <= 1 ? LIVE_VIDEO_MAX_SESSION_SECONDS : value - 1));
+    if (sessionEnded) return;
+    const id = setTimeout(() => {
+      setSecondsLeft((value) => Math.max(0, value - 1));
     }, 1000);
-    return () => clearInterval(id);
-  }, [reducedMotion]);
+    return () => clearTimeout(id);
+  }, [secondsLeft, sessionEnded]);
 
   const bars = useMemo(() => Array.from({ length: WAVE_BARS }, (_, index) => index), []);
-  const animating = speaking && !reducedMotion;
+  const animating = !sessionEnded && speaking && !reducedMotion;
 
   return (
     <div className="relative mx-auto w-full max-w-[560px]">
@@ -101,12 +103,16 @@ export default function LiveVideoStage() {
         </div>
 
         <div className="vr-panel__stage">
-          <span className="vr-live">
-            <span className="vr-live__dot" aria-hidden="true" />
-            Live
+          <span className={`vr-live${sessionEnded ? " vr-live--paused" : ""}`}>
+            {!sessionEnded ? <span className="vr-live__dot" aria-hidden="true" /> : null}
+            {sessionEnded ? "Paused" : "Live"}
           </span>
-          <span className="vr-provider" role="timer" aria-label="Time left in this session">
-            {formatClock(secondsLeft)} left
+          <span
+            className="vr-provider"
+            role="timer"
+            aria-label={`${clock} left in this session${sessionEnded ? "; session paused" : ""}`}
+          >
+            {clock} left
           </span>
 
           <div className="vr-feed" aria-hidden="true">
@@ -122,7 +128,9 @@ export default function LiveVideoStage() {
                 <span key={bar} />
               ))}
             </div>
-            <p className="vr-voice__state">{animating ? "Agent speaking" : "Listening"}</p>
+            <p className="vr-voice__state">
+              {sessionEnded ? "Session paused" : animating ? "Agent speaking" : "Listening"}
+            </p>
           </div>
         </div>
 

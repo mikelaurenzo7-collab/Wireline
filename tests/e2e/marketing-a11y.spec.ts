@@ -34,12 +34,12 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   // rendered as a hero subhead (the pitch lives in the title, chips, and demo).
 
   // The hero's separate brand-spine word-mark was deliberately removed in the
-  // minimal-copy pass (#1042); the operating loop now appears once, as the
-  // loop section's heading. Assert that canonical statement instead of the
-  // retired word-mark.
+  // minimal-copy pass (#1042); the operating loop now appears once in the
+  // document outline. It is intentionally sr-only, so assert presence rather
+  // than visual rendering.
   await expect(
     page.getByRole("heading", { name: "How Wireline works", exact: true }),
-  ).toBeVisible();
+  ).toBeAttached();
 
   // Channel proof lives in the Live Video spotlight's "Agent channels" list
   // since the hero minimal-copy pass; the old "Wireline capabilities" hero
