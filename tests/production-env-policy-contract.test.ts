@@ -114,6 +114,7 @@ describe("production environment launch policy", () => {
       ["VITE_VAPI_PUBLIC_KEY", "configured"],
       ["APP_URL", "https://trywireline.com"],
       ["WIRELINE_SELF_SERVE_BILLING_ENABLED", "true"],
+      ["WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA", "a".repeat(40)],
     ]) {
       const result = runPreviewBoundary({ [name]: configuredValue });
       expect(result.status).toBe(1);
@@ -128,5 +129,13 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");
+  });
+
+  it("binds self-serve billing authorization to the exact production Git SHA", () => {
+    expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_SHA")');
+    expect(deploymentBoundary).toContain('value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA")');
+    expect(deploymentBoundary).toContain("releaseSha !== deploymentSha");
+    expect(deploymentBoundary).toContain("will remain runtime-closed");
+    expect(deploymentBoundary).toContain("is authorized for exact production SHA");
   });
 });

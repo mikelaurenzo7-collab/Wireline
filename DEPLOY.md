@@ -13,6 +13,12 @@ This root path is retained for legacy links, development-tool discovery, and dep
 
 ## Self-serve billing release control
 
-`WIRELINE_SELF_SERVE_BILLING_ENABLED` is a production release switch, not a provider credential. It defaults closed when unset. The complete release-control policy — certification prerequisites, the demo-mode interlock, and the verified rollback procedure — lives in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control).
+Self-serve checkout requires all three production controls to align:
+
+- `WIRELINE_SELF_SERVE_BILLING_ENABLED=true`;
+- `WIRELINE_LAUNCH_DEMO_MODE=false`;
+- `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` exactly matching Vercel's full `VERCEL_GIT_COMMIT_SHA` for the deployed artifact.
+
+The exact-head authorization defaults closed, is production-only, and must be deliberate for every new release. A boolean left enabled from an older deployment cannot authorize a new commit. The complete certification prerequisites, opening procedure, and verified rollback procedure live in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control).
 
 Use the canonical runbook for the complete release, environment, provider-verification, and rollback procedure.

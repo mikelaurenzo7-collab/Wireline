@@ -4,6 +4,8 @@ const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "developme
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
+const notices = [];
+const fullGitSha = /^[a-f0-9]{40}$/i;
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -70,6 +72,22 @@ if (isProduction) {
       "WIRELINE_SELF_SERVE_BILLING_ENABLED: production checkout requires WIRELINE_LAUNCH_DEMO_MODE=false so paid activity is not classified as demo evidence",
     );
   }
+
+  if (affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED")) {
+    const deploymentSha = value("VERCEL_GIT_COMMIT_SHA").toLowerCase();
+    const releaseSha = value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA").toLowerCase();
+    if (!fullGitSha.test(deploymentSha)) {
+      notices.push(
+        "Self-serve billing will remain runtime-closed because VERCEL_GIT_COMMIT_SHA is not a full deployed Git SHA.",
+      );
+    } else if (!fullGitSha.test(releaseSha) || releaseSha !== deploymentSha) {
+      notices.push(
+        `Self-serve billing will remain runtime-closed until WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA=${deploymentSha}.`,
+      );
+    } else {
+      notices.push(`Self-serve billing is authorized for exact production SHA ${deploymentSha}.`);
+    }
+  }
 }
 
 const productionOnlyPreviewKeys = [
@@ -96,6 +114,7 @@ const productionOnlyPreviewKeys = [
   "UPSTASH_REDIS_REST_URL",
   "VITE_STRIPE_PUBLIC_KEY",
   "VITE_VAPI_PUBLIC_KEY",
+  "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA",
   "X_CLIENT_ID",
   "YAHOO_CLIENT_ID",
   "ZOOM_CLIENT_ID",
@@ -169,4 +188,5 @@ if (failures.length) {
   process.exit(1);
 }
 
+for (const notice of notices) console.warn(`Deployment-boundary notice: ${notice}`);
 console.log(`Deployment-boundary check passed for ${environment}.`);
