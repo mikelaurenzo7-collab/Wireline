@@ -303,16 +303,16 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <div className="min-h-3 flex-1" />
 
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
-          (item) => (
-            <RailLink
-              key={item.href}
-              item={item}
-              pathname={pathname}
-              activeOverride={secondaryRouteParent === item.href ? true : undefined}
-            />
-          ),
-        )}
+        {OPERATE_NAV.filter(
+          (item) => item.href !== "/settings" && isRouteAvailableForAccount(accountType, item.href),
+        ).map((item) => (
+          <RailLink
+            key={item.href}
+            item={item}
+            pathname={pathname}
+            activeOverride={secondaryRouteParent === item.href ? true : undefined}
+          />
+        ))}
       </nav>
 
       <Link

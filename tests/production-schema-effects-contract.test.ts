@@ -4,7 +4,10 @@ import { describe, expect, it } from "vitest";
 const buildSource = readFileSync("scripts/vercel-build.mjs", "utf8");
 const verifierSource = readFileSync("scripts/check-production-schema-effects.mjs", "utf8");
 const wrapperSource = readFileSync("scripts/run-production-schema-effects.mjs", "utf8");
-const migrationSource = readFileSync("drizzle/migrations/0142_resend_delivery_feedback.sql", "utf8");
+const migrationSource = readFileSync(
+  "drizzle/migrations/0142_resend_delivery_feedback.sql",
+  "utf8",
+);
 
 describe("production schema effects", () => {
   it("pins the full Resend feedback table contract, not just object names", () => {
@@ -77,6 +80,16 @@ describe("production schema effects", () => {
       expect(verifierSource).toContain(orphanCheck);
     }
     expect(verifierSource).not.toContain("wireline_jobs t LEFT JOIN public.wireline_users");
+  });
+
+  it("certifies the live retention routine body, not merely its function name", () => {
+    expect(verifierSource).toContain("pg_get_functiondef");
+    expect(verifierSource).toContain("wireline_purge_old_data(uuid,integer)");
+    expect(verifierSource).toContain("retention:delivery_log_not_purgeable");
+    expect(verifierSource).toContain("retention:live_webhook_configuration_purgeable");
+    expect(verifierSource).toContain("retention:live_intake_key_configuration_purgeable");
+    expect(verifierSource).toContain("retention:purge_errors_suppressed");
+    expect(verifierSource).toContain("retention:purge_function_search_path_not_pinned");
   });
 
   it("runs the read-only schema assertion on every real production build against runtime-selected DB truth", () => {

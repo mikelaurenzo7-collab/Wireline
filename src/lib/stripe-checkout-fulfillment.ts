@@ -6,6 +6,7 @@ import * as schema from "../db/schema";
 import { addCredit } from "./credit-wallet";
 import { drizzle, tenantStore } from "./server-context";
 import { stripe, syncSubscriptionFromStripe } from "./stripe-helpers";
+import { resolveCurrentLiveVideoCheckoutEntitlement } from "./stripe-live-video-addon";
 
 const CHECKOUT_OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
 
@@ -110,25 +111,41 @@ export async function fulfillStripeCheckoutSession(
     }
 
     if (session.metadata?.purpose === "live_video_addon") {
-      if (!checkoutSubscriptionId(session)) {
+      const subscriptionId = checkoutSubscriptionId(session);
+      if (!subscriptionId) {
         throw new Error(`Settled live-video Checkout ${session.id} has no subscription.`);
       }
 
+      const checkoutCustomerId =
+        typeof session.customer === "string" ? session.customer : session.customer?.id;
+      const current = await resolveCurrentLiveVideoCheckoutEntitlement({
+        subscriptionId,
+        userId,
+        checkoutCustomerId,
+      });
+
       // Tenant-scoped like the credit-topup arm below: the entitlement write
       // must carry RLS WITH CHECK insurance against a metadata-identity bug.
-      const updated = await tenantStore.run(userId, () =>
-        drizzle
+      await tenantStore.run(userId, async () => {
+        const settingsRows = await drizzle
           .update(schema.settings)
-          .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
+          .set({ liveVideoAddonEnabled: current.enabled, updatedAt: new Date() })
           .where(eq(schema.settings.userId, userId))
-          .returning({ userId: schema.settings.userId }),
-      );
-      if (!updated[0]) {
-        // A paid add-on without a durable workspace projection must stay
-        // retryable; acknowledging it here would strand the entitlement.
-        throw new Error(`Settled live-video Checkout ${session.id} has no Wireline workspace.`);
-      }
-      result.liveVideoEnabled = true;
+          .returning({ userId: schema.settings.userId });
+        if (!settingsRows[0]) {
+          // A paid add-on without a durable workspace projection must stay
+          // retryable; acknowledging it here would strand the entitlement.
+          throw new Error(`Settled live-video Checkout ${session.id} has no Wireline workspace.`);
+        }
+        if (!current.enabled) {
+          await drizzle
+            .update(schema.agents)
+            .set({ videoPresenterProvider: "synthetic" })
+            .where(eq(schema.agents.userId, userId));
+        }
+        await markCheckoutOperationCompleted(session);
+      });
+      result.liveVideoEnabled = current.enabled;
       return result;
     }
 

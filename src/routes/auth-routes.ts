@@ -99,9 +99,11 @@ router.post(
         SIGNIN_MIN_DURATION_MS,
       );
       if (!result) {
-        // Spend the failure budgets. Fire-and-forget: the throttle is defense
-        // in depth and must not delay or convert the 401.
-        void recordSigninFailure(req.ip || "", email);
+        // Spend the failure budgets before sending the 401. On a serverless
+        // runtime, unawaited remote writes may be frozen as soon as the response
+        // completes, making the spray/stuffing counters probabilistic. The
+        // recorder catches limiter errors so this never converts the 401.
+        await recordSigninFailure(req.ip || "", email);
         throw AppError.fromHttpStatus(401, "Invalid email or password");
       }
 

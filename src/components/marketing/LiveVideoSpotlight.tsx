@@ -16,7 +16,7 @@ const CHANNELS = [
 const PRESENTER_SLOTS = ["01", "02", "03"] as const;
 const LIVE_VIDEO_FACTS = [
   `${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} min/month`,
-  `${LIVE_VIDEO_SESSION_RESERVATION_MINUTES} min/session max`,
+  `${LIVE_VIDEO_SESSION_RESERVATION_MINUTES} min wall-clock max`,
   `$${LIVE_VIDEO_ADDON_PRICE_USD}/mo add-on`,
 ] as const;
 
@@ -43,6 +43,11 @@ export default function LiveVideoSpotlight({ bridgeLabel }: LiveVideoSpotlightPr
             </h2>
             <p className="mx-auto mt-4 max-w-[48ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">
               {`Call. Text. Email. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
+            </p>
+            <p className="mx-auto mt-2 max-w-[52ch] text-xs leading-5 text-muted-foreground lg:mx-0">
+              Wireline voice uses that agent&apos;s Training and tools. Optional presenter-managed
+              voice modes use their own workspace profile and may reserve more allowance for the
+              same session.
             </p>
 
             <div

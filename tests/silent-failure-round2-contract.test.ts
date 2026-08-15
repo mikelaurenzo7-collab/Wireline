@@ -292,7 +292,7 @@ describe("every AI-spending surface reaches the spend ledger", () => {
 });
 
 describe("the retention purge deletes event data, never live configuration", () => {
-  const migration = read("drizzle/migrations/0148_retention_purge_spares_live_configuration.sql");
+  const migration = read("drizzle/migrations/0149_retention_purge_fails_closed.sql");
 
   it("drops the two configuration tables from the purge list", () => {
     const purgeList = migration.slice(
@@ -307,19 +307,24 @@ describe("the retention purge deletes event data, never live configuration", () 
     expect(purgeList).toContain("'wireline_audit_log'");
   });
 
-  it("keeps the hardening 0077 added", () => {
+  it("keeps input and search-path hardening while allowing unexpected failures to retry", () => {
     expect(migration).toContain("SET search_path = public, pg_temp");
     expect(migration).toContain("p_user_id is required");
     expect(migration).toContain("p_retention_days must be at least 1");
-    expect(migration).toContain("EXCEPTION WHEN others THEN");
+    const body = migration.slice(migration.indexOf("AS $$"), migration.indexOf("$$;"));
+    expect(body).not.toMatch(/EXCEPTION\s+WHEN\s+others/i);
+    expect(body).not.toMatch(/v_rows_deleted\s*:=\s*0/i);
+    expect(body).toContain("EXECUTE format(");
+    expect(body).toContain("INTO v_rows_deleted USING p_user_id, v_cutoff_date");
   });
 
   it("is journalled so the production build actually applies it", () => {
     const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json")) as {
-      entries: { tag: string }[];
+      entries: { idx: number; tag: string }[];
     };
-    expect(journal.entries.map((entry) => entry.tag)).toContain(
-      "0148_retention_purge_spares_live_configuration",
-    );
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 47,
+      tag: "0149_retention_purge_fails_closed",
+    });
   });
 });

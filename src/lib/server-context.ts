@@ -2,6 +2,7 @@ import { log, IS_PROD } from "./server-logger";
 import { tryResolveDatabaseConnection } from "./database-connection";
 import { AppError } from "./api-error";
 import { resolveTenantDatabaseScope } from "./tenant-context-scope";
+import { runTenantScopedPoolQuery, scopePgClientToTenant } from "./tenant-pool-transaction";
 
 export { log, IS_PROD };
 
@@ -138,10 +139,6 @@ export async function serialQueryBatch<const T extends readonly unknown[]>(
 
 const _origConnect = pool.connect.bind(pool);
 
-// Savepoint used to remap drizzle's own top-level BEGIN/COMMIT/ROLLBACK so that
-// `drizzle.transaction()` keeps working while we hold the outer real transaction.
-const OUTER_SAVEPOINT = "__wireline_tenant_sp__";
-
 /**
  * Acquire a pooled client already scoped to `userId`'s tenant for RLS.
  *
@@ -153,8 +150,9 @@ const OUTER_SAVEPOINT = "__wireline_tenant_sp__";
  *
  * To make the context stick on both session- and transaction-mode connections we
  * open a single real transaction at checkout, set the role + GUC `LOCAL` to it,
- * and COMMIT on release. Because pgbouncer pins one backend for the lifetime of an
- * open transaction, the GUC is visible to every query drizzle runs on this client.
+ * and finalize it before the caller observes success. Because pgbouncer pins one
+ * backend for the lifetime of an open transaction, the GUC is visible to every
+ * query drizzle runs on this client.
  *
  * drizzle borrows a fresh connection per query/transaction, so each checkout has
  * exactly one outer level. When a route uses `drizzle.transaction()`, drizzle emits
@@ -163,74 +161,7 @@ const OUTER_SAVEPOINT = "__wireline_tenant_sp__";
  */
 async function scopeClientToTenant(userId: string) {
   const client = await _origConnect();
-  try {
-    await client.query("BEGIN");
-    // Explicitly override any session-level read-only state inherited from a
-    // transaction-pool backend. Supavisor intentionally reuses backend
-    // sessions, so a maintenance client that leaks
-    // default_transaction_read_only=on can otherwise break unrelated writes.
-    // Transaction-local READ WRITE is safe for pooled connections and still
-    // fails closed when the database is genuinely a read-only replica.
-    await client.query("SET TRANSACTION READ WRITE");
-    await client.query("SET LOCAL ROLE wireline_server");
-    await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
-  } catch (e) {
-    // Roll back any partial transaction and discard the (now poisoned) connection.
-    try {
-      await client.query("ROLLBACK");
-    } catch {
-      /* connection unusable; release with destroy below */
-    }
-    client.release(true);
-    throw e;
-  }
-
-  // Remap drizzle's top-level transaction control to savepoints so the outer
-  // transaction (and thus the tenant GUC) stays open for the whole checkout.
-  const _origQuery = client.query.bind(client);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pg query has many overloads
-  (client as any).query = (config: any, values?: any, cb?: any) => {
-    const text = typeof config === "string" ? config : config?.text;
-    if (typeof text === "string") {
-      const normalized = text.trim().toLowerCase();
-      let remapped: string | null = null;
-      if (/^begin(\s|$)/.test(normalized)) remapped = `SAVEPOINT ${OUTER_SAVEPOINT}`;
-      else if (normalized === "commit") remapped = `RELEASE SAVEPOINT ${OUTER_SAVEPOINT}`;
-      else if (normalized === "rollback") remapped = `ROLLBACK TO SAVEPOINT ${OUTER_SAVEPOINT}`;
-      if (remapped) {
-        if (typeof config === "string") return _origQuery(remapped, values, cb);
-        return _origQuery({ ...config, text: remapped }, values, cb);
-      }
-    }
-    return _origQuery(config, values, cb);
-  };
-
-  const _origRelease = client.release.bind(client);
-  let released = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pg release signature uses overloads
-  client.release = (err?: any) => {
-    if (released) return;
-    released = true;
-    // Restore the raw query fn before finalizing so our control statements run as-is.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restoring pg client.query
-    (client as any).query = _origQuery;
-    if (err) {
-      // The pool discards errored clients, and closing the socket rolls the
-      // outer transaction back implicitly. Issuing ROLLBACK here would queue
-      // it behind any still in-flight query on this client — the exact
-      // pattern pg@8 deprecates ("client already executing a query") and
-      // pg@9 rejects outright.
-      _origRelease(err);
-      return;
-    }
-    // COMMIT must settle before the client returns to the pool
-    // (_origRelease only runs after). SET LOCAL ROLE is transaction-scoped, so
-    // the next checkout never inherits wireline_server from this one.
-    _origQuery("COMMIT")
-      .then(() => _origRelease())
-      .catch(() => _origRelease(true));
-  };
-  return client;
+  return (await scopePgClientToTenant(client, userId)).client;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- pg Pool.connect has overloaded callback/promise signatures */
@@ -260,6 +191,30 @@ async function scopeClientToTenant(userId: string) {
     return;
   }
   return scopeClientToTenant(connectionScope.userId);
+};
+
+const _origPoolQuery = pool.query.bind(pool);
+(pool as any).query = function tenantScopedQuery(config: any, values?: any, callback?: any): any {
+  const userId = tenantStore.getStore();
+  let connectionScope: ReturnType<typeof resolveTenantDatabaseScope>;
+  try {
+    connectionScope = resolveTenantDatabaseScope(userId);
+  } catch (error) {
+    log.error("Refusing database query for malformed tenant context", {
+      hasTenantContext: Boolean(userId),
+    });
+    const queryCallback = typeof values === "function" ? values : callback;
+    if (queryCallback) {
+      queueMicrotask(() => queryCallback(error));
+      return;
+    }
+    return Promise.reject(error);
+  }
+
+  if (connectionScope.kind === "root") {
+    return _origPoolQuery(config, values, callback);
+  }
+  return runTenantScopedPoolQuery(_origConnect, connectionScope.userId, config, values, callback);
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

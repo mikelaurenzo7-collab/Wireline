@@ -59,7 +59,7 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "Wireline for Home Services | AI Receptionist for Calls and Follow Up",
+    metaTitle: "Wireline for Home Services | Voice Receptionist and Follow Up",
     metaDescription:
       "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
@@ -116,7 +116,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   medical: {
     slug: "medical",
-    metaTitle: "Wireline for Medical Practices | AI Intake and Scheduling",
+    metaTitle: "Wireline for Medical Practices | Voice Intake and Scheduling",
     metaDescription:
       "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
@@ -173,7 +173,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "Wireline for Law Firms | AI Intake and Consult Routing",
+    metaTitle: "Wireline for Law Firms | Voice Intake and Consult Routing",
     metaDescription:
       "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
@@ -230,7 +230,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "Wireline for Real Estate | AI Listing Call Qualification",
+    metaTitle: "Wireline for Real Estate | Voice Listing Call Qualification",
     metaDescription:
       "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
@@ -287,9 +287,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "Wireline for Everyone | Your AI Handles the Calls You Hate",
+    metaTitle: "Wireline for Everyone | A Voice Agent for Calls You Avoid",
     metaDescription:
-      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
+      "A personal voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Hand off the calls you keep avoiding.",
     pains: [
@@ -318,7 +318,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
-      "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
+      "Your voice agent calls on your behalf. You say what you need; it dials, talks, and reports back. You stay off the call.",
     primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
@@ -349,7 +349,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   insurance: {
     slug: "insurance",
-    metaTitle: "Wireline for Insurance Agencies | AI Quote Intake + Renewal Follow Up",
+    metaTitle: "Wireline for Insurance Agencies | Voice Quote Intake and Renewal Follow Up",
     metaDescription:
       "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
@@ -406,7 +406,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "Wireline for Restaurants | AI Phone Host for Reservations + Takeout",
+    metaTitle: "Wireline for Restaurants | Voice Host for Reservations and Takeout",
     metaDescription:
       "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",

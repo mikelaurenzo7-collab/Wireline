@@ -330,6 +330,13 @@
       "when": 1786663959676,
       "tag": "0148_retention_purge_spares_live_configuration",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1786807727640,
+      "tag": "0149_retention_purge_fails_closed",
+      "breakpoints": true
     }
   ]
 }

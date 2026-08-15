@@ -345,7 +345,7 @@ CTA: Link in bio
 
 ### Meta ad primary text
 Create and train a voice agent for free. Live work draws from prepaid Runtime Balance.
-Free Builder, Starter, Starter Plus, Pro, and Business. Clear rates. No surprise math.
+Free Builder, Starter, Starter Plus, and Pro. Scale is custom. Clear rates. No surprise math.
 
 ### App Store subtitle
 Voice agents for sales and support

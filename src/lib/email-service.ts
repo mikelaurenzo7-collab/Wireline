@@ -33,6 +33,7 @@ import {
 export interface SendResult {
   ok: boolean;
   provider: "resend" | "log-fallback" | "no-transport";
+  disposition: "accepted" | "suppressed" | "failed";
   id?: string;
   error?: string;
 }
@@ -68,10 +69,17 @@ async function sendViaResend(args: {
   text: string;
   /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
   headers?: Record<string, string>;
+  /** Stable operation key so provider retries cannot duplicate customer email. */
+  idempotencyKey?: string;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    return { ok: false, provider: "resend", error: "RESEND_API_KEY not set" };
+    return {
+      ok: false,
+      provider: "resend",
+      disposition: "failed",
+      error: "RESEND_API_KEY not set",
+    };
   }
 
   // Provider complaints, hard bounces, and Resend-level suppressions apply to
@@ -86,6 +94,7 @@ async function sendViaResend(args: {
       return {
         ok: false,
         provider: "resend",
+        disposition: "suppressed",
         error: "Recipient is suppressed after provider delivery feedback.",
       };
     }
@@ -97,6 +106,7 @@ async function sendViaResend(args: {
     return {
       ok: false,
       provider: "resend",
+      disposition: "failed",
       error: "Email delivery safety check unavailable",
     };
   }
@@ -108,6 +118,7 @@ async function sendViaResend(args: {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
+        ...(args.idempotencyKey ? { "Idempotency-Key": args.idempotencyKey } : {}),
       },
       body: JSON.stringify({
         from,
@@ -134,6 +145,7 @@ async function sendViaResend(args: {
       return {
         ok: false,
         provider: "resend",
+        disposition: "failed",
         error,
       };
     }
@@ -143,7 +155,7 @@ async function sendViaResend(args: {
       from,
       resendId: parsed?.id,
     });
-    return { ok: true, provider: "resend", id: parsed?.id };
+    return { ok: true, provider: "resend", disposition: "accepted", id: parsed?.id };
   } catch (err) {
     const error = getErrorMessage(err);
     log.error("[email-service] Resend transport error", {
@@ -152,7 +164,7 @@ async function sendViaResend(args: {
       error,
       transport: getResendTransportDiagnostics(),
     });
-    return { ok: false, provider: "resend", error };
+    return { ok: false, provider: "resend", disposition: "failed", error };
   }
 }
 
@@ -169,9 +181,15 @@ export async function sendEmail(opts: {
   html: string;
   /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
   headers?: Record<string, string>;
+  idempotencyKey?: string;
 }): Promise<SendResult> {
   if (!process.env.RESEND_API_KEY) {
-    return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
+    return {
+      ok: false,
+      provider: "no-transport",
+      disposition: "failed",
+      error: "RESEND_API_KEY not set",
+    };
   }
   return await sendViaResend(opts);
 }
@@ -209,7 +227,12 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
   // Fail closed. The reset URL is a bearer credential and must never
   // be copied into runtime logs, even as a development fallback.
   log.error("Password reset email unavailable: RESEND_API_KEY missing");
-  return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
+  return {
+    ok: false,
+    provider: "no-transport",
+    disposition: "failed",
+    error: "RESEND_API_KEY not set",
+  };
 }
 
 /**
@@ -273,6 +296,7 @@ export async function sendPaymentLinkEmail(opts: {
     return {
       ok: false,
       provider: "no-transport",
+      disposition: "failed",
       error: "Email transport not configured (RESEND_API_KEY missing)",
     };
   }
@@ -361,6 +385,7 @@ export async function sendSignupLinkEmail(opts: {
   return {
     ok: false,
     provider: "no-transport",
+    disposition: "failed",
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }
@@ -419,6 +444,7 @@ export async function sendEmailVerification(opts: {
   return {
     ok: false,
     provider: "no-transport",
+    disposition: "failed",
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }
@@ -473,6 +499,7 @@ export async function sendUrgentEscalationEmail(opts: {
   return {
     ok: false,
     provider: "no-transport",
+    disposition: "failed",
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }
@@ -482,6 +509,7 @@ export async function sendPaymentFailedEmail(opts: {
   amountDisplay: string;
   invoiceUrl?: string;
   updateCardUrl: string;
+  idempotencyKey?: string;
 }): Promise<SendResult> {
   const subject = "Your Wireline payment failed";
   const text = [
@@ -512,7 +540,13 @@ export async function sendPaymentFailedEmail(opts: {
     </div>
   `;
   if (process.env.RESEND_API_KEY) {
-    return await sendViaResend({ to: opts.to, subject, html, text });
+    return await sendViaResend({
+      to: opts.to,
+      subject,
+      html,
+      text,
+      idempotencyKey: opts.idempotencyKey,
+    });
   }
   log.warn("[email-service] payment failed email skipped — RESEND_API_KEY missing.", {
     ...emailLogContext(opts.to),
@@ -520,6 +554,7 @@ export async function sendPaymentFailedEmail(opts: {
   return {
     ok: false,
     provider: "no-transport",
+    disposition: "failed",
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }
@@ -528,6 +563,7 @@ export async function sendTrialEndingSoonEmail(opts: {
   to: string;
   daysLeft: number;
   checkoutUrl: string;
+  idempotencyKey?: string;
 }): Promise<SendResult> {
   if (!getPostalAddress()) {
     log.error("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing", {
@@ -536,6 +572,7 @@ export async function sendTrialEndingSoonEmail(opts: {
     return {
       ok: false,
       provider: "no-transport",
+      disposition: "failed",
       error: "Commercial email compliance is not configured",
     };
   }
@@ -549,7 +586,12 @@ export async function sendTrialEndingSoonEmail(opts: {
     log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
       ...emailLogContext(opts.to),
     });
-    return { ok: false, provider: "no-transport", error: "Recipient has unsubscribed" };
+    return {
+      ok: false,
+      provider: "no-transport",
+      disposition: "suppressed",
+      error: "Recipient has unsubscribed",
+    };
   }
 
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
@@ -585,6 +627,7 @@ export async function sendTrialEndingSoonEmail(opts: {
       html,
       text,
       headers: buildListUnsubscribeHeaders(opts.to),
+      idempotencyKey: opts.idempotencyKey,
     });
   }
   log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
@@ -594,6 +637,7 @@ export async function sendTrialEndingSoonEmail(opts: {
   return {
     ok: false,
     provider: "no-transport",
+    disposition: "failed",
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }

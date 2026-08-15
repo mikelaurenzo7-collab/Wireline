@@ -3,6 +3,11 @@ import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import * as base from "./job-queue-base";
 import { reportError } from "./error-reporter";
+import {
+  isProviderSpendPausedError,
+  PROVIDER_SPEND_PAUSE_DELAY_MS,
+  providerSpendPauseSchedule,
+} from "./provider-spend-job-pause";
 
 // Public queue consumers must enter through this attempt-fenced facade. Export
 // only the producer/statistics primitives that are safe to share; the base
@@ -23,7 +28,8 @@ export type {
   QueueStats,
 } from "./job-queue-base";
 
-export type JobType = base.JobType | "post_call_artifact" | "scheduled_report";
+export type JobType =
+  base.JobType | "post_call_artifact" | "scheduled_report" | "twilio_message_reconciliation";
 export interface JobRow extends Omit<base.JobRow, "type"> {
   type: JobType;
 }
@@ -180,24 +186,25 @@ export async function completeClaimedJob(
   result?: base.JobPayload,
 ): Promise<boolean> {
   const expectedAttempts = Number(job.attempts || 0);
-  const [updated] = await db.transaction(async (tx) =>
-    tx
-      .update(schema.jobs)
-      .set({
-        status: "done",
-        finishedAt: new Date(),
-        error: null,
-        ...(result !== undefined ? { result } : {}),
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(schema.jobs.id, job.id),
-          eq(schema.jobs.status, "running"),
-          eq(schema.jobs.attempts, expectedAttempts),
-        ),
-      )
-      .returning({ id: schema.jobs.id }),
+  const [updated] = await db.transaction(
+    async (tx) =>
+      tx
+        .update(schema.jobs)
+        .set({
+          status: "done",
+          finishedAt: new Date(),
+          error: null,
+          ...(result !== undefined ? { result } : {}),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.jobs.id, job.id),
+            eq(schema.jobs.status, "running"),
+            eq(schema.jobs.attempts, expectedAttempts),
+          ),
+        )
+        .returning({ id: schema.jobs.id }),
     base.writeTransactionConfig(),
   );
   return Boolean(updated);
@@ -231,24 +238,25 @@ export async function failJob(
     longRunning ? 5 * 60 : 0,
   );
 
-  const [updated] = await db.transaction(async (tx) =>
-    tx
-      .update(schema.jobs)
-      .set({
-        status: exhausted ? "dead" : "pending",
-        error: errorMessage.slice(0, 2000),
-        finishedAt: exhausted ? new Date() : null,
-        runAt: exhausted ? new Date() : new Date(Date.now() + retryDelaySeconds * 1000),
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(schema.jobs.id, job.id),
-          eq(schema.jobs.status, "running"),
-          eq(schema.jobs.attempts, attempts),
-        ),
-      )
-      .returning({ id: schema.jobs.id }),
+  const [updated] = await db.transaction(
+    async (tx) =>
+      tx
+        .update(schema.jobs)
+        .set({
+          status: exhausted ? "dead" : "pending",
+          error: errorMessage.slice(0, 2000),
+          finishedAt: exhausted ? new Date() : null,
+          runAt: exhausted ? new Date() : new Date(Date.now() + retryDelaySeconds * 1000),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.jobs.id, job.id),
+            eq(schema.jobs.status, "running"),
+            eq(schema.jobs.attempts, attempts),
+          ),
+        )
+        .returning({ id: schema.jobs.id }),
     base.writeTransactionConfig(),
   );
 
@@ -259,6 +267,64 @@ export async function failJob(
       tags: { source: "job_queue", outcome: "dead_letter" },
     });
   }
+}
+
+/**
+ * Return launch-gated provider work to pending without consuming the attempt
+ * that claimEligibleJob added. The exact running-attempt fence prevents a late
+ * pause from rewinding a newer worker's claim.
+ */
+export async function deferPausedProviderSpendJob(
+  db: QueueDb,
+  job: ClaimedJobIdentity,
+  errorMessage: string,
+  delayMs = PROVIDER_SPEND_PAUSE_DELAY_MS,
+): Promise<boolean> {
+  const claimedAttempts = Number(job.attempts || 0);
+  const pausedAt = new Date();
+  const schedule = providerSpendPauseSchedule(claimedAttempts, pausedAt, delayMs);
+
+  const [updated] = await db.transaction(
+    async (tx) =>
+      tx
+        .update(schema.jobs)
+        .set({
+          status: "pending",
+          attempts: schedule.attempts,
+          error: errorMessage.slice(0, 2000),
+          startedAt: null,
+          finishedAt: null,
+          runAt: schedule.runAt,
+          updatedAt: pausedAt,
+        })
+        .where(
+          and(
+            eq(schema.jobs.id, job.id),
+            eq(schema.jobs.status, "running"),
+            eq(schema.jobs.attempts, claimedAttempts),
+          ),
+        )
+        .returning({ id: schema.jobs.id }),
+    base.writeTransactionConfig(),
+  );
+  return Boolean(updated);
+}
+
+export type ClaimedJobErrorSettlement = "deferred" | "failed" | "stale";
+
+/** Shared settlement for HTTP sweeps and persistent workers. */
+export async function settleClaimedJobError(
+  db: QueueDb,
+  job: ClaimedJobIdentity,
+  error: unknown,
+): Promise<ClaimedJobErrorSettlement> {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  if (isProviderSpendPausedError(error)) {
+    const deferred = await deferPausedProviderSpendJob(db, job, errorMessage);
+    return deferred ? "deferred" : "stale";
+  }
+  await failJob(db, job, errorMessage);
+  return "failed";
 }
 
 /**
@@ -339,7 +405,7 @@ export function startWorker(
           await handler(job as JobRow);
           await completeClaimedJob(db, job);
         } catch (error) {
-          await failJob(db, job, error instanceof Error ? error.message : String(error));
+          await settleClaimedJobError(db, job, error);
         }
       }
     } catch (error) {

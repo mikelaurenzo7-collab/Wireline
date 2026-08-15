@@ -13,6 +13,7 @@ import {
   planById,
   planByPriceId,
   planByStripePrice,
+  plansForClient,
 } from "./plan-catalog";
 
 const STRIPE_PLAN_ENV_KEYS = [
@@ -53,11 +54,18 @@ describe("plan-catalog", () => {
     ]);
   });
 
-  it("keeps Enterprise the top self-serve capacity tier", () => {
+  it("keeps the legacy Business tier resolvable but out of self-serve launch", () => {
     const enterprise = planById("enterprise");
     expect(enterprise?.name).toBe("Wireline Business");
     expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
+    expect(enterprise?.public).toBe(false);
+    expect(plansForClient().map((plan) => plan.id)).toEqual([
+      "personal",
+      "starter",
+      "team",
+      "business",
+    ]);
   });
 
   it("keeps paid plans positive and overage above variable voice cost", () => {

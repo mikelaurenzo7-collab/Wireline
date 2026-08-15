@@ -10,6 +10,7 @@ describe("live tool reliability classification", () => {
       "I couldn't safely verify whether that action was already processed.",
       "The callback was not scheduled because the requested time could not be verified.",
       "That action was already started and may still be processing.",
+      "I couldn't record or send the escalation right now.",
     ]) {
       expect(isToolCallFailureResult(result)).toBe(true);
     }
@@ -19,7 +20,7 @@ describe("live tool reliability classification", () => {
     for (const result of [
       "Email sent.",
       "Callback scheduled for Tuesday at 2 PM Central.",
-      "Human supervisors were alerted.",
+      "I recorded this escalation for the team.",
       "Support ticket #abc123 created.",
     ]) {
       expect(isToolCallFailureResult(result)).toBe(false);

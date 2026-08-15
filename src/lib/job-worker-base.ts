@@ -880,9 +880,17 @@ export async function handleJob(job: JobRow): Promise<void> {
         to: userRow.email,
         daysLeft: p.daysLeft ?? 3,
         checkoutUrl: `${appUrl}/pricing`,
+        idempotencyKey: `trial-ending-soon/${job.id}`,
       });
       if (!result.ok) {
-        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
+        if (result.disposition === "suppressed") {
+          log.info("trial_ending_soon_email suppressed", {
+            userId: p.userId,
+            reason: result.error,
+          });
+          return;
+        }
+        throw new Error(result.error || "Trial-ending email was not accepted");
       } else {
         log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
       }
@@ -921,19 +929,23 @@ export async function handleJob(job: JobRow): Promise<void> {
     if (count === 0) return;
     const top = await listAtRiskTenants(5);
     const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail) return;
+    if (!ownerEmail) throw new Error("OWNER_EMAIL is required for margin-at-risk alerts");
     const lines = top
       .map(
         (t) =>
           `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "—"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
       )
       .join("\n");
-    await sendEmail({
+    const result = await sendEmail({
       to: ownerEmail,
       subject: `[Wireline] ${count} tenant(s) at margin risk`,
       text: `${count} tenant(s) are below the margin safety threshold this month.\n\n${lines}`,
       html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
+      idempotencyKey: `margin-at-risk/${job.id}`,
     });
+    if (!result.ok) {
+      throw new Error(result.error || "Margin-at-risk alert was not accepted");
+    }
   }
 }
 

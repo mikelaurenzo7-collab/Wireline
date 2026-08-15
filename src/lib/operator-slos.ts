@@ -1,5 +1,5 @@
 import * as schema from "../db/schema";
-import { eq, and, gte, inArray, sql } from "drizzle-orm";
+import { eq, and, gte, inArray, or, sql } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import { getQueueStats, type QueueStats } from "./job-queue";
 import type { WebhookEvent } from "./webhook-helpers";
@@ -50,7 +50,7 @@ const DEFAULT_WINDOW_H = 24;
 export function evaluateAccountHolderSloHealth(input: {
   pendingJobs: number;
   deadEnrichmentWindow: number;
-  webhookAttemptsWindow: number;
+  webhookCompletedWindow: number;
   webhookSuccessRate: number | null;
   auditErrorsWindow: number;
 }): {
@@ -75,7 +75,7 @@ export function evaluateAccountHolderSloHealth(input: {
     input.deadEnrichmentWindow > 5 ? "critical" : input.deadEnrichmentWindow > 0 ? "warn" : "ok";
 
   let webhooks: SloHealth = "ok";
-  if (input.webhookAttemptsWindow >= 10) {
+  if (input.webhookCompletedWindow >= 10) {
     if (input.webhookSuccessRate !== null && input.webhookSuccessRate < 0.85) webhooks = "critical";
     else if (input.webhookSuccessRate !== null && input.webhookSuccessRate < 0.95)
       webhooks = "warn";
@@ -228,6 +228,67 @@ export async function getPlatformWebhookStats(
   };
 }
 
+export interface PlatformJobWindowStats {
+  oldest_pending_age_seconds: number | null;
+  enrichment: {
+    pending: number;
+    running: number;
+    failed: number;
+    dead: number;
+    done_in_window: number;
+  };
+}
+
+/**
+ * Fleet-wide job measurements that cannot be derived from the aggregate queue
+ * counters alone.
+ *
+ * These fields used to be published as literal zero/null placeholders by the
+ * external-monitor snapshot. Query the actual enrichment states and requested
+ * completion window, and calculate the oldest pending age from the same
+ * run-at/created-at semantics used by the tenant snapshot.
+ */
+export async function getPlatformJobWindowStats(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+  now: Date = new Date(),
+): Promise<PlatformJobWindowStats> {
+  const since = new Date(now.getTime() - windowHours * 3_600_000);
+  const [row] = await db
+    .select({
+      oldestPendingAt: sql<
+        Date | string | null
+      >`min(coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt})) filter (where ${schema.jobs.status} = 'pending')`,
+      enrichmentPending: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'pending')`,
+      enrichmentRunning: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'running')`,
+      enrichmentFailed: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'failed')`,
+      enrichmentDead: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'dead' and ${schema.jobs.finishedAt} >= ${since})`,
+      enrichmentDone: sql<number>`count(*) filter (where ${schema.jobs.type} = 'post_call_enrichment' and ${schema.jobs.status} = 'done' and ${schema.jobs.finishedAt} >= ${since})`,
+    })
+    .from(schema.jobs)
+    // The status/run-at and type/created-at indexes can constrain this to the
+    // only two groups used by the filtered aggregate instead of scanning
+    // unrelated terminal job types.
+    .where(or(eq(schema.jobs.status, "pending"), eq(schema.jobs.type, "post_call_enrichment")));
+
+  const oldestPendingAt = row?.oldestPendingAt
+    ? new Date(row.oldestPendingAt).getTime()
+    : Number.NaN;
+
+  return {
+    oldest_pending_age_seconds: Number.isFinite(oldestPendingAt)
+      ? Math.max(0, Math.floor((now.getTime() - oldestPendingAt) / 1000))
+      : null,
+    enrichment: {
+      pending: Number(row?.enrichmentPending ?? 0),
+      running: Number(row?.enrichmentRunning ?? 0),
+      failed: Number(row?.enrichmentFailed ?? 0),
+      dead: Number(row?.enrichmentDead ?? 0),
+      done_in_window: Number(row?.enrichmentDone ?? 0),
+    },
+  };
+}
+
 /**
  * Platform-wide AI reliability over the window.
  *
@@ -287,16 +348,17 @@ export async function getPlatformSloSnapshot(
 ): Promise<AccountHolderSloSnapshot> {
   const now = new Date();
   const evaluated_at = now.toISOString();
-  const queue = await getQueueStats(db);
-  const webhooks = await getPlatformWebhookStats(db, windowHours);
-  // Windowed, not queue.dead — see getDeadJobsInWindow.
-  const deadInWindow = await getDeadJobsInWindow(db, windowHours);
-  const ai = await getPlatformAiReliability(db, windowHours);
-  const pendingRetryNow = await getPlatformWebhooksPendingRetry(db);
+  const [queue, jobWindow, webhooks, ai, pendingRetryNow] = await Promise.all([
+    getQueueStats(db),
+    getPlatformJobWindowStats(db, windowHours, now),
+    getPlatformWebhookStats(db, windowHours),
+    getPlatformAiReliability(db, windowHours),
+    getPlatformWebhooksPendingRetry(db),
+  ]);
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
-    deadEnrichmentWindow: deadInWindow,
-    webhookAttemptsWindow: webhooks.attempts_in_window,
+    deadEnrichmentWindow: jobWindow.enrichment.dead,
+    webhookCompletedWindow: webhooks.success_in_window + webhooks.terminal_failure_in_window,
     webhookSuccessRate: webhooks.success_rate,
     auditErrorsWindow: ai.errorSeverity,
   });
@@ -305,14 +367,8 @@ export async function getPlatformSloSnapshot(
     evaluated_at,
     jobs: {
       queue,
-      oldest_pending_age_seconds: null,
-      enrichment: {
-        pending: 0,
-        running: 0,
-        failed: 0,
-        dead: deadInWindow,
-        done_in_window: queue.done_last_hour,
-      },
+      oldest_pending_age_seconds: jobWindow.oldest_pending_age_seconds,
+      enrichment: jobWindow.enrichment,
     },
     webhooks: {
       ...webhooks,
@@ -529,7 +585,7 @@ export async function getAccountHolderSloSnapshot(
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
     deadEnrichmentWindow: enDead,
-    webhookAttemptsWindow: attempts_in_window,
+    webhookCompletedWindow: completed_in_window,
     webhookSuccessRate: success_rate,
     auditErrorsWindow: errSev,
   });

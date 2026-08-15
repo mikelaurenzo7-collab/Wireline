@@ -46,8 +46,14 @@ describe("sign-in spray and stuffing are bounded, not just repeat guessing", () 
     );
     const failureBranch = signinHandler.slice(signinHandler.indexOf("if (!result)"));
     expect(failureBranch).toContain("recordSigninFailure");
-    // Fire-and-forget: the throttle must not delay or convert the 401.
-    expect(failureBranch).toContain("void recordSigninFailure");
+    // The remote counter writes must finish before a serverless response can
+    // freeze the invocation. The recorder catches failures, so awaiting it
+    // preserves the 401 contract while making the budget durable.
+    expect(failureBranch).toContain("await recordSigninFailure");
+    expect(failureBranch).not.toContain("void recordSigninFailure");
+    expect(failureBranch.indexOf("await recordSigninFailure")).toBeLessThan(
+      failureBranch.indexOf("throw AppError.fromHttpStatus(401"),
+    );
   });
 
   it("never records a failure on the success path", () => {

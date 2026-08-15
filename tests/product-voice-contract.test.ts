@@ -152,7 +152,7 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Every channel. One agent.");
     expect(landing).toContain("Build your voice agent");
     expect(landing).toContain("Hear it live");
-    expect(landing).toContain("Build free. Go live from $19.");
+    expect(landing).toContain("Build free. Go live from $19/mo.");
     expect(about).toContain("Agents that run calls like you would.");
     expect(compare).toContain("Wireline vs. other voice AI.");
     expect(privacy).toContain("voice agent platform");

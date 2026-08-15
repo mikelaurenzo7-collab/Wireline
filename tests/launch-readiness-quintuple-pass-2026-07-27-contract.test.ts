@@ -77,7 +77,8 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
     expect(note).toContain("$19");
     expect(note).toContain("$39");
     expect(note).toContain("$79");
-    expect(note).toContain("$159");
+    expect(note).toContain("The retired $159 Business tier remains resolver-compatible");
+    expect(note).not.toMatch(/\| Business \| \$159/);
     expect(note).not.toMatch(/\| Starter \| \$9 \|/);
     expect(note).not.toMatch(/\| Starter Plus \| \$24 \|/);
     expect(note).not.toMatch(/\| Pro \| \$59 \|/);

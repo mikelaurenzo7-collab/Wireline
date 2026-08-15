@@ -124,6 +124,19 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
           "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
       });
     }
+    (
+      req as Request & {
+        wirelineSimulationQuotaReservation?: {
+          userId: string;
+          units: number;
+          periodKey: string;
+        };
+      }
+    ).wirelineSimulationQuotaReservation = {
+      userId,
+      units: 5,
+      periodKey: decision.period_key,
+    };
   } catch (err) {
     // checkAndIncrement already degrades internally; an exception here means
     // the tracker itself is down. Every session mint charges a vendor-metered
@@ -143,6 +156,23 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     });
   }
   next();
+}
+
+/** Return a mint quota debit only when no usable provider session was created. */
+export async function releaseSimulationMinuteQuota(req: Request): Promise<void> {
+  const request = req as Request & {
+    wirelineSimulationQuotaReservation?: { userId: string; units: number; periodKey: string };
+  };
+  const reservation = request.wirelineSimulationQuotaReservation;
+  if (!reservation) return;
+  delete request.wirelineSimulationQuotaReservation;
+  const { quotaTracker } = await import("../lib/server-context");
+  await quotaTracker.releaseUsage(
+    reservation.userId,
+    "simulation_minutes_daily",
+    reservation.units,
+    reservation.periodKey,
+  );
 }
 
 interface RateLimitMiddleware {

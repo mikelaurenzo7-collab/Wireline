@@ -2,17 +2,20 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  SIGNUP_PLAN_IDS,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
 } from "../src/lib/signup-intent";
+import { signupSchema } from "../src/lib/api-validation";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("signup intent contract", () => {
   it("keeps retired pricing aliases aligned with the current public launch catalog", () => {
+    expect(SIGNUP_PLAN_IDS).toEqual(["personal", "starter", "team", "business"]);
     expect(parseSignupIntent("?plan=free")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=builder")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
@@ -20,7 +23,22 @@ describe("signup intent contract", () => {
     expect(parseSignupIntent("?plan=starter-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=pro")?.preferredPlanId).toBe("business");
-    expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("enterprise");
+    expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("business");
+    expect(parseSignupIntent("?plan=enterprise")?.preferredPlanId).toBe("business");
+    expect(
+      signupSchema.parse({
+        email: "legacy@example.com",
+        password: "ValidPass1",
+        preferredPlanId: "enterprise",
+      }).preferredPlanId,
+    ).toBe("business");
+    expect(
+      signupSchema.parse({
+        email: "scale@example.com",
+        password: "ValidPass1",
+        preferredPlanId: "scale",
+      }).preferredPlanId,
+    ).toBe("business");
   });
 
   it("preserves an annual pricing choice through signup and server attribution", () => {
@@ -37,6 +55,7 @@ describe("signup intent contract", () => {
 
     const portal = read("src/components/AuthPortal.tsx");
     expect(portal).toContain("plan.price_usd_annual");
+    expect(portal).toContain("candidate.public !== false");
     expect(portal).toContain(
       "preferredBillingInterval: attribution.preferredBillingInterval",
     );
@@ -48,6 +67,8 @@ describe("signup intent contract", () => {
     expect(validation).toContain(
       'preferredBillingInterval: z.enum(["month", "year"]).optional()',
     );
+    expect(validation).toContain("preferredPlanId: publicSignupPlanIdSchema.optional()");
+    expect(validation).toContain('["enterprise", "scale", "custom"]');
 
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain(

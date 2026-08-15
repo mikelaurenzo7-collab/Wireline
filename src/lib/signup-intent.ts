@@ -1,6 +1,9 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business", "enterprise"] as const;
+// Public signup intent mirrors plansForClient(). The legacy `enterprise` plan
+// remains resolver-compatible in plan-catalog for existing Stripe events, but
+// it is not a public acquisition or self-serve checkout target.
+export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -113,8 +116,11 @@ const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   business_starter_plus: "team",
   business_growth: "business",
   businessgrowth: "business",
-  custom: "enterprise",
-  scale: "enterprise",
+  // Retired $159/Scale links resolve to the current top self-serve plan. The
+  // pricing and checkout surfaces then offer the separate contact-sales path.
+  enterprise: "business",
+  custom: "business",
+  scale: "business",
 };
 
 function normalizePlanId(value: string | null | undefined): SignupPlanId | undefined {

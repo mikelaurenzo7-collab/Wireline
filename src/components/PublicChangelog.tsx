@@ -92,8 +92,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jun 4, 2026",
     tag: "polish",
-    title: "Design-system consistency locked in repo-wide",
-    body: "Every interactive control now routes through one canonical Button - proper focus rings, a 44px touch target, and consistent press feedback everywhere. The razor-edged flat-corner aesthetic is enforced by an automated guard so it cannot quietly drift back. The result is a tighter, more uniform surface on every screen.",
+    title: "Shared actions now follow one interaction system",
+    body: "Primary shared actions now use the canonical Button patterns for focus rings, touch targets, and press feedback. Automated checks protect the common components while the remaining specialized controls keep their purpose-built shapes.",
   },
   {
     date: "Jan 28, 2026",

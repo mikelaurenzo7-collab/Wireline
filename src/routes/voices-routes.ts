@@ -21,6 +21,7 @@ import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -367,6 +368,7 @@ router.get(
   "/api/voices/:id/preview",
   authenticateUser,
   voicePreviewRateLimit,
+  enforceLaunchHardGate,
   asyncHandler<AuthenticatedRequest>(async (req, res: Response) => {
     const voiceId = req.params.id.trim();
     const curated = isCuratedElevenLabsVoiceId(voiceId);
@@ -412,6 +414,7 @@ router.post(
   requirePlatformAdmin,
   voiceMutationRateLimit,
   cloneIpRateLimit,
+  enforceLaunchHardGate,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
     if (!elevenLabsConfigured()) {
       throw AppError.serviceUnavailable("Voice creation is not configured.");
@@ -558,6 +561,7 @@ router.post(
   authenticateUser,
   requirePlatformAdmin,
   voiceMutationRateLimit,
+  enforceLaunchHardGate,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
     if (req.body?.qualityConfirmed !== true) {
       throw AppError.badRequest("Listen to the proof and confirm its quality first.");

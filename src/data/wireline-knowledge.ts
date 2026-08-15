@@ -59,14 +59,14 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "Wireline Business",
-    price: "$159/mo",
-    bestFor: "Governed rollout for larger teams.",
+    name: "Wireline Scale & Enterprise",
+    price: "Custom committed usage",
+    bestFor: "Governed rollout for organizations that need 25 or more agents.",
     includes: [
-      "Up to 15 live agents and 15 production numbers, provisioned when needed",
-      "350 guaranteed live-voice minutes each month",
-      "$12 monthly Runtime Allowance + $12 managed AI allowance",
-      "Priority support posture and no automatic overages",
+      "Custom agent and production-number capacity",
+      "SSO, security review, retention controls, and implementation support",
+      "Custom integrations, channel economics, and service commitments",
+      "Founder-led scoping instead of self-serve checkout",
     ],
   },
   {

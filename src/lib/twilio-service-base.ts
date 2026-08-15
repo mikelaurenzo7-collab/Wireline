@@ -47,6 +47,8 @@ export interface TwilioSendResult {
   status?: string | null;
   to?: string;
   channel?: TwilioMessageChannel;
+  /** Carrier accepted; local accounting/history is converging asynchronously. */
+  reconciliationPending?: boolean;
 }
 
 let cachedClient: ReturnType<typeof twilio> | null | undefined;

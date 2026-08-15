@@ -215,7 +215,7 @@ describe("agent navigation contract", () => {
       /One assistant system|Same assistants|New assistant/,
     );
     expect(pricingPage).toMatch(/STRIPE_PLANS/);
-    for (const tier of ["Free Builder", "Starter Plus", "Pro", "Business"]) {
+    for (const tier of ["Free Builder", "Starter Plus", "Pro"]) {
       expect(pricingPage).toContain(tier);
     }
     expect(pricingPage).toMatch(/Runtime Balance/);

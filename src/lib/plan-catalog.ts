@@ -278,6 +278,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1Tx5Xs8e6If87QKmGxEvongq",
     lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v6",
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
+    // Retained for existing Stripe events and legacy entitlement resolution.
+    // The launch offer stops at Pro; larger deployments are sales-assisted
+    // Scale agreements rather than a fifth self-serve checkout tier.
+    public: false,
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 15 live communications agents",

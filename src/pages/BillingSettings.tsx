@@ -194,7 +194,7 @@ export default function BillingSettings() {
           ? "Billing status is unavailable. Retry before adding Runtime Balance."
           : paidPlan
             ? "Restore your active subscription before adding Runtime Balance."
-            : "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance.",
+            : "Choose Starter, Starter Plus, or Pro before adding Runtime Balance.",
       );
       return;
     }

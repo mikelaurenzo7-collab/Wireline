@@ -55,7 +55,7 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
       script.indexOf('if (database.status !== "reachable") {'),
     );
     for (const code of [
-      "starter_annual_price_not_live_190",
+      "stripe_public_catalog_not_aligned",
       "stripe_brand_not_wireline",
       "stripe_customer_portal_not_ready",
       "stripe_webhook_not_aligned",
@@ -95,5 +95,15 @@ describe("migration drift is answerable, and the tool is honest about its covera
     // and every tool that reads the journal reports the schema as correct.
     expect(script).toContain("[journalled]");
     expect(script).toContain("re-running db:migrate will NOT fix it");
+  });
+
+  it("checks high-risk CREATE OR REPLACE routine semantics", () => {
+    expect(script).toContain("ROUTINE_SEMANTIC_EXPECTATIONS");
+    expect(script).toContain("wireline_purge_old_data(uuid,integer)");
+    expect(script).toContain('mustNotContain: ["wireline_webhooks", "wireline_intake_keys"]');
+    expect(script).toContain("EXCEPTION\\s+WHEN\\s+OTHERS");
+    expect(script).toContain("v_rows_deleted\\s*:=\\s*0");
+    expect(script).toContain("0149_retention_purge_fails_closed");
+    expect(script).toContain("pg_get_functiondef");
   });
 });

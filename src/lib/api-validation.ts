@@ -19,6 +19,19 @@ const boundedSigninPasswordSchema = z
     message: `Password must be ${MAX_PASSWORD_BYTES} UTF-8 bytes or fewer`,
   });
 
+// Old signup bundles and campaign links may still submit the retired $159
+// identifier. Keep account creation forward-compatible by translating that
+// acquisition intent to Pro; the legacy entitlement resolver remains separate
+// in plan-catalog and checkout still returns its explicit 410 retirement body.
+const publicSignupPlanIdSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return value;
+    const normalized = value.trim().toLowerCase();
+    return ["enterprise", "scale", "custom"].includes(normalized) ? "business" : normalized;
+  },
+  z.enum(["personal", "starter", "team", "business"]),
+);
+
 export const signinSchema = z.object({
   email: z
     .string()
@@ -31,7 +44,7 @@ export const signinSchema = z.object({
 /** Founder catalog extension plus a hard byte bound before any scrypt work. */
 export const signupSchema = baseSignupSchema.extend({
   password: boundedPasswordSchema,
-  preferredPlanId: z.enum(["personal", "starter", "team", "business", "enterprise"]).optional(),
+  preferredPlanId: publicSignupPlanIdSchema.optional(),
   preferredBillingInterval: z.enum(["month", "year"]).optional(),
 });
 
@@ -48,11 +61,11 @@ export const signupIntentSchema = signupSchema
     (value) =>
       Boolean(
         value.preferredPlanId ||
-          value.preferredBillingInterval ||
-          value.signupWedge ||
-          value.utmSource ||
-          value.utmMedium ||
-          value.utmCampaign,
+        value.preferredBillingInterval ||
+        value.signupWedge ||
+        value.utmSource ||
+        value.utmMedium ||
+        value.utmCampaign,
       ),
     "At least one signup-intent field is required",
   );
@@ -77,5 +90,5 @@ export const resetPasswordSchema = z
   });
 
 export const createSubscriptionSchema = baseCreateSubscriptionSchema.extend({
-  planId: z.enum(["starter", "team", "business", "enterprise"]),
+  planId: z.enum(["starter", "team", "business"]),
 });

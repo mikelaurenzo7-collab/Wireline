@@ -150,14 +150,25 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
           })),
         );
-        await authFetch(`/api/sms/threads/${threadId}/mark-read`, { method: "POST" }).catch(
-          () => {},
-        );
-        setThreads((current) =>
-          current.map((thread) =>
-            thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
-          ),
-        );
+        const markReadResponse = await authFetch(`/api/sms/threads/${threadId}/mark-read`, {
+          method: "POST",
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (markReadResponse.ok) {
+          setThreads((current) =>
+            current.map((thread) =>
+              thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
+            ),
+          );
+        } else {
+          const markReadBody = await markReadResponse.json().catch(() => ({}));
+          toastError(
+            "Unread status not updated",
+            markReadBody.error ||
+              "The conversation is open, but its unread badge could not be cleared.",
+          );
+        }
       } catch (error: any) {
         // A superseded request rejects with AbortError; surfacing it would put an
         // error banner and a toast over the thread the reader actually opened.
@@ -243,7 +254,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       if (!response.ok || !result.ok) {
         throw new Error(result.reason || result.error || "Send failed");
       }
-      success("SMS sent", "Message delivered to customer.");
+      success("SMS queued", "The carrier accepted the message for delivery.");
       // Carry the sent thread's own signal, so switching threads aborts this
       // refresh instead of letting it paint thread A's messages under thread
       // B's header and mark A read.

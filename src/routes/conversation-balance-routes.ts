@@ -84,9 +84,9 @@ router.post(
         .limit(1);
 
       const plan = planById(subscription?.plan);
-      // Every paid plan can top up. `personal` is the free Builder tier; the
-      // `enterprise` id is the self-serve $159 Business plan, which must be
-      // allowed (it exhausts its included minutes like any paid plan).
+      // Every active paid entitlement can top up. `personal` is the free Builder
+      // tier. Keep legacy `enterprise` subscriptions eligible without presenting
+      // that retired catalog row as a current self-serve offer.
       const activePaidPlan =
         !!plan &&
         plan.id !== "personal" &&
@@ -95,7 +95,7 @@ router.post(
         return res.status(402).json({
           code: "LIVE_PLAN_REQUIRED",
           error:
-            "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance. Paid plans include live-call minutes first.",
+            "Choose Starter, Starter Plus, or Pro before adding Runtime Balance. Paid plans include live-call minutes first.",
           recovery_path: "/settings/billing",
         });
       }

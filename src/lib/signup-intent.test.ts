@@ -11,7 +11,8 @@ describe("signup-intent", () => {
     expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
     expect(parseSignupIntent("?plan=starter")?.preferredPlanId).toBe("starter");
-    expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("enterprise");
+    expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("business");
+    expect(parseSignupIntent("?plan=enterprise")?.preferredPlanId).toBe("business");
   });
 
   it("lets an explicit Free Builder plan override keep stored acquisition context", () => {

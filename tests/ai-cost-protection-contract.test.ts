@@ -244,8 +244,8 @@ describe("AI cost-protection contract", () => {
     ]) {
       const route = read(path);
       expect(route, path).toContain("enforceSpendCap");
-      expect(route, path).toContain('platformCostReserveUsd("openai_realtime_session")');
-      expect(route, path).toContain('action: "voice.realtime.session"');
+      expect(route, path).toContain("reserveRealtimeSessionSpend");
+      expect(route, path).toContain("releaseRealtimeSessionSpendAfterFailure");
       // Cap BEFORE quota: simulationMinuteQuota durably debits five minutes,
       // so a capped tenant's rejected attempts must not consume the daily
       // allowance they would still need after raising the cap.
@@ -253,16 +253,30 @@ describe("AI cost-protection contract", () => {
       expect(route.indexOf("enforceSpendCap,"), path).toBeLessThan(
         route.indexOf("simulationMinuteQuota,"),
       );
+      expect(route.indexOf("validateBody("), path).toBeLessThan(
+        route.indexOf("simulationMinuteQuota,"),
+      );
+      expect(
+        route.indexOf("const reservation = await reserveRealtimeSessionSpend"),
+        path,
+      ).toBeLessThan(route.indexOf("session = await createOpenAI"));
     }
-    expect(mcpSimulation).toContain("isHardSpendCapExceeded(authed.userId)");
-    // Same ordering rule for the JSON-RPC path: cap check ahead of the
-    // durable quota increment.
-    expect(mcpSimulation.indexOf("isHardSpendCapExceeded")).toBeLessThan(
-      mcpSimulation.indexOf("checkAndIncrement"),
+    expect(mcpSimulation).toContain("reservePlatformCostRecord({");
+    expect(mcpSimulation.indexOf("reservePlatformCostRecord({")).toBeLessThan(
+      mcpSimulation.indexOf("createOpenAIRealtimeClientSecret({"),
     );
+    // The locked cap reservation happens after the daily-minute debit, so a
+    // cap refusal must return that exact-period quota reservation.
+    expect(mcpSimulation).toContain("quotaTracker.releaseUsage(");
+    expect(mcpSimulation).toContain("quota.period_key");
+    expect(mcpSimulation).toContain("releasePlatformCostReservation(spendDecision.reservation)");
+    expect(mcpSimulation).not.toContain("persistPlatformCostRecord({");
     expect(mcpSimulation).toContain('platformCostReserveUsd("openai_realtime_session")');
     const middleware = read("src/middleware/audit-middleware.ts");
+    const realtimeReserve = read("src/lib/realtime-spend-reservation.ts");
     expect(middleware).toContain("openai_realtime_session");
+    expect(realtimeReserve).toContain('platformCostReserveUsd("openai_realtime_session")');
+    expect(realtimeReserve).toContain('action: "voice.realtime.session"');
   });
 
   it("persists AI spend accounting on every outcome, pinned to the invocation", () => {

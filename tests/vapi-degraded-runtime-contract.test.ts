@@ -35,8 +35,13 @@ describe("degraded and delayed Vapi runtime behavior", () => {
   it("keeps transfer retries complete and async escalation truthful", () => {
     expect(idempotency).toContain('"escalate_to_human"');
     expect(idempotency).toContain("output.destination");
-    expect(workflow).toContain("Human supervisors were alerted");
+    expect(workflow).toContain("I recorded this escalation for the team");
     expect(workflow).toContain("do not promise a response time");
+    expect(workflow).toContain('taskType: "human_escalation"');
+    expect(workflow.indexOf("await drizzle.insert(schema.followUpTasks)")).toBeLessThan(
+      workflow.indexOf("await notifier.sendUrgentAlert"),
+    );
     expect(workflow).not.toContain("a human will reach out shortly");
+    expect(workflow).not.toContain("Human supervisors were alerted");
   });
 });

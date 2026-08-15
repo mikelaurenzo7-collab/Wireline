@@ -21,6 +21,16 @@ const projectHint = [
 const isDuplicateV0Project = /(^|[\s.-])v0-project([\s.-]|$)/i.test(projectHint);
 const migrationsForced = process.env.WIRELINE_RUN_MIGRATIONS === "true";
 const migrationsDisabled = process.env.WIRELINE_RUN_MIGRATIONS === "false";
+const isCanonicalProduction = environment === "production" && !isDuplicateV0Project;
+
+if (isCanonicalProduction && migrationsDisabled) {
+  console.error(
+    "Refusing canonical production build with WIRELINE_RUN_MIGRATIONS=false. " +
+      "Production must apply the exact-head append-only migration journal before serving traffic.",
+  );
+  process.exit(1);
+}
+
 const shouldMigrate =
   !migrationsDisabled &&
   (migrationsForced || (environment === "production" && !isDuplicateV0Project));
@@ -129,6 +139,9 @@ run("npx", [
   "tests/production-schema-database-selection.test.ts",
   "tests/migration-journal-integrity-contract.test.ts",
   "tests/production-schema-effects-contract.test.ts",
+  "tests/production-promotion-safety-contract.test.ts",
+  "tests/provider-spend-hard-gate-contract.test.ts",
+  "tests/realtime-spend-reservation-contract.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
@@ -158,6 +171,14 @@ run("npx", [
   "tests/health-surfaces-contract.test.ts",
   "tests/integration/api-health.test.ts",
   "tests/billing-proof-contract.test.ts",
+  "tests/live-video-stripe-races.test.ts",
+  "tests/twilio-accepted-reconciliation-behavior.test.ts",
+  "tests/lifecycle-notification-durability-contract.test.ts",
+  "tests/signin-failure-durability.test.ts",
+  "tests/tenant-pool-transaction.test.ts",
+  "tests/sms-inbox-error-honesty-contract.test.ts",
+  "tests/prelaunch-account-export-and-twilio.test.ts",
+  "tests/operational-slo-accuracy.test.ts",
   "tests/stripe-checkout-branding-contract.test.ts",
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
@@ -211,7 +232,7 @@ if (shouldMigrate) {
   if (!databaseUrl) {
     console.error(
       "Refusing to run production migrations without POSTGRES_URL or DATABASE_URL. " +
-        "Set WIRELINE_RUN_MIGRATIONS=false only on non-live duplicate Vercel projects.",
+        "Only non-live duplicate Vercel projects may disable migration execution.",
     );
     process.exit(1);
   }

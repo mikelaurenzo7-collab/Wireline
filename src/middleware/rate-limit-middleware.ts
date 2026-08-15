@@ -147,17 +147,27 @@ function signinFailureEmailKey(email: string) {
  */
 export async function recordSigninFailure(ip: string, email: string): Promise<void> {
   const normalizedIp = ip || "anon";
+  const normalizedEmail = email.trim().toLowerCase();
   try {
-    await rateLimit(
-      signinFailureIpKey(normalizedIp),
-      authRateLimitOptions("signin_fail_ip", SIGNIN_RATE_WINDOW_MS, SIGNIN_IP_FAILURE_MAX),
-    );
-    if (email) {
-      await rateLimit(
-        signinFailureEmailKey(email),
-        authRateLimitOptions("signin_fail_email", SIGNIN_RATE_WINDOW_MS, SIGNIN_EMAIL_FAILURE_MAX),
+    const writes = [
+      rateLimit(
+        signinFailureIpKey(normalizedIp),
+        authRateLimitOptions("signin_fail_ip", SIGNIN_RATE_WINDOW_MS, SIGNIN_IP_FAILURE_MAX),
+      ),
+    ];
+    if (normalizedEmail) {
+      writes.push(
+        rateLimit(
+          signinFailureEmailKey(normalizedEmail),
+          authRateLimitOptions(
+            "signin_fail_email",
+            SIGNIN_RATE_WINDOW_MS,
+            SIGNIN_EMAIL_FAILURE_MAX,
+          ),
+        ),
       );
     }
+    await Promise.all(writes);
   } catch {
     /* the throttle is defense in depth; never fail the request on it */
   }

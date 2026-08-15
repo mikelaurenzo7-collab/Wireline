@@ -17,6 +17,11 @@ The canonical deployment path is GitHub `main` -> Vercel project `revaluate/wire
 
 A green stale deployment is not release evidence. Validation must match the head that is merged.
 
+Never promote a preview artifact directly to production. Preview builds intentionally skip
+database migrations and production-only schema/environment gates; changing its alias does not
+rebuild it. `npm run vercel:promote-production -- <deploymentId> <exactCommitSha>` therefore
+accepts only a READY, `main`, production-target deployment at the expected SHA.
+
 ## Vercel project boundary
 
 Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `trywireline.com` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.

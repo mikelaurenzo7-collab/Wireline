@@ -106,7 +106,12 @@ function signupPlanLabel(
   planId: SignupPlanId,
   interval: SignupIntent["preferredBillingInterval"],
 ): string {
-  const plan = STRIPE_PLANS.find((candidate) => candidate.id === planId);
+  // Defense in depth for stale localStorage from before the $159 tier retired:
+  // public signup must never render a non-public catalog row even if an old
+  // client somehow bypasses signup-intent normalization.
+  const plan = STRIPE_PLANS.find(
+    (candidate) => candidate.id === planId && candidate.public !== false,
+  );
   if (!plan) return planId;
   const name = plan.name.replace(/^Wireline /, "");
   if (plan.price_usd_monthly === 0) return name;

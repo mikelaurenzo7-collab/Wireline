@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { drizzle, log, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { runInBackground } from "../lib/background-work";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -9,7 +10,7 @@ import {
   runInAuditContext,
   type RuntimeCallMeta,
 } from "../lib/ai-audit";
-import { recordDailySpend, evaluateSpend } from "../lib/spend-guards";
+import { clearBudgetCache, recordDailySpend, evaluateSpend } from "../lib/spend-guards";
 
 function estimateAuditRecordCost(record: RuntimeCallMeta): number {
   // estimateCost normalizes gateway-prefixed ids ("xai/grok-4.5") to their bare
@@ -150,6 +151,144 @@ export async function persistPlatformCostRecord(opts: {
   recordDailySpend(opts.costUsd);
   await evaluateSpend(opts.userId, opts.costUsd).catch((error: unknown) =>
     log.error("Platform cost spend evaluation failed", { error: getErrorMessage(error) }),
+  );
+}
+
+export type PlatformCostReservation = {
+  auditId: bigint;
+  userId: string;
+  costUsd: number;
+};
+
+export type PlatformCostReservationDecision =
+  | { reserved: true; reservation: PlatformCostReservation }
+  | {
+      reserved: false;
+      reason: "cap_reached" | "unavailable";
+      period?: string;
+      monthToDateUsd?: number;
+      monthlyLimitUsd?: number;
+    };
+
+/**
+ * Atomically serialize fixed-cost platform reservations on the tenant budget
+ * row, verify fresh month-to-date spend, and write the audit debit before a
+ * browser receives a provider-funded realtime session.
+ */
+export async function reservePlatformCostRecord(opts: {
+  userId: string;
+  action: string;
+  provider: string;
+  model: string;
+  costUsd: number;
+  requestMeta?: Record<string, unknown>;
+}): Promise<PlatformCostReservationDecision> {
+  if (!(opts.costUsd > 0)) return { reserved: false, reason: "unavailable" };
+  const period = new Date().toISOString().slice(0, 7);
+  const periodStart = new Date(`${period}-01T00:00:00.000Z`);
+
+  try {
+    const decision = await drizzle.transaction(async (tx) => {
+      const [budget] = await tx
+        .select({
+          monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
+          hardCap: schema.spendBudgets.hardCap,
+          enabled: schema.spendBudgets.enabled,
+        })
+        .from(schema.spendBudgets)
+        .where(eq(schema.spendBudgets.userId, opts.userId))
+        .limit(1)
+        .for("update");
+
+      if (!budget) {
+        return { reserved: false, reason: "unavailable" } as const;
+      }
+
+      const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
+      const hardCapEnabled = budget.enabled !== false && budget.hardCap === true;
+      if (hardCapEnabled && !(monthlyLimitUsd > 0)) {
+        return { reserved: false, reason: "unavailable" } as const;
+      }
+
+      const [mtd] = await tx
+        .select({
+          costUsd: sql<string>`coalesce(sum(${schema.auditLog.costUsd}), 0)`.mapWith(String),
+        })
+        .from(schema.auditLog)
+        .where(
+          and(eq(schema.auditLog.userId, opts.userId), gte(schema.auditLog.createdAt, periodStart)),
+        );
+      const monthToDateUsd = Number(mtd?.costUsd || 0);
+      if (hardCapEnabled && monthToDateUsd + opts.costUsd > monthlyLimitUsd) {
+        return {
+          reserved: false,
+          reason: "cap_reached",
+          period,
+          monthToDateUsd,
+          monthlyLimitUsd,
+        } as const;
+      }
+
+      const [row] = await tx
+        .insert(schema.auditLog)
+        .values({
+          userId: opts.userId,
+          action: opts.action,
+          provider: opts.provider,
+          model: opts.model,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheCreateTokens: 0,
+          costUsd: String(opts.costUsd),
+          latencyMs: 0,
+          metadata: { ...(opts.requestMeta || {}), accounting_state: "reserved_before_provider" },
+        })
+        .returning({ id: schema.auditLog.id });
+      if (!row) throw new Error("Platform cost reservation insert returned no row.");
+
+      return {
+        reserved: true,
+        reservation: { auditId: row.id, userId: opts.userId, costUsd: opts.costUsd },
+      } as const;
+    });
+    clearBudgetCache(opts.userId);
+    return decision;
+  } catch (error) {
+    log.error("Platform cost reservation failed closed", {
+      userId: opts.userId,
+      action: opts.action,
+      error: getErrorMessage(error),
+    });
+    return { reserved: false, reason: "unavailable" };
+  }
+}
+
+/** Remove a pre-provider reservation after a definitive no-session outcome. */
+export async function releasePlatformCostReservation(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  await drizzle
+    .delete(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.id, reservation.auditId),
+        eq(schema.auditLog.userId, reservation.userId),
+      ),
+    );
+  clearBudgetCache(reservation.userId);
+}
+
+/** Publish telemetry after the already-durable reservation becomes real spend. */
+export async function commitPlatformCostReservation(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  recordDailySpend(reservation.costUsd);
+  await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
+    log.error("Reserved platform cost spend evaluation failed", {
+      userId: reservation.userId,
+      error: getErrorMessage(error),
+    }),
   );
 }
 

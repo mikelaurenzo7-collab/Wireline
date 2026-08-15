@@ -103,8 +103,9 @@ router.post(
       return res.status(410).json({
         code: "LEGACY_PLAN_RETIRED",
         error:
-          "This personal subscription is no longer offered. Start free on Builder, then choose Starter or higher for live work. Runtime Balance covers overflow after a paid plan is active.",
-        replacement: "starter",
+          "This self-serve plan is no longer offered. Choose Pro for up to five live agents, or contact sales for a Scale rollout.",
+        replacement: "business",
+        contact_sales: "/contact?topic=enterprise",
       });
     }
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {

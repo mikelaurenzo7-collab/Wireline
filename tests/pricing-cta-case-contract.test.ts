@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * Every plan card on /pricing ends in the same call to action, and case is what
  * ranks this design — so those six buttons have to speak in one voice.
  *
- * They did not. The four paid tiers carried `marketing-btn-primary` /
+ * They did not. The paid tiers carried `marketing-btn-primary` /
  * `marketing-btn-secondary`, which puts them in the cased control tier, while
  * the Free and Scale cards were hand-rolled `border border-border` links. Those
  * two fell outside the tier entirely and rendered exactly as their strings were
@@ -31,7 +31,7 @@ function planCtaLinks(): string[] {
 describe("pricing plan CTA case contract", () => {
   it("finds the plan CTAs it is meant to guard", () => {
     // Three call sites render six buttons: the Free card, one template mapped
-    // over the four paid tiers, and the Scale card. Asserting the count keeps a
+    // over the paid tiers, and the Scale card. Asserting the count keeps a
     // markup refactor from silently reducing this file to an empty loop that
     // passes because it found nothing to check.
     expect(planCtaLinks().length, "plan CTA links not found -- the markup changed").toBe(3);

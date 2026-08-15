@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { handleJob as handleBaseJob } from "./job-worker-base";
 import { createAuditContext, runInAuditContext } from "./ai-audit";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import { isLaunchHardBlocked } from "./launch-readiness";
 import {
   ARTIFACT_RUNTIME_RESERVE_USD,
   refundRuntimeUsage,
@@ -24,7 +25,13 @@ import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-jo
 import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
-import { startWorker, type JobRow } from "./job-queue";
+import { DEFAULT_MAX_ATTEMPTS, startWorker, type JobRow } from "./job-queue";
+import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
+import {
+  isPausableProviderSpendJobType,
+  ProviderSpendPausedError,
+  runtimeReservationReferenceForJob,
+} from "./provider-spend-job-pause";
 
 export * from "./job-worker-base";
 
@@ -36,13 +43,21 @@ function attemptNumber(job: JobRow): number {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
 }
 
+function maxAttemptNumber(job: JobRow): number {
+  const shaped = job as unknown as { maxAttempts?: number; max_attempts?: number };
+  const value = Number(shaped.maxAttempts ?? shaped.max_attempts ?? DEFAULT_MAX_ATTEMPTS);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : DEFAULT_MAX_ATTEMPTS;
+}
+
 function jobOwnerId(job: JobRow): string {
   const shaped = job as unknown as { userId?: string; user_id?: string };
   return String(shaped.userId || shaped.user_id || "");
 }
 
-function executionReference(job: JobRow): string {
-  return `${job.type}:${job.id}:attempt:${attemptNumber(job)}`;
+function assertLaunchProviderSpendAllowed(job: JobRow): void {
+  if (isPausableProviderSpendJobType(job.type) && isLaunchHardBlocked()) {
+    throw new ProviderSpendPausedError(job.type);
+  }
 }
 
 function validateFormat(value: unknown): RuntimeArtifactFormat {
@@ -84,8 +99,12 @@ async function withRuntimeReservation<T>(
   operation: () => Promise<T>,
   refundWhen?: (result: T) => boolean,
 ): Promise<T> {
+  // Queue workers do not traverse Express middleware. The typed pause is
+  // settled by job-queue without spending an attempt or reaching dead-letter.
+  assertLaunchProviderSpendAllowed(job);
+
   const amountUsd = ARTIFACT_RUNTIME_RESERVE_USD[format];
-  const referenceId = executionReference(job);
+  const referenceId = runtimeReservationReferenceForJob(job);
   const reservation = await reserveRuntimeUsage({
     userId,
     amountUsd,
@@ -118,7 +137,7 @@ async function withRuntimeReservation<T>(
   const auditContext = createAuditContext();
   try {
     const result = await runInAuditContext(auditContext, () => operation());
-    if (refundWhen?.(result) && !reservation.alreadyReserved) {
+    if (refundWhen?.(result)) {
       await refundRuntimeUsage({
         userId,
         amountUsd,
@@ -135,10 +154,11 @@ async function withRuntimeReservation<T>(
     }
     return result;
   } catch (error) {
-    // A unique reference is used for every attempt, so generation failures and
-    // completion-checkpoint failures can be refunded without giving a later
-    // retry a free reservation.
-    if (!reservation.alreadyReserved) {
+    // One reserve follows the durable job across retries. Hold it while another
+    // attempt remains, then refund exactly once if the final attempt fails.
+    // This also means a worker death after the debit cannot charge the customer
+    // again when stale recovery reclaims the same job.
+    if (attemptNumber(job) >= maxAttemptNumber(job)) {
       await refundRuntimeUsage({
         userId,
         amountUsd,
@@ -251,6 +271,10 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 
 /** Global durable-job dispatcher including launch reporting extensions. */
 export async function handleJob(job: JobRow): Promise<void> {
+  if (job.type === "twilio_message_reconciliation") {
+    await handleTwilioMessageReconciliationJob(job);
+    return;
+  }
   if (job.type === "post_call_artifact") {
     await handlePostCallArtifact(job);
     return;
@@ -262,6 +286,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   // Intercept the legacy handler before it can run unscoped phone-only history
   // reads. The replacement asserts job/payload ownership and enters tenant RLS.
   if (job.type === "proactive_lead_enrichment") {
+    assertLaunchProviderSpendAllowed(job);
     await handleProactiveLeadEnrichmentJob(job);
     return;
   }
@@ -275,6 +300,10 @@ export async function handleJob(job: JobRow): Promise<void> {
     await persistJobResult(job.id, { orphan_carriers: orphanCarriers });
     return;
   }
+  // Every remaining provider-spending base branch enters through this wrapper.
+  // Maintenance, reconciliation, deletion, and carrier-release jobs are not in
+  // the policy set, so the kill switch cannot block accounting or cost relief.
+  assertLaunchProviderSpendAllowed(job);
   await handleBaseJob(job as never);
 }
 

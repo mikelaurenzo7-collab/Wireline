@@ -52,6 +52,7 @@ export function evaluatePlatformOperationalSlos(input: {
   pendingJobs?: number | null;
   webhookSuccessRate?: number | null;
   webhookAttempts?: number | null;
+  webhookCompletedDeliveries?: number | null;
   windowHours?: number;
 }): PlatformOperationalSlos {
   const evaluated_at = new Date().toISOString();
@@ -65,15 +66,23 @@ export function evaluatePlatformOperationalSlos(input: {
       : "degraded"
     : "insufficient_data";
 
-  const incidentConfigured = !!(
-    process.env.HEALTH_MONITOR_TOKEN ||
-    process.env.CRON_SECRET ||
-    process.env.OWNER_EMAIL
+  const monitorTokenConfigured = [process.env.HEALTH_MONITOR_TOKEN, process.env.CRON_SECRET].some(
+    (value) => Boolean(value?.trim()),
   );
+  const ownerContactConfigured = Boolean(process.env.OWNER_EMAIL?.trim());
+  // A protected diagnostic with nobody to receive/escalate it is not an
+  // incident-response path. Neither is an owner address without a credential
+  // that lets an external monitor read the protected evidence. Require both
+  // prerequisites before calling the path configured.
+  const incidentConfigured = monitorTokenConfigured && ownerContactConfigured;
   const incidentStatus: MeasuredSloStatus = incidentConfigured ? "ok" : "insufficient_data";
   if (!incidentConfigured) {
+    const missing = [
+      !monitorTokenConfigured ? "HEALTH_MONITOR_TOKEN or CRON_SECRET" : null,
+      !ownerContactConfigured ? "OWNER_EMAIL" : null,
+    ].filter(Boolean);
     notes.push(
-      "Incident-response monitor path is not fully configured (HEALTH_MONITOR_TOKEN or CRON_SECRET).",
+      `Incident-response monitor path is not fully configured (missing ${missing.join(" and ")}).`,
     );
   }
 
@@ -88,14 +97,21 @@ export function evaluatePlatformOperationalSlos(input: {
   }
 
   const attempts = input.webhookAttempts ?? 0;
+  // Older direct callers supplied only `webhookAttempts`; preserve that
+  // behavior while allowing the production snapshot to use the actual sample
+  // behind success_rate (success + terminal failure, excluding pending rows).
+  const completed =
+    input.webhookCompletedDeliveries === undefined
+      ? attempts
+      : (input.webhookCompletedDeliveries ?? 0);
   const rate = input.webhookSuccessRate;
   let webhooksStatus: MeasuredSloStatus = "insufficient_data";
   let webhooksDimension: SloHealth = "ok";
-  if (attempts >= 10 && rate !== null && rate !== undefined) {
-    webhooksStatus = rate < 0.85 ? "degraded" : rate < 0.95 ? "ok" : "ok";
+  if (completed >= 10 && rate !== null && rate !== undefined) {
+    webhooksStatus = rate < 0.95 ? "degraded" : "ok";
     webhooksDimension = rate < 0.85 ? "critical" : rate < 0.95 ? "warn" : "ok";
   } else {
-    notes.push("Webhook success rate needs at least 10 delivery attempts in the window.");
+    notes.push("Webhook success rate needs at least 10 completed deliveries in the window.");
   }
 
   const dimensions: Record<string, SloHealth> = {
@@ -127,16 +143,18 @@ export function evaluatePlatformOperationalSlos(input: {
       incident_response: {
         configured: incidentConfigured,
         status: incidentStatus,
-        target_label: "Post-incident reporting path",
+        target_label: "Incident monitoring prerequisites",
         evidence: {
-          monitor_token_configured: !!(process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET),
-          owner_contact_configured: !!process.env.OWNER_EMAIL,
+          monitor_token_configured: monitorTokenConfigured,
+          owner_contact_configured: ownerContactConfigured,
         },
         notes: incidentConfigured
           ? [
-              "Incident workflow relies on configured monitor token and owner contact — not a published SLA.",
+              "Monitor access and owner contact are configured; verify external polling and alert delivery separately.",
             ]
-          : ["Configure HEALTH_MONITOR_TOKEN or CRON_SECRET for automated incident snapshots."],
+          : [
+              "Configure both a monitor credential (HEALTH_MONITOR_TOKEN or CRON_SECRET) and OWNER_EMAIL. Configuration does not by itself prove external polling or alert delivery.",
+            ],
       },
       job_queue: {
         configured: typeof pending === "number",
@@ -145,12 +163,16 @@ export function evaluatePlatformOperationalSlos(input: {
         evidence: typeof pending === "number" ? { pending_jobs: pending } : undefined,
       },
       webhooks: {
-        configured: attempts >= 10 && rate !== null && rate !== undefined,
+        configured: completed >= 10 && rate !== null && rate !== undefined,
         status: webhooksStatus,
         target_label: "Webhook delivery success (tenant-aggregated when available)",
         evidence:
-          attempts >= 10 && rate !== null && rate !== undefined
-            ? { attempts_in_window: attempts, success_rate: rate }
+          completed >= 10 && rate !== null && rate !== undefined
+            ? {
+                delivery_records_in_window: attempts,
+                completed_deliveries_in_window: completed,
+                success_rate: rate,
+              }
             : undefined,
       },
     },

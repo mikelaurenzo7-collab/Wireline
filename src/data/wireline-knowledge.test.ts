@@ -14,18 +14,19 @@ describe("wireline knowledge", () => {
       "Wireline Starter",
       "Wireline Starter Plus",
       "Wireline Pro",
-      "Wireline Business",
+      "Wireline Scale & Enterprise",
       "Runtime Balance",
     ]);
 
     expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("Legacy");
+    expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("$159");
   });
 
   it("keeps Free Builder locked out of live work and never promises balance-funded calls", () => {
     expect(WIRELINE_PLANS[0].name).toBe("Wireline Free Builder");
     expect(WIRELINE_PLANS[0].price).not.toContain("Runtime Balance");
     expect(WIRELINE_PLANS[0].includes.join(" ")).toMatch(/no live calls/);
-    expect(WIRELINE_PLANS[5].name).toBe("Runtime Balance");
+    expect(WIRELINE_PLANS.at(-1)?.name).toBe("Runtime Balance");
   });
 
   it("keeps shared product knowledge agent-forward", () => {

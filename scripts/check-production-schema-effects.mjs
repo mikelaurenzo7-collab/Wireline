@@ -104,32 +104,26 @@ try {
   const tables = expected.map(({ table }) => table);
   const indexes = expected.map(({ index }) => index.name);
 
-  const [
-    tableResult,
-    columnResult,
-    primaryKeyResult,
-    indexResult,
-    policyResult,
-    privilegeResult,
-  ] = await Promise.all([
-    pool.query(
-      `SELECT c.relname AS table_name, c.relrowsecurity AS rls_enabled
+  const [tableResult, columnResult, primaryKeyResult, indexResult, policyResult, privilegeResult] =
+    await Promise.all([
+      pool.query(
+        `SELECT c.relname AS table_name, c.relrowsecurity AS rls_enabled
          FROM pg_class c
          JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public'
           AND c.relkind = 'r'
           AND c.relname = ANY($1::text[])`,
-      [tables],
-    ),
-    pool.query(
-      `SELECT table_name, column_name, udt_name, is_nullable, column_default
+        [tables],
+      ),
+      pool.query(
+        `SELECT table_name, column_name, udt_name, is_nullable, column_default
          FROM information_schema.columns
         WHERE table_schema = 'public'
           AND table_name = ANY($1::text[])`,
-      [tables],
-    ),
-    pool.query(
-      `SELECT tc.table_name, kcu.column_name, kcu.ordinal_position
+        [tables],
+      ),
+      pool.query(
+        `SELECT tc.table_name, kcu.column_name, kcu.ordinal_position
          FROM information_schema.table_constraints tc
          JOIN information_schema.key_column_usage kcu
            ON tc.constraint_name = kcu.constraint_name
@@ -138,10 +132,10 @@ try {
           AND tc.constraint_type = 'PRIMARY KEY'
           AND tc.table_name = ANY($1::text[])
         ORDER BY tc.table_name, kcu.ordinal_position`,
-      [tables],
-    ),
-    pool.query(
-      `SELECT t.relname AS table_name,
+        [tables],
+      ),
+      pool.query(
+        `SELECT t.relname AS table_name,
               i.relname AS index_name,
               pg_get_indexdef(i.oid) AS index_def,
               ix.indisvalid AS index_valid
@@ -151,26 +145,26 @@ try {
          JOIN pg_namespace n ON n.oid = t.relnamespace
         WHERE n.nspname = 'public'
           AND i.relname = ANY($1::text[])`,
-      [indexes],
-    ),
-    pool.query(
-      `SELECT tablename, policyname, permissive, roles, cmd, qual, with_check
+        [indexes],
+      ),
+      pool.query(
+        `SELECT tablename, policyname, permissive, roles, cmd, qual, with_check
          FROM pg_policies
         WHERE schemaname = 'public'
           AND tablename = ANY($1::text[])
           AND policyname IN ('deny_direct_api_access', 'wireline_server_access')`,
-      [tables],
-    ),
-    pool.query(
-      `SELECT table_name,
+        [tables],
+      ),
+      pool.query(
+        `SELECT table_name,
               has_table_privilege('wireline_server', format('public.%I', table_name), 'SELECT') AS can_select,
               has_table_privilege('wireline_server', format('public.%I', table_name), 'INSERT') AS can_insert,
               has_table_privilege('wireline_server', format('public.%I', table_name), 'UPDATE') AS can_update,
               has_table_privilege('wireline_server', format('public.%I', table_name), 'DELETE') AS can_delete
          FROM unnest($1::text[]) AS table_name`,
-      [tables],
-    ),
-  ]);
+        [tables],
+      ),
+    ]);
 
   const tableState = new Map(tableResult.rows.map((row) => [row.table_name, row.rls_enabled]));
   const columnState = new Map();
@@ -278,9 +272,15 @@ try {
     }
   }
 
-  const [agentIntegrityResult, agentGuardResult, authFkResult, authIndexResult, orphanResult] =
-    await Promise.all([
-      pool.query(`
+  const [
+    agentIntegrityResult,
+    agentGuardResult,
+    authFkResult,
+    authIndexResult,
+    orphanResult,
+    retentionFunctionResult,
+  ] = await Promise.all([
+    pool.query(`
         SELECT
           count(*) FILTER (WHERE a.account_id IS NULL) AS null_accounts,
           count(*) FILTER (
@@ -290,7 +290,7 @@ try {
         FROM public.wireline_agents a
         LEFT JOIN public.wireline_accounts wa ON wa.id = a.account_id
       `),
-      pool.query(`
+    pool.query(`
         SELECT
           t.tgenabled,
           pg_get_triggerdef(t.oid) AS trigger_def,
@@ -305,8 +305,8 @@ try {
           AND t.tgname = 'wireline_agents_account_binding_guard'
           AND NOT t.tgisinternal
       `),
-      pool.query(
-        `SELECT tc.constraint_name,
+    pool.query(
+      `SELECT tc.constraint_name,
                 tc.table_name,
                 kcu.column_name,
                 ccu.table_name AS foreign_table,
@@ -325,10 +325,10 @@ try {
           WHERE tc.constraint_schema = 'public'
             AND tc.constraint_type = 'FOREIGN KEY'
             AND tc.constraint_name = ANY($1::text[])`,
-        [[...expectedAuthForeignKeys.keys()]],
-      ),
-      pool.query(
-        `SELECT t.relname AS table_name,
+      [[...expectedAuthForeignKeys.keys()]],
+    ),
+    pool.query(
+      `SELECT t.relname AS table_name,
                 i.relname AS index_name,
                 pg_get_indexdef(i.oid) AS index_def,
                 ix.indisvalid AS index_valid
@@ -338,9 +338,9 @@ try {
            JOIN pg_namespace n ON n.oid = t.relnamespace
           WHERE n.nspname = 'public'
             AND i.relname = ANY($1::text[])`,
-        [[...expectedAuthIndexes.keys()]],
-      ),
-      pool.query(`
+      [[...expectedAuthIndexes.keys()]],
+    ),
+    pool.query(`
         SELECT
           (SELECT count(*) FROM public.wireline_password_reset_tokens t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS reset_orphans,
           (SELECT count(*) FROM public.wireline_email_verification_tokens t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS verification_orphans,
@@ -353,7 +353,13 @@ try {
           (SELECT count(*) FROM public.wireline_audit_log t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS audit_orphans,
           (SELECT count(*) FROM public.wireline_training_backup_20260609 t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS training_backup_orphans
       `),
-    ]);
+    pool.query(`
+        SELECT pg_get_functiondef(p.oid) AS function_def,
+               p.proconfig
+          FROM pg_proc p
+         WHERE p.oid = to_regprocedure('public.wireline_purge_old_data(uuid,integer)')
+      `),
+  ]);
 
   const agentIntegrity = agentIntegrityResult.rows[0] ?? {};
   if (Number(agentIntegrity.null_accounts || 0) !== 0) failures.push("agents:null_account_binding");
@@ -374,7 +380,8 @@ try {
     if (!triggerDef.includes("EXECUTE FUNCTION wireline_enforce_agent_account_binding()")) {
       failures.push("agents:wrong_account_binding_trigger_function");
     }
-    if (agentGuard.security_definer !== true) failures.push("agents:binding_function_not_security_definer");
+    if (agentGuard.security_definer !== true)
+      failures.push("agents:binding_function_not_security_definer");
     if (!proconfig.some((value) => /search_path=pg_catalog,\s*public/i.test(value))) {
       failures.push("agents:binding_function_search_path_not_pinned");
     }
@@ -410,7 +417,10 @@ try {
       continue;
     }
     const definition = String(index.index_def || "");
-    if (!definition.includes(`ON public.${expectedTable}`) || !definition.includes(columnFragment)) {
+    if (
+      !definition.includes(`ON public.${expectedTable}`) ||
+      !definition.includes(columnFragment)
+    ) {
       failures.push(`auth:wrong_index_definition:${indexName}`);
     }
   }
@@ -420,12 +430,46 @@ try {
     if (Number(value || 0) !== 0) failures.push(`deletion:${key}:${value}`);
   }
 
+  // A function name is not evidence that its latest CREATE OR REPLACE body
+  // landed. Migration 0148 removes live webhook and intake-key configuration
+  // from the retention sweep, and 0149 makes unexpected DELETE failures abort
+  // so the durable job retries instead of recording a false success.
+  // Certify those semantics after every production migration run so an old
+  // body cannot pass merely because the routine already exists.
+  const retentionFunction = retentionFunctionResult.rows[0];
+  if (!retentionFunction) {
+    failures.push("retention:missing_purge_function");
+  } else {
+    const definition = String(retentionFunction.function_def || "");
+    const proconfig = Array.isArray(retentionFunction.proconfig)
+      ? retentionFunction.proconfig.map(String)
+      : [];
+    if (!definition.includes("wireline_webhook_deliveries")) {
+      failures.push("retention:delivery_log_not_purgeable");
+    }
+    if (definition.includes("wireline_webhooks")) {
+      failures.push("retention:live_webhook_configuration_purgeable");
+    }
+    if (definition.includes("wireline_intake_keys")) {
+      failures.push("retention:live_intake_key_configuration_purgeable");
+    }
+    if (
+      /EXCEPTION\s+WHEN\s+OTHERS/i.test(definition) ||
+      /v_rows_deleted\s*:=\s*0/i.test(definition)
+    ) {
+      failures.push("retention:purge_errors_suppressed");
+    }
+    if (!proconfig.some((value) => /search_path=public,\s*pg_temp/i.test(value))) {
+      failures.push("retention:purge_function_search_path_not_pinned");
+    }
+  }
+
   if (failures.length > 0) {
     console.error("Production schema effects are incomplete:", failures.join(", "));
     process.exitCode = 1;
   } else {
     console.log(
-      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, and deleted-user reconciliation are ready.",
+      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, deleted-user reconciliation, and retention configuration safety are ready.",
     );
   }
 } catch (error) {

@@ -15,8 +15,10 @@ import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { sendTenantMessage } from "../lib/twilio-service";
+import { customerSafeSmsFailureReason } from "../lib/sms-customer-errors";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -85,6 +87,7 @@ router.post(
   "/api/sms/threads/:id/reply",
   authenticateUser,
   smsRateLimit,
+  enforceLaunchHardGate,
   validateBody(smsReplySchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -138,14 +141,31 @@ router.post(
         body,
         channel: "sms",
       });
-      // sendTenantMessage already writes the outbound message row + bumps
-      // last_message_at. Just need to clear unread count for this thread.
-      await drizzle
-        .update(schema.smsThreads)
-        .set({ unreadCount: 0 })
-        .where(eq(schema.smsThreads.id, thread.id));
-
-      res.json({ ok: result.ok, reason: result.ok ? null : result.reason });
+      if (!result.ok) {
+        log.warn("SMS reply was not accepted", {
+          userId: req.user.id,
+          configured: result.configured,
+          enabled: result.enabled,
+          code: result.code,
+          providerReason: result.reason,
+        });
+        res.json({
+          ok: false,
+          reason: customerSafeSmsFailureReason(result),
+          code: result.code,
+          recovery_path: result.recovery_path,
+        });
+        return;
+      }
+      // sendTenantMessage owns accepted-message persistence and unread cleanup.
+      // Any local failure is queued for reconciliation, so this route can
+      // acknowledge carrier acceptance without inviting a duplicate retry.
+      res.json({
+        ok: true,
+        reason: null,
+        status: result.status ?? null,
+        reconciliation_pending: result.reconciliationPending ?? false,
+      });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       log.error("SMS reply failed", { error: e?.message });

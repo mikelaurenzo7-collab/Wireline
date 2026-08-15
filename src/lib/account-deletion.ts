@@ -61,6 +61,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_sms_messages", userColumns: ["user_id"] },
   { table: "wireline_sms_threads", userColumns: ["user_id"] },
   { table: "wireline_call_logs", userColumns: ["user_id"] },
+  { table: "wireline_outbound_dial_reservations", userColumns: ["user_id"] },
   // Shareable call-recap / weekly-review artifacts (published URLs). Must purge
   // with the account so transcript/summary content cannot outlive deletion.
   { table: "wireline_recap_artifacts", userColumns: ["user_id"] },
@@ -108,6 +109,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_director_artifacts", userColumns: ["user_id"] },
   { table: "wireline_director_artifact_objects", userColumns: ["user_id"] },
   { table: "wireline_director_profile", userColumns: ["user_id"] },
+  { table: "wireline_checkout_operations", userColumns: ["user_id"] },
   { table: "wireline_subscriptions", userColumns: ["user_id"] },
   { table: "wireline_onboarding_progress", userColumns: ["user_id"] },
   { table: "wireline_user_preferences", userColumns: ["user_id"] },

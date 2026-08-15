@@ -3,8 +3,8 @@
  * Subscription gate for routes that spend money on live telephony.
  *
  * Create → Train stays free. New accounts begin in `pending_activation` until
- * Stripe confirms a paid plan (Starter, Starter Plus, Pro, Business) or a
- * governed Enterprise contract.
+ * Stripe confirms a public paid plan (Starter, Starter Plus, Pro) or a
+ * governed Scale contract.
  * Provider-spending actions fail closed whenever entitlement state cannot be
  * verified; read-only and draft-building surfaces remain available.
  */

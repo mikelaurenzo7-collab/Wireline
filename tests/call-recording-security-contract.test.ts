@@ -24,7 +24,7 @@ describe("call recording access contract", () => {
     // The failover voicemail email must carry the tenant-gated Wireline
     // recording route, never the persistent Twilio media URL.
     expect(twilioWebhook).toContain(
-      "recordingUrl: publicAssetUrl(`/api/calls/${String(inserted.id)}/recording`)",
+      "recordingUrl: publicAssetUrl(`/api/calls/${String(voicemail.id)}/recording`)",
     );
     expect(registry).toContain("app.use(callRecordingRouter)");
   });

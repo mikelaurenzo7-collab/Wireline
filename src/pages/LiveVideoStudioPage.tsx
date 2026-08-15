@@ -446,7 +446,7 @@ export default function LiveVideoStudioPage() {
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"
-          description="Put a business agent on screen, then test a real conversation through the same Wireline brain."
+          description="Put a business agent on screen. Wireline voice uses that agent's Training and tools; optional presenter-managed voices use their own workspace profile."
         />
 
         {agentsLoading ? (
@@ -499,7 +499,7 @@ export default function LiveVideoStudioPage() {
                     {remainingMinutes} / {includedMinutes} min left
                   </span>
                   <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
-                    {sessionMinutes} min / session
+                    {sessionMinutes} min wall-clock max
                   </span>
                   <span
                     className={`rounded-full border px-3 py-1.5 font-medium ${
@@ -593,8 +593,9 @@ export default function LiveVideoStudioPage() {
                     className="mt-1"
                   />
                   <span>
-                    I understand this agent will use a catalog presenter and each live session
-                    reserves {sessionMinutes} minutes from the monthly allowance.
+                    I understand this agent will use a catalog presenter. Each session runs for up
+                    to {sessionMinutes} minutes, and the selected voice engine will show its exact
+                    allowance reservation before I start.
                   </span>
                 </label>
                 <Button
@@ -676,10 +677,8 @@ export default function LiveVideoStudioPage() {
                           </Select>
                           {selectedEngine ? (
                             <p className="text-xs leading-5 text-muted-foreground">
-                              {selectedEngine.description}
-                              {reserveMinutes > sessionMinutes
-                                ? ` Reserves ${reserveMinutes} minutes of your monthly allowance per session.`
-                                : ""}
+                              {selectedEngine.description} A {sessionMinutes}-minute session
+                              reserves {reserveMinutes} minutes of your monthly allowance.
                             </p>
                           ) : null}
                         </div>

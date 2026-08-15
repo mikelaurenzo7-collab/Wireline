@@ -245,6 +245,7 @@ describe("runtime artifact settlement integrity", () => {
     expect(scheduledReservation.indexOf("generateScheduledOperatingReport")).toBeLessThan(
       scheduledReservation.indexOf("await persistJobResult"),
     );
-    expect(worker).toContain("completion-checkpoint failures can be refunded");
+    expect(worker).toContain("One reserve follows the durable job across retries");
+    expect(worker).toContain("attemptNumber(job) >= maxAttemptNumber(job)");
   });
 });

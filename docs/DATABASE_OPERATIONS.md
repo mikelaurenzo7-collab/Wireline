@@ -19,7 +19,7 @@ Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 
 `npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. Production runs exactly that, from `scripts/vercel-build.mjs`.
 
-The two are not the same set. 152 `.sql` files are committed; 47 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. The backlog is fixed at 105: every migration authored since has been journalled properly, so the gap is historical rather than growing. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
+The two are not the same set. 153 `.sql` files are committed; 48 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. The backlog is fixed at 105: every migration authored since has been journalled properly, so the gap is historical rather than growing. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
 
 Two consequences to work from, not around:
 

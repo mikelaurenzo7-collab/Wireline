@@ -196,7 +196,9 @@ describe("the platform SLO snapshot reports measurements, not constants", () => 
 
   it("reports real webhook retry backlog and windowed dead jobs", () => {
     expect(snapshot).toContain("pending_retry_now: pendingRetryNow");
-    expect(snapshot).toContain("dead: deadInWindow");
+    expect(snapshot).toContain("deadEnrichmentWindow: jobWindow.enrichment.dead");
+    expect(snapshot).toContain("enrichment: jobWindow.enrichment");
     expect(snapshot).not.toContain("pending_retry_now: 0");
+    expect(snapshot).not.toContain("oldest_pending_age_seconds: null");
   });
 });

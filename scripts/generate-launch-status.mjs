@@ -1,5 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import {
+  FOUNDER_CATALOG_VERSION,
+  FOUNDER_PRICES,
+  FOUNDER_PRODUCTS,
+  PUBLIC_SELF_SERVE_PLAN_IDS,
+} from "./lib/stripe-founder-catalog.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
@@ -68,33 +74,36 @@ async function launchReadiness() {
 async function stripeStatus() {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   if (!key) return { status: "unknown", reason: "STRIPE_SECRET_KEY not supplied" };
-  const priceId = process.env.STRIPE_STARTER_9_ANNUAL_PRICE_ID?.trim();
   const headers = { Authorization: `Bearer ${key}` };
+  const publicPlanIds = new Set(PUBLIC_SELF_SERVE_PLAN_IDS);
+  const publicCatalogPrices = FOUNDER_PRICES.filter(
+    (price) => price.recurring && publicPlanIds.has(price.metadata?.wireline_plan_id),
+  );
+  const catalogParams = new URLSearchParams({ active: "true", limit: "100" });
+  for (const price of publicCatalogPrices) catalogParams.append("lookup_keys[]", price.lookupKey);
+  catalogParams.append("expand[]", "data.product");
+  const productByKey = new Map(FOUNDER_PRODUCTS.map((product) => [product.key, product]));
   const [
     balanceResult,
-    priceResult,
+    catalogPriceResult,
     accountResult,
     portalResult,
     webhookResult,
     taxResult,
     taxRegistrationsResult,
   ] = await Promise.all([
-      jsonFetch("https://api.stripe.com/v1/balance", { headers }),
-      priceId
-        ? jsonFetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
-            headers,
-          })
-        : Promise.resolve({ ok: false, status: 0, body: null }),
-      jsonFetch("https://api.stripe.com/v1/account", { headers }),
-      jsonFetch("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
-        headers,
-      }),
-      jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
-      jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
-      jsonFetch("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
-        headers,
-      }),
-    ]);
+    jsonFetch("https://api.stripe.com/v1/balance", { headers }),
+    jsonFetch(`https://api.stripe.com/v1/prices?${catalogParams.toString()}`, { headers }),
+    jsonFetch("https://api.stripe.com/v1/account", { headers }),
+    jsonFetch("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
+      headers,
+    }),
+    jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
+    jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
+    jsonFetch("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
+      headers,
+    }),
+  ]);
 
   const available = Array.isArray(balanceResult.body?.available)
     ? balanceResult.body.available.find((item) => item.currency === "usd")?.amount
@@ -102,6 +111,74 @@ async function stripeStatus() {
   const pending = Array.isArray(balanceResult.body?.pending)
     ? balanceResult.body.pending.find((item) => item.currency === "usd")?.amount
     : null;
+
+  const liveCatalogPrices = Array.isArray(catalogPriceResult.body?.data)
+    ? catalogPriceResult.body.data
+    : [];
+  const catalogFindings = [];
+  for (const expected of publicCatalogPrices) {
+    const matches = liveCatalogPrices.filter((price) => price?.lookup_key === expected.lookupKey);
+    if (matches.length !== 1) {
+      catalogFindings.push(
+        `${expected.lookupKey}:expected_one_active_price_found_${matches.length}`,
+      );
+      continue;
+    }
+    const [actual] = matches;
+    if (actual.active !== true) catalogFindings.push(`${expected.lookupKey}:inactive`);
+    if (actual.livemode !== true) catalogFindings.push(`${expected.lookupKey}:not_livemode`);
+    if (actual.currency !== "usd") catalogFindings.push(`${expected.lookupKey}:currency_not_usd`);
+    if (actual.unit_amount !== expected.unitAmount) {
+      catalogFindings.push(
+        `${expected.lookupKey}:amount_${actual.unit_amount}_expected_${expected.unitAmount}`,
+      );
+    }
+    if (actual.recurring?.interval !== expected.recurring.interval) {
+      catalogFindings.push(
+        `${expected.lookupKey}:interval_${actual.recurring?.interval || "missing"}_expected_${expected.recurring.interval}`,
+      );
+    }
+    if (actual.recurring?.usage_type !== expected.recurring.usage_type) {
+      catalogFindings.push(`${expected.lookupKey}:usage_type_not_licensed`);
+    }
+    if (actual.metadata?.wireline_plan_id !== expected.metadata?.wireline_plan_id) {
+      catalogFindings.push(`${expected.lookupKey}:plan_id_mismatch`);
+    }
+    // Checkout refuses a price from any other catalog generation, even when
+    // its amount and plan id happen to match. Launch status must exercise that
+    // same acceptance contract or it can report GO while every checkout 503s.
+    if (actual.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) {
+      catalogFindings.push(`${expected.lookupKey}:catalog_version_mismatch`);
+    }
+    if (actual.metadata?.wireline_price_key !== expected.key) {
+      catalogFindings.push(`${expected.lookupKey}:price_key_mismatch`);
+    }
+    const expectedProduct = productByKey.get(expected.productKey);
+    const actualProduct =
+      actual.product && typeof actual.product === "object" ? actual.product : null;
+    if (!expectedProduct || !actualProduct) {
+      catalogFindings.push(`${expected.lookupKey}:product_not_expanded`);
+    } else {
+      if (actualProduct.active !== true) {
+        catalogFindings.push(`${expected.lookupKey}:product_inactive`);
+      }
+      if (actualProduct.name !== expectedProduct.name) {
+        catalogFindings.push(`${expected.lookupKey}:product_name_mismatch`);
+      }
+      if (actualProduct.metadata?.wireline_plan_id !== expected.metadata?.wireline_plan_id) {
+        catalogFindings.push(`${expected.lookupKey}:product_plan_id_mismatch`);
+      }
+      if (actualProduct.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) {
+        catalogFindings.push(`${expected.lookupKey}:product_catalog_version_mismatch`);
+      }
+    }
+  }
+  const starterAnnualExpected = publicCatalogPrices.find(
+    (price) => price.lookupKey === "starter_annual_founder_2026_07_v6",
+  );
+  const starterAnnualActual = liveCatalogPrices.find(
+    (price) => price?.lookup_key === starterAnnualExpected?.lookupKey,
+  );
 
   const publicName = String(
     accountResult.body?.business_profile?.name ||
@@ -124,29 +201,87 @@ async function stripeStatus() {
   };
   const websiteOrigin = origin(accountResult.body?.business_profile?.url);
   const supportOrigin = origin(accountResult.body?.business_profile?.support_url);
+  const supportEmail = String(accountResult.body?.business_profile?.support_email || "")
+    .trim()
+    .toLowerCase();
+  const brandingLogo = String(accountResult.body?.settings?.branding?.logo || "").trim();
   const brandReady =
     /wireline/i.test(publicName) &&
     statementDescriptor.startsWith("WIRELINE") &&
     websiteOrigin === "https://trywireline.com" &&
-    supportOrigin === "https://trywireline.com";
+    supportOrigin === "https://trywireline.com" &&
+    supportEmail === "support@trywireline.com" &&
+    brandingLogo.length > 0;
 
   const portalConfigurations = Array.isArray(portalResult.body?.data) ? portalResult.body.data : [];
-  // Same selection rule as check-vendor-readiness.mjs: require the customer
-  // controls first, then prefer the Wireline-managed configuration, so a bare
-  // Dashboard default cannot mask the one the application actually uses.
+  // Launch certification is stricter than "some active portal exists". The app
+  // intentionally creates a Wireline-managed, catalog-versioned configuration;
+  // a stale Dashboard default can omit plan switches or cancel immediately.
   const portalHasCustomerControls = (configuration) =>
     configuration?.features?.payment_method_update?.enabled === true &&
     configuration?.features?.invoice_history?.enabled === true &&
-    configuration?.features?.subscription_cancel?.enabled === true;
-  const portalCandidates = portalConfigurations.filter(
-    (configuration) => configuration?.active === true && portalHasCustomerControls(configuration),
+    configuration?.features?.subscription_cancel?.enabled === true &&
+    configuration?.features?.subscription_cancel?.mode === "at_period_end" &&
+    configuration?.features?.subscription_update?.enabled === true;
+  const portalConfiguration = portalConfigurations.find(
+    (configuration) =>
+      configuration?.active === true &&
+      configuration?.metadata?.wireline_managed === "true" &&
+      configuration?.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION,
   );
-  const portalConfiguration =
-    portalCandidates.find(
-      (configuration) => configuration?.metadata?.wireline_managed === "true",
-    ) || portalCandidates.find((configuration) => configuration?.is_default === true);
   const portalFeatures = portalConfiguration?.features ?? {};
-  const portalReady = Boolean(portalResult.ok && portalConfiguration);
+  const portalFindings = [];
+  if (!portalConfiguration) portalFindings.push("managed_configuration_missing");
+  if (portalConfiguration && !portalHasCustomerControls(portalConfiguration)) {
+    portalFindings.push("customer_controls_incomplete");
+  }
+  if (
+    portalConfiguration &&
+    portalConfiguration.default_return_url !== "https://trywireline.com/settings/billing"
+  ) {
+    portalFindings.push("return_url_mismatch");
+  }
+  if (
+    portalConfiguration &&
+    (portalConfiguration.business_profile?.privacy_policy_url !==
+      "https://trywireline.com/privacy" ||
+      portalConfiguration.business_profile?.terms_of_service_url !==
+        "https://trywireline.com/terms")
+  ) {
+    portalFindings.push("legal_urls_mismatch");
+  }
+
+  const expectedPortalPrices = new Map();
+  for (const price of liveCatalogPrices) {
+    const productId = price?.product && typeof price.product === "object" ? price.product.id : null;
+    if (!productId || !price?.id) continue;
+    const ids = expectedPortalPrices.get(productId) || [];
+    ids.push(price.id);
+    expectedPortalPrices.set(productId, ids);
+  }
+  const actualPortalPrices = new Map();
+  for (const product of portalFeatures.subscription_update?.products || []) {
+    if (typeof product?.product !== "string" || !Array.isArray(product?.prices)) continue;
+    actualPortalPrices.set(product.product, [...product.prices].sort());
+  }
+  if (expectedPortalPrices.size !== PUBLIC_SELF_SERVE_PLAN_IDS.length) {
+    portalFindings.push("expected_catalog_products_unresolved");
+  } else {
+    for (const [productId, priceIds] of expectedPortalPrices) {
+      const actualIds = actualPortalPrices.get(productId) || [];
+      if (actualIds.join(",") !== [...priceIds].sort().join(",")) {
+        portalFindings.push(`plan_switch_prices_mismatch:${productId}`);
+      }
+    }
+    for (const productId of actualPortalPrices.keys()) {
+      if (!expectedPortalPrices.has(productId)) {
+        portalFindings.push(`unexpected_plan_switch_product:${productId}`);
+      }
+    }
+  }
+  const portalReady = Boolean(
+    portalResult.ok && portalConfiguration && portalFindings.length === 0,
+  );
 
   // Read off the code that handles them, exactly as the aligner does. A second
   // hardcoded copy here drifted once the dispute-funds handlers landed and
@@ -177,16 +312,16 @@ async function stripeStatus() {
     : [];
   const taxProviderReady = Boolean(
     taxResult.ok &&
-      taxResult.body?.status === "active" &&
-      taxRegistrationsResult.ok &&
-      activeTaxRegistrations.length > 0,
+    taxResult.body?.status === "active" &&
+    taxRegistrationsResult.ok &&
+    activeTaxRegistrations.length > 0,
   );
   const taxReady = !automaticTaxEnabled || taxProviderReady;
 
   return {
     status:
       balanceResult.ok &&
-      priceResult.ok &&
+      catalogPriceResult.ok &&
       accountResult.ok &&
       portalResult.ok &&
       webhookResult.ok &&
@@ -196,20 +331,33 @@ async function stripeStatus() {
     available_usd: typeof available === "number" ? available / 100 : null,
     pending_usd: typeof pending === "number" ? pending / 100 : null,
     starter_annual: {
-      price_id: priceId || null,
+      price_id: starterAnnualActual?.id ?? null,
       unit_amount_usd:
-        typeof priceResult.body?.unit_amount === "number"
-          ? priceResult.body.unit_amount / 100
+        typeof starterAnnualActual?.unit_amount === "number"
+          ? starterAnnualActual.unit_amount / 100
           : null,
-      active: priceResult.body?.active === true,
-      livemode: priceResult.body?.livemode === true,
-      lookup_key: priceResult.body?.lookup_key ?? null,
+      active: starterAnnualActual?.active === true,
+      livemode: starterAnnualActual?.livemode === true,
+      lookup_key: starterAnnualActual?.lookup_key ?? null,
+    },
+    public_catalog: {
+      plan_ids: [...PUBLIC_SELF_SERVE_PLAN_IDS],
+      expected_price_count: publicCatalogPrices.length,
+      live_price_count: liveCatalogPrices.length,
+      findings: catalogFindings,
+      ready:
+        catalogPriceResult.ok &&
+        publicCatalogPrices.length === PUBLIC_SELF_SERVE_PLAN_IDS.length * 2 &&
+        liveCatalogPrices.length === publicCatalogPrices.length &&
+        catalogFindings.length === 0,
     },
     brand: {
       public_name: publicName || null,
       statement_descriptor_ready: statementDescriptor.startsWith("WIRELINE"),
       website_origin: websiteOrigin,
       support_origin: supportOrigin,
+      support_email: supportEmail || null,
+      logo_present: brandingLogo.length > 0,
       ready: brandReady,
     },
     customer_portal: {
@@ -217,6 +365,8 @@ async function stripeStatus() {
       payment_method_update: portalFeatures.payment_method_update?.enabled === true,
       invoice_history: portalFeatures.invoice_history?.enabled === true,
       subscription_cancel: portalFeatures.subscription_cancel?.enabled === true,
+      subscription_update: portalFeatures.subscription_update?.enabled === true,
+      findings: portalFindings,
       ready: portalReady,
     },
     webhook: {
@@ -228,9 +378,7 @@ async function stripeStatus() {
     tax: {
       automatic_tax_enabled: automaticTaxEnabled,
       status: taxResult.body?.status ?? null,
-      active_registration_count: taxRegistrationsResult.ok
-        ? activeTaxRegistrations.length
-        : null,
+      active_registration_count: taxRegistrationsResult.ok ? activeTaxRegistrations.length : null,
       provider_ready: taxProviderReady,
       ready: taxReady,
     },
@@ -417,13 +565,7 @@ if (readiness.overall_score !== 100) blockers.push("launch_readiness_below_100")
 if (stripe.status !== "reachable") {
   blockers.push("stripe_not_reachable");
 } else {
-  if (
-    stripe.starter_annual?.unit_amount_usd !== 190 ||
-    stripe.starter_annual?.active !== true ||
-    stripe.starter_annual?.livemode !== true
-  ) {
-    blockers.push("starter_annual_price_not_live_190");
-  }
+  if (stripe.public_catalog?.ready !== true) blockers.push("stripe_public_catalog_not_aligned");
   if (stripe.brand?.ready !== true) blockers.push("stripe_brand_not_wireline");
   if (stripe.customer_portal?.ready !== true) blockers.push("stripe_customer_portal_not_ready");
   if (stripe.webhook?.ready !== true) blockers.push("stripe_webhook_not_aligned");

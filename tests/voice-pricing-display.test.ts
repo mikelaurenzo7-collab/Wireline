@@ -10,12 +10,7 @@ import {
 describe("voice-pricing-display", () => {
   it("publishes one prepaid rate for every paid plan", () => {
     const rates = publishedVoiceRates();
-    expect(rates.map((row) => row.planId)).toEqual([
-      "starter",
-      "team",
-      "business",
-      "enterprise",
-    ]);
+    expect(rates.map((row) => row.planId)).toEqual(["starter", "team", "business"]);
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
     expect(
       rates.every((row) => row.rateUsd === voiceRateForPlan("starter")),

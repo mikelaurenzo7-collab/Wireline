@@ -40,6 +40,7 @@ import {
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { isOwnerEmail } from "../lib/auth-service";
@@ -287,6 +288,7 @@ router.post(
   "/api/agents/:id/video-presenter/session",
   authenticateUser,
   sessionLimiter,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await ownedAgent(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");

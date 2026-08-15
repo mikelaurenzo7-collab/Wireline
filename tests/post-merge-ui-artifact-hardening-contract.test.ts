@@ -53,7 +53,7 @@ describe("post-merge UI and artifact hardening", () => {
     expect(assets).toContain('secure: baseUrl.protocol === "https:"');
     expect(assets).toContain("try {\n    const context = await browser.newContext");
     expect(assets).toContain("finally {\n    await browser.close();");
-    expect(assets).toContain("Free Builder, Starter, Starter Plus, Pro, and Business.");
+    expect(assets).toContain("Free Builder, Starter, Starter Plus, and Pro. Scale is custom.");
     expect(assets).toContain("Voice agents for sales and support");
     expect(assets).not.toContain("Free Builder · Starter · Growth · Scale · Business");
     expect(assets).not.toContain("Your best salesperson, without the commission");

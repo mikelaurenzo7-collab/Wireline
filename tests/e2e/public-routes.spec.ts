@@ -72,7 +72,7 @@ for (const route of PUBLIC_ROUTES) {
 const PRERENDERED_HEAD = [
   { route: "/pricing", title: "Pricing | Wireline Voice Agents from $19/month" },
   { route: "/features", title: "Features | Wireline Voice Agents" },
-  { route: "/for/legal", title: "Wireline for Law Firms | AI Intake and Consult Routing" },
+  { route: "/for/legal", title: "Wireline for Law Firms | Voice Intake and Consult Routing" },
 ];
 
 for (const { route, title } of PRERENDERED_HEAD) {
