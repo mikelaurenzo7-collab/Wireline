@@ -40,7 +40,7 @@ export default function LiveVideoSpotlight({ eyebrow }: LiveVideoSpotlightProps)
               Your voice agent, now on screen.
             </h2>
             <p className="mx-auto mt-4 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">
-              {`Bring the voice agent that answers your calls on screen with the same Training and tools. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
+              {`Bring the voice agent that answers your calls on screen using the same Training, operating rules, and approved knowledge. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
             </p>
             <p className="mx-auto mt-3 max-w-[46ch] text-xs leading-5 text-muted-foreground/80 lg:mx-0">
               Optional presenter-managed voice modes use their own workspace profile and can reserve

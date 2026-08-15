@@ -48,25 +48,49 @@ describe("live video economics contract", () => {
     expect(catalog).toContain('session_reservation_minutes: "5"');
   });
 
-  it("keeps the public Live Video spotlight aligned with paid add-on economics", () => {
+  it("keeps public Live Video copy aligned with the runtime that actually ships", () => {
     const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
-    // The allowance and session ceiling moved onto the session stage itself,
-    // where they read as part of the product rather than as a caption. Both
-    // files must still derive every published number from the policy module —
-    // the point of the contract is that no marketing surface can hardcode a
-    // limit the runtime does not enforce.
     const stage = read("src/components/marketing/LiveVideoStage.tsx");
+    const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
+    const generator = read("scripts/generate-campaign-vo.mjs");
 
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
     expect(spotlight).toContain("paid business agent");
-    expect(spotlight).toContain("same Training and tools");
+    expect(spotlight).toContain("same Training, operating rules, and approved knowledge");
     expect(spotlight).not.toMatch(/\bhistory\b/i);
+    expect(spotlight).not.toContain("same Training and tools");
     expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
     expect(spotlight).toContain("LiveVideoStage");
     expect(stage).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
     expect(stage).toContain("LIVE_VIDEO_MAX_SESSION_SECONDS");
     expect(stage).not.toMatch(/\b(60|19)\s*(min|\/mo)\b/);
+
+    const campaignSection = campaign.slice(
+      campaign.indexOf("### Live Video proof"),
+      campaign.indexOf("## Organic and Direct Launch Copy"),
+    );
+    const generatorSection = generator.slice(
+      generator.indexOf('id: "live-video-25s"'),
+      generator.indexOf("  },\n];", generator.indexOf('id: "live-video-25s"')),
+    );
+    for (const source of [spotlight, campaignSection, generatorSection]) {
+      expect(source).not.toMatch(/same logged outcome/i);
+      expect(source).not.toMatch(/outcome it logs/i);
+      expect(source).not.toMatch(/cross-channel history/i);
+    }
+    expect(campaignSection).toContain("approved knowledge");
+    expect(campaignSection).toContain("It does not yet claim");
+  });
+
+  it("keeps founder launch spend on customer proof rather than premature brand media", () => {
+    const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
+
+    expect(campaign).toContain("3–5 consented design partners");
+    expect(campaign).toContain("not authorized founder-launch spend");
+    expect(campaign).toContain("## Post-proof Brand Concepts");
+    expect(campaign).not.toContain("## Out of Home");
+    expect(campaign).not.toContain('## Hero Film — "The Second Ring"');
   });
 
   it("depicts the hard session cap as a terminal pause instead of a looping timer", () => {
@@ -83,9 +107,6 @@ describe("live video economics contract", () => {
   });
 
   it("keeps the retired browser audio bridge deleted", () => {
-    // The unmounted preview and its decode bridge were removed 2026-08-13;
-    // LiveVideoPresenter's SDK path (video-presenter-contract) is the live
-    // browser audio surface.
     expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
