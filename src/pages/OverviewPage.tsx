@@ -128,6 +128,11 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
           <h2 id="first-run-title" className="text-xl font-semibold text-foreground sm:text-2xl">
             Start with one job.
           </h2>
+          <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            {posture === "personal"
+              ? "Give it one personal task. Wireline handles the call, the follow-up, and the record."
+              : "Give it one customer job. Wireline handles the call, the follow-up, and the record."}
+          </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
               <Link
@@ -141,12 +146,9 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
                 <ArrowRight size={15} aria-hidden="true" />
               </Link>
             </Button>
-            <Link
-              to="/showcase"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
-            >
-              View demo
-            </Link>
+            <Button asChild variant="secondary" className="w-full justify-center sm:w-auto">
+              <Link to="/showcase">View demo</Link>
+            </Button>
           </div>
         </div>
 
@@ -582,53 +584,43 @@ export default function OverviewPage() {
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
       <WorkspacePageFrame mode="standard" className="wl-overview">
-        <section
-          className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}
-        >
-          <div className={`flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}>
-            <div className="max-w-2xl">
-              <h1 className="wl-preserve-case wl-display-2 text-balance">
-                {isFirstRun
-                  ? `Let's put your first ${language.singular} to work.`
-                  : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
-              </h1>
-            </div>
-            <div
-              className={`flex flex-wrap items-center gap-2 ${hasAgents ? "justify-start" : "justify-center"}`}
-            >
-              {hasAgents ? (
-                <>
-                  <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
-                    <Link to={primaryStudioHref}>
-                      <Sparkles aria-hidden="true" size={15} />
-                      Manage {language.navLabel.toLowerCase()}
+        <section className="relative wl-overview-greeting text-left">
+          <div className="flex flex-col items-start gap-5">
+            <h1 className="wl-preserve-case wl-display-2 text-balance">
+              {`${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
+            </h1>
+            {hasAgents ? (
+              <div className="flex flex-wrap items-center justify-start gap-2">
+                <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
+                  <Link to={primaryStudioHref}>
+                    <Sparkles aria-hidden="true" size={15} />
+                    Manage {language.navLabel.toLowerCase()}
+                  </Link>
+                </Button>
+                {hasLiveLine ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="shrink-0 justify-center sm:min-w-[154px]"
+                    onClick={() => setShowOutboundDial(true)}
+                  >
+                    <Phone aria-hidden="true" size={15} />
+                    Start a call
+                  </Button>
+                ) : (
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="shrink-0 justify-center sm:min-w-[154px]"
+                  >
+                    <Link to={primaryTestHref}>
+                      <Play aria-hidden="true" size={15} />
+                      Test {language.navShort.toLowerCase()}
                     </Link>
                   </Button>
-                  {hasLiveLine ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="shrink-0 justify-center sm:min-w-[154px]"
-                      onClick={() => setShowOutboundDial(true)}
-                    >
-                      <Phone aria-hidden="true" size={15} />
-                      Start a call
-                    </Button>
-                  ) : (
-                    <Button
-                      asChild
-                      variant="secondary"
-                      className="shrink-0 justify-center sm:min-w-[154px]"
-                    >
-                      <Link to={primaryTestHref}>
-                        <Play aria-hidden="true" size={15} />
-                        Test {language.navShort.toLowerCase()}
-                      </Link>
-                    </Button>
-                  )}
-                </>
-              ) : null}
-            </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </section>
 

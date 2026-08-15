@@ -36,6 +36,19 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toContain(":has(> section:first-child .wl-empty-state)");
   });
 
+  it("keeps the Overview greeting as a short left-aligned personal line", () => {
+    const css = read("src/styles/authenticated-visual-qa.css");
+    const overview = read("src/pages/OverviewPage.tsx");
+
+    expect(css).toContain(".wl-overview-greeting .wl-display-2");
+    expect(css).toContain("max-width: 22ch");
+    expect(css).toContain("margin: 0.9rem 0 0");
+    expect(css).not.toContain("margin: 0.9rem auto 0");
+    expect(overview).toContain("dayGreeting()");
+    expect(overview).not.toContain("Let's put your first");
+    expect(overview).toContain("wl-overview-greeting text-left");
+  });
+
   it("removes the decorative ledger treatment from authenticated task surfaces", () => {
     const css = read("src/styles/workspace-polish.css");
     expect(css).toMatch(/\.wl-workspace-shell::before\s*\{[\s\S]*content: none;/);

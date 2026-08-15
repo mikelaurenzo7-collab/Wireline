@@ -23,6 +23,11 @@ describe("activation path contract", () => {
     expect(overview).toContain("FirstRunLaunchpad");
     expect(overview).toContain("Start with one job.");
     expect(overview).toContain("{language.createCta}");
+    expect(overview).toContain("dayGreeting()");
+    expect(overview).toContain("workspaceFirstName(");
+    expect(overview).not.toContain("Let's put your first");
+    expect(overview).not.toContain("text-center");
+    expect(overview).toContain('className="relative wl-overview-greeting text-left"');
     expect(overview).not.toContain("Reliable voice and behavior defaults are already selected.");
     expect(overview).not.toContain("start the founder pair with personal + business");
     expect(overview).toContain("degraded && !hasAgents");
