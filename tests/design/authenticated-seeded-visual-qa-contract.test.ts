@@ -63,4 +63,24 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain("issues.some");
     expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
   });
+
+  it("keeps Insights category tabs inside a real horizontal scroller on phones", () => {
+    const css = read("src/styles/system-refinement-pass-two.css");
+    const tabs = read("src/components/layout/ClientSubTabs.tsx");
+    const rule =
+      css
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .match(
+          /:where\(\[role="tablist"\]\.tab-strip-scroll, \.app-tab-strip\)\s*\{[^}]*\}/,
+        )?.[0] ?? "";
+
+    expect(rule, "tab rails must declare overflow-x so Revenue cannot escape the viewport").not.toBe(
+      "",
+    );
+    expect(rule).toContain("overflow-x: auto");
+    expect(rule).toContain("max-width: 100%");
+    expect(tabs).toContain("tab-strip-scroll");
+    expect(tabs).toContain("min-w-0 max-w-full");
+    expect(tabs).not.toContain("flex shrink-0 items-center");
+  });
 });

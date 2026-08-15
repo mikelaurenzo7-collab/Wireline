@@ -86,7 +86,7 @@ export default function ClientSubTabs({
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
       className={cn(
-        "tab-strip-scroll max-sm:tab-strip-scroll--fade flex shrink-0 items-center gap-1",
+        "tab-strip-scroll max-sm:tab-strip-scroll--fade flex min-w-0 max-w-full items-center gap-1",
         density === "compact" ? "mb-0 justify-start" : "mb-2 justify-center md:mb-3",
         className,
       )}
