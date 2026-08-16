@@ -3,9 +3,9 @@
  * Canonical Vercel deployment entrypoint.
  *
  * Keep the project build command short while preserving one ordered release
- * pipeline: sanitize retired client configuration, run the application gate,
- * execute the sanitizer contract, build the public health function, and smoke
- * the resulting handler.
+ * pipeline: sanitize retired client configuration, prove the sanitizer contract,
+ * run the application gate, build the public health function, and smoke the
+ * resulting handler.
  */
 import "./sanitize-retired-client-env.mjs";
 import { spawnSync } from "node:child_process";
@@ -28,8 +28,11 @@ function run(command, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run(process.execPath, ["scripts/vercel-build.mjs"]);
+// Prove the production compatibility bridge before migrations or any provider
+// gate can run. A broken sanitizer must fail before the release path can mutate
+// database or external-provider state.
 run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"]);
+run(process.execPath, ["scripts/vercel-build.mjs"]);
 run("npx", [
   "esbuild",
   "src/entrypoints/public-health-api.ts",
