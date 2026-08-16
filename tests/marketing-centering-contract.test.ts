@@ -17,11 +17,17 @@ describe("marketing centering contract", () => {
     expect(claritySystem).not.toContain("left-aligned reading rail");
   });
 
-  it("keeps mobile navigation balanced and delays duplicate sticky actions", () => {
+  it("keeps the compact account header balanced and delays duplicate sticky actions", () => {
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
     const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
 
-    expect(header).toContain("ml-auto lg:hidden");
+    expect(header).toContain(
+      '<nav className="ml-auto flex items-center gap-2 sm:gap-4" aria-label="Account">',
+    );
+    expect(header).toContain('to="/signin"');
+    expect(header).toContain('to="/signup?plan=personal"');
+    expect(header).not.toContain("DialogTrigger");
+    expect(header).not.toContain("wl-public-nav-overlay");
     expect(stickyCta).toContain('document.querySelector(".marketing-hero__actions")');
     expect(stickyCta).toContain("IntersectionObserver");
     expect(stickyCta).toContain("if (!visible) return null");
@@ -38,22 +44,29 @@ describe("marketing centering contract", () => {
     );
   });
 
-  it("loads public polish then hierarchy, and keeps centered labels on the shared axis", () => {
+  it("loads public hierarchy before document flow and the final readable-type layer", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");
+    const documentFlow = read("src/styles/marketing-document-flow.css");
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polishIndex = marketingBundle.indexOf("public-marketing-polish.css");
     const hierarchyIndex = marketingBundle.indexOf("marketing-information-hierarchy.css");
+    const viewportIndex = marketingBundle.indexOf("viewport-first-marketing.css");
+    const callStageIndex = marketingBundle.indexOf("landing-call-stage.css");
+    const documentFlowIndex = marketingBundle.indexOf("marketing-document-flow.css");
+    const longformIndex = marketingBundle.indexOf("landing-longform.css");
+    const readableTypeIndex = marketingBundle.indexOf("marketing-readable-type.css");
 
     expect(polishIndex).toBeGreaterThanOrEqual(0);
     expect(hierarchyIndex).toBeGreaterThan(polishIndex);
-    // The viewport frame loads last among shared marketing rhythm files.
-    // The home call-stage is a page-specific surface and must follow it.
-    expect(marketingBundle.indexOf("viewport-first-marketing.css")).toBeGreaterThan(hierarchyIndex);
-    expect(marketingBundle.indexOf("landing-call-stage.css")).toBeGreaterThan(
-      marketingBundle.indexOf("viewport-first-marketing.css"),
-    );
-    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/landing-call-stage\.css";$/);
+    expect(viewportIndex).toBeGreaterThan(hierarchyIndex);
+    expect(callStageIndex).toBeGreaterThan(viewportIndex);
+    expect(documentFlowIndex).toBeGreaterThan(callStageIndex);
+    expect(longformIndex).toBeGreaterThan(documentFlowIndex);
+    expect(readableTypeIndex).toBeGreaterThan(longformIndex);
+    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/marketing-readable-type\.css";$/);
+    expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
+    expect(documentFlow).toContain('body[data-wireline-viewport="document"]');
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");
@@ -69,19 +82,22 @@ describe("marketing centering contract", () => {
     expect(mark).toContain('<stop offset="0" stopColor="#8B5CF6" />');
   });
 
-  it("gives every public route exactly one bounded scroller", () => {
+  it("gives every public route one browser-document scroll owner", () => {
     const frame = read("src/components/layout/MarketingPageFrame.tsx");
+    const documentFlow = read("src/styles/marketing-document-flow.css");
 
-    // The frame no longer grows with content: the window is the frame. Every
-    // public route is 100dvh with one scroller between a fixed header and a
-    // pinned chrome bar, so no public page has a document scrollbar at any
-    // width. See src/styles/viewport-first-marketing.css.
     expect(frame).toContain('"marketing-flow relative z-10"');
     expect(frame).toContain("marketing-surface");
     expect(frame).toContain("marketing-frame-stack");
     expect(frame).not.toContain("resp-adaptive-grid");
-    // Long-form document routes still need a way out of panel composition.
     expect(frame).toContain("marketing-longform");
+    expect(frame).toContain("Public routes use normal document scrolling");
+    expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
+    expect(documentFlow).toContain('body[data-wireline-viewport="document"]');
+    expect(documentFlow).toContain("overflow-y: auto;");
+    expect(documentFlow).toContain(".wl-ui-caps.wl-ui-caps--document");
+    expect(documentFlow).toContain(".marketing-surface .marketing-flow");
+    expect(documentFlow).toContain("overflow: visible;");
   });
 
   it("lets a one-screen panel fill the flow instead of sitting under the header", () => {
