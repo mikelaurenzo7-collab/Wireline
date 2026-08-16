@@ -276,6 +276,10 @@
  * real, and still lets the panel scroll normally when a short window makes it
  * taller than the viewport.
  */
+.wl-overview {
+  flex: 1 1 auto;
+}
+
 .wl-overview--first-run {
   flex: 1 1 auto;
   justify-content: center;

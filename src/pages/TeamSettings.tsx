@@ -149,7 +149,7 @@ export default function TeamSettings() {
   const canInvite = teamAccess === "ok";
 
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         {/* The selected Settings tab already reads "Team"; the heading stays

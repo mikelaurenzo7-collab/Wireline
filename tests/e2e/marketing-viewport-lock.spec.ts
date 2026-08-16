@@ -78,6 +78,21 @@ test("home phone stage still fits a short laptop", async ({ page }) => {
   expect(metrics.phoneHeight).toBeGreaterThan(280);
 });
 
+test("home hides the chrome bar and does not scroll on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCanvas(page, "/");
+  await expect(page.locator(".landing-phone")).toBeVisible();
+  await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
+  await expect(page.locator(".landing-stage__loop")).toContainText("Launch");
+  await expect(page.locator(".landing-stage__loop")).not.toContainText("Improve");
+  const metrics = await viewportMetrics(page);
+  expect(metrics.docOverflow, "home document scrollbar on phone").toBeLessThanOrEqual(2);
+  expect(metrics.bodyOverflow, "home body scrollbar on phone").toBeLessThanOrEqual(2);
+  expect(metrics.flowOverflow, "home marketing-flow must not scroll on phone").toBeLessThanOrEqual(
+    8,
+  );
+});
+
 test("features canvas stays inside 1365x900", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openCanvas(page, "/features");

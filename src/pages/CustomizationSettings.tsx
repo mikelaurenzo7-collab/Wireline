@@ -76,7 +76,7 @@ export default function CustomizationSettings() {
       (!("businessOnly" in link && link.businessOnly) || accountType === "business"),
   );
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-8">
+    <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         <WorkspacePageIntro title="Appearance & brand" titleHidden />

@@ -174,11 +174,14 @@ describe("E2E design and brand polish", () => {
     expect(landing).toContain("landing-stage__device");
     expect(landing).toContain("See Plans");
     expect(landing).toContain("Start free.");
+    expect(landing).toContain("MARKETING_VOICE.spine");
+    expect(landing).not.toContain("MarketingChromeBar");
     // The closing band that repeated the hero's headline and both of its
     // buttons verbatim is gone: the plan cards are the close.
     expect(landing).not.toContain("Put your first voice agent to work");
-    // The four step cards are titled Build/Train/Launch/Improve, so a display
-    // heading repeating those same four words is banned, not merely absent.
+    // Home shows Build / Train / Launch. Improve stays on Features and in
+    // BRAND_SYSTEM.proofLoop; shouting it on the opening call implied the
+    // product starts broken.
     expect(landing).not.toContain('wl-display-2">Build. Train. Launch. Improve.');
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");

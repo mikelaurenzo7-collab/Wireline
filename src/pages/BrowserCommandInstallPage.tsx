@@ -33,7 +33,7 @@ const DOWNLOADS = [
 
 export default function BrowserCommandInstallPage() {
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
         <div className="mb-4">
           <Button asChild variant="link" className="px-0 text-sm text-muted-foreground">

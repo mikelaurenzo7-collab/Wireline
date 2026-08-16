@@ -244,6 +244,8 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
+    expect(landing).toContain("MARKETING_VOICE.spine");
+    expect(landing).not.toContain("HERO_LOOP = MARKETING_VOICE.proof");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
     expect(extension).toContain('data-action="call"');
