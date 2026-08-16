@@ -115,6 +115,39 @@ if (/\.marketing-section \{[^}]*max-height/s.test(frameCss)) {
   );
 }
 
+// One screen, one headline.
+//
+// A panel is a screen, and a screen carries a single display-tier heading. A
+// second one beneath the first competes with it at nearly the same weight and
+// reads as two pages stacked -- which is exactly what these pages were before
+// they were composed into panels. Supporting groups inside a panel get the
+// eyebrow tier, which names them without arguing with the page's own title.
+//
+// The budget is derived, not hand-listed: a page may carry one headline per
+// `.marketing-section` it declares. `<MarketingHero>` counts as a headline
+// because it renders one, even though the class that styles it lives in the
+// shared component rather than in the page.
+const HEADLINE_TIER =
+  /\bwl-(?:public-section-heading|stitch-display|page-title)\b|marketing-hero-title|<MarketingHero\b/g;
+
+for (const path of [...PUBLIC_SURFACES, ...FRAMED_PAGES]) {
+  if (path.endsWith("MarketingPageFrame.tsx")) continue;
+  const source = read(path);
+  // Long-form document routes are chapters, not panels; a heading per section
+  // is how a document is meant to read.
+  if (source.includes("marketing-section--longform") || source.includes("<MarketingPageFrame longform")) {
+    continue;
+  }
+  const panels = Math.max(1, (source.match(/\bmarketing-section\b/g) ?? []).length);
+  const headlines = (source.match(HEADLINE_TIER) ?? []).length;
+  if (headlines > panels) {
+    failures.push(
+      `${path}: ${headlines} display-tier headings across ${panels} panel(s) -- one screen carries ` +
+        "one headline; demote supporting group titles to the eyebrow tier",
+    );
+  }
+}
+
 if (failures.length > 0) {
   console.error("Marketing viewport-fit check failed:");
   for (const failure of failures) console.error(`- ${failure}`);

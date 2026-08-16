@@ -130,11 +130,11 @@ describe("product voice cohesion", () => {
     const features = read("src/pages/Features.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const authPortal = read("src/components/AuthPortal.tsx");
-    for (const step of ["Build", "Train", "Launch", "Improve"]) {
-      expect(features).toContain(step);
-    }
+    expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
-    expect(features).toContain("Build. Train. Launch. Improve.");
+    // Sourced from BRAND_SYSTEM.proofLoop rather than typed as a display line,
+    // so the four steps and their order have exactly one origin.
+    expect(features).toContain("MARKETING_VOICE.proof");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
     expect(features).toContain("Voice agents for every customer conversation");

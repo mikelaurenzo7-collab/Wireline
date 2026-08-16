@@ -28,11 +28,13 @@
  */
 
 .marketing-surface {
-  /* One beat, tightened. Section padding used to resolve to 52-76px per edge,
-     which stacked to ~150px of empty canvas at every boundary — a sixth of the
-     viewport spent on nothing, four to seven times per page. */
-  --wl-public-section-space: clamp(2.5rem, 3.4vw, 3.5rem);
-  --wl-public-section-space-tight: clamp(1.75rem, 2.6vw, 2.5rem);
+  /* One beat, tightened twice. Section padding originally resolved to 52-76px
+     per edge, stacking to ~150px of empty canvas at every boundary — a sixth of
+     the viewport spent on nothing, four to seven times per page. The second
+     pass took it to 24-36px: at one panel per screen the boundary is carried by
+     the panel change itself, not by the gap. */
+  --wl-public-section-space: clamp(1.5rem, 2.2vw, 2.25rem);
+  --wl-public-section-space-tight: clamp(1rem, 1.6vw, 1.5rem);
   --wl-marketing-chrome-top: 4rem;
 
   display: flex;
@@ -110,14 +112,21 @@
   padding-block: var(--wl-public-section-space-tight);
 }
 
-/* A hero that a page renders straight into the flow, rather than composing
-   inside a panel, is its own opening screen: centred in the viewport, snapping
-   like a panel, and no longer stacking a `min-height` on top of its own padding
-   to reserve ~200px of dead band above and below ~300px of content. */
+/*
+ * A hero claims no more room than its content needs.
+ *
+ * It used to take a full screen wherever a page rendered it straight into the
+ * flow. That is right for a landing page and wrong everywhere else: on
+ * /showcase, /solutions/*, /blog and /contact the hero is a headline, two
+ * buttons and a demo widget — roughly 400px — and reserving 733px for it was
+ * single-handedly what pushed each of those pages from one screen to two. The
+ * page decides what deserves a whole screen, by marking a panel `--screen`; the
+ * hero just sizes to itself.
+ */
 .marketing-surface .marketing-hero {
   display: grid;
   align-content: center;
-  min-height: calc(100dvh - var(--wl-marketing-chrome-top) - 3rem);
+  min-height: 0;
   padding-block: var(--wl-public-section-space);
   scroll-snap-align: start;
 }
@@ -128,6 +137,13 @@
   min-height: 0;
   padding-block: 0;
   scroll-snap-align: none;
+}
+
+/* The gap between a headline and its actions was authored when the hero owned a
+   whole screen. Composed into a panel with the page's evidence beneath it, 36px
+   is the beat. */
+.marketing-surface .marketing-section .marketing-hero__actions {
+  margin-top: 2.25rem;
 }
 
 /*
@@ -298,6 +314,32 @@
    the leading that suited sentence case closes up. */
 .marketing-surface :is(.wl-public-section-heading, .wl-stitch-display) {
   line-height: 1.04;
+}
+
+/*
+ * Rank by size as well as by case.
+ *
+ * The section tier clamped to 57px and the hero to 56px, so a panel heading and
+ * the page's own headline arrived at the same weight one screen apart and
+ * neither read as subordinate. At one panel per screen that is also unaffordable
+ * in pure height: /features spent 360px — 43% of its screen — on two headlines
+ * that between them carried nine words.
+ *
+ * The hero keeps the display size. Section headings drop a full step, which is
+ * what a supporting heading was always meant to be, and stops most of them
+ * wrapping to a second line at all.
+ */
+.marketing-surface :is(.wl-public-section-heading, .wl-stitch-display) {
+  font-size: clamp(1.5rem, 1.15rem + 1.1vw, 2.25rem);
+  max-width: 26ch;
+}
+
+/* Heroes on the pages that are not the landing page: the same step down. The
+   landing keeps its full display scale — it is the one page whose headline is
+   the entire argument. */
+.marketing-surface .marketing-hero__title:not(.wireline-home-hero__content .marketing-hero__title) {
+  font-size: clamp(1.85rem, 1.35rem + 1.9vw, 3rem);
+  max-width: 24ch;
 }
 
 /*

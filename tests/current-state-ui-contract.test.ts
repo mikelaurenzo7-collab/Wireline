@@ -154,9 +154,11 @@ describe("current-state UI contract", () => {
     expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
     expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
-    for (const step of ["Build", "Train", "Launch", "Improve"]) {
-      expect(features).toContain(`title: "${step}"`);
-    }
+    // The loop is still on /features, but as the four words in sequence rather
+    // than four cards with a paragraph each: the landing page carries the
+    // explanation, and this page now fits one screen. It reads them from the
+    // shared voice constant, so the canonical order cannot drift.
+    expect(features).toContain("MARKETING_VOICE.proof.map");
   });
 
   it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {

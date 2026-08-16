@@ -164,10 +164,18 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the final loop step must settle violet on the wire",
   );
 
+  // The loop is still on this buying surface, but it is no longer typed as a
+  // display line. /features is one screen now, and four cards with a paragraph
+  // each cost ~300px to repeat what the landing page already explains in full;
+  // the four words in sequence carry the spine for ~50px. Sourcing them from
+  // MARKETING_VOICE.proof (BRAND_SYSTEM.proofLoop) also gives the steps and
+  // their order exactly one origin, which a hand-typed headline never had --
+  // this page used to headline "Build. Train. Launch. Improve." above cards
+  // titled "Define the Agent" / "Teach the Business".
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,
-    /Build\. Train\. Launch\. Improve\./,
+    /MARKETING_VOICE\.proof\.map/,
     "features must preserve the canonical operating loop",
   );
   for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Scale"]) {

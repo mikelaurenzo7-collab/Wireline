@@ -1,17 +1,12 @@
-import { Link } from "react-router";
 import {
   BarChart3,
   CalendarClock,
   CheckCircle2,
-  Contact,
   Mail,
   MessageSquareText,
   PhoneCall,
-  Puzzle,
   ShieldCheck,
-  ShoppingBag,
   SlidersHorizontal,
-  Store,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -19,29 +14,7 @@ import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-
-/* Titled with the canonical step names the landing page uses. This list used
-   to sit under a "Build. Train. Launch. Improve." headline while its own cards
-   were titled "Define the Agent" / "Teach the Business" — one four-step story,
-   two vocabularies, on two pages. One vocabulary now. */
-const OPERATING_LOOP = [
-  {
-    title: "Build",
-    body: "Choose the job, audience, success criteria, channels, and limits.",
-  },
-  {
-    title: "Train",
-    body: "Add knowledge, tone, objections, routing, approvals, and handoff rules.",
-  },
-  {
-    title: "Launch",
-    body: "Activate live channels, claim the included number, and set spend controls.",
-  },
-  {
-    title: "Improve",
-    body: "Review conversations, completed work, exceptions, and the next action.",
-  },
-] as const;
+import { MARKETING_VOICE } from "../lib/product-copy";
 
 const CHANNEL_CAPABILITIES = [
   {
@@ -94,53 +67,6 @@ const CORE_FEATURES = [
   },
 ] as const;
 
-const TOOL_STACK = [
-  { icon: ShoppingBag, label: "Shopify", status: "Orders" },
-  { icon: Store, label: "Square", status: "Customers" },
-  { icon: BarChart3, label: "HubSpot", status: "CRM" },
-  { icon: Puzzle, label: "Salesforce", status: "Pipeline" },
-  { icon: Mail, label: "Google & Microsoft", status: "Inbox" },
-] as const;
-
-const USE_CASES = [
-  {
-    title: "Lead Response",
-    icon: PhoneCall,
-    to: "/solutions/sales",
-    body: "Answer and qualify new demand before it cools.",
-  },
-  {
-    title: "Inbox Triage",
-    icon: Mail,
-    to: "/solutions/support",
-    body: "Sort, draft, and resolve email without losing context.",
-  },
-  {
-    title: "SMS Follow Up",
-    icon: MessageSquareText,
-    to: "/solutions/sales",
-    body: "Keep momentum with consented text that finishes the job.",
-  },
-  {
-    title: "Appointments",
-    icon: CalendarClock,
-    to: "/solutions/support",
-    body: "Offer real availability and book without the phone tag.",
-  },
-  {
-    title: "Front Desk",
-    icon: Contact,
-    to: "/solutions/support",
-    body: "Catch every call, route the exception, log the outcome.",
-  },
-  {
-    title: "Custom Workflow",
-    icon: Workflow,
-    to: "/signup",
-    body: "Train one voice agent on the conversation work you want off your plate.",
-  },
-] as const;
-
 export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
@@ -152,9 +78,20 @@ export default function Features() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
-        {/* Screen 1 — what it runs on. The three channel cards carry the
-            "every channel, one agent" claim, so the headline that said it in
-            words above them is gone: the row is the proof and the sentence. */}
+        {/*
+          One screen: what it runs on, why it can be trusted with the work, and
+          what it plugs into.
+
+          This page was four screens and twenty-four cards. Cut: the four-step
+          loop (the landing page tells it in full, and it arrived here under a
+          headline that used a different four words for the same four steps);
+          the six use-case cards, which were links to /solutions pages the header
+          already links to by name; and the "Every channel. One voice agent."
+          headline, whose claim the channel row makes without it. The three
+          channel cards became chips — a card with an icon, a title and a body
+          line spent 200px to say "Voice", "Text / SMS" and "Email", which is a
+          capability list. The six controls are the argument, so they keep cards.
+        */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
             title="Voice agents for every customer conversation"
@@ -165,92 +102,46 @@ export default function Features() {
               tone: "secondary",
             }}
           />
-          <div className="wl-public-rail mt-10">
-            <div className="grid gap-3 lg:grid-cols-3">
-              {CHANNEL_CAPABILITIES.map(({ icon: Icon, title, body }) => (
-                <FeatureCard key={title} icon={Icon} title={title} body={body} />
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Screen 2 — why it can be trusted with the work. */}
-        <section className="marketing-section border-t border-border">
-          <div className="wl-public-rail">
-            <h2 className="wl-public-section-heading mx-auto text-center">
+          <div className="wl-public-rail mt-6">
+            <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+              {MARKETING_VOICE.proof.map((step, index) => (
+                <li key={step} className="flex items-center gap-2">
+                  {index > 0 ? (
+                    <span aria-hidden="true" className="text-xs text-muted-foreground">
+                      /
+                    </span>
+                  ) : null}
+                  <span className="wl-overline text-foreground">{step}</span>
+                </li>
+              ))}
+            </ol>
+
+            <ul className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              {CHANNEL_CAPABILITIES.map(({ icon: Icon, title }) => (
+                <li
+                  key={title}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
+                >
+                  <Icon size={15} className="text-primary" aria-hidden="true" />
+                  {title}
+                </li>
+              ))}
+            </ul>
+
+            {/* A label, not a second headline. One screen gets one headline —
+                a display heading beneath the hero competes with it at nearly the
+                same weight, and the six cards under this line already say what
+                they are. The eyebrow tier names the group without arguing with
+                the page's own title. */}
+            <p className="wl-eyebrow mx-auto mt-8 text-center text-muted-foreground">
               The controls that make it reliable
-            </h2>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
                 <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* Screen 3 — the work itself. Each card now renders the body copy it
-            has always carried: the six use cases shipped as bare labels with a
-            hover-only "Explore", so the data existed and the visitor never saw
-            it. Connections ride along at the foot of the same screen — they
-            answer "does it reach my systems", which is the question a use case
-            raises, and they no longer need a one-word section of their own. */}
-        <section className="marketing-section border-t border-border bg-card/45">
-          <div className="wl-public-rail">
-            <h2 className="wl-public-section-heading mx-auto text-center">
-              Start with the work you want off your plate
-            </h2>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {USE_CASES.map((useCase) => (
-                <Link
-                  key={useCase.title}
-                  to={useCase.to}
-                  className="wl-stitch-card group flex flex-col items-center rounded-xl border border-border bg-card p-5 text-center transition-all hover:border-primary/30 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                >
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
-                    <useCase.icon size={18} aria-hidden="true" />
-                  </div>
-                  <h3 className="wl-card-title">{useCase.title}</h3>
-                  <p className="mx-auto mt-2 max-w-[32ch] text-sm leading-6 text-muted-foreground">
-                    {useCase.body}
-                  </p>
-                </Link>
-              ))}
-            </div>
-
-            <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              {TOOL_STACK.map(({ icon: Icon, label, status }) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2"
-                >
-                  <Icon size={15} className="text-primary" aria-hidden="true" />
-                  <span className="text-xs font-semibold text-foreground">{label}</span>
-                  <span className="wl-overline text-muted-foreground">{status}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Screen 4 — how you get there, in the same four words the landing
-            page and the workspace use. The closing CTA band that used to sit
-            below this repeated the hero's two buttons verbatim; the loop ends
-            on "Improve", which is a better last word than a third Start Free. */}
-        <section className="marketing-section border-t border-border">
-          <div className="wl-public-rail">
-            <ol className="grid gap-px overflow-hidden rounded-[var(--radius-xl)] border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-              {OPERATING_LOOP.map(({ title, body }, index) => (
-                <li key={title} className="bg-card p-6 text-center">
-                  <span className="mx-auto grid h-9 w-9 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="wl-card-title mt-4">{title}</h3>
-                  <p className="mx-auto mt-2 max-w-[30ch] text-sm leading-6 text-muted-foreground">
-                    {body}
-                  </p>
-                </li>
-              ))}
-            </ol>
           </div>
         </section>
       </main>
@@ -270,7 +161,7 @@ function FeatureCard({
   body: string;
 }) {
   return (
-    <article className="wl-stitch-card group flex min-h-[12rem] flex-col items-center rounded-xl p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:p-7">
+    <article className="wl-stitch-card group flex flex-col items-center rounded-xl p-5 text-center transition-all hover:-translate-y-px hover:shadow-sm">
       <Icon
         size={22}
         className="text-primary transition group-hover:scale-110"
@@ -282,8 +173,8 @@ function FeatureCard({
           so every body paragraph in the row started on a different baseline. */}
       {/* Two lines are reserved so every body paragraph in a row starts on the
           same baseline whether its title wraps once or not. */}
-      <h3 className="wl-card-title mx-auto mt-5 min-h-[2.24em] max-w-[18ch]">{title}</h3>
-      <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
+      <h3 className="wl-card-title mx-auto mt-3 max-w-[18ch]">{title}</h3>
+      <p className="mx-auto mt-2 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
     </article>
   );
 }
