@@ -110,11 +110,15 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/MARKETING_VOICE\.spine/, "landing must consume the shared Build Train Launch spine"],
     [/<PrecisionPublicHeader\s*\/>/, "landing must use the visible shared public header"],
     [/aria-label="Agent work lane"/, "work lanes must stay reachable as named navigation"],
+    [/landing-stage__lane-group/, "work lanes must remain a compact supporting entry point"],
     [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
     [/landing-console__activity/, "home must show an outcome ledger beside the live agent"],
-    [/One call\. A completed next step\./, "home must explain the completed-work proof"],
+    [/Illustrative Workflow/, "home must label static proof as illustrative"],
+    [/From first answer to confirmed next step\./, "home must explain the completed-work proof"],
     [/Booked and logged/, "home must expose a concrete outcome"],
     [/rules, approvals, spend, and handoffs/, "home must keep owner control explicit"],
+    [/Build free/, "landing must keep the free builder visible"],
+    [/View Pricing/, "landing must preserve a direct pricing path"],
     [/STRIPE_PLANS/, "landing pricing must stay tied to the Stripe plan catalog"],
     [/Runtime\s+Balance/, "landing pricing must explain prepaid Runtime Balance"],
   ]) {
@@ -129,8 +133,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     executable(wireAgentLanding),
-    /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/,
-    "landing executable code must not depend on borrowed device-OS metaphors",
+    /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"|00:42|landing-console__duration|Live Video/,
+    "landing executable code must not depend on borrowed device metaphors, pseudo-live telemetry, or optional add-ons",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -154,14 +158,26 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/styles/landing-stage-layout.css",
     landingLayoutCss,
-    /grid-template-columns:\s*minmax\(0, 0\.88fr\)\s+minmax\(34rem, 1\.12fr\)/,
+    /grid-template-columns:\s*minmax\(0, 0\.93fr\)\s+minmax\(34rem, 1\.07fr\)/,
     "desktop landing must preserve a deliberate narrative and proof split",
+  );
+  mustInclude(
+    "src/styles/landing-stage-layout.css",
+    landingLayoutCss,
+    /\.landing-stage__lane-group/,
+    "work-lane entry points must remain visually subordinate to the primary CTA",
   );
   mustInclude(
     "src/styles/landing-live-console.css",
     landingConsoleCss,
     /\.landing-console__body[\s\S]*grid-template-columns:/,
     "live proof must preserve separate agent and outcome panes",
+  );
+  mustInclude(
+    "src/styles/landing-live-console.css",
+    landingConsoleCss,
+    /\.landing-demo__microcopy[\s\S]*font-size:\s*0\.71rem/,
+    "demo disclosures must remain readable rather than collapsing into micro chrome",
   );
   mustInclude(
     "src/styles/landing-call-stage.css",

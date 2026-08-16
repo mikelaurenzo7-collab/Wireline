@@ -61,8 +61,9 @@ describe("E2E design and brand polish", () => {
     ).toEqual([]);
 
     for (const selector of [
-      ".landing-stage__live-label",
+      ".landing-stage__eyebrow",
       ".landing-stage__spine li",
+      ".landing-stage__lanes-label",
       ".landing-console__status",
       ".landing-console__channels li",
       ".landing-demo__presence",
@@ -158,15 +159,20 @@ describe("E2E design and brand polish", () => {
     expect(executableLanding).toContain('variant="stage"');
     expect(executableLanding).toContain("landing-stage__rail");
     expect(executableLanding).toContain("landing-stage__copy");
+    expect(executableLanding).toContain("landing-stage__lane-group");
     expect(executableLanding).toContain("landing-console");
     expect(executableLanding).toContain("landing-console__activity");
-    expect(executableLanding).toContain("One call. A completed next step.");
+    expect(executableLanding).toContain("Illustrative Workflow");
+    expect(executableLanding).toContain("From first answer to confirmed next step.");
     expect(executableLanding).toContain("Booked and logged");
     expect(executableLanding).toContain("MARKETING_VOICE.subline");
     expect(executableLanding).toContain("MARKETING_VOICE.spine");
-    expect(executableLanding).toContain("See Plans");
-    expect(executableLanding).toContain("Start free.");
+    expect(executableLanding).toContain("View Pricing");
+    expect(executableLanding).toContain("Build free");
     expect(executableLanding).toContain("rules, approvals, spend, and handoffs");
+    expect(executableLanding).not.toContain("00:42");
+    expect(executableLanding).not.toContain("landing-console__duration");
+    expect(executableLanding).not.toContain("Live Video");
     expect(executableLanding).not.toContain("Choose the outcome");
     expect(executableLanding).not.toContain("landing-phone");
     expect(executableLanding).not.toContain("landing-os__tray");
@@ -181,6 +187,8 @@ describe("E2E design and brand polish", () => {
     expect(executableStage).not.toContain("#fbbf24");
     expect(executableStage).not.toContain("#7dd3fc");
     expect(executableStage).not.toContain("#2563eb");
+    expect(consoleCss).toContain("font-size: 0.71rem");
+    expect(consoleCss).not.toContain("0 2.4rem 6rem");
     expect(header).not.toContain("landing-os-nav");
     expect(header).not.toContain('chrome?: "bar" | "hidden"');
 
