@@ -10,7 +10,6 @@ import {
   PhoneCall,
   ShieldCheck,
   Sparkles,
-  Video,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -55,11 +54,10 @@ const AUDIENCES = [
   },
 ] as const;
 
-const CHANNELS = [
+const CORE_CHANNELS = [
   { label: "Voice", icon: PhoneCall },
   { label: "Text", icon: MessageSquareText },
   { label: "Email", icon: Mail },
-  { label: "Live Video Add-On", icon: Video },
 ] as const;
 
 const EXAMPLE_RUN = [
@@ -132,11 +130,8 @@ export default function WireAgentLanding() {
           <div className="landing-stage__rail">
             <div className="landing-stage__copy">
               <div className="landing-stage__eyebrow">
-                <span className="landing-stage__live-label">
-                  <span className="landing-stage__live-dot" aria-hidden="true" />
-                  Live Product Demo
-                </span>
-                <span className="landing-stage__eyebrow-detail">Voice, text, and email</span>
+                <span className="landing-stage__live-dot" aria-hidden="true" />
+                Live Voice Demo
               </div>
 
               <h1 className="landing-stage__title">{MARKETING_VOICE.headline}</h1>
@@ -157,10 +152,10 @@ export default function WireAgentLanding() {
               </div>
 
               <div className="landing-stage__economics" aria-label="Plan summary">
-                <span>Start free.</span>
-                <span>Go live from ${STARTER_PRICE}/mo</span>
-                <span>Wireline number on paid plans</span>
-                <Link to="/pricing">See Plans</Link>
+                <span>Build free</span>
+                <span>Launch from ${STARTER_PRICE}/mo</span>
+                <span>Number included</span>
+                <Link to="/pricing">View Pricing</Link>
                 <span className="sr-only">
                   Channels unlock at activation. Paid plans include a Wireline number. Extra usage
                   uses prepaid Runtime Balance.
@@ -177,27 +172,29 @@ export default function WireAgentLanding() {
                 ))}
               </ol>
 
-              <nav className="landing-stage__lanes" aria-label="Agent work lane">
-                {AUDIENCES.map((audience) => {
-                  const Icon = audience.icon;
-                  return (
-                    <Link
-                      key={audience.key}
-                      to={audience.href}
-                      className="landing-stage__lane"
-                      onClick={() => selectAudience(audience.key)}
-                    >
-                      <Icon className="landing-stage__lane-icon" aria-hidden="true" />
-                      <span>
+              <div className="landing-stage__lane-group">
+                <p className="landing-stage__lanes-label">Start With</p>
+                <nav className="landing-stage__lanes" aria-label="Agent work lane">
+                  {AUDIENCES.map((audience) => {
+                    const Icon = audience.icon;
+                    return (
+                      <Link
+                        key={audience.key}
+                        to={audience.href}
+                        className="landing-stage__lane"
+                        onClick={() => selectAudience(audience.key)}
+                      >
+                        <Icon className="landing-stage__lane-icon" aria-hidden="true" />
                         <strong>{audience.label}</strong>
-                        <small className="wl-preserve-case">{audience.detail}</small>
-                        <span className="sr-only">{audience.uses.join(", ")}</span>
-                      </span>
-                      <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
-                    </Link>
-                  );
-                })}
-              </nav>
+                        <span className="sr-only">
+                          {audience.detail}. {audience.uses.join(", ")}.
+                        </span>
+                        <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
             </div>
 
             <div className="landing-stage__proof">
@@ -209,7 +206,7 @@ export default function WireAgentLanding() {
                   </div>
                   <div className="landing-console__status">
                     <span aria-hidden="true" />
-                    Public Demo
+                    Demo Ready
                   </div>
                 </header>
 
@@ -242,16 +239,15 @@ export default function WireAgentLanding() {
 
                   <aside
                     className="landing-console__activity"
-                    aria-label="Example completed workflow"
+                    aria-label="Illustrative completed workflow"
                   >
                     <div className="landing-console__activity-heading">
                       <div>
-                        <p className="landing-console__activity-kicker">Example Run</p>
+                        <p className="landing-console__activity-kicker">Illustrative Workflow</p>
                         <h2 className="landing-console__activity-title">
-                          One call. A completed next step.
+                          From first answer to confirmed next step.
                         </h2>
                       </div>
-                      <span className="landing-console__duration">00:42</span>
                     </div>
 
                     <ol className="landing-console__events">
@@ -286,8 +282,8 @@ export default function WireAgentLanding() {
                     <ShieldCheck aria-hidden="true" />
                     <span>You set the rules, approvals, spend, and handoffs.</span>
                   </div>
-                  <ul className="landing-console__channels" aria-label="Agent channels">
-                    {CHANNELS.map((channel) => {
+                  <ul className="landing-console__channels" aria-label="Core agent channels">
+                    {CORE_CHANNELS.map((channel) => {
                       const Icon = channel.icon;
                       return (
                         <li key={channel.label}>
@@ -303,7 +299,7 @@ export default function WireAgentLanding() {
           </div>
 
           <footer className="landing-stage__footer">
-            <p>One trained voice agent across conversations, follow through, and proof.</p>
+            <p>&copy; {new Date().getFullYear()} Wireline</p>
             <nav aria-label="Legal">
               {LEGAL_LINKS.map((link) => (
                 <Link key={link.to} to={link.to}>
