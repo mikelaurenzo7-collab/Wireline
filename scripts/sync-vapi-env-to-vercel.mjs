@@ -1,68 +1,66 @@
 #!/usr/bin/env node
 /**
- * Push Vapi env vars to the Wireline Vercel project (encrypted · all targets).
+ * Replace Wireline's server-only Vapi credentials in Vercel production.
+ *
+ * Public browser previews no longer use VITE_VAPI_PUBLIC_KEY. They mint a
+ * short-lived Wireline ticket and reach Vapi through a private-key server
+ * proxy. This script therefore manages only server credentials, never exposes
+ * secret values, and deliberately removes stale preview/development copies.
  *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
  *   $env:VAPI_PRIVATE_KEY = "..."
- *   $env:VITE_VAPI_PUBLIC_KEY = "..."
- *   $env:VAPI_WEBHOOK_SECRET = "..."   # optional — generates one if unset
+ *   $env:VAPI_WEBHOOK_SECRET = "..."
  *   node scripts/sync-vapi-env-to-vercel.mjs
  */
 
-import { randomBytes } from "node:crypto";
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const TARGETS = ["production", "preview", "development"];
-
+const TARGETS = ["production"];
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
+
 if (!token) {
   console.error("Set VERCEL_TOKEN in the environment.");
   process.exit(1);
 }
 
 const privateKey = process.env.VAPI_PRIVATE_KEY?.trim();
-const publicKey = process.env.VITE_VAPI_PUBLIC_KEY?.trim();
-let webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
+const webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
 
-if (!privateKey || !publicKey) {
-  console.error("Set VAPI_PRIVATE_KEY and VITE_VAPI_PUBLIC_KEY.");
+if (!privateKey || !webhookSecret) {
+  console.error("Set VAPI_PRIVATE_KEY and VAPI_WEBHOOK_SECRET.");
   process.exit(1);
-}
-
-if (!webhookSecret) {
-  webhookSecret = randomBytes(24).toString("hex");
-  console.log(`Generated VAPI_WEBHOOK_SECRET (${webhookSecret.length} chars)`);
 }
 
 const envMap = {
   VAPI_PRIVATE_KEY: privateKey,
-  VITE_VAPI_PUBLIC_KEY: publicKey,
   VAPI_WEBHOOK_SECRET: webhookSecret,
 };
 
 function vercelUrl(path) {
-  const sep = path.includes("?") ? "&" : "?";
-  return `https://api.vercel.com${path}${sep}teamId=${encodeURIComponent(TEAM_ID)}`;
+  const separator = path.includes("?") ? "&" : "?";
+  return `https://api.vercel.com${path}${separator}teamId=${encodeURIComponent(TEAM_ID)}`;
 }
 
-async function vercelFetch(path, opts = {}) {
-  const res = await fetch(vercelUrl(path), {
-    ...opts,
+async function vercelFetch(path, options = {}) {
+  const response = await fetch(vercelUrl(path), {
+    ...options,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      ...(opts.headers || {}),
+      ...(options.headers || {}),
     },
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Vercel API ${res.status}: ${text.slice(0, 800)}`);
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Vercel API ${response.status}: ${text.slice(0, 800)}`);
+  }
   return text ? JSON.parse(text) : {};
 }
 
-async function listProjectEnv() {
+async function listProjectEnvMetadata() {
   const data = await vercelFetch(
-    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env?decrypt=true`,
+    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env`,
     { method: "GET" },
   );
   return data.envs || [];
@@ -75,54 +73,51 @@ async function deleteEnv(envId) {
   );
 }
 
-async function createEnv(key, value) {
+async function createProductionEnv(key, value) {
   await vercelFetch(`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`, {
     method: "POST",
-    body: JSON.stringify({ key, value, type: "encrypted", target: TARGETS }),
+    body: JSON.stringify({
+      key,
+      value,
+      type: "encrypted",
+      target: TARGETS,
+    }),
   });
-  console.log(`  + created ${key}`);
 }
 
-async function upsertEnv(key, value) {
-  const existing = (await listProjectEnv()).find((e) => e.key === key);
-  if (!existing) {
-    await createEnv(key, value);
-    return;
+async function replaceProductionEnv(key, value, allEntries) {
+  const existing = allEntries.filter((entry) => entry.key === key);
+  for (const entry of existing) {
+    await deleteEnv(entry.id);
   }
+  await createProductionEnv(key, value);
+  console.log(`  ✓ rotated ${key} for production only`);
+}
 
-  try {
-    await vercelFetch(
-      `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(existing.id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ value, type: "encrypted", target: TARGETS }),
-      },
-    );
-    console.log(`  ↻ updated ${key}`);
-  } catch (err) {
-    if (/cannot change the type/i.test(String(err.message))) {
-      await deleteEnv(existing.id);
-      await createEnv(key, value);
-      console.log(`  ↻ recreated ${key} (type change)`);
-      return;
-    }
-    throw err;
+async function removeLegacyPublicKey(allEntries) {
+  const legacy = allEntries.filter((entry) => entry.key === "VITE_VAPI_PUBLIC_KEY");
+  for (const entry of legacy) {
+    await deleteEnv(entry.id);
+  }
+  if (legacy.length) {
+    console.log("  ✓ removed legacy VITE_VAPI_PUBLIC_KEY from all Vercel targets");
   }
 }
 
 async function main() {
-  console.log(
-    "Syncing Vapi env vars to Vercel (encrypted · production + preview + development)…\n",
-  );
+  console.log("Rotating Wireline Vapi server credentials in Vercel production…\n");
+  const entries = await listProjectEnvMetadata();
+
   for (const [key, value] of Object.entries(envMap)) {
-    await upsertEnv(key, value);
+    await replaceProductionEnv(key, value, entries);
   }
-  console.log("\nDone. Redeploy production for serverless functions to pick up new values.");
-  console.log("\nVAPI_WEBHOOK_SECRET for Vapi dashboard / assistant sync:");
-  console.log(webhookSecret);
+  await removeLegacyPublicKey(entries);
+
+  console.log("\nDone. No credential values were requested from Vercel or printed.");
+  console.log("Redeploy production so every serverless function receives the rotated values.");
 }
 
-main().catch((e) => {
-  console.error(e.message || e);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
