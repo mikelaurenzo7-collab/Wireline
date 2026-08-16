@@ -163,7 +163,8 @@ describe("E2E design and brand polish", () => {
     expect(executableLanding).toContain("landing-console");
     expect(executableLanding).toContain("landing-console__activity");
     expect(executableLanding).toContain("Illustrative Workflow");
-    expect(executableLanding).toContain("From first answer to confirmed next step.");
+    expect(executableLanding).toContain("From first answer to confirmed next step");
+    expect(executableLanding).not.toContain("From first answer to confirmed next step.");
     expect(executableLanding).toContain("Booked and logged");
     expect(executableLanding).toContain("MARKETING_VOICE.subline");
     expect(executableLanding).toContain("MARKETING_VOICE.spine");

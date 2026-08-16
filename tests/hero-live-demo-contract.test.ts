@@ -19,7 +19,8 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     expect(landing).toContain('id="hear-a-demo"');
     expect(landing).toContain("landing-console");
     expect(landing).toContain("Illustrative Workflow");
-    expect(landing).toContain("From first answer to confirmed next step.");
+    expect(landing).toContain("From first answer to confirmed next step");
+    expect(landing).not.toContain("From first answer to confirmed next step.");
     expect(landing).toContain('aria-label="Core agent channels"');
     expect(landing).not.toContain("00:42");
 

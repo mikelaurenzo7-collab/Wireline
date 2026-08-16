@@ -78,8 +78,21 @@ describe("marketing centering contract", () => {
     // width. See src/styles/viewport-first-marketing.css.
     expect(frame).toContain('"marketing-flow relative z-10"');
     expect(frame).toContain("marketing-surface");
+    expect(frame).toContain("marketing-frame-stack");
+    expect(frame).not.toContain("resp-adaptive-grid");
     // Long-form document routes still need a way out of panel composition.
     expect(frame).toContain("marketing-longform");
+  });
+
+  it("lets a one-screen panel fill the flow instead of sitting under the header", () => {
+    const frameCss = read("src/styles/viewport-first-marketing.css");
+    const executableCss = frameCss.replace(/\/\*[\s\S]*?\*\//g, "");
+    const solutionsPage = read("src/pages/SolutionsPage.tsx");
+
+    expect(frameCss).toContain(".marketing-flow > .marketing-frame-stack");
+    expect(executableCss).toContain(".marketing-flow > .marketing-frame-stack > *");
+    expect(executableCss).not.toContain("padding-block: 0.45rem");
+    expect(solutionsPage.match(/marketing-section--screen/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps the retired Sarah call preview fully removed from use cases", () => {

@@ -94,8 +94,12 @@ export default function MarketingPageFrame({
         {/* Children are not wrapped in a section: pages compose their own
             `.marketing-section` panels, because only the page knows where one
             screen ends and the next begins. Wrapping the whole page in one
-            centred, height-capped box clipped every multi-section route. */}
-        <div className={cn("resp-adaptive-grid", longform && "marketing-longform")}>{children}</div>
+            centred, height-capped box clipped every multi-section route.
+            The stack itself must fill the flow so a `--screen` panel can
+            centre in the visible field instead of sitting under the header. */}
+        <div className={cn("marketing-frame-stack", longform && "marketing-longform")}>
+          {children}
+        </div>
       </main>
 
       {footer ? <MarketingChromeBar /> : null}

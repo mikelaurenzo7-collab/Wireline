@@ -71,6 +71,8 @@
    chaining into the page behind it, and `scroll-padding-top` keeps an anchored
    `#section` clear of the fixed header instead of landing under it. */
 .marketing-surface .marketing-flow {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
@@ -80,6 +82,24 @@
   scroll-padding-top: var(--wl-marketing-chrome-top);
   scroll-snap-type: y proximity;
   padding-top: var(--wl-marketing-chrome-top);
+}
+
+/*
+ * MarketingPageFrame wraps panels in a stack. That stack has to be a flex
+ * child of the flow, or a one-screen panel never grows: `align-content: center`
+ * is a no-op on a content-sized box, and the headline sits on the header.
+ * Measured at 1440x900, /solutions and /showcase had 6px from header to H1
+ * and a void under the evidence. The stack fills; the panel centres inside it.
+ */
+.marketing-surface .marketing-flow > .marketing-frame-stack {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.marketing-surface .marketing-flow > .marketing-frame-stack > * {
+  flex-shrink: 0;
 }
 
 /* The section is the screen.
@@ -96,7 +116,7 @@
  */
 .marketing-surface .marketing-section {
   display: grid;
-  align-content: center;
+  align-content: safe center;
   padding-block: var(--wl-public-section-space);
   padding-inline: var(--wl-public-gutter-inline);
   scroll-snap-align: start;
@@ -121,17 +141,7 @@
 }
 
 .marketing-surface.wl-features-page .marketing-flow,
-.marketing-surface.wl-pricing-page .marketing-flow,
 .marketing-surface.wl-showcase-page .marketing-flow,
-.marketing-surface.wl-solutions-page .marketing-flow,
-.marketing-surface.wl-about-page .marketing-flow {
-  display: flex;
-  flex-direction: column;
-}
-
-.marketing-surface.wl-features-page .marketing-flow,
-.marketing-surface.wl-showcase-page .marketing-flow,
-.marketing-surface.wl-solutions-page .marketing-flow,
 .marketing-surface.wl-about-page .marketing-flow {
   overflow: hidden;
 }
@@ -139,11 +149,9 @@
 .marketing-surface.wl-features-page .marketing-section--screen,
 .marketing-surface.wl-pricing-page .marketing-section--screen,
 .marketing-surface.wl-showcase-page .marketing-section--screen,
-.marketing-surface.wl-solutions-page .marketing-section--screen,
 .marketing-surface.wl-about-page .marketing-section--screen {
   flex: 1 1 auto;
   min-height: 0;
-  padding-block: 0.45rem;
 }
 
 .marketing-surface .marketing-section--tight {
@@ -178,7 +186,7 @@
  */
 .marketing-surface .marketing-hero {
   display: grid;
-  align-content: center;
+  align-content: safe center;
   min-height: 0;
   padding-block: var(--wl-public-section-space);
   scroll-snap-align: start;
@@ -225,8 +233,7 @@
 }
 
 .marketing-surface .marketing-section--screen .marketing-hero__experience {
-  margin-top: 0.75rem;
-  padding: 0.7rem 1rem;
+  margin-top: 1.5rem;
 }
 
 /*

@@ -245,7 +245,7 @@ export default function WireAgentLanding() {
                       <div>
                         <p className="landing-console__activity-kicker">Illustrative Workflow</p>
                         <h2 className="landing-console__activity-title">
-                          From first answer to confirmed next step.
+                          From first answer to confirmed next step
                         </h2>
                       </div>
                     </div>

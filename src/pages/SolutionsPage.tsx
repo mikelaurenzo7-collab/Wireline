@@ -142,24 +142,26 @@ export default function SolutionsPage() {
             </div>
           }
         />
+      </section>
 
-        <ol className="mt-3 grid gap-2 sm:grid-cols-3">
+      <section className="marketing-section marketing-section--screen">
+        <ol className="grid gap-3 sm:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card px-3 py-3 text-center">
+            <li key={title} className="wl-stitch-card px-4 py-5 text-center">
               <span className="flex items-center justify-center gap-2">
                 <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
                   0{index + 1}
                 </span>
                 <h3 className="wl-card-title">{title}</h3>
               </span>
-              <p className="mx-auto mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
+              <p className="mx-auto mt-2 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
                 {copy}
               </p>
             </li>
           ))}
         </ol>
 
-        <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
+        <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
           {page.capabilities.map(([title, copy], index) => {
             const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
               index
@@ -177,7 +179,7 @@ export default function SolutionsPage() {
           })}
         </ul>
 
-        <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+        <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
           {page.proof}
         </p>
       </section>

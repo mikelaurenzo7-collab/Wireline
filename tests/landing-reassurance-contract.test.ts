@@ -12,7 +12,8 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("Live Video");
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain("Illustrative Workflow");
-    expect(landing).toContain("From first answer to confirmed next step.");
+    expect(landing).toContain("From first answer to confirmed next step");
+    expect(landing).not.toContain("From first answer to confirmed next step.");
     expect(landing).toContain("Booked and logged");
     expect(landing).not.toContain("00:42");
   });

@@ -114,7 +114,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
     [/landing-console__activity/, "home must show an outcome ledger beside the live agent"],
     [/Illustrative Workflow/, "home must label static proof as illustrative"],
-    [/From first answer to confirmed next step\./, "home must explain the completed-work proof"],
+    [/From first answer to confirmed next step/, "home must explain the completed-work proof"],
     [/Booked and logged/, "home must expose a concrete outcome"],
     [/rules, approvals, spend, and handoffs/, "home must keep owner control explicit"],
     [/Build free/, "landing must keep the free builder visible"],
@@ -130,6 +130,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     );
   }
 
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    executable(wireAgentLanding),
+    /From first answer to confirmed next step\./,
+    "cased activity title must not carry a terminal period",
+  );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     executable(wireAgentLanding),

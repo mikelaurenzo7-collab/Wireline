@@ -138,10 +138,14 @@ export default function Developers() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
 
+      <section className="marketing-section marketing-section--screen">
+        <div className="mx-auto max-w-5xl">
           <div
             id="mcp-endpoint"
-            className="mx-auto mt-4 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-4 text-left"
+            className="mx-auto max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-4 text-left"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <code className="min-w-0 overflow-x-auto font-mono text-sm text-foreground">
@@ -163,11 +167,7 @@ export default function Developers() {
             </p>
           </div>
 
-          {/* What the connector actually exposes. The four boundaries used to
-              sit two screens down under "Draft. Simulate. Continue in Studio",
-              below a three-card "Connect. Draft. Launch." row that repeated the
-              action already on each client card above. */}
-          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-2 sm:grid-cols-2">
             {MCP_BOUNDARIES.map((endpoint) => (
               <li
                 key={endpoint.path}

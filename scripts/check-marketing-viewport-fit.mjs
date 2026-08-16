@@ -91,6 +91,7 @@ for (const [needle, description] of [
   ["overflow: hidden;", "the surface must not scroll"],
   ["scroll-snap-type: y proximity;", "the flow must snap by proximity, never mandatory"],
   ["scroll-snap-align: start;", "panels must settle flush with the top of the viewport"],
+  ["align-content: safe center;", "a panel that overflows must start under the header, not clip through it"],
   ["prefers-reduced-motion", "snap and signal motion must yield to reduced-motion"],
   ["margin-inline: auto;", "centred containers must centre the boxes their measure creates"],
   ["min-height: 2.24em;", "card rows must reserve a shared title height"],
@@ -108,6 +109,41 @@ if (/\.marketing-section \{[^}]*max-height/s.test(frameCss)) {
   failures.push(
     "src/styles/viewport-first-marketing.css: .marketing-section must not cap its own height -- " +
       "a ceiling in CSS clips content rather than composing it",
+  );
+}
+
+const frameSource = read("src/components/layout/MarketingPageFrame.tsx");
+if (!frameSource.includes("marketing-frame-stack")) {
+  failures.push(
+    "src/components/layout/MarketingPageFrame.tsx: panels must wrap in .marketing-frame-stack so a --screen panel can fill the flow",
+  );
+}
+if (frameSource.includes("resp-adaptive-grid")) {
+  failures.push(
+    "src/components/layout/MarketingPageFrame.tsx: page-level resp-adaptive-grid sizes to content and leaves the headline on the header",
+  );
+}
+if (!frameCss.includes(".marketing-flow > .marketing-frame-stack")) {
+  failures.push(
+    "src/styles/viewport-first-marketing.css: the frame stack must fill the flow so one-screen panels can centre",
+  );
+}
+if (!executable(frameCss).includes(".marketing-flow > .marketing-frame-stack > *")) {
+  failures.push(
+    "src/styles/viewport-first-marketing.css: frame-stack children must not shrink below their content",
+  );
+}
+if (executable(frameCss).includes("padding-block: 0.45rem")) {
+  failures.push(
+    "src/styles/viewport-first-marketing.css: composed screens must keep section padding, not crush it to 0.45rem",
+  );
+}
+
+const solutionsPage = read("src/pages/SolutionsPage.tsx");
+const solutionsScreens = solutionsPage.match(/marketing-section--screen/g) ?? [];
+if (solutionsScreens.length < 2) {
+  failures.push(
+    "src/pages/SolutionsPage.tsx: opening claim and conversation sequence must be separate screens so the hero can breathe",
   );
 }
 

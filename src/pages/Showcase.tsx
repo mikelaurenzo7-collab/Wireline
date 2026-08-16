@@ -54,7 +54,7 @@ export default function Showcase() {
           }
         />
 
-        <section id="demo-lines" className="mt-3">
+        <section id="demo-lines" className="mt-8">
           <div className="grid gap-2 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <a

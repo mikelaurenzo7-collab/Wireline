@@ -79,16 +79,13 @@ export default function Blog() {
         structuredData={structuredData}
       />
 
-      <section className="marketing-section mx-auto max-w-6xl text-center">
+      <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-3xl">
           <h1 className="wl-stitch-marketing-hero text-balance">
             Practical notes for getting time back
           </h1>
         </div>
-      </section>
-
-      <section className="marketing-section border-t border-border bg-card">
-        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
+        <div className="mx-auto mt-10 grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {NOTES.map(({ icon: Icon, title, copy }) => (
             <article
               id={noteSlug(title)}
