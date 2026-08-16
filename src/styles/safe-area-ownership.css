@@ -42,8 +42,35 @@
   padding-left: env(safe-area-inset-left, 0px);
 }
 
+/* AuthPortal historically claimed 100dvh inside another 100dvh shell. Once the
+ * shell owns the notch, the form must fill the shell's content box instead of
+ * recreating the full viewport and losing its bottom edge. */
+.wl-stitch-auth-shell .wl-auth-form-panel {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+@media (max-width: 639px) {
+  /* The shell now owns env() values, so the mobile form keeps only its authored
+   * breathing room rather than charging the safe area a second time. */
+  .wl-stitch-auth-shell .wl-auth-form-panel {
+    padding: 1.25rem 1rem 2rem;
+  }
+}
+
 .wl-workspace-shell {
   padding-top: env(safe-area-inset-top, 0px);
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* The rail fills the shell's safe content box. A nested 100dvh rail would undo
+ * the shell padding and clip its account control at the bottom. */
+.wl-workspace-shell > .wl-workspace-frame > aside {
+  height: 100%;
+}
+
+.wl-workspace-shell > nav[aria-label="Workspace navigation"] {
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
