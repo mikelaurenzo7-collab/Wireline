@@ -1,6 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-export const PUBLIC_DEMO_TICKET_TTL_SECONDS = 75;
+/** Short enough to limit replay value; long enough for a deliberate mic prompt. */
+export const PUBLIC_DEMO_TICKET_TTL_SECONDS = 120;
 
 type PublicDemoTicketClaims = {
   v: 1;
