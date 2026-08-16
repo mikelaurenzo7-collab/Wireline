@@ -23,6 +23,13 @@ describe("public browser demo cost protection", () => {
     expect(widget).not.toContain("/api/public/assistant/");
   });
 
+  it("checks protected-demo availability before asking for microphone access", () => {
+    const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
+    const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
+    expect(sessionRequest).toBeGreaterThan(-1);
+    expect(permissionRequest).toBeGreaterThan(sessionRequest);
+  });
+
   it("caps duration, disables retained artifacts, and exposes no real tools", () => {
     const policy = read("src/lib/public-browser-demo.ts");
     expect(policy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
@@ -54,6 +61,8 @@ describe("public browser demo cost protection", () => {
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
     expect(widget).toContain("Try the public demo line instead");
+    expect(widget).toContain("Public demo line available");
+    expect(widget).toContain("Standard carrier rates may apply");
     expect(widget).toContain("no retained call artifacts");
   });
 });
