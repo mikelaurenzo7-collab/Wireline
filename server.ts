@@ -18,7 +18,7 @@ import { getErrorMessage } from "./src/lib/server-utils";
 import { validateStartupEnv } from "./src/lib/startup";
 import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
-import { PRERENDERED_MARKETING_ROUTES } from "./src/lib/marketing-route-meta";
+import { PRERENDERED_ROUTE_SHELLS } from "./src/lib/marketing-route-meta";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
@@ -246,7 +246,7 @@ async function startServer() {
   // does. Keyed off the build's own route list rather than the request path, so
   // no user input reaches the filesystem lookup.
   const prerenderedShells = new Map(
-    PRERENDERED_MARKETING_ROUTES.map((route) => [
+    PRERENDERED_ROUTE_SHELLS.map((route) => [
       route,
       path.join(dist, ...route.split("/").filter(Boolean), "index.html"),
     ]),
