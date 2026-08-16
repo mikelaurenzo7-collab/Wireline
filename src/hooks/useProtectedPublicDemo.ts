@@ -62,7 +62,7 @@ export function useProtectedPublicDemo(
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
-  const [maxDurationSeconds, setMaxDurationSeconds] = useState(
+  const [maxDurationSeconds, setMaxDurationSeconds] = useState<number>(
     PUBLIC_BROWSER_DEMO_MAX_SECONDS,
   );
 
