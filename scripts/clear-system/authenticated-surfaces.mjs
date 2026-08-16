@@ -8,6 +8,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const appRoutes = read("src/routes/AppRoutes.tsx");
   const workspaceShell = read("src/components/WorkspaceShell.tsx");
   const responsiveCss = read("src/styles/responsive.css");
+  const safeAreaOwnership = read("src/styles/safe-area-ownership.css");
   const navigation = read("src/constants/navigation.ts");
   const mobileBrowserUtilities = read(
     "src/components/MobileBrowserUtilities.tsx",
@@ -77,10 +78,22 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "MobileBrowserUtilities must be gated by native shell detection",
   );
   mustInclude(
+    "src/styles/safe-area-ownership.css",
+    safeAreaOwnership,
+    /\.wl-workspace-shell \{[\s\S]*padding-bottom:\s*env\(safe-area-inset-bottom/,
+    "workspace shell must own the device home-indicator inset",
+  );
+  mustInclude(
+    "src/styles/safe-area-ownership.css",
+    safeAreaOwnership,
+    /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
+    "mobile workspace scroller must clear the fixed dock once",
+  );
+  mustExclude(
     "src/styles/responsive.css",
     responsiveCss,
     /padding-bottom:\s*calc\(5\.25rem \+ env\(safe-area-inset-bottom\)\)/,
-    "mobile workspace content must clear the fixed dock and device safe area",
+    "responsive.css must not restack dock clearance on the main column",
   );
   mustInclude(
     "src/constants/navigation.ts",
