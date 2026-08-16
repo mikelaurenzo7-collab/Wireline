@@ -5,8 +5,8 @@
  * stored hash, renders the Letterpress SSR page, and increments the view
  * counter fire-and-forget. Unknown slug, expired, revoked, and bad-token
  * cases all return an identical 404 render — the caller cannot
- * distinguish which reason applies. Rate-limited per IP and per slug so
- * a leaked URL cannot be used to enumerate.
+ * distinguish which reason applies. Distributed limits apply per IP and per
+ * slug; production fails closed if that privacy boundary is unavailable.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
@@ -14,7 +14,7 @@ import { eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { rateLimit } from "../lib/rate-limit";
+import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -33,7 +33,25 @@ import type { WorkspaceBrand } from "../lib/shareable-artifact/brand";
 
 const router = Router();
 
+function sendLimiterUnavailable(res: Response): void {
+  res.setHeader("Retry-After", "60");
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, nocache");
+  res.status(503).type("text/plain").send("Recap temporarily unavailable.");
+}
+
+function distributedRecapLimiterReady(res: Response): boolean {
+  const status = distributedLimiterStatus();
+  if (status.ok) return true;
+
+  log.error("public recap limiter unavailable, failing closed", { code: status.code });
+  sendLimiterUnavailable(res);
+  return false;
+}
+
 async function ipRateLimit(req: Request, res: Response, next: NextFunction) {
+  if (!distributedRecapLimiterReady(res)) return;
+
   try {
     // Key on Express's trust-proxy-resolved req.ip, NOT the raw X-Forwarded-For header:
     // XFF is client-writable, so keying on XFF[0] lets a flooder mint a fresh bucket per request.
@@ -42,6 +60,7 @@ async function ipRateLimit(req: Request, res: Response, next: NextFunction) {
       bucket: "recap:ip",
       windowMs: 60_000,
       max: 60,
+      failClosedOnError: true,
     });
     if (!decision.allowed) {
       res.setHeader("Retry-After", String(Math.ceil(decision.resetMs / 1000)));
@@ -49,12 +68,16 @@ async function ipRateLimit(req: Request, res: Response, next: NextFunction) {
       return;
     }
   } catch (err) {
-    log.warn("recap ip rate limiter failed, fail open", { error: getErrorMessage(err) });
+    log.error("recap ip rate limiter failed, failing closed", { error: getErrorMessage(err) });
+    sendLimiterUnavailable(res);
+    return;
   }
   next();
 }
 
 async function slugRateLimit(req: Request, res: Response, next: NextFunction) {
+  if (!distributedRecapLimiterReady(res)) return;
+
   try {
     const slug = String(req.params.slug || "").trim();
     if (!slug) return next();
@@ -62,6 +85,7 @@ async function slugRateLimit(req: Request, res: Response, next: NextFunction) {
       bucket: "recap:slug",
       windowMs: 60_000,
       max: 20,
+      failClosedOnError: true,
     });
     if (!decision.allowed) {
       res.setHeader("Retry-After", String(Math.ceil(decision.resetMs / 1000)));
@@ -69,7 +93,9 @@ async function slugRateLimit(req: Request, res: Response, next: NextFunction) {
       return;
     }
   } catch (err) {
-    log.warn("recap slug rate limiter failed, fail open", { error: getErrorMessage(err) });
+    log.error("recap slug rate limiter failed, failing closed", { error: getErrorMessage(err) });
+    sendLimiterUnavailable(res);
+    return;
   }
   next();
 }
