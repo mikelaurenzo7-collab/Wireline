@@ -20,13 +20,13 @@ export default function PrecisionPublicHeader() {
         <nav className="ml-auto flex items-center gap-2 sm:gap-4" aria-label="Account">
           <Link
             to="/signin"
-            className="inline-flex min-h-10 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-3 sm:text-sm"
+            className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             Sign In
           </Link>
           <Link
             to="/signup?plan=personal"
-            className="marketing-btn-primary min-h-10 px-3 text-xs font-semibold sm:min-h-11 sm:px-4 sm:text-sm"
+            className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold"
           >
             Start Free
           </Link>
