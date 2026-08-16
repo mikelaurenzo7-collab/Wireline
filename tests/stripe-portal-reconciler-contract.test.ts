@@ -155,9 +155,12 @@ describe("Stripe customer portal reconciliation", () => {
     ).toContain("plan_switch_catalog_unverifiable");
   });
 
-  it("runs only as an explicit live production deploy gate", () => {
+  it("keeps production deploy verification read-only and provider repair explicit", () => {
     const script = read("scripts/reconcile-stripe-customer-portal.mts");
     const build = read("scripts/vercel-build.mjs");
+    const packageJson = JSON.parse(read("package.json")) as {
+      scripts?: Record<string, string>;
+    };
     const route = read("src/routes/billing-portal-readiness-routes.ts");
     const launchStatus = read("scripts/generate-launch-status.mjs");
     const webhookSecretSync = read("scripts/sync-stripe-webhook-secret-to-vercel.mjs");
@@ -176,7 +179,19 @@ describe("Stripe customer portal reconciliation", () => {
     expect(script).toContain("exactly one active Wireline-managed portal configuration");
     expect(build).toContain('process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true"');
     expect(build).toContain("isCanonicalVercelProject");
-    expect(build).toContain('"scripts/reconcile-stripe-customer-portal.mts"');
+    expect(build).toContain("function verifyStripePortalIfRequested()");
+    expect(build).toContain(
+      'run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);',
+    );
+    expect(build).not.toContain(
+      'run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts", "--apply"]);',
+    );
+    expect(packageJson.scripts?.["stripe:portal:verify"]).toBe(
+      "node --import tsx scripts/reconcile-stripe-customer-portal.mts",
+    );
+    expect(packageJson.scripts?.["stripe:portal:reconcile"]).toBe(
+      "node --import tsx scripts/reconcile-stripe-customer-portal.mts --apply",
+    );
     expect(route).toContain("resolveOwnedStripeCustomer({");
     expect(route).toContain("stripePriceMatchesFounderPlan");
     expect(route).toContain("authenticatedEmail: req.user!.email");
