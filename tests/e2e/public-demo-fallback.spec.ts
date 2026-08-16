@@ -55,14 +55,15 @@ test("a protected-demo outage fails before microphone permission and exposes the
   await page.setViewportSize({ width: 390, height: 844 });
   await openHomepage(page);
 
-  await page.getByRole("button", { name: "Hear It Live", exact: true }).click();
+  const console = page.locator(".landing-console");
+  await console.getByRole("button", { name: "Hear It Live", exact: true }).click();
 
-  await expect(page.getByRole("alert")).toContainText(
+  await expect(console.getByRole("alert")).toContainText(
     "The protected live demo is temporarily unavailable",
   );
-  await expect(page.getByText("Public demo line available", { exact: true })).toBeVisible();
-  await expect(page.getByText("Standard carrier rates may apply.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Hear It Live", exact: true })).toHaveAttribute(
+  await expect(console.getByText("Public demo line available", { exact: true })).toBeVisible();
+  await expect(console.getByText("Standard carrier rates may apply.", { exact: true })).toBeVisible();
+  await expect(console.getByRole("link", { name: "Hear It Live", exact: true })).toHaveAttribute(
     "href",
     /^tel:/,
   );
