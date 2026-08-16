@@ -251,6 +251,13 @@ export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [
   ...Object.keys(NON_INDEXED_ROUTE_META),
 ];
 
+/**
+ * Backward-compatible runtime-server export. The historical name predates the
+ * guarded account shells, so it now intentionally contains every emitted shell,
+ * including `noindex` routes. New code should use PRERENDERED_ROUTE_SHELLS.
+ */
+export const PRERENDERED_MARKETING_ROUTES = PRERENDERED_ROUTE_SHELLS;
+
 /** Resolve per-route public meta, or `null` to serve the static HTML as-is. */
 export function resolveRouteMeta(pathname: string): RouteMeta | null {
   if (typeof pathname !== "string" || !pathname) return null;
