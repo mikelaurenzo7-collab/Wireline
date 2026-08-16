@@ -14,6 +14,7 @@ import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const withoutComments = (value: string) => value.replace(/\/\*[\s\S]*?\*\//g, "");
 
 const CORE_BUYING_SURFACES = [
   "src/lib/product-copy.ts",
@@ -51,9 +52,6 @@ describe("product voice cohesion", () => {
     );
 
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    // No terminal period: the hero renders in the cased display tier, where a
-    // full stop after seven words of caps reads as a stray mark. See the case
-    // doctrine in src/styles/viewport-first-marketing.css.
     expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done");
     expect(MARKETING_VOICE.primaryCta).toBe("Build Your Voice Agent");
     expect(MARKETING_VOICE.subline).toBe(
@@ -132,8 +130,6 @@ describe("product voice cohesion", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
-    // Sourced from BRAND_SYSTEM.proofLoop rather than typed as a display line,
-    // so the four steps and their order have exactly one origin.
     expect(features).toContain("MARKETING_VOICE.proof");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
@@ -145,35 +141,29 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("keeps public landing copy broad, agent first, and action oriented", () => {
+  it("keeps public landing copy broad, agent first, action oriented, and visibly navigable", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const executableLanding = withoutComments(landing);
     const about = read("src/pages/About.tsx");
     const compare = read("src/pages/Compare.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const contactAgents = read("src/data/contact-agents.ts");
 
-    // "Every channel. One agent." now lives only where it is not immediately
-    // restated: the Features section heading. On the landing it sat as an
-    // eyebrow directly above "One agent. Now on screen.", saying the same
-    // thing twice in two type sizes.
-    // The three channel cards carry this claim on the opening screen; the
-    // headline that restated it in words above them was removed.
     expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
-    expect(landing).toContain("Live Video");
-    // The literal used to appear because the page ended with a CTA band that
-    // repeated the hero's headline and both of its buttons. That band is gone,
-    // so the assertion holds what actually matters: the landing takes its
-    // primary call to action from the shared voice constant rather than
-    // hand-typing a second wording of it.
-    expect(landing).toContain("MARKETING_VOICE.primaryCta");
-    expect(landing).toContain("Hear It Live");
-    // The plan cards are the plans block now; a heading above them repeating
-    // "start free" duplicated the first card's own button on a one-headline page.
-    expect(landing).toContain("variant=\"phone\"");
-    expect(landing).toContain("landing-phone__call");
-    // /about is a statement page now, not a second landing page: it opens on
-    // who answers the support email, not on a restatement of the product pitch.
-    // Cased titles carry no terminal punctuation.
+    expect(executableLanding).toContain("Live Video");
+    expect(executableLanding).toContain("MARKETING_VOICE.primaryCta");
+    expect(executableLanding).toContain("MARKETING_VOICE.subline");
+    expect(executableLanding).toContain("Hear It Live");
+    expect(executableLanding).toContain('variant="stage"');
+    expect(executableLanding).toContain("landing-console");
+    expect(executableLanding).toContain("landing-console__activity");
+    expect(executableLanding).toContain("Booked and logged");
+    expect(executableLanding).toContain("<PrecisionPublicHeader />");
+    expect(executableLanding).not.toContain('variant="phone"');
+    expect(executableLanding).not.toContain("landing-phone");
+    expect(executableLanding).not.toContain("landing-os__tray");
+    expect(executableLanding).not.toContain('chrome="hidden"');
+
     expect(about).toContain("Built by the people who answer the support email");
     expect(compare).toContain("Wireline vs. other voice AI");
     expect(privacy).toContain("voice agent platform");
@@ -238,9 +228,7 @@ describe("product voice cohesion", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
-    // The landing hero is deliberately minimal: the headline, capability chips,
-    // and live demo carry the pitch, so the subline is no longer rendered as a
-    // hero subhead. It still backs the SEO description in index.html.
+    expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
@@ -255,9 +243,6 @@ describe("product voice cohesion", () => {
 
   it("keeps landing examples broad across profit, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    // Title Case at the source: each is a three-word-or-fewer label, which the
-    // case doctrine writes in Title Case so it reads deliberately wherever the
-    // uppercase tier does not apply.
     for (const phrase of [
       "Lead Response",
       "Quote Follow Up",
@@ -315,17 +300,11 @@ describe("product voice cohesion", () => {
   it("keeps public entry paths broad instead of defaulting to home services", () => {
     const app = read("src/App.tsx");
     const precisionHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
-    // The legacy PublicSiteHeader was removed; PrecisionPublicHeader is the
-    // only public chrome and must stay that way.
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
     const footer = read("src/components/marketing/MarketingFooter.tsx");
     expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
     expect(precisionHeader).toContain('to: "/solutions/support"');
     expect(precisionHeader).toContain('path.startsWith("/for/")');
-    // The footer lists EVERY wedge symmetrically with Personal first — broad
-    // entry means no single industry is privileged, not that seven of the
-    // eight built wedge pages (each with its own live demo line) go unlinked.
-    // Signup CTAs and the /for/* fallback below still enforce personal-first.
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     for (const wedgePath of [
       "/for/home-services",
@@ -342,13 +321,9 @@ describe("product voice cohesion", () => {
       footer.indexOf('to: "/for/home-services"'),
     );
 
-    // Generic acquisition promises "free", so they must override any paid
-    // signup intent left in local storage from a previous pricing visit.
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
     expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
-    expect(landing).toContain('"/signup?plan=personal"');
-    // The hero CTA is a prop on the shared hero, not a literal attribute.
     expect(landing).toContain('"/signup?plan=personal"');
     expect(sticky).toContain('href = "/signup?plan=personal"');
     expect(landing).not.toContain('to: "/signup"');
@@ -390,8 +365,6 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps authenticated setup examples broad across support and call coverage", () => {
-    // The unrouted PhoneAgentBlueprint mock was removed; the recipe forms are
-    // the real authenticated setup surface and carry the breadth contract.
     expect(existsSync("src/components/PhoneAgentBlueprint.tsx")).toBe(false);
     const wireForm = read("src/components/recipes/forms/AgentWireForm.tsx");
     const documentForm = read("src/components/recipes/forms/KnowledgeFromDocumentForm.tsx");
