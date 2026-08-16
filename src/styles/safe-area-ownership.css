@@ -60,8 +60,9 @@
 
 .wl-workspace-shell {
   padding-top: env(safe-area-inset-top, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
 }
 
 /* The rail fills the shell's safe content box. A nested 100dvh rail would undo
@@ -75,6 +76,14 @@
   padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
 
+@media (max-width: 767px) {
+  /* The shell already removed the home-indicator inset from the scrollport.
+   * Keep only the dock clearance here; the fixed dock itself still owns env(). */
+  .wl-workspace-shell .wl-workspace-content {
+    padding-bottom: 5.25rem;
+  }
+}
+
 /* Loading, OAuth-complete, and degraded-state transitions can be the first
  * surface mounted. They therefore own all four edges directly rather than
  * relying on public or workspace chrome that may not exist yet. The base
@@ -84,4 +93,11 @@
   padding-right: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-right, 0px));
   padding-bottom: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px));
   padding-left: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-left, 0px));
+}
+
+.wl-transition-shell .wl-transition-rail {
+  min-height: calc(
+    100dvh - max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-top, 0px)) -
+      max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px))
+  );
 }
