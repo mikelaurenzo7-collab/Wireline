@@ -1,0 +1,241 @@
+/* Responsive and motion contracts for the homepage call stage. */
+
+@media (max-width: 860px) {
+  .marketing-surface .wl-landing-stage-section {
+    align-content: start;
+    padding-inline: clamp(0.8rem, 4vw, 1.25rem) !important;
+  }
+
+  .wl-landing-stage-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .wl-landing-stage-copy {
+    max-width: 38rem;
+    margin-inline: auto;
+    text-align: center !important;
+  }
+
+  .wl-landing-stage-copy :where(p) {
+    margin-inline: auto;
+  }
+
+  .wl-landing-stage__eyebrow {
+    justify-content: center;
+  }
+
+  .wl-landing-stage__headline {
+    max-width: 15ch;
+    margin: 0.5rem auto 0;
+    font-size: clamp(2rem, 8.5vw, 3.1rem);
+    line-height: 0.94;
+  }
+
+  .wl-landing-stage__lead {
+    margin-top: 0.6rem;
+    font-size: 0.81rem;
+    line-height: 1.42;
+  }
+
+  .wl-landing-stage__tabs,
+  .wl-landing-stage__actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.65rem;
+  }
+
+  .wl-landing-stage__tabs .wl-segmented__item {
+    min-height: 2.2rem;
+    padding-inline: 0.8rem;
+    font-size: 0.67rem;
+  }
+
+  .wl-landing-stage__primary {
+    min-height: 2.7rem;
+    padding-inline: 1rem;
+    font-size: 0.8rem;
+  }
+
+  .wl-landing-stage__price-link {
+    min-height: 1.9rem;
+    font-size: 0.61rem;
+  }
+
+  .wl-landing-stage__channels {
+    justify-content: center;
+    margin-top: 0.35rem;
+  }
+
+  .wl-landing-stage__channels li {
+    font-size: 0.56rem;
+  }
+
+  .wl-landing-stage-visual {
+    display: grid;
+    min-height: 0;
+    place-items: start center;
+  }
+
+  .wl-landing-call-stage {
+    width: min(100%, 23rem);
+    min-height: 0;
+    height: min(19.5rem, 39dvh);
+  }
+
+  .wl-landing-call-stage__outcomes {
+    display: none;
+  }
+
+  .wl-landing-call-stage__phone {
+    width: min(100%, 20.5rem);
+    min-height: 100%;
+    height: 100%;
+    border-radius: 1.7rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .wl-landing-call-stage__phone::before {
+    top: 0.32rem;
+    width: 3rem;
+    height: 0.18rem;
+  }
+
+  .wl-landing-call-stage__topbar {
+    min-height: 1.5rem;
+    padding-top: 0.2rem;
+  }
+
+  .wl-landing-call-stage__identity {
+    flex: 0 1 auto;
+    padding-top: 0.1rem;
+  }
+
+  .wl-landing-call-stage__avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .wl-landing-call-stage__face {
+    width: 4.25rem;
+    height: 4.25rem;
+    border-radius: 1.2rem;
+  }
+
+  .wl-landing-call-stage__avatar-ring {
+    inset: 0.18rem;
+    border-radius: 1.5rem;
+  }
+
+  .wl-landing-call-stage__kind {
+    margin-top: 0.2rem;
+  }
+
+  .wl-landing-call-stage__name {
+    margin-top: 0.08rem;
+    font-size: 1.15rem;
+  }
+
+  .wl-landing-call-stage__promise {
+    margin-top: 0.15rem;
+    font-size: 0.63rem;
+    line-height: 1.25;
+  }
+
+  .wl-landing-call-stage__task {
+    min-height: 2.25rem;
+    margin-top: 0.25rem;
+    border-radius: 0.68rem;
+    padding: 0.35rem 0.52rem;
+  }
+
+  .wl-landing-call-stage__task strong {
+    font-size: 0.64rem;
+  }
+
+  .wl-landing-call-stage__wave {
+    height: 1.3rem;
+    margin-top: 0.18rem;
+  }
+
+  .wl-landing-call-stage__listening {
+    font-size: 0.48rem;
+  }
+
+  .wl-landing-call-stage__workflow {
+    margin-top: 0.28rem;
+  }
+
+  .wl-landing-call-stage__workflow li {
+    gap: 0.18rem;
+    font-size: 0.44rem;
+  }
+
+  .wl-landing-call-stage__control {
+    min-height: 2.55rem;
+    margin-top: 0.28rem;
+  }
+
+  .wl-landing-call-stage__control :is(button, a) {
+    min-height: 2.45rem;
+    min-width: min(100%, 10.5rem);
+    padding-inline: 0.85rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .wl-landing-stage__channels {
+    display: none;
+  }
+
+  .wl-landing-stage__price-rail {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 860px) and (max-height: 760px) {
+  .wl-landing-stage__eyebrow,
+  .wl-landing-stage__lead,
+  .wl-landing-stage__channels,
+  .wl-landing-call-stage__promise,
+  .wl-landing-call-stage__workflow {
+    display: none;
+  }
+
+  .wl-landing-stage__headline {
+    margin-top: 0;
+    font-size: clamp(1.85rem, 7.5vw, 2.55rem);
+  }
+
+  .wl-landing-stage__tabs,
+  .wl-landing-stage__actions {
+    margin-top: 0.4rem;
+  }
+
+  .wl-landing-call-stage {
+    height: min(17rem, 40dvh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-landing-stage__price-link,
+  .wl-landing-call-stage__wire span,
+  .wl-landing-call-stage__status > span,
+  .wl-landing-call-stage__avatar-ring,
+  .wl-landing-call-stage__wave span,
+  .wl-landing-call-stage__outcome {
+    animation: none;
+    transition: none;
+  }
+
+  .wl-landing-call-stage__avatar-ring:first-child {
+    opacity: 0.28;
+  }
+
+  .wl-landing-call-stage__avatar-ring:nth-child(2) {
+    display: none;
+  }
+}

@@ -1,0 +1,636 @@
+/*
+ * Homepage call stage
+ *
+ * One voice agent owns the opening frame. The public navigation owns the rest
+ * of the buying story. Motion is limited to transform and opacity, with a
+ * complete reduced-motion fallback.
+ */
+
+.marketing-surface .wl-landing-stage-section {
+  overflow: clip;
+  padding-block: clamp(0.75rem, 1.6vw, 1.4rem) !important;
+}
+
+.wl-landing-stage-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 76rem);
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 0.9fr) minmax(24rem, 1.1fr);
+  align-items: center;
+  gap: clamp(1.75rem, 4vw, 4.5rem);
+}
+
+.wl-landing-stage-copy {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 34rem;
+}
+
+.wl-landing-stage-copy :where(p) {
+  margin-inline: 0;
+}
+
+.wl-landing-stage__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--wireline-color-action-secondary-default);
+}
+
+.wl-landing-stage__eyebrow::before {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+}
+
+.wl-landing-stage__headline {
+  max-width: 11ch;
+  margin-top: 0.9rem;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(3rem, 5.2vw, 5.65rem);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.052em;
+  text-wrap: balance;
+}
+
+.wl-landing-stage__lead {
+  max-width: 31rem;
+  margin-top: 1.1rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: clamp(0.94rem, 1.2vw, 1.05rem);
+  line-height: 1.6;
+}
+
+.wl-landing-stage__tabs,
+.wl-landing-stage__actions {
+  margin-top: 1.15rem;
+}
+
+.wl-landing-stage__tabs .wl-segmented__item {
+  min-height: 2.5rem;
+}
+
+.wl-landing-stage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem 1rem;
+}
+
+.wl-landing-stage__primary {
+  min-height: 3rem;
+  justify-content: center;
+  padding-inline: 1.3rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.wl-landing-stage__price-rail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wl-landing-stage__price-link {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.wl-landing-stage__price-link + .wl-landing-stage__price-link::before {
+  content: "/";
+  margin-right: 0.75rem;
+  color: var(--wireline-color-border-strong);
+}
+
+.wl-landing-stage__price-link:hover {
+  color: var(--wireline-color-text-primary);
+  transform: translateY(-1px);
+}
+
+.wl-landing-stage__channels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-top: 0.9rem;
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-landing-stage__channels li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.wl-landing-stage__channels svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-landing-stage-visual {
+  min-width: 0;
+}
+
+.wl-landing-call-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: min(100%, 39rem);
+  min-height: clamp(31rem, 63vh, 37rem);
+  margin-inline: auto;
+  place-items: center;
+}
+
+.wl-landing-call-stage__halo {
+  position: absolute;
+  inset: 10%;
+  z-index: -3;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent),
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 7%, transparent) 46%,
+    transparent 70%
+  );
+  filter: blur(1.5rem);
+  opacity: 0.82;
+}
+
+.wl-landing-call-stage__wire {
+  position: absolute;
+  z-index: -2;
+  top: 49%;
+  left: 1%;
+  right: 1%;
+  height: 1px;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 62%, transparent) 18%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 84%, transparent) 50%,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 62%, transparent) 82%,
+    transparent
+  );
+}
+
+.wl-landing-call-stage__wire span {
+  position: absolute;
+  top: -1px;
+  left: -14%;
+  width: 4.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 92%, white),
+    transparent
+  );
+  animation: wl-landing-wire 5.8s ease-in-out infinite;
+}
+
+.wl-landing-call-stage__phone {
+  position: relative;
+  display: flex;
+  width: min(100%, 22.5rem);
+  min-height: clamp(31rem, 59vh, 36rem);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wireline-color-border-strong);
+  border-radius: 2.25rem;
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-surface-raised),
+    var(--wireline-color-surface-subtle)
+  );
+  box-shadow:
+    var(--wireline-elevation-lg),
+    0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 8%, transparent);
+  padding: 1rem 1.05rem;
+}
+
+.wl-landing-call-stage__phone::before {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  left: 50%;
+  width: 4rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--wireline-color-border-strong);
+  opacity: 0.55;
+  transform: translateX(-50%);
+}
+
+.wl-landing-call-stage__topbar {
+  display: flex;
+  min-height: 2.1rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.4rem;
+}
+
+.wl-landing-call-stage__status,
+.wl-landing-call-stage__mode,
+.wl-landing-call-stage__kind,
+.wl-landing-call-stage__task span,
+.wl-landing-call-stage__listening {
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wl-landing-call-stage__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--wireline-color-status-success);
+}
+
+.wl-landing-call-stage__status > span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0.25rem
+    color-mix(in srgb, var(--wireline-color-status-success) 13%, transparent);
+  animation: wl-landing-pulse 2.8s ease-in-out infinite;
+}
+
+.wl-landing-call-stage__mode,
+.wl-landing-call-stage__listening {
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-landing-call-stage__identity {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.35rem;
+  text-align: center;
+}
+
+.wl-landing-call-stage__avatar {
+  position: relative;
+  display: grid;
+  width: 8.7rem;
+  height: 8.7rem;
+  place-items: center;
+}
+
+.wl-landing-call-stage__avatar::before {
+  content: "";
+  position: absolute;
+  inset: 1.2rem;
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent);
+  filter: blur(1rem);
+}
+
+.wl-landing-call-stage__face {
+  position: relative;
+  z-index: 2;
+  width: 7.25rem;
+  height: 7.25rem;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-secondary-default) 42%, transparent);
+  border-radius: 1.9rem;
+  box-shadow: 0 0 0 0.4rem
+    color-mix(in srgb, var(--wireline-color-surface-default) 72%, transparent);
+}
+
+.wl-landing-call-stage__avatar-ring {
+  position: absolute;
+  inset: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
+  border-radius: 2.45rem;
+  animation: wl-landing-ring 3.8s ease-out infinite;
+}
+
+.wl-landing-call-stage__avatar-ring:nth-child(2) {
+  animation-delay: -1.9s;
+}
+
+.wl-landing-call-stage__kind {
+  margin-top: 0.65rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-landing-call-stage__name {
+  margin-top: 0.2rem;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.5rem, 2.4vw, 1.95rem);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: none !important;
+}
+
+.wl-landing-call-stage__promise {
+  max-width: 18rem;
+  margin-top: 0.45rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.wl-landing-call-stage__task {
+  display: flex;
+  min-height: 3.2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--wireline-color-surface-raised) 78%, transparent);
+  padding: 0.6rem 0.75rem;
+}
+
+.wl-landing-call-stage__task span {
+  flex: none;
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-landing-call-stage__task strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-landing-call-stage__wave {
+  display: flex;
+  height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  margin-top: 0.55rem;
+}
+
+.wl-landing-call-stage__wave span {
+  width: 0.15rem;
+  min-height: 0.28rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+  transform-origin: center;
+  animation: wl-landing-wave 1.7s ease-in-out infinite alternate;
+  opacity: 0.65;
+}
+
+.wl-landing-call-stage__listening {
+  margin-top: 0.05rem;
+  text-align: center;
+}
+
+.wl-landing-call-stage__workflow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin-top: 0.6rem;
+}
+
+.wl-landing-call-stage__workflow li {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.52rem;
+  font-weight: 650;
+  letter-spacing: 0.075em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wl-landing-call-stage__workflow li::after {
+  content: "";
+  position: absolute;
+  top: 0.24rem;
+  left: calc(50% + 0.4rem);
+  width: calc(100% - 0.8rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+  opacity: 0.32;
+}
+
+.wl-landing-call-stage__workflow li:last-child::after {
+  content: none;
+}
+
+.wl-landing-call-stage__workflow li > span {
+  position: relative;
+  z-index: 1;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--wireline-color-action-secondary-default);
+  border-radius: 50%;
+  background: var(--wireline-color-surface-default);
+  color: transparent;
+}
+
+.wl-landing-call-stage__workflow li:last-child > span {
+  border-color: var(--wireline-color-action-primary-default);
+  background: var(--wireline-color-action-primary-default);
+}
+
+.wl-landing-call-stage__control {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 0.7rem;
+}
+
+/* BrowserCallWidget normally draws a second identity orb. The stage already
+ * owns the identity, so only its actual control and live status remain here. */
+.wl-landing-call-stage__control > div > div:first-child {
+  display: none;
+}
+
+.wl-landing-call-stage__control :is(button, a) {
+  min-width: min(100%, 11.5rem);
+}
+
+.wl-landing-call-stage__outcomes {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.wl-landing-call-stage__outcome {
+  position: absolute;
+  display: flex;
+  width: 10.2rem;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--wireline-color-surface-raised) 90%, transparent);
+  box-shadow: var(--wireline-elevation-md);
+  padding: 0.65rem 0.7rem;
+  backdrop-filter: blur(0.9rem);
+  animation: wl-landing-float 5.2s ease-in-out infinite;
+}
+
+.wl-landing-call-stage__outcome:nth-child(1) {
+  top: 18%;
+  left: 0;
+}
+
+.wl-landing-call-stage__outcome:nth-child(2) {
+  top: 44%;
+  right: 0;
+  animation-delay: -2s;
+}
+
+.wl-landing-call-stage__outcome:nth-child(3) {
+  bottom: 12%;
+  left: 3%;
+  animation-delay: -3.5s;
+}
+
+.wl-landing-call-stage__outcome-icon {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 11%, transparent);
+  color: var(--wireline-color-action-primary-default);
+  place-items: center;
+}
+
+.wl-landing-call-stage__outcome-icon svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.wl-landing-call-stage__outcome > span:last-child {
+  min-width: 0;
+}
+
+.wl-landing-call-stage__outcome small,
+.wl-landing-call-stage__outcome strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-landing-call-stage__outcome small {
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.wl-landing-call-stage__outcome strong {
+  margin-top: 0.15rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+@keyframes wl-landing-wire {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15%, 85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(44rem);
+    opacity: 0;
+  }
+}
+
+@keyframes wl-landing-pulse {
+  0%, 100% {
+    transform: scale(0.88);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes wl-landing-ring {
+  0% {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  28% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+@keyframes wl-landing-wave {
+  from {
+    transform: scaleY(0.28);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes wl-landing-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.4rem, 0);
+  }
+}
