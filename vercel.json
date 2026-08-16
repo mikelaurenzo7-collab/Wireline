@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node --import ./scripts/sanitize-retired-client-env.mjs ./scripts/vercel-build.mjs && npx esbuild src/entrypoints/public-health-api.ts --platform=node --bundle --format=cjs --outfile=dist/public-health-api.cjs && node scripts/smoke-public-health-bundle.mjs",
+  "buildCommand": "node --import ./scripts/sanitize-retired-client-env.mjs ./scripts/vercel-build.mjs && npx vitest run tests/retired-client-env-sanitizer-contract.test.ts && npx esbuild src/entrypoints/public-health-api.ts --platform=node --bundle --format=cjs --outfile=dist/public-health-api.cjs && node scripts/smoke-public-health-bundle.mjs",
   "regions": [
     "cle1"
   ],
