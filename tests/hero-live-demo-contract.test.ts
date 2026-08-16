@@ -30,12 +30,16 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     expect(landing).toContain("fallback=");
     expect(landing).toContain("Hear It Live");
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
+    expect(landing).toContain('aria-label="Call the Public Demo Line"');
     expect(landing).toContain('mode: "phone"');
 
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
     expect(widget).toContain('variant?: "compact" | "stage"');
-    expect(widget).toContain("Try the public demo line instead");
+    expect(widget).toContain("Public demo line available");
+    expect(widget).toContain("Standard carrier rates may apply");
     expect(widget).toContain("{fallback}");
+    expect(hook).toContain("Try the public demo line instead");
   });
 
   it("hard-caps browser preview spend and disables retained provider artifacts", () => {
