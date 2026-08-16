@@ -78,6 +78,7 @@ export default function BrowserCallWidget({
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
+  const [browserUnavailable, setBrowserUnavailable] = useState(false);
 
   // The ~300 KB @vapi-ai/web WebRTC SDK is only needed once the visitor starts a
   // call, so it is imported dynamically on first use rather than shipped in the
@@ -91,6 +92,13 @@ export default function BrowserCallWidget({
     if (callStopTimerRef.current === null) return;
     window.clearTimeout(callStopTimerRef.current);
     callStopTimerRef.current = null;
+  };
+
+  const activateFallback = () => {
+    if (!fallback) return false;
+    setBrowserUnavailable(true);
+    setError(null);
+    return true;
   };
 
   useEffect(() => {
@@ -110,7 +118,7 @@ export default function BrowserCallWidget({
   async function ensureVapi(): Promise<Vapi | null> {
     if (vapiRef.current) return vapiRef.current;
     if (!VAPI_PUBLIC_KEY) {
-      setError("Voice demo is unavailable right now.");
+      activateFallback();
       return null;
     }
     const { default: VapiSDK } = await import("@vapi-ai/web");
@@ -126,6 +134,7 @@ export default function BrowserCallWidget({
           // The provider may already have ended at the same hard ceiling.
         }
       }, PUBLIC_BROWSER_DEMO_MAX_SECONDS * 1000);
+      setBrowserUnavailable(false);
       setConnecting(false);
       setCallActive(true);
       setError(null);
@@ -152,7 +161,9 @@ export default function BrowserCallWidget({
     instance.on("error", (reason: unknown) => {
       clearCallStopTimer();
       console.error("[wireline:webrtc] voice bridge error:", reason);
-      setError("Voice connection failed. Try again.");
+      if (!activateFallback()) {
+        setError("Voice connection failed. Try again.");
+      }
       setConnecting(false);
       setCallActive(false);
       setVolume(0);
@@ -185,7 +196,7 @@ export default function BrowserCallWidget({
         return;
       }
       const response = await fetch(`/api/public/assistant/${encodeURIComponent(agentName)}`);
-      if (!response.ok) throw new Error("Could not load the demo agent.");
+      if (!response.ok) throw new Error(`Public demo unavailable (${response.status})`);
       const assistantPayload = await response.json();
 
       if (navigator.mediaDevices?.getUserMedia) {
@@ -196,13 +207,15 @@ export default function BrowserCallWidget({
     } catch (reason: unknown) {
       clearCallStopTimer();
       console.error("[wireline:webrtc] Call start failed:", reason);
-      setError(callStartErrorMessage(reason));
+      if (!activateFallback()) {
+        setError(callStartErrorMessage(reason));
+      }
       setConnecting(false);
     }
   };
 
   const buttonText = connecting ? "Connecting…" : callActive ? "End Call" : buttonLabel;
-  const useFallbackControl = !VAPI_PUBLIC_KEY && Boolean(fallback);
+  const useFallbackControl = (!VAPI_PUBLIC_KEY || browserUnavailable) && Boolean(fallback);
   const idleDemoCopy = useFallbackControl
     ? "Call the public demo line. Standard carrier rates may apply."
     : `No account required. Microphone access starts only when you choose the ${PUBLIC_BROWSER_DEMO_MAX_SECONDS}-second preview.`;
