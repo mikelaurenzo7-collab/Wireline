@@ -49,7 +49,7 @@ const BAR_LINKS = [
 
 const COLUMNS = [
   { heading: "Product", links: PRODUCT_LINKS },
-  { heading: "Who Its For", links: WHO_ITS_FOR_LINKS },
+  { heading: "Who It's For", links: WHO_ITS_FOR_LINKS },
   { heading: "Company", links: COMPANY_LINKS },
   { heading: "Resources", links: RESOURCE_LINKS },
 ] as const;
