@@ -70,7 +70,7 @@ const required = [
   ],
   [
     "VAPI_PRIVATE_KEY",
-    "Vapi managed inbound and outbound voice runtime",
+    "Vapi managed inbound, outbound, and protected browser voice runtime",
     process.env.VAPI_PRIVATE_KEY,
   ],
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
@@ -126,7 +126,6 @@ const recommended = [
     "XAI_API_KEY",
     "Optional xAI credential — activates the Grok structured continuity lane and Wireline Preview voice rendering; OpenAI stays primary",
   ],
-  ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
@@ -294,40 +293,40 @@ if (
   console.log("OK: all required and recommended env vars are set and shaped correctly.\n");
   if (missingOptional.length) {
     console.log("  Optional (informational only):");
-    missingOptional.forEach(([k, d]) => console.log(`    - ${k} - ${d}`));
+    missingOptional.forEach(([key, description]) => console.log(`    - ${key} - ${description}`));
   }
   process.exit(0);
 }
 
 if (missingRequired.length) {
   console.log("MISSING REQUIRED env vars (deploy will fail):\n");
-  missingRequired.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
+  missingRequired.forEach(([key, description]) => console.log(`    - ${key}\n      ${description}`));
 }
 
 if (invalidRequired.length) {
   console.log("\nINVALID REQUIRED env vars (deploy will fail):\n");
-  invalidRequired.forEach(([k, d]) => {
-    const hint = formatHints.get(k);
-    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+  invalidRequired.forEach(([key, description]) => {
+    const hint = formatHints.get(key);
+    console.log(`    - ${key}\n      ${description}${hint ? `\n      Expected: ${hint}` : ""}`);
   });
 }
 
 if (missingRecommended.length) {
   console.log("\nMISSING RECOMMENDED env vars (features will be degraded):\n");
-  missingRecommended.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
+  missingRecommended.forEach(([key, description]) => console.log(`    - ${key}\n      ${description}`));
 }
 
 if (invalidRecommended.length) {
   console.log("\nINVALID RECOMMENDED env vars (features will be degraded or ignored):\n");
-  invalidRecommended.forEach(([k, d]) => {
-    const hint = formatHints.get(k);
-    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+  invalidRecommended.forEach(([key, description]) => {
+    const hint = formatHints.get(key);
+    console.log(`    - ${key}\n      ${description}${hint ? `\n      Expected: ${hint}` : ""}`);
   });
 }
 
 if (missingOptional.length) {
   console.log("\nMissing optional env vars (informational):");
-  missingOptional.forEach(([k]) => console.log(`    - ${k}`));
+  missingOptional.forEach(([key]) => console.log(`    - ${key}`));
 }
 
 console.log("");
