@@ -1,5 +1,5 @@
 /**
- * Wireline Clear System check — the executable design/product contract.
+ * Wireline Clear System check: the executable design/product contract.
  *
  * The profit-agent launch story (and its included-number promise) is the
  * active truth; the broader historical guardrails live in focused modules
@@ -9,6 +9,7 @@
  *   launch-story            profit-agent metadata, included numbers, claims
  *   design-tokens           Aurora palette + retired-palette sweep
  *   marketing-surfaces      public pages, wire signature, honest positioning
+ *   public-typography       shipped weights, platform rendering, readable type
  *   browser-extension       Wireline Command naming, commands, permissions
  *   native-surfaces         Android/iOS tabs, titles, agent language
  *   authenticated-surfaces  routes, Studio canvas, auth flow, Training IA
@@ -23,6 +24,7 @@ import { createCheckContext } from "./clear-system/context.mjs";
 import { checkLaunchStory } from "./clear-system/launch-story.mjs";
 import { checkDesignTokens } from "./clear-system/design-tokens.mjs";
 import { checkMarketingSurfaces } from "./clear-system/marketing-surfaces.mjs";
+import { checkPublicTypography } from "./clear-system/public-typography.mjs";
 import { checkBrowserExtension } from "./clear-system/browser-extension.mjs";
 import { checkNativeSurfaces } from "./clear-system/native-surfaces.mjs";
 import { checkAuthenticatedSurfaces } from "./clear-system/authenticated-surfaces.mjs";
@@ -34,6 +36,7 @@ const modules = [
   ["launch story", checkLaunchStory],
   ["design tokens", checkDesignTokens],
   ["marketing surfaces", checkMarketingSurfaces],
+  ["public typography", checkPublicTypography],
   ["browser extension", checkBrowserExtension],
   ["native surfaces", checkNativeSurfaces],
   ["authenticated surfaces", checkAuthenticatedSurfaces],
