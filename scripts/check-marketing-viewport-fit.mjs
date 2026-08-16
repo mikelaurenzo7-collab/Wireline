@@ -129,7 +129,7 @@ for (const [needle, description] of [
   ['id="features"', "home must include features"],
   ['id="pricing"', "home must include pricing"],
   ['id="trust"', "home must include trust controls"],
-  ["<MarketingChromeBar />", "home must retain footer wayfinding"],
+  ["<LandingFooter />", "home must retain footer wayfinding"],
 ]) {
   if (!executableHome.includes(needle)) {
     failures.push(`src/components/marketing/WireAgentLanding.tsx: ${description}`);
@@ -137,6 +137,11 @@ for (const [needle, description] of [
 }
 if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(executableHome)) {
   failures.push("src/components/marketing/WireAgentLanding.tsx: retired device markers must stay removed");
+}
+
+const landingFooter = read("src/components/marketing/LandingFooter.tsx");
+if (!landingFooter.includes("<MarketingChromeBar />")) {
+  failures.push("src/components/marketing/LandingFooter.tsx: shared public link bar is missing");
 }
 
 const header = executable(read("src/components/marketing/PrecisionPublicHeader.tsx"));
