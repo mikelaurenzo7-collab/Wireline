@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type Vapi from "@vapi-ai/web";
 import { AlertCircle, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { PUBLIC_BROWSER_DEMO_MAX_SECONDS } from "../../lib/public-browser-demo";
 import AgentFace from "../AgentFace";
 import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -82,11 +83,22 @@ export default function BrowserCallWidget({
   // call, so it is imported dynamically on first use rather than shipped in the
   // marketing page bundle. Keep the instance in a ref so it survives re-renders.
   const vapiRef = useRef<Vapi | null>(null);
+  const callStopTimerRef = useRef<number | null>(null);
   const agentNameRef = useRef(agentName);
   agentNameRef.current = agentName;
 
+  const clearCallStopTimer = () => {
+    if (callStopTimerRef.current === null) return;
+    window.clearTimeout(callStopTimerRef.current);
+    callStopTimerRef.current = null;
+  };
+
   useEffect(() => {
     return () => {
+      if (callStopTimerRef.current !== null) {
+        window.clearTimeout(callStopTimerRef.current);
+        callStopTimerRef.current = null;
+      }
       try {
         vapiRef.current?.stop();
       } catch {
@@ -105,6 +117,15 @@ export default function BrowserCallWidget({
     const instance = new VapiSDK(VAPI_PUBLIC_KEY);
 
     instance.on("call-start", () => {
+      clearCallStopTimer();
+      callStopTimerRef.current = window.setTimeout(() => {
+        callStopTimerRef.current = null;
+        try {
+          instance.stop();
+        } catch {
+          // The provider may already have ended at the same hard ceiling.
+        }
+      }, PUBLIC_BROWSER_DEMO_MAX_SECONDS * 1000);
       setConnecting(false);
       setCallActive(true);
       setError(null);
@@ -116,6 +137,7 @@ export default function BrowserCallWidget({
     });
 
     instance.on("call-end", () => {
+      clearCallStopTimer();
       setCallActive(false);
       setConnecting(false);
       setVolume(0);
@@ -128,6 +150,7 @@ export default function BrowserCallWidget({
     });
 
     instance.on("error", (reason: unknown) => {
+      clearCallStopTimer();
       console.error("[wireline:webrtc] voice bridge error:", reason);
       setError("Voice connection failed. Try again.");
       setConnecting(false);
@@ -142,6 +165,7 @@ export default function BrowserCallWidget({
 
   const handleToggleCall = async () => {
     if (callActive) {
+      clearCallStopTimer();
       setConnecting(true);
       vapiRef.current?.stop();
       return;
@@ -170,6 +194,7 @@ export default function BrowserCallWidget({
       }
       await instance.start(assistantPayload);
     } catch (reason: unknown) {
+      clearCallStopTimer();
       console.error("[wireline:webrtc] Call start failed:", reason);
       setError(callStartErrorMessage(reason));
       setConnecting(false);
@@ -178,6 +203,9 @@ export default function BrowserCallWidget({
 
   const buttonText = connecting ? "Connecting…" : callActive ? "End Call" : buttonLabel;
   const useFallbackControl = !VAPI_PUBLIC_KEY && Boolean(fallback);
+  const idleDemoCopy = useFallbackControl
+    ? "Call the public demo line. Standard carrier rates may apply."
+    : `No account required. Microphone access starts only when you choose the ${PUBLIC_BROWSER_DEMO_MAX_SECONDS}-second preview.`;
 
   if (useFallbackControl && variant !== "stage") {
     return <>{fallback}</>;
@@ -208,9 +236,17 @@ export default function BrowserCallWidget({
           <div className="landing-demo__signal" role="status" aria-live="polite">
             {callActive ? (
               <>
-                <Volume2 className={cn("size-3.5", speakerActive && "text-primary")} aria-hidden="true" />
+                <Volume2
+                  className={cn("size-3.5", speakerActive && "text-primary")}
+                  aria-hidden="true"
+                />
                 <WaveBars volume={volume} active={speakerActive} />
                 <span>{speakerActive ? "Agent speaking" : "Listening"}</span>
+              </>
+            ) : useFallbackControl ? (
+              <>
+                <Phone className="size-3.5" aria-hidden="true" />
+                <span>Public Demo Line</span>
               </>
             ) : (
               <>
@@ -244,8 +280,8 @@ export default function BrowserCallWidget({
 
           <p className="landing-demo__microcopy">
             {callActive
-              ? "Speak naturally. End the call whenever you are ready."
-              : "No account required. Microphone access starts only when you choose the demo."}
+              ? `This preview ends automatically after ${PUBLIC_BROWSER_DEMO_MAX_SECONDS} seconds. End it sooner at any time.`
+              : idleDemoCopy}
           </p>
 
           {error ? (
