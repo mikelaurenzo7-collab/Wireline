@@ -1,0 +1,48 @@
+/*
+ * Terminal type integrity
+ *
+ * This layer runs after every authored visual tier. It prevents synthetic
+ * weights, platform-specific thinning, and sub-12px operational labels from
+ * weakening otherwise correct Wireline typography.
+ */
+
+html {
+  font-synthesis: none;
+}
+
+body {
+  text-rendering: auto;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+/* Inter Tight ships static 500, 600, 700, and 800 faces. The public hero uses
+ * the real 700 face instead of a synthetic intermediate weight. */
+.marketing-surface .marketing-hero__title,
+.marketing-surface .wireline-home-hero .marketing-hero__title {
+  font-weight: 700;
+}
+
+/* IBM Plex Mono ships static 500, 600, and 700 faces. Shared labels use the
+ * real semibold face throughout marketing and authenticated workspace views. */
+:where(
+    .wl-chip,
+    .wl-metric-tile__label,
+    .wl-eyebrow,
+    .wl-key-value__key,
+    .marketing-hero-proof span
+  ) {
+  font-weight: 600;
+}
+
+/* Compact labels remain compact without becoming low-resolution microtype. */
+:where(
+    .marketing-proof-chip,
+    .marketing-tag-success,
+    .wl-transition-detail dt,
+    .wl-workspace-header .wl-overline
+  ) {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
