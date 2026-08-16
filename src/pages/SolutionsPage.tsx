@@ -145,14 +145,16 @@ export default function SolutionsPage() {
 
         <ol className="mt-3 grid gap-2 sm:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card px-3 py-2.5 text-center">
+            <li key={title} className="wl-stitch-card px-3 py-3 text-center">
               <span className="flex items-center justify-center gap-2">
                 <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
                   0{index + 1}
                 </span>
                 <h3 className="wl-card-title">{title}</h3>
               </span>
-              <p className="sr-only">{copy}</p>
+              <p className="mx-auto mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
+                {copy}
+              </p>
             </li>
           ))}
         </ol>

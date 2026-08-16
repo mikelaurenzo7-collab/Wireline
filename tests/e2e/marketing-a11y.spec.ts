@@ -22,18 +22,21 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage stages a live agent on a phone with no serious axe violations", async ({
+test("homepage live console has visible navigation and no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await gotoHomepageWithMain(page);
+
   await expect(
     page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
   ).toBeVisible();
-
   await expect(
     page.getByRole("heading", { name: "How Wireline works", exact: true }),
   ).toBeAttached();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toBeVisible();
+  await expect(page.locator(".landing-console")).toBeVisible();
+  await expect(page.getByText("Booked and logged", { exact: true })).toBeVisible();
 
   const channelList = page.getByRole("list", { name: "Agent channels" });
   await expect(channelList).toBeVisible();
@@ -53,7 +56,11 @@ test("homepage stages a live agent on a phone with no serious axe violations", a
     workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.hybrid.label}\\b`) }),
   ).toBeVisible();
 
-  await expect(page.getByRole("button", { name: /Hear It Live/i }).or(page.getByRole("link", { name: /Hear It Live/i }))).toBeVisible();
+  await expect(
+    page
+      .getByRole("button", { name: /Hear It Live/i })
+      .or(page.getByRole("link", { name: /Hear It Live/i })),
+  ).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>
@@ -63,7 +70,7 @@ test("homepage stages a live agent on a phone with no serious axe violations", a
   expect(blockingViolations).toEqual([]);
 });
 
-test("homepage hero stays inside the desktop viewport", async ({ page }) => {
+test("homepage narrative and proof stay inside the desktop viewport", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
@@ -71,17 +78,25 @@ test("homepage hero stays inside the desktop viewport", async ({ page }) => {
     name: MARKETING_VOICE.headline,
     exact: true,
   });
+  const consoleElement = page.locator(".landing-console");
   await expect(headline).toBeVisible();
+  await expect(consoleElement).toBeVisible();
 
-  const bounds = await headline.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
+  const bounds = await page.evaluate(() => {
+    const headline = document.querySelector(".landing-stage__title")?.getBoundingClientRect();
+    const consoleElement = document.querySelector(".landing-console")?.getBoundingClientRect();
     return {
-      left: rect.left,
-      right: rect.right,
+      headlineLeft: headline?.left ?? -1,
+      headlineRight: headline?.right ?? Number.POSITIVE_INFINITY,
+      consoleLeft: consoleElement?.left ?? -1,
+      consoleRight: consoleElement?.right ?? Number.POSITIVE_INFINITY,
       viewportWidth: document.documentElement.clientWidth,
     };
   });
 
-  expect(bounds.left).toBeGreaterThanOrEqual(0);
-  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.headlineLeft).toBeGreaterThanOrEqual(0);
+  expect(bounds.headlineRight).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.consoleLeft).toBeGreaterThanOrEqual(0);
+  expect(bounds.consoleRight).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.headlineRight).toBeLessThan(bounds.consoleRight);
 });

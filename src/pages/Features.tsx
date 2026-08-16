@@ -47,7 +47,7 @@ const CORE_FEATURES = [
   },
   {
     icon: CalendarClock,
-    title: "Scheduling And Handoff",
+    title: "Scheduling and Handoff",
     body: "Offer real availability and pass the request without making the customer repeat context.",
   },
   {
@@ -57,12 +57,12 @@ const CORE_FEATURES = [
   },
   {
     icon: SlidersHorizontal,
-    title: "Training By Workflow",
+    title: "Training by Workflow",
     body: "Tune one voice agent for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
-    title: "Outcomes Over Activity",
+    title: "Outcomes over Activity",
     body: "See what happened, what changed, and what needs attention across every channel.",
   },
 ] as const;
@@ -97,7 +97,7 @@ export default function Features() {
             title="Voice agents for every customer conversation"
             primaryAction={{ label: "Build Your Voice Agent", to: "/signup?plan=personal" }}
             secondaryAction={{
-              label: "Hear A Demo",
+              label: "Hear a Demo",
               to: "/showcase",
               tone: "secondary",
             }}
@@ -164,7 +164,9 @@ function FeatureCard({
         aria-hidden="true"
       />
       <h3 className="wl-card-title mx-auto mt-2 max-w-[18ch]">{title}</h3>
-      <p className="mx-auto mt-1.5 max-w-[36ch] text-xs leading-5 text-muted-foreground">{body}</p>
+      <p className="mx-auto mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
+        {body}
+      </p>
     </article>
   );
 }

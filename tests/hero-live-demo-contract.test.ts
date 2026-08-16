@@ -5,54 +5,38 @@ import { PRODUCT_EVENT_NAMES } from "../src/lib/product-events";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-/**
- * The flagship browser voice demo belongs above the fold — "hear it now" is
- * the single strongest converter for a voice-AI product, and it used to be
- * one click + one page away on /showcase. Two top-of-funnel events
- * (landing_demo_clicked, landing_audience_selected) also existed in the
- * taxonomy with zero emit sites, so demo-interest and audience drop-off
- * were unmeasurable.
- */
 describe("homepage hero live demo + funnel instrumentation", () => {
-  it("renders the browser voice widget in the hero, not just a link to /showcase", () => {
+  it("renders the flagship browser voice proof above the fold", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("import BrowserCallWidget");
     expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('variant="phone"');
+    expect(landing).toContain('variant="stage"');
     expect(landing).toContain('id="hear-a-demo"');
+    expect(landing).toContain("landing-console");
   });
 
-  it("falls back to a phone demo line when the browser demo can't run", () => {
+  it("falls back to the public phone demo without removing the proof console", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("fallback=");
-    // The eyebrow above the widget was removed: the button already says it.
     expect(landing).toContain("Hear It Live");
-    // Assert the mechanism, not the button's wording: the fallback must dial
-    // the demo line. Pinning an exact label made a copy edit look like a
-    // regression while the tel: link it exists to protect went unchecked.
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
-    // The phone fallback is still the fallback; its label now matches the
-    // browser demo button so the hero offers one action, not two names for it.
-    expect(landing).toMatch(/Hear It Live/);
     expect(landing).toContain('mode: "phone"');
+
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
-    // The widget renders the fallback instead of a dead button when the key
-    // is missing.
-    expect(widget).toContain('variant?: "compact" | "phone"');
+    expect(widget).toContain('variant?: "compact" | "stage"');
     expect(widget).toContain("!VAPI_PUBLIC_KEY && Boolean(fallback)");
+    expect(widget).toContain('variant !== "stage"');
   });
 
-  it("emits the two previously-dead funnel events", () => {
+  it("emits the live-demo, audience, and primary-action funnel events", () => {
     expect(PRODUCT_EVENT_NAMES).toContain("landing_demo_clicked");
     expect(PRODUCT_EVENT_NAMES).toContain("landing_audience_selected");
+    expect(PRODUCT_EVENT_NAMES).toContain("landing_primary_cta_clicked");
     expect(read("src/components/marketing/BrowserCallWidget.tsx")).toContain(
-      '"landing_demo_clicked"',
-    );
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      '"landing_audience_selected"',
-    );
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
       'event: "landing_demo_clicked"',
     );
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    expect(landing).toContain('event: "landing_audience_selected"');
+    expect(landing).toContain('event: "landing_primary_cta_clicked"');
   });
 });
