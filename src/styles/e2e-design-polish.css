@@ -46,8 +46,9 @@
  * operational controls and metadata, not supporting copy. */
 .marketing-surface
   :is(
-    .landing-stage__live-label,
+    .landing-stage__eyebrow,
     .landing-stage__spine li,
+    .landing-stage__lanes-label,
     .landing-stage__lane,
     .landing-console__status,
     .landing-console__channels li,
