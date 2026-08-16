@@ -59,7 +59,7 @@ const CHANNELS = [
   { label: "Voice", icon: PhoneCall },
   { label: "Text", icon: MessageSquareText },
   { label: "Email", icon: Mail },
-  { label: "Live Video Add-on", icon: Video },
+  { label: "Live Video Add-On", icon: Video },
 ] as const;
 
 const EXAMPLE_RUN = [
@@ -190,7 +190,7 @@ export default function WireAgentLanding() {
                       <Icon className="landing-stage__lane-icon" aria-hidden="true" />
                       <span>
                         <strong>{audience.label}</strong>
-                        <small>{audience.detail}</small>
+                        <small className="wl-preserve-case">{audience.detail}</small>
                         <span className="sr-only">{audience.uses.join(", ")}</span>
                       </span>
                       <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
