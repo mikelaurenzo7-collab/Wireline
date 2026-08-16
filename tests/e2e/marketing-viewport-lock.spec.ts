@@ -174,6 +174,15 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
   expect(metrics.footerBottom).toBeLessThanOrEqual(metrics.viewportHeight + 2);
 });
 
+test("feature canvas keeps an inner-scroll escape hatch on a short desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 720 });
+  await openCanvas(page, "/features");
+  const metrics = await viewportMetrics(page);
+  expect(metrics.docOverflow).toBeLessThanOrEqual(2);
+  expect(metrics.bodyOverflow).toBeLessThanOrEqual(2);
+  expect(metrics.flowOverflowY).toMatch(/auto|scroll/);
+});
+
 test("features canvas stays inside 1365x900", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openCanvas(page, "/features");
