@@ -179,7 +179,11 @@ describe("current-state UI contract", () => {
       /system-hardening\.css";[\s\S]*responsive\.css";[\s\S]*ruthless-mobile-cleanup\.css";[\s\S]*agent-tabs-compact\.css";/,
     );
     expect(index).toContain("font-size: 16px");
-    expect(responsive).toContain("padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));");
+    expect(responsive).toContain(".wl-workspace-main");
+    expect(responsive).toContain("padding-inline: 1rem");
+    expect(responsive).not.toContain(
+      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
+    );
     for (const source of [input, select]) {
       expect(source).toContain("h-11");
       expect(source).toContain("text-base");

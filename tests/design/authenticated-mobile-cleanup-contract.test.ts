@@ -121,6 +121,9 @@ describe("authenticated mobile cleanup", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const accounts = read("src/components/admin/AccountsPanel.tsx");
     const insights = read("src/components/insights/shared.tsx");
+    const insightsPage = read("src/pages/InsightsPage.tsx");
+    const insightsView = read("src/components/insights/InsightsView.tsx");
+    const operateIntro = read("src/components/layout/WorkspacePageFrame.tsx");
     const polish = read("src/styles/authenticated-visual-qa.css");
 
     expect(overview).toContain("hasAgents ? (");
@@ -131,6 +134,10 @@ describe("authenticated mobile cleanup", () => {
     expect(accounts).not.toContain("Keep personal and business work separate.");
     expect(insights).toContain("No conversations yet");
     expect(insights).toContain("Activity appears once a voice agent starts taking calls.");
+    expect(insightsPage).toContain("tabs={firstRun ? undefined : <AppChromeSubTabs density=\"compact\" />}");
+    expect(insightsView).toContain("if (firstRun) {");
+    expect(insightsView).toContain('<InsightEmpty configKey="funnel"');
+    expect(operateIntro).toContain("!showBarAlways && titleHidden && \"lg:hidden\"");
   });
 
   it("uses Wireline language and iconography on active work surfaces", () => {

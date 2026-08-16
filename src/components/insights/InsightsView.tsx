@@ -6,6 +6,7 @@
  */
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
+import { TrendingUp } from "lucide-react";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";
@@ -22,6 +23,8 @@ import {
   resolveInsightsGroupForView,
 } from "../../lib/page-sub-tabs";
 
+import { useAgents } from "../../contexts/AgentsContext";
+import { InsightEmpty } from "./shared";
 import FunnelView from "./FunnelView";
 import AttributionView from "./AttributionView";
 import TopicsView from "./TopicsView";
@@ -48,6 +51,8 @@ type InsightGroupId = "performance" | "reliability" | "quality" | "revenue";
 const INSIGHTS_ROUTE = resolveAppPageSubTabRoute("/insights")!;
 
 export default function InsightsView() {
+  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
+  const firstRun = !agentsLoading && agents.length === 0 && !agentsDegraded;
   const [days, setDays] = useState(30);
   const [searchParams] = useSearchParams();
   const routeGroup = resolveAppPageSubTabId(
@@ -88,6 +93,14 @@ export default function InsightsView() {
     };
     return views[activeView] ?? views.funnel;
   }, [activeView, days]);
+
+  if (firstRun) {
+    return (
+      <ClientRouteViewport>
+        <InsightEmpty configKey="funnel" icon={TrendingUp} />
+      </ClientRouteViewport>
+    );
+  }
 
   const dayPicker = (
     <SegmentStrip

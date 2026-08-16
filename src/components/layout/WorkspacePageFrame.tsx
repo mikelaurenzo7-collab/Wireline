@@ -148,8 +148,17 @@ export function WorkspaceOperateIntro({
   action,
   titleHidden = false,
 }: WorkspaceOperateIntroProps) {
+  const showBarAlways = Boolean(tabs || action);
   return (
-    <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
+    <header
+      className={cn(
+        "wl-operate-surface shrink-0 border-b border-border/60 pb-3",
+        // First-run Insights has a page title on the phone and nothing else.
+        // Keep that name under the dock's More sheet, and drop the empty
+        // bordered bar on desktop where the rail already says Activity.
+        !showBarAlways && titleHidden && "lg:hidden",
+      )}
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1

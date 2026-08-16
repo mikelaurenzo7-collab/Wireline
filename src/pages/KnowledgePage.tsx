@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { BookOpen, MessageCircle, WandSparkles } from "lucide-react";
+import { BookOpen, MessageCircle } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -32,33 +32,20 @@ const knowledgeTabs: Array<{
 
 function EmptyKnowledge() {
   return (
-    <div className="grid min-h-[520px] flex-1 place-items-center py-8">
-      <EmptyState
-        density="default"
-        className="wl-paper wl-paper-elevated w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
-        icon={<BookOpen size={30} strokeWidth={1.7} />}
-        title="Knowledge starts with a voice agent"
-        action={
-          <div className="space-y-4">
-            <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
-              Create the agent first, then add the business facts, policies, and answers it may use
-              with customers.
-            </p>
-            <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row">
-              <Button asChild>
-                <Link to="/studio?create=1">
-                  <WandSparkles aria-hidden="true" size={16} />
-                  Create voice agent
-                </Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link to="/templates">Browse templates</Link>
-              </Button>
-            </div>
-          </div>
-        }
-      />
-    </div>
+    <EmptyState
+      fill
+      density="compact"
+      titleTone="ui"
+      withHalo={false}
+      className="wl-paper wl-paper-elevated mx-auto w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
+      icon={<BookOpen size={30} strokeWidth={1.7} />}
+      title="Knowledge starts with a voice agent"
+      description="Create the agent first, then add the business facts, policies, and answers it may use with customers."
+      actions={[
+        { label: "Create voice agent", to: "/studio?create=1", primary: true },
+        { label: "Browse templates", to: "/templates" },
+      ]}
+    />
   );
 }
 
@@ -98,7 +85,7 @@ export default function KnowledgePage() {
   return (
     <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
       {!loading && !agents.length ? (
-        <WorkspacePageFrame mode="standard">
+        <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
           <WorkspacePageIntro title="Knowledge" />
           {/* An empty roster and an unreachable one are the same `agents.length`
               but opposite facts. Without this check a failed load rendered

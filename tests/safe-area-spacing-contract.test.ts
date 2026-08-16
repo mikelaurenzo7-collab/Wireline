@@ -38,6 +38,8 @@ describe("safe-area spacing ownership", () => {
   it("keeps auth and workspace children inside their safe content boxes", () => {
     const ownership = read("src/styles/safe-area-ownership.css");
     const workspace = read("src/components/WorkspaceShell.tsx");
+    const responsive = read("src/styles/responsive.css");
+    const hotfix = read("src/styles/visual-qa-hotfix.css");
 
     expect(ownership).toContain(".wl-stitch-auth-shell {");
     expect(ownership).toMatch(
@@ -51,7 +53,14 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
-    expect(workspace).toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
+    // Main fills the shell's safe box. Dock clearance is the scroller's job, so
+    // first-run pages are not given two empty bands above the mobile dock.
+    expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
+    expect(workspace).toContain("pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6");
+    expect(responsive).not.toContain(
+      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
+    );
+    expect(hotfix).not.toContain("padding-bottom: max(2.5rem");
   });
 
   it("protects transition surfaces that mount before public or workspace chrome", () => {

@@ -394,8 +394,8 @@ export default function WorkspaceShell({
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
   const mainSpacing = fullBleed
-    ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
-    : "px-3 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
+    ? "p-0 lg:pb-0"
+    : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
   const contentInner = fullBleed
     ? "wl-workspace-content-inner mx-0 flex h-full min-h-0 w-full max-w-none flex-col"
     : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-1 flex-col";

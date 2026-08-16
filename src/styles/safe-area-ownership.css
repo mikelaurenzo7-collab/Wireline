@@ -77,8 +77,10 @@
 }
 
 @media (max-width: 767px) {
-  /* The shell already removed the home-indicator inset from the scrollport.
-   * Keep only the dock clearance here; the fixed dock itself still owns env(). */
+  /* Dock clearance belongs on the scrollport once. The shell already owns
+   * the home-indicator inset, and the main column fills that safe box.
+   * Padding the column AND this scroller reserved two empty bands above the
+   * dock, which left first-run Overview with a 200px void under the only card. */
   .wl-workspace-shell .wl-workspace-content {
     padding-bottom: 5.25rem;
   }
