@@ -1,13 +1,20 @@
 /**
- * Public marketing surfaces with centered rails, shared product voice, accessible
- * work lane interactions, the wire signature, and honest Founder economics.
+ * Public marketing surfaces with centered rails, shared product voice, visible
+ * navigation, accessible work-lane links, proprietary live proof, the Wire
+ * signature, and honest plan economics.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
+  const executable = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
   const claritySystemCss = read("src/styles/clarity-system.css");
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
+  const landingStageCss = read("src/styles/landing-call-stage.css");
+  const landingLayoutCss = read("src/styles/landing-stage-layout.css");
+  const landingConsoleCss = read("src/styles/landing-live-console.css");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -27,13 +34,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
     "marketing actions must center by default",
   );
-  // The frame no longer grows with content: the window *is* the frame. Every
-  // public route is 100dvh with a single bounded scroller between a fixed
-  // header and a pinned chrome bar, so no public page has a document
-  // scrollbar at any width. What this contract now holds is that invariant —
-  // the shared frame must render the one scroller, and long-form document
-  // routes must still have a way to opt out of the panel composition.
-  // See src/styles/viewport-first-marketing.css for the three mechanisms.
+
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
@@ -57,10 +58,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/SolutionsPage.tsx",
     "src/pages/VerticalLanding.tsx",
   ]) {
-    // `!text-left` is the deliberate opt-out, not an oversight. /about is
-    // built to be identifiable at a glance as *not* the landing page, and a
-    // left-aligned column is the cheapest signal available; the blanket
-    // centering rule in clarity-system.css would otherwise re-centre it.
     mustInclude(
       file,
       read(file),
@@ -81,56 +78,59 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /MARKETING_VOICE\.buyingNoun/,
     "mobile navigation must consume the canonical product noun",
   );
-  mustExclude(
+  mustInclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
     publicHeader,
-    /Wire your agent/,
-    "public navigation must not revive retired campaign copy",
+    /aria-label="Site"/,
+    "desktop public navigation must remain visible and named",
+  );
+  mustExclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    executable(publicHeader),
+    /Wire your agent|landing-os-nav|chrome\?:\s*"bar"\s*\|\s*"hidden"/,
+    "public navigation executable code must not revive retired campaign or device-chrome behavior",
   );
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
     /aria-label=\{[\s\S]*?isHomeHero[\s\S]*?typeof title === "string"[\s\S]*?\? title[\s\S]*?: undefined[\s\S]*?\}/,
-    "the home hero headline must expose its visual copy as a screen-reader-safe name",
+    "shared hero headlines must expose their visual copy as an accessible name",
   );
   mustExclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
     /aria-label="Wireline capabilities"/,
-    "minimal heroes must not reintroduce capability chips",
+    "minimal shared heroes must not reintroduce capability chips",
   );
 
-  mustInclude(
+  for (const [pattern, description] of [
+    [/MARKETING_VOICE\.headline/, "landing must consume the shared headline"],
+    [/MARKETING_VOICE\.subline/, "landing must consume the shared supporting line"],
+    [/MARKETING_VOICE\.primaryCta/, "landing must consume the shared primary action"],
+    [/MARKETING_VOICE\.spine/, "landing must consume the shared Build Train Launch spine"],
+    [/<PrecisionPublicHeader\s*\/>/, "landing must use the visible shared public header"],
+    [/aria-label="Agent work lane"/, "work lanes must stay reachable as named navigation"],
+    [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
+    [/landing-console__activity/, "home must show an outcome ledger beside the live agent"],
+    [/One call\. A completed next step\./, "home must explain the completed-work proof"],
+    [/Booked and logged/, "home must expose a concrete outcome"],
+    [/rules, approvals, spend, and handoffs/, "home must keep owner control explicit"],
+    [/STRIPE_PLANS/, "landing pricing must stay tied to the Stripe plan catalog"],
+    [/Runtime\s+Balance/, "landing pricing must explain prepaid Runtime Balance"],
+  ]) {
+    mustInclude(
+      "src/components/marketing/WireAgentLanding.tsx",
+      wireAgentLanding,
+      pattern,
+      description,
+    );
+  }
+
+  mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /MARKETING_VOICE\.headline/,
-    "landing hero must consume the shared headline",
-  );
-  // Subline intentionally omitted from the hero (minimal hero); it still backs
-  // the SEO/social description in index.html.
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /role="tablist"[\s\S]*aria-label="Agent work lane"/,
-    "work lanes must use an accessible tablist",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /onKeyDown=\{handleModeKeyDown\}/,
-    "work lanes must support keyboard navigation",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /STRIPE_PLANS/,
-    "landing pricing must stay tied to the Stripe plan catalog",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /Runtime\s+Balance/,
-    "landing pricing must explain prepaid Runtime Balance",
+    executable(wireAgentLanding),
+    /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/,
+    "landing executable code must not depend on borrowed device-OS metaphors",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -138,6 +138,49 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /Start 7-day trial|Try 7 days free|\$79|postpaid voice-overage/i,
     "landing must not revive retired trial or overage positioning",
   );
+
+  mustInclude(
+    "src/styles/landing-call-stage.css",
+    landingStageCss,
+    /@import "\.\/landing-stage-layout\.css";/,
+    "landing shell must import its narrative layout module",
+  );
+  mustInclude(
+    "src/styles/landing-call-stage.css",
+    landingStageCss,
+    /@import "\.\/landing-live-console\.css";/,
+    "landing shell must import its live-console module",
+  );
+  mustInclude(
+    "src/styles/landing-stage-layout.css",
+    landingLayoutCss,
+    /grid-template-columns:\s*minmax\(0, 0\.88fr\)\s+minmax\(34rem, 1\.12fr\)/,
+    "desktop landing must preserve a deliberate narrative and proof split",
+  );
+  mustInclude(
+    "src/styles/landing-live-console.css",
+    landingConsoleCss,
+    /\.landing-console__body[\s\S]*grid-template-columns:/,
+    "live proof must preserve separate agent and outcome panes",
+  );
+  mustInclude(
+    "src/styles/landing-call-stage.css",
+    landingStageCss,
+    /overflow-y:\s*auto/,
+    "mobile landing must use a mechanically scrollable bounded flow",
+  );
+  for (const [file, source] of [
+    ["src/styles/landing-call-stage.css", landingStageCss],
+    ["src/styles/landing-stage-layout.css", landingLayoutCss],
+    ["src/styles/landing-live-console.css", landingConsoleCss],
+  ]) {
+    mustExclude(
+      file,
+      executable(source),
+      /#4ade80|#fbbf24|#7dd3fc|#2563eb|landing-phone|landing-os/,
+      "landing styles must stay on the Letterpress token system without retired device selectors",
+    );
+  }
 
   mustInclude(
     "src/styles/wireline-signature.css",
@@ -164,14 +207,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the final loop step must settle violet on the wire",
   );
 
-  // The loop is still on this buying surface, but it is no longer typed as a
-  // display line. /features is one screen now, and four cards with a paragraph
-  // each cost ~300px to repeat what the landing page already explains in full;
-  // the four words in sequence carry the spine for ~50px. Sourcing them from
-  // MARKETING_VOICE.proof (BRAND_SYSTEM.proofLoop) also gives the steps and
-  // their order exactly one origin, which a hand-typed headline never had --
-  // this page used to headline "Build. Train. Launch. Improve." above cards
-  // titled "Define the Agent" / "Teach the Business".
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,

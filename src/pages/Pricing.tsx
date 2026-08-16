@@ -241,7 +241,7 @@ export default function Pricing() {
         */}
         <section id="plans" className="marketing-section marketing-section--screen">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-4 lg:justify-between">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-border pb-3 lg:justify-between">
               <p className="wl-eyebrow text-muted-foreground">Pricing</p>
 
               <div
@@ -285,19 +285,19 @@ export default function Pricing() {
               </p>
             </div>
 
-            <div className="mt-6 grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center">
+            <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
                 <div className="flex items-center justify-center gap-2">
                   <WalletCards className="h-4 w-4 text-primary" aria-hidden="true" />
                   <h3 className="wl-card-title">Free Builder</h3>
                 </div>
                 <div className="mt-3 flex items-end justify-center gap-1.5">
-                  <span className="text-[2.35rem] font-semibold leading-none tracking-[-0.04em]">
+                  <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                     $0
                   </span>
                   <span className="text-xs text-muted-foreground">forever</span>
                 </div>
-                <ul className="mx-auto mt-5 w-full flex-1 space-y-2 text-left text-[13px] leading-5">
+                <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
                   {planById.personal.features.map((feature) => (
                     <li key={feature} className="flex gap-2">
                       <Check
@@ -310,7 +310,7 @@ export default function Pricing() {
                 </ul>
                 <Link
                   to="/signup?plan=personal"
-                  className="marketing-btn-secondary mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+                  className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
                 >
                   Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
@@ -326,9 +326,9 @@ export default function Pricing() {
                   return (
                     <article
                       key={plan.id}
-                      className={`relative flex flex-col rounded-[var(--radius-xl)] border p-5 text-center ${
+                      className={`relative flex flex-col rounded-[var(--radius-xl)] border p-4 text-center ${
                         featured
-                          ? "border-primary/50 bg-card pt-7 ring-2 ring-primary/45"
+                          ? "border-primary/50 bg-card pt-6 ring-2 ring-primary/45"
                           : "border-border bg-card"
                       }`}
                     >
@@ -345,7 +345,7 @@ export default function Pricing() {
                         <h3 className="wl-card-title">{publicName}</h3>
                       </div>
                       <div className="mt-3 flex items-end justify-center gap-1.5">
-                        <span className="text-[2.35rem] font-semibold leading-none tracking-[-0.04em]">
+                        <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                           ${price}
                         </span>
                         <span className="text-xs text-muted-foreground">{priceSuffix}</span>
@@ -355,11 +355,11 @@ export default function Pricing() {
                       ) : plan.price_usd_annual > 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           {savings
-                            ? `or $${plan.price_usd_annual}/yr · ${savings}`
+                            ? `or $${plan.price_usd_annual}/yr, ${savings}`
                             : `or $${plan.price_usd_annual}/yr`}
                         </p>
                       ) : null}
-                      <ul className="mx-auto mt-5 w-full flex-1 space-y-2 text-left text-[13px] leading-5">
+                      <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
                         {plan.features
                           .filter((f) => !isSharedPaidFeature(f))
                           .map((feature) => (
@@ -374,7 +374,7 @@ export default function Pricing() {
                       </ul>
                       <Link
                         to={path}
-                        className={`mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
+                        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
                           featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
                         }`}
                       >
@@ -389,7 +389,7 @@ export default function Pricing() {
 
             <article
               id="scale"
-              className="mt-3 flex scroll-mt-24 flex-col items-center gap-4 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-4 text-center lg:flex-row lg:justify-between lg:text-left"
+              className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
             >
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -397,8 +397,8 @@ export default function Pricing() {
                 <span className="text-sm text-muted-foreground">Custom</span>
               </div>
               <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
-                25+ live agent capacity · committed voice, SMS, email, and data economics · custom
-                telephony and integrations · security, rollout, and support plan
+                25+ live agent capacity, committed voice, SMS, email, and data economics, custom
+                telephony and integrations, security, rollout, and support plan
               </p>
               <Link
                 to="/contact?topic=enterprise"
@@ -408,75 +408,66 @@ export default function Pricing() {
               </Link>
             </article>
 
-            <p className="mx-auto mt-4 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">Every paid plan</span>{" "}
-              {SHARED_PAID_FEATURES.join(" · ").toLowerCase()}
-            </p>
-
-            <p className="mx-auto mt-4 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
-              {SHARED_PAID_FEATURES.join(" · ")}
-            </p>
-
-            <div className="mx-auto mt-3 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-3 text-center text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Live Video · $19/mo</span>
+            <div className="mx-auto mt-2 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-2 text-center text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Live Video $19/mo</span>
               <span>60 reserved minutes</span>
-              <span>5-minute wall-clock session max</span>
-              <span>managed voices may reserve 10 allowance minutes</span>
+              <span>5-minute session max</span>
               <span>no automatic overage</span>
             </div>
-          </div>
-        </section>
 
-        <section className="marketing-section border-t border-border bg-muted/35">
-          <div className="wl-public-rail mx-auto max-w-[1400px]">
-            <h2 className="wl-public-section-heading mx-auto text-center">
-              One voice agent. No seat tax. Clear costs
-            </h2>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
-                <article
-                  key={title}
-                  className="rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center"
-                >
-                  <Icon className="mx-auto h-5 w-5 text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title mt-3">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
-                </article>
-              ))}
-            </div>
-            <p className="mx-auto mt-6 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-              Every plan enforces calling-hour rules, Do Not Call checks before marketing dials, and
-              instant opt-out honoring in the runtime.{" "}
-              <Link to="/trust" className="font-semibold text-primary underline underline-offset-4">
-                Read the Trust Center
-              </Link>
-              .
-            </p>
-          </div>
-        </section>
-
-        {/* Answers open in place, two columns wide. As ten stacked full-width
-            rows this read as 500px of identical grey bars, and it was followed
-            by a closing CTA band whose only content was a headline and a
-            "Build your voice agent" button that already appears on the Free
-            Builder card, in the header, and in the mobile sticky bar. */}
-        <section className="marketing-section border-t border-border">
-          <div className="wl-public-rail mx-auto max-w-[1100px]">
-            <h2 className="wl-public-section-heading mx-auto text-center">Before launch</h2>
-            <div className="mt-7 grid gap-2 md:grid-cols-2">
-              {FAQ.map(([question, answer]) => (
-                <details
-                  key={question}
-                  className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
-                >
-                  <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
-                    {question}
-                  </summary>
-                  <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{answer}</p>
-                </details>
-              ))}
-            </div>
+            <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
+              <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">
+                Channel rules and launch questions
+              </summary>
+              <div className="pricing-more__body mt-3">
+                <p className="mx-auto max-w-4xl text-center text-xs leading-5 text-muted-foreground">
+                  <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
+                  {SHARED_PAID_FEATURES.join(". ")}
+                </p>
+                <h2 className="wl-public-section-heading mx-auto text-center">
+                  One voice agent. No seat tax. Clear costs
+                </h2>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
+                    <article
+                      key={title}
+                      className="rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center"
+                    >
+                      <Icon className="mx-auto h-5 w-5 text-primary" aria-hidden="true" />
+                      <h3 className="wl-card-title mt-2">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+                    </article>
+                  ))}
+                </div>
+                <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+                  Every plan enforces calling-hour rules, Do Not Call checks before marketing dials,
+                  and instant opt-out honoring in the runtime.{" "}
+                  <Link
+                    to="/trust"
+                    className="font-semibold text-primary underline underline-offset-4"
+                  >
+                    Read the Trust Center
+                  </Link>
+                  .
+                </p>
+                <h2 className="wl-public-section-heading mx-auto mt-6 text-center">Before launch</h2>
+                <div className="mt-4 grid gap-2 md:grid-cols-2">
+                  {FAQ.map(([question, answer]) => (
+                    <details
+                      key={question}
+                      className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
+                    >
+                      <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
+                        {question}
+                      </summary>
+                      <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">
+                        {answer}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            </details>
           </div>
         </section>
       </main>

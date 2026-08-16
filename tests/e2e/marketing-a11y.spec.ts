@@ -22,57 +22,45 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage hero has accessible work-lane tabs and no serious axe violations", async ({
+test("homepage live console has visible navigation and no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await gotoHomepageWithMain(page);
+
   await expect(
     page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
   ).toBeVisible();
-  // The hero heading carries the accessible name; the subline is no longer
-  // rendered as a hero subhead (the pitch lives in the title, chips, and demo).
-
-  // The hero's separate brand-spine word-mark was deliberately removed in the
-  // minimal-copy pass (#1042); the operating loop now appears once in the
-  // document outline. It is intentionally sr-only, so assert presence rather
-  // than visual rendering.
   await expect(
     page.getByRole("heading", { name: "How Wireline works", exact: true }),
   ).toBeAttached();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toBeVisible();
+  await expect(page.locator(".landing-console")).toBeVisible();
+  await expect(page.getByText("Booked and logged", { exact: true })).toBeVisible();
 
-  // Channel proof lives in the Live Video spotlight's "Agent channels" list
-  // since the hero minimal-copy pass; the old "Wireline capabilities" hero
-  // list no longer exists.
   const channelList = page.getByRole("list", { name: "Agent channels" });
   await expect(channelList).toBeVisible();
   for (const label of ["Voice", "Text", "Email", "Live Video"]) {
     await expect(channelList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
 
-  const tablist = page.getByRole("tablist", { name: "Agent work lane" });
-  await expect(tablist).toBeVisible();
+  const workLane = page.getByRole("navigation", { name: "Agent work lane" });
+  await expect(workLane).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.outbound.label}\\b`) }),
+  ).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.inbound.label}\\b`) }),
+  ).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.hybrid.label}\\b`) }),
+  ).toBeVisible();
 
-  // Tab names come from AGENT_DIRECTION_MODES for the same reason as the proof
-  // labels: a copy rename must fail the contract tests, not desync this spec.
-  const salesTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.outbound.label });
-  const serviceTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.inbound.label });
-  const allPurposeTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.hybrid.label });
-
-  await expect(salesTab).toHaveAttribute("aria-selected", "true");
-  await expect(salesTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");
-  await expect(serviceTab).toHaveAttribute("aria-selected", "false");
-  await expect(page.getByRole("tabpanel", { name: "Sales" })).toBeVisible();
-
-  await salesTab.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(serviceTab).toBeFocused();
-  await expect(serviceTab).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel", { name: "Service" })).toBeVisible();
-
-  await page.keyboard.press("End");
-  await expect(allPurposeTab).toBeFocused();
-  await expect(allPurposeTab).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page
+      .getByRole("button", { name: /Hear It Live/i })
+      .or(page.getByRole("link", { name: /Hear It Live/i })),
+  ).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>
@@ -82,7 +70,7 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   expect(blockingViolations).toEqual([]);
 });
 
-test("homepage hero stays inside the desktop viewport", async ({ page }) => {
+test("homepage narrative and proof stay inside the desktop viewport", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
@@ -90,17 +78,25 @@ test("homepage hero stays inside the desktop viewport", async ({ page }) => {
     name: MARKETING_VOICE.headline,
     exact: true,
   });
+  const consoleElement = page.locator(".landing-console");
   await expect(headline).toBeVisible();
+  await expect(consoleElement).toBeVisible();
 
-  const bounds = await headline.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
+  const bounds = await page.evaluate(() => {
+    const headline = document.querySelector(".landing-stage__title")?.getBoundingClientRect();
+    const consoleElement = document.querySelector(".landing-console")?.getBoundingClientRect();
     return {
-      left: rect.left,
-      right: rect.right,
+      headlineLeft: headline?.left ?? -1,
+      headlineRight: headline?.right ?? Number.POSITIVE_INFINITY,
+      consoleLeft: consoleElement?.left ?? -1,
+      consoleRight: consoleElement?.right ?? Number.POSITIVE_INFINITY,
       viewportWidth: document.documentElement.clientWidth,
     };
   });
 
-  expect(bounds.left).toBeGreaterThanOrEqual(0);
-  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.headlineLeft).toBeGreaterThanOrEqual(0);
+  expect(bounds.headlineRight).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.consoleLeft).toBeGreaterThanOrEqual(0);
+  expect(bounds.consoleRight).toBeLessThanOrEqual(bounds.viewportWidth);
+  expect(bounds.headlineRight).toBeLessThan(bounds.consoleRight);
 });

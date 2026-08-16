@@ -479,7 +479,7 @@ export default function LiveVideoStudioPage() {
   const exhausted = usage?.exhausted === true || remainingMinutes < reserveMinutes;
 
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-8">
+    <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"

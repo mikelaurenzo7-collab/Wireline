@@ -97,6 +97,16 @@ export default function MarketingChromeBar({ className }: { className?: string }
               ))}
             </nav>
           ))}
+          <div className="col-span-2 sm:col-span-4">
+            <button
+              type="button"
+              data-compact="true"
+              className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
+            >
+              Privacy Choices
+            </button>
+          </div>
         </div>
       </div>
 
@@ -111,32 +121,24 @@ export default function MarketingChromeBar({ className }: { className?: string }
         off-centre against the copyright beneath it.
       */}
       <div className="marketing-chrome-bar__row">
-        <div className="wl-public-rail flex flex-wrap items-center gap-x-5 gap-y-1">
-          <span className="text-xs text-muted-foreground">
+        <div className="marketing-chrome-bar__rail wl-public-rail flex flex-nowrap items-center gap-x-4 overflow-hidden">
+          <span className="marketing-chrome-bar__copy shrink-0 text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Wireline
           </span>
 
           <nav
             aria-label="Legal"
-            className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-muted-foreground"
+            className="flex min-w-0 flex-nowrap items-center gap-x-3 text-xs text-muted-foreground sm:gap-x-4"
           >
             {BAR_LINKS.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-8 items-center transition-colors hover:text-foreground"
+                className="inline-flex min-h-8 shrink-0 items-center transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
             ))}
-            <button
-              type="button"
-              data-compact="true"
-              className="inline-flex min-h-8 items-center transition-colors hover:text-foreground"
-              onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
-            >
-              Privacy Choices
-            </button>
           </nav>
 
           <button

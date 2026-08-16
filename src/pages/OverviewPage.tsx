@@ -572,7 +572,7 @@ export default function OverviewPage() {
     : emptyStudioHref;
 
   return (
-    <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
+    <WorkspaceShell contentClassName="pt-4 pb-5 lg:pt-5">
       {/* First run has one card and no data, so the page rendered a 540px void
           under it: the activation panel sat pinned to the top of an otherwise
           empty screen. Centring the block in the content area turns that into

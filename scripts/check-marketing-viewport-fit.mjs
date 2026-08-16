@@ -3,26 +3,24 @@
  *
  * The public surface has one structural rule: the window is the frame, and the
  * frame never scrolls. Every public route renders `.marketing-surface` (100dvh,
- * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller, with a
- * fixed header above it and a pinned chrome bar below. See
- * `src/styles/viewport-first-marketing.css` for the three mechanisms.
+ * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller. Public
+ * routes keep a visible fixed header. Most routes also pin the compact chrome
+ * bar; home omits that bar and carries legal wayfinding inside its composed
+ * product theater. See `src/styles/viewport-first-marketing.css`.
  *
  * This reads source rather than a browser because the failure it guards is a
  * structural one, and it is the kind that comes back a page at a time: a route
- * re-adds `min-h-screen`, or hand-rolls its own `<main className="pt-16">`, or
- * grows a second scroller, and that one page quietly gets a document scrollbar
- * while every other page keeps the frame. A screenshot job would catch it later
- * and more expensively; this catches it in the diff that introduces it.
- *
- * What it cannot check is whether a panel's *content* fits its screen. That
- * stays an editorial judgement, made against a real browser at 1440x900 — the
- * numbers in `docs/DESIGN_VIEWPORT_BASELINE.md` are the record of it.
+ * re-adds `min-h-screen`, hand-rolls its own `<main className="pt-16">`, or
+ * grows a second scroller. Browser tests separately certify actual dimensions,
+ * mobile mechanical scrolling, and overflow at representative viewports.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
+const executable = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 /** Every route that renders public marketing chrome. */
 const PUBLIC_SURFACES = [
@@ -64,16 +62,12 @@ for (const path of PUBLIC_SURFACES) {
     );
   }
 
-  // `min-h-screen` / `min-h-dvh` on a surface that is already exactly 100dvh
-  // can only make it taller than the window, which is how a public page grows
-  // a document scrollbar back.
   for (const utility of ["min-h-screen", "min-h-dvh"]) {
     if (source.includes(utility)) {
       failures.push(`${path}: ${utility} defeats the 100dvh frame and returns the page scrollbar`);
     }
   }
 
-  // The scroller owns the offset from the fixed header, once.
   if (/<main[^>]*className="[^"]*\bpt-16\b/.test(source)) {
     failures.push(
       `${path}: hand-rolled pt-16 on <main> -- the header offset belongs to .marketing-flow`,
@@ -91,8 +85,6 @@ for (const path of FRAMED_PAGES) {
   }
 }
 
-// The frame, the panel, and the snap are one system; losing any one of them
-// turns the other two into dead weight.
 const frameCss = read("src/styles/viewport-first-marketing.css");
 for (const [needle, description] of [
   ["height: 100dvh;", "the surface must be exactly one viewport tall"],
@@ -100,24 +92,18 @@ for (const [needle, description] of [
   ["scroll-snap-type: y proximity;", "the flow must snap by proximity, never mandatory"],
   ["scroll-snap-align: start;", "panels must settle flush with the top of the viewport"],
   ["prefers-reduced-motion", "snap and signal motion must yield to reduced-motion"],
-  // A max-width with no auto margins is a left-aligned block pretending to be
-  // centred. The typography layer gives every marketing paragraph a 72ch
-  // measure; without this, one inside a wider centred container renders hard
-  // against its left edge with its text centred within itself. Measured on
-  // /solutions/support: a 545px box in an 854px panel, 154px off.
   ["margin-inline: auto;", "centred containers must centre the boxes their measure creates"],
-  // A row of cards reserves one title height for all of them, or the row
-  // renders a one-line title beside a two-line one and every body paragraph
-  // starts on a different baseline.
   ["min-height: 2.24em;", "card rows must reserve a shared title height"],
+  [
+    ".wl-ui-caps > .marketing-surface",
+    "the app shell must not turn the marketing frame into a second scroller",
+  ],
 ]) {
   if (!frameCss.includes(needle)) {
     failures.push(`src/styles/viewport-first-marketing.css: ${description} (missing "${needle}")`);
   }
 }
 
-// A `max-height` on the panel cannot make content fit; it can only clip it.
-// This is how the five-column plan grid lost its bottom two rows of features.
 if (/\.marketing-section \{[^}]*max-height/s.test(frameCss)) {
   failures.push(
     "src/styles/viewport-first-marketing.css: .marketing-section must not cap its own height -- " +
@@ -125,26 +111,40 @@ if (/\.marketing-section \{[^}]*max-height/s.test(frameCss)) {
   );
 }
 
-// One screen, one headline.
-//
-// A panel is a screen, and a screen carries a single display-tier heading. A
-// second one beneath the first competes with it at nearly the same weight and
-// reads as two pages stacked -- which is exactly what these pages were before
-// they were composed into panels. Supporting groups inside a panel get the
-// eyebrow tier, which names them without arguing with the page's own title.
-//
-// The budget is derived, not hand-listed: a page may carry one headline per
-// `.marketing-section` it declares. `<MarketingHero>` counts as a headline
-// because it renders one, even though the class that styles it lives in the
-// shared component rather than in the page.
+const home = read("src/components/marketing/WireAgentLanding.tsx");
+const executableHome = executable(home);
+if (!executableHome.includes("<PrecisionPublicHeader />")) {
+  failures.push("src/components/marketing/WireAgentLanding.tsx: home must keep visible shared navigation");
+}
+if (!executableHome.includes('variant="stage"') || !executableHome.includes("landing-console")) {
+  failures.push(
+    "src/components/marketing/WireAgentLanding.tsx: home must render the professional live-console stage",
+  );
+}
+if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(executableHome)) {
+  failures.push(
+    "src/components/marketing/WireAgentLanding.tsx: retired device-OS executable markers must stay removed",
+  );
+}
+
+const landingCss = read("src/styles/landing-call-stage.css");
+for (const [needle, description] of [
+  ["overflow-y: auto;", "mobile landing flow must remain mechanically scrollable"],
+  ["height: auto;", "mobile landing panel must grow honestly with its content"],
+  ["flex: 0 0 auto;", "mobile landing panel must not be flex-clipped to the viewport"],
+]) {
+  if (!landingCss.includes(needle)) {
+    failures.push(`src/styles/landing-call-stage.css: ${description} (missing "${needle}")`);
+  }
+}
+
+// One screen, one display-tier headline. Long-form document routes opt out.
 const HEADLINE_TIER =
   /\bwl-(?:public-section-heading|stitch-display|page-title)\b|marketing-hero-title|<MarketingHero\b/g;
 
 for (const path of [...PUBLIC_SURFACES, ...FRAMED_PAGES]) {
   if (path.endsWith("MarketingPageFrame.tsx")) continue;
   const source = read(path);
-  // Long-form document routes are chapters, not panels; a heading per section
-  // is how a document is meant to read.
   if (source.includes("marketing-section--longform") || source.includes("<MarketingPageFrame longform")) {
     continue;
   }

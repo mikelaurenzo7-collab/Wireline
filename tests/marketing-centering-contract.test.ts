@@ -47,10 +47,13 @@ describe("marketing centering contract", () => {
 
     expect(polishIndex).toBeGreaterThanOrEqual(0);
     expect(hierarchyIndex).toBeGreaterThan(polishIndex);
-    // The viewport frame is last in the tier: it overrides the section rhythm,
-    // hero sizing, and ambience that the files above it establish.
+    // The viewport frame loads last among shared marketing rhythm files.
+    // The home call-stage is a page-specific surface and must follow it.
     expect(marketingBundle.indexOf("viewport-first-marketing.css")).toBeGreaterThan(hierarchyIndex);
-    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/viewport-first-marketing\.css";$/);
+    expect(marketingBundle.indexOf("landing-call-stage.css")).toBeGreaterThan(
+      marketingBundle.indexOf("viewport-first-marketing.css"),
+    );
+    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/landing-call-stage\.css";$/);
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");

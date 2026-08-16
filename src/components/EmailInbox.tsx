@@ -300,7 +300,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   const frameClass = embedded
     ? "flex h-full min-h-0 flex-col bg-background"
-    : "min-h-screen bg-background px-5 py-8 sm:px-6";
+    : "h-full min-h-0 bg-background px-5 py-8 sm:px-6";
   if (loading) return <InboxLoadingState frameClass={frameClass} />;
 
   if (threads.length === 0 && error) {
