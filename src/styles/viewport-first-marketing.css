@@ -36,6 +36,10 @@
   --wl-public-section-space: clamp(1.5rem, 2.2vw, 2.25rem);
   --wl-public-section-space-tight: clamp(1rem, 1.6vw, 1.5rem);
   --wl-marketing-chrome-top: 4rem;
+  /* The pinned chrome bar. A full-screen panel has to subtract it as well as
+     the header, or `--screen` means "one viewport" while the space a visitor
+     can actually see is 45px shorter. */
+  --wl-marketing-chrome-bottom: 2.85rem;
 
   display: flex;
   flex-direction: column;
@@ -87,10 +91,14 @@
    the exact mathematical centre of a field reads as sitting low, and the pinned
    chrome bar takes ~45px off the bottom of the visible field on top of that.
    Measured, the hero block sat 22px below the optical centre of the space a
-   visitor actually sees; this lifts it. */
+   visitor actually sees; this lifts it. Half a rem, not the 3.5rem it started
+   at: the lift is only doing work on a panel with room to spare, and on a full
+   one it is 56px charged against the panel that can least afford it. */
 .marketing-surface .marketing-section--screen {
-  min-height: calc(100dvh - var(--wl-marketing-chrome-top));
-  padding-bottom: calc(var(--wl-public-section-space) + 3.5rem);
+  min-height: calc(
+    100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+  );
+  padding-bottom: calc(var(--wl-public-section-space) + 0.5rem);
 }
 
 .marketing-surface .marketing-section--tight {
@@ -143,14 +151,22 @@
    whole screen. Composed into a panel with the page's evidence beneath it, 36px
    is the beat. */
 .marketing-surface .marketing-section .marketing-hero__actions {
-  margin-top: 2.25rem;
+  margin-top: 1.25rem;
 }
 
 /* Same story for the hero's visual slot: 48px of margin and 36px of padding on
-   a bordered card, sized for a hero that owned a screen. */
+   a bordered card, sized for a hero that owned a screen.
+
+   It also sizes to its content now. At `max-w-4xl` the slot drew an 896px band
+   around a single 240px button and a phone number, so the demo read as a wide
+   empty panel with something small adrift in the middle of it. `fit-content`
+   with a cap keeps the frame around the widget rather than around the column. */
 .marketing-surface .marketing-hero__experience {
+  width: fit-content;
+  max-width: min(100%, 34rem);
   margin-top: 1.75rem;
-  padding: 1.25rem;
+  margin-inline: auto;
+  padding: 1.25rem 2rem;
 }
 
 /*
@@ -190,6 +206,66 @@
       color-mix(in srgb, var(--wireline-color-canvas-warmer) 22%, transparent),
       transparent 72%
     );
+}
+
+/*
+ * A max-width with no auto margins is a left-aligned block pretending to be
+ * centred.
+ *
+ * The typography layer gives every `p, li, dd, dt, summary` inside
+ * `.marketing-surface` a 72ch measure, which is right — it keeps line length in
+ * the readable band on wide screens. What it does not do is centre the resulting
+ * box. Inside a container narrower than 72ch that is invisible. Inside a wider
+ * one the paragraph is a narrow block sitting hard against the left edge with
+ * its text centred *within itself*, which reads as one element mysteriously out
+ * of alignment with everything above it.
+ *
+ * Measured on /solutions/support: the demo line's phone number was a 545px box
+ * in an 854px panel, 154px left of the centre every other element shared.
+ *
+ * Only containers that actually centre get this. `.wl-public-rail` is centred by
+ * clarity-system.css on the marketing surface, but /about opts out with
+ * `!text-left`, and a left-aligned column must not have its paragraphs pushed to
+ * the middle — hence the `:not([class*="text-left"])`.
+ *
+ * Paragraphs only, deliberately. `margin-inline: auto` on a flex item does not
+ * centre it, it distributes the row's free space into the gaps: applied to `li`
+ * as well, it blew the landing page's three lane chips apart across a
+ * thousand pixels. The measure that creates the bug is a block-level one.
+ */
+.marketing-surface
+  :is(.wl-public-rail, .wl-marketing-center, .marketing-hero__experience, [class*="text-center"]):not(
+    [class*="text-left"]
+  )
+  :where(p) {
+  margin-inline: auto;
+}
+
+/*
+ * A row of cards reserves one title height for all of them.
+ *
+ * Card titles are one or two lines depending on how long the words happen to
+ * be, so a three-up row rendered "Your Voice And Playbook" on one line next to
+ * "Booking That Closes The Loop" on two, and every body paragraph in the row
+ * started on a different baseline. Measured across the public surface: four
+ * rows on three routes, titles at 24px beside titles at 48px.
+ *
+ * Two lines are reserved rather than clamping to one, because the second line
+ * is real content on the longer titles. Only above the breakpoint where the
+ * grid actually has columns — stacked on a phone, a row is one card wide and
+ * reserving a second line would just add dead space to every one of them.
+ */
+@media (min-width: 640px) {
+  .marketing-surface :where(.grid) :where(.wl-card-title, .wl-display-4) {
+    display: flex;
+    min-height: 2.24em;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marketing-surface :where(.grid) :where([class*="text-left"]) :where(.wl-card-title) {
+    justify-content: flex-start;
+  }
 }
 
 /*

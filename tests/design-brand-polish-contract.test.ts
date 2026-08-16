@@ -79,7 +79,7 @@ describe("E2E design and brand polish", () => {
     expect(hero).not.toContain("uppercase tracking-[.1em]");
     // Relaxed measure on the hero remains.
     expect(hero).toContain("max-w-[19ch]");
-    expect(hero).toContain("leading-[0.99]");
+    expect(hero).toContain("leading-[1]");
     // The body-font assertion here pinned the hero subhead's styling. Heroes no
     // longer render a subhead at all — the headline, actions, and proof carry
     // the pitch — so the shape itself is pinned by
@@ -157,9 +157,15 @@ describe("E2E design and brand polish", () => {
   it("keeps the landing journey punchy and outcome led", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     // Cased titles carry no terminal punctuation.
-    expect(landing).toContain("Choose the outcome");
-    expect(landing).not.toContain("Choose the outcome.");
-    expect(landing).toContain("Start free, scale when it pays");
+    // The outcome picker lost its headline, not its function: one screen
+    // carries one headline, and the segmented control sits with the CTA whose
+    // wedge it retargets rather than under a display line of its own.
+    expect(landing).toContain('aria-label="Agent work lane"');
+    expect(landing).not.toContain("Choose the outcome");
+    // Same for the plans block: the cards state the prices, and a heading above
+    // them repeating "start free" duplicated the first card's own button.
+    expect(landing).toContain("PLAN_PREVIEW.map");
+    expect(landing).toContain("Start Free");
     // The closing band that repeated the hero's headline and both of its
     // buttons verbatim is gone: the plan cards are the close.
     expect(landing).not.toContain("Put your first voice agent to work");

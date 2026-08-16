@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  BookOpen,
-  Copy,
-  ExternalLink,
-  MessageSquareText,
-  ShieldCheck,
-  Sparkles,
-  Terminal,
-} from "lucide-react";
+import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -18,27 +10,6 @@ import { PageMeta } from "../lib/page-meta";
  * There is no Settings → API Access key minting surface today — session-cookie
  * product APIs and the account-bound MCP connector are the real contracts.
  */
-
-const GETTING_STARTED = [
-  {
-    title: "Connect an MCP client",
-    description:
-      "Add https://trywireline.com/mcp in ChatGPT, Claude, or Cursor. Sign in with your Wireline account via OAuth.",
-    icon: Sparkles,
-  },
-  {
-    title: "Draft and simulate privately",
-    description:
-      "Use account-bound tools to create or refine a private agent draft and run a private voice simulation before continuing in Wireline.",
-    icon: MessageSquareText,
-  },
-  {
-    title: "Finish in Studio",
-    description:
-      "Numbers, dialing, Training, billing, and launch stay in the Wireline web app. The connector never claims those actions happened.",
-    icon: BookOpen,
-  },
-] as const;
 
 const MCP_BOUNDARIES = [
   {
@@ -143,22 +114,23 @@ export default function Developers() {
             </a>
           </div>
 
-          <h2 id="mcp-apps-heading" className="wl-stitch-display mt-12 text-balance">
+          {/* A label, not a second headline: one screen carries one. */}
+          <p id="mcp-apps-heading" className="wl-eyebrow mt-9 text-muted-foreground">
             Connect once
-          </h2>
+          </p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
               <article
                 key={title}
-                className="wl-stitch-card flex min-h-[15rem] flex-col items-center p-6 text-center"
+                className="wl-stitch-card flex flex-col items-center p-4 text-center"
               >
-                <span className="grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title">{title}</h3>
                 </span>
-                <h3 className="mt-5 text-xl font-semibold tracking-[-.025em]">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-                <Button variant="outline" size="sm" asChild className="mt-auto">
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
+                <Button variant="outline" size="sm" asChild className="mt-3">
                   <a href={href} target="_blank" rel="noopener noreferrer">
                     {action} <ExternalLink className="h-3.5 w-3.5 opacity-60" />
                   </a>
@@ -169,96 +141,47 @@ export default function Developers() {
 
           <div
             id="mcp-endpoint"
-            className="mx-auto mt-6 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-5"
+            className="mx-auto mt-4 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-4 text-left"
           >
-            <code className="block overflow-x-auto font-mono text-sm text-foreground">
-              {mcpEndpoint}
-            </code>
-            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <code className="min-w-0 overflow-x-auto font-mono text-sm text-foreground">
+                {mcpEndpoint}
+              </code>
+              <Button variant="outline" size="sm" onClick={handleCopy}>
+                <Copy className="mr-1 h-3.5 w-3.5" />
+                {copied ? "Copied" : "Copy endpoint"}
+              </Button>
+            </div>
+            {/* The auth model and the private-by-default boundary were a whole
+                panel each, one of them headed by its own display line and a
+                48px icon. They are two facts, and they read as two lines. */}
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Private-by-default boundary: this connector cannot place calls, send messages,
-              provision numbers, or launch a live voice agent.
+              provision numbers, or launch a live voice agent. MCP clients use OAuth PKCE against
+              your Wireline account; the OpenAPI map documents the same session-authenticated
+              product routes the web app uses. There is no separate public API-key product today.
             </p>
-            <Button variant="outline" size="sm" onClick={handleCopy} className="mt-4">
-              <Copy className="mr-1 h-3.5 w-3.5" />
-              {copied ? "Copied" : "Copy endpoint"}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="marketing-section border-b border-border">
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Connect. Draft. Launch</h2>
           </div>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {GETTING_STARTED.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <article
-                  key={step.title}
-                  className="wl-stitch-card flex min-h-[13rem] flex-col items-center p-6 text-center"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted text-primary">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <p className="wl-overline mt-5 text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold tracking-[-.025em]">{step.title}</h3>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="marketing-section border-b border-border bg-card">
-        <div className="mx-auto max-w-4xl text-center">
-          <span className="mx-auto grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
-            <ShieldCheck className="h-5 w-5" />
-          </span>
-          <h2 className="wl-stitch-display mx-auto mt-5 max-w-[22ch] text-balance">
-            OAuth for MCP. Session auth for the product API
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
-            same session-authenticated product routes the web app uses. There is no separate public
-            API-key product today.
-          </p>
-        </div>
-      </section>
-
-      <section className="marketing-section">
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Draft. Simulate. Continue in Studio</h2>
-          </div>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          {/* What the connector actually exposes. The four boundaries used to
+              sit two screens down under "Draft. Simulate. Continue in Studio",
+              below a three-card "Connect. Draft. Launch." row that repeated the
+              action already on each client card above. */}
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {MCP_BOUNDARIES.map((endpoint) => (
-              <article key={endpoint.path} className="wl-stitch-card p-5 text-center">
-                <code className="inline-flex rounded border border-brand/20 bg-brand/10 px-2 py-1 font-mono text-xs font-semibold text-primary">
+              <li
+                key={endpoint.path}
+                className="wl-stitch-card flex flex-wrap items-baseline gap-x-3 gap-y-1 p-3 text-left"
+              >
+                <code className="rounded border border-brand/20 bg-brand/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
                   {endpoint.path}
                 </code>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                <span className="min-w-0 flex-1 text-sm leading-6 text-muted-foreground">
                   {endpoint.description}
-                </p>
-              </article>
+                </span>
+              </li>
             ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href={openApiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-foreground"
-              >
-                OpenAPI map <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-              </a>
-            </Button>
-          </div>
+          </ul>
         </div>
       </section>
     </MarketingPageFrame>

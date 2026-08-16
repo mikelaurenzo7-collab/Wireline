@@ -100,6 +100,16 @@ for (const [needle, description] of [
   ["scroll-snap-type: y proximity;", "the flow must snap by proximity, never mandatory"],
   ["scroll-snap-align: start;", "panels must settle flush with the top of the viewport"],
   ["prefers-reduced-motion", "snap and signal motion must yield to reduced-motion"],
+  // A max-width with no auto margins is a left-aligned block pretending to be
+  // centred. The typography layer gives every marketing paragraph a 72ch
+  // measure; without this, one inside a wider centred container renders hard
+  // against its left edge with its text centred within itself. Measured on
+  // /solutions/support: a 545px box in an 854px panel, 154px off.
+  ["margin-inline: auto;", "centred containers must centre the boxes their measure creates"],
+  // A row of cards reserves one title height for all of them, or the row
+  // renders a one-line title beside a two-line one and every body paragraph
+  // starts on a different baseline.
+  ["min-height: 2.24em;", "card rows must reserve a shared title height"],
 ]) {
   if (!frameCss.includes(needle)) {
     failures.push(`src/styles/viewport-first-marketing.css: ${description} (missing "${needle}")`);

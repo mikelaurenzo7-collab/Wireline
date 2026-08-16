@@ -45,10 +45,10 @@ export default function Showcase() {
                 fallback={
                   <div className="text-center">
                     <a
-                      href={`tel:${primaryDemo.tel}`}
+                      href="#demo-lines"
                       className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
                     >
-                      Call {primaryDemo.display}
+                      Call a Demo Line
                     </a>
                   </div>
                 }
@@ -59,7 +59,7 @@ export default function Showcase() {
       />
 
       <section id="demo-lines" className="marketing-section marketing-section--tight">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl text-center">
           {/* A label, not a second headline: one screen carries one. */}
           <p className="wl-eyebrow mx-auto text-center text-muted-foreground">
             Or call a live demo line
@@ -76,7 +76,9 @@ export default function Showcase() {
                   <Phone className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block wl-card-title">{agent.name}</span>
+                  <span className="block text-[15px] font-semibold tracking-[-.015em] text-foreground">
+                    {agent.name}
+                  </span>
                   <span className="block text-sm text-muted-foreground">{agent.role}</span>
                 </span>
                 <span className="shrink-0 text-right">

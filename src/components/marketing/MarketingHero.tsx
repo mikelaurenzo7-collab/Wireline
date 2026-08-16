@@ -87,7 +87,7 @@ export default function MarketingHero({
               "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
               "mt-0",
               isHomeHero &&
-                "max-w-[19ch] text-[clamp(2.45rem,5vw,4.75rem)] leading-[0.99] tracking-[-.04em]",
+                "max-w-[19ch] text-[clamp(2.2rem,3.9vw,3.6rem)] leading-[1] tracking-[-.04em]",
             )}
           >
             {title}

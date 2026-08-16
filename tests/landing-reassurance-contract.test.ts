@@ -12,7 +12,9 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("Live Video");
     // Cased titles carry no terminal punctuation, and the plans heading no
     // longer repeats the word on the button directly beneath it.
-    expect(landing).toContain("Start free, scale when it pays");
+    // The plan cards are the plans block; the heading over them repeated the
+    // first card's own button on a page that now carries one headline.
+    expect(landing).toContain("PLAN_PREVIEW.map");
   });
 
   it("keeps free and paid capacity distinct", () => {

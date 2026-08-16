@@ -167,7 +167,9 @@ describe("product voice cohesion", () => {
     // hand-typing a second wording of it.
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("Hear It Live");
-    expect(landing).toContain("Start free, scale when it pays");
+    // The plan cards are the plans block now; a heading above them repeating
+    // "start free" duplicated the first card's own button on a one-headline page.
+    expect(landing).toContain("PLAN_PREVIEW.map");
     // /about is a statement page now, not a second landing page: it opens on
     // who answers the support email, not on a restatement of the product pitch.
     // Cased titles carry no terminal punctuation.
@@ -342,9 +344,9 @@ describe("product voice cohesion", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
     expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
-    expect(landing).toContain('to: "/signup?plan=personal"');
+    expect(landing).toContain('"/signup?plan=personal"');
     // The hero CTA is a prop on the shared hero, not a literal attribute.
-    expect(landing).toContain('to: "/signup?plan=personal"');
+    expect(landing).toContain('"/signup?plan=personal"');
     expect(sticky).toContain('href = "/signup?plan=personal"');
     expect(landing).not.toContain('to: "/signup"');
     expect(landing).not.toContain('to="/signup"');

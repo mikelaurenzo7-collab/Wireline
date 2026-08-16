@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, Mail, MessageSquareText, Phone, PhoneCall, Video } from "lucide-react";
+import { Mail, MessageSquareText, Phone, PhoneCall, Video } from "lucide-react";
 import { Link } from "react-router";
 
 import MarketingChromeBar from "./MarketingChromeBar";
@@ -7,7 +7,6 @@ import MarketingHero from "./MarketingHero";
 import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import BrowserCallWidget from "./BrowserCallWidget";
-import LiveVideoStage from "./LiveVideoStage";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 import { LIVE_VIDEO_ADDON_PRICE_USD } from "../../lib/video-presenter/live-video-policy";
@@ -56,15 +55,6 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   },
 };
 
-/* One line each. These used to run to two sentences and 90 characters inside a
-   card 300px wide, which is what turned a four-step strip into a 240px band. */
-const LOOP_COPY = [
-  "Set the outcome, audience, and limits.",
-  "Add voice, knowledge, objections, and approvals.",
-  "Claim the number and connect the channels.",
-  "Let it answer, book, follow up, and log the result.",
-] as const;
-
 const CHANNELS = [
   { label: "Voice", icon: PhoneCall },
   { label: "Text", icon: MessageSquareText },
@@ -85,7 +75,7 @@ const PLAN_PREVIEW = [
     name: "Free Builder",
     price: "$0",
     period: "to create",
-    facts: ["1 private draft agent", "Training and simulation", "Channels unlock at activation"],
+    facts: ["1 private draft agent", "Channels unlock at activation"],
     cta: "Start Free",
     ctaPath: "/signup?plan=personal",
     highlight: false,
@@ -97,7 +87,6 @@ const PLAN_PREVIEW = [
     facts: [
       `${planCatalog.starter.max_agents} live voice agent`,
       `${planCatalog.starter.included_phone_numbers} Wireline number`,
-      `${planCatalog.starter.voice_minutes_monthly} voice minutes a month`,
     ],
     cta: "Choose Starter",
     ctaPath: "/signup?plan=starter",
@@ -110,7 +99,6 @@ const PLAN_PREVIEW = [
     facts: [
       `${planCatalog.team.max_agents} live agents`,
       `${planCatalog.team.included_phone_numbers} Wireline numbers`,
-      `${planCatalog.team.voice_minutes_monthly} voice minutes a month`,
     ],
     cta: "Choose Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -123,7 +111,6 @@ const PLAN_PREVIEW = [
     facts: [
       `${planCatalog.business.max_agents} live voice agents`,
       `${planCatalog.business.included_phone_numbers} Wireline numbers`,
-      `${planCatalog.business.voice_minutes_monthly} voice minutes a month`,
     ],
     cta: "Choose Pro",
     ctaPath: "/signup?plan=business",
@@ -185,86 +172,36 @@ export default function WireAgentLanding() {
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
         {/*
-          Screen 1: what it is, what it costs you to try, and proof you can
-          hear in ten seconds. Everything a first-time visitor needs to decide
-          is above the fold; the four screens below are for the ones who want
-          more, not for the ones who have already decided.
+          The whole landing page, on one screen.
 
-          What was cut from this screen: a 180px bordered panel that held one
-          button, and a duplicate of both hero CTAs 4,000px lower down.
+          It was four: a hero, an outcome picker, a Live Video panel, and a plan
+          grid, 2.96 viewports, and 5.16 before this branch. What a visitor
+          needs in order to decide is what it is, proof they can hear, which
+          lane it runs in, and what it costs. All four are above the fold now,
+          so none of them is behind a scroll.
+
+          Nothing was dropped to get here; it was re-ranked. The outcome picker
+          is a segmented control that swaps one line and retargets the CTA's
+          wedge, rather than a full panel with its own headline and card. Live
+          Video is a channel chip and a line in the plan note, which is where a
+          $19 add-on belongs. The plan cards carry the two facts a visitor
+          actually compares on (capacity and the included number) and
+          /pricing owns the rest.
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
             title={MARKETING_VOICE.headline}
-            primaryAction={{
-              label: MARKETING_VOICE.primaryCta,
-              to: "/signup?plan=personal",
-            }}
-            secondaryAction={{
-              label: "See Plans",
-              to: "#plans",
-              tone: "secondary",
-            }}
+            primaryAction={{ label: MARKETING_VOICE.primaryCta, to: detail.ctaPath }}
+            secondaryAction={{ label: "See Plans", to: "#plans", tone: "secondary" }}
           />
 
-          {/* The demo is the proof, so it sits in the hero as a live control
-              rather than behind a scroll and a second click. */}
-          <div
-            id="hear-a-demo"
-            className="mx-auto mt-8 flex w-full max-w-xl flex-col items-center gap-4"
-          >
-            <BrowserCallWidget
-              agentName={HERO_DEMO_AGENT.name}
-              buttonLabel="Hear It Live"
-              fallback={
-                <a
-                  href={`tel:${HERO_DEMO_AGENT.tel}`}
-                  className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
-                  onClick={() =>
-                    emitProductEvent({
-                      event: "landing_demo_clicked",
-                      surface: "marketing_web",
-                      metadata: { agent: HERO_DEMO_AGENT.name, mode: "phone" },
-                    })
-                  }
-                >
-                  <Phone className="h-4 w-4" aria-hidden="true" />
-                  Hear It Live
-                </a>
-              }
-            />
-
-            {/* The channel rail replaces a whole "every channel, one agent"
-                section: four words carry what a headline plus three cards did. */}
-            <ul
-              className="flex flex-wrap items-center justify-center gap-2"
-              aria-label="Agent channels"
-            >
-              {CHANNELS.map(({ label, icon: Icon }) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
-                >
-                  <Icon className="size-3.5 text-primary" aria-hidden="true" />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/*
-          Screen 2: the work, chosen by the visitor. The four-step loop sits in
-          the same screen as the outcome picker because they answer one
-          question in sequence: what do you want done, and what does it take to
-          get there. They used to be two full sections a screen apart.
-        */}
-        <section className="marketing-section border-t border-border bg-card/40">
-          <div className="wl-public-rail">
-            <h2 className="wl-public-section-heading mx-auto text-center">Choose the outcome</h2>
-
+          <div className="wl-public-rail mt-3 text-center">
+            {/* The lane picker sits with the CTA it retargets: choosing a lane
+                changes the promise and the wedge the signup flow opens on, and
+                that relationship is invisible when the control lives a screen
+                away from the button. */}
             <div
-              className="wl-segmented mx-auto mt-6 flex w-fit max-w-full"
+              className="wl-segmented mx-auto flex w-fit max-w-full"
               role="tablist"
               aria-label="Agent work lane"
               onKeyDown={handleModeKeyDown}
@@ -290,129 +227,117 @@ export default function WireAgentLanding() {
               })}
             </div>
 
-            <div className="wl-paper mx-auto mt-6 max-w-3xl rounded-[18px] p-6 text-center">
-              {MODE_OPTIONS.map(({ key, label }) => (
-                <div
-                  key={key}
-                  id={modePanelId(key)}
-                  role="tabpanel"
-                  aria-labelledby={modeTabId(key)}
-                  aria-label={`${label} agent details`}
-                  hidden={mode !== key}
-                >
-                  {mode === key ? (
-                    <div className="space-y-5">
-                      <div>
-                        <h3 className="wl-display-4 mx-auto max-w-[24ch]">{detail.title}</h3>
-                        <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-[1.6] text-muted-foreground">
-                          {detail.lead}
-                        </p>
-                      </div>
-                      <ul className="grid gap-2 sm:grid-cols-3">
-                        {detail.bestFor.map((item) => (
-                          <li
-                            key={item}
-                            className="rounded-[12px] border border-border bg-muted px-4 py-2.5 text-sm font-semibold text-foreground"
-                          >
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      {/* The lane rides into signup on the query string, so the
-                          flow opens where the visitor pointed it. */}
-                      <Link
-                        to={detail.ctaPath}
-                        className="marketing-btn-primary mx-auto min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit"
-                      >
-                        Start with Starter
-                        <ArrowRight size={14} aria-hidden="true" />
-                      </Link>
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-
-            {/* The loop is one row, not four cards: it is a sequence, and a
-                sequence reads faster laid out as one. */}
-            <ol className="mt-8 grid gap-px overflow-hidden rounded-[16px] border border-border bg-border sm:grid-cols-4">
-              {HERO_LOOP.map((step, index) => (
-                <li key={step} className="bg-card p-5 text-center">
-                  <span className="block font-mono text-[11px] font-semibold tracking-[.08em] text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="wl-display-4 mt-1.5">{step}</h3>
-                  <p className="mt-2 text-[13px] leading-[1.55] text-muted-foreground">
-                    {LOOP_COPY[index]}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        {/*
-          Screen 3: Live Video. A paid product surface with a real visual,
-          standing where an empty bordered box used to sit on screen one.
-        */}
-        <section className="marketing-section border-t border-border">
-          <div className="wl-public-rail">
-            <div className="grid items-center gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
-              <div className="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
-                <h2 className="wl-public-section-heading lg:mx-0">
-                  Your voice agent, now on screen
-                </h2>
-                <p className="mx-auto mt-4 max-w-[46ch] text-[15px] leading-[1.65] text-muted-foreground lg:mx-0">
-                  {`The same agent that answers your calls, with the same training and approved knowledge, on camera. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
-                </p>
-                <Link
-                  to="/signup?plan=starter"
-                  className="marketing-btn-primary mx-auto mt-6 min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit lg:mx-0"
-                >
-                  Build a Business Agent
-                  <ArrowRight size={14} aria-hidden="true" />
-                </Link>
+            {MODE_OPTIONS.map(({ key, label }) => (
+              <div
+                key={key}
+                id={modePanelId(key)}
+                role="tabpanel"
+                aria-labelledby={modeTabId(key)}
+                aria-label={`${label} agent details`}
+                hidden={mode !== key}
+              >
+                {mode === key ? (
+                  <>
+                    <p className="mx-auto mt-3 max-w-[64ch] text-sm leading-[1.55] text-muted-foreground">
+                      {detail.lead}
+                    </p>
+                    <ul className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                      {detail.bestFor.map((item, index) => (
+                        <li key={item} className="flex items-center gap-2">
+                          {index > 0 ? (
+                            <span aria-hidden="true" className="text-xs text-muted-foreground">
+                              /
+                            </span>
+                          ) : null}
+                          <span className="wl-overline text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
               </div>
+            ))}
 
-              <LiveVideoStage />
+            {/* Proof you can hear, on the same screen as the claim. */}
+            <div id="hear-a-demo" className="mt-3.5 flex flex-col items-center gap-2">
+              <BrowserCallWidget
+                agentName={HERO_DEMO_AGENT.name}
+                buttonLabel="Hear It Live"
+                fallback={
+                  <a
+                    href={`tel:${HERO_DEMO_AGENT.tel}`}
+                    className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
+                    onClick={() =>
+                      emitProductEvent({
+                        event: "landing_demo_clicked",
+                        surface: "marketing_web",
+                        metadata: { agent: HERO_DEMO_AGENT.name, mode: "phone" },
+                      })
+                    }
+                  >
+                    <Phone className="h-4 w-4" aria-hidden="true" />
+                    Hear It Live
+                  </a>
+                }
+              />
+
+              {/* Four words for what used to be a headline and four cards. */}
+              <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                {HERO_LOOP.map((step, index) => (
+                  <li key={step} className="flex items-center gap-2">
+                    {index > 0 ? (
+                      <span aria-hidden="true" className="text-xs text-muted-foreground">
+                        /
+                      </span>
+                    ) : null}
+                    <span className="wl-overline text-foreground">{step}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <ul className="flex flex-wrap items-center justify-center gap-2">
+                {CHANNELS.map(({ label, icon: Icon }) => (
+                  <li
+                    key={label}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
+                  >
+                    <Icon className="size-3.5 text-primary" aria-hidden="true" />
+                    {label}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </section>
 
-        {/*
-          Screen 4: plans, and the close. The closing call to action lives on
-          the plan cards where the decision is actually made; the separate
-          full-width CTA band that repeated the hero verbatim is gone.
-        */}
-        <section id="plans" className="marketing-section border-t border-border">
-          <div className="wl-public-rail">
-            <h2 className="wl-public-section-heading mx-auto text-center">
-              Start free, scale when it pays
-            </h2>
-
-            <div className="mx-auto mt-7 grid max-w-[1200px] items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* The price, on the same screen as the pitch. Two facts per card:
+                what you can run, and what comes with it. */}
+            <div
+              id="plans"
+              className="mx-auto mt-4 grid max-w-[1100px] items-stretch gap-2.5 sm:grid-cols-2 lg:grid-cols-4"
+            >
               {PLAN_PREVIEW.map((plan) => (
                 <article
                   key={plan.name}
-                  className={`wl-paper relative flex flex-col rounded-[16px] p-6 text-center ${
+                  className={`wl-paper relative flex flex-col rounded-[14px] p-3 text-center ${
                     plan.highlight ? "ring-2 ring-primary/60" : ""
                   }`}
                 >
                   {plan.highlight ? (
                     <span
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground"
+                      className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground"
                       aria-label="Most popular plan"
                     >
                       Most Popular
                     </span>
                   ) : null}
-                  <h3 className="wl-display-4">{plan.name}</h3>
-                  <div className="mt-4 flex items-baseline justify-center gap-1">
-                    <span className="wl-display-2 leading-none">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{plan.period}</span>
+                  <h2 className="wl-card-title">{plan.name}</h2>
+                  <div className="mt-2 flex items-baseline justify-center gap-1">
+                    <span className="text-[1.6rem] font-semibold leading-none tracking-[-.04em] text-foreground">
+                      {plan.price}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{plan.period}</span>
                   </div>
                   <ul
-                    className="wl-info-list mx-auto w-full max-w-[30ch] flex-1"
+                    className="mt-2.5 flex-1 space-y-0.5 text-[13px] leading-5 text-muted-foreground"
                     aria-label={`${plan.name} highlights`}
                   >
                     {plan.facts.map((fact) => (
@@ -421,7 +346,7 @@ export default function WireAgentLanding() {
                   </ul>
                   <Link
                     to={plan.ctaPath}
-                    className={`mt-5 min-h-11 justify-center text-sm font-semibold ${
+                    className={`mt-2.5 min-h-8 justify-center text-[13px] font-semibold ${
                       plan.highlight ? "marketing-btn-primary" : "marketing-btn-secondary"
                     }`}
                   >
@@ -431,9 +356,8 @@ export default function WireAgentLanding() {
               ))}
             </div>
 
-            <p className="mx-auto mt-6 max-w-[62ch] text-center text-sm leading-[1.6] text-muted-foreground">
-              Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
-              Runtime Balance that you control, never a surprise invoice.{" "}
+            <p className="mt-2.5 text-center text-xs leading-5 text-muted-foreground">
+              Prepaid Runtime Balance you control. Live Video adds ${LIVE_VIDEO_ADDON_PRICE_USD}/mo.{" "}
               <Link to="/pricing" className="font-semibold text-primary hover:underline">
                 Compare every plan
               </Link>
