@@ -22,6 +22,11 @@ describe("activation path contract", () => {
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
     expect(overview).toContain("Start with one job.");
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+    expect(studio).toContain("Start with one job.");
+    expect(studio).toContain("Give it one customer job. You can change everything later.");
+    expect(studio).not.toContain("Start with one customer-facing job.");
+    expect(studio).toContain('{posture === "personal" ? (');
     expect(overview).toContain("{language.createCta}");
     expect(overview).toContain("dayGreeting()");
     expect(overview).toContain("workspaceFirstName(");

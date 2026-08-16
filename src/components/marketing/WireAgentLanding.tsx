@@ -417,7 +417,7 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[18ch]">
+                <h2 className="wl-display-2 mx-auto max-w-[24ch]">
                   Put your first voice agent to work.
                 </h2>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

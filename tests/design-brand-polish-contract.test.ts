@@ -158,6 +158,8 @@ describe("E2E design and brand polish", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("Choose the outcome.");
     expect(landing).toContain("Put your first voice agent to work.");
+    expect(landing).toContain('max-w-[24ch]');
+    expect(landing).toContain('max-w-[18ch]">Choose the outcome.');
     expect(landing).toContain("Start free.");
     // The four step cards are titled Build/Train/Launch/Improve, so a display
     // heading repeating those same four words is banned, not merely absent.

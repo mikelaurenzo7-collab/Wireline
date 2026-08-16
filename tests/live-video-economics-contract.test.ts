@@ -57,6 +57,7 @@ describe("live video economics contract", () => {
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
     expect(spotlight).toContain("paid business agent");
+    expect(spotlight).toContain("max-w-[24ch]");
     expect(spotlight).toContain("same Training, operating rules, and approved knowledge");
     expect(spotlight).not.toMatch(/\bhistory\b/i);
     expect(spotlight).not.toContain("same Training and tools");
