@@ -37,17 +37,17 @@ const recommended = [
   "STRIPE_WEBHOOK_SECRET",
 ];
 
-// Voice remains an independent capability. Its absence is reported, never
-// treated as a core platform or AI Gateway failure.
+// Voice is independently fail-closed. All platform-funded Vapi paths are now
+// server-only; a browser publishable key is neither required nor desired.
 const voice = [
   "VAPI_PRIVATE_KEY",
-  "VITE_VAPI_PUBLIC_KEY",
   "VAPI_WEBHOOK_SECRET",
   "LIVEAVATAR_API_KEY",
   "HEYGEN_API_KEY",
   "LIVEAVATAR_DEFAULT_AVATAR_ID",
 ];
 
+const retired = ["VITE_VAPI_PUBLIC_KEY"];
 const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID"];
 
 async function main() {
@@ -76,19 +76,12 @@ async function main() {
         console.log(`  ${strict ? "✗" : "○"} ${key} — not configured`);
         continue;
       }
-      // A key may be stored as several per-target entries (Vercel creates
-      // separate rows when you POST a single-target array) or as one entry
-      // covering many targets. Coverage is correct as long as the UNION of
-      // every entry's targets covers the required targets — not the per-entry
-      // missing set, which unions false negatives when entries are split.
-      //
-      // Production is the only required target: scripts/check-deployment-boundaries.mjs
-      // fails preview builds that can see credential-like configuration, so a
-      // credential absent from preview is the boundary policy working, not a gap.
+      // Production is the only required target: preview builds reject
+      // credential-like project configuration at the deployment boundary.
       const covered = new Set(
         entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])),
       );
-      const missingTargets = ["production"].filter((t) => !covered.has(t));
+      const missingTargets = ["production"].filter((target) => !covered.has(target));
       const types = [...new Set(entries.map((entry) => entry.type || "plain"))].join(", ");
       console.log(
         `  ${missingTargets.length ? "△" : "✓"} ${key} — ${types}${
@@ -100,21 +93,43 @@ async function main() {
     return missing;
   };
 
+  const reportRetired = (keys) => {
+    console.log("\nRETIRED BROWSER CREDENTIALS");
+    let configured = 0;
+    for (const key of keys) {
+      const entries = byKey.get(key) || [];
+      if (entries.length) {
+        configured++;
+        const targets = [
+          ...new Set(entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : []))),
+        ];
+        console.log(`  ✗ ${key} — remove from ${targets.join(", ") || "all targets"}`);
+      } else {
+        console.log(`  ✓ ${key} — absent`);
+      }
+    }
+    return configured;
+  };
+
   console.log("\nWIRELINE · VERCEL ENVIRONMENT HEALTH");
   console.log("Metadata only. No secret values were requested or printed.");
 
   const missingCore = report("CORE PLATFORM", required, true);
   const missingGateway = report("AI GATEWAY", gateway, false);
   const missingRecommended = report("RECOMMENDED OPERATIONS", recommended, false);
-  const missingVoice = report("VOICE CAPABILITY · INDEPENDENT", voice, false);
+  const missingVoice = report("VOICE CAPABILITY · SERVER ONLY", voice, false);
+  const configuredRetired = reportRetired(retired);
   const missingBilling = report("BILLING ADD-ONS", billing, false);
 
   console.log("\nDECISION");
   if (missingCore) {
     console.log("  BLOCKED — configure the missing core variables for the production target.");
     process.exitCode = 2;
+  } else if (configuredRetired) {
+    console.log("  ROTATION REQUIRED — remove retired browser credentials before production release.");
+    process.exitCode = 2;
   } else {
-    console.log("  CORE READY — no required platform variable is missing.");
+    console.log("  CORE READY — no required platform variable is missing or retired browser key remains.");
   }
   console.log(
     "  AI Gateway: deployed Vercel functions can use VERCEL_OIDC_TOKEN; AI_GATEWAY_API_KEY remains recommended for local and non-Vercel execution.",
