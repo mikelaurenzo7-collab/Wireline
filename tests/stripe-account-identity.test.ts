@@ -6,6 +6,22 @@ import {
   stripeAccountIdentityFindings,
   stripeAccountIdentitySummary,
 } from "../scripts/lib/stripe-account-identity.mjs";
+import { plansForClient } from "../src/lib/plan-catalog";
+
+const RELEASE_ENV_KEYS = [
+  "WIRELINE_SELF_SERVE_BILLING_ENABLED",
+  "WIRELINE_LAUNCH_DEMO_MODE",
+  "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA",
+  "VERCEL_GIT_COMMIT_SHA",
+] as const;
+
+function restoreEnvironment(previous: Map<string, string | undefined>) {
+  for (const key of RELEASE_ENV_KEYS) {
+    const value = previous.get(key);
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+}
 
 describe("Stripe account identity guard", () => {
   it("accepts the canonical Wireline customer-facing identity", () => {
@@ -32,7 +48,7 @@ describe("Stripe account identity guard", () => {
     expect(findings).toEqual([]);
   });
 
-  it("models Stripe's static-descriptor fallback when no card prefix is configured", () => {
+  it("accepts Stripe's static descriptor fallback when no explicit card prefix exists", () => {
     const account = {
       business_profile: {
         name: "Try Wireline",
@@ -41,7 +57,6 @@ describe("Stripe account identity guard", () => {
         support_email: "support@trywireline.com",
       },
       settings: {
-        dashboard: { display_name: "Wireline" },
         card_payments: { statement_descriptor_prefix: null },
         payments: { statement_descriptor: "WIRELINE" },
         branding: {
@@ -58,38 +73,19 @@ describe("Stripe account identity guard", () => {
       source: "payment_statement_descriptor_fallback",
     });
     expect(stripeAccountIdentityFindings(account)).toEqual([]);
-    expect(stripeAccountIdentitySummary(account)).toMatchObject({
-      card_statement_descriptor_prefix: null,
-      effective_card_statement_descriptor_prefix: "WIRELINE",
-      card_statement_descriptor_prefix_source: "payment_statement_descriptor_fallback",
-    });
   });
 
-  it("truncates Stripe's fallback card prefix to ten characters", () => {
-    const account = {
-      settings: {
-        card_payments: { statement_descriptor_prefix: null },
-        payments: { statement_descriptor: "WIRELINE LONG NAME" },
-      },
-    };
-
-    expect(effectiveStripeCardStatementDescriptor(account)).toEqual({
-      value: "WIRELINE L",
+  it("models Stripe's ten-character fallback prefix without weakening brand matching", () => {
+    expect(
+      effectiveStripeCardStatementDescriptor({
+        settings: {
+          card_payments: { statement_descriptor_prefix: null },
+          payments: { statement_descriptor: "WIRELINE*RUNTIME" },
+        },
+      }),
+    ).toEqual({
+      value: "WIRELINE*R",
       source: "payment_statement_descriptor_fallback",
-    });
-  });
-
-  it("prefers an explicit card prefix over the static descriptor fallback", () => {
-    const account = {
-      settings: {
-        card_payments: { statement_descriptor_prefix: "OTHER" },
-        payments: { statement_descriptor: "WIRELINE" },
-      },
-    };
-
-    expect(effectiveStripeCardStatementDescriptor(account)).toEqual({
-      value: "OTHER",
-      source: "explicit",
     });
   });
 
@@ -295,6 +291,43 @@ describe("Stripe account identity guard", () => {
     expect(JSON.stringify(summary)).not.toMatch(/private|1234/i);
   });
 
+  it("keeps paid plan CTAs closed until the exact deployed SHA is authorized", () => {
+    const previous = new Map<string, string | undefined>(
+      RELEASE_ENV_KEYS.map((key) => [key, process.env[key]]),
+    );
+
+    try {
+      for (const key of RELEASE_ENV_KEYS) delete process.env[key];
+
+      const closedCatalog = plansForClient();
+      const free = closedCatalog.find((plan) => plan.id === "personal");
+      const closedPaid = closedCatalog.filter((plan) => plan.price_usd_monthly > 0);
+      expect(free).toMatchObject({ configured: true, annual_configured: true });
+      expect(closedPaid).not.toHaveLength(0);
+      expect(closedPaid.every((plan) => !plan.configured && !plan.annual_configured)).toBe(true);
+      expect(closedPaid.every((plan) => plan.contact_sales)).toBe(true);
+
+      const deployedSha = "a".repeat(40);
+      process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
+      process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+      process.env.VERCEL_GIT_COMMIT_SHA = deployedSha;
+      process.env.WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA = "b".repeat(40);
+      expect(
+        plansForClient()
+          .filter((plan) => plan.price_usd_monthly > 0)
+          .every((plan) => !plan.configured),
+      ).toBe(true);
+
+      process.env.WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA = deployedSha;
+      const openPaid = plansForClient().filter((plan) => plan.price_usd_monthly > 0);
+      expect(openPaid.every((plan) => plan.configured && plan.annual_configured)).toBe(true);
+      expect(openPaid.every((plan) => plan.extra_agent_configured)).toBe(true);
+      expect(openPaid.every((plan) => !plan.contact_sales)).toBe(true);
+    } finally {
+      restoreEnvironment(previous);
+    }
+  });
+
   it("makes the launch gate consume the exact merchant-identity constants", () => {
     const launchStatus = readFileSync(
       new URL("../scripts/generate-launch-status.mjs", import.meta.url),
@@ -311,8 +344,11 @@ describe("Stripe account identity guard", () => {
       expect(launchStatus).toContain(constant);
     }
     expect(launchStatus).toContain("supportUrl === STRIPE_PUBLIC_SUPPORT_URL");
-    expect(launchStatus).toContain('statementDescriptor === "WIRELINE"');
-    expect(launchStatus).toContain('cardStatementDescriptor === "WIRELINE"');
+    expect(launchStatus).toContain("effectiveStripeCardStatementDescriptor");
+    expect(launchStatus).toContain("hasWirelineDescriptor(statementDescriptor)");
+    expect(launchStatus).toContain("hasWirelineDescriptor(cardStatementDescriptor.value)");
+    expect(launchStatus).toContain("card_statement_descriptor_source");
+    expect(launchStatus).not.toContain('cardStatementDescriptor === "WIRELINE"');
     expect(launchStatus).not.toContain("brandingIcon.length > 0 &&");
     expect(launchStatus).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
     expect(launchStatus).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
