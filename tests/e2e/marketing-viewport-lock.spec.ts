@@ -51,6 +51,7 @@ async function viewportMetrics(page: Page) {
       docOverflow: root.scrollHeight - root.clientHeight,
       bodyOverflow: body.scrollHeight - body.clientHeight,
       flowOverflow: flow ? flow.scrollHeight - flow.clientHeight : 0,
+      flowOverflowY: flow ? getComputedStyle(flow).overflowY : "",
       headerCount: header ? 1 : 0,
       consoleWidth: consoleRect?.width ?? 0,
       consoleHeight: consoleRect?.height ?? 0,
@@ -138,8 +139,18 @@ test("home uses normal navigation and a bounded inner scroll on phone", async ({
   expect(metrics.docOverflow, "phone document scrollbar").toBeLessThanOrEqual(2);
   expect(metrics.bodyOverflow, "phone body scrollbar").toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow, "mobile story scrolls only inside the frame").toBeGreaterThan(0);
+  expect(metrics.flowOverflowY).toMatch(/auto|scroll/);
   expect(metrics.headerCount).toBe(1);
   expect(metrics.consoleWidth).toBeGreaterThan(330);
+
+  const scrollPosition = await page.locator(".marketing-flow").evaluate((element) => {
+    element.scrollTop = 160;
+    return element.scrollTop;
+  });
+  expect(scrollPosition, "mobile story must be mechanically scrollable").toBeGreaterThan(0);
+  await page.locator(".marketing-flow").evaluate((element) => {
+    element.scrollTop = 0;
+  });
 
   await page.getByRole("button", { name: "Open navigation" }).click();
   const sheet = page.locator("#wireline-mobile-navigation");
