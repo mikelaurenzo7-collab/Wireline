@@ -9,21 +9,24 @@ describe("home landing launch clarity", () => {
 
   it("keeps one concise product theater instead of a brochure stack", () => {
     expect(landing).not.toContain("REASSURANCES");
-    expect(landing).toContain("Live Video");
+    expect(landing).not.toContain("Live Video");
     expect(landing).toContain('variant="stage"');
-    expect(landing).toContain("One call. A completed next step.");
+    expect(landing).toContain("Illustrative Workflow");
+    expect(landing).toContain("From first answer to confirmed next step.");
     expect(landing).toContain("Booked and logged");
+    expect(landing).not.toContain("00:42");
   });
 
-  it("keeps free and paid capacity distinct", () => {
-    expect(landing).toContain("Start free.");
+  it("keeps free and paid capacity distinct without crowding the hero", () => {
+    expect(landing).toContain("Build free");
+    expect(landing).toContain("Launch from $");
+    expect(landing).toContain("Number included");
     expect(landing).toContain("Channels unlock at activation");
-    expect(landing).toContain("Wireline number");
     expect(landing).toContain("Runtime Balance");
   });
 
   it("keeps conversion explicit and owner control visible", () => {
-    expect(landing).toContain("See Plans");
+    expect(landing).toContain("View Pricing");
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("rules, approvals, spend, and handoffs");
     expect(landing).not.toContain("Put your first voice agent to work");

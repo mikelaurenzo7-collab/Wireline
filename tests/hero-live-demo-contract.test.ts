@@ -18,11 +18,17 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain('id="hear-a-demo"');
     expect(landing).toContain("landing-console");
+    expect(landing).toContain("Illustrative Workflow");
+    expect(landing).toContain("From first answer to confirmed next step.");
+    expect(landing).toContain('aria-label="Core agent channels"');
+    expect(landing).not.toContain("00:42");
 
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).toContain("Protected browser preview");
+    expect(widget).toContain("No retained call artifacts.");
     expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
+    expect(widget).not.toContain(" · ");
   });
 
   it("falls back to the public phone demo without removing the proof console", () => {
