@@ -23,6 +23,23 @@ describe("public browser demo cost protection", () => {
     expect(widget).not.toContain("/api/public/assistant/");
   });
 
+  it("keeps the compatibility route metadata-only", () => {
+    const compatibilityStart = routes.indexOf(
+      'router.get("/api/public/assistant/:agentName"',
+    );
+    const compatibilityEnd = routes.indexOf(
+      'router.post("/api/public/demo-session"',
+      compatibilityStart,
+    );
+    const compatibilityBlock = routes.slice(compatibilityStart, compatibilityEnd);
+    expect(compatibilityBlock).toContain('mode: "protected_browser_preview"');
+    expect(compatibilityBlock).toContain('sessionEndpoint: "/api/public/demo-session"');
+    expect(compatibilityBlock).not.toContain("buildPublicBrowserAssistant(agent)");
+    expect(compatibilityBlock).not.toContain("systemPrompt");
+    expect(compatibilityBlock).not.toContain("voiceId");
+    expect(compatibilityBlock).not.toContain("transcriber");
+  });
+
   it("checks protected-demo availability before asking for microphone access", () => {
     const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
     const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
@@ -60,6 +77,8 @@ describe("public browser demo cost protection", () => {
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
+    expect(landing).toContain('aria-label="Call the Public Demo Line"');
+    expect(landing).toContain("Call Demo Line");
     expect(widget).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");
