@@ -258,7 +258,7 @@
 .wl-pricing-page #plans article {
   border-radius: 1.05rem;
   box-shadow: none;
-  padding: clamp(1.35rem, 1.05rem + 0.8vw, 1.8rem);
+  padding: clamp(0.85rem, 0.7rem + 0.45vw, 1.15rem);
 }
 
 /* Features / About / Compare: same gutter + section beat as the landing rail. */
@@ -296,30 +296,8 @@
   border-radius: 0.75rem;
 }
 
-.wl-pricing-page main > section:nth-last-child(3) article p {
-  max-width: 32ch;
-  margin-inline: auto;
-}
-
-/* The final pricing CTA should feel like the rest of the product, not an
-   unrelated white billboard. */
-.wl-pricing-page main > section:last-child > div {
-  border-radius: 1.35rem;
-  background: var(--wireline-color-surface-default);
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-pricing-page main > section:last-child > div :where(h2, p) {
-  color: var(--wireline-color-text-primary) !important;
-}
-
-.wl-pricing-page main > section:last-child > div p {
-  color: var(--wireline-color-text-secondary) !important;
-}
-
-.wl-pricing-page main > section:last-child > div a {
-  background: var(--wireline-color-action-primary-default);
-  color: var(--wireline-color-canvas-default);
+.pricing-more__summary::-webkit-details-marker {
+  display: none;
 }
 
 /* Trust strip: match the public section beat instead of a compressed py-10 band. */
@@ -331,11 +309,11 @@
 /* Demos: make the journey read as one story and keep the closing CTA compact. */
 .marketing-surface #demo-lines,
 .marketing-surface #demo-lines + section {
-  padding-block: var(--wl-public-section-space-tight);
+  padding-block: 0;
 }
 
 .marketing-surface #demo-lines .wl-stitch-card {
-  min-height: 11.25rem;
+  min-height: 0;
 }
 
 .marketing-surface #demo-lines + section .wl-stitch-card-brand {

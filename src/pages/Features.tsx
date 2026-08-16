@@ -103,7 +103,7 @@ export default function Features() {
             }}
           />
 
-          <div className="wl-public-rail mt-6">
+          <div className="wl-public-rail mt-3">
             <p className="sr-only">Build. Train. Launch. Improve.</p>
             <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
               {MARKETING_VOICE.proof.map((step, index) => (
@@ -118,27 +118,22 @@ export default function Features() {
               ))}
             </ol>
 
-            <ul className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
               {CHANNEL_CAPABILITIES.map(({ icon: Icon, title }) => (
                 <li
                   key={title}
-                  className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
+                  className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
                 >
-                  <Icon size={15} className="text-primary" aria-hidden="true" />
+                  <Icon size={14} className="text-primary" aria-hidden="true" />
                   {title}
                 </li>
               ))}
             </ul>
 
-            {/* A label, not a second headline. One screen gets one headline —
-                a display heading beneath the hero competes with it at nearly the
-                same weight, and the six cards under this line already say what
-                they are. The eyebrow tier names the group without arguing with
-                the page's own title. */}
-            <p className="wl-eyebrow mx-auto mt-8 text-center text-muted-foreground">
+            <p className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
               The controls that make it reliable
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
                 <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
@@ -162,20 +157,14 @@ function FeatureCard({
   body: string;
 }) {
   return (
-    <article className="wl-stitch-card group flex flex-col items-center rounded-xl p-5 text-center transition-all hover:-translate-y-px hover:shadow-sm">
+    <article className="wl-stitch-card group flex flex-col items-center rounded-xl p-3.5 text-center transition-all hover:-translate-y-px hover:shadow-sm">
       <Icon
-        size={22}
+        size={18}
         className="text-primary transition group-hover:scale-110"
         aria-hidden="true"
       />
-      {/* Card tier, not section tier. `wl-section-title` clamps up to 2.5rem —
-          a page-section scale that, inside a 3-up card, wrapped "One
-          conversation memory" onto three lines while its neighbours took two,
-          so every body paragraph in the row started on a different baseline. */}
-      {/* Two lines are reserved so every body paragraph in a row starts on the
-          same baseline whether its title wraps once or not. */}
-      <h3 className="wl-card-title mx-auto mt-3 max-w-[18ch]">{title}</h3>
-      <p className="mx-auto mt-2 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
+      <h3 className="wl-card-title mx-auto mt-2 max-w-[18ch]">{title}</h3>
+      <p className="mx-auto mt-1.5 max-w-[36ch] text-xs leading-5 text-muted-foreground">{body}</p>
     </article>
   );
 }

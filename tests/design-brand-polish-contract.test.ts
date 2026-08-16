@@ -170,6 +170,8 @@ describe("E2E design and brand polish", () => {
     // Same for the plans block: the cards state the prices, and a heading above
     // them repeating "start free" duplicated the first card's own button.
     expect(landing).toContain("landing-phone");
+    expect(landing).toContain("landing-stage__dock");
+    expect(landing).toContain("landing-stage__device");
     expect(landing).toContain("See Plans");
     expect(landing).toContain("Start free.");
     // The closing band that repeated the hero's headline and both of its

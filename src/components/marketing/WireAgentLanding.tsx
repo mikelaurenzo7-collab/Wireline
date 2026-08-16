@@ -65,23 +65,24 @@ export default function WireAgentLanding() {
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
         <section className="marketing-section marketing-section--screen landing-stage">
-          <h1 aria-label={MARKETING_VOICE.headline} className="landing-stage__title">
-            {MARKETING_VOICE.headline}
-          </h1>
+          <div className="landing-stage__whisper">
+            <h1 aria-label={MARKETING_VOICE.headline} className="landing-stage__title">
+              {MARKETING_VOICE.headline}
+            </h1>
+            <h2 className="sr-only">How Wireline works</h2>
+            <ol className="landing-stage__loop">
+              {HERO_LOOP.map((step, index) => (
+                <li
+                  key={step}
+                  className={index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined}
+                >
+                  <span className="wl-overline text-foreground">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-          <h2 className="sr-only">How Wireline works</h2>
-          <ol className="landing-stage__loop">
-            {HERO_LOOP.map((step, index) => (
-              <li
-                key={step}
-                className={index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined}
-              >
-                <span className="wl-overline text-foreground">{step}</span>
-              </li>
-            ))}
-          </ol>
-
-          <div id="hear-a-demo">
+          <div id="hear-a-demo" className="landing-stage__device">
             <BrowserCallWidget
               variant="phone"
               agentName={HERO_DEMO_AGENT.name}
@@ -108,55 +109,60 @@ export default function WireAgentLanding() {
             />
           </div>
 
-          <div className="landing-stage__actions">
-            <Link
-              to={PERSONAL_SIGNUP}
-              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
-              onClick={() =>
-                emitProductEvent({
-                  event: "landing_primary_cta_clicked",
-                  surface: "marketing_web",
-                  metadata: {
-                    label: MARKETING_VOICE.primaryCta,
-                    destination: PERSONAL_SIGNUP,
-                    source: "marketing_hero",
-                  },
-                })
-              }
-            >
-              {MARKETING_VOICE.primaryCta}
-            </Link>
-            <Link to="/pricing" className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold">
-              See Plans
-            </Link>
-          </div>
-
-          <nav className="landing-stage__lanes" aria-label="Agent work lane">
-            {AUDIENCES.map((audience) => (
+          <div className="landing-stage__dock">
+            <div className="landing-stage__actions">
               <Link
-                key={audience.key}
-                to={audience.href}
-                onClick={() => selectAudience(audience.key)}
-                className="landing-stage__lane"
+                to={PERSONAL_SIGNUP}
+                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+                onClick={() =>
+                  emitProductEvent({
+                    event: "landing_primary_cta_clicked",
+                    surface: "marketing_web",
+                    metadata: {
+                      label: MARKETING_VOICE.primaryCta,
+                      destination: PERSONAL_SIGNUP,
+                      source: "marketing_hero",
+                    },
+                  })
+                }
               >
-                {audience.label}
-                <span className="sr-only">{audience.uses.join(", ")}</span>
+                {MARKETING_VOICE.primaryCta}
               </Link>
-            ))}
-          </nav>
+              <Link
+                to="/pricing"
+                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+              >
+                See Plans
+              </Link>
+            </div>
 
-          <ul className="landing-stage__channels" aria-label="Agent channels">
-            {CHANNELS.map((label) => (
-              <li key={label} className="landing-stage__channel">
-                {label}
-              </li>
-            ))}
-          </ul>
+            <nav className="landing-stage__lanes" aria-label="Agent work lane">
+              {AUDIENCES.map((audience) => (
+                <Link
+                  key={audience.key}
+                  to={audience.href}
+                  onClick={() => selectAudience(audience.key)}
+                  className="landing-stage__lane"
+                >
+                  {audience.label}
+                  <span className="sr-only">{audience.uses.join(", ")}</span>
+                </Link>
+              ))}
+            </nav>
 
-          <p className="landing-stage__note">
-            Start free. Live from ${STARTER_PRICE}/mo. Channels unlock at activation. Paid plans
-            include a Wireline number. Extra usage is prepaid Runtime Balance.
-          </p>
+            <ul className="landing-stage__channels" aria-label="Agent channels">
+              {CHANNELS.map((label) => (
+                <li key={label} className="landing-stage__channel">
+                  {label}
+                </li>
+              ))}
+            </ul>
+
+            <p className="landing-stage__note">
+              Start free. Live from ${STARTER_PRICE}/mo. Channels unlock at activation. Paid plans
+              include a Wireline number. Extra usage is prepaid Runtime Balance.
+            </p>
+          </div>
         </section>
       </main>
 

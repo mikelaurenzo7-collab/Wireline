@@ -210,7 +210,10 @@ export default function BrowserCallWidget({
       <div className="landing-phone">
         <div className="landing-phone__glow" aria-hidden="true" />
         <div className={cn("landing-phone__device", callActive && "is-live")}>
+          <span className="landing-phone__hard landing-phone__hard--vol" aria-hidden="true" />
+          <span className="landing-phone__hard landing-phone__hard--pwr" aria-hidden="true" />
           <div className="landing-phone__bezel">
+            <div className="landing-phone__glass" aria-hidden="true" />
             <div className="landing-phone__island" aria-hidden="true" />
             <div className="landing-phone__status">
               <span className="landing-phone__dot" aria-hidden="true" />
@@ -218,7 +221,7 @@ export default function BrowserCallWidget({
             </div>
             <AgentFace
               seed={`public-demo:${agentName}`}
-              size={176}
+              size={196}
               speaking={speaking}
               className="landing-phone__face"
               title={`${agentName} agent avatar`}

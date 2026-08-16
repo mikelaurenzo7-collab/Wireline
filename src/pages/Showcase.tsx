@@ -7,6 +7,8 @@ import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
+const PERSONAL_SIGNUP = "/signup?plan=personal";
+
 export default function Showcase() {
   const primaryDemo = LANDING_PUBLIC_DEMO_AGENTS[0];
 
@@ -22,55 +24,51 @@ export default function Showcase() {
         path="/showcase"
       />
 
-      <MarketingHero
-        title="Hear what your customer hears"
-        primaryAction={{ label: "Create an Agent", to: "/signup" }}
-        secondaryAction={{
-          label: "Call a demo line",
-          to: "#demo-lines",
-          tone: "secondary",
-        }}
-        visual={
-          <div className="flex flex-col gap-5 text-center">
-            <div>
+      <section className="marketing-section marketing-section--screen">
+        <MarketingHero
+          title="Hear what your customer hears"
+          primaryAction={{ label: "Create an Agent", to: PERSONAL_SIGNUP }}
+          secondaryAction={{
+            label: "Call a Demo Line",
+            to: "#demo-lines",
+            tone: "secondary",
+          }}
+          visual={
+            <div className="flex flex-col gap-3 text-center">
               <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
                 <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
                 Live browser preview
               </div>
+              <div className="rounded-[16px] border border-border bg-background/70 p-3">
+                <BrowserCallWidget
+                  agentName={primaryDemo.name}
+                  buttonLabel="Start live demo"
+                  fallback={
+                    <div className="text-center">
+                      <a
+                        href="#demo-lines"
+                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                      >
+                        Call a Demo Line
+                      </a>
+                    </div>
+                  }
+                />
+              </div>
             </div>
-            <div className="rounded-[16px] border border-border bg-background/70 p-4">
-              <BrowserCallWidget
-                agentName={primaryDemo.name}
-                buttonLabel="Start live demo"
-                fallback={
-                  <div className="text-center">
-                    <a
-                      href="#demo-lines"
-                      className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
-                    >
-                      Call a Demo Line
-                    </a>
-                  </div>
-                }
-              />
-            </div>
-          </div>
-        }
-      />
+          }
+        />
 
-      <section id="demo-lines" className="marketing-section marketing-section--tight">
-        <div className="mx-auto max-w-6xl text-center">
-          {/* A label, not a second headline: one screen carries one. */}
+        <section id="demo-lines" className="mt-4">
           <p className="wl-eyebrow mx-auto text-center text-muted-foreground">
             Or call a live demo line
           </p>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <a
                 key={agent.tel}
                 href={`tel:${agent.tel}`}
-                className="group wl-stitch-card wl-stitch-card-hover flex items-center gap-4 p-4 text-left"
+                className="group wl-stitch-card wl-stitch-card-hover flex items-center gap-3 p-3 text-left"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/8 text-primary">
                   <Phone className="h-4 w-4" aria-hidden="true" />
@@ -96,7 +94,7 @@ export default function Showcase() {
               </a>
             ))}
           </div>
-        </div>
+        </section>
       </section>
     </MarketingPageFrame>
   );

@@ -101,6 +101,23 @@
   padding-bottom: calc(var(--wl-public-section-space) + 0.5rem);
 }
 
+.marketing-surface.wl-features-page .marketing-flow,
+.marketing-surface.wl-pricing-page .marketing-flow {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-surface.wl-features-page .marketing-flow {
+  overflow: hidden;
+}
+
+.marketing-surface.wl-features-page .marketing-section--screen,
+.marketing-surface.wl-pricing-page .marketing-section--screen {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-block: 0.65rem;
+}
+
 .marketing-surface .marketing-section--tight {
   padding-block: var(--wl-public-section-space-tight);
 }
@@ -154,6 +171,16 @@
   margin-top: 1.25rem;
 }
 
+.marketing-surface.wl-features-page .marketing-section .marketing-hero__actions,
+.marketing-surface.wl-features-page .marketing-hero__actions {
+  margin-top: 0.7rem;
+}
+
+.marketing-surface.wl-features-page .marketing-hero__title {
+  max-width: 22ch;
+  font-size: clamp(1.15rem, 1rem + 1.15vw, 1.85rem);
+}
+
 /* Same story for the hero's visual slot: 48px of margin and 36px of padding on
    a bordered card, sized for a hero that owned a screen.
 
@@ -167,6 +194,11 @@
   margin-top: 1.75rem;
   margin-inline: auto;
   padding: 1.25rem 2rem;
+}
+
+.marketing-surface .marketing-section--screen .marketing-hero__experience {
+  margin-top: 0.75rem;
+  padding: 0.7rem 1rem;
 }
 
 /*
