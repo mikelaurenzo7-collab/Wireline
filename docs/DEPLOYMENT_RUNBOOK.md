@@ -51,9 +51,10 @@ The production build must:
 - apply committed Drizzle migrations through `npm run db:migrate` unless the deployment is an explicitly identified non-live duplicate;
 - build the production client/server and ChatGPT MCP bundles;
 - pass server import smoke;
-- reconcile and re-read the catalog-fingerprinted Stripe Customer Portal when
+- read and verify the catalog-fingerprinted Stripe Customer Portal when
   `WIRELINE_RECONCILE_STRIPE_PORTAL=true`; canonical production fails closed when the switch is
   absent or the live configuration cannot be verified;
+- never mutate Stripe Customer Portal configuration as a side effect of application artifact construction;
 - report whether self-serve billing is authorized for the exact `VERCEL_GIT_COMMIT_SHA` or will remain runtime-closed;
 - finish READY with no alias error and own `trywireline.com`.
 
@@ -107,11 +108,19 @@ Self-serve billing has three independent, fail-closed production controls:
 
 Checkout remains closed unless all three controls align. The release SHA is production-only, must never be available to Preview or Development, and must be updated deliberately for each new production artifact. A boolean project-level switch surviving from an older release is never sufficient to authorize a different commit.
 
-`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. It does
-not open checkout. It makes every canonical Production build reconcile the exact public
-Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method
-updates, invoice history, and legal/return URLs after the application build passes. Preview and
-Development must leave it false/unset.
+`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. The
+historical name is retained for environment compatibility, but canonical Production builds use it
+as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter
+Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice
+history, and legal/return URLs after the application build passes. Preview and Development must
+leave it false/unset.
+
+Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure,
+production-configured operator context. When drift is confirmed, run
+`npm run stripe:portal:reconcile` deliberately from that context, inspect the resulting managed
+configuration, then redeploy so the production artifact independently re-verifies the live state.
+The repair command is write-capable; it must not be embedded in a build, preview, or automatic
+retry loop.
 
 Before opening an exact-SHA certification window, verify all of the following against the live Wireline Stripe account and the deployed artifact:
 
@@ -124,7 +133,7 @@ Before opening an exact-SHA certification window, verify all of the following ag
 
 The controlled checkout lifecycle necessarily requires the gate to be open for the founder-controlled account performing it. Exact-head authorization is therefore a narrow certification window, not proof by itself. A successful window must still demonstrate checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund or reversal, and ledger reconciliation.
 
-Valid Stripe credentials, a reconciled portal, and a previously enabled boolean never authorize a new deployment by themselves.
+Valid Stripe credentials, a verified portal, and a previously enabled boolean never authorize a new deployment by themselves.
 
 ### Opening a controlled certification window
 
