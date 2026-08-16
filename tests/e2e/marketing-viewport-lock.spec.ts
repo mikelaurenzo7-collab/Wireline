@@ -181,6 +181,10 @@ test("home island sheet stays a compact card on the iPad canvas", async ({ page 
   expect(sheetBox).toBeTruthy();
   expect(sheetBox!.height, "island sheet does not swallow the iPad").toBeLessThan(900 * 0.58);
   expect(sheetBox!.width, "island sheet hangs from the island").toBeLessThan(420);
+  expect(
+    Math.abs(sheetBox!.x + sheetBox!.width / 2 - 1365 / 2),
+    "island sheet is centered under the island",
+  ).toBeLessThan(48);
   await sheet.getByRole("button", { name: "Close" }).click();
   await expect(sheet).toHaveCount(0);
 });

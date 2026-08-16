@@ -897,7 +897,7 @@ button.landing-phone__island:focus-visible {
 #wireline-mobile-navigation.landing-os-nav {
   inset: auto;
   top: max(0.5rem, env(safe-area-inset-top));
-  right: auto;
+  right: 0;
   bottom: auto;
   left: 0;
   width: min(23.5rem, calc(100vw - 1.5rem));
