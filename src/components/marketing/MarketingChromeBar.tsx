@@ -39,12 +39,11 @@ const RESOURCE_LINKS = [
   { to: "/support", label: "Support" },
 ] as const;
 
-/** Always visible in the bar itself — the four a visitor reaches for by name. */
 const BAR_LINKS = [
-  { to: "/trust", label: "Trust" },
-  { to: "/status", label: "Status" },
-  { to: "/privacy", label: "Privacy" },
-  { to: "/terms", label: "Terms" },
+  { to: "/trust", label: "Trust", mobilePriority: false },
+  { to: "/status", label: "Status", mobilePriority: false },
+  { to: "/privacy", label: "Privacy", mobilePriority: true },
+  { to: "/terms", label: "Terms", mobilePriority: true },
 ] as const;
 
 const COLUMNS = [
@@ -54,33 +53,13 @@ const COLUMNS = [
   { heading: "Resources", links: RESOURCE_LINKS },
 ] as const;
 
-/**
- * The pinned marketing chrome bar.
- *
- * It replaces a four-column sitemap footer that ran 300px on desktop and 700px
- * on mobile — on the landing page, the tallest single block on the page, sitting
- * directly below a trust section that already repeated three of its own links.
- * Pinned, it costs 45px and stays reachable from every panel.
- *
- * The sitemap is not deleted, it is collapsed: every link stays in the rendered
- * markup so crawlers and assistive technology still see the full internal link
- * graph. The disclosure is a plain button and a panel rather than
- * `<details>/<summary>`, because Chrome lays a `<summary>` out through the
- * details shadow slot and it shrink-wraps its own text no matter what width it
- * is given — measured at 727px inside a 1440px bar, which threw the row's
- * right-aligned control two thirds of the way across the frame instead of onto
- * the rail's right edge.
- */
+/** Compact, pinned public chrome. The full sitemap stays one disclosure away. */
 export default function MarketingChromeBar({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
   return (
     <footer className={cn("marketing-chrome-bar", className)}>
-      {/* Painted above the bar row, so the sitemap opens upward into the page
-          instead of pushing the bar past the bottom of a frame that cannot
-          scroll. `hidden` keeps the links in the document for crawlers while
-          removing them from the tab order when collapsed. */}
       <div id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
         <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-4 lg:px-8">
           {COLUMNS.map(({ heading, links }) => (
@@ -100,31 +79,24 @@ export default function MarketingChromeBar({ className }: { className?: string }
         </div>
       </div>
 
-      {/*
-        One row, on the same rail as the content above it.
-
-        It was two: a branding row (mark + "Wireline" + tagline) stacked on a
-        legal row that opened with "© Wireline". The mark and the wordmark are
-        both already fixed in the header, so the bar showed a visitor the logo
-        twice and the company name three times — and the two rows sat on
-        different grids, which is what made the sitemap control read as
-        off-centre against the copyright beneath it.
-      */}
       <div className="marketing-chrome-bar__row">
-        <div className="wl-public-rail flex flex-wrap items-center gap-x-5 gap-y-1">
-          <span className="text-xs text-muted-foreground">
+        <div className="wl-public-rail marketing-chrome-bar__rail flex items-center gap-x-5">
+          <span className="marketing-chrome-bar__copyright shrink-0 text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Wireline
           </span>
 
           <nav
             aria-label="Legal"
-            className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-muted-foreground"
+            className="marketing-chrome-bar__legal flex min-w-0 items-center gap-x-4 text-xs text-muted-foreground"
           >
             {BAR_LINKS.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-8 items-center transition-colors hover:text-foreground"
+                className={cn(
+                  "inline-flex min-h-8 shrink-0 items-center transition-colors hover:text-foreground",
+                  !link.mobilePriority && "marketing-chrome-bar__mobile-optional",
+                )}
               >
                 {link.label}
               </Link>
@@ -132,7 +104,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             <button
               type="button"
               data-compact="true"
-              className="inline-flex min-h-8 items-center transition-colors hover:text-foreground"
+              className="marketing-chrome-bar__privacy-choices inline-flex min-h-8 shrink-0 items-center transition-colors hover:text-foreground"
               onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
             >
               Privacy Choices
@@ -144,7 +116,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((value) => !value)}
-            className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="marketing-chrome-bar__sitemap ml-auto inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Sitemap
             <ChevronUp

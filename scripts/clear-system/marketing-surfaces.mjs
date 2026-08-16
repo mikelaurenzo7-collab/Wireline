@@ -1,6 +1,6 @@
 /**
  * Public marketing surfaces with centered rails, shared product voice, a
- * zero-runtime landing product theater, the wire signature, and honest Founder
+ * protected live product theater, the wire signature, and honest Founder
  * economics on the dedicated pricing surface.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
@@ -8,8 +8,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+  const chromeBar = read("src/components/marketing/MarketingChromeBar.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const landingTheaterCss = read("src/styles/landing-product-theater.css");
+  const landingDemoCss = read("src/styles/landing-product-theater-demo.css");
+  const viewportFinalCss = read("src/styles/viewport-final-polish.css");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -29,10 +32,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
     "marketing actions must center by default",
   );
-  // The frame no longer grows with content: the window is the frame. Every
-  // public route is 100dvh with a single bounded scroller between a fixed
-  // header and a pinned chrome bar, so no public page has a document scrollbar
-  // at any width. What this contract now holds is that invariant.
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
@@ -56,9 +55,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/SolutionsPage.tsx",
     "src/pages/VerticalLanding.tsx",
   ]) {
-    // `!text-left` is the deliberate opt-out, not an oversight. /about is
-    // built to be identifiable at a glance as not the landing page, and a
-    // left-aligned column is the cheapest signal available.
     mustInclude(
       file,
       read(file),
@@ -78,6 +74,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     publicHeader,
     /MARKETING_VOICE\.buyingNoun/,
     "mobile navigation must consume the canonical product noun",
+  );
+  mustInclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    publicHeader,
+    /h-14[\s\S]*lg:h-16/,
+    "public header height must match the mobile and desktop viewport equations",
   );
   mustExclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
@@ -113,8 +115,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /aria-label="Animated preview of a Wireline voice agent/,
-    "the visual product scene must expose an accessible description",
+    /aria-label="Animated preview and protected live demo of a Wireline voice agent/,
+    "the product scene must expose an accessible description",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -131,6 +133,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
+    /useProtectedPublicDemo/,
+    "the landing must use the protected live-demo path",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
     /const PRIMARY_CTA_PATH = "\/signup\?plan=personal"/,
     "the landing must preserve free-builder conversion intent",
   );
@@ -143,8 +151,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /import BrowserCallWidget|<BrowserCallWidget|LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:/,
-    "anonymous landing traffic must not execute or expose a live provider demo",
+    /LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:|<BrowserCallWidget/,
+    "the homepage must not expose a demo number or direct runtime widget",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -172,22 +180,34 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the homepage scene must size against the dynamic viewport",
   );
   mustInclude(
-    "src/styles/landing-product-theater.css",
-    landingTheaterCss,
-    /\.wireline-device__waveform/,
-    "the product scene must carry a voice-specific signature",
+    "src/styles/landing-product-theater-demo.css",
+    landingDemoCss,
+    /\.wireline-device__demo-button/,
+    "live proof must remain integrated into the phone object",
   );
   mustInclude(
-    "src/styles/landing-product-theater.css",
-    landingTheaterCss,
+    "src/styles/landing-product-theater-demo.css",
+    landingDemoCss,
     /prefers-reduced-motion:\s*reduce/,
-    "landing motion must yield to reduced-motion preferences",
+    "live-demo presentation must yield to reduced-motion preferences",
   );
   mustInclude(
-    "src/styles/landing-product-theater.css",
-    landingTheaterCss,
-    /animation:\s*none !important/,
-    "landing animation must have a deterministic still state",
+    "src/styles/viewport-final-polish.css",
+    viewportFinalCss,
+    /safe-area-inset-bottom/,
+    "pinned public chrome must reserve mobile safe areas",
+  );
+  mustInclude(
+    "src/styles/viewport-final-polish.css",
+    viewportFinalCss,
+    /orientation:\s*landscape/,
+    "mobile landscape must receive its own composition",
+  );
+  mustInclude(
+    "src/components/marketing/MarketingChromeBar.tsx",
+    chromeBar,
+    /marketing-chrome-bar__mobile-optional/,
+    "the pinned footer must keep a one-row mobile priority set",
   );
 
   mustInclude(
@@ -215,9 +235,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the final loop step must settle violet on the wire",
   );
 
-  // Features owns the operating-loop explanation; the homepage only stages a
-  // representative outcome. This keeps the first screen singular while the
-  // deeper product page preserves the complete Build/Train/Launch/Improve loop.
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,

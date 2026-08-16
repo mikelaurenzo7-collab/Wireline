@@ -1,0 +1,178 @@
+/* Final viewport pass: keep every public route inside one dynamic viewport,
+ * align the CSS math to the actual chrome, and make short/landscape screens a
+ * first-class composition rather than a squeezed desktop screenshot. */
+
+@media (max-width: 1023px) {
+  .marketing-surface {
+    /* PrecisionPublicHeader is h-14 below lg. */
+    --wl-marketing-chrome-top: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-surface {
+    /* PrecisionPublicHeader is h-16 at lg+. */
+    --wl-marketing-chrome-top: 4rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .marketing-surface {
+    --wl-marketing-chrome-bottom: calc(
+      2.85rem + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .marketing-chrome-bar__row {
+    min-height: calc(2.75rem + env(safe-area-inset-bottom, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  .marketing-chrome-bar__rail {
+    flex-wrap: nowrap;
+    gap: 0.8rem;
+  }
+
+  .marketing-chrome-bar__copyright,
+  .marketing-chrome-bar__mobile-optional,
+  .marketing-chrome-bar__privacy-choices {
+    display: none;
+  }
+
+  .marketing-chrome-bar__legal {
+    gap: 0.85rem;
+  }
+
+  .marketing-chrome-bar__legal a,
+  .marketing-chrome-bar__sitemap {
+    min-height: 2.5rem;
+  }
+
+  .marketing-chrome-bar__panel {
+    max-height: min(68dvh, 29rem);
+    overscroll-behavior: contain;
+  }
+}
+
+/* Standalone/PWA mode exposes the physical top inset rather than browser
+ * chrome. Add it exactly once to both the real header and the frame equation. */
+@media (display-mode: standalone) and (max-width: 1023px) {
+  .marketing-surface {
+    --wl-marketing-chrome-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  .precision-public-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  #wireline-mobile-navigation {
+    top: calc(3.5rem + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
+/* Compact portrait phones and browser toolbars: edit the scene, never scale the
+ * type to illegibility. The live proof remains; explanatory copy yields first. */
+@media (max-width: 1023px) and (max-height: 720px) {
+  .marketing-surface .wireline-theater.marketing-section--screen {
+    align-content: center;
+    min-height: calc(
+      100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+    );
+    padding-block: 0.45rem;
+  }
+
+  .wireline-theater__grid {
+    gap: 0.35rem;
+  }
+
+  .wireline-theater__subline,
+  .wireline-theater__activation-note {
+    display: none;
+  }
+
+  .wireline-theater__title {
+    margin-top: 0.3rem;
+    font-size: clamp(2.3rem, 9.5vw, 3.25rem);
+  }
+
+  .wireline-theater__actions {
+    margin-top: 0.55rem !important;
+  }
+
+  .wireline-device {
+    height: clamp(13.75rem, 38vh, 17.25rem);
+  }
+
+  .wireline-device__avatar {
+    width: clamp(3.9rem, 10.5vh, 5rem);
+  }
+
+  .wireline-device__transcript {
+    display: none;
+  }
+}
+
+/* Mobile landscape gets the same two-column stage logic as desktop. A tall
+ * single column is the wrong composition when height, not width, is scarce. */
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 600px) {
+  .marketing-surface .wireline-theater.marketing-section--screen {
+    padding-block: 0.35rem;
+  }
+
+  .wireline-theater__grid {
+    grid-template-columns: minmax(0, 0.88fr) minmax(15rem, 1.12fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: clamp(0.75rem, 3vw, 2rem);
+  }
+
+  .wireline-theater__copy {
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  .wireline-theater__eyebrow {
+    font-size: 0.52rem;
+  }
+
+  .wireline-theater__title {
+    max-width: 8ch;
+    margin-inline: 0;
+    font-size: clamp(2.15rem, 6.5vw, 3.3rem);
+  }
+
+  .wireline-theater__actions {
+    justify-content: flex-start;
+  }
+
+  .wireline-theater__secondary-action {
+    display: none;
+  }
+
+  .wireline-theater__stage {
+    max-width: none;
+  }
+
+  .wireline-device {
+    height: calc(
+      100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom) - 0.8rem
+    );
+    min-height: 13.5rem;
+    max-height: 20rem;
+  }
+
+  .wireline-theater__orbit--outer {
+    width: min(48vw, 22rem);
+  }
+
+  .wireline-theater__orbit--inner {
+    width: min(36vw, 16rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-chrome-bar__sitemap svg {
+    transition: none;
+  }
+}

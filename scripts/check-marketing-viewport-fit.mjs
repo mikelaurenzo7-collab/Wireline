@@ -1,22 +1,10 @@
 /**
- * Marketing viewport-fit check.
+ * Viewport-shell contract.
  *
- * The public surface has one structural rule: the window is the frame, and the
- * frame never scrolls. Every public route renders `.marketing-surface` (100dvh,
- * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller, with a
- * fixed header above it and a pinned chrome bar below. See
- * `src/styles/viewport-first-marketing.css` for the three mechanisms.
- *
- * This reads source rather than a browser because the failure it guards is a
- * structural one, and it is the kind that comes back a page at a time: a route
- * re-adds `min-h-screen`, or hand-rolls its own `<main className="pt-16">`, or
- * grows a second scroller, and that one page quietly gets a document scrollbar
- * while every other page keeps the frame. A screenshot job would catch it later
- * and more expensively; this catches it in the diff that introduces it.
- *
- * What it cannot check is whether a panel's *content* fits its screen. That
- * stays an editorial judgement, made against a real browser at 1440x900 — the
- * numbers in `docs/DESIGN_VIEWPORT_BASELINE.md` are the record of it.
+ * Public and authenticated Wireline surfaces share one architectural rule: the
+ * browser window is the frame. Persistent chrome stays attached and exactly
+ * one content region owns vertical scrolling. Content may be longer than a
+ * viewport; the document itself may not become a second scroller.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -24,7 +12,6 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
 
-/** Every route that renders public marketing chrome. */
 const PUBLIC_SURFACES = [
   "src/components/marketing/WireAgentLanding.tsx",
   "src/components/layout/MarketingPageFrame.tsx",
@@ -32,7 +19,6 @@ const PUBLIC_SURFACES = [
   "src/pages/Pricing.tsx",
 ];
 
-/** Pages that reach the frame through the shared component. */
 const FRAMED_PAGES = [
   "src/pages/About.tsx",
   "src/pages/Blog.tsx",
@@ -59,25 +45,17 @@ for (const path of PUBLIC_SURFACES) {
 
   const flowCount = source.split("marketing-flow").length - 1;
   if (flowCount > 1) {
-    failures.push(
-      `${path}: ${flowCount} .marketing-flow scrollers -- the frame allows exactly one`,
-    );
+    failures.push(`${path}: ${flowCount} .marketing-flow scrollers -- the frame allows one`);
   }
 
-  // `min-h-screen` / `min-h-dvh` on a surface that is already exactly 100dvh
-  // can only make it taller than the window, which is how a public page grows
-  // a document scrollbar back.
   for (const utility of ["min-h-screen", "min-h-dvh"]) {
     if (source.includes(utility)) {
-      failures.push(`${path}: ${utility} defeats the 100dvh frame and returns the page scrollbar`);
+      failures.push(`${path}: ${utility} defeats the 100dvh frame`);
     }
   }
 
-  // The scroller owns the offset from the fixed header, once.
   if (/<main[^>]*className="[^"]*\bpt-16\b/.test(source)) {
-    failures.push(
-      `${path}: hand-rolled pt-16 on <main> -- the header offset belongs to .marketing-flow`,
-    );
+    failures.push(`${path}: header offset must belong to .marketing-flow, not a page utility`);
   }
 }
 
@@ -87,64 +65,109 @@ for (const path of FRAMED_PAGES) {
     failures.push(`${path}: public page must reach the frame through MarketingPageFrame`);
   }
   if (source.includes("min-h-screen") || source.includes("min-h-dvh")) {
-    failures.push(`${path}: min-height utility defeats the frame supplied by MarketingPageFrame`);
+    failures.push(`${path}: min-height utility defeats the shared frame`);
   }
 }
 
-// The frame, the panel, and the snap are one system; losing any one of them
-// turns the other two into dead weight.
 const frameCss = read("src/styles/viewport-first-marketing.css");
 for (const [needle, description] of [
-  ["height: 100dvh;", "the surface must be exactly one viewport tall"],
-  ["overflow: hidden;", "the surface must not scroll"],
-  ["scroll-snap-type: y proximity;", "the flow must snap by proximity, never mandatory"],
-  ["scroll-snap-align: start;", "panels must settle flush with the top of the viewport"],
-  ["prefers-reduced-motion", "snap and signal motion must yield to reduced-motion"],
-  // A max-width with no auto margins is a left-aligned block pretending to be
-  // centred. The typography layer gives every marketing paragraph a 72ch
-  // measure; without this, one inside a wider centred container renders hard
-  // against its left edge with its text centred within itself. Measured on
-  // /solutions/support: a 545px box in an 854px panel, 154px off.
-  ["margin-inline: auto;", "centred containers must centre the boxes their measure creates"],
-  // A row of cards reserves one title height for all of them, or the row
-  // renders a one-line title beside a two-line one and every body paragraph
-  // starts on a different baseline.
+  ["height: 100dvh;", "the public surface must be exactly one dynamic viewport"],
+  ["overflow: hidden;", "the public surface must not scroll"],
+  ["overflow-y: auto;", "the public flow must own vertical scrolling"],
+  ["scroll-snap-type: y proximity;", "desktop panel snap must remain proximity-only"],
+  ["scroll-snap-align: start;", "panels must settle at a stable boundary"],
+  ["prefers-reduced-motion", "snap and signal motion must yield to reduced motion"],
+  ["margin-inline: auto;", "centred measures must centre their boxes"],
   ["min-height: 2.24em;", "card rows must reserve a shared title height"],
 ]) {
   if (!frameCss.includes(needle)) {
-    failures.push(`src/styles/viewport-first-marketing.css: ${description} (missing "${needle}")`);
+    failures.push(`src/styles/viewport-first-marketing.css: ${description} (missing ${needle})`);
   }
 }
 
-// A `max-height` on the panel cannot make content fit; it can only clip it.
-// This is how the five-column plan grid lost its bottom two rows of features.
 if (/\.marketing-section \{[^}]*max-height/s.test(frameCss)) {
   failures.push(
-    "src/styles/viewport-first-marketing.css: .marketing-section must not cap its own height -- " +
-      "a ceiling in CSS clips content rather than composing it",
+    "src/styles/viewport-first-marketing.css: .marketing-section must not cap its own height",
   );
 }
 
-// One screen, one headline.
-//
-// A panel is a screen, and a screen carries a single display-tier heading. A
-// second one beneath the first competes with it at nearly the same weight and
-// reads as two pages stacked -- which is exactly what these pages were before
-// they were composed into panels. Supporting groups inside a panel get the
-// eyebrow tier, which names them without arguing with the page's own title.
-//
-// The budget is derived, not hand-listed: a page may carry one headline per
-// `.marketing-section` it declares. `<MarketingHero>` counts as a headline
-// because it renders one, even though the class that styles it lives in the
-// shared component rather than in the page.
+const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+if (!/h-14[\s\S]*lg:h-16/.test(publicHeader)) {
+  failures.push(
+    "PrecisionPublicHeader: mobile h-14 and desktop h-16 must match viewport variables",
+  );
+}
+if (!publicHeader.includes("!top-14") || !publicHeader.includes("lg:!top-16")) {
+  failures.push("PrecisionPublicHeader: mobile navigation must start below the real header height");
+}
+
+const chrome = read("src/components/marketing/MarketingChromeBar.tsx");
+for (const needle of [
+  "marketing-chrome-bar__rail",
+  "marketing-chrome-bar__mobile-optional",
+  "marketing-chrome-bar__sitemap",
+]) {
+  if (!chrome.includes(needle)) {
+    failures.push(`MarketingChromeBar: missing ${needle} mobile containment hook`);
+  }
+}
+
+const finalViewportCss = read("src/styles/viewport-final-polish.css");
+for (const [needle, description] of [
+  ["safe-area-inset-bottom", "bottom chrome must reserve device safe area"],
+  ["safe-area-inset-top", "standalone header must reserve device safe area"],
+  ["orientation: landscape", "mobile landscape must have an intentional composition"],
+  ["--wl-marketing-chrome-top: 3.5rem", "mobile header equation must be explicit"],
+  ["--wl-marketing-chrome-top: 4rem", "desktop header equation must be explicit"],
+]) {
+  if (!finalViewportCss.includes(needle)) {
+    failures.push(`src/styles/viewport-final-polish.css: ${description}`);
+  }
+}
+
+const workspaceShell = read("src/components/WorkspaceShell.tsx");
+for (const [needle, description] of [
+  ["h-[100dvh]", "workspace shell must be one dynamic viewport"],
+  ["overflow-hidden", "workspace shell must not become a document scroller"],
+  ["wl-workspace-content min-h-0 flex-1 overflow-y-auto", "workspace content must be the one scroller"],
+  ["pb-[max(0.5rem,env(safe-area-inset-bottom))]", "mobile dock must reserve bottom safe area"],
+  ["fixed inset-x-0 bottom-0", "mobile dock must remain attached to the viewport"],
+]) {
+  if (!workspaceShell.includes(needle)) {
+    failures.push(`src/components/WorkspaceShell.tsx: ${description}`);
+  }
+}
+
+const productSurfaceIndex = read("src/styles/wireline-product-surfaces.css");
+if (!productSurfaceIndex.includes('@import "./viewport-shell-hardening.css";')) {
+  failures.push("wireline-product-surfaces.css: authenticated viewport hardening is not imported");
+}
+
+const workspaceViewportCss = read("src/styles/viewport-shell-hardening.css");
+for (const [needle, description] of [
+  ["max-height: 100dvh", "authenticated frame must have a hard dynamic-viewport ceiling"],
+  ["scrollbar-gutter: stable", "desktop content must not shift when a scrollbar appears"],
+  ["orientation: landscape", "mobile workspace landscape must be compacted intentionally"],
+  ["overflow-y: auto", "modal overflow must remain inside the modal"],
+  ["safe-area-inset-bottom", "workspace chrome must reserve mobile safe area"],
+]) {
+  if (!workspaceViewportCss.includes(needle)) {
+    failures.push(`src/styles/viewport-shell-hardening.css: ${description}`);
+  }
+}
+
+const modalCss = read("src/styles/modal-hierarchy.css");
+if (!modalCss.includes("max-height: calc(100dvh - 1.5rem)")) {
+  failures.push("modal-hierarchy.css: mobile dialogs must retain a dynamic-viewport ceiling");
+}
+
+// One screen, one display-tier headline on composed marketing panels.
 const HEADLINE_TIER =
   /\bwl-(?:public-section-heading|stitch-display|page-title)\b|marketing-hero-title|<MarketingHero\b/g;
 
 for (const path of [...PUBLIC_SURFACES, ...FRAMED_PAGES]) {
   if (path.endsWith("MarketingPageFrame.tsx")) continue;
   const source = read(path);
-  // Long-form document routes are chapters, not panels; a heading per section
-  // is how a document is meant to read.
   if (source.includes("marketing-section--longform") || source.includes("<MarketingPageFrame longform")) {
     continue;
   }
@@ -152,16 +175,17 @@ for (const path of [...PUBLIC_SURFACES, ...FRAMED_PAGES]) {
   const headlines = (source.match(HEADLINE_TIER) ?? []).length;
   if (headlines > panels) {
     failures.push(
-      `${path}: ${headlines} display-tier headings across ${panels} panel(s) -- one screen carries ` +
-        "one headline; demote supporting group titles to the eyebrow tier",
+      `${path}: ${headlines} display headings across ${panels} panel(s); one screen carries one headline`,
     );
   }
 }
 
 if (failures.length > 0) {
-  console.error("Marketing viewport-fit check failed:");
+  console.error("Viewport-shell check failed:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log(`Marketing viewport-fit check passed (${PUBLIC_SURFACES.length + FRAMED_PAGES.length} public surfaces)`);
+console.log(
+  `Viewport-shell check passed (${PUBLIC_SURFACES.length + FRAMED_PAGES.length} public surfaces plus authenticated shell)`,
+);

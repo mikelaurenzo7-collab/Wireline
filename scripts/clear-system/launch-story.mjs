@@ -18,6 +18,9 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   const productCopy = read("src/lib/product-copy.ts");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const landingPage = read("src/pages/LandingPage.tsx");
+  const publicDemoRoutes = read("src/routes/marketing-runtime-routes.ts");
+  const publicDemoBudget = read("src/lib/public-demo-budget.ts");
+  const publicDemoHook = read("src/hooks/useProtectedPublicDemo.ts");
   const planCatalog = read("src/lib/plan-catalog.ts");
   const pricingPage = read("src/pages/Pricing.tsx");
 
@@ -122,20 +125,20 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /landing_product_theater/,
-    "landing conversion must remain attributable to the product-theater surface",
+    /useProtectedPublicDemo/,
+    "landing live proof must use the protected browser-demo hook",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /wireline-device/,
-    "landing must demonstrate the product through a deterministic visual scene",
+    /Talk Live/,
+    "landing must make live product proof explicit",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /import BrowserCallWidget|<BrowserCallWidget|LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:/,
-    "anonymous landing traffic must not execute or expose a live provider demo",
+    /LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:|<BrowserCallWidget/,
+    "landing must not expose a demo number or direct public runtime widget",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -143,6 +146,50 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /STRIPE_PLANS|Runtime\s+Balance/,
     "landing must route plan economics to the dedicated pricing surface",
   );
+
+  mustInclude(
+    "src/hooks/useProtectedPublicDemo.ts",
+    publicDemoHook,
+    /fetch\("\/api\/public\/demo-session"/,
+    "browser demos must request a server-issued session",
+  );
+  mustInclude(
+    "src/hooks/useProtectedPublicDemo.ts",
+    publicDemoHook,
+    /new VapiSDK\(token, absoluteProxyUrl\)/,
+    "browser demos must route through the Wireline proxy",
+  );
+  mustInclude(
+    "src/routes/marketing-runtime-routes.ts",
+    publicDemoRoutes,
+    /process\.env\.VAPI_PRIVATE_KEY/,
+    "Vapi browser-call authorization must remain server-side",
+  );
+  mustInclude(
+    "src/routes/marketing-runtime-routes.ts",
+    publicDemoRoutes,
+    /router\.post\("\/api\/public\/demo-vapi\/call\/web"/,
+    "the protected Vapi call proxy must remain mounted",
+  );
+  mustInclude(
+    "src/routes/marketing-runtime-routes.ts",
+    publicDemoRoutes,
+    /recordingEnabled:\s*false/,
+    "public demos must not retain provider audio",
+  );
+  mustInclude(
+    "src/lib/public-demo-budget.ts",
+    publicDemoBudget,
+    /PUBLIC_DEMO_MAX_DURATION_SECONDS = 45/,
+    "public browser demos must have a hard 45-second ceiling",
+  );
+  mustInclude(
+    "src/lib/public-demo-budget.ts",
+    publicDemoBudget,
+    /failClosedOnError:\s*true/,
+    "public demo spend controls must fail closed",
+  );
+
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,

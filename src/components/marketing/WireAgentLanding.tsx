@@ -3,20 +3,27 @@ import {
   ArrowRight,
   CalendarCheck2,
   CheckCircle2,
+  Loader2,
   Mail,
   MessageSquareText,
+  Mic,
   PhoneCall,
+  PhoneOff,
+  ShieldCheck,
+  Volume2,
 } from "lucide-react";
 import { Link } from "react-router";
 
+import { useProtectedPublicDemo } from "../../hooks/useProtectedPublicDemo";
+import { emitProductEvent } from "../../lib/product-event-client";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
+import WirelineMark from "../brand/WirelineMark";
 import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import WirelineMark from "../brand/WirelineMark";
-import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
-import { emitProductEvent } from "../../lib/product-event-client";
 
 const PRIMARY_CTA_PATH = "/signup?plan=personal";
 const HERO_LOOP = MARKETING_VOICE.proof;
+const LANDING_DEMO_AGENT = "Liam";
 
 const THEATER_SCENES = [
   {
@@ -69,17 +76,25 @@ const CHANNELS = [
 const WAVEFORM = [34, 58, 82, 48, 92, 64, 38, 76, 54, 88, 44, 70, 32, 60, 84] as const;
 
 export default function WireAgentLanding() {
-  const trackPrimaryCta = () => {
+  const demo = useProtectedPublicDemo(LANDING_DEMO_AGENT, "landing_product_theater");
+
+  const trackPrimaryCta = (source = "landing_product_theater") => {
     emitProductEvent({
       event: "landing_primary_cta_clicked",
       surface: "marketing_web",
       metadata: {
         label: "Start Free",
         to: PRIMARY_CTA_PATH,
-        source: "landing_product_theater",
+        source,
       },
     });
   };
+
+  const demoButtonLabel = demo.connecting
+    ? "Connecting"
+    : demo.callActive
+      ? "End Demo"
+      : "Talk Live";
 
   return (
     <div className="marketing-surface wireline-theater-surface bg-background text-foreground">
@@ -107,7 +122,7 @@ export default function WireAgentLanding() {
                   to={PRIMARY_CTA_PATH}
                   data-canonical-label={MARKETING_VOICE.primaryCta}
                   className="marketing-btn-primary wireline-theater__primary-action"
-                  onClick={trackPrimaryCta}
+                  onClick={() => trackPrimaryCta()}
                 >
                   <span>Start Free</span>
                   <ArrowRight className="size-4" aria-hidden="true" />
@@ -131,7 +146,8 @@ export default function WireAgentLanding() {
 
               <article
                 className="wireline-device"
-                aria-label="Animated preview of a Wireline voice agent answering a lead, qualifying the request, and booking the next step"
+                data-demo-active={demo.callActive ? "true" : undefined}
+                aria-label="Animated preview and protected live demo of a Wireline voice agent answering, qualifying, and booking the next step"
               >
                 <div className="wireline-device__bezel">
                   <div className="wireline-device__screen">
@@ -139,7 +155,7 @@ export default function WireAgentLanding() {
                       <span>Wireline</span>
                       <span className="wireline-device__live">
                         <span aria-hidden="true" />
-                        Active
+                        {demo.callActive ? "Live" : "Active"}
                       </span>
                     </div>
 
@@ -158,24 +174,44 @@ export default function WireAgentLanding() {
                         </span>
                       </div>
 
-                      <div className="wireline-device__scene-stack" aria-hidden="true">
-                        {THEATER_SCENES.map((scene) => (
-                          <div
-                            key={scene.task}
-                            className="wireline-device__scene"
-                            style={
-                              {
-                                "--wireline-scene-delay": scene.delay,
-                              } as CSSProperties
-                            }
-                          >
-                            <p className="wireline-device__agent-label">{scene.lane}</p>
-                            <p className="wireline-device__task">{scene.task}</p>
-                            <p className="wireline-device__queue">{scene.queue.join(" / ")}</p>
+                      {demo.callActive || demo.connecting ? (
+                        <div className="wireline-device__scene-stack" aria-live="polite">
+                          <div className="wireline-device__scene wireline-device__scene--live">
+                            <p className="wireline-device__agent-label">Live Demo</p>
+                            <p className="wireline-device__task">
+                              {demo.connecting ? "Connecting" : "Your Turn"}
+                            </p>
+                            <p className="wireline-device__queue">
+                              Ask me to answer, qualify, follow up, or book
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                      <p className="wireline-device__timer">00:24</p>
+                        </div>
+                      ) : (
+                        <div className="wireline-device__scene-stack" aria-hidden="true">
+                          {THEATER_SCENES.map((scene) => (
+                            <div
+                              key={scene.task}
+                              className="wireline-device__scene"
+                              style={
+                                {
+                                  "--wireline-scene-delay": scene.delay,
+                                } as CSSProperties
+                              }
+                            >
+                              <p className="wireline-device__agent-label">{scene.lane}</p>
+                              <p className="wireline-device__task">{scene.task}</p>
+                              <p className="wireline-device__queue">{scene.queue.join(" / ")}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="wireline-device__timer">
+                        {demo.callActive
+                          ? `≤ 00:${demo.maxDurationSeconds}`
+                          : demo.completed
+                            ? "Demo Complete"
+                            : "00:24"}
+                      </p>
                     </div>
 
                     <div className="wireline-device__waveform" aria-hidden="true">
@@ -193,8 +229,79 @@ export default function WireAgentLanding() {
                     </div>
 
                     <p className="wireline-device__transcript">
-                      I can help with that. What time works best?
+                      {demo.callActive
+                        ? demo.speakerActive
+                          ? "Agent speaking. Interrupt naturally at any time."
+                          : "Listening. Give me a real situation to handle."
+                        : demo.completed
+                          ? "That was live. Build yours free and train it for your work."
+                          : "I can help with that. What time works best?"}
                     </p>
+
+                    <div className="wireline-device__demo-control">
+                      {demo.completed ? (
+                        <Link
+                          to={PRIMARY_CTA_PATH}
+                          className="wireline-device__demo-button"
+                          onClick={() => trackPrimaryCta("landing_live_demo_complete")}
+                        >
+                          <span>Build Yours</span>
+                          <ArrowRight className="size-3.5" aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="wireline-device__demo-button"
+                          data-active={demo.callActive ? "true" : undefined}
+                          onClick={demo.toggle}
+                          disabled={demo.connecting}
+                          aria-busy={demo.connecting}
+                          aria-label={demoButtonLabel}
+                        >
+                          {demo.connecting ? (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                          ) : demo.callActive ? (
+                            <PhoneOff className="size-3.5" aria-hidden="true" />
+                          ) : (
+                            <Mic className="size-3.5" aria-hidden="true" />
+                          )}
+                          <span>{demoButtonLabel}</span>
+                        </button>
+                      )}
+
+                      <div className="wireline-device__demo-status" aria-live="polite">
+                        {demo.callActive ? (
+                          <>
+                            <Volume2 className="size-3" aria-hidden="true" />
+                            <span>{demo.speakerActive ? "Speaking" : "Listening"}</span>
+                            <span className="wireline-device__live-bars" aria-hidden="true">
+                              {[1, 2, 3].map((bar) => (
+                                <i
+                                  key={bar}
+                                  style={{
+                                    transform: `scaleY(${Math.max(
+                                      0.3,
+                                      Math.min(1, demo.volume * (1 + bar * 0.35)),
+                                    )})`,
+                                  }}
+                                />
+                              ))}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="size-3" aria-hidden="true" />
+                            <span>{demo.maxDurationSeconds} Sec Protected Demo</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {demo.error ? (
+                      <p className="wireline-device__demo-error" role="alert">
+                        {demo.error}
+                      </p>
+                    ) : null}
 
                     <div className="wireline-device__outcome">
                       <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -209,11 +316,6 @@ export default function WireAgentLanding() {
                         </li>
                       ))}
                     </ul>
-
-                    <Link to="/features" className="wireline-device__explore">
-                      See The System
-                      <ArrowRight className="size-3.5" aria-hidden="true" />
-                    </Link>
                   </div>
                 </div>
               </article>
@@ -266,6 +368,6 @@ export default function WireAgentLanding() {
 /*
  * Intentional landing exclusions retained as searchable migration notes:
  * "Hear It Live", Live Video, and PLAN_PREVIEW.map belong on /showcase,
- * /features, and /pricing, not in the zero-cost product theater above. Do not
- * restore a public tel: fallback or BrowserCallWidget here.
+ * /features, and /pricing. The landing uses a protected proxy instead of a
+ * public tel: fallback or BrowserCallWidget.
  */

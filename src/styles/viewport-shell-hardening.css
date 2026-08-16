@@ -1,0 +1,106 @@
+/* Authenticated viewport shell hardening.
+ *
+ * The app follows the same rule as the public surface: the browser window is
+ * the frame. Navigation and status chrome stay attached; exactly one content
+ * region scrolls. Dense work is allowed to scroll inside that frame, but no
+ * authenticated route may grow a second document scrollbar. */
+
+.wl-workspace-shell,
+.wl-workspace-frame,
+.wl-workspace-main {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+}
+
+.wl-workspace-shell,
+.wl-workspace-frame,
+.wl-workspace-main,
+.wl-workspace-content,
+.wl-workspace-content-inner,
+.wl-workspace-page {
+  min-width: 0;
+}
+
+.wl-workspace-content {
+  overscroll-behavior-y: contain;
+  scroll-padding-top: 1rem;
+  scroll-padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  touch-action: pan-y pinch-zoom;
+}
+
+@media (min-width: 1024px) {
+  .wl-workspace-content {
+    scrollbar-gutter: stable;
+    scroll-padding-bottom: 1.5rem;
+  }
+}
+
+/* Short laptops keep the full information architecture but tighten empty
+ * rhythm before shrinking type or clipping controls. */
+@media (min-width: 1024px) and (max-height: 760px) {
+  .wl-workspace-shell .wl-workspace-content {
+    padding-top: 0.45rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .wl-workspace-shell .wl-workspace-page {
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .wl-workspace-shell aside[aria-label="Workspace navigation"] {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .wl-workspace-shell .wl-rail-link {
+    min-height: 2.35rem;
+  }
+
+  .wl-workspace-shell .wl-overview [aria-label="Customer readiness checklist"] ol a {
+    min-height: 2.8rem;
+  }
+}
+
+/* On a landscape phone, labels remain in accessible names while the dock uses
+ * an icon-first, 44px instrument bar. This returns meaningful vertical room to
+ * the actual work without changing navigation depth. */
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 500px) {
+  .wl-workspace-shell > nav[aria-label="Workspace navigation"] {
+    padding-top: 0.2rem;
+    padding-bottom: max(0.2rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .wl-workspace-shell > nav[aria-label="Workspace navigation"] :is(a, button) {
+    min-height: 2.65rem;
+    padding-block: 0.2rem;
+  }
+
+  .wl-workspace-shell > nav[aria-label="Workspace navigation"] :is(a, button) > span {
+    display: none;
+  }
+
+  .wl-workspace-shell .wl-workspace-main {
+    padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .wl-workspace-content {
+    scroll-padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Browser zoom and large text may make a modal taller than its authored card.
+ * The dialog, not the page behind it, owns that overflow. */
+[data-slot="dialog-content"][data-presentation="modal"],
+.wl-ui-caps [role="dialog"] {
+  overscroll-behavior: contain;
+}
+
+[data-slot="dialog-content"][data-presentation="modal"] {
+  max-height: calc(
+    100dvh - max(1.5rem, env(safe-area-inset-top, 0px)) -
+      max(1.5rem, env(safe-area-inset-bottom, 0px))
+  );
+  overflow-y: auto;
+}

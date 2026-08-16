@@ -34,9 +34,9 @@ export default function PrecisionPublicHeader() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_98%,transparent)] backdrop-blur-xl">
+      <header className="precision-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_98%,transparent)] backdrop-blur-xl">
         <SkipToContentLink href="#main-content" />
-        <div className="wl-measure relative mx-auto flex h-16 items-center gap-4 px-5 sm:px-6 lg:px-8">
+        <div className="wl-measure relative mx-auto flex h-14 items-center gap-4 px-5 sm:px-6 lg:h-16 lg:px-8">
           <Link
             to="/"
             className="flex shrink-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -96,7 +96,7 @@ export default function PrecisionPublicHeader() {
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        overlayClassName="!top-16 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
+        overlayClassName="!top-14 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm lg:!top-16"
       >
         <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
         <DialogDescription className="sr-only">

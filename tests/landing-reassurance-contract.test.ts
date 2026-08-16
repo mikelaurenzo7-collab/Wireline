@@ -7,6 +7,8 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
   const theater = read("src/styles/landing-product-theater.css");
+  const demo = read("src/styles/landing-product-theater-demo.css");
+  const viewport = read("src/styles/viewport-final-polish.css");
 
   it("keeps the homepage to one conversion scene", () => {
     expect(landing.match(/marketing-section marketing-section--screen/g)).toHaveLength(1);
@@ -14,13 +16,13 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("On The Line");
     expect(landing).toContain("Start Free");
     expect(landing).toContain("Explore Product");
-    expect(landing).not.toContain("MODE_OPTIONS");
     expect(landing).not.toContain("STRIPE_PLANS");
   });
 
-  it("does not spend provider runtime on anonymous landing traffic", () => {
-    expect(landing).not.toContain('import BrowserCallWidget from "./BrowserCallWidget"');
-    expect(landing).not.toContain("<BrowserCallWidget");
+  it("offers bounded live proof without exposing a demo number", () => {
+    expect(landing).toContain("useProtectedPublicDemo");
+    expect(landing).toContain("Talk Live");
+    expect(landing).toContain("Protected Demo");
     expect(landing).not.toContain("LANDING_PUBLIC_DEMO_AGENTS");
     expect(landing).not.toContain("href={`tel:");
     expect(landing).not.toContain("Runtime Balance");
@@ -30,11 +32,13 @@ describe("home landing launch clarity", () => {
   it("uses a branded, accessible, reduced-motion-safe product preview", () => {
     expect(landing).toContain("<WirelineMark");
     expect(landing).toContain("OUTCOME_SIGNALS.map");
-    expect(landing).toContain('aria-label="Animated preview');
+    expect(landing).toContain('aria-label="Animated preview and protected live demo');
     expect(theater).toContain("min-height: calc(");
     expect(theater).toContain("100dvh");
     expect(theater).toContain("prefers-reduced-motion");
-    expect(theater).toContain("animation: none !important");
+    expect(demo).toContain("prefers-reduced-motion");
+    expect(viewport).toContain("orientation: landscape");
+    expect(viewport).toContain("safe-area-inset-bottom");
   });
 
   it("keeps title and control copy in the cased tiers without sentence punctuation", () => {
