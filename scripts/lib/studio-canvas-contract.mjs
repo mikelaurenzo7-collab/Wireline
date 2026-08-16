@@ -104,7 +104,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Start with one job\./ },
+    { id: "empty-state", pattern: /Start with one job/ },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [

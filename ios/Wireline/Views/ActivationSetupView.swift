@@ -8,7 +8,7 @@ struct ActivationSetupView: View {
     var body: some View {
         List {
             Section {
-                row("mic.fill", "Siri", "Say “Ask Wireline”, or “Ask Wireline what needs my attention.” Works the moment the app is installed — no setup.")
+                row("mic.fill", "Siri", "Say “Ask Wireline”, or “Ask Wireline what needs my attention.” Works the moment the app is installed. No extra setup.")
             } header: { Text("Hands-free") }
 
             Section {

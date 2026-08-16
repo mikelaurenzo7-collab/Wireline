@@ -150,7 +150,7 @@ export function ContactPage() {
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
           <h1 className="wl-stitch-marketing-hero text-balance">
-            Get the right kind of call coverage.
+            Get the right kind of call coverage
           </h1>
         </div>
 

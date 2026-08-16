@@ -187,7 +187,7 @@ function DemandReadinessCard({
   const state = !hasLiveLine
     ? {
         eyebrow: "Phone line",
-        title: "Connect a phone line.",
+        title: "Connect a phone line",
         detail: undefined,
         primaryHref: "/settings/phone",
         primaryLabel: "Connect phone",
@@ -197,8 +197,8 @@ function DemandReadinessCard({
     : !hasConversationHistory
       ? {
           eyebrow: "Line ready",
-          title: "Your line is live. Put it where customers already call.",
-          detail: undefined,
+          title: "Your line is live",
+          detail: "Put it where customers already call.",
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
@@ -207,7 +207,7 @@ function DemandReadinessCard({
       : activeWork > 0
         ? {
             eyebrow: "Action required",
-            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} your attention.`,
+            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} attention`,
             detail: "Review approvals and human handoffs while the context is fresh.",
             primaryHref: "/approvals",
             primaryLabel: "Review work",
@@ -216,11 +216,11 @@ function DemandReadinessCard({
           }
         : {
             eyebrow: conversationsToday > 0 ? "Customer demand today" : "Line ready",
-            title:
+            title: conversationsToday > 0 ? "Handling conversations" : "No new conversations today",
+            detail:
               conversationsToday > 0
-                ? "Wireline is handling conversations and recording what happened."
-                : "No new conversations today. Your customer line is still ready.",
-            detail: undefined,
+                ? "Outcomes are being recorded as they happen."
+                : "Your customer line is still ready.",
             primaryHref: "/inbox",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,

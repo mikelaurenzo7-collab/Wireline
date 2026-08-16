@@ -99,13 +99,13 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Warm-transfer escalation",
-    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default - explicit opt-in.",
+    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Per-agent escalation routing",
-    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent - escalation phone (SMS) and escalation email - override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
+    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent, escalation phone (SMS) and escalation email, override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
   },
   {
     date: "Jan 27, 2026",

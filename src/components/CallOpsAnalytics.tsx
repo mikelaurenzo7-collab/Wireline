@@ -61,7 +61,7 @@ export default function CallOpsAnalytics() {
   if (analytics.totalCalls === 0) {
     return (
       <EmptyState
-        title="No call history yet."
+        title="No call history yet"
         description="Metrics will appear when calls are logged."
         density="compact"
         withHalo={false}

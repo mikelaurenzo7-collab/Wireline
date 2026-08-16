@@ -96,7 +96,7 @@ export function SupportPage() {
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
           <h1 className="wl-stitch-marketing-hero text-balance">
-            Help with your agent, without the runaround.
+            Help with your agent, without the runaround
           </h1>
         </div>
 

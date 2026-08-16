@@ -109,7 +109,7 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
-    expect(onboardingFlow).toContain("Opening your first ${language.singular}");
+    expect(onboardingFlow).toContain("language.createCta");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
   });

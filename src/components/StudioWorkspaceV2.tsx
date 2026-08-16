@@ -62,7 +62,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
     <EmptyState
       fill
       icon={Sparkles}
-      title="Start with one job."
+      title="Start with one job"
       description={
         posture === "business"
           ? "Give it one customer job. You can change everything later."

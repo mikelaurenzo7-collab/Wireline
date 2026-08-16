@@ -78,7 +78,7 @@ struct SettingsView: View {
             try await WirelineAPI.shared.setHandoffPhone(trimmed.isEmpty ? nil : trimmed)
             savedNote = "Saved."
         } catch {
-            savedNote = "Couldn't save — check the number format."
+            savedNote = "Couldn't save. Check the number format."
         }
     }
 
@@ -92,7 +92,7 @@ struct SettingsView: View {
             deleteNote = "Deletion queued."
             auth.signOut()
         } catch {
-            deleteNote = "Couldn't queue deletion — try again."
+            deleteNote = "Couldn't queue deletion. Try again."
         }
     }
 }

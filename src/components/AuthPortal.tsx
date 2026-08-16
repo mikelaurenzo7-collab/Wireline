@@ -669,7 +669,7 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={`${pageTitle} - Wireline`}
+        title={pageTitle}
         description={pageDescription}
         path={isSignUp ? "/signup" : "/signin"}
         noIndex

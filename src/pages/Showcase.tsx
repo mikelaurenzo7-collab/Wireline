@@ -28,11 +28,6 @@ export default function Showcase() {
         <MarketingHero
           title="Hear what your customer hears"
           primaryAction={{ label: "Build Your Voice Agent", to: PERSONAL_SIGNUP }}
-          secondaryAction={{
-            label: "Call a Demo Line",
-            to: "#demo-lines",
-            tone: "secondary",
-          }}
           visual={
             <div className="flex flex-col gap-3 text-center">
               <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
@@ -60,10 +55,7 @@ export default function Showcase() {
         />
 
         <section id="demo-lines" className="mt-3">
-          <p className="wl-eyebrow mx-auto text-center text-muted-foreground">
-            Or call a live demo line
-          </p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <a
                 key={agent.tel}

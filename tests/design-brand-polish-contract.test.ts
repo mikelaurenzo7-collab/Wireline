@@ -104,7 +104,7 @@ describe("E2E design and brand polish", () => {
     expect(header).toContain("text-sm font-medium");
     expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
     expect(header).not.toContain("font-semibold uppercase");
-    expect(sticky).toContain('label = "Build Your Agent"');
+    expect(sticky).toContain("MARKETING_VOICE.primaryCta");
     expect(sticky).toContain('secondaryLabel = "Hear It Live"');
     expect(sticky).toContain("min-h-[48px]");
     expect(footer).toContain("min-h-11 items-center");

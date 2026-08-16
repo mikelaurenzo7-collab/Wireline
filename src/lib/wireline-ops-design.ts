@@ -44,11 +44,11 @@ export const OPS_PULSE_METRICS = {
 } as const;
 
 export const OPS_COPY = {
-  floorQuiet: "No live calls - active conversations appear here.",
+  floorQuiet: "No live calls. Active conversations appear here.",
   floorLoading: "Loading Active calls",
   floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
-  intelEmpty: "All clear, no Account Holder approvals waiting.",
+  intelEmpty: "All clear. No approvals waiting.",
   telemetryTitle: "Agent activity",
   telemetryActive: "Streaming",
   growthTitle: "Autonomous outreach",

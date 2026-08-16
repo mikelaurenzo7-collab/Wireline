@@ -30,7 +30,7 @@ const DIFFERENCES = [
   {
     icon: Clock3,
     title: "A Clear Next Step",
-    copy: "A clear next step: booked, handed off, or logged.",
+    copy: "Booked, handed off, or logged.",
   },
   {
     icon: Brain,

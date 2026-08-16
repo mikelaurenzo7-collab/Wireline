@@ -425,7 +425,7 @@ export default function Pricing() {
                   {SHARED_PAID_FEATURES.join(". ")}
                 </p>
                 <h2 className="wl-public-section-heading mx-auto text-center">
-                  One voice agent. No seat tax. Clear costs
+                  One voice agent, no seat tax, clear costs
                 </h2>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (

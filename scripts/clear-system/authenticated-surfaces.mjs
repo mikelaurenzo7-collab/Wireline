@@ -157,7 +157,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/OnboardingFlow.tsx",
     onboardingFlow,
-    /Opening your first \$\{language\.singular\}/,
+    /language\.createCta/,
     "legacy onboarding must hand directly into create",
   );
   mustExclude(

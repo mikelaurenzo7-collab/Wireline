@@ -79,7 +79,7 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps growth, service, and all purpose positioning concrete", () => {
-    expect(OUTBOUND_WEDGE.headline).toBe("A voice agent that moves growth work forward.");
+    expect(OUTBOUND_WEDGE.headline).toBe("A voice agent that moves growth work forward");
     for (const verb of ["researches", "calls", "texts", "emails", "books", "logs proof"]) {
       expect(OUTBOUND_WEDGE.subline).toContain(verb);
     }

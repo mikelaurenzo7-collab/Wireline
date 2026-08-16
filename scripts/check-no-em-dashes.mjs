@@ -9,12 +9,12 @@
  * It reads source rather than a browser: the failure it guards is textual, and
  * the repo's convention is that a textual invariant gets a source-reading
  * contract that names the owning file. It strips comments first (dashes are
- * welcome in the prose that explains the code — only shipped copy is governed),
- * then flags any U+2014 / U+2013 / U+2015 that survives inside a string or JSX
- * text node.
+ * welcome in the prose that explains the code; only shipped copy is governed),
+ * then flags any U+2014 / U+2013 / U+2015 that survives inside a string, JSX
+ * text node, HTML text, or native string literal.
  *
- * A dash that is genuinely structural — a delimiter the code splits or joins on
- * — is not copy. Those are enumerated in ALLOWED with a reason, so the guard
+ * A dash that is genuinely structural, a delimiter the code splits or joins on,
+ * is not copy. Those are enumerated in ALLOWED with a reason, so the guard
  * stays honest instead of being switched off.
  */
 import { readFileSync } from "node:fs";
@@ -23,7 +23,6 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const DASHES = /[—–―]/;
-const DASHES_G = /[—–―]/g;
 
 /**
  * Structural dashes that are parsed, not read. Each entry is a substring that
@@ -40,20 +39,36 @@ const ALLOWED = [
   },
 ];
 
+const GLOBS = [
+  "src/**/*.ts",
+  "src/**/*.tsx",
+  "apps/browser-extension/**/*.json",
+  "apps/browser-extension/**/*.html",
+  "apps/browser-extension/**/*.js",
+  "public/**/*.html",
+  "ios/**/*.swift",
+  "android/**/*.kt",
+  "chatgpt-app-submission.json",
+];
+
 function stripComments(src) {
-  let out = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")); // block comments -> spaces (keep line numbers)
+  let out = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
+  out = out.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, " "));
   out = out
     .split("\n")
     .map((line) => {
-      if (/^\s*\/\//.test(line)) return ""; // whole-line // comment
-      if (/^\s*\*/.test(line)) return ""; // JSDoc continuation
-      return line.replace(/([^:"'`])\/\/.*$/, "$1"); // trailing // comment (rough, skips URLs)
+      if (/^\s*\/\//.test(line)) return "";
+      if (/^\s*\*/.test(line)) return "";
+      return line.replace(/([^:"'`])\/\/.*$/, "$1");
     })
     .join("\n");
   return out;
 }
 
-const files = execSync("git ls-files 'src/**/*.ts' 'src/**/*.tsx'", { cwd: root, encoding: "utf8" })
+const files = execSync(`git ls-files ${GLOBS.map((glob) => `'${glob}'`).join(" ")}`, {
+  cwd: root,
+  encoding: "utf8",
+})
   .split("\n")
   .filter(Boolean);
 

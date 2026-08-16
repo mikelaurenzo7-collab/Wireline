@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { emitProductEvent } from "../../lib/product-event-client";
+import { MARKETING_VOICE } from "../../lib/product-copy";
 import { cn } from "../../lib/utils";
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
 
 export default function MarketingStickyCta({
   href = "/signup?plan=personal",
-  label = "Build Your Agent",
+  label = MARKETING_VOICE.primaryCta,
   secondaryHref = "/showcase",
   secondaryLabel = "Hear It Live",
   className,

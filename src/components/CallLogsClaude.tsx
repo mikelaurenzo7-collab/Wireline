@@ -600,7 +600,7 @@ function IntelTab({
   if (!items.length) {
     return (
       <EmptyState
-        title="No follow-ups queued."
+        title="No follow-ups queued"
         description="High-value and callback-tagged calls land here."
         density="compact"
         withHalo={false}
@@ -669,7 +669,7 @@ function TriageTab({
   if (!items.length) {
     return (
       <EmptyState
-        title="Nothing to triage."
+        title="Nothing to triage"
         description="Escalations and negative-sentiment calls surface here."
         density="compact"
         withHalo={false}

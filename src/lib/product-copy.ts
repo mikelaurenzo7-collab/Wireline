@@ -113,7 +113,7 @@ export const AGENT_NUMBER_PROMISE =
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "A voice agent that moves growth work forward.",
+  headline: "A voice agent that moves growth work forward",
   subline:
     "Start with one capable voice agent that researches leads, calls, texts, emails, sells, books, follows up, and logs proof. Add specialists only when volume or workflow complexity calls for them.",
   lanes: [

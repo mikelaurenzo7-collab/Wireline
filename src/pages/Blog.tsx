@@ -9,17 +9,17 @@ const SITE_URL = "https://trywireline.com";
 const NOTES = [
   {
     icon: PhoneCall,
-    title: "Start with one repeatable call.",
+    title: "Start with one repeatable call",
     copy: "The best first job is clear and common: check a refill, confirm an appointment, ask about an order, or get through a support queue.",
   },
   {
     icon: MessageSquare,
-    title: "Write down the boundaries.",
+    title: "Write down the boundaries",
     copy: "Tell your agent what it can say, what it should not do, and when it should stop and ask you to take over.",
   },
   {
     icon: Check,
-    title: "Ask for the useful result.",
+    title: "Ask for the useful result",
     copy: "A good handoff ends with a plain answer and the next step, not a long transcript you have to decode.",
   },
 ] as const;
@@ -82,7 +82,7 @@ export default function Blog() {
       <section className="marketing-section mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-3xl">
           <h1 className="wl-stitch-marketing-hero text-balance">
-            Practical notes for getting time back.
+            Practical notes for getting time back
           </h1>
         </div>
       </section>
@@ -113,7 +113,7 @@ export default function Blog() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-              Teach an agent the call you keep putting off.
+              Teach an agent the call you keep putting off
             </h2>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="primary" size="lg">
