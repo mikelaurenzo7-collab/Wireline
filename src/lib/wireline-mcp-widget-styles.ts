@@ -1,6 +1,7 @@
 /**
  * Canonical Wireline dark styling for ChatGPT MCP HTML widgets.
- * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
+ * Values mirror design-tokens/wireline.tokens.json. Keep them synchronized via
+ * build-design-tokens.
  */
 export const WIRELINE_MCP_WIDGET_TOKENS = {
   canvas: "#0A0A0E",
@@ -37,6 +38,7 @@ export function buildWirelineMcpWidgetCss(): string {
   --wl-shadow-card: ${t.shadowCard};
   --wl-font-display: ${t.fontDisplay};
   --wl-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-synthesis: none;
 }
 * { box-sizing: border-box; }
 body {
@@ -44,6 +46,9 @@ body {
   background: transparent;
   color: var(--wl-text);
   font-family: var(--wl-font-ui);
+  text-rendering: auto;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 #app { max-width: 680px; margin: 0 auto; padding: 14px; }
 .card {
@@ -55,8 +60,8 @@ body {
 }
 .eyebrow {
   font-family: var(--wl-font-display);
-  font-size: 11px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--wl-muted);
@@ -72,7 +77,8 @@ p { margin: 0; line-height: 1.45; color: var(--wl-muted); }
 }
 .meta strong {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--wl-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -90,7 +96,7 @@ button, a.button {
   background: var(--wl-surface);
   color: var(--wl-text);
   font: inherit;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   min-height: 44px;
