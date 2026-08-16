@@ -48,6 +48,27 @@ export function hasWirelineDescriptor(value) {
   return /^WIRELINE(?:$|[\s*-])/.test(normalized);
 }
 
+/**
+ * Stripe uses the static payment descriptor as the card prefix when an
+ * explicit card prefix is absent, truncating it to 10 characters. Model that
+ * provider contract directly so launch certification does not reject a valid
+ * account merely because the optional override is null.
+ */
+export function effectiveStripeCardStatementDescriptor(account) {
+  const explicit = normalizeText(
+    account?.settings?.card_payments?.statement_descriptor_prefix,
+  );
+  if (explicit) {
+    return { value: explicit, source: "explicit" };
+  }
+
+  const paymentDescriptor = normalizeText(account?.settings?.payments?.statement_descriptor);
+  return {
+    value: paymentDescriptor.slice(0, 10),
+    source: paymentDescriptor ? "payment_statement_descriptor_fallback" : "missing",
+  };
+}
+
 function finding(level, message, metadata = {}) {
   return { level, message, metadata };
 }
@@ -64,9 +85,7 @@ export function stripeAccountIdentityFindings(account) {
   const profileName = normalizeText(account?.business_profile?.name);
   const profileUrl = normalizeText(account?.business_profile?.url);
   const profileIdentity = publicUrlIdentity(profileUrl);
-  const cardDescriptor = normalizeText(
-    account?.settings?.card_payments?.statement_descriptor_prefix,
-  );
+  const cardDescriptor = effectiveStripeCardStatementDescriptor(account);
   const paymentDescriptor = normalizeText(account?.settings?.payments?.statement_descriptor);
 
   if (normalizedBrand(profileName) !== normalizedBrand(STRIPE_PUBLIC_BRAND)) {
@@ -109,11 +128,12 @@ export function stripeAccountIdentityFindings(account) {
     );
   }
 
-  if (!hasWirelineDescriptor(cardDescriptor)) {
+  if (!hasWirelineDescriptor(cardDescriptor.value)) {
     findings.push(
       finding("error", "Stripe card statement descriptor prefix is not Wireline-branded.", {
         expected_prefix: STRIPE_STATEMENT_DESCRIPTOR_PREFIX,
-        actual: cardDescriptor || null,
+        actual: cardDescriptor.value || null,
+        source: cardDescriptor.source,
       }),
     );
   }
@@ -160,12 +180,17 @@ export function stripeAccountIdentityFindings(account) {
 
 export function stripeAccountIdentitySummary(account) {
   const profileIdentity = publicUrlIdentity(account?.business_profile?.url);
+  const rawCardDescriptor = normalizeText(
+    account?.settings?.card_payments?.statement_descriptor_prefix,
+  );
+  const effectiveCardDescriptor = effectiveStripeCardStatementDescriptor(account);
   return {
     business_profile_name: normalizeText(account?.business_profile?.name) || null,
     business_profile_host: profileIdentity.hostname || null,
     business_profile_protocol: profileIdentity.protocol || null,
-    card_statement_descriptor_prefix:
-      normalizeText(account?.settings?.card_payments?.statement_descriptor_prefix) || null,
+    card_statement_descriptor_prefix: rawCardDescriptor || null,
+    effective_card_statement_descriptor_prefix: effectiveCardDescriptor.value || null,
+    card_statement_descriptor_prefix_source: effectiveCardDescriptor.source,
     payment_statement_descriptor:
       normalizeText(account?.settings?.payments?.statement_descriptor) || null,
     branding_logo_configured: Boolean(account?.settings?.branding?.logo),
