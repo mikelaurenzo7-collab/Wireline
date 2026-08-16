@@ -227,7 +227,7 @@ export default function BrowserCallWidget({
               title={`${agentName} agent avatar`}
             />
             <p className="landing-phone__name wl-preserve-case">{agentName}</p>
-            <p className="landing-phone__role">Voice Agent</p>
+            <p className="sr-only landing-phone__role">Voice Agent</p>
             <div
               className={cn("landing-phone__wave", !(speaking || callActive) && "is-quiet")}
               aria-hidden="true"

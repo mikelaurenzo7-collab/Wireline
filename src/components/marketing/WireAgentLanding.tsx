@@ -75,17 +75,19 @@ export default function WireAgentLanding() {
             <h1 aria-label={MARKETING_VOICE.headline} className="landing-stage__title">
               {MARKETING_VOICE.headline}
             </h1>
-            <h2 className="sr-only">How Wireline works</h2>
-            <ol className="landing-stage__loop">
-              {HERO_LOOP.map((step, index) => (
-                <li
-                  key={step}
-                  className={index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined}
-                >
-                  <span className="wl-overline text-foreground">{step}</span>
-                </li>
-              ))}
-            </ol>
+            <div className="sr-only">
+              <h2>How Wireline works</h2>
+              <ol className="landing-stage__loop">
+                {HERO_LOOP.map((step, index) => (
+                  <li
+                    key={step}
+                    className={index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined}
+                  >
+                    <span className="wl-overline text-foreground">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
 
           <div id="hear-a-demo" className="landing-stage__device">
@@ -134,35 +136,34 @@ export default function WireAgentLanding() {
               >
                 {MARKETING_VOICE.primaryCta}
               </Link>
-              <Link
-                to="/pricing"
-                className="marketing-btn-secondary landing-stage__cta min-h-11 px-5 text-sm font-semibold"
-              >
+              <Link to="/pricing" className="landing-stage__plans min-h-11">
                 See Plans
               </Link>
             </div>
 
-            <nav className="landing-stage__lanes" aria-label="Agent work lane">
-              {AUDIENCES.map((audience) => (
-                <Link
-                  key={audience.key}
-                  to={audience.href}
-                  onClick={() => selectAudience(audience.key)}
-                  className="landing-stage__lane"
-                >
-                  {audience.label}
-                  <span className="sr-only">{audience.uses.join(", ")}</span>
-                </Link>
-              ))}
-            </nav>
+            <div className="landing-stage__meta">
+              <nav className="landing-stage__lanes" aria-label="Agent work lane">
+                {AUDIENCES.map((audience) => (
+                  <Link
+                    key={audience.key}
+                    to={audience.href}
+                    onClick={() => selectAudience(audience.key)}
+                    className="landing-stage__lane"
+                  >
+                    {audience.label}
+                    <span className="sr-only">{audience.uses.join(", ")}</span>
+                  </Link>
+                ))}
+              </nav>
 
-            <ul className="landing-stage__channels" aria-label="Agent channels">
-              {CHANNELS.map((label) => (
-                <li key={label} className="landing-stage__channel">
-                  {label}
-                </li>
-              ))}
-            </ul>
+              <ul className="landing-stage__channels" aria-label="Agent channels">
+                {CHANNELS.map((label) => (
+                  <li key={label} className="landing-stage__channel">
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             <p className="landing-stage__note">
               Start free. Live from ${STARTER_PRICE}/mo.

@@ -74,6 +74,7 @@ describe("E2E design and brand polish", () => {
     // them unless the terminal layer names them as labels.
     expect(polish).toContain(".landing-stage__channel");
     expect(polish).toContain(".landing-phone__cta");
+    expect(polish).toContain(".landing-stage__plans");
     expect(polish).toContain(".wl-channel-chip");
     // Read-as-written exceptions: long-form legal prose and customer-authored
     // words are never rewritten by the case system.

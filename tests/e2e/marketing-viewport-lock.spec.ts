@@ -83,8 +83,10 @@ test("home hides the chrome bar and does not scroll on a phone", async ({ page }
   await openCanvas(page, "/");
   await expect(page.locator(".landing-phone")).toBeVisible();
   await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
+  await expect(page.locator(".landing-stage__loop")).toBeHidden();
   await expect(page.locator(".landing-stage__loop")).toContainText("Launch");
   await expect(page.locator(".landing-stage__loop")).not.toContainText("Improve");
+  await expect(page.locator(".landing-phone__role")).toBeHidden();
   const metrics = await viewportMetrics(page);
   expect(metrics.docOverflow, "home document scrollbar on phone").toBeLessThanOrEqual(2);
   expect(metrics.bodyOverflow, "home body scrollbar on phone").toBeLessThanOrEqual(2);

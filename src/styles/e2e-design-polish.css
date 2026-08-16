@@ -51,6 +51,7 @@
     .landing-phone__cta,
     .landing-stage__channel,
     .landing-stage__lane,
+    .landing-stage__plans,
     .wl-channel-chip
   ) {
   font-family: var(--wireline-font-family-mono);
