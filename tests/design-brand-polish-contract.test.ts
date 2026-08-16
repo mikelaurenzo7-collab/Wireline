@@ -70,6 +70,11 @@ describe("E2E design and brand polish", () => {
       `stylesheets still dressing the removed hero subhead:\n${dressers.join("\n")}`,
     ).toEqual([]);
     expect(polish).toContain("text-transform: uppercase");
+    // Call-stage labels are `p`/`li` nodes, so the body rule would sentence-case
+    // them unless the terminal layer names them as labels.
+    expect(polish).toContain(".landing-stage__channel");
+    expect(polish).toContain(".landing-phone__cta");
+    expect(polish).toContain(".wl-channel-chip");
     // Read-as-written exceptions: long-form legal prose and customer-authored
     // words are never rewritten by the case system.
     expect(polish).toContain(".marketing-surface .prose");

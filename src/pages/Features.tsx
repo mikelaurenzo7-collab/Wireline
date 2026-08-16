@@ -122,7 +122,7 @@ export default function Features() {
               {CHANNEL_CAPABILITIES.map(({ icon: Icon, title }) => (
                 <li
                   key={title}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
+                  className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground"
                 >
                   <Icon size={15} className="text-primary" aria-hidden="true" />
                   {title}

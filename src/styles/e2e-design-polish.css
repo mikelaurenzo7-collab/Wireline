@@ -42,6 +42,23 @@
   line-height: 1.6;
 }
 
+/* Labels authored as `p` / `li` still have to outrank the body rule. The
+ * call stage and channel chips are controls, not supporting copy. */
+.marketing-surface
+  :is(
+    .landing-phone__status,
+    .landing-phone__role,
+    .landing-phone__cta,
+    .landing-stage__channel,
+    .landing-stage__lane,
+    .wl-channel-chip
+  ) {
+  font-family: var(--wireline-font-family-mono);
+  letter-spacing: var(--wl-caps-label-tracking);
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
 /* Read-as-written. The uppercase rules above are intentionally kept to a single
  * class of specificity so these resets win by specificity or source order:
  *   - long-form legal prose (Tailwind .prose) reads normally, where dense text
