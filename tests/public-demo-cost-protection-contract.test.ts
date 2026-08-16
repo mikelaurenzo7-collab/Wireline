@@ -24,9 +24,7 @@ describe("public browser demo cost protection", () => {
   });
 
   it("keeps the compatibility route metadata-only", () => {
-    const compatibilityStart = routes.indexOf(
-      'router.get("/api/public/assistant/:agentName"',
-    );
+    const compatibilityStart = routes.indexOf('router.get("/api/public/assistant/:agentName"');
     const compatibilityEnd = routes.indexOf(
       'router.post("/api/public/demo-session"',
       compatibilityStart,
@@ -82,6 +80,6 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");
-    expect(widget).toContain("no retained call artifacts");
+    expect(widget).toContain("No retained call artifacts");
   });
 });

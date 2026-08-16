@@ -13,7 +13,7 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(logs).toContain("loadFailed={Boolean(error)}");
     expect(logs).toContain("if (loadFailed && !calls.length) return null");
     expect(logs).toContain("if (loadFailed && !items.length) return null");
-    expect(logs).toContain('{metricsLoading || metricsError ? "—" : kpi.value}');
+    expect(logs).toContain('{metricsLoading || metricsError ? "N/A" : kpi.value}');
   });
 
   it("surfaces Webhooks and Intake Keys load failures instead of empty success", () => {

@@ -353,7 +353,7 @@ async function rerankSourcesWithPerplexityEmbeddings(
   timeoutMs: number,
 ): Promise<PerplexitySource[] | null> {
   const texts = sources.map((source) =>
-    [source.title, source.snippet, source.uri].filter(Boolean).join(" — ").slice(0, 1_500),
+    [source.title, source.snippet, source.uri].filter(Boolean).join(" · ").slice(0, 1_500),
   );
   const scores = await rerankTextsWithPerplexityEmbeddings(query, texts, timeoutMs);
   if (!scores || scores.length !== sources.length) return null;

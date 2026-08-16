@@ -286,7 +286,7 @@ describe("the stage spends the allowance honestly", () => {
     expect(micAt).toBeLessThan(sessionAt);
     // The old gate skipped the default engine entirely.
     expect(start).not.toContain("if (voiceEngine !== DEFAULT_ENGINE) {");
-    expect(page).toContain("no session minutes were used");
+    expect(page).toContain("No session minutes were used");
   });
 
   it("settles the reservation when the stage closes and when a session ends itself", () => {

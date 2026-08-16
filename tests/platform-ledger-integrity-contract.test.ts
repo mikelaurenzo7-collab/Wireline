@@ -57,7 +57,7 @@ describe("platform ledger migration delivery", () => {
     expect(deletion).toContain(
       "ON CONFLICT (former_user_id, phone_number) WHERE status = 'pending'",
     );
-    expect(deletion).toContain("orphan carrier handoff failed — deferring account purge");
+    expect(deletion).toContain("orphan carrier handoff failed, deferring account purge");
     expect(deletion).toContain("throw ledgerErr");
 
     // Pin the untouched deletion engine and grace-window exports. This prevents
@@ -69,9 +69,7 @@ describe("platform ledger migration delivery", () => {
   });
 
   it("enforces Twilio consent MessageSid idempotency in Postgres", () => {
-    const migration = read(
-      "drizzle/migrations/0117_twilio_consent_message_sid_uniqueness.sql",
-    );
+    const migration = read("drizzle/migrations/0117_twilio_consent_message_sid_uniqueness.sql");
     expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS");
     expect(migration).toContain("uq_consent_log_twilio_message_sid");
     expect(migration).toContain("metadata ->> 'twilio_message_sid'");
@@ -86,7 +84,9 @@ describe("platform ledger migration delivery", () => {
     expect(idempotency).toContain("drizzle.transaction(async (tx) =>");
     expect(idempotency).not.toContain("async (tx: typeof drizzle)");
     expect(serverContext).toContain('export const drizzle: Omit<typeof db, "$client"> = db;');
-    expect(serverContext).toContain("Code that genuinely needs the raw database instance can import `db`");
+    expect(serverContext).toContain(
+      "Code that genuinely needs the raw database instance can import `db`",
+    );
     expect(serverContext).toContain("export const { requirePermission, requireRole }");
     expect(serverContext).toContain("export const quotaTracker = new QuotaTracker");
     expect(actionEngine).not.toContain(

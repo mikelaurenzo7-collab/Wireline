@@ -106,10 +106,10 @@ async function executeStep(
         const temporal =
           gate.reason === "outside_permitted_calling_hours" ||
           gate.reason === "self_recent_call_scheduled";
-        return { ok: false, result: `skipped — ${gate.reason}`, defer: temporal };
+        return { ok: false, result: `skipped: ${gate.reason}`, defer: temporal };
       }
     } catch (err: any) {
-      log.warn("cadence outbound compliance gate failed — failing closed", {
+      log.warn("cadence outbound compliance gate failed, failing closed", {
         error: err?.message,
       });
       return { ok: false, result: "compliance gate failed (fail-closed)", retryable: true };
@@ -133,7 +133,7 @@ async function executeStep(
       agentId,
       customerName: lead.customerName,
       customerNumber: lead.customerNumber,
-      context: `Cadence "${cadence.name}" — step type call`,
+      context: `Cadence "${cadence.name}", step type call`,
       callPurpose: "marketing_or_sales",
     });
     if (res.ok) {
@@ -184,7 +184,7 @@ async function executeStep(
 
   if (step.type === "sms") {
     if (!lead.customerNumber) return { ok: false, result: "no phone number on lead" };
-    const body = applyVars(step.template || `Hi {{name}}, checking back in — Wireline`, lead);
+    const body = applyVars(step.template || `Hi {{name}}, checking back in. Wireline`, lead);
     const res = await sendTenantMessage(cadence.userId, {
       to: lead.customerNumber,
       body,
@@ -200,14 +200,14 @@ async function executeStep(
 
   if (step.type === "email") {
     if (!lead.email) return { ok: false, result: "no email on lead" };
-    const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up — Wireline`, lead);
+    const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up. Wireline`, lead);
     const integ = new IntegrationService(cadence.userId);
     // Cadence email is recurring commercial mail: honor the suppression list
     // and carry an unsubscribe affordance on every transport, including the
     // tenant's own connected mailbox.
     const ok = await integ.sendEmail({
       to: lead.email,
-      subject: `Following up — ${cadence.name}`,
+      subject: `Following up: ${cadence.name}`,
       body,
       marketing: true,
     });
@@ -352,7 +352,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
           .set({
             status: "paused",
             nextDueAt: null,
-            lastResult: "account deletion in progress — provider step cancelled",
+            lastResult: "account deletion in progress, provider step cancelled",
             updatedAt: now,
           })
           .where(eq(schema.cadenceRuns.id, run.id));

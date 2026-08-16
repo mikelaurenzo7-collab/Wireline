@@ -26,10 +26,10 @@ describe("number provisioning tells the tenant something true and nothing intern
 
   it("still records the real cause for the operator", () => {
     expect(source).toContain(
-      'log.error("number provisioning refused — VAPI_PRIVATE_KEY is not set"',
+      'log.error("number provisioning refused, VAPI_PRIVATE_KEY is not set"',
     );
     expect(source).toContain(
-      'log.error("number provisioning refused — auto-provisioning is disabled"',
+      'log.error("number provisioning refused, auto-provisioning is disabled"',
     );
     expect(source).toContain('log.error("releaseTenantNumber failed"');
     expect(source).toContain('log.error("provisionTenantNumber failed"');

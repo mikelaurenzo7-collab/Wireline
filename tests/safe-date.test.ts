@@ -3,14 +3,14 @@ import { formatDate, formatRelative, msSinceNow, safeDate } from "../src/lib/saf
 
 describe("safeDate / formatDate", () => {
   it("returns the fallback for null / empty / unparsable input (never throws)", () => {
-    expect(formatDate(null)).toBe("—");
-    expect(formatDate("")).toBe("—");
-    expect(formatDate("   ")).toBe("—");
-    expect(formatDate("not a date")).toBe("—");
+    expect(formatDate(null)).toBe("N/A");
+    expect(formatDate("")).toBe("N/A");
+    expect(formatDate("   ")).toBe("N/A");
+    expect(formatDate("not a date")).toBe("N/A");
   });
   it("formats a valid ISO string to a non-fallback string", () => {
     const out = formatDate("2026-01-15T10:30:00Z");
-    expect(out).not.toBe("—");
+    expect(out).not.toBe("N/A");
     expect(out.length).toBeGreaterThan(0);
   });
   it("safeDate returns a Date for valid input and null for invalid", () => {
@@ -28,6 +28,6 @@ describe("msSinceNow / formatRelative", () => {
   });
   it("formatRelative reads 'just now' for a very recent time and the fallback for bad input", () => {
     expect(formatRelative(new Date().toISOString())).toBe("just now");
-    expect(formatRelative("bad")).toBe("—");
+    expect(formatRelative("bad")).toBe("N/A");
   });
 });

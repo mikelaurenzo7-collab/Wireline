@@ -173,7 +173,7 @@ describe("account deletion versus post-call provider work", () => {
     expect(worker).toContain("claimTerminalAccountPurge");
     expect(dispatcher).toContain("withAccountDeletionFence(tx, userId");
     expect(dispatcher).toContain("runTenantJobAfterDeletionCheck");
-    expect(dispatcher).toContain("tenant job skipped — terminal account deletion has begun");
+    expect(dispatcher).toContain("tenant job skipped, terminal account deletion has begun");
     expect(dispatcher).toContain('"twilio_message_reconciliation"');
     expect(tenantFence).toContain("runTenantProviderWorkAfterDeletionFence");
     expect(tenantFence).toContain("deletionQueue.status} = 'purging'");

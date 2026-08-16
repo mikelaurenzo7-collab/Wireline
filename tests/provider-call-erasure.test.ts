@@ -78,8 +78,7 @@ describe("provider call erasure", () => {
       }
 
       if (
-        input ===
-        `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Calls/${CALL_SID}.json`
+        input === `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Calls/${CALL_SID}.json`
       ) {
         expect(init?.method).toBe("DELETE");
         return emptyResponse();
@@ -117,7 +116,10 @@ describe("provider call erasure", () => {
     let callDeleteAttempts = 0;
     const fetchFn = vi.fn(async (input: string, init?: RequestInit): Promise<Response> => {
       if (input === RECORDING_METADATA_URL && !init?.method) {
-        return jsonResponse({ call_sid: CALL_SID, status: recordingDeleted ? "deleted" : "completed" });
+        return jsonResponse({
+          call_sid: CALL_SID,
+          status: recordingDeleted ? "deleted" : "completed",
+        });
       }
       if (
         input ===
@@ -131,8 +133,7 @@ describe("provider call erasure", () => {
         return emptyResponse();
       }
       if (
-        input ===
-        `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Calls/${CALL_SID}.json`
+        input === `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Calls/${CALL_SID}.json`
       ) {
         callDeleteAttempts++;
         return callDeleteAttempts === 1 ? emptyResponse(500) : emptyResponse();
@@ -203,10 +204,7 @@ describe("provider call erasure", () => {
   });
 
   it("is wired into external cleanup before the local hard-delete engine", () => {
-    const deletion = readFileSync(
-      resolve(process.cwd(), "src/lib/account-deletion.ts"),
-      "utf8",
-    );
+    const deletion = readFileSync(resolve(process.cwd(), "src/lib/account-deletion.ts"), "utf8");
     const providerErasure = deletion.indexOf(
       "await eraseProviderCallArtifacts(callArtifactPointers)",
     );
@@ -215,7 +213,7 @@ describe("provider call erasure", () => {
     expect(providerErasure).toBeGreaterThan(-1);
     expect(hardDelete).toBeGreaterThan(providerErasure);
     expect(deletion).toContain(
-      'log.error("provider call-data deletion failed — deferring account purge"',
+      'log.error("provider call-data deletion failed, deferring account purge"',
     );
   });
 });

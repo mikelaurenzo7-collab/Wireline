@@ -15,10 +15,18 @@ describe("Call Ops operational truth", () => {
     expect(route).toContain("gte(schema.callLogs.createdAt, since)");
     expect(route).toContain("eq(schema.callLogs.userId, userId)");
     expect(route).toContain("eq(schema.followUpTasks.userId, userId)");
-    expect(route).toContain('import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";');
-    expect(route).toContain("inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])");
-    expect(route).toContain('const CALL_TASK_SOURCE_TYPES = ["phone_call", "showcase_call"] as const;');
-    expect(route).toContain("inArray(schema.followUpTasks.sourceType, [...CALL_TASK_SOURCE_TYPES])");
+    expect(route).toContain(
+      'import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";',
+    );
+    expect(route).toContain(
+      "inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])",
+    );
+    expect(route).toContain(
+      'const CALL_TASK_SOURCE_TYPES = ["phone_call", "showcase_call"] as const;',
+    );
+    expect(route).toContain(
+      "inArray(schema.followUpTasks.sourceType, [...CALL_TASK_SOURCE_TYPES])",
+    );
     expect(route).toContain("taskType} = 'human_escalation'");
     expect(route).toContain("eq(schema.agents.userId, userId)");
     expect(route).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
@@ -42,7 +50,7 @@ describe("Call Ops operational truth", () => {
     expect(callOps).toContain('label: "Pending", value: metrics?.pending ?? 0');
     expect(callOps).toContain('label: "Agents", value: metrics?.agents ?? 0');
     expect(callOps).toContain('label: "Escalations", value: metrics?.escalations ?? 0');
-    expect(callOps).toContain('metricsLoading || metricsError ? "—" : kpi.value');
+    expect(callOps).toContain('metricsLoading || metricsError ? "N/A" : kpi.value');
     expect(callOps).toContain('authFetch("/api/calls?limit=100&offset=0")');
     expect(callOps).not.toContain("emitProductEventOnce");
     expect(callOps).not.toContain('event: "outcome_reviewed"');

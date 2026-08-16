@@ -31,7 +31,7 @@ describe("runtime prompt clamp preserves the WHOLE guardrail block", () => {
 
     const clamped = clampRuntimePromptPreservingTail(built.prompt);
     expect(clamped.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
-    expect(clamped).toContain("## COMPLIANCE — HIPAA");
+    expect(clamped).toContain("## COMPLIANCE: HIPAA");
     expect(clamped).toContain("## DO-NOT-DISCUSS TOPICS");
     expect(clamped).toContain("## IMMEDIATE-ESCALATION TRIGGERS");
     expect(clamped).toContain("## VOICE CONSISTENCY");

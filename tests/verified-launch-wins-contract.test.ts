@@ -74,7 +74,7 @@ describe("verified launch-readiness wins", () => {
     expect(provisioning).toContain("tt=15000");
     expect(readiness).toContain('"twilio_sms_webhook_retries"');
     expect(twilio).toContain("await drizzle.transaction(async (tx)");
-    expect(twilio).toContain("Inbound SMS persist failed — requesting Twilio redelivery");
+    expect(twilio).toContain("Inbound SMS persist failed, requesting Twilio redelivery");
     expect(twilio).toContain("return res.status(503).send(twimlEmpty())");
   });
 

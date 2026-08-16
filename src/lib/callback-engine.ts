@@ -198,14 +198,14 @@ export async function tickDueCallbacks({
       if (priorDeferrals >= MAX_DEFERRALS) {
         await finish({
           callbackScheduledAt: null,
-          summary: `Callback dropped — ${why} (max retries reached).`,
+          summary: `Callback dropped: ${why} (max retries reached).`,
           metadata: { ...metadata, callback_deferrals: 0 },
         });
         return "dropped";
       }
       await finish({
         callbackScheduledAt: new Date(Date.now() + DEFERRAL_STEP_MS),
-        summary: `Callback deferred — ${why}.`,
+        summary: `Callback deferred: ${why}.`,
         metadata: { ...metadata, callback_deferrals: priorDeferrals + 1 },
       });
       return "deferred";
@@ -241,7 +241,7 @@ export async function tickDueCallbacks({
           if (!lead.customerNumber) {
             await finish({
               callbackScheduledAt: null,
-              summary: "Callback skipped — lead has no phone number.",
+              summary: "Callback skipped: lead has no phone number.",
             });
             return "skipped";
           }
@@ -259,7 +259,7 @@ export async function tickDueCallbacks({
           if (!agentId) {
             await finish({
               callbackScheduledAt: null,
-              summary: "Callback skipped — no agent available to place the call.",
+              summary: "Callback skipped: no agent available to place the call.",
             });
             return "skipped";
           }
@@ -296,7 +296,7 @@ export async function tickDueCallbacks({
             }
             await finish({
               callbackScheduledAt: null,
-              summary: `Callback blocked — ${gate.reason}.`,
+              summary: `Callback blocked: ${gate.reason}.`,
               ...(gate.metadataPatch ? { metadata: gate.metadataPatch } : {}),
             });
             return "skipped";
@@ -330,7 +330,7 @@ export async function tickDueCallbacks({
             customerNumber: lead.customerNumber,
             context: consumerRequested
               ? `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`
-              : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call — introduce yourself and state why you are calling.`,
+              : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call. Introduce yourself and state why you are calling.`,
             callPurpose,
           });
 
@@ -376,7 +376,7 @@ export async function tickDueCallbacks({
 
       if (!fencedCallback.performed) {
         skipped++;
-        log.warn("callback skipped — account erased or terminal deletion has begun", {
+        log.warn("callback skipped: account erased or terminal deletion has begun", {
           leadId: String(lead.id),
           userId: lead.userId,
         });
@@ -396,7 +396,7 @@ export async function tickDueCallbacks({
         perform: () =>
           finish({
             callbackScheduledAt: null,
-            summary: "Callback failed with an internal error — flagged for manual follow-up.",
+            summary: "Callback failed with an internal error. Flagged for manual follow-up.",
           }),
       }).catch(() => {});
     }

@@ -80,7 +80,7 @@ describe("Meta data-deletion callback", () => {
   it("returns 5xx on a failed deactivation so Facebook retries", () => {
     const routes = read("src/routes/meta-webhook-routes.ts");
     expect(routes).toContain(
-      'throw AppError.fromHttpStatus(503, "deletion request could not be recorded — retry")',
+      'throw AppError.fromHttpStatus(503, "deletion request could not be recorded, retry")',
     );
     expect(routes).not.toContain("Still return 200 with the code");
   });

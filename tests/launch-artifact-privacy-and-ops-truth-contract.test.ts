@@ -56,7 +56,7 @@ describe("launch artifact privacy and operations truth", () => {
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
-    expect(security).toContain("365-day default; supported range 90–365 days");
+    expect(security).toContain("365-day default; supported range 90 to 365 days");
     expect(security).toContain("Managed full-call provider audio recording is disabled by default");
     expect(security).not.toContain("transcript retention defaults to 90 days");
   });
@@ -64,7 +64,7 @@ describe("launch artifact privacy and operations truth", () => {
   it("does not publish unsupported self-serve SLA or recovery guarantees", () => {
     const sla = read("docs/SLA.md");
     expect(sla).toContain("do **not** include a contractual uptime SLA");
-    expect(sla).toContain("365-day default, minimum 90 days, and a supported 90–365 day range");
+    expect(sla).toContain("365-day default, minimum 90 days, and a supported 90 to 365 day range");
     expect(sla).not.toContain("99.95%");
     expect(sla).not.toContain("Dedicated Slack channel");
     expect(sla).not.toContain("Synthetic monitoring:");

@@ -31,7 +31,7 @@ describe("personal agent parity — create defaults", () => {
     });
     expect(personality).toBeTruthy();
     expect(personality!).toContain("elite personal assistant");
-    expect(personality!).toContain("TEMPLATE SPECIALTY — Personal Concierge");
+    expect(personality!).toContain("TEMPLATE SPECIALTY: Personal Concierge");
     expect(personality!).toContain("You represent your principal");
     expect(personality!).not.toContain("You represent Sarah");
     expect(personality!).not.toContain("your business — a single individual");
@@ -143,10 +143,10 @@ describe("personal agent parity — presentation and runtime", () => {
 
   it("preserves rich personality when Studio Set up updates delivery tone", () => {
     const rich =
-      "You are an elite personal assistant — an extension of your principal's time.\n\n## TEMPLATE SPECIALTY — Personal Concierge\nBook appointments and take messages.";
+      "You are an elite personal assistant — an extension of your principal's time.\n\n## TEMPLATE SPECIALTY: Personal Concierge\nBook appointments and take messages.";
     const composed = composeSetupPersonality(rich, "Warm", false);
     expect(composed).toContain("elite personal assistant");
-    expect(composed).toContain("TEMPLATE SPECIALTY — Personal Concierge");
+    expect(composed).toContain("TEMPLATE SPECIALTY: Personal Concierge");
     expect(composed).toContain("## DELIVERY TONE");
     expect(composed).toContain("Warm. Concise, useful, and personally discreet.");
     const again = composeSetupPersonality(composed, "Polished", false);
@@ -263,7 +263,7 @@ describe("founder hybrid pricing — Starter Plus pair capacity", () => {
     expect(supportsFounderAgentPair("team")).toBe(true);
     expect(supportsFounderAgentPair("starter")).toBe(false);
     const catalog = read("src/lib/plan-catalog.ts");
-    expect(catalog).toContain("2 live agents — personal Concierge + business voice agent");
+    expect(catalog).toContain("2 live agents, personal Concierge + business voice agent");
     expect(read("src/pages/Pricing.tsx")).toContain("Founder hybrid");
     expect(read("src/pages/OverviewPage.tsx")).not.toContain("Complete your founder pair");
   });

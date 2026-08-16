@@ -235,7 +235,7 @@ export async function postCallAnalysis(input: PostCallInput): Promise<PostCallAn
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
-      log.warn(`postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`, {
+      log.warn(`postCallAnalysis: unknown role "${input.role}", no scoring lens applied.`, {
         role: input.role,
       });
   }

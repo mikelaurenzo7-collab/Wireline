@@ -68,7 +68,7 @@ describe("authenticated agent flow", () => {
      * tools whose integration the tenant has not connected. Without this hint an
      * unconnected integration looked identical to a connected one.
      */
-    expect(permissions).toContain("Not connected — these stay off in live calls until");
+    expect(permissions).toContain("Not connected. These stay off in live calls until");
     expect(permissions).toContain("to={playbook.connectPath}");
     expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
 
