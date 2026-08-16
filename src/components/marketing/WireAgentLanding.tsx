@@ -13,6 +13,8 @@ import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-
 const HERO_LOOP = MARKETING_VOICE.proof;
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
 const PERSONAL_SIGNUP = "/signup?plan=personal";
+const SALES_SIGNUP = "/signup?plan=starter&mode=outbound";
+const SERVICE_SIGNUP = "/signup?plan=starter&mode=inbound";
 const HYBRID_SIGNUP = "/signup?plan=starter&mode=hybrid";
 const STARTER_PRICE =
   STRIPE_PLANS.find((plan) => plan.id === "starter")?.price_usd_monthly ?? 19;
@@ -21,13 +23,13 @@ const AUDIENCES = [
   {
     key: "outbound" as const,
     label: AGENT_DIRECTION_MODES.outbound.label,
-    href: "/solutions/sales",
+    href: SALES_SIGNUP,
     uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
   },
   {
     key: "inbound" as const,
     label: AGENT_DIRECTION_MODES.inbound.label,
-    href: "/solutions/support",
+    href: SERVICE_SIGNUP,
     uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
   },
   {

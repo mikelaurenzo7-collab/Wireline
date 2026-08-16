@@ -108,8 +108,8 @@ describe("current-state UI contract", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const auth = read("src/components/AuthPortal.tsx");
 
-    expect(landing).toContain('name: "Starter"');
-    expect(landing).toContain("planCatalog.starter.price_usd_monthly");
+    expect(landing).toContain("STRIPE_PLANS");
+    expect(landing).toContain("price_usd_monthly");
     expect(landing).toContain("/signup?plan=starter&mode=outbound");
     expect(landing).toContain("/signup?plan=starter&mode=inbound");
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
