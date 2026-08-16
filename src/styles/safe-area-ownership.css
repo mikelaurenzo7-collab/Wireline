@@ -74,3 +74,14 @@
   padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
   padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
+
+/* Loading, OAuth-complete, and degraded-state transitions can be the first
+ * surface mounted. They therefore own all four edges directly rather than
+ * relying on public or workspace chrome that may not exist yet. The base
+ * transition padding remains the comfortable floor. */
+.wl-transition-shell {
+  padding-top: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-top, 0px));
+  padding-right: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-right, 0px));
+  padding-bottom: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px));
+  padding-left: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-left, 0px));
+}
