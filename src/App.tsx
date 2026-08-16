@@ -9,7 +9,7 @@ import { AccountProvider } from "./contexts/AccountContext";
 import TransitionSurface from "./components/TransitionSurface";
 import RouteChangeA11y from "./components/RouteChangeA11y";
 import { useAuth } from "./contexts/AuthContext";
-import { isWorkspaceRoute } from "./lib/workspace-route-scope";
+import { isWorkspaceRoute, usesWorkspaceViewport } from "./lib/workspace-route-scope";
 
 import ToastStack from "./components/Toast";
 import CookieConsent from "./components/CookieConsent";
@@ -65,7 +65,8 @@ function UnknownRoute() {
 
 function ViewportModeRoot({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const mode = isWorkspaceRoute(pathname) ? "workspace" : "document";
+  const { user } = useAuth();
+  const mode = usesWorkspaceViewport(pathname, Boolean(user)) ? "workspace" : "document";
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -144,9 +145,9 @@ function AppRouter() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ViewportModeRoot>
-        <RouteChangeA11y />
-        <AuthProvider>
+      <AuthProvider>
+        <ViewportModeRoot>
+          <RouteChangeA11y />
           <ThemeProvider>
             <ToastProvider>
               <BrandingProvider>
@@ -160,8 +161,8 @@ export default function App() {
               </BrandingProvider>
             </ToastProvider>
           </ThemeProvider>
-        </AuthProvider>
-      </ViewportModeRoot>
+        </ViewportModeRoot>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
