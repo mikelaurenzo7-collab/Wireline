@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 
 import { MARKETING_VOICE } from "../../lib/product-copy";
@@ -35,13 +35,28 @@ const legalLinks = [
 const mobileControlClassName =
   "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-foreground transition-[background-color,color,transform] hover:bg-secondary hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
-export default function PrecisionPublicHeader() {
+type PrecisionPublicHeaderProps = {
+  /**
+   * bar: the public site chrome. hidden: home is the device glass, so the
+   * island inside the phone opens this same navigation dialog.
+   */
+  chrome?: "bar" | "hidden";
+  children?: ReactNode;
+};
+
+export default function PrecisionPublicHeader({
+  chrome = "bar",
+  children,
+}: PrecisionPublicHeaderProps) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   useEffect(() => setOpen(false), [location.pathname]);
+  const deviceChrome = chrome === "hidden";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {deviceChrome ? <SkipToContentLink href="#main-content" /> : null}
+      {deviceChrome ? null : (
       <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_98%,transparent)] backdrop-blur-xl">
         <SkipToContentLink href="#main-content" />
         <div className="wl-measure relative mx-auto flex h-16 items-center gap-4 px-5 sm:px-6 lg:px-8">
@@ -98,13 +113,20 @@ export default function PrecisionPublicHeader() {
           </DialogTrigger>
         </div>
       </header>
+      )}
+      {children}
 
       <DialogContent
         id="wireline-mobile-navigation"
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        overlayClassName="!top-16 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
+        className={deviceChrome ? "!top-0" : undefined}
+        overlayClassName={
+          deviceChrome
+            ? "!top-0 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
+            : "!top-16 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
+        }
       >
         <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
         <DialogDescription className="sr-only">

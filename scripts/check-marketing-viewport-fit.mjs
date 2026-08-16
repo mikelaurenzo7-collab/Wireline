@@ -3,9 +3,9 @@
  *
  * The public surface has one structural rule: the window is the frame, and the
  * frame never scrolls. Every public route renders `.marketing-surface` (100dvh,
- * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller, with a
- * fixed header above it. Other public pages pin a chrome bar below; home omits
- * it so the live agent on a phone owns the canvas. See
+ * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller. Other
+ * public pages pin a fixed header above the flow and a chrome bar below; home
+ * omits both so the live agent on the device glass owns the canvas. See
  * `src/styles/viewport-first-marketing.css` for the three mechanisms.
  *
  * This reads source rather than a browser because the failure it guards is a

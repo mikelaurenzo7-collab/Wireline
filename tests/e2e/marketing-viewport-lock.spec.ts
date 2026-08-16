@@ -37,17 +37,20 @@ async function viewportMetrics(page: Page) {
     const title = document.querySelector(".landing-stage__title");
     const phoneRect = phone?.getBoundingClientRect();
     const titleRect = title?.getBoundingClientRect();
+    const header = document.querySelector(".marketing-surface > header");
     return {
       docOverflow: root.scrollHeight - root.clientHeight,
       bodyOverflow: body.scrollHeight - body.clientHeight,
       flowOverflow: flow ? flow.scrollHeight - flow.clientHeight : 0,
       phoneHeight: phoneRect?.height ?? 0,
       phoneWidth: phoneRect?.width ?? 0,
-      phoneRight: phoneRect?.right ?? 0,
-      titleLeft: titleRect?.left ?? 0,
-      titleBottom: titleRect?.bottom ?? 0,
       phoneTop: phoneRect?.top ?? 0,
+      phoneBottom: phoneRect?.bottom ?? 0,
+      titleTop: titleRect?.top ?? 0,
+      titleBottom: titleRect?.bottom ?? 0,
+      headerCount: header ? 1 : 0,
       viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
     };
   });
 }
@@ -72,10 +75,11 @@ test("home phone stage fills the canvas without inner scroll", async ({ page }) 
 
   const metrics = await viewportMetrics(page);
   expect(metrics.flowOverflow, "home marketing-flow must not scroll").toBeLessThanOrEqual(8);
-  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.72);
-  expect(metrics.phoneRight, "desktop phone sits beside the headline, not under it").toBeLessThan(
-    metrics.titleLeft,
-  );
+  expect(metrics.headerCount, "home has no site header around the glass").toBe(0);
+  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.92);
+  expect(metrics.phoneWidth).toBeGreaterThan(metrics.viewportWidth * 0.92);
+  expect(metrics.titleTop, "headline lives inside the glass").toBeGreaterThan(metrics.phoneTop);
+  expect(metrics.titleBottom).toBeLessThan(metrics.phoneBottom);
 });
 
 test("home phone stage still fits a short laptop", async ({ page }) => {
@@ -85,8 +89,8 @@ test("home phone stage still fits a short laptop", async ({ page }) => {
   const metrics = await viewportMetrics(page);
   expect(metrics.docOverflow).toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow).toBeLessThanOrEqual(12);
-  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.68);
-  expect(metrics.phoneRight).toBeLessThan(metrics.titleLeft);
+  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.92);
+  expect(metrics.phoneWidth).toBeGreaterThan(metrics.viewportWidth * 0.92);
 });
 
 test("home hides the chrome bar and does not scroll on a phone", async ({ page }) => {
@@ -94,19 +98,21 @@ test("home hides the chrome bar and does not scroll on a phone", async ({ page }
   await openCanvas(page, "/");
   await expect(page.locator(".landing-phone")).toBeVisible();
   await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
-  await expect(page.locator(".landing-stage__loop")).toBeHidden();
+  await expect(page.locator(".marketing-surface > header")).toHaveCount(0);
+  await expect(page.locator(".landing-os__tray")).toBeVisible();
+  await expect(page.locator(".sr-only .landing-stage__loop")).toHaveCount(1);
   await expect(page.locator(".landing-stage__loop")).toContainText("Launch");
   await expect(page.locator(".landing-stage__loop")).not.toContainText("Improve");
-  await expect(page.locator(".landing-phone__role")).toBeHidden();
+  await expect(page.locator(".sr-only.landing-phone__role")).toHaveCount(1);
   const metrics = await viewportMetrics(page);
   expect(metrics.docOverflow, "home document scrollbar on phone").toBeLessThanOrEqual(2);
   expect(metrics.bodyOverflow, "home body scrollbar on phone").toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow, "home marketing-flow must not scroll on phone").toBeLessThanOrEqual(
     8,
   );
-  expect(metrics.titleBottom, "phone canvas keeps the headline above the device").toBeLessThan(
-    metrics.phoneTop,
-  );
+  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.92);
+  expect(metrics.phoneWidth).toBeGreaterThan(metrics.viewportWidth * 0.92);
+  expect(metrics.titleTop, "headline lives inside the glass").toBeGreaterThan(metrics.phoneTop);
 });
 
 test("features canvas stays inside 1365x900", async ({ page }) => {

@@ -75,6 +75,7 @@ describe("E2E design and brand polish", () => {
     expect(polish).toContain(".landing-stage__channel");
     expect(polish).toContain(".landing-phone__cta");
     expect(polish).toContain(".landing-stage__plans");
+    expect(polish).toContain(".landing-os__label");
     expect(polish).toContain(".wl-channel-chip");
     // Read-as-written exceptions: long-form legal prose and customer-authored
     // words are never rewritten by the case system.
@@ -173,10 +174,12 @@ describe("E2E design and brand polish", () => {
     expect(landing).toContain("landing-phone");
     expect(landing).toContain("landing-stage__dock");
     expect(landing).toContain("landing-stage__device");
+    expect(landing).toContain('chrome="hidden"');
+    expect(landing).toContain("landing-os__tray");
     const stage = read("src/styles/landing-call-stage.css");
-    expect(stage).toContain('"device whisper"');
-    expect(stage).toContain("max-width: none");
-    expect(stage).toContain("max-width: min(21.25rem, 72vw)");
+    expect(stage).toContain("aspect-ratio: auto");
+    expect(stage).toContain("landing-os__tray");
+    expect(stage).not.toContain("max-width: min(21.25rem, 72vw)");
     expect(landing).toContain("See Plans");
     expect(landing).toContain("Start free.");
     expect(landing).toContain("MARKETING_VOICE.spine");

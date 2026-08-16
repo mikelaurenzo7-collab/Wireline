@@ -1,9 +1,11 @@
-import { useEffect } from "react";
-import { Phone } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
+import { Headphones, LayoutGrid, Layers, Phone, PhoneCall, Sparkles, UserRound } from "lucide-react";
 import { Link } from "react-router";
 
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import BrowserCallWidget from "./BrowserCallWidget";
+import { DialogTrigger } from "../atoms";
+import WirelineMark from "../brand/WirelineMark";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
@@ -24,18 +26,24 @@ const AUDIENCES = [
     label: AGENT_DIRECTION_MODES.outbound.label,
     href: SALES_SIGNUP,
     uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
+    tone: "sales" as const,
+    icon: PhoneCall,
   },
   {
     key: "inbound" as const,
     label: AGENT_DIRECTION_MODES.inbound.label,
     href: SERVICE_SIGNUP,
     uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
+    tone: "service" as const,
+    icon: Headphones,
   },
   {
     key: "hybrid" as const,
     label: AGENT_DIRECTION_MODES.hybrid.label,
     href: HYBRID_SIGNUP,
     uses: ["Sales Desk", "Collections Desk", "Appointment Desk"],
+    tone: "hybrid" as const,
+    icon: Sparkles,
   },
 ] as const;
 
@@ -47,6 +55,39 @@ const LEGAL_LINKS = [
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
 ] as const;
+
+function OsApp({
+  to,
+  label,
+  caption,
+  hint,
+  tone,
+  onClick,
+  children,
+}: {
+  to: string;
+  label: string;
+  caption?: string;
+  hint?: string;
+  tone: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      to={to}
+      className={`landing-os__app landing-os__app--${tone}`}
+      aria-label={caption ? label : undefined}
+      onClick={onClick}
+    >
+      <span className="landing-os__icon" aria-hidden="true">
+        {children}
+      </span>
+      <span className="landing-os__label">{caption ?? label}</span>
+      {hint ? <span className="sr-only">{hint}</span> : null}
+    </Link>
+  );
+}
 
 export default function WireAgentLanding() {
   useEffect(() => {
@@ -66,124 +107,161 @@ export default function WireAgentLanding() {
   };
 
   return (
-    <div className="marketing-surface landing-home bg-background text-foreground">
-      <PrecisionPublicHeader />
-
-      <main id="main-content" className="marketing-flow" tabIndex={-1}>
-        <section className="marketing-section marketing-section--screen landing-stage">
-          <div className="landing-stage__whisper">
-            <h1 aria-label={MARKETING_VOICE.headline} className="landing-stage__title">
-              {MARKETING_VOICE.headline}
-            </h1>
-            <div className="sr-only">
-              <h2>How Wireline works</h2>
-              <ol className="landing-stage__loop">
-                {HERO_LOOP.map((step, index) => (
-                  <li
-                    key={step}
-                    className={index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined}
-                  >
-                    <span className="wl-overline text-foreground">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </div>
-
-          <div id="hear-a-demo" className="landing-stage__device">
-            <BrowserCallWidget
-              variant="phone"
-              agentName={HERO_DEMO_AGENT.name}
-              buttonLabel="Hear It Live"
-              fallback={
-                <a
-                  href={`tel:${HERO_DEMO_AGENT.tel}`}
-                  className="landing-phone__call"
-                  aria-label="Hear It Live"
-                  onClick={() =>
-                    emitProductEvent({
-                      event: "landing_demo_clicked",
-                      surface: "marketing_web",
-                      metadata: {
-                        agent: HERO_DEMO_AGENT.name,
-                        mode: "phone",
-                      },
-                    })
-                  }
-                >
-                  <Phone className="h-5 w-5" aria-hidden="true" />
-                </a>
-              }
-            />
-          </div>
-
-          <div className="landing-stage__dock">
-            <div className="landing-stage__actions">
-              <Link
-                to={PERSONAL_SIGNUP}
-                className="marketing-btn-primary landing-stage__cta min-h-11 px-5 text-sm font-semibold"
-                onClick={() =>
-                  emitProductEvent({
-                    event: "landing_primary_cta_clicked",
-                    surface: "marketing_web",
-                    metadata: {
-                      label: MARKETING_VOICE.primaryCta,
-                      destination: PERSONAL_SIGNUP,
-                      source: "marketing_hero",
-                    },
-                  })
+    <div className="marketing-surface landing-home landing-os bg-background text-foreground">
+      <PrecisionPublicHeader chrome="hidden">
+        <main id="main-content" className="marketing-flow" tabIndex={-1}>
+          <section className="marketing-section marketing-section--screen landing-stage">
+            <div id="hear-a-demo" className="landing-stage__device">
+              <BrowserCallWidget
+                variant="phone"
+                agentName={HERO_DEMO_AGENT.name}
+                buttonLabel="Hear It Live"
+                island={
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      className="landing-phone__island"
+                      aria-label="Wireline menu"
+                      aria-controls="wireline-mobile-navigation"
+                    >
+                      <WirelineMark signal className="landing-phone__mark" />
+                      <span className="landing-phone__wordmark">Wireline</span>
+                    </button>
+                  </DialogTrigger>
                 }
-              >
-                {MARKETING_VOICE.primaryCta}
-              </Link>
-              <Link to="/pricing" className="landing-stage__plans min-h-11">
-                See Plans
-              </Link>
-            </div>
+                heading={
+                  <div className="landing-stage__whisper">
+                    <h1 aria-label={MARKETING_VOICE.headline} className="landing-stage__title">
+                      {MARKETING_VOICE.headline}
+                    </h1>
+                    <div className="sr-only">
+                      <h2>How Wireline works</h2>
+                      <ol className="landing-stage__loop">
+                        {HERO_LOOP.map((step, index) => (
+                          <li
+                            key={step}
+                            className={
+                              index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : undefined
+                            }
+                          >
+                            <span className="wl-overline text-foreground">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                }
+                dock={
+                  <div className="landing-stage__dock">
+                    <nav className="landing-stage__lanes" aria-label="Agent work lane">
+                      {AUDIENCES.map((audience) => {
+                        const Icon = audience.icon;
+                        return (
+                          <OsApp
+                            key={audience.key}
+                            to={audience.href}
+                            label={audience.label}
+                            tone={audience.tone}
+                            hint={audience.uses.join(", ")}
+                            onClick={() => selectAudience(audience.key)}
+                          >
+                            <Icon className="landing-os__glyph" />
+                          </OsApp>
+                        );
+                      })}
+                    </nav>
 
-            <div className="landing-stage__meta">
-              <nav className="landing-stage__lanes" aria-label="Agent work lane">
-                {AUDIENCES.map((audience) => (
-                  <Link
-                    key={audience.key}
-                    to={audience.href}
-                    onClick={() => selectAudience(audience.key)}
-                    className="landing-stage__lane"
+                    <ul className="landing-stage__channels" aria-label="Agent channels">
+                      {CHANNELS.map((label) => (
+                        <li key={label} className="landing-stage__channel">
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="landing-os__tray">
+                      <OsApp
+                        to={PERSONAL_SIGNUP}
+                        label={MARKETING_VOICE.primaryCta}
+                        caption="Build"
+                        tone="build"
+                        onClick={() =>
+                          emitProductEvent({
+                            event: "landing_primary_cta_clicked",
+                            surface: "marketing_web",
+                            metadata: {
+                              label: MARKETING_VOICE.primaryCta,
+                              destination: PERSONAL_SIGNUP,
+                              source: "marketing_hero",
+                            },
+                          })
+                        }
+                      >
+                        <WirelineMark signal className="landing-os__mark" />
+                      </OsApp>
+                      <OsApp to="/pricing" label="See Plans" caption="Plans" tone="plans">
+                        <Layers className="landing-os__glyph" />
+                      </OsApp>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="landing-os__app landing-os__app--apps"
+                          aria-label="Open navigation"
+                          aria-controls="wireline-mobile-navigation"
+                        >
+                          <span className="landing-os__icon" aria-hidden="true">
+                            <LayoutGrid className="landing-os__glyph" />
+                          </span>
+                          <span className="landing-os__label">Apps</span>
+                        </button>
+                      </DialogTrigger>
+                      <OsApp to="/signin" label="Sign In" tone="signin">
+                        <UserRound className="landing-os__glyph" />
+                      </OsApp>
+                    </div>
+
+                    <p className="landing-stage__note">
+                      Start free. Live from ${STARTER_PRICE}/mo.
+                      <span className="sr-only">
+                        {" "}
+                        Channels unlock at activation. Paid plans include a Wireline number. Extra
+                        usage is prepaid Runtime Balance.
+                      </span>
+                    </p>
+                  </div>
+                }
+                fallback={
+                  <a
+                    href={`tel:${HERO_DEMO_AGENT.tel}`}
+                    className="landing-phone__call"
+                    aria-label="Hear It Live"
+                    onClick={() =>
+                      emitProductEvent({
+                        event: "landing_demo_clicked",
+                        surface: "marketing_web",
+                        metadata: {
+                          agent: HERO_DEMO_AGENT.name,
+                          mode: "phone",
+                        },
+                      })
+                    }
                   >
-                    {audience.label}
-                    <span className="sr-only">{audience.uses.join(", ")}</span>
-                  </Link>
-                ))}
-              </nav>
-
-              <ul className="landing-stage__channels" aria-label="Agent channels">
-                {CHANNELS.map((label) => (
-                  <li key={label} className="landing-stage__channel">
-                    {label}
-                  </li>
-                ))}
-              </ul>
+                    <Phone className="h-5 w-5" aria-hidden="true" />
+                  </a>
+                }
+              />
             </div>
+          </section>
+        </main>
 
-            <p className="landing-stage__note">
-              Start free. Live from ${STARTER_PRICE}/mo.
-              <span className="sr-only">
-                {" "}
-                Channels unlock at activation. Paid plans include a Wireline number. Extra usage is
-                prepaid Runtime Balance.
-              </span>
-            </p>
-          </div>
-        </section>
-      </main>
-
-      <nav className="sr-only" aria-label="Legal">
-        {LEGAL_LINKS.map((link) => (
-          <Link key={link.to} to={link.to}>
-            {link.label}
-          </Link>
-        ))}
-      </nav>
+        <nav className="sr-only" aria-label="Legal">
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.to} to={link.to}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </PrecisionPublicHeader>
     </div>
   );
 }

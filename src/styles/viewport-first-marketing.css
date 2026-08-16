@@ -51,6 +51,7 @@
 /* Home is the product, not a brochure. No pinned legal bar: those links live
    in the header menu, a visually hidden legal nav, and every other public page. */
 .marketing-surface.landing-home {
+  --wl-marketing-chrome-top: 0px;
   --wl-marketing-chrome-bottom: 0px;
 }
 

@@ -19,6 +19,12 @@ type BrowserCallWidgetProps = {
    * phone: the home stage — a device with a large agent and one answer control.
    */
   variant?: "compact" | "phone";
+  /** Replaces the decorative Dynamic Island. Home uses this as the Wireline menu. */
+  island?: ReactNode;
+  /** Lock-screen title and any visually hidden spine copy, rendered in the glass. */
+  heading?: ReactNode;
+  /** Home-screen apps and the iOS dock, rendered in the glass. */
+  dock?: ReactNode;
   /**
    * Rendered instead of a dead-end error when the browser voice demo can't
    * run (VITE_VAPI_PUBLIC_KEY unset in this environment). Lets the hero fall
@@ -74,6 +80,9 @@ export default function BrowserCallWidget({
   tintColor: _tintColor,
   buttonLabel = "Talk in browser",
   variant = "compact",
+  island,
+  heading,
+  dock,
   fallback,
 }: BrowserCallWidgetProps) {
   const [callActive, setCallActive] = useState(false);
@@ -214,7 +223,8 @@ export default function BrowserCallWidget({
           <span className="landing-phone__hard landing-phone__hard--pwr" aria-hidden="true" />
           <div className="landing-phone__bezel">
             <div className="landing-phone__glass" aria-hidden="true" />
-            <div className="landing-phone__island" aria-hidden="true" />
+            {island ?? <div className="landing-phone__island" aria-hidden="true" />}
+            {heading}
             <div className="landing-phone__status">
               <span className="landing-phone__dot" aria-hidden="true" />
               {callActive ? "Live" : "Incoming"}
@@ -264,6 +274,8 @@ export default function BrowserCallWidget({
                 {error}
               </p>
             ) : null}
+            {dock}
+            <div className="landing-phone__home" aria-hidden="true" />
           </div>
         </div>
       </div>
