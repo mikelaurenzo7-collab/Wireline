@@ -19,11 +19,13 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/trust",
   "/privacy",
   "/terms",
+  "/solutions",
+  "/use-cases",
   "/not-found",
   "/404",
 ]);
 
-const MARKETING_PUBLIC_PREFIXES = ["/blog/", "/for/", "/solutions/", "/trust/"];
+const MARKETING_PUBLIC_PREFIXES = ["/blog/", "/for/", "/solutions/", "/use-cases/", "/trust/"];
 
 /** Broader marketing surface — must not block on session hydration. */
 export function isMarketingPublicPath(pathname: string): boolean {
@@ -40,6 +42,7 @@ export function isAuthPortalPath(pathname: string): boolean {
     pathname.startsWith("/signup/") ||
     pathname === "/login" ||
     pathname === "/get-started" ||
+    pathname === "/reset" ||
     pathname === "/reset-password" ||
     pathname === "/oauth-complete" ||
     pathname === "/auth" ||

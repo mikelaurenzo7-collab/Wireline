@@ -62,6 +62,19 @@ describe("public route fallbacks", () => {
     expect(usesWorkspaceViewport("/accept-invite", true)).toBe(false);
   });
 
+  it("keeps public aliases and redirects document-owned for authenticated visitors", () => {
+    for (const path of [
+      "/reset",
+      "/solutions",
+      "/solutions/support",
+      "/use-cases",
+      "/use-cases/personal",
+    ]) {
+      expect(isSessionOptionalPublicPath(path), path).toBe(true);
+      expect(usesWorkspaceViewport(path, true), path).toBe(false);
+    }
+  });
+
   it("captures the live solution routes rather than the retired personal alias", () => {
     for (const path of ["scripts/capture-prod-visual-qa.mjs", "tests/e2e/public-routes.spec.ts"]) {
       const source = read(path);
