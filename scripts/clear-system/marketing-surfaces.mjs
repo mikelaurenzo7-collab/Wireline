@@ -1,7 +1,6 @@
 /**
- * Public marketing surfaces with centered rails, shared product voice, visible
- * navigation, accessible work-lane links, proprietary live proof, the Wire
- * signature, and honest plan economics.
+ * Public marketing surface contracts for the consolidated homepage, natural
+ * document flow, minimal public header, live proof, and honest plan economics.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const executable = (source) =>
@@ -15,6 +14,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const landingStageCss = read("src/styles/landing-call-stage.css");
   const landingLayoutCss = read("src/styles/landing-stage-layout.css");
   const landingConsoleCss = read("src/styles/landing-live-console.css");
+  const landingLongformCss = read("src/styles/landing-longform.css");
+  const documentFlowCss = read("src/styles/marketing-document-flow.css");
+  const marketingSurfaceIndex = read("src/styles/wireline-marketing-surfaces.css");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -39,7 +41,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
     /className=\{cn\(\s*"marketing-flow relative z-10"/,
-    "the shared marketing frame must render exactly one bounded scroller",
+    "the shared marketing frame must render one primary content flow",
   );
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
@@ -72,24 +74,28 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /MARKETING_VOICE/,
     "marketing voice must live in the shared product-copy module",
   );
-  mustInclude(
-    "src/components/marketing/PrecisionPublicHeader.tsx",
-    publicHeader,
-    /MARKETING_VOICE\.buyingNoun/,
-    "mobile navigation must consume the canonical product noun",
-  );
-  mustInclude(
-    "src/components/marketing/PrecisionPublicHeader.tsx",
-    publicHeader,
-    /aria-label="Site"/,
-    "desktop public navigation must remain visible and named",
-  );
+
+  for (const [pattern, description] of [
+    [/aria-label="Wireline home"/, "public header must provide a named home link"],
+    [/aria-label="Account"/, "public header must expose only account actions"],
+    [/to="\/signin"/, "public header must keep sign in visible"],
+    [/to="\/signup\?plan=personal"/, "public header must keep free signup visible"],
+    [/Start Free/, "public header must retain the direct conversion action"],
+  ]) {
+    mustInclude(
+      "src/components/marketing/PrecisionPublicHeader.tsx",
+      publicHeader,
+      pattern,
+      description,
+    );
+  }
   mustExclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
     executable(publicHeader),
-    /Wire your agent|landing-os-nav|chrome\?:\s*"bar"\s*\|\s*"hidden"/,
-    "public navigation executable code must not revive retired campaign or device-chrome behavior",
+    /Dialog|Menu|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Features"|label:\s*"Pricing"|label:\s*"Demos"|label:\s*"Trust"/,
+    "public header must not revive brochure tabs or a mobile navigation dialog",
   );
+
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
@@ -108,9 +114,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/MARKETING_VOICE\.subline/, "landing must consume the shared supporting line"],
     [/MARKETING_VOICE\.primaryCta/, "landing must consume the shared primary action"],
     [/MARKETING_VOICE\.spine/, "landing must consume the shared Build Train Launch spine"],
-    [/<PrecisionPublicHeader\s*\/>/, "landing must use the visible shared public header"],
+    [/<PrecisionPublicHeader\s*\/>/, "landing must use the minimal shared public header"],
+    [/<MarketingChromeBar\s*\/>/, "landing must retain full footer wayfinding"],
+    [/id="solutions"/, "landing must include solutions in the main story"],
+    [/id="features"/, "landing must include product capabilities in the main story"],
+    [/id="pricing"/, "landing must include pricing in the main story"],
+    [/id="trust"/, "landing must include controls and trust in the main story"],
     [/aria-label="Agent work lane"/, "work lanes must stay reachable as named navigation"],
-    [/landing-stage__lane-group/, "work lanes must remain a compact supporting entry point"],
     [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
     [/landing-console__activity/, "home must show an outcome ledger beside the live agent"],
     [/Illustrative Workflow/, "home must label static proof as illustrative"],
@@ -140,14 +150,44 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/marketing/WireAgentLanding.tsx",
     executable(wireAgentLanding),
     /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"|00:42|landing-console__duration|Live Video/,
-    "landing executable code must not depend on borrowed device metaphors, pseudo-live telemetry, or optional add-ons",
+    "landing code must not depend on borrowed device metaphors or pseudo-live telemetry",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Start 7-day trial|Try 7 days free|\$79|postpaid voice-overage/i,
-    "landing must not revive retired trial or overage positioning",
+    /Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
+    "landing must not revive retired trial, plan, or overage positioning",
   );
+
+  for (const [pattern, description] of [
+    [/@import "\.\/marketing-document-flow\.css";/, "marketing tier must load document flow"],
+    [/@import "\.\/landing-longform\.css";/, "marketing tier must load consolidated landing styles"],
+  ]) {
+    mustInclude(
+      "src/styles/wireline-marketing-surfaces.css",
+      marketingSurfaceIndex,
+      pattern,
+      description,
+    );
+  }
+
+  for (const [pattern, description] of [
+    [/data-wireline-viewport="document"/, "public document mode must be explicit"],
+    [/height:\s*auto;/, "public documents must grow with content"],
+    [/overflow-y:\s*auto;/, "the document must own vertical scrolling"],
+    [/scroll-snap-type:\s*none;/, "public documents must not snap between panels"],
+    [/font-synthesis:\s*none;/, "type must not synthesize missing font weights"],
+    [/-webkit-font-smoothing:\s*auto;/, "font rendering must follow the platform"],
+    [/--wireline-typography-display-weight:\s*700;/, "display type must use a shipped static weight"],
+    [/--wireline-typography-h3-weight:\s*600;/, "supporting type must use a shipped static weight"],
+  ]) {
+    mustInclude(
+      "src/styles/marketing-document-flow.css",
+      documentFlowCss,
+      pattern,
+      description,
+    );
+  }
 
   mustInclude(
     "src/styles/landing-call-stage.css",
@@ -168,39 +208,35 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "desktop landing must preserve a deliberate narrative and proof split",
   );
   mustInclude(
-    "src/styles/landing-stage-layout.css",
-    landingLayoutCss,
-    /\.landing-stage__lane-group/,
-    "work-lane entry points must remain visually subordinate to the primary CTA",
-  );
-  mustInclude(
     "src/styles/landing-live-console.css",
     landingConsoleCss,
     /\.landing-console__body[\s\S]*grid-template-columns:/,
     "live proof must preserve separate agent and outcome panes",
   );
   mustInclude(
-    "src/styles/landing-live-console.css",
-    landingConsoleCss,
-    /\.landing-demo__microcopy[\s\S]*font-size:\s*0\.71rem/,
-    "demo disclosures must remain readable rather than collapsing into micro chrome",
+    "src/styles/landing-longform.css",
+    landingLongformCss,
+    /\.landing-home__pricing-grid/,
+    "consolidated landing must include a responsive pricing grid",
   );
   mustInclude(
-    "src/styles/landing-call-stage.css",
-    landingStageCss,
-    /overflow-y:\s*auto/,
-    "mobile landing must use a mechanically scrollable bounded flow",
+    "src/styles/landing-longform.css",
+    landingLongformCss,
+    /\.landing-home__control-grid/,
+    "consolidated landing must include a control proof grid",
   );
+
   for (const [file, source] of [
     ["src/styles/landing-call-stage.css", landingStageCss],
     ["src/styles/landing-stage-layout.css", landingLayoutCss],
     ["src/styles/landing-live-console.css", landingConsoleCss],
+    ["src/styles/landing-longform.css", landingLongformCss],
   ]) {
     mustExclude(
       file,
       executable(source),
       /#4ade80|#fbbf24|#7dd3fc|#2563eb|landing-phone|landing-os/,
-      "landing styles must stay on the Letterpress token system without retired device selectors",
+      "landing styles must stay on the Wireline token system without retired device selectors",
     );
   }
 
@@ -215,18 +251,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     signatureCss,
     /prefers-reduced-motion: reduce/,
     "the Wire pulse must respect reduced motion",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /wl-eyebrow--wired/,
-    "landing sections must not reintroduce decorative eyebrows",
-  );
-  mustInclude(
-    "src/styles/wireline-signature.css",
-    signatureCss,
-    /\.wl-wire-step--settled/,
-    "the final loop step must settle violet on the wire",
   );
 
   mustInclude(
