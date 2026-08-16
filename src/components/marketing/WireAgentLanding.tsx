@@ -3,6 +3,8 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarCheck2,
+  Check,
+  ClipboardCheck,
   Headphones,
   Mail,
   MessageSquareText,
@@ -10,10 +12,15 @@ import {
   PhoneCall,
   ShieldCheck,
   Sparkles,
+  Users,
+  WalletCards,
+  Workflow,
+  type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router";
 
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import MarketingChromeBar from "./MarketingChromeBar";
 import BrowserCallWidget from "./BrowserCallWidget";
 import WirelineMark from "../brand/WirelineMark";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
@@ -83,19 +90,139 @@ const EXAMPLE_RUN = [
   },
 ] as const;
 
-const LEGAL_LINKS = [
-  { to: "/trust", label: "Trust" },
-  { to: "/status", label: "Status" },
-  { to: "/privacy", label: "Privacy" },
-  { to: "/terms", label: "Terms" },
+const CAPABILITIES = [
+  {
+    title: "Voice",
+    body: "Answer, call, qualify, book, transfer, and recap.",
+    icon: PhoneCall,
+  },
+  {
+    title: "Text",
+    body: "Confirm, remind, nurture, and recover under consent rules.",
+    icon: MessageSquareText,
+  },
+  {
+    title: "Email",
+    body: "Follow up, reply, and preserve the conversation record.",
+    icon: Mail,
+  },
+  {
+    title: "Shared Memory",
+    body: "One identity, knowledge base, history, and rule set.",
+    icon: Workflow,
+  },
+  {
+    title: "Approvals",
+    body: "Keep sensitive actions behind explicit owner control.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Outcomes",
+    body: "Log what happened, what changed, and what comes next.",
+    icon: BadgeCheck,
+  },
 ] as const;
+
+const CONTROL_POINTS = [
+  {
+    title: "Approvals",
+    body: "Require a person before sensitive actions.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Spend",
+    body: "Set prepaid limits with no automatic overages.",
+    icon: WalletCards,
+  },
+  {
+    title: "Handoffs",
+    body: "Escalate with context, not a cold transfer.",
+    icon: Users,
+  },
+  {
+    title: "Proof",
+    body: "Keep transcripts, outcomes, and audit history.",
+    icon: ShieldCheck,
+  },
+] as const;
+
+const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
+
+const PLAN_PRESENTATION = {
+  personal: {
+    name: "Free Builder",
+    description: "Build, train, and privately simulate one draft agent.",
+    cta: "Build Free",
+  },
+  starter: {
+    name: "Starter",
+    description: "Put one focused communications agent live.",
+    cta: "Choose Starter",
+  },
+  team: {
+    name: "Starter Plus",
+    description: "Run a personal and business agent together.",
+    cta: "Choose Starter Plus",
+  },
+  business: {
+    name: "Pro",
+    description: "Operate a supervised team of specialized agents.",
+    cta: "Choose Pro",
+  },
+} as const;
+
+const PLAN_CARDS = PUBLIC_PLAN_IDS.map((id) => {
+  const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
+  if (!plan) throw new Error(`Missing public plan: ${id}`);
+  return { id, plan, presentation: PLAN_PRESENTATION[id] };
+});
+
+function SectionHeading({
+  eyebrow,
+  title,
+  body,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="landing-home__section-heading">
+      <p className="wl-eyebrow text-primary">{eyebrow}</p>
+      <h2 className="wl-public-section-heading">{title}</h2>
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function CompactCard({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="landing-home__compact-card">
+      <span className="landing-home__compact-icon">
+        <Icon aria-hidden="true" />
+      </span>
+      <div>
+        <h3>{title}</h3>
+        <p>{body}</p>
+      </div>
+    </article>
+  );
+}
 
 export default function WireAgentLanding() {
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
       surface: "marketing_web",
-      metadata: { path: window.location.pathname || "/", scope: "home_hero" },
+      metadata: { path: window.location.pathname || "/", scope: "consolidated_home" },
     });
   }, []);
 
@@ -103,7 +230,7 @@ export default function WireAgentLanding() {
     emitProductEvent({
       event: "landing_audience_selected",
       surface: "marketing_web",
-      metadata: { audience, source: "hero_work_lane" },
+      metadata: { audience, source: "solutions_section" },
     });
   };
 
@@ -155,7 +282,7 @@ export default function WireAgentLanding() {
                 <span>Build free</span>
                 <span>Launch from ${STARTER_PRICE}/mo</span>
                 <span>Number included</span>
-                <Link to="/pricing">View Pricing</Link>
+                <a href="#pricing">View Pricing</a>
                 <span className="sr-only">
                   Channels unlock at activation. Paid plans include a Wireline number. Extra usage
                   uses prepaid Runtime Balance.
@@ -178,9 +305,9 @@ export default function WireAgentLanding() {
                   {AUDIENCES.map((audience) => {
                     const Icon = audience.icon;
                     return (
-                      <Link
+                      <a
                         key={audience.key}
-                        to={audience.href}
+                        href="#solutions"
                         className="landing-stage__lane"
                         onClick={() => selectAudience(audience.key)}
                       >
@@ -190,7 +317,7 @@ export default function WireAgentLanding() {
                           {audience.detail}. {audience.uses.join(", ")}.
                         </span>
                         <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
-                      </Link>
+                      </a>
                     );
                   })}
                 </nav>
@@ -297,19 +424,167 @@ export default function WireAgentLanding() {
               </div>
             </div>
           </div>
+        </section>
 
-          <footer className="landing-stage__footer">
-            <p>&copy; {new Date().getFullYear()} Wireline</p>
-            <nav aria-label="Legal">
-              {LEGAL_LINKS.map((link) => (
-                <Link key={link.to} to={link.to}>
-                  {link.label}
-                </Link>
+        <section id="solutions" className="marketing-section landing-home__section">
+          <div className="wl-public-rail">
+            <SectionHeading
+              eyebrow="Solutions"
+              title="Start with one job"
+              body="Choose the work. Wireline keeps every channel, rule, and outcome together."
+            />
+
+            <div className="landing-home__solution-grid">
+              {AUDIENCES.map((audience) => {
+                const Icon = audience.icon;
+                return (
+                  <article key={audience.key} className="landing-home__solution-card">
+                    <span className="landing-home__solution-icon">
+                      <Icon aria-hidden="true" />
+                    </span>
+                    <p className="wl-eyebrow">{audience.label}</p>
+                    <h3>{audience.detail}</h3>
+                    <ul>
+                      {audience.uses.map((use) => (
+                        <li key={use}>
+                          <Check aria-hidden="true" />
+                          {use}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link to={audience.href} onClick={() => selectAudience(audience.key)}>
+                      Start Here
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="marketing-section landing-home__section landing-home__section--tinted">
+          <div className="wl-public-rail">
+            <SectionHeading
+              eyebrow="Product"
+              title="One agent across every conversation"
+              body="Voice, text, email, memory, approvals, and proof stay in one operating system."
+            />
+
+            <div className="landing-home__compact-grid">
+              {CAPABILITIES.map((capability) => (
+                <CompactCard key={capability.title} {...capability} />
               ))}
-            </nav>
-          </footer>
+            </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="marketing-section landing-home__section">
+          <div className="wl-public-rail">
+            <SectionHeading
+              eyebrow="Pricing"
+              title="Build free. Launch when ready"
+              body="Every paid plan includes a Wireline number. No automatic overages."
+            />
+
+            <div className="landing-home__pricing-grid">
+              {PLAN_CARDS.map(({ id, plan, presentation }) => {
+                const free = id === "personal";
+                const featured = id === "team";
+                const agentCount = free
+                  ? "1 private draft"
+                  : `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}`;
+                const capacity = free
+                  ? "$1.50 private simulation"
+                  : `${plan.voice_minutes_monthly} voice minutes`;
+                const numberCount = free
+                  ? "Activate to go live"
+                  : `${plan.included_phone_numbers} number${
+                      plan.included_phone_numbers === 1 ? "" : "s"
+                    } included`;
+
+                return (
+                  <article
+                    key={id}
+                    className={`landing-home__price-card${featured ? " is-featured" : ""}`}
+                  >
+                    {featured ? <span className="landing-home__price-badge">Most Popular</span> : null}
+                    <p className="wl-eyebrow">{presentation.name}</p>
+                    <div className="landing-home__price">
+                      <strong>${plan.price_usd_monthly}</strong>
+                      <span>{free ? "forever" : "/month"}</span>
+                    </div>
+                    <p className="landing-home__price-description">{presentation.description}</p>
+                    <ul>
+                      {[agentCount, capacity, numberCount].map((fact) => (
+                        <li key={fact}>
+                          <Check aria-hidden="true" />
+                          {fact}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={`/signup?plan=${id}`}
+                      className={featured ? "marketing-btn-primary" : "marketing-btn-secondary"}
+                    >
+                      {presentation.cta}
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="landing-home__pricing-note">
+              <p>Extra live work uses prepaid Runtime Balance.</p>
+              <Link to="/pricing">
+                Full Plan Details
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="trust" className="marketing-section landing-home__section landing-home__section--tinted">
+          <div className="wl-public-rail landing-home__trust-layout">
+            <SectionHeading
+              eyebrow="Trust"
+              title="Control stays with you"
+              body="Wireline can act. You decide where it stops, asks, escalates, and records proof."
+            />
+
+            <div className="landing-home__control-grid">
+              {CONTROL_POINTS.map((control) => (
+                <CompactCard key={control.title} {...control} />
+              ))}
+            </div>
+
+            <Link to="/trust" className="marketing-btn-secondary landing-home__trust-link">
+              Open Trust Center
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+
+        <section className="marketing-section landing-home__final-section">
+          <div className="wl-public-rail landing-home__final-card">
+            <WirelineMark signal className="landing-home__final-mark" />
+            <p className="wl-eyebrow text-primary">Wireline</p>
+            <h2>Build your voice agent</h2>
+            <p>Start free. Go live when the work is ready.</p>
+            <div>
+              <Link to={PERSONAL_SIGNUP} className="marketing-btn-primary">
+                Start Free
+                <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/signin" className="marketing-btn-secondary">
+                Sign In
+              </Link>
+            </div>
+          </div>
         </section>
       </main>
+
+      <MarketingChromeBar />
     </div>
   );
 }
