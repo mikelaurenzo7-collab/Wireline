@@ -6,20 +6,24 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("safe-area spacing ownership", () => {
-  it("keeps the exact-height application root unpadded", () => {
+  it("keeps the route-aware application root unpadded", () => {
     const app = read("src/App.tsx");
     const ownership = read("src/styles/safe-area-ownership.css");
+    const documentFlow = read("src/styles/marketing-document-flow.css");
     const index = read("src/index.css");
 
-    expect(app).toContain("wl-ui-caps w-full max-w-[100vw] overflow-x-hidden");
+    expect(app).toContain(
+      "wl-ui-caps wl-ui-caps--${mode} w-full max-w-[100vw] overflow-x-hidden",
+    );
     expect(app).not.toContain("safe-area-insets");
     expect(ownership).toContain("The application root is exactly 100dvh and never pads itself");
+    expect(documentFlow).toContain(".wl-ui-caps.wl-ui-caps--document");
     expect(index.indexOf("safe-area-ownership.css")).toBeGreaterThan(
       index.indexOf("prestige-polish.css"),
     );
   });
 
-  it("assigns notches and home indicators to physical public chrome", () => {
+  it("assigns notches and home indicators to the current physical public chrome", () => {
     const ownership = read("src/styles/safe-area-ownership.css");
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
 
@@ -28,10 +32,11 @@ describe("safe-area spacing ownership", () => {
     );
     expect(ownership).toContain("--wl-marketing-chrome-bottom: calc(2.1rem + env(");
     expect(ownership).toContain(".wl-public-header {");
-    expect(ownership).toContain(".wl-public-nav-overlay {");
     expect(ownership).toContain(".marketing-chrome-bar__row");
+    expect(ownership).not.toContain(".wl-public-nav-overlay {");
     expect(header).toContain("wl-public-header fixed");
-    expect(header).toContain("wl-public-nav-overlay");
+    expect(header).toContain('aria-label="Account"');
+    expect(header).not.toContain("wl-public-nav-overlay");
     expect(header).not.toContain("!top-16");
   });
 
@@ -76,10 +81,13 @@ describe("safe-area spacing ownership", () => {
     );
   });
 
-  it("preserves the one-scroller public and form contracts", () => {
-    expect(read("src/styles/viewport-first-marketing.css")).toContain(
-      "padding-top: var(--wl-marketing-chrome-top);",
-    );
+  it("preserves the public document and bounded form contracts", () => {
+    const documentFlow = read("src/styles/marketing-document-flow.css");
+
+    expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
+    expect(documentFlow).toContain('body[data-wireline-viewport="document"]');
+    expect(documentFlow).toContain("overflow-y: auto;");
+    expect(documentFlow).toContain("padding-top: var(--wl-marketing-chrome-top, 4rem);");
     for (const path of ["src/pages/Features.tsx", "src/pages/Pricing.tsx", "src/pages/About.tsx"]) {
       expect(read(path), path).not.toContain('className="pt-16"');
     }
