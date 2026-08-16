@@ -10,12 +10,15 @@ describe("Vapi environment boundary", () => {
   const health = read("scripts/check-vercel-env-health.mjs");
   const sync = read("scripts/sync-vapi-env-to-vercel.mjs");
 
-  it("requires server credentials without requiring a browser publishable key", () => {
+  it("requires server credentials and fails production on the browser publishable key", () => {
     expect(productionCheck).toContain('"VAPI_PRIVATE_KEY"');
     expect(productionCheck).toContain('"VAPI_WEBHOOK_SECRET"');
     expect(productionCheck).not.toContain('"VITE_VAPI_PUBLIC_KEY"');
     expect(deployment).toContain('requireValue("VAPI_PRIVATE_KEY"');
-    expect(deployment).toContain("VITE_VAPI_PUBLIC_KEY is legacy configuration");
+    expect(deployment).toContain(
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production",
+    );
+    expect(deployment).toContain("failures.push(");
   });
 
   it("rejects the retired key in previews and reports it in environment health", () => {
