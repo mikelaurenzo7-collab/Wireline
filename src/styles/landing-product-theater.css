@@ -1,0 +1,940 @@
+/*
+ * Landing product theater
+ *
+ * The homepage is not a compressed catalog. It is one conversion scene: a
+ * brand-specific, deterministic preview of the agent at work. The animation is
+ * CSS-only, performs no provider calls, and preserves a still composition when
+ * reduced motion is requested.
+ */
+
+.wireline-theater-surface .marketing-flow {
+  scrollbar-width: none;
+}
+
+.wireline-theater-surface .marketing-flow::-webkit-scrollbar {
+  display: none;
+}
+
+.marketing-surface .wireline-theater.marketing-section--screen {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(
+    100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+  );
+  overflow: hidden;
+  padding-block: clamp(0.8rem, 1.8vh, 1.4rem);
+  background:
+    radial-gradient(
+      circle at 76% 48%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 15%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 18% 72%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 6%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      122deg,
+      color-mix(in srgb, var(--wireline-color-canvas-warmer) 38%, transparent),
+      var(--wireline-color-canvas-default) 54%,
+      color-mix(in srgb, var(--wireline-color-surface-subtle) 72%, transparent)
+    );
+}
+
+.wireline-theater__mesh {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--wireline-color-border-default) 32%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--wireline-color-border-default) 28%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: clamp(2.75rem, 4vw, 4.5rem) clamp(2.75rem, 4vw, 4.5rem);
+  opacity: 0.22;
+  -webkit-mask-image: radial-gradient(ellipse 68% 74% at 72% 50%, black, transparent 78%);
+  mask-image: radial-gradient(ellipse 68% 74% at 72% 50%, black, transparent 78%);
+  pointer-events: none;
+}
+
+.wireline-theater__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 0.9fr) minmax(24rem, 1.1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 6rem);
+}
+
+.wireline-theater__copy {
+  position: relative;
+  z-index: 4;
+  max-width: 42rem;
+}
+
+.wireline-theater__eyebrow {
+  margin: 0;
+  color: var(--wireline-color-action-primary-default);
+  letter-spacing: 0.13em;
+}
+
+.wireline-theater__title {
+  max-width: 8.8ch;
+  margin: clamp(0.65rem, 1.3vh, 1rem) 0 0;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(3.6rem, 6.4vw, 6.85rem);
+  font-weight: 650;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+  text-transform: uppercase;
+}
+
+.wireline-theater__title span {
+  display: block;
+}
+
+.wireline-theater__subline {
+  max-width: 38rem;
+  margin: clamp(1rem, 2.1vh, 1.45rem) 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: clamp(1rem, 0.92rem + 0.28vw, 1.2rem);
+  line-height: 1.58;
+}
+
+.wireline-theater__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: clamp(1.15rem, 2.6vh, 1.8rem) !important;
+}
+
+.wireline-theater__primary-action,
+.wireline-theater__secondary-action {
+  min-height: 3rem;
+  padding-inline: 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.wireline-theater__primary-action {
+  gap: 0.5rem;
+}
+
+.wireline-theater__activation-note {
+  margin: 0.8rem 0 0;
+  color: var(--wireline-color-text-tertiary, var(--wireline-color-text-secondary));
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.wireline-theater__activation-note span {
+  display: inline-block;
+  margin-inline: 0.45rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wireline-theater__stage {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  justify-self: stretch;
+  width: 100%;
+  max-width: 43rem;
+  margin-inline: auto;
+}
+
+.wireline-theater__orbit {
+  position: absolute;
+  z-index: -1;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.wireline-theater__orbit--outer {
+  width: min(92%, 36rem);
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 24%, transparent);
+  background:
+    conic-gradient(
+      from 12deg,
+      transparent 0 19%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 20%, transparent) 19% 24%,
+      transparent 24% 61%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent) 61% 66%,
+      transparent 66% 100%
+    );
+  opacity: 0.8;
+  animation: wireline-theater-orbit 28s linear infinite;
+}
+
+.wireline-theater__orbit--inner {
+  width: min(68%, 26rem);
+  border: 1px dashed color-mix(in srgb, var(--wireline-color-border-strong) 58%, transparent);
+  opacity: 0.48;
+  animation: wireline-theater-orbit 20s linear infinite reverse;
+}
+
+.wireline-device {
+  position: relative;
+  z-index: 2;
+  height: clamp(26rem, 63vh, 35rem);
+  aspect-ratio: 0.535;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-strong) 80%, transparent);
+  border-radius: clamp(2rem, 3.5vw, 2.8rem);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--wireline-color-surface-raised) 92%, white 8%),
+      color-mix(in srgb, var(--wireline-color-canvas-default) 90%, black 10%)
+    );
+  box-shadow:
+    0 2.4rem 5rem -2.6rem color-mix(in srgb, var(--wireline-color-text-primary) 58%, transparent),
+    0 0 0 0.4rem color-mix(in srgb, var(--wireline-color-surface-default) 62%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 15%, transparent);
+  padding: clamp(0.42rem, 0.8vw, 0.58rem);
+  transform: translateZ(0);
+  animation: wireline-device-float 6.5s ease-in-out infinite;
+}
+
+.wireline-device::before {
+  content: "";
+  position: absolute;
+  top: 0.72rem;
+  left: 50%;
+  z-index: 4;
+  width: 29%;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wireline-color-text-primary) 42%, transparent);
+  transform: translateX(-50%);
+}
+
+.wireline-device__bezel,
+.wireline-device__screen {
+  width: 100%;
+  height: 100%;
+}
+
+.wireline-device__bezel {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 72%, transparent);
+  border-radius: calc(clamp(2rem, 3.5vw, 2.8rem) - 0.45rem);
+  background: var(--wireline-color-canvas-default);
+}
+
+.wireline-device__screen {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(0.9rem, 1.4vw, 1.15rem);
+  background:
+    radial-gradient(
+      circle at 50% 29%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 19%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-surface-subtle) 84%, transparent),
+      var(--wireline-color-canvas-default) 74%
+    );
+}
+
+.wireline-device__status {
+  display: flex;
+  min-height: 1.65rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.wireline-device__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: var(--wireline-color-status-success);
+}
+
+.wireline-device__live > span {
+  width: 0.42rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 28%, transparent);
+  animation: wireline-live-pulse 2.2s ease-out infinite;
+}
+
+.wireline-device__agent {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: clamp(0.45rem, 1.8vh, 1rem);
+  text-align: center;
+}
+
+.wireline-device__avatar {
+  position: relative;
+  display: grid;
+  width: clamp(6.25rem, 17vh, 9rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.wireline-device__halo {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 36%, transparent);
+  border-radius: inherit;
+  animation: wireline-avatar-halo 3.6s ease-out infinite;
+}
+
+.wireline-device__halo--two {
+  animation-delay: -1.8s;
+}
+
+.wireline-device__avatar-core {
+  position: relative;
+  display: grid;
+  width: 68%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 46%, transparent);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      color-mix(in srgb, white 13%, transparent),
+      transparent 34%
+    ),
+    color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 15%,
+      var(--wireline-color-surface-default)
+    );
+  box-shadow:
+    0 0 2.8rem color-mix(in srgb, var(--wireline-color-action-primary-default) 22%, transparent),
+    inset 0 0 1.6rem color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent);
+}
+
+.wireline-device__mark {
+  width: 58%;
+  height: 58%;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wireline-device__agent-label {
+  margin: clamp(0.5rem, 1.2vh, 0.8rem) 0 0;
+  color: var(--wireline-color-action-primary-default);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.wireline-device__task {
+  margin: 0.2rem 0 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.wireline-device__timer {
+  margin: 0.28rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+}
+
+.wireline-device__waveform {
+  display: flex;
+  height: clamp(1.55rem, 4vh, 2.25rem);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.16rem, 0.35vw, 0.28rem);
+  margin-inline: auto;
+}
+
+.wireline-device__waveform span {
+  width: clamp(0.13rem, 0.2vw, 0.18rem);
+  height: var(--wireline-wave-height);
+  border-radius: 999px;
+  background: var(--wireline-color-action-primary-default);
+  opacity: 0.68;
+  transform: scaleY(0.34);
+  animation: wireline-waveform 1.45s ease-in-out infinite;
+  animation-delay: calc(var(--wireline-wave-index) * -0.085s);
+}
+
+.wireline-device__transcript {
+  max-width: 22ch;
+  margin: clamp(0.35rem, 1vh, 0.65rem) auto 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: clamp(0.68rem, 0.9vw, 0.79rem);
+  line-height: 1.42;
+  text-align: center;
+}
+
+.wireline-device__outcome {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  align-self: center;
+  gap: 0.42rem;
+  margin-top: clamp(0.55rem, 1.2vh, 0.8rem);
+  border: 1px solid color-mix(in srgb, var(--wireline-color-status-success) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-status-success) 9%,
+    var(--wireline-color-surface-default)
+  );
+  padding-inline: 0.72rem;
+  color: var(--wireline-color-status-success);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wireline-device__channels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: clamp(0.6rem, 1.4vh, 0.85rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wireline-device__channels li {
+  display: flex;
+  min-width: 0;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 78%, transparent);
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.5rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wireline-device__channels svg {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wireline-device__explore {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  align-self: center;
+  gap: 0.35rem;
+  margin-top: clamp(0.55rem, 1.1vh, 0.75rem);
+  border-radius: var(--wireline-radius-md);
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.wireline-device__explore:hover {
+  color: var(--wireline-color-action-primary-default);
+  transform: translateX(0.12rem);
+}
+
+.wireline-device__explore:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 0.25rem;
+}
+
+.wireline-theater__signal {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  min-width: 11.6rem;
+  align-items: center;
+  gap: 0.68rem;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-strong) 58%, transparent);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 86%, transparent);
+  box-shadow: 0 1.1rem 2.6rem -1.8rem color-mix(in srgb, black 48%, transparent);
+  padding: 0.72rem 0.82rem;
+  backdrop-filter: blur(16px);
+  animation: wireline-signal-float 5.8s ease-in-out infinite;
+  animation-delay: calc(var(--wireline-signal-index) * -1.35s);
+}
+
+.wireline-theater__signal--answer {
+  top: 16%;
+  left: 0;
+}
+
+.wireline-theater__signal--qualified {
+  top: 43%;
+  right: 0;
+}
+
+.wireline-theater__signal--booked {
+  bottom: 10%;
+  left: 5%;
+}
+
+.wireline-theater__signal-icon {
+  display: grid;
+  width: 2rem;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.62rem;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 13%,
+    var(--wireline-color-surface-subtle)
+  );
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wireline-theater__signal > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.wireline-theater__signal strong {
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.wireline-theater__signal small {
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+@keyframes wireline-theater-orbit {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes wireline-device-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.4deg);
+  }
+  50% {
+    transform: translateY(-0.55rem) rotate(0.4deg);
+  }
+}
+
+@keyframes wireline-avatar-halo {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.72);
+  }
+  72%,
+  100% {
+    opacity: 0;
+    transform: scale(1.28);
+  }
+}
+
+@keyframes wireline-waveform {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: scaleY(0.34);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes wireline-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 30%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.45rem transparent;
+  }
+}
+
+@keyframes wireline-signal-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.35rem);
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 1024px) {
+  .wireline-theater__grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(22rem, 1.05fr);
+    gap: 1.5rem;
+  }
+
+  .wireline-theater__title {
+    font-size: clamp(3.25rem, 5.8vw, 5rem);
+  }
+
+  .wireline-theater__signal {
+    min-width: 10.25rem;
+    padding: 0.62rem 0.7rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .marketing-surface .wireline-theater.marketing-section--screen {
+    align-content: center;
+    min-height: calc(
+      100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+    );
+    padding-block: clamp(0.55rem, 1.4vh, 0.9rem);
+  }
+
+  .wireline-theater__mesh {
+    opacity: 0.15;
+    -webkit-mask-image: radial-gradient(ellipse 90% 54% at 50% 74%, black, transparent 82%);
+    mask-image: radial-gradient(ellipse 90% 54% at 50% 74%, black, transparent 82%);
+  }
+
+  .wireline-theater__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(0.45rem, 1.4vh, 0.9rem);
+  }
+
+  .wireline-theater__copy {
+    max-width: 46rem;
+    justify-self: center;
+    text-align: center;
+  }
+
+  .wireline-theater__title {
+    max-width: 11ch;
+    margin-inline: auto;
+    font-size: clamp(2.65rem, 11vw, 4.5rem);
+    line-height: 0.9;
+  }
+
+  .wireline-theater__subline {
+    max-width: 48ch;
+    margin-top: clamp(0.55rem, 1.4vh, 0.9rem);
+    margin-inline: auto;
+    font-size: clamp(0.88rem, 2.2vw, 1rem);
+    line-height: 1.45;
+  }
+
+  .wireline-theater__actions {
+    justify-content: center;
+    margin-top: clamp(0.7rem, 1.8vh, 1rem) !important;
+  }
+
+  .wireline-theater__primary-action,
+  .wireline-theater__secondary-action {
+    min-height: 2.75rem;
+  }
+
+  .wireline-theater__activation-note {
+    margin-top: 0.55rem;
+    text-align: center;
+  }
+
+  .wireline-theater__stage {
+    max-width: 31rem;
+  }
+
+  .wireline-device {
+    height: clamp(15.75rem, 38vh, 20.5rem);
+    border-radius: 1.7rem;
+    padding: 0.32rem;
+  }
+
+  .wireline-device::before {
+    top: 0.5rem;
+    height: 0.25rem;
+  }
+
+  .wireline-device__bezel {
+    border-radius: 1.4rem;
+  }
+
+  .wireline-device__screen {
+    padding: clamp(0.62rem, 1.5vw, 0.82rem);
+  }
+
+  .wireline-device__status {
+    min-height: 1.2rem;
+    font-size: 0.48rem;
+  }
+
+  .wireline-device__avatar {
+    width: clamp(4.45rem, 12vh, 6.1rem);
+  }
+
+  .wireline-device__agent {
+    padding-block: 0.2rem;
+  }
+
+  .wireline-device__agent-label {
+    margin-top: 0.28rem;
+    font-size: 0.45rem;
+  }
+
+  .wireline-device__task {
+    margin-top: 0.1rem;
+    font-size: clamp(0.85rem, 2.7vw, 1.05rem);
+  }
+
+  .wireline-device__timer {
+    margin-top: 0.1rem;
+    font-size: 0.5rem;
+  }
+
+  .wireline-device__waveform {
+    height: 1.2rem;
+    margin-top: 0.1rem;
+  }
+
+  .wireline-device__transcript {
+    max-width: 24ch;
+    margin-top: 0.22rem;
+    font-size: 0.58rem;
+    line-height: 1.28;
+  }
+
+  .wireline-device__outcome {
+    min-height: 1.5rem;
+    margin-top: 0.35rem;
+    padding-inline: 0.5rem;
+    font-size: 0.43rem;
+  }
+
+  .wireline-device__channels {
+    gap: 0.2rem;
+    margin-top: 0.35rem;
+  }
+
+  .wireline-device__channels li {
+    min-height: 1.45rem;
+    border-radius: 0.45rem;
+    font-size: 0.4rem;
+  }
+
+  .wireline-device__explore {
+    min-height: 1.45rem;
+    margin-top: 0.28rem;
+    font-size: 0.44rem;
+  }
+
+  .wireline-theater__orbit--outer {
+    width: min(82vw, 25rem);
+  }
+
+  .wireline-theater__orbit--inner {
+    width: min(62vw, 18rem);
+  }
+
+  .wireline-theater__signal {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .marketing-surface .wireline-theater.marketing-section--screen {
+    padding-inline: max(1rem, env(safe-area-inset-left));
+  }
+
+  .wireline-theater__eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .wireline-theater__title {
+    font-size: clamp(2.55rem, 12.5vw, 3.55rem);
+  }
+
+  .wireline-theater__actions {
+    flex-wrap: nowrap;
+    gap: 0.45rem;
+  }
+
+  .wireline-theater__primary-action,
+  .wireline-theater__secondary-action {
+    min-width: 0;
+    padding-inline: 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .wireline-device__channels li {
+    gap: 0.18rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 700px) {
+  .marketing-surface .wireline-theater.marketing-section--screen {
+    align-content: center;
+    min-height: calc(
+      100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+    );
+    padding-block: 0.55rem;
+  }
+
+  .wireline-theater__grid {
+    gap: clamp(1.25rem, 3vw, 3rem);
+  }
+
+  .wireline-theater__title {
+    font-size: clamp(3rem, 5vw, 4.7rem);
+  }
+
+  .wireline-theater__subline {
+    max-width: 34rem;
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .wireline-theater__actions {
+    margin-top: 0.9rem !important;
+  }
+
+  .wireline-device {
+    height: clamp(22rem, 60vh, 27rem);
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 600px) {
+  .wireline-theater__activation-note {
+    display: none;
+  }
+
+  .wireline-theater__title {
+    font-size: clamp(2.75rem, 4.6vw, 4rem);
+  }
+
+  .wireline-device {
+    height: clamp(19rem, 55vh, 22rem);
+  }
+
+  .wireline-theater__signal {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-width: 1023px) and (max-height: 620px) {
+  .wireline-theater__subline,
+  .wireline-theater__activation-note,
+  .wireline-device__transcript {
+    display: none;
+  }
+
+  .wireline-theater__eyebrow {
+    font-size: 0.56rem;
+  }
+
+  .wireline-theater__title {
+    margin-top: 0.35rem;
+    font-size: clamp(2.25rem, 9.5vw, 3rem);
+  }
+
+  .wireline-theater__actions {
+    margin-top: 0.55rem !important;
+  }
+
+  .wireline-device {
+    height: clamp(13.5rem, 38vh, 15.5rem);
+  }
+
+  .wireline-device__avatar {
+    width: clamp(3.8rem, 10vh, 4.7rem);
+  }
+
+  .wireline-device__outcome,
+  .wireline-device__channels {
+    margin-top: 0.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wireline-theater__orbit,
+  .wireline-device,
+  .wireline-device__halo,
+  .wireline-device__live > span,
+  .wireline-device__waveform span,
+  .wireline-theater__signal {
+    animation: none !important;
+  }
+
+  .wireline-device {
+    transform: none;
+  }
+
+  .wireline-device__halo--one {
+    opacity: 0.42;
+    transform: scale(0.92);
+  }
+
+  .wireline-device__halo--two {
+    opacity: 0.2;
+    transform: scale(1.12);
+  }
+
+  .wireline-device__waveform span {
+    opacity: 0.72;
+    transform: scaleY(0.68);
+  }
+}

@@ -10,3 +10,6 @@
 /* Last in the marketing tier: the frame, the section ceiling, and the case
    doctrine override the per-page rhythm the files above establish. */
 @import "./viewport-first-marketing.css";
+/* The homepage is a single, zero-runtime product scene rather than a compressed
+   catalog. Its route-specific rules sit after the shared frame by design. */
+@import "./landing-product-theater.css";

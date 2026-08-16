@@ -6,51 +6,43 @@ import { PRODUCT_EVENT_NAMES } from "../src/lib/product-events";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * The flagship browser voice demo belongs above the fold — "hear it now" is
- * the single strongest converter for a voice-AI product, and it used to be
- * one click + one page away on /showcase. Two top-of-funnel events
- * (landing_demo_clicked, landing_audience_selected) also existed in the
- * taxonomy with zero emit sites, so demo-interest and audience drop-off
- * were unmeasurable.
+ * The homepage now demonstrates the product without executing provider work.
+ * Live browser calls and phone-number fallbacks remain available on deliberate
+ * demo surfaces, but an anonymous landing-page view must never incur runtime
+ * cost or remove the reason to create an account.
  */
-describe("homepage hero live demo + funnel instrumentation", () => {
-  it("renders the browser voice widget in the hero, not just a link to /showcase", () => {
+describe("homepage zero-runtime product theater", () => {
+  it("renders a deterministic product scene instead of a live public demo", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("import BrowserCallWidget");
-    expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('id="hear-a-demo"');
+
+    expect(landing).toContain("wireline-device");
+    expect(landing).toContain("OUTCOME_SIGNALS.map");
+    expect(landing).toContain("WAVEFORM.map");
+    expect(landing).not.toContain('import BrowserCallWidget from "./BrowserCallWidget"');
+    expect(landing).not.toContain("<BrowserCallWidget");
+    expect(landing).not.toContain("LANDING_PUBLIC_DEMO_AGENTS");
+    expect(landing).not.toContain("HERO_DEMO_AGENT");
+    expect(landing).not.toContain("href={`tel:");
   });
 
-  it("falls back to a phone demo line when the browser demo can't run", () => {
+  it("keeps conversion and product exploration one click away", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("fallback=");
-    // The eyebrow above the widget was removed: the button already says it.
-    expect(landing).toContain("Hear It Live");
-    // Assert the mechanism, not the button's wording: the fallback must dial
-    // the demo line. Pinning an exact label made a copy edit look like a
-    // regression while the tel: link it exists to protect went unchecked.
-    expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
-    // The phone fallback is still the fallback; its label now matches the
-    // browser demo button so the hero offers one action, not two names for it.
-    expect(landing).toMatch(/Hear It Live/);
-    expect(landing).toContain('mode: "phone"');
+
+    expect(landing).toContain('const PRIMARY_CTA_PATH = "/signup?plan=personal"');
+    expect(landing).toContain("Start Free");
+    expect(landing).toContain('to="/features"');
+    expect(landing).toContain('event: "landing_primary_cta_clicked"');
+    expect(landing).toContain('source: "landing_product_theater"');
+  });
+
+  it("keeps live-demo instrumentation on intentional demo surfaces only", () => {
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
-    // The widget renders the fallback instead of a dead button when the key
-    // is missing.
-    expect(widget).toContain("!VAPI_PUBLIC_KEY && fallback");
-  });
 
-  it("emits the two previously-dead funnel events", () => {
     expect(PRODUCT_EVENT_NAMES).toContain("landing_demo_clicked");
     expect(PRODUCT_EVENT_NAMES).toContain("landing_audience_selected");
-    expect(read("src/components/marketing/BrowserCallWidget.tsx")).toContain(
-      '"landing_demo_clicked"',
-    );
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      '"landing_audience_selected"',
-    );
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      'event: "landing_demo_clicked"',
-    );
+    expect(widget).toContain('"landing_demo_clicked"');
+    expect(landing).not.toContain('event: "landing_demo_clicked"');
+    expect(landing).not.toContain('event: "landing_audience_selected"');
   });
 });
