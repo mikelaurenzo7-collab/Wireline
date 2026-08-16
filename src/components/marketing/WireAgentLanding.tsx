@@ -222,7 +222,7 @@ export default function WireAgentLanding() {
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}
                         className="landing-demo__button"
-                        aria-label="Hear It Live"
+                        aria-label="Call the Public Demo Line"
                         onClick={() =>
                           emitProductEvent({
                             event: "landing_demo_clicked",
@@ -235,7 +235,7 @@ export default function WireAgentLanding() {
                         }
                       >
                         <Phone className="size-4" aria-hidden="true" />
-                        <span>Hear It Live</span>
+                        <span>Call Demo Line</span>
                       </a>
                     }
                   />
