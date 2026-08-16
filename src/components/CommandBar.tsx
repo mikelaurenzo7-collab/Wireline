@@ -38,6 +38,7 @@ import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
 import { useAccount } from "../contexts/AccountContext";
 import { isRouteAvailableForAccount } from "../lib/account-type";
+import { customerAgentLanguage } from "../lib/product-copy";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
 
@@ -226,8 +227,11 @@ export default function CommandBar() {
     // The palette must offer the same surface set as the rail: an unfiltered
     // list pushed personal accounts to business-only pages (Activity) where no
     // nav entry exists and there is no way back.
+    const language = customerAgentLanguage(accountType);
     const available = WORKSPACE_COMMANDS.filter((command) =>
       isRouteAvailableForAccount(accountType, command.href),
+    ).map((command) =>
+      command.id === "agents" ? { ...command, label: language.navLabel } : command,
     );
     const term = query.trim().toLocaleLowerCase();
     if (!term) return available;

@@ -133,7 +133,8 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
                     : "/studio?create=1&posture=business"
                 }
               >
-                {language.createCta}
+                <span className="sm:hidden">{language.createCtaShort}</span>
+                <span className="hidden sm:inline">{language.createCta}</span>
                 <ArrowRight size={15} aria-hidden="true" />
               </Link>
             </Button>
@@ -582,10 +583,10 @@ export default function OverviewPage() {
         mode="standard"
         className={hasAgents ? "wl-overview" : "wl-overview wl-overview--first-run"}
       >
-        <section className="relative wl-overview-greeting text-left">
-          <div className="flex flex-col items-start gap-5">
-            {hasAgents ? <h1 className="wl-app-page-title text-balance">Overview</h1> : null}
-            {hasAgents ? (
+        {hasAgents ? (
+          <section className="relative wl-overview-greeting text-left">
+            <div className="flex flex-col items-start gap-5">
+              <h1 className="wl-app-page-title text-balance">Overview</h1>
               <div className="flex flex-wrap items-center justify-start gap-2">
                 <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                   <Link to={primaryStudioHref}>
@@ -616,9 +617,9 @@ export default function OverviewPage() {
                   </Button>
                 )}
               </div>
-            ) : null}
-          </div>
-        </section>
+            </div>
+          </section>
+        ) : null}
 
         {isFirstRun ? (
           <FirstRunLaunchpad posture={accountType} />

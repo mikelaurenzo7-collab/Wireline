@@ -492,7 +492,14 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? "Creating…" : language.createCta}
+              {creating ? (
+                "Creating…"
+              ) : (
+                <>
+                  <span className="sm:hidden">{language.createCtaShort}</span>
+                  <span className="hidden sm:inline">{language.createCta}</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

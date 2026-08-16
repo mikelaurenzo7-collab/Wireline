@@ -452,7 +452,7 @@ export default function AdminSettings() {
           activeId={activeTab}
           onSelect={(id) => navigate(`/admin?tab=${id}`)}
           density="compact"
-          wrap
+          wrap="always"
           className="mb-3 border-b border-border/70 pb-3"
           tabs={VALID_TABS.map((tab) => ({
             id: tab,

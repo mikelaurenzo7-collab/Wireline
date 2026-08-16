@@ -61,6 +61,8 @@ describe("current-state UI contract", () => {
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
     expect(commandBar).toContain('label: "Companion surfaces"');
+    expect(commandBar).toContain("language.navLabel");
+    expect(commandBar).toContain('command.id === "agents"');
     expect(commandBar).not.toContain("Wireline everywhere");
     expect(security).toContain("The web app is the GA product");
     expect(security).toContain("Marketing and campaign outbound fail closed");

@@ -99,11 +99,13 @@ describe("product voice cohesion", () => {
       singular: "personal voice agent",
       plural: "personal voice agents",
       createCta: "Create personal voice agent",
+      createCtaShort: "Create voice agent",
     });
     expect(customerAgentLanguage("business")).toMatchObject({
       singular: "business voice agent",
       plural: "business voice agents",
       createCta: "Create business voice agent",
+      createCtaShort: "Create voice agent",
     });
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
 

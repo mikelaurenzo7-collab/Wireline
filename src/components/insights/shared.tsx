@@ -135,6 +135,13 @@ export function InsightEmpty({
               ]
             : [...config.actions]);
 
+  const firstRun = !agentsLoading && agents.length === 0 && !agentsDegraded;
+  const title = titleOverride ?? (firstRun ? "No conversations yet" : config.title);
+  const description =
+    firstRun && !titleOverride
+      ? "Activity appears once a voice agent starts taking calls."
+      : undefined;
+
   return (
     <EmptyState
       framed={framed}
@@ -143,7 +150,8 @@ export function InsightEmpty({
       titleTone="ui"
       withHalo={false}
       icon={icon}
-      title={titleOverride ?? config.title}
+      title={title}
+      description={description}
       actions={prerequisiteActions}
       accent={success ? WL_BRAND.accent : undefined}
     />

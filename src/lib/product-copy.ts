@@ -42,6 +42,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create personal voice agent",
+    createCtaShort: "Create voice agent",
     setupLabel: "Personal voice agent in about a minute",
     setupPrompt: "What should your personal voice agent handle?",
     setupDescription: "Start with one call, appointment, or personal task.",
@@ -54,6 +55,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create business voice agent",
+    createCtaShort: "Create voice agent",
     setupLabel: "Business voice agent in about a minute",
     setupPrompt: "What job should this voice agent own?",
     setupDescription: "Start with one customer-facing job.",
@@ -68,6 +70,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: string;
     navShort: string;
     createCta: string;
+    createCtaShort: string;
     setupLabel: string;
     setupPrompt: string;
     setupDescription: string;

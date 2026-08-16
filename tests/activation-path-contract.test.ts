@@ -28,6 +28,9 @@ describe("activation path contract", () => {
     expect(studio).not.toContain("Start with one customer-facing job.");
     expect(studio).toContain('{posture === "personal" ? (');
     expect(overview).toContain("{language.createCta}");
+    expect(overview).toContain("{language.createCtaShort}");
+    expect(overview).toContain("hasAgents ? (");
+    expect(overview).toContain('className="relative wl-overview-greeting text-left"');
     // The time-of-day greeting is gone: it was the largest type on the most
     // important screen in activation, carrying the least information on it, and
     // it changed three times a day for no decision a visitor makes. On first
