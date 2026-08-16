@@ -46,14 +46,19 @@ describe("E2E cleanliness contracts", () => {
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
   });
 
-  it("cleans up browser microphone permission streams and safely addresses demo agents", () => {
+  it("cleans up browser microphone permission streams inside the protected session owner", () => {
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
 
-    expect(widget).toContain("encodeURIComponent(agentName)");
-    expect(widget).toContain("permissionStream.getTracks()");
-    expect(widget).toContain("track.stop()");
-    expect(widget).toContain("await instance.start(assistantPayload)");
-    expect(widget).not.toContain(
+    expect(hook).toContain('fetch("/api/public/demo-session"');
+    expect(hook).toContain("JSON.stringify({ agentName, source })");
+    expect(hook).toContain("permissionStream.getTracks()");
+    expect(hook).toContain("track.stop()");
+    expect(hook).toContain("await instance.start(PROTECTED_DEMO_ASSISTANT_SENTINEL)");
+    expect(widget).toContain("useProtectedPublicDemo");
+    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
+    expect(widget).not.toContain("assistantPayload");
+    expect(hook).not.toContain(
       'setError(reason instanceof Error ? reason.message : "Voice connection failed.")',
     );
   });

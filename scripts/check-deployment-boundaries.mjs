@@ -42,7 +42,6 @@ if (isProduction) {
   // XAI_API_KEY is optional experiment-only; never a production launch requirement.
   requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
   requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
-  requireValue("VITE_VAPI_PUBLIC_KEY", "the public live-call client cannot initialize");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
@@ -57,6 +56,12 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   validHttpsUrl("APP_URL", true);
   validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
+
+  if (value("VITE_VAPI_PUBLIC_KEY")) {
+    failures.push(
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and the server-only VAPI_PRIVATE_KEY proxy",
+    );
+  }
 
   if (value("STRIPE_SECRET_KEY") && !/^(?:sk|rk)_live_/.test(value("STRIPE_SECRET_KEY"))) {
     failures.push("STRIPE_SECRET_KEY: production must use a live-mode key");

@@ -11,13 +11,18 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("homepage hero live demo + funnel instrumentation", () => {
-  it("renders the flagship browser voice proof above the fold", () => {
+  it("renders the flagship protected voice proof above the fold", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("import BrowserCallWidget");
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain('id="hear-a-demo"');
     expect(landing).toContain("landing-console");
+
+    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+    expect(widget).toContain("useProtectedPublicDemo");
+    expect(widget).toContain("Protected browser preview");
+    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
   });
 
   it("falls back to the public phone demo without removing the proof console", () => {
@@ -25,18 +30,20 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     expect(landing).toContain("fallback=");
     expect(landing).toContain("Hear It Live");
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
+    expect(landing).toContain('aria-label="Call the Public Demo Line"');
     expect(landing).toContain('mode: "phone"');
 
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
     expect(widget).toContain('variant?: "compact" | "stage"');
-    expect(widget).toContain("!VAPI_PUBLIC_KEY && Boolean(fallback)");
-    expect(widget).toContain('variant !== "stage"');
-    expect(widget).toContain("Public Demo Line");
+    expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");
+    expect(widget).toContain("{fallback}");
+    expect(hook).toContain("Try the public demo line instead");
   });
 
   it("hard-caps browser preview spend and disables retained provider artifacts", () => {
-    expect(PUBLIC_BROWSER_DEMO_MAX_SECONDS).toBe(90);
+    expect(PUBLIC_BROWSER_DEMO_MAX_SECONDS).toBe(45);
     expect(PUBLIC_BROWSER_DEMO_REQUESTS_PER_MINUTE).toBe(6);
     expect(buildPublicBrowserDemoArtifactPlan()).toEqual({
       recordingEnabled: false,
@@ -49,18 +56,19 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     const route = read("src/routes/marketing-runtime-routes.ts");
     expect(route).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
     expect(route).toContain("artifactPlan: buildPublicBrowserDemoArtifactPlan()");
-    expect(route).toContain("max: PUBLIC_BROWSER_DEMO_REQUESTS_PER_MINUTE");
+    expect(route).toContain('router.post("/api/public/demo-session"');
+    expect(route).toContain('router.post("/api/public/demo-vapi/call/web"');
 
-    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(widget).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS * 1000");
-    expect(widget).toContain("ends automatically after");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
+    expect(hook).toContain("(durationSeconds + 3) * 1000");
+    expect(hook).toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
   });
 
-  it("emits the live-demo, audience, and primary-action funnel events", () => {
+  it("emits live-demo, audience, and primary-action funnel events", () => {
     expect(PRODUCT_EVENT_NAMES).toContain("landing_demo_clicked");
     expect(PRODUCT_EVENT_NAMES).toContain("landing_audience_selected");
     expect(PRODUCT_EVENT_NAMES).toContain("landing_primary_cta_clicked");
-    expect(read("src/components/marketing/BrowserCallWidget.tsx")).toContain(
+    expect(read("src/hooks/useProtectedPublicDemo.ts")).toContain(
       'event: "landing_demo_clicked"',
     );
     const landing = read("src/components/marketing/WireAgentLanding.tsx");

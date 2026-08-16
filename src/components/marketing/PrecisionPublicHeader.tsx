@@ -43,7 +43,7 @@ export default function PrecisionPublicHeader() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">
+      <header className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">
         <SkipToContentLink href="#main-content" />
         <div className="wl-measure relative mx-auto flex h-16 items-center gap-4 px-5 sm:px-6 lg:px-8">
           <Link
@@ -108,7 +108,7 @@ export default function PrecisionPublicHeader() {
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        overlayClassName="!top-16 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
+        overlayClassName="wl-public-nav-overlay !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
       >
         <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
         <DialogDescription className="sr-only">

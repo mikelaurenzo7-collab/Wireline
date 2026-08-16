@@ -118,6 +118,7 @@
 @import "./styles/modal-hierarchy.css";
 @import "./styles/e2e-design-polish.css";
 @import "./styles/prestige-polish.css";
+@import "./styles/safe-area-ownership.css";
 
 body {
   /* `background-color`, not the `background` shorthand: this rule sits after the
