@@ -153,13 +153,23 @@ requirePattern(
 );
 requirePattern(
   "scripts/run-launch-browser-audit.mjs",
+  /WIRELINE_BROWSER_AUDIT_CAPABLE/,
+  "Browser certification must require an explicitly browser-capable runner.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /SKIPPED_RUNNER_UNAVAILABLE/,
+  "Unavailable browser infrastructure must be reported separately from a failed product test.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
   /marketing-viewport-lock\.spec\.ts[\s\S]*marketing-a11y\.spec\.ts[\s\S]*public-demo-fallback\.spec\.ts/,
   "The browser audit must cover geometry, accessibility, and protected-demo fallback.",
 );
 requirePattern(
   "scripts/run-launch-browser-audit.mjs",
   /playwright[\s\S]*install[\s\S]*chromium/,
-  "The browser audit must install the pinned Chromium build before execution.",
+  "A capable browser-audit runner must install the pinned Chromium build before execution.",
 );
 
 requirePattern(
