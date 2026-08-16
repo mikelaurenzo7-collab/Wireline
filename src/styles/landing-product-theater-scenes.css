@@ -1,0 +1,135 @@
+/*
+ * The product theater rotates representative work inside one visual object.
+ * These scenes preserve breadth without adding homepage sections, controls, or
+ * provider-backed demos.
+ */
+
+.wireline-device__loop {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.2rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wireline-device__loop li {
+  position: relative;
+  min-width: 0;
+  color: var(--wireline-color-text-tertiary, var(--wireline-color-text-secondary));
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.42rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wireline-device__loop li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.16rem;
+  width: 0.24rem;
+  height: 1px;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 42%,
+    transparent
+  );
+}
+
+.wireline-device__scene-stack {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 3.25rem;
+  place-items: start center;
+  margin-top: clamp(0.32rem, 0.9vh, 0.55rem);
+}
+
+.wireline-device__scene {
+  grid-area: 1 / 1;
+  display: grid;
+  width: 100%;
+  place-items: center;
+  opacity: 0;
+  animation: wireline-scene-cycle 12s ease-in-out infinite both;
+  animation-delay: var(--wireline-scene-delay);
+}
+
+.wireline-device__scene .wireline-device__agent-label,
+.wireline-device__scene .wireline-device__task {
+  margin-top: 0;
+}
+
+.wireline-device__queue {
+  max-width: 28ch;
+  margin: 0.28rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.49rem;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+@keyframes wireline-scene-cycle {
+  0%,
+  27% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  33%,
+  94% {
+    opacity: 0;
+    transform: translateY(0.22rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1023px) {
+  .wireline-device__loop {
+    display: none;
+  }
+
+  .wireline-device__scene-stack {
+    min-height: 2.35rem;
+    margin-top: 0.18rem;
+  }
+
+  .wireline-device__queue {
+    margin-top: 0.1rem;
+    font-size: 0.38rem;
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 1023px) and (max-height: 620px) {
+  .wireline-device__queue {
+    display: none;
+  }
+
+  .wireline-device__scene-stack {
+    min-height: 1.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wireline-device__scene {
+    display: none;
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+
+  .wireline-device__scene:first-child {
+    display: grid;
+    opacity: 1;
+  }
+}

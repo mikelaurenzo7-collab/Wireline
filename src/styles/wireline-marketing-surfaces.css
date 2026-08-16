@@ -13,3 +13,4 @@
 /* The homepage is a single, zero-runtime product scene rather than a compressed
    catalog. Its route-specific rules sit after the shared frame by design. */
 @import "./landing-product-theater.css";
+@import "./landing-product-theater-scenes.css";

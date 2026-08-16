@@ -12,10 +12,32 @@ import { Link } from "react-router";
 import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import WirelineMark from "../brand/WirelineMark";
-import { MARKETING_VOICE } from "../../lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { emitProductEvent } from "../../lib/product-event-client";
 
 const PRIMARY_CTA_PATH = "/signup?plan=personal";
+const HERO_LOOP = MARKETING_VOICE.proof;
+
+const THEATER_SCENES = [
+  {
+    lane: AGENT_DIRECTION_MODES.outbound.label,
+    task: "Lead Response",
+    queue: ["Quote Follow Up", "Appointment Setting"],
+    delay: "0s",
+  },
+  {
+    lane: AGENT_DIRECTION_MODES.inbound.label,
+    task: "Front Desk",
+    queue: ["Lead Qualifier", "Support Triage"],
+    delay: "-8s",
+  },
+  {
+    lane: AGENT_DIRECTION_MODES.hybrid.label,
+    task: "Sales Desk",
+    queue: ["Collections Desk", "Appointment Desk"],
+    delay: "-4s",
+  },
+] as const;
 
 const OUTCOME_SIGNALS = [
   {
@@ -103,7 +125,7 @@ export default function WireAgentLanding() {
               </p>
             </header>
 
-            <div className="wireline-theater__stage">
+            <div className="wireline-theater__stage" aria-label="Agent work lane">
               <div className="wireline-theater__orbit wireline-theater__orbit--outer" aria-hidden="true" />
               <div className="wireline-theater__orbit wireline-theater__orbit--inner" aria-hidden="true" />
 
@@ -121,6 +143,12 @@ export default function WireAgentLanding() {
                       </span>
                     </div>
 
+                    <ol className="wireline-device__loop" aria-label="Agent lifecycle">
+                      {HERO_LOOP.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+
                     <div className="wireline-device__agent">
                       <div className="wireline-device__avatar" aria-hidden="true">
                         <span className="wireline-device__halo wireline-device__halo--one" />
@@ -129,8 +157,24 @@ export default function WireAgentLanding() {
                           <WirelineMark className="wireline-device__mark" signal />
                         </span>
                       </div>
-                      <p className="wireline-device__agent-label">Voice Agent</p>
-                      <p className="wireline-device__task">New Lead</p>
+
+                      <div className="wireline-device__scene-stack" aria-hidden="true">
+                        {THEATER_SCENES.map((scene) => (
+                          <div
+                            key={scene.task}
+                            className="wireline-device__scene"
+                            style={
+                              {
+                                "--wireline-scene-delay": scene.delay,
+                              } as CSSProperties
+                            }
+                          >
+                            <p className="wireline-device__agent-label">{scene.lane}</p>
+                            <p className="wireline-device__task">{scene.task}</p>
+                            <p className="wireline-device__queue">{scene.queue.join(" / ")}</p>
+                          </div>
+                        ))}
+                      </div>
                       <p className="wireline-device__timer">00:24</p>
                     </div>
 
@@ -191,13 +235,24 @@ export default function WireAgentLanding() {
                 </div>
               ))}
 
-              <ul className="sr-only">
-                {OUTCOME_SIGNALS.map(({ label, detail }) => (
-                  <li key={label}>
-                    {label}: {detail}
-                  </li>
-                ))}
-              </ul>
+              <div className="sr-only">
+                <p>Voice agent work lanes:</p>
+                <ul>
+                  {THEATER_SCENES.map((scene) => (
+                    <li key={scene.task}>
+                      {scene.lane}: {scene.task}, {scene.queue.join(", ")}
+                    </li>
+                  ))}
+                </ul>
+                <p>Example outcomes:</p>
+                <ul>
+                  {OUTCOME_SIGNALS.map(({ label, detail }) => (
+                    <li key={label}>
+                      {label}: {detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>
