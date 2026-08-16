@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import WirelineMark from "../brand/WirelineMark";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
+const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
+
 const links = [
   {
     to: "/solutions/support",
@@ -22,6 +24,12 @@ const links = [
     active: (path: string) =>
       path === "/trust" || path === "/security" || path.startsWith("/trust/"),
   },
+] as const;
+
+const legalLinks = [
+  { to: "/status", label: "Status" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
 ] as const;
 
 const mobileControlClassName =
@@ -146,6 +154,32 @@ export default function PrecisionPublicHeader() {
             >
               Sign In
             </Link>
+            <nav
+              aria-label="Legal"
+              className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+            >
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setOpen(false)}
+                  className="inline-flex min-h-8 items-center hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                type="button"
+                data-compact="true"
+                className="inline-flex min-h-8 items-center hover:text-foreground"
+                onClick={() => {
+                  setOpen(false);
+                  window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT));
+                }}
+              >
+                Privacy Choices
+              </button>
+            </nav>
           </div>
         </div>
       </DialogContent>

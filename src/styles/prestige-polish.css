@@ -251,6 +251,9 @@ body {
 .wl-stitch-auth-shell {
   position: relative;
   isolation: isolate;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background:
     radial-gradient(
       circle at 50% 0%,

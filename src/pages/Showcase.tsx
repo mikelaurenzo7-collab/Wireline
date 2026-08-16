@@ -17,7 +17,7 @@ export default function Showcase() {
   }, []);
 
   return (
-    <MarketingPageFrame>
+    <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
         title="Try Wireline"
         description="Hear the voice agent your customers will meet first, then build one for voice, SMS, and email."
@@ -59,16 +59,16 @@ export default function Showcase() {
           }
         />
 
-        <section id="demo-lines" className="mt-4">
+        <section id="demo-lines" className="mt-3">
           <p className="wl-eyebrow mx-auto text-center text-muted-foreground">
             Or call a live demo line
           </p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <a
                 key={agent.tel}
                 href={`tel:${agent.tel}`}
-                className="group wl-stitch-card wl-stitch-card-hover flex items-center gap-3 p-3 text-left"
+                className="group wl-stitch-card wl-stitch-card-hover flex items-center gap-3 p-2.5 text-left"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/8 text-primary">
                   <Phone className="h-4 w-4" aria-hidden="true" />

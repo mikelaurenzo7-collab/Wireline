@@ -4,7 +4,8 @@
  * The public surface has one structural rule: the window is the frame, and the
  * frame never scrolls. Every public route renders `.marketing-surface` (100dvh,
  * `overflow: hidden`) wrapping exactly one `.marketing-flow` scroller, with a
- * fixed header above it and a pinned chrome bar below. See
+ * fixed header above it. Other public pages pin a chrome bar below; home omits
+ * it so the live agent on a phone owns the canvas. See
  * `src/styles/viewport-first-marketing.css` for the three mechanisms.
  *
  * This reads source rather than a browser because the failure it guards is a
@@ -110,6 +111,10 @@ for (const [needle, description] of [
   // renders a one-line title beside a two-line one and every body paragraph
   // starts on a different baseline.
   ["min-height: 2.24em;", "card rows must reserve a shared title height"],
+  [
+    ".wl-ui-caps > .marketing-surface",
+    "the app shell must not turn the marketing frame into a second scroller",
+  ],
 ]) {
   if (!frameCss.includes(needle)) {
     failures.push(`src/styles/viewport-first-marketing.css: ${description} (missing "${needle}")`);

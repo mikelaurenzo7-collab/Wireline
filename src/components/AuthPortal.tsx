@@ -328,7 +328,7 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
       <main
         id="main-content"
         className={cn(
-          "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
+          "wl-auth-form-panel flex h-[100dvh] max-h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-4 sm:px-6",
           compact ? "py-3 sm:py-4" : "py-8 sm:py-12",
         )}
       >

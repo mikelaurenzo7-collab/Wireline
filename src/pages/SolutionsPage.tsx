@@ -103,24 +103,24 @@ export default function SolutionsPage() {
   const demoAgent = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === demoAgentName);
 
   return (
-    <MarketingPageFrame>
+    <MarketingPageFrame className="wl-solutions-page">
       <PageMeta
         title={`${page.title} | Wireline`}
         description={page.description}
         path={`/solutions/${key}`}
       />
 
-      <MarketingHero
-        title={page.title}
-        primaryAction={{ to: page.primary.href, label: page.primary.label }}
-        secondaryAction={{
-          to: page.secondary.href,
-          label: page.secondary.label,
-          tone: "secondary",
-        }}
-        visual={
-          <div className="text-center">
-            <div>
+      <section className="marketing-section marketing-section--screen">
+        <MarketingHero
+          title={page.title}
+          primaryAction={{ to: page.primary.href, label: page.primary.label }}
+          secondaryAction={{
+            to: page.secondary.href,
+            label: page.secondary.label,
+            tone: "secondary",
+          }}
+          visual={
+            <div className="text-center">
               <BrowserCallWidget
                 agentName={demoAgentName}
                 fallback={
@@ -140,51 +140,42 @@ export default function SolutionsPage() {
                 }
               />
             </div>
-          </div>
-        }
-      />
+          }
+        />
 
-      <section className="marketing-section marketing-section--tight wl-public-rail mx-auto">
-        <p className="wl-eyebrow text-center text-muted-foreground">From contact to next step</p>
-        <ol className="mt-4 grid gap-3 lg:grid-cols-3">
+        <ol className="mt-3 grid gap-2 sm:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card relative p-4 text-center">
+            <li key={title} className="wl-stitch-card px-3 py-2.5 text-center">
               <span className="flex items-center justify-center gap-2">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
                   0{index + 1}
                 </span>
                 <h3 className="wl-card-title">{title}</h3>
               </span>
-              <p className="mx-auto mt-1.5 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                {copy}
-              </p>
+              <p className="sr-only">{copy}</p>
             </li>
           ))}
         </ol>
 
-        <p className="wl-eyebrow mt-5 text-center text-muted-foreground">What it handles</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
           {page.capabilities.map(([title, copy], index) => {
             const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
               index
             ] as LucideIcon;
             return (
-              <article key={title} className="wl-stitch-card bg-background p-4 text-center">
-                <span className="flex items-center justify-center gap-2">
-                  <CapabilityIcon size={16} className="text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title">{title}</h3>
-                </span>
-                <p className="mx-auto mt-1.5 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                  {copy}
-                </p>
-              </article>
+              <li
+                key={title}
+                className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+              >
+                <CapabilityIcon size={14} className="text-primary" aria-hidden="true" />
+                {title}
+                <span className="sr-only">{copy}</span>
+              </li>
             );
           })}
-        </div>
+        </ul>
 
-        {/* The proof line keeps its place; the button under it was the hero's
-            own CTA a second time, and the hero is on the same screen now. */}
-        <p className="mx-auto mt-5 max-w-2xl text-center text-[15px] leading-[1.6] text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
           {page.proof}
         </p>
       </section>

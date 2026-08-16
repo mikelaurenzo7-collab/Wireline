@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Phone } from "lucide-react";
 import { Link } from "react-router";
 
-import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import BrowserCallWidget from "./BrowserCallWidget";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
@@ -10,7 +9,7 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
-const HERO_LOOP = MARKETING_VOICE.proof;
+const HERO_LOOP = MARKETING_VOICE.spine;
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
 const PERSONAL_SIGNUP = "/signup?plan=personal";
 const SALES_SIGNUP = "/signup?plan=starter&mode=outbound";
@@ -42,6 +41,13 @@ const AUDIENCES = [
 
 const CHANNELS = ["Voice", "Text", "Email", "Live Video"] as const;
 
+const LEGAL_LINKS = [
+  { to: "/trust", label: "Trust" },
+  { to: "/status", label: "Status" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
+] as const;
+
 export default function WireAgentLanding() {
   useEffect(() => {
     emitProductEventOnce({
@@ -60,7 +66,7 @@ export default function WireAgentLanding() {
   };
 
   return (
-    <div className="marketing-surface bg-background text-foreground">
+    <div className="marketing-surface landing-home bg-background text-foreground">
       <PrecisionPublicHeader />
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
@@ -113,7 +119,7 @@ export default function WireAgentLanding() {
             <div className="landing-stage__actions">
               <Link
                 to={PERSONAL_SIGNUP}
-                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+                className="marketing-btn-primary landing-stage__cta min-h-11 px-5 text-sm font-semibold"
                 onClick={() =>
                   emitProductEvent({
                     event: "landing_primary_cta_clicked",
@@ -130,7 +136,7 @@ export default function WireAgentLanding() {
               </Link>
               <Link
                 to="/pricing"
-                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+                className="marketing-btn-secondary landing-stage__cta min-h-11 px-5 text-sm font-semibold"
               >
                 See Plans
               </Link>
@@ -159,14 +165,24 @@ export default function WireAgentLanding() {
             </ul>
 
             <p className="landing-stage__note">
-              Start free. Live from ${STARTER_PRICE}/mo. Channels unlock at activation. Paid plans
-              include a Wireline number. Extra usage is prepaid Runtime Balance.
+              Start free. Live from ${STARTER_PRICE}/mo.
+              <span className="sr-only">
+                {" "}
+                Channels unlock at activation. Paid plans include a Wireline number. Extra usage is
+                prepaid Runtime Balance.
+              </span>
             </p>
           </div>
         </section>
       </main>
 
-      <MarketingChromeBar />
+      <nav className="sr-only" aria-label="Legal">
+        {LEGAL_LINKS.map((link) => (
+          <Link key={link.to} to={link.to}>
+            {link.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

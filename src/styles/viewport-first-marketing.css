@@ -36,15 +36,33 @@
   --wl-public-section-space: clamp(1.5rem, 2.2vw, 2.25rem);
   --wl-public-section-space-tight: clamp(1rem, 1.6vw, 1.5rem);
   --wl-marketing-chrome-top: 4rem;
-  /* The pinned chrome bar. A full-screen panel has to subtract it as well as
-     the header, or `--screen` means "one viewport" while the space a visitor
-     can actually see is 45px shorter. */
-  --wl-marketing-chrome-bottom: 2.85rem;
+  /* The pinned chrome bar is one nowrap row. A full-screen panel has to subtract
+     it as well as the header, or `--screen` means "one viewport" while the
+     space a visitor can actually see is shorter. Home hides the bar. */
+  --wl-marketing-chrome-bottom: 2.1rem;
 
   display: flex;
   flex-direction: column;
   height: 100dvh;
   max-height: 100dvh;
+  overflow: hidden;
+}
+
+/* Home is the product, not a brochure. No pinned legal bar: those links live
+   in the header menu, a visually hidden legal nav, and every other public page. */
+.marketing-surface.landing-home {
+  --wl-marketing-chrome-bottom: 0px;
+}
+
+/*
+ * The app shell (`.wl-ui-caps > :not(.wl-workspace-shell, .sr-only)`) turns
+ * every non-workspace route into a 100dvh scroller. That is correct for
+ * leftover pages. It is fatal for the marketing frame: it scrolls the header
+ * and chrome bar with the story, which is the document scrollbar this file
+ * exists to prevent. The surface is the frame. Only `.marketing-flow` scrolls.
+ */
+.wl-ui-caps > .marketing-surface,
+.wl-ui-caps > .wl-stitch-auth-shell {
   overflow: hidden;
 }
 
@@ -102,17 +120,26 @@
 }
 
 .marketing-surface.wl-features-page .marketing-flow,
-.marketing-surface.wl-pricing-page .marketing-flow {
+.marketing-surface.wl-pricing-page .marketing-flow,
+.marketing-surface.wl-showcase-page .marketing-flow,
+.marketing-surface.wl-solutions-page .marketing-flow,
+.marketing-surface.wl-about-page .marketing-flow {
   display: flex;
   flex-direction: column;
 }
 
-.marketing-surface.wl-features-page .marketing-flow {
+.marketing-surface.wl-features-page .marketing-flow,
+.marketing-surface.wl-showcase-page .marketing-flow,
+.marketing-surface.wl-solutions-page .marketing-flow,
+.marketing-surface.wl-about-page .marketing-flow {
   overflow: hidden;
 }
 
 .marketing-surface.wl-features-page .marketing-section--screen,
-.marketing-surface.wl-pricing-page .marketing-section--screen {
+.marketing-surface.wl-pricing-page .marketing-section--screen,
+.marketing-surface.wl-showcase-page .marketing-section--screen,
+.marketing-surface.wl-solutions-page .marketing-section--screen,
+.marketing-surface.wl-about-page .marketing-section--screen {
   flex: 1 1 auto;
   min-height: 0;
   padding-block: 0.45rem;
@@ -484,7 +511,7 @@
 .marketing-chrome-bar__row {
   display: flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: 2.1rem;
   padding-inline: 1.25rem;
 }
 
@@ -494,18 +521,31 @@
   }
 }
 
+@media (max-width: 639px) {
+  .marketing-chrome-bar__copy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
 /* The bar's links stay in the caps control tier: each is one or two words, and
    the doctrine puts anything three words or fewer in a control slot in caps.
    The copyright beside them is not a label and stays sentence case. */
 
 @media (max-width: 1023px) {
   .marketing-surface {
-    --wl-marketing-chrome-top: 3.5rem;
+    --wl-marketing-chrome-top: 4rem;
   }
 
   /* A phone viewport cannot hold a desktop panel, and squeezing one produces
      8px type. Below the lg breakpoint the ceiling lifts and sections stack
-     normally — the frame still does not scroll, the flow inside it does. */
+     normally — the frame still does not scroll, the flow inside it does.
+     Home is the exception: the phone stage is composed to the frame, so the
+     flow itself does not scroll. */
   .marketing-surface .marketing-section {
     align-content: start;
     scroll-snap-align: none;
@@ -517,6 +557,15 @@
 
   .marketing-surface .marketing-flow {
     scroll-snap-type: none;
+  }
+
+  .marketing-surface.landing-home .marketing-flow {
+    overflow: hidden;
+  }
+
+  .marketing-surface.landing-home .marketing-section--screen {
+    height: 100%;
+    flex: 1 1 auto;
   }
 }
 

@@ -12,7 +12,8 @@
  * the remaining viewport. The dock is the composer. Nothing on home scrolls.
  */
 
-.marketing-surface:has(.landing-stage) .marketing-flow {
+.marketing-surface:has(.landing-stage) .marketing-flow,
+.marketing-surface.landing-home .marketing-flow {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -517,20 +518,52 @@
   }
 }
 
+.landing-stage__cta {
+  white-space: nowrap;
+}
+
 @media (max-width: 639px) {
-  .landing-stage__dock {
+  .marketing-surface.landing-home .landing-stage.marketing-section--screen {
+    grid-template-rows: auto minmax(14rem, 1fr) auto;
     gap: 0.22rem;
-    padding: 0.42rem 0.65rem 0.36rem;
-    border-radius: 1.1rem;
+    padding-block: 0.12rem 0.18rem;
+  }
+
+  .landing-stage__title {
+    font-size: clamp(0.78rem, 0.68rem + 1.6vw, 0.98rem);
+  }
+
+  .landing-phone {
+    min-height: 14rem;
+    max-width: min(19.5rem, 78vw);
+  }
+
+  .landing-stage__dock {
+    gap: 0.16rem;
+    padding: 0.32rem 0.5rem 0.28rem;
+    border-radius: 1rem;
+  }
+
+  .landing-stage__cta {
+    min-height: 2.5rem;
+    padding-inline: 0.9rem;
+    font-size: 0.72rem;
   }
 
   .landing-stage__lane {
-    min-height: 1.75rem;
+    min-height: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  .landing-stage__channel {
+    min-height: 1.35rem;
+    padding-inline: 0.5rem;
+    font-size: 0.55rem;
   }
 
   .landing-stage__note {
-    font-size: 0.62rem;
-    line-height: 1.3;
+    font-size: 0.6rem;
+    line-height: 1.25;
   }
 }
 

@@ -150,6 +150,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.wl-ui-caps > .marketing-surface,
+.wl-ui-caps > .wl-stitch-auth-shell {
+  overflow: hidden;
+}
+
 /* Current-production auth QA: keep compact CTA labels readable instead of novelty-spaced. */
 .studio-card button[class*="tracking-[0.22em]"],
 button[class*="tracking-[0.25em]"],
