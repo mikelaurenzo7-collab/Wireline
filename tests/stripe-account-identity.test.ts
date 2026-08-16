@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  effectiveStripeCardStatementDescriptor,
   stripeAccountIdentityFindings,
   stripeAccountIdentitySummary,
 } from "../scripts/lib/stripe-account-identity.mjs";
@@ -29,6 +30,67 @@ describe("Stripe account identity guard", () => {
     });
 
     expect(findings).toEqual([]);
+  });
+
+  it("models Stripe's static-descriptor fallback when no card prefix is configured", () => {
+    const account = {
+      business_profile: {
+        name: "Try Wireline",
+        url: "https://trywireline.com",
+        support_url: "https://trywireline.com/support",
+        support_email: "support@trywireline.com",
+      },
+      settings: {
+        dashboard: { display_name: "Wireline" },
+        card_payments: { statement_descriptor_prefix: null },
+        payments: { statement_descriptor: "WIRELINE" },
+        branding: {
+          logo: "file_logo",
+          icon: "file_icon",
+          primary_color: "#A78BFA",
+          secondary_color: "#141319",
+        },
+      },
+    };
+
+    expect(effectiveStripeCardStatementDescriptor(account)).toEqual({
+      value: "WIRELINE",
+      source: "payment_statement_descriptor_fallback",
+    });
+    expect(stripeAccountIdentityFindings(account)).toEqual([]);
+    expect(stripeAccountIdentitySummary(account)).toMatchObject({
+      card_statement_descriptor_prefix: null,
+      effective_card_statement_descriptor_prefix: "WIRELINE",
+      card_statement_descriptor_prefix_source: "payment_statement_descriptor_fallback",
+    });
+  });
+
+  it("truncates Stripe's fallback card prefix to ten characters", () => {
+    const account = {
+      settings: {
+        card_payments: { statement_descriptor_prefix: null },
+        payments: { statement_descriptor: "WIRELINE LONG NAME" },
+      },
+    };
+
+    expect(effectiveStripeCardStatementDescriptor(account)).toEqual({
+      value: "WIRELINE L",
+      source: "payment_statement_descriptor_fallback",
+    });
+  });
+
+  it("prefers an explicit card prefix over the static descriptor fallback", () => {
+    const account = {
+      settings: {
+        card_payments: { statement_descriptor_prefix: "OTHER" },
+        payments: { statement_descriptor: "WIRELINE" },
+      },
+    };
+
+    expect(effectiveStripeCardStatementDescriptor(account)).toEqual({
+      value: "OTHER",
+      source: "explicit",
+    });
   });
 
   it("fails on a stale company name, domain, and descriptors", () => {
@@ -224,6 +286,8 @@ describe("Stripe account identity guard", () => {
       business_profile_host: null,
       business_profile_protocol: null,
       card_statement_descriptor_prefix: "WIRELINE",
+      effective_card_statement_descriptor_prefix: "WIRELINE",
+      card_statement_descriptor_prefix_source: "explicit",
       payment_statement_descriptor: null,
       branding_logo_configured: false,
       branding_icon_configured: true,
