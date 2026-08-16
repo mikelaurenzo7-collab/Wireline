@@ -40,7 +40,7 @@ describe("public browser demo cost protection", () => {
   it("binds one-use tickets to the browser and fails closed on budget infrastructure", () => {
     expect(ticket).toContain("timingSafeEqual");
     expect(ticket).toContain("publicDemoIpFingerprint");
-    expect(ticket).toContain("PUBLIC_DEMO_TICKET_TTL_SECONDS = 75");
+    expect(ticket).toContain("PUBLIC_DEMO_TICKET_TTL_SECONDS = 120");
     expect(budget).toContain("distributedLimiterStatus");
     expect(budget).toContain("failClosedOnError: true");
     expect(budget).toContain('bucket: "public-demo-one-use-ticket"');
