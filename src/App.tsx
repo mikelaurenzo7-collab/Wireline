@@ -120,7 +120,7 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <div className="wl-ui-caps w-full max-w-[100vw] overflow-x-hidden safe-area-insets">
+    <div className="wl-ui-caps w-full max-w-[100vw] overflow-x-hidden">
       <BrowserRouter>
         <RouteChangeA11y />
         <AuthProvider>
