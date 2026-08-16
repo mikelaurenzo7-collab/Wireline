@@ -8,8 +8,20 @@
  * ad that brought the visitor already carried the pitch. Home's job is to make
  * them stay, listen, and then click through.
  *
- * The canvas is an AI-app frame: whisper, product, dock. The phone grows into
- * the remaining viewport. The dock is the composer. Nothing on home scrolls.
+ * The canvas is an AI-app frame: whisper, product, dock. Nothing on home
+ * scrolls. Composition changes with the window, because the iPhone trick is
+ * not the same object at every width:
+ *
+ *   Phone: the device IS the viewport. Hardware rails, island, 9/19.4, stacked
+ *   whisper / phone / dock. That is the catchy "I am looking at an iPhone,
+ *   except it is Wireline" beat.
+ *
+ *   Laptop: a skinny 9:19 gadget centered in a black sea reads as a product
+ *   mock, not as a phone. Keep the same iPhone object, but height-lock it to
+ *   the leftover window and sit the copy beside it. Width comes from aspect
+ *   ratio times available height, so the hardware chrome can still sell
+ *   "this is a phone." The pair hugs the center. Do not scale the device to
+ *   a `max-width: 72vw` toy.
  */
 
 .marketing-surface:has(.landing-stage) .marketing-flow,
@@ -589,9 +601,81 @@
   }
 }
 
+@media (min-width: 1024px) {
+  .marketing-surface .landing-stage.marketing-section--screen {
+    grid-template-columns: minmax(12.5rem, auto) minmax(17.5rem, 22rem);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "device whisper"
+      "device dock";
+    justify-content: center;
+    justify-items: stretch;
+    align-items: stretch;
+    column-gap: clamp(1.75rem, 3.2vw, 3.25rem);
+    row-gap: 0.7rem;
+    padding-block: 0.45rem 0.55rem;
+    padding-inline: clamp(1.5rem, 4vw, 3.5rem);
+  }
+
+  .landing-stage__whisper {
+    grid-area: whisper;
+    align-items: flex-start;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .landing-stage__title {
+    max-width: 13ch;
+    font-size: clamp(1.35rem, 1.05rem + 1.15vw, 2.15rem);
+    line-height: 0.98;
+    text-align: left;
+  }
+
+  .landing-stage__device {
+    grid-area: device;
+    place-items: stretch end;
+  }
+
+  .landing-phone {
+    height: 100%;
+    width: auto;
+    min-height: 0;
+    max-width: none;
+    max-height: 100%;
+  }
+
+  .landing-stage__dock {
+    grid-area: dock;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 22rem;
+    padding: 0;
+  }
+
+  .landing-stage__actions,
+  .landing-stage__meta,
+  .landing-stage__lanes,
+  .landing-stage__channels {
+    justify-content: flex-start;
+  }
+
+  .landing-stage__meta {
+    align-items: flex-start;
+  }
+
+  .landing-stage__note {
+    text-align: left;
+  }
+}
+
 @media (min-width: 1024px) and (max-height: 760px) {
   .landing-stage__title {
-    font-size: 0.95rem;
+    font-size: clamp(1.05rem, 0.9rem + 0.8vw, 1.35rem);
+  }
+
+  .marketing-surface .landing-stage.marketing-section--screen {
+    column-gap: 1.5rem;
+    padding-block: 0.28rem 0.32rem;
   }
 }
 

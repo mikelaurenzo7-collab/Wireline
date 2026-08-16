@@ -173,6 +173,10 @@ describe("E2E design and brand polish", () => {
     expect(landing).toContain("landing-phone");
     expect(landing).toContain("landing-stage__dock");
     expect(landing).toContain("landing-stage__device");
+    const stage = read("src/styles/landing-call-stage.css");
+    expect(stage).toContain('"device whisper"');
+    expect(stage).toContain("max-width: none");
+    expect(stage).toContain("max-width: min(21.25rem, 72vw)");
     expect(landing).toContain("See Plans");
     expect(landing).toContain("Start free.");
     expect(landing).toContain("MARKETING_VOICE.spine");

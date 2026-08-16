@@ -34,12 +34,19 @@ async function viewportMetrics(page: Page) {
     const body = document.body;
     const flow = document.querySelector(".marketing-flow");
     const phone = document.querySelector(".landing-phone");
+    const title = document.querySelector(".landing-stage__title");
     const phoneRect = phone?.getBoundingClientRect();
+    const titleRect = title?.getBoundingClientRect();
     return {
       docOverflow: root.scrollHeight - root.clientHeight,
       bodyOverflow: body.scrollHeight - body.clientHeight,
       flowOverflow: flow ? flow.scrollHeight - flow.clientHeight : 0,
       phoneHeight: phoneRect?.height ?? 0,
+      phoneWidth: phoneRect?.width ?? 0,
+      phoneRight: phoneRect?.right ?? 0,
+      titleLeft: titleRect?.left ?? 0,
+      titleBottom: titleRect?.bottom ?? 0,
+      phoneTop: phoneRect?.top ?? 0,
       viewportHeight: window.innerHeight,
     };
   });
@@ -65,7 +72,10 @@ test("home phone stage fills the canvas without inner scroll", async ({ page }) 
 
   const metrics = await viewportMetrics(page);
   expect(metrics.flowOverflow, "home marketing-flow must not scroll").toBeLessThanOrEqual(8);
-  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.42);
+  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.72);
+  expect(metrics.phoneRight, "desktop phone sits beside the headline, not under it").toBeLessThan(
+    metrics.titleLeft,
+  );
 });
 
 test("home phone stage still fits a short laptop", async ({ page }) => {
@@ -75,7 +85,8 @@ test("home phone stage still fits a short laptop", async ({ page }) => {
   const metrics = await viewportMetrics(page);
   expect(metrics.docOverflow).toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow).toBeLessThanOrEqual(12);
-  expect(metrics.phoneHeight).toBeGreaterThan(280);
+  expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.68);
+  expect(metrics.phoneRight).toBeLessThan(metrics.titleLeft);
 });
 
 test("home hides the chrome bar and does not scroll on a phone", async ({ page }) => {
@@ -92,6 +103,9 @@ test("home hides the chrome bar and does not scroll on a phone", async ({ page }
   expect(metrics.bodyOverflow, "home body scrollbar on phone").toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow, "home marketing-flow must not scroll on phone").toBeLessThanOrEqual(
     8,
+  );
+  expect(metrics.titleBottom, "phone canvas keeps the headline above the device").toBeLessThan(
+    metrics.phoneTop,
   );
 });
 
