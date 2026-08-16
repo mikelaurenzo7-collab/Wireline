@@ -563,15 +563,6 @@ button.landing-phone__island:focus-visible {
     0 12px 28px -18px color-mix(in srgb, var(--wireline-color-action-primary-default) 72%, transparent);
 }
 
-.landing-os__app--plans .landing-os__icon {
-  color: var(--wireline-color-canvas-default);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--wireline-color-action-secondary-hover) 70%, white),
-    var(--wireline-color-action-secondary-default)
-  );
-}
-
 .landing-os__glyph,
 .landing-os__mark {
   width: 1.35rem;
