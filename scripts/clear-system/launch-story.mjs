@@ -107,20 +107,41 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /MARKETING_VOICE\.headline/,
     "landing must consume the shared headline",
   );
-  // The landing hero is deliberately minimal — the shared subline is no longer
-  // rendered as a hero subhead. It still backs the SEO/social description in
-  // index.html, which static-metadata-contract guards.
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /\/signup\?plan=starter&mode=outbound/,
-    "sales conversion must preserve Starter intent",
+    /MARKETING_VOICE\.subline/,
+    "landing must consume the shared explanatory copy",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Runtime\s+Balance/,
-    "landing economics must explain prepaid Runtime Balance",
+    /const PRIMARY_CTA_PATH = "\/signup\?plan=personal"/,
+    "landing conversion must preserve free-builder intent",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /landing_product_theater/,
+    "landing conversion must remain attributable to the product-theater surface",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /wireline-device/,
+    "landing must demonstrate the product through a deterministic visual scene",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /import BrowserCallWidget|<BrowserCallWidget|LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:/,
+    "anonymous landing traffic must not execute or expose a live provider demo",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /STRIPE_PLANS|Runtime\s+Balance/,
+    "landing must route plan economics to the dedicated pricing surface",
   );
   mustInclude(
     "src/pages/LandingPage.tsx",

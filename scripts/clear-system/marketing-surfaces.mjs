@@ -1,6 +1,7 @@
 /**
- * Public marketing surfaces with centered rails, shared product voice, accessible
- * work lane interactions, the wire signature, and honest Founder economics.
+ * Public marketing surfaces with centered rails, shared product voice, a
+ * zero-runtime landing product theater, the wire signature, and honest Founder
+ * economics on the dedicated pricing surface.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const claritySystemCss = read("src/styles/clarity-system.css");
@@ -8,6 +9,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
+  const landingTheaterCss = read("src/styles/landing-product-theater.css");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -27,13 +29,10 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
     "marketing actions must center by default",
   );
-  // The frame no longer grows with content: the window *is* the frame. Every
+  // The frame no longer grows with content: the window is the frame. Every
   // public route is 100dvh with a single bounded scroller between a fixed
-  // header and a pinned chrome bar, so no public page has a document
-  // scrollbar at any width. What this contract now holds is that invariant —
-  // the shared frame must render the one scroller, and long-form document
-  // routes must still have a way to opt out of the panel composition.
-  // See src/styles/viewport-first-marketing.css for the three mechanisms.
+  // header and a pinned chrome bar, so no public page has a document scrollbar
+  // at any width. What this contract now holds is that invariant.
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
@@ -58,9 +57,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/VerticalLanding.tsx",
   ]) {
     // `!text-left` is the deliberate opt-out, not an oversight. /about is
-    // built to be identifiable at a glance as *not* the landing page, and a
-    // left-aligned column is the cheapest signal available; the blanket
-    // centering rule in clarity-system.css would otherwise re-centre it.
+    // built to be identifiable at a glance as not the landing page, and a
+    // left-aligned column is the cheapest signal available.
     mustInclude(
       file,
       read(file),
@@ -91,7 +89,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
     /aria-label=\{[\s\S]*?isHomeHero[\s\S]*?typeof title === "string"[\s\S]*?\? title[\s\S]*?: undefined[\s\S]*?\}/,
-    "the home hero headline must expose its visual copy as a screen-reader-safe name",
+    "shared home-hero semantics must expose visual copy as a screen-reader-safe name",
   );
   mustExclude(
     "src/components/marketing/MarketingHero.tsx",
@@ -104,39 +102,92 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /MARKETING_VOICE\.headline/,
-    "landing hero must consume the shared headline",
-  );
-  // Subline intentionally omitted from the hero (minimal hero); it still backs
-  // the SEO/social description in index.html.
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /role="tablist"[\s\S]*aria-label="Agent work lane"/,
-    "work lanes must use an accessible tablist",
+    "landing must consume the shared headline",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /onKeyDown=\{handleModeKeyDown\}/,
-    "work lanes must support keyboard navigation",
+    /MARKETING_VOICE\.subline/,
+    "landing must consume the shared explanatory copy",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /STRIPE_PLANS/,
-    "landing pricing must stay tied to the Stripe plan catalog",
+    /aria-label="Animated preview of a Wireline voice agent/,
+    "the visual product scene must expose an accessible description",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Runtime\s+Balance/,
-    "landing pricing must explain prepaid Runtime Balance",
+    /OUTCOME_SIGNALS\.map/,
+    "the landing scene must show concrete operating outcomes",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /<WirelineMark/,
+    "the landing scene must be visibly owned by Wireline",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /const PRIMARY_CTA_PATH = "\/signup\?plan=personal"/,
+    "the landing must preserve free-builder conversion intent",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /role="tablist"|handleModeKeyDown|MODE_OPTIONS/,
+    "the homepage must not restore a multi-lane configurator before signup",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /import BrowserCallWidget|<BrowserCallWidget|LANDING_PUBLIC_DEMO_AGENTS|href=\{`tel:/,
+    "anonymous landing traffic must not execute or expose a live provider demo",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /STRIPE_PLANS|Runtime\s+Balance/,
+    "the homepage must route plan comparison and usage economics to pricing",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /Start 7-day trial|Try 7 days free|\$79|postpaid voice-overage/i,
     "landing must not revive retired trial or overage positioning",
+  );
+
+  mustInclude(
+    "src/styles/landing-product-theater.css",
+    landingTheaterCss,
+    /\.marketing-surface \.wireline-theater\.marketing-section--screen/,
+    "the homepage scene must compose inside the shared viewport frame",
+  );
+  mustInclude(
+    "src/styles/landing-product-theater.css",
+    landingTheaterCss,
+    /100dvh/,
+    "the homepage scene must size against the dynamic viewport",
+  );
+  mustInclude(
+    "src/styles/landing-product-theater.css",
+    landingTheaterCss,
+    /\.wireline-device__waveform/,
+    "the product scene must carry a voice-specific signature",
+  );
+  mustInclude(
+    "src/styles/landing-product-theater.css",
+    landingTheaterCss,
+    /prefers-reduced-motion:\s*reduce/,
+    "landing motion must yield to reduced-motion preferences",
+  );
+  mustInclude(
+    "src/styles/landing-product-theater.css",
+    landingTheaterCss,
+    /animation:\s*none !important/,
+    "landing animation must have a deterministic still state",
   );
 
   mustInclude(
@@ -164,14 +215,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the final loop step must settle violet on the wire",
   );
 
-  // The loop is still on this buying surface, but it is no longer typed as a
-  // display line. /features is one screen now, and four cards with a paragraph
-  // each cost ~300px to repeat what the landing page already explains in full;
-  // the four words in sequence carry the spine for ~50px. Sourcing them from
-  // MARKETING_VOICE.proof (BRAND_SYSTEM.proofLoop) also gives the steps and
-  // their order exactly one origin, which a hand-typed headline never had --
-  // this page used to headline "Build. Train. Launch. Improve." above cards
-  // titled "Define the Agent" / "Teach the Business".
+  // Features owns the operating-loop explanation; the homepage only stages a
+  // representative outcome. This keeps the first screen singular while the
+  // deeper product page preserves the complete Build/Train/Launch/Improve loop.
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,
