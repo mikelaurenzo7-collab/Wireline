@@ -77,6 +77,14 @@ describe("public browser demo cost protection", () => {
     );
   });
 
+  it("keeps cancellation reachable while a private session is connecting", () => {
+    expect(widget).toContain('? "Cancel"');
+    expect(widget).toContain("disabled={demo.completed}");
+    expect(widget).toContain("demo.callActive || demo.connecting");
+    expect(widget).toContain("Cancel at any time before the private voice session begins.");
+    expect(widget).not.toContain("disabled={demo.connecting || demo.completed}");
+  });
+
   it("uses Express's trusted proxy identity instead of caller-controlled forwarding input", () => {
     const requestIpStart = routes.indexOf("function requestIp(req: Request)");
     const requestIpEnd = routes.indexOf("function requestHost", requestIpStart);

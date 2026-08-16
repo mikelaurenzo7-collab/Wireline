@@ -58,7 +58,7 @@ export default function BrowserCallWidget({
   );
   const showPhoneFallback = Boolean(fallback) && (Boolean(demo.error) || demo.completed);
   const buttonText = demo.connecting
-    ? "Connecting…"
+    ? "Cancel"
     : demo.callActive
       ? "End Call"
       : demo.completed
@@ -125,14 +125,17 @@ export default function BrowserCallWidget({
 
           <button
             type="button"
-            className={cn("landing-demo__button", demo.callActive && "is-end")}
+            className={cn(
+              "landing-demo__button",
+              (demo.callActive || demo.connecting) && "is-end",
+            )}
             onClick={demo.toggle}
-            disabled={demo.connecting || demo.completed}
+            disabled={demo.completed}
             aria-busy={demo.connecting}
             aria-label={buttonText}
           >
             {demo.connecting ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              <PhoneOff className="size-4" aria-hidden="true" />
             ) : demo.callActive ? (
               <PhoneOff className="size-4" aria-hidden="true" />
             ) : demo.completed ? (
@@ -146,9 +149,11 @@ export default function BrowserCallWidget({
           <p className="landing-demo__microcopy">
             {demo.callActive
               ? `This preview ends automatically after ${demo.maxDurationSeconds} seconds. End it sooner at any time.`
-              : showPhoneFallback
-                ? "Call the public demo line below. Standard carrier rates may apply."
-                : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}
+              : demo.connecting
+                ? "Cancel at any time before the private voice session begins."
+                : showPhoneFallback
+                  ? "Call the public demo line below. Standard carrier rates may apply."
+                  : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}
           </p>
 
           {demo.error ? (
@@ -192,22 +197,22 @@ export default function BrowserCallWidget({
       <ShadButton
         type="button"
         disableAnimations
-        variant={demo.callActive ? "destructive" : "outline"}
+        variant={demo.callActive || demo.connecting ? "destructive" : "outline"}
         onClick={demo.toggle}
-        disabled={demo.connecting || demo.completed}
+        disabled={demo.completed}
         aria-busy={demo.connecting}
         aria-label={buttonText}
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
-          demo.callActive
+          demo.callActive || demo.connecting
             ? "border-[color:var(--wireline-color-status-error)] bg-[color:var(--wireline-color-status-error)] text-[color:var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]"
             : "border-[color:var(--wireline-color-action-primary-default)] bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-[color:var(--wireline-color-text-onAction)]",
         )}
       >
         {demo.connecting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>Connecting…</span>
+            <PhoneOff className="h-4 w-4" aria-hidden="true" />
+            <span>Cancel</span>
           </>
         ) : demo.callActive ? (
           <>
@@ -228,7 +233,9 @@ export default function BrowserCallWidget({
       </ShadButton>
 
       <p className="wl-preserve-case max-w-xs text-center text-xs leading-5 text-muted-foreground">
-        {demo.maxDurationSeconds}-second private preview. No retained call artifacts.
+        {demo.connecting
+          ? "Cancel at any time before the private voice session begins."
+          : `${demo.maxDurationSeconds}-second private preview. No retained call artifacts.`}
       </p>
 
       {demo.callActive ? (
