@@ -150,13 +150,18 @@ describe("product voice cohesion", () => {
     const contactAgents = read("src/data/contact-agents.ts");
 
     expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
-    expect(executableLanding).toContain("Live Video");
+    expect(executableLanding).toContain('aria-label="Core agent channels"');
+    expect(executableLanding).toContain('{ label: "Voice", icon: PhoneCall }');
+    expect(executableLanding).toContain('{ label: "Text", icon: MessageSquareText }');
+    expect(executableLanding).toContain('{ label: "Email", icon: Mail }');
+    expect(executableLanding).not.toContain("Live Video");
     expect(executableLanding).toContain("MARKETING_VOICE.primaryCta");
     expect(executableLanding).toContain("MARKETING_VOICE.subline");
     expect(executableLanding).toContain("Hear It Live");
     expect(executableLanding).toContain('variant="stage"');
     expect(executableLanding).toContain("landing-console");
     expect(executableLanding).toContain("landing-console__activity");
+    expect(executableLanding).toContain("Illustrative Workflow");
     expect(executableLanding).toContain("Booked and logged");
     expect(executableLanding).toContain("<PrecisionPublicHeader />");
     expect(executableLanding).not.toContain('variant="phone"');
