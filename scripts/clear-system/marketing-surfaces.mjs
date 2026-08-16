@@ -111,14 +111,14 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /role="tablist"[\s\S]*aria-label="Agent work lane"/,
-    "work lanes must use an accessible tablist",
+    /aria-label="Agent work lane"/,
+    "work lanes must stay reachable as named navigation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /onKeyDown=\{handleModeKeyDown\}/,
-    "work lanes must support keyboard navigation",
+    /variant="phone"/,
+    "home must stage the live agent on a phone, not a brochure grid",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",

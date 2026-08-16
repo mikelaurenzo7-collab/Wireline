@@ -42,7 +42,7 @@ export default function PrecisionPublicHeader() {
             className="flex shrink-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Wireline home"
           >
-            <WirelineMark className="size-11 shrink-0 text-primary" signal />
+            <WirelineMark className="size-8 shrink-0 text-primary" signal />
             <span>Wireline</span>
           </Link>
           <nav
@@ -68,13 +68,13 @@ export default function PrecisionPublicHeader() {
               to="/signin"
               className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
-              Sign in
+              Sign In
             </Link>
             <Link
               to="/signup?plan=personal"
               className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold"
             >
-              Start free
+              Start Free
             </Link>
           </div>
           <DialogTrigger asChild>
@@ -137,14 +137,14 @@ export default function PrecisionPublicHeader() {
               onClick={() => setOpen(false)}
               className="marketing-btn-primary min-h-12 text-[length:var(--wireline-typography-body-size)] font-semibold"
             >
-              Start free
+              Start Free
             </Link>
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
               className="marketing-btn-secondary min-h-12 text-[length:var(--wireline-typography-body-size)] font-semibold"
             >
-              Sign in
+              Sign In
             </Link>
           </div>
         </div>

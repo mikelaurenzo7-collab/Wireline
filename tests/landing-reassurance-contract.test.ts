@@ -14,7 +14,7 @@ describe("home landing launch clarity", () => {
     // longer repeats the word on the button directly beneath it.
     // The plan cards are the plans block; the heading over them repeated the
     // first card's own button on a page that now carries one headline.
-    expect(landing).toContain("PLAN_PREVIEW.map");
+    expect(landing).toContain("variant=\"phone\"");
   });
 
   it("keeps free and paid capacity distinct", () => {
@@ -24,9 +24,8 @@ describe("home landing launch clarity", () => {
   });
 
   it("closes with one action", () => {
-    // The closing band repeated the hero headline and both hero buttons
-    // verbatim. The plan cards are the close now, and each carries its own
-    // action, so the page still ends on exactly one thing to do per plan.
+    expect(landing).toContain("See Plans");
+    expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).not.toContain("Put your first voice agent to work");
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");

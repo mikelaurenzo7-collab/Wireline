@@ -710,7 +710,7 @@ export default function AuthPortal() {
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                Sign in
+                Sign In
               </button>
               <button
                 type="button"
@@ -723,7 +723,7 @@ export default function AuthPortal() {
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                Create account
+                Create Account
               </button>
             </div>
           )}
@@ -984,12 +984,12 @@ export default function AuthPortal() {
                   </>
                 ) : isSignUp ? (
                   <>
-                    Create account
+                    Create Account
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    Sign in
+                    Sign In
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 )}

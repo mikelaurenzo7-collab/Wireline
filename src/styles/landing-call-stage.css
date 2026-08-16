@@ -1,0 +1,415 @@
+/*
+ * Home is a call, not a brochure.
+ *
+ * Typical SaaS landings lead with a giant headline and bury the product in a
+ * laptop mock. Wireline is a voice product. The opening screen is an incoming
+ * call on a phone: a live agent face, a waveform, one answer control. Pricing,
+ * features, and who-its-for already live in the header and chrome bar, and the
+ * ad that brought the visitor already carried the pitch. Home's job is to make
+ * them stay, listen, and then click through.
+ */
+
+.marketing-surface .landing-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: calc(
+    100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+  );
+  padding-block: 0.65rem;
+}
+
+.landing-stage__title {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.2rem, 1.05rem + 1.1vw, 1.85rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  word-spacing: 0.02em;
+}
+
+.landing-stage__loop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem 0.7rem;
+}
+
+.landing-phone {
+  position: relative;
+  isolation: isolate;
+  width: min(18.25rem, 74vw);
+  height: min(36rem, 58dvh);
+}
+
+.landing-phone__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: -18% -28%;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 55% 48% at 50% 42%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent),
+    transparent 70%
+  );
+  filter: blur(8px);
+}
+
+.landing-phone__device {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  padding: 0.48rem;
+  border-radius: 2.35rem;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, #2c2c32 0%, #0a0a0d 42%, #050506 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 28px 64px -24px rgba(0, 0, 0, 0.72),
+    0 0 72px -28px color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent);
+  animation: landing-phone-float 6.5s ease-in-out infinite;
+}
+
+.landing-phone__device.is-live {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent),
+    0 28px 64px -24px rgba(0, 0, 0, 0.72),
+    0 0 90px -16px color-mix(in srgb, var(--wireline-color-action-primary-default) 70%, transparent);
+}
+
+.landing-phone__bezel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 1.95rem;
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 50% 18%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 14%, transparent),
+      transparent 58%
+    ),
+    #07070a;
+}
+
+.landing-phone__island {
+  width: 5.4rem;
+  height: 1.2rem;
+  margin-top: 0.55rem;
+  border-radius: 999px;
+  background: #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.landing-phone__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  font-family: var(--wireline-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+.landing-phone__dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--wireline-color-status-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wireline-color-status-success) 28%, transparent);
+}
+
+.landing-phone__device.is-live .landing-phone__dot {
+  animation: landing-phone-dot 1.4s ease-in-out infinite;
+}
+
+.landing-phone__face {
+  width: min(46%, 8.4rem);
+  height: auto;
+  margin-top: 1.15rem;
+  border-radius: 1.6rem;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.45));
+}
+
+.landing-phone__name {
+  margin: 0.85rem 0 0;
+  font-family: var(--wireline-font-family-display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: #f4f4f6;
+}
+
+.landing-phone__role {
+  margin: 0.15rem 0 0;
+  font-family: var(--wireline-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 246, 0.55);
+}
+
+.landing-phone__wave {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.22rem;
+  height: 1.35rem;
+  margin-top: 0.85rem;
+}
+
+.landing-phone__wave span {
+  display: block;
+  width: 0.18rem;
+  border-radius: 999px;
+  background: var(--wireline-color-action-primary-default);
+  transform-origin: center bottom;
+  animation: landing-phone-wave 1.15s ease-in-out infinite;
+}
+
+.landing-phone__wave span:nth-child(1) {
+  height: 28%;
+  animation-delay: 0s;
+}
+.landing-phone__wave span:nth-child(2) {
+  height: 52%;
+  animation-delay: 0.12s;
+}
+.landing-phone__wave span:nth-child(3) {
+  height: 86%;
+  animation-delay: 0.24s;
+}
+.landing-phone__wave span:nth-child(4) {
+  height: 64%;
+  animation-delay: 0.08s;
+}
+.landing-phone__wave span:nth-child(5) {
+  height: 40%;
+  animation-delay: 0.2s;
+}
+
+.landing-phone__wave.is-quiet span {
+  animation: none;
+  opacity: 0.35;
+}
+
+.landing-phone__call {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.85rem;
+  height: 3.85rem;
+  margin-top: auto;
+  margin-bottom: 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--wireline-color-text-onAction);
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--wireline-color-action-primary-default) 80%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.landing-phone__call:hover {
+  background: var(--wireline-color-action-primary-pressed);
+  transform: scale(1.04);
+}
+
+.landing-phone__call:focus-visible {
+  outline: 2px solid var(--wireline-color-action-primary-default);
+  outline-offset: 3px;
+}
+
+.landing-phone__call:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.landing-phone__call.is-end {
+  background: var(--wireline-color-status-error);
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--wireline-color-status-error) 70%, transparent);
+}
+
+.landing-phone__call:not(.is-end)::after {
+  content: "";
+  position: absolute;
+  inset: -0.45rem;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent);
+  animation: landing-phone-ring 2.4s ease-out infinite;
+}
+
+.landing-phone__cta {
+  margin: 0 0 1.05rem;
+  font-family: var(--wireline-font-mono);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 246, 0.72);
+}
+
+.landing-phone__alert {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 5.4rem;
+  left: 0.7rem;
+  z-index: 2;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, #07070a 82%, transparent);
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: rgba(244, 244, 246, 0.82);
+  text-align: center;
+}
+
+.landing-stage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.landing-stage__lanes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem 1.15rem;
+}
+
+.landing-stage__lane {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--wireline-color-text-primary);
+  text-decoration: none;
+}
+
+.landing-stage__lane:hover {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-stage__channels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.landing-stage__channel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 999px;
+  font-family: var(--wireline-font-mono);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.landing-stage__note {
+  max-width: 52ch;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--wireline-color-text-secondary);
+}
+
+@keyframes landing-phone-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes landing-phone-wave {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes landing-phone-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+@keyframes landing-phone-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 639px) {
+  .landing-phone {
+    width: min(16.25rem, 80vw);
+    height: min(31.5rem, 52dvh);
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .landing-phone {
+    height: min(28rem, 48dvh);
+  }
+
+  .landing-stage__title {
+    font-size: 1.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-phone__device,
+  .landing-phone__wave span,
+  .landing-phone__call::after,
+  .landing-phone__device.is-live .landing-phone__dot {
+    animation: none;
+  }
+}

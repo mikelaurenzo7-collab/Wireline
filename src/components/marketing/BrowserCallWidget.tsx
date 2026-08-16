@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type Vapi from "@vapi-ai/web";
-import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
+import { Phone, PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import AgentFace from "../AgentFace";
 import { SignalOrbFrame } from "../ui/SignalOrbFrame";
@@ -14,6 +14,11 @@ type BrowserCallWidgetProps = {
   /** Retained for call-site compatibility. The public demo uses shared semantic tokens. */
   tintColor?: string;
   buttonLabel?: string;
+  /**
+   * compact: small face + rectangular button (showcase, solutions).
+   * phone: the home stage — a device with a large agent and one answer control.
+   */
+  variant?: "compact" | "phone";
   /**
    * Rendered instead of a dead-end error when the browser voice demo can't
    * run (VITE_VAPI_PUBLIC_KEY unset in this environment). Lets the hero fall
@@ -37,10 +42,38 @@ function callStartErrorMessage(reason: unknown): string {
   return "Could not start the voice demo. Try again.";
 }
 
+function WaveBars({
+  volume,
+  active,
+  bars = 5,
+}: {
+  volume: number;
+  active: boolean;
+  bars?: number;
+}) {
+  return (
+    <div className="flex h-3 items-end gap-0.5" aria-hidden="true">
+      {Array.from({ length: bars }, (_, index) => {
+        const bar = index + 1;
+        const scaled = volume * (1 + bar * 0.3);
+        const height = scaled > 0.01 ? Math.min(100, Math.max(15, scaled * 100)) : 15;
+        return (
+          <div
+            key={bar}
+            className="w-0.5 rounded-full bg-primary transition-all duration-75"
+            style={{ height: `${height}%`, opacity: active ? 1 : 0.35 }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function BrowserCallWidget({
   agentName,
   tintColor: _tintColor,
   buttonLabel = "Talk in browser",
+  variant = "compact",
   fallback,
 }: BrowserCallWidgetProps) {
   const [callActive, setCallActive] = useState(false);
@@ -48,6 +81,7 @@ export default function BrowserCallWidget({
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
+  const [idleTalk, setIdleTalk] = useState(true);
 
   // The ~300 KB @vapi-ai/web WebRTC SDK is only needed once the visitor starts a
   // call, so it is imported dynamically on first use rather than shipped in the
@@ -66,6 +100,17 @@ export default function BrowserCallWidget({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (variant !== "phone" || callActive) return;
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIdleTalk(false);
+      return;
+    }
+    const id = window.setInterval(() => setIdleTalk((value) => !value), 2200);
+    return () => window.clearInterval(id);
+  }, [variant, callActive]);
 
   async function ensureVapi(): Promise<Vapi | null> {
     if (vapiRef.current) return vapiRef.current;
@@ -150,13 +195,76 @@ export default function BrowserCallWidget({
     }
   };
 
-  const buttonText = connecting ? "Connecting…" : callActive ? "End call" : buttonLabel;
+  const buttonText = connecting ? "Connecting…" : callActive ? "End Call" : buttonLabel;
+  const speaking = callActive ? speakerActive : variant === "phone" && idleTalk;
+  const useFallbackControl = !VAPI_PUBLIC_KEY && Boolean(fallback);
 
-  // When the public voice key isn't configured, don't render a dead button —
-  // show the provided fallback (phone demo lines) if the call site gave one.
-  // Placed after all hooks so hook order stays stable across renders.
-  if (!VAPI_PUBLIC_KEY && fallback) {
+  // Compact surfaces still swap the whole widget for the tel fallback.
+  // The phone stage keeps the device on screen and only swaps the answer control.
+  if (useFallbackControl && variant !== "phone") {
     return <>{fallback}</>;
+  }
+
+  if (variant === "phone") {
+    return (
+      <div className="landing-phone">
+        <div className="landing-phone__glow" aria-hidden="true" />
+        <div className={cn("landing-phone__device", callActive && "is-live")}>
+          <div className="landing-phone__bezel">
+            <div className="landing-phone__island" aria-hidden="true" />
+            <div className="landing-phone__status">
+              <span className="landing-phone__dot" aria-hidden="true" />
+              {callActive ? "Live" : "Incoming"}
+            </div>
+            <AgentFace
+              seed={`public-demo:${agentName}`}
+              size={176}
+              speaking={speaking}
+              className="landing-phone__face"
+              title={`${agentName} agent avatar`}
+            />
+            <p className="landing-phone__name wl-preserve-case">{agentName}</p>
+            <p className="landing-phone__role">Voice Agent</p>
+            <div
+              className={cn("landing-phone__wave", !(speaking || callActive) && "is-quiet")}
+              aria-hidden="true"
+            >
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            {useFallbackControl ? (
+              fallback
+            ) : (
+              <button
+                type="button"
+                className={cn("landing-phone__call", callActive && "is-end")}
+                onClick={() => void handleToggleCall()}
+                disabled={connecting}
+                aria-busy={connecting}
+                aria-label={buttonText}
+              >
+                {connecting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                ) : callActive ? (
+                  <PhoneOff className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Phone className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
+            )}
+            <p className="landing-phone__cta">{buttonText}</p>
+            {error ? (
+              <p className="landing-phone__alert" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -203,7 +311,7 @@ export default function BrowserCallWidget({
         ) : callActive ? (
           <>
             <PhoneOff className="h-4 w-4" aria-hidden="true" />
-            <span>End call</span>
+            <span>End Call</span>
           </>
         ) : (
           <>
@@ -232,19 +340,7 @@ export default function BrowserCallWidget({
             )}
             aria-hidden="true"
           />
-          <div className="flex h-3 items-end gap-0.5" aria-hidden="true">
-            {[1, 2, 3, 4, 5].map((bar) => {
-              const scaled = volume * (1 + bar * 0.3);
-              const height = scaled > 0.01 ? Math.min(100, Math.max(15, scaled * 100)) : 15;
-              return (
-                <div
-                  key={bar}
-                  className="w-0.5 rounded-full bg-primary transition-all duration-75"
-                  style={{ height: `${height}%`, opacity: speakerActive ? 1 : 0.35 }}
-                />
-              );
-            })}
-          </div>
+          <WaveBars volume={volume} active={speakerActive} />
           <span className="font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
             {speakerActive ? "Agent speaking" : "Listening"}
           </span>

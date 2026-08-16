@@ -22,7 +22,7 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage hero has accessible work-lane tabs and no serious axe violations", async ({
+test("homepage stages a live agent on a phone with no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
@@ -30,49 +30,30 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   await expect(
     page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
   ).toBeVisible();
-  // The hero heading carries the accessible name; the subline is no longer
-  // rendered as a hero subhead (the pitch lives in the title, chips, and demo).
 
-  // The hero's separate brand-spine word-mark was deliberately removed in the
-  // minimal-copy pass (#1042); the operating loop now appears once in the
-  // document outline. It is intentionally sr-only, so assert presence rather
-  // than visual rendering.
   await expect(
     page.getByRole("heading", { name: "How Wireline works", exact: true }),
   ).toBeAttached();
 
-  // Channel proof lives in the Live Video spotlight's "Agent channels" list
-  // since the hero minimal-copy pass; the old "Wireline capabilities" hero
-  // list no longer exists.
   const channelList = page.getByRole("list", { name: "Agent channels" });
   await expect(channelList).toBeVisible();
   for (const label of ["Voice", "Text", "Email", "Live Video"]) {
     await expect(channelList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
 
-  const tablist = page.getByRole("tablist", { name: "Agent work lane" });
-  await expect(tablist).toBeVisible();
+  const workLane = page.getByRole("navigation", { name: "Agent work lane" });
+  await expect(workLane).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.outbound.label, "i") }),
+  ).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.inbound.label, "i") }),
+  ).toBeVisible();
+  await expect(
+    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.hybrid.label, "i") }),
+  ).toBeVisible();
 
-  // Tab names come from AGENT_DIRECTION_MODES for the same reason as the proof
-  // labels: a copy rename must fail the contract tests, not desync this spec.
-  const salesTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.outbound.label });
-  const serviceTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.inbound.label });
-  const allPurposeTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.hybrid.label });
-
-  await expect(salesTab).toHaveAttribute("aria-selected", "true");
-  await expect(salesTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");
-  await expect(serviceTab).toHaveAttribute("aria-selected", "false");
-  await expect(page.getByRole("tabpanel", { name: "Sales" })).toBeVisible();
-
-  await salesTab.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(serviceTab).toBeFocused();
-  await expect(serviceTab).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel", { name: "Service" })).toBeVisible();
-
-  await page.keyboard.press("End");
-  await expect(allPurposeTab).toBeFocused();
-  await expect(allPurposeTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("button", { name: /Hear It Live/i }).or(page.getByRole("link", { name: /Hear It Live/i }))).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>

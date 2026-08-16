@@ -47,7 +47,7 @@ const CORE_FEATURES = [
   },
   {
     icon: CalendarClock,
-    title: "Scheduling and Handoff",
+    title: "Scheduling And Handoff",
     body: "Offer real availability and pass the request without making the customer repeat context.",
   },
   {
@@ -57,12 +57,12 @@ const CORE_FEATURES = [
   },
   {
     icon: SlidersHorizontal,
-    title: "Training by Workflow",
+    title: "Training By Workflow",
     body: "Tune one voice agent for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
-    title: "Outcomes over Activity",
+    title: "Outcomes Over Activity",
     body: "See what happened, what changed, and what needs attention across every channel.",
   },
 ] as const;
@@ -95,15 +95,16 @@ export default function Features() {
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
             title="Voice agents for every customer conversation"
-            primaryAction={{ label: "Build Your Voice Agent", to: "/signup" }}
+            primaryAction={{ label: "Build Your Voice Agent", to: "/signup?plan=personal" }}
             secondaryAction={{
-              label: "Hear a Demo",
+              label: "Hear A Demo",
               to: "/showcase",
               tone: "secondary",
             }}
           />
 
           <div className="wl-public-rail mt-6">
+            <p className="sr-only">Build. Train. Launch. Improve.</p>
             <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
               {MARKETING_VOICE.proof.map((step, index) => (
                 <li key={step} className="flex items-center gap-2">

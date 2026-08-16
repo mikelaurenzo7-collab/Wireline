@@ -18,6 +18,7 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("import BrowserCallWidget");
     expect(landing).toContain("<BrowserCallWidget");
+    expect(landing).toContain('variant="phone"');
     expect(landing).toContain('id="hear-a-demo"');
   });
 
@@ -37,7 +38,8 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     // The widget renders the fallback instead of a dead button when the key
     // is missing.
-    expect(widget).toContain("!VAPI_PUBLIC_KEY && fallback");
+    expect(widget).toContain('variant?: "compact" | "phone"');
+    expect(widget).toContain("!VAPI_PUBLIC_KEY && Boolean(fallback)");
   });
 
   it("emits the two previously-dead funnel events", () => {

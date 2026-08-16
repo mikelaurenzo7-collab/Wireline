@@ -55,7 +55,7 @@ describe("product voice cohesion", () => {
     // full stop after seven words of caps reads as a stray mark. See the case
     // doctrine in src/styles/viewport-first-marketing.css.
     expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done");
-    expect(MARKETING_VOICE.primaryCta).toBe("Build your voice agent");
+    expect(MARKETING_VOICE.primaryCta).toBe("Build Your Voice Agent");
     expect(MARKETING_VOICE.subline).toBe(
       "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
     );
@@ -169,7 +169,8 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Hear It Live");
     // The plan cards are the plans block now; a heading above them repeating
     // "start free" duplicated the first card's own button on a one-headline page.
-    expect(landing).toContain("PLAN_PREVIEW.map");
+    expect(landing).toContain("variant=\"phone\"");
+    expect(landing).toContain("landing-phone__call");
     // /about is a statement page now, not a second landing page: it opens on
     // who answers the support email, not on a restatement of the product pitch.
     // Cased titles carry no terminal punctuation.

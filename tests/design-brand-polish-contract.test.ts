@@ -106,8 +106,8 @@ describe("E2E design and brand polish", () => {
     // this is the primary public conversion target.
     expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
     expect(header).not.toContain("font-semibold uppercase");
-    expect(sticky).toContain('label = "Build your agent"');
-    expect(sticky).toContain('secondaryLabel = "Hear it live"');
+    expect(sticky).toContain('label = "Build Your Agent"');
+    expect(sticky).toContain('secondaryLabel = "Hear It Live"');
     expect(sticky).toContain("min-h-[48px]");
     expect(footer).toContain("min-h-11 items-center");
   });
@@ -164,8 +164,9 @@ describe("E2E design and brand polish", () => {
     expect(landing).not.toContain("Choose the outcome");
     // Same for the plans block: the cards state the prices, and a heading above
     // them repeating "start free" duplicated the first card's own button.
-    expect(landing).toContain("PLAN_PREVIEW.map");
-    expect(landing).toContain("Start Free");
+    expect(landing).toContain("landing-phone");
+    expect(landing).toContain("See Plans");
+    expect(landing).toContain("Start free.");
     // The closing band that repeated the hero's headline and both of its
     // buttons verbatim is gone: the plan cards are the close.
     expect(landing).not.toContain("Put your first voice agent to work");

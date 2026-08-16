@@ -140,7 +140,7 @@ export const MARKETING_VOICE = {
      labels and do not take them. */
   headline: "Voice agents that get the work done",
   /** Public hero CTA broad enough for personal and business buyers. */
-  primaryCta: "Build your voice agent",
+  primaryCta: "Build Your Voice Agent",
   subline:
     "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
   channelProof: [
