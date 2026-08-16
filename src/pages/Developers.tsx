@@ -111,7 +111,7 @@ export default function Developers() {
   }, []);
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame>
       <PageMeta
         title="Developer Portal | Wireline"
         description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys."
@@ -129,7 +129,7 @@ export default function Developers() {
       />
 
       <section
-        className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20 lg:px-10"
+        className="marketing-section border-b border-border bg-card"
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
@@ -176,7 +176,7 @@ export default function Developers() {
         </div>
       </section>
 
-      <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      <section className="marketing-section border-b border-border">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="wl-stitch-display text-balance">Connect. Draft. Launch.</h2>
@@ -204,7 +204,7 @@ export default function Developers() {
         </div>
       </section>
 
-      <section className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      <section className="marketing-section border-b border-border bg-card">
         <div className="mx-auto max-w-4xl text-center">
           <span className="mx-auto grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
             <ShieldCheck className="h-5 w-5" />
@@ -220,7 +220,7 @@ export default function Developers() {
         </div>
       </section>
 
-      <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="wl-stitch-display text-balance">Draft. Simulate. Continue in Studio.</h2>

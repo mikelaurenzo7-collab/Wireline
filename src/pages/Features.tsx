@@ -1,6 +1,5 @@
 import { Link } from "react-router";
 import {
-  ArrowRight,
   BarChart3,
   CalendarClock,
   CheckCircle2,
@@ -16,30 +15,30 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
-import MarketingFooter from "../components/marketing/MarketingFooter";
+import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 
+/* Titled with the canonical step names the landing page uses. This list used
+   to sit under a "Build. Train. Launch. Improve." headline while its own cards
+   were titled "Define the Agent" / "Teach the Business" — one four-step story,
+   two vocabularies, on two pages. One vocabulary now. */
 const OPERATING_LOOP = [
   {
-    step: "Build",
-    title: "Define the agent",
+    title: "Build",
     body: "Choose the job, audience, success criteria, channels, and limits.",
   },
   {
-    step: "Train",
-    title: "Teach the business",
+    title: "Train",
     body: "Add knowledge, tone, objections, routing, approvals, and handoff rules.",
   },
   {
-    step: "Launch",
-    title: "Connect the operation",
+    title: "Launch",
     body: "Activate live channels, claim the included number, and set spend controls.",
   },
   {
-    step: "Improve",
-    title: "Coach from outcomes",
+    title: "Improve",
     body: "Review conversations, completed work, exceptions, and the next action.",
   },
 ] as const;
@@ -65,32 +64,32 @@ const CHANNEL_CAPABILITIES = [
 const CORE_FEATURES = [
   {
     icon: Workflow,
-    title: "One conversation memory",
+    title: "One Conversation Memory",
     body: "Calls, texts, and email share business knowledge, customer context, rules, and history.",
   },
   {
     icon: CheckCircle2,
-    title: "Work that finishes",
+    title: "Work That Finishes",
     body: "Book, update, recap, route the exception, and preserve proof. Not just a transcript.",
   },
   {
     icon: CalendarClock,
-    title: "Scheduling and handoff",
+    title: "Scheduling and Handoff",
     body: "Offer real availability and pass the request without making the customer repeat context.",
   },
   {
     icon: ShieldCheck,
-    title: "Approvals and safety",
+    title: "Approvals and Safety",
     body: "Keep sensitive actions behind controls and audit what happened before and after execution.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Training by workflow",
+    title: "Training by Workflow",
     body: "Tune one voice agent for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
-    title: "Outcomes over activity",
+    title: "Outcomes over Activity",
     body: "See what happened, what changed, and what needs attention across every channel.",
   },
 ] as const;
@@ -105,19 +104,19 @@ const TOOL_STACK = [
 
 const USE_CASES = [
   {
-    title: "Lead response",
+    title: "Lead Response",
     icon: PhoneCall,
     to: "/solutions/sales",
     body: "Answer and qualify new demand before it cools.",
   },
   {
-    title: "Inbox triage",
+    title: "Inbox Triage",
     icon: Mail,
     to: "/solutions/support",
     body: "Sort, draft, and resolve email without losing context.",
   },
   {
-    title: "SMS follow up",
+    title: "SMS Follow Up",
     icon: MessageSquareText,
     to: "/solutions/sales",
     body: "Keep momentum with consented text that finishes the job.",
@@ -129,13 +128,13 @@ const USE_CASES = [
     body: "Offer real availability and book without the phone tag.",
   },
   {
-    title: "Front desk",
+    title: "Front Desk",
     icon: Contact,
     to: "/solutions/support",
     body: "Catch every call, route the exception, log the outcome.",
   },
   {
-    title: "Custom workflow",
+    title: "Custom Workflow",
     icon: Workflow,
     to: "/signup",
     body: "Train one voice agent on the conversation work you want off your plate.",
@@ -144,7 +143,7 @@ const USE_CASES = [
 
 export default function Features() {
   return (
-    <div className="marketing-surface wl-features-page min-h-screen bg-background text-foreground">
+    <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
         title="Features | Wireline Voice Agents"
         description="Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory."
@@ -152,22 +151,21 @@ export default function Features() {
       />
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="pt-16" tabIndex={-1}>
-        <MarketingHero
-          title="Voice Agents for every customer conversation."
-          primaryAction={{ label: "Build your voice agent", to: "/signup" }}
-          secondaryAction={{
-            label: "Hear a demo",
-            to: "/showcase",
-            tone: "secondary",
-          }}
-        />
-
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">Every channel. One voice agent.</h2>
-            </div>
+      <main id="main-content" className="marketing-flow" tabIndex={-1}>
+        {/* Screen 1 — what it runs on. The three channel cards carry the
+            "every channel, one agent" claim, so the headline that said it in
+            words above them is gone: the row is the proof and the sentence. */}
+        <section className="marketing-section marketing-section--screen">
+          <MarketingHero
+            title="Voice agents for every customer conversation"
+            primaryAction={{ label: "Build Your Voice Agent", to: "/signup" }}
+            secondaryAction={{
+              label: "Hear a Demo",
+              to: "/showcase",
+              tone: "secondary",
+            }}
+          />
+          <div className="wl-public-rail mt-10">
             <div className="grid gap-3 lg:grid-cols-3">
               {CHANNEL_CAPABILITIES.map(({ icon: Icon, title, body }) => (
                 <FeatureCard key={title} icon={Icon} title={title} body={body} />
@@ -176,38 +174,13 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="wl-public-section border-b border-border bg-card/45">
+        {/* Screen 2 — why it can be trusted with the work. */}
+        <section className="marketing-section border-t border-border">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="wl-public-section-heading">Build. Train. Launch. Improve.</h2>
-            </div>
-            <div className="grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
-              {OPERATING_LOOP.map(({ title, body }, index) => (
-                <article
-                  key={title}
-                  className="p-6 text-center transition-colors hover:bg-muted/40"
-                >
-                  <span className="mx-auto grid h-10 w-10 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="mx-auto mt-5 max-w-[16ch] text-[1rem] font-semibold tracking-[-.015em] text-foreground">
-                    {title}
-                  </h3>
-                  <p className="mx-auto mt-3 max-w-[30ch] text-sm leading-6 text-muted-foreground">
-                    {body}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="wl-public-section-heading">The controls that make it reliable.</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="wl-public-section-heading mx-auto text-center">
+              The controls that make it reliable
+            </h2>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
                 <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
@@ -215,73 +188,74 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="wl-public-section border-b border-border bg-card/45">
+        {/* Screen 3 — the work itself. Each card now renders the body copy it
+            has always carried: the six use cases shipped as bare labels with a
+            hover-only "Explore", so the data existed and the visitor never saw
+            it. Connections ride along at the foot of the same screen — they
+            answer "does it reach my systems", which is the question a use case
+            raises, and they no longer need a one-word section of their own. */}
+        <section className="marketing-section border-t border-border bg-card/45">
           <div className="wl-public-rail">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">Connections.</h2>
-            </div>
-            <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {TOOL_STACK.map(({ icon: Icon, label, status }) => (
-                <div
-                  key={label}
-                  className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-background p-4 text-center transition-all hover:-translate-y-0.5 hover:border-primary/20"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
-                    <Icon size={18} aria-hidden="true" />
-                  </div>
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                  <span className="wl-overline text-muted-foreground">{status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="wl-public-section-heading">
-                Start with the work you want off your plate.
-              </h2>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="wl-public-section-heading mx-auto text-center">
+              Start with the work you want off your plate
+            </h2>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {USE_CASES.map((useCase) => (
                 <Link
                   key={useCase.title}
                   to={useCase.to}
-                  className="wl-stitch-card group flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="wl-stitch-card group flex flex-col items-center rounded-xl border border-border bg-card p-5 text-center transition-all hover:border-primary/30 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
-                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
                     <useCase.icon size={18} aria-hidden="true" />
                   </div>
-                  <h3 className="text-[1.05rem] font-semibold leading-tight tracking-[-0.015em] text-foreground">
-                    {useCase.title}
-                  </h3>
-                  <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-primary opacity-0 transition group-hover:opacity-100">
-                    Explore <ArrowRight size={12} aria-hidden="true" />
-                  </span>
+                  <h3 className="wl-card-title">{useCase.title}</h3>
+                  <p className="mx-auto mt-2 max-w-[32ch] text-sm leading-6 text-muted-foreground">
+                    {useCase.body}
+                  </p>
                 </Link>
               ))}
             </div>
+
+            <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
+              {TOOL_STACK.map(({ icon: Icon, label, status }) => (
+                <li
+                  key={label}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2"
+                >
+                  <Icon size={15} className="text-primary" aria-hidden="true" />
+                  <span className="text-xs font-semibold text-foreground">{label}</span>
+                  <span className="wl-overline text-muted-foreground">{status}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <section className="wl-public-section">
-          <div className="wl-public-rail text-center">
-            <h2 className="wl-public-section-heading">Train it. Test it. Launch it.</h2>
-            <div className="marketing-hero__actions mt-8">
-              <Link to="/signup" className="marketing-btn-primary px-6 text-sm font-semibold">
-                Build your voice agent
-              </Link>
-              <Link to="/pricing" className="marketing-btn-secondary px-6 text-sm font-semibold">
-                See plans <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            </div>
+        {/* Screen 4 — how you get there, in the same four words the landing
+            page and the workspace use. The closing CTA band that used to sit
+            below this repeated the hero's two buttons verbatim; the loop ends
+            on "Improve", which is a better last word than a third Start Free. */}
+        <section className="marketing-section border-t border-border">
+          <div className="wl-public-rail">
+            <ol className="grid gap-px overflow-hidden rounded-[var(--radius-xl)] border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+              {OPERATING_LOOP.map(({ title, body }, index) => (
+                <li key={title} className="bg-card p-6 text-center">
+                  <span className="mx-auto grid h-9 w-9 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="wl-card-title mt-4">{title}</h3>
+                  <p className="mx-auto mt-2 max-w-[30ch] text-sm leading-6 text-muted-foreground">
+                    {body}
+                  </p>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       </main>
 
-      <MarketingFooter />
+      <MarketingChromeBar />
     </div>
   );
 }

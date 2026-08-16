@@ -33,9 +33,9 @@ export function ContactPage() {
   const startsAsSales = ["sales", "business", "enterprise"].includes(
     initialIntent?.toLowerCase() ?? "",
   );
-  const [inquiryType, setInquiryType] = useState<
-    (typeof INQUIRY_TYPES)[number]["value"]
-  >(startsAsSales ? "sales" : "personal");
+  const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
+    startsAsSales ? "sales" : "personal",
+  );
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [subject, setSubject] = useState(
@@ -92,9 +92,7 @@ export function ContactPage() {
         const failBody = (await response.json().catch(() => null)) as {
           error?: string;
         } | null;
-        throw new Error(
-          failBody?.error || `Message could not be sent (${response.status}).`,
-        );
+        throw new Error(failBody?.error || `Message could not be sent (${response.status}).`);
       }
       const payload = (await response.json().catch(() => null)) as {
         sent?: boolean;
@@ -105,18 +103,16 @@ export function ContactPage() {
       setSubmitted(true);
       if (
         typeof window !== "undefined" &&
-        (window as { plausible?: (name: string, options?: unknown) => void })
-          .plausible
+        (window as { plausible?: (name: string, options?: unknown) => void }).plausible
       ) {
-        (
-          window as { plausible: (name: string, options?: unknown) => void }
-        ).plausible("ContactMessageSubmitted", { props: { inquiryType } });
+        (window as { plausible: (name: string, options?: unknown) => void }).plausible(
+          "ContactMessageSubmitted",
+          { props: { inquiryType } },
+        );
       }
     } catch (reason) {
       const message =
-        reason instanceof Error
-          ? reason.message
-          : "The message service did not respond.";
+        reason instanceof Error ? reason.message : "The message service did not respond.";
       // Only fall back to mailto for transport/service failures — keep validation/API errors inline.
       const isTransport =
         (responseStatus !== null && responseStatus >= 500) ||
@@ -138,10 +134,7 @@ export function ContactPage() {
   };
 
   return (
-    <MarketingPageFrame
-      stickyCta={false}
-      mainClassName="!px-0 pb-0 pt-20 sm:pt-24"
-    >
+    <MarketingPageFrame longform>
       <PageMeta
         title="Contact Wireline"
         description="Talk to Wireline about personal call coverage, team rollout, partnerships, or support."
@@ -167,12 +160,8 @@ export function ContactPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">
-              Call Wireline
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {salesAgent.display}
-            </p>
+            <h2 className="mt-5 font-semibold text-foreground">Call Wireline</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{salesAgent.display}</p>
           </a>
           <a
             href="mailto:support@trywireline.com"
@@ -180,9 +169,7 @@ export function ContactPage() {
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              support@trywireline.com
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
           </a>
           <Link
             to="/pricing"
@@ -191,22 +178,18 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train free. Starter launches at ${STARTER_PRICE}/mo;
-              Starter Plus at ${STARTER_PLUS_PRICE}/mo.
+              Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $
+              {STARTER_PLUS_PRICE}/mo.
             </p>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
-            Send a note
-          </h2>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">
-                Message received
-              </h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 We aim to reply within one business day at {email}.
               </p>
@@ -239,10 +222,7 @@ export function ContactPage() {
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  Company{" "}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
+                  Company <span className="font-normal text-muted-foreground">(optional)</span>
                   <Input
                     value={company}
                     onChange={(event) => setCompany(event.target.value)}
@@ -252,9 +232,7 @@ export function ContactPage() {
               </div>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Callback number{" "}
-                <span className="font-normal text-muted-foreground">
-                  (optional)
-                </span>
+                <span className="font-normal text-muted-foreground">(optional)</span>
                 <Input
                   type="tel"
                   autoComplete="tel"
@@ -309,10 +287,7 @@ export function ContactPage() {
         </section>
         <p className="mt-7 text-center text-sm text-muted-foreground">
           Need product help instead?{" "}
-          <Link
-            to="/support"
-            className="font-semibold text-primary underline underline-offset-4"
-          >
+          <Link to="/support" className="font-semibold text-primary underline underline-offset-4">
             Visit support <ArrowRight className="inline h-4 w-4" />
           </Link>
         </p>

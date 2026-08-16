@@ -21,7 +21,7 @@ const PRINCIPLES = [
 
 export default function About() {
   return (
-    <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame className="wl-about-page">
       <PageMeta
         title="About Wireline | Voice Agents for Calls and Follow up"
         description="Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations."
@@ -32,13 +32,13 @@ export default function About() {
         title="Agents that run calls like you would."
         primaryAction={{ label: "Build your Voice Agent", to: "/pricing" }}
         secondaryAction={{
-          label: "Contact support",
+          label: "Contact Support",
           to: "/contact",
           tone: "secondary",
         }}
       />
 
-      <section className="wl-public-section border-y border-border bg-card">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
           <div className="bg-card px-5 pb-4 pt-9 text-center sm:px-8 sm:py-12 lg:px-10 lg:py-12">
             <h2 className="wl-stitch-display text-balance">Independent. Direct line to us.</h2>
@@ -55,7 +55,7 @@ export default function About() {
         </div>
       </section>
 
-      <section className="wl-public-section">
+      <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto grid max-w-4xl gap-6 text-center">
             <div>
@@ -80,7 +80,7 @@ export default function About() {
         </div>
       </section>
 
-      <section className="wl-public-section border-t border-border bg-card">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
             <h2 className="wl-stitch-display mx-auto max-w-2xl text-balance">

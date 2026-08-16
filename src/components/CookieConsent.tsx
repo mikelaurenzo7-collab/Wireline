@@ -189,7 +189,7 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[390px]",
+            "fixed z-[9999] left-3 right-3 sm:right-4 sm:left-auto sm:max-w-[340px]",
             // Bottom placement everywhere. Authenticated app shell has a
             // mobile bottom nav (~4.25rem); clear it so Overview CTAs stay
             // tappable. Marketing sticky CTAs need a taller offset.
@@ -197,7 +197,7 @@ export default function CookieConsent() {
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
               : hasSession
                 ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
-                : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
+                : "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))]",
           )}
           role="dialog"
           aria-modal="true"
@@ -233,8 +233,8 @@ export default function CookieConsent() {
                   </>
                 ) : (
                   <>
-                    Essential storage and privacy-friendly product analytics help Wireline operate.
-                    Optional advertising measurement stays off unless you allow it.{" "}
+                    Essential storage keeps Wireline working. Optional ad measurement stays off
+                    unless you allow it.{" "}
                   </>
                 )}
                 <Link

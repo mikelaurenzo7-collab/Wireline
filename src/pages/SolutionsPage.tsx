@@ -22,7 +22,7 @@ const SOLUTIONS = {
       "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
     primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
-    secondary: { href: "/showcase", label: "Hear a demo" },
+    secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
       ["A lead reaches out", "A voice agent responds on the channel the lead already chose."],
       [
@@ -61,7 +61,7 @@ const SOLUTIONS = {
       href: "/signup?wedge=support",
       label: "Create a front desk agent",
     },
-    secondary: { href: "/showcase", label: "Hear a demo" },
+    secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
       [
         "A customer reaches out",
@@ -104,7 +104,7 @@ export default function SolutionsPage() {
   const demoAgent = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === demoAgentName);
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 !pb-0 !pt-16">
+    <MarketingPageFrame>
       <PageMeta
         title={`${page.title} | Wireline`}
         description={page.description}
@@ -145,7 +145,7 @@ export default function SolutionsPage() {
         }
       />
 
-      <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="marketing-section wl-public-rail mx-auto">
         <div className="wl-marketing-center mx-auto max-w-2xl">
           <h2 className="wl-stitch-display text-balance">From contact to next step.</h2>
         </div>
@@ -164,7 +164,7 @@ export default function SolutionsPage() {
         </ol>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="wl-public-rail mx-auto">
           <div className="wl-marketing-center mx-auto max-w-3xl">
             <h2 className="wl-stitch-display text-balance">What it handles.</h2>
@@ -191,7 +191,7 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="marketing-section wl-public-rail mx-auto">
         <div className="wl-stitch-card wl-stitch-card-tinted wl-marketing-center grid justify-items-center gap-6 p-6 sm:p-8">
           <div className="max-w-2xl">
             <p className="text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">

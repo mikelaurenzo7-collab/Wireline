@@ -69,8 +69,7 @@ const MARKET_OPTIONS = [
   {
     name: "Wireline",
     price: "$0 to build · live from $19/mo",
-    usage:
-      "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
+    usage: "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
     fit: "Owners who want one trained voice agent across voice, SMS, email, follow up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",
@@ -79,8 +78,7 @@ const MARKET_OPTIONS = [
   {
     name: "Goodcall",
     price: "$79/agent/mo",
-    usage:
-      "Unlimited minutes and tokens; 100 unique customers monthly on Starter",
+    usage: "Unlimited minutes and tokens; 100 unique customers monthly on Starter",
     fit: "Flat rate AI phone answering where customer count limits fit the call pattern",
     href: "https://www.goodcall.com/pricing",
     source: "Goodcall pricing",
@@ -89,8 +87,7 @@ const MARKET_OPTIONS = [
   {
     name: "Smith.ai",
     price: "$0 free · Pro from $150/mo",
-    usage:
-      "25 live calls on Free; 75 included live calls on the first paid Pro tier",
+    usage: "25 live calls on Free; 75 included live calls on the first paid Pro tier",
     fit: "AI receptionist buyers who prefer per call capacity and service backed tiers",
     href: "https://smith.ai/pricing/ai-receptionist",
     source: "Smith.ai pricing",
@@ -108,8 +105,7 @@ const MARKET_OPTIONS = [
   {
     name: "Retell",
     price: "$0.07–$0.31/min",
-    usage:
-      "Pay as you go voice components; phone numbers and messaging have separate rates",
+    usage: "Pay as you go voice components; phone numbers and messaging have separate rates",
     fit: "Developers optimizing model, voice, telephony, and add on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
@@ -123,14 +119,8 @@ const TABLE_ROWS = [
   ["Repeat the same details", "Your agent keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
   ["Miss after hours calls", "Your agent picks up 24/7, no voicemail tag"],
-  [
-    "Train a new receptionist",
-    "Your agent ships with your playbook on day one",
-  ],
-  [
-    "Log calls manually in a CRM",
-    "Your agent writes the summary and syncs the record",
-  ],
+  ["Train a new receptionist", "Your agent ships with your playbook on day one"],
+  ["Log calls manually in a CRM", "Your agent writes the summary and syncs the record"],
   [
     "Follow up on every inbound lead",
     "Your agent qualifies, books, or hands off. Nothing falls through",
@@ -139,10 +129,7 @@ const TABLE_ROWS = [
 
 export default function Compare() {
   return (
-    <MarketingPageFrame
-      className="wl-compare-page"
-      mainClassName="!px-0 pb-0 pt-16"
-    >
+    <MarketingPageFrame className="wl-compare-page">
       <PageMeta
         title="Why Wireline"
         description="Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing."
@@ -151,21 +138,18 @@ export default function Compare() {
 
       <MarketingHero
         title="Wireline vs. other voice AI."
-        primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
+        primaryAction={{ label: "Start Free", to: "/signup?plan=personal" }}
         secondaryAction={{
-          label: "Hear a demo",
+          label: "Hear a Demo",
           to: "/showcase",
           tone: "secondary",
         }}
       />
 
-      <section className="wl-public-section border-y border-border bg-card">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
           {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
-            <article
-              className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10"
-              key={title}
-            >
+            <article className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10" key={title}>
               <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                 <Icon className="h-4 w-4" />
               </span>
@@ -180,19 +164,17 @@ export default function Compare() {
         </div>
       </section>
 
-      <section className="wl-public-section">
+      <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">
-              Compare the model, not the sticker.
-            </h2>
+            <h2 className="wl-stitch-display text-balance">Compare the model, not the sticker.</h2>
           </div>
 
           <div className="mt-8 overflow-x-auto border border-border bg-card">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
-                Public launch pricing and buying-model comparison for Wireline
-                and selected alternatives
+                Public launch pricing and buying-model comparison for Wireline and selected
+                alternatives
               </caption>
               <thead className="border-b border-border bg-muted/40">
                 <tr>
@@ -254,8 +236,7 @@ export default function Compare() {
                           rel="noreferrer"
                           target="_blank"
                         >
-                          {option.source}{" "}
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          {option.source} <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       )}
                     </td>
@@ -266,18 +247,15 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1,
-            2026 and may change. Taxes, carrier fees, optional extras, annual
-            discounts, implementation services, and usage patterns can change
-            the effective total. This is a buying-model reference,{" "}
-            {
-              "not a claim that unlike products are feature for feature equivalents."
-            }
+            Public prices were checked on the linked official pages on August 1, 2026 and may
+            change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
+            and usage patterns can change the effective total. This is a buying-model reference,{" "}
+            {"not a claim that unlike products are feature for feature equivalents."}
           </p>
         </div>
       </section>
 
-      <section className="wl-public-section border-y border-border bg-card">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="text-center">
             <h2 className="wl-stitch-display text-balance">
@@ -288,14 +266,11 @@ export default function Compare() {
             {TABLE_ROWS.map(([before, after], index) => (
               <div
                 className={
-                  (index ? "border-t border-border " : "") +
-                  "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
+                  (index ? "border-t border-border " : "") + "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
                 }
                 key={before}
               >
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {before}
-                </p>
+                <p className="text-sm leading-6 text-muted-foreground">{before}</p>
                 <p className="flex gap-2 text-sm font-medium leading-6 text-foreground">
                   <Check className="mt-1 h-4 w-4 flex-none text-primary" />
                   {after}
@@ -306,7 +281,7 @@ export default function Compare() {
         </div>
       </section>
 
-      <section className="wl-public-section border-t border-border bg-card">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
             <h2 className="wl-stitch-display mx-auto max-w-2xl text-balance">

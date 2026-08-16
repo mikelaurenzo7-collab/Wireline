@@ -119,7 +119,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -137,7 +137,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         }}
       />
 
-      <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      <section className="marketing-section mx-auto max-w-6xl">
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = PAIN_ICONS[pain.icon];
@@ -162,7 +162,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="wl-stitch-display text-balance">
@@ -182,7 +182,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section mx-auto max-w-4xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
             {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
@@ -211,7 +211,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="border-t border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto max-w-6xl">
           <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
             <div className="grid justify-items-center gap-7 text-center">

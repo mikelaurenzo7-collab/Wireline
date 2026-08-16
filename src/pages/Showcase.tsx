@@ -16,7 +16,7 @@ export default function Showcase() {
   }, []);
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame>
       <PageMeta
         title="Try Wireline"
         description="Hear the voice agent your customers will meet first, then build one for voice, SMS, and email."
@@ -25,7 +25,7 @@ export default function Showcase() {
 
       <MarketingHero
         title="Hear what your customer hears."
-        primaryAction={{ label: "Create an agent", to: "/signup" }}
+        primaryAction={{ label: "Create an Agent", to: "/signup" }}
         secondaryAction={{
           label: "Call a demo line",
           to: "#demo-lines",
@@ -59,10 +59,7 @@ export default function Showcase() {
         }
       />
 
-      <section
-        id="demo-lines"
-        className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20"
-      >
+      <section id="demo-lines" className="marketing-section border-b border-border bg-card">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="wl-stitch-display text-balance">Call a live demo line.</h2>
@@ -98,7 +95,7 @@ export default function Showcase() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16 lg:px-10">
+      <section className="marketing-section mx-auto max-w-6xl">
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="grid justify-items-center gap-7 text-center">
             <div>

@@ -92,7 +92,12 @@ export const AGENT_DIRECTION_MODES = {
       "Answers live demand, continues by text or email when useful, and routes only what needs a person.",
   },
   hybrid: {
-    label: "All purpose",
+    // Title Case, not sentence case: this is a two-word tab label, not a
+    // sentence. Wireline's case rule is that anything three words or fewer in a
+    // title/label/tab/button slot is Title Case at the source and UPPERCASE
+    // where the tier applies — so it reads as a deliberate label in the places
+    // that do not uppercase it (native clients, aria labels, document titles).
+    label: "All Purpose",
     eyebrow: "Voice agent for daily operations",
     loop: ["Answer", "Sell", "Follow up", "Sync"],
     promise:
@@ -126,7 +131,11 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "Voice agents that get the work done.",
+  /* No terminal period. The hero renders in the cased display tier at up to
+     76px, where a full stop after seven words of caps reads as a stray mark,
+     not as punctuation. Sentence-case copy keeps its periods; cased titles are
+     labels and do not take them. */
+  headline: "Voice agents that get the work done",
   /** Public hero CTA broad enough for personal and business buyers. */
   primaryCta: "Build your voice agent",
   subline:

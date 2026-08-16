@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router";
 import PrecisionPublicHeader from "../marketing/PrecisionPublicHeader";
-import MarketingFooter from "../marketing/MarketingFooter";
+import MarketingChromeBar from "../marketing/MarketingChromeBar";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";
 import { cn } from "../../lib/utils";
 
@@ -12,8 +12,13 @@ type MarketingSectionLink = {
 
 interface MarketingPageFrameProps {
   children: ReactNode;
-  /** Fixed viewport (landing-style) vs scrollable long-form */
-  scroll?: boolean;
+  /**
+   * Long-form document pages (legal, changelog, blog) opt out of the section
+   * ceiling: a terms-of-service panel that scrolls inside a panel is worse than
+   * one honest column. The frame itself still never scrolls — only the flow
+   * inside it does.
+   */
+  longform?: boolean;
   /** Opt-in mobile bottom conversion bar. Public pages already carry in-flow CTAs. */
   stickyCta?: boolean;
   footer?: boolean;
@@ -22,10 +27,17 @@ interface MarketingPageFrameProps {
   sectionLinks?: MarketingSectionLink[];
 }
 
-/** Shared shell for public marketing pages — fixed chrome, consistent rhythm, and one footer. */
+/**
+ * Shared shell for public marketing pages.
+ *
+ * The window is the frame and the frame never scrolls: fixed header, pinned
+ * chrome bar, and a single bounded scroll region between them. See
+ * `src/styles/viewport-first-marketing.css` for the three mechanisms — frame,
+ * section ceiling, and proximity snap — that this component supplies the DOM for.
+ */
 export default function MarketingPageFrame({
   children,
-  scroll = true,
+  longform = false,
   stickyCta = false,
   footer = true,
   className,
@@ -36,31 +48,23 @@ export default function MarketingPageFrame({
   const activeSection = location.hash.replace(/^#/, "") || sectionLinks?.[0]?.id;
 
   return (
-    <div
-      className={cn(
-        "marketing-surface relative flex flex-col bg-background text-foreground",
-        scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
-        className,
-      )}
-    >
+    <div className={cn("marketing-surface bg-background text-foreground", className)}>
       <PrecisionPublicHeader />
 
       <main
         id="main-content"
         tabIndex={-1}
         className={cn(
-          "relative z-10",
-          scroll ? "grow" : "min-h-0 flex-1",
-          scroll ? "scroll-viewport" : "flex flex-col overflow-hidden",
-          stickyCta && scroll && "marketing-has-sticky-cta",
-          scroll
-            ? "px-4 pb-8 pt-20 sm:px-5 sm:pb-10 sm:pt-24 md:px-8 md:pb-12 md:pt-28 lg:px-12 xl:px-16 2xl:px-20"
-            : "px-4 pb-4 pt-16 sm:px-5 lg:px-8 lg:pb-6",
+          "marketing-flow relative z-10",
+          stickyCta && "marketing-has-sticky-cta",
           mainClassName,
         )}
       >
         {sectionLinks && sectionLinks.length > 0 ? (
-          <div className="sticky top-16 z-20 -mx-5 mb-6 border-y border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_94%,transparent)] px-5 py-2.5 backdrop-blur-xl md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+          // `top-0` inside the flow, not `top-16` against the document: the
+          // scroll container starts below the fixed header, so an offset meant
+          // for page scroll left a 64px gap the strip floated under.
+          <div className="sticky top-0 z-20 border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_94%,transparent)] px-5 py-2 backdrop-blur-xl lg:px-8">
             <nav
               aria-label="On this page"
               className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
@@ -87,13 +91,15 @@ export default function MarketingPageFrame({
             </nav>
           </div>
         ) : null}
-        <div className={cn(scroll && "wl-measure", "resp-adaptive-grid")}>{children}</div>
+        {/* Children are not wrapped in a section: pages compose their own
+            `.marketing-section` panels, because only the page knows where one
+            screen ends and the next begins. Wrapping the whole page in one
+            centred, height-capped box clipped every multi-section route. */}
+        <div className={cn("resp-adaptive-grid", longform && "marketing-longform")}>{children}</div>
       </main>
 
-      {footer ? (
-        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} />
-      ) : null}
-      {stickyCta && scroll ? <MarketingStickyCta /> : null}
+      {footer ? <MarketingChromeBar /> : null}
+      {stickyCta ? <MarketingStickyCta /> : null}
     </div>
   );
 }

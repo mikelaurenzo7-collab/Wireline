@@ -71,7 +71,7 @@ const structuredData = {
 
 export default function Blog() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame longform>
       <PageMeta
         title="Wireline Notes | Voice agent guides for small business phone coverage"
         description="Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate."
@@ -79,7 +79,7 @@ export default function Blog() {
         structuredData={structuredData}
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+      <section className="marketing-section mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-3xl">
           <h1 className="wl-stitch-marketing-hero text-balance">
             Practical notes for getting time back.
@@ -87,7 +87,7 @@ export default function Blog() {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {NOTES.map(({ icon: Icon, title, copy }) => (
             <article
@@ -109,7 +109,7 @@ export default function Blog() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+      <section className="marketing-section mx-auto max-w-6xl">
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">

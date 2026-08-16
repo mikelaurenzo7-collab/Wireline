@@ -12,8 +12,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import MarketingFooter from "../components/marketing/MarketingFooter";
-import MarketingHero from "../components/marketing/MarketingHero";
+import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
@@ -76,6 +75,26 @@ const PAID_TIERS = [
     badge: "Multi agent",
   },
 ] as const;
+
+/**
+ * Features every paid tier lists verbatim, computed rather than hand-listed so
+ * a catalog edit cannot leave this out of step.
+ *
+ * Three lines — the +$15/mo add-agent rate, the post-call record, and "no
+ * automatic overages" — were printed identically on Starter, Starter Plus and
+ * Pro. At four columns each wrapped to two or three lines, so one shared fact
+ * cost roughly 130 vertical pixels three times over, and a visitor comparing
+ * plans had to read the same sentence three times to discover it did not
+ * differentiate them. Stated once, under the grid, it reads as what it is: a
+ * property of the product, not of a tier.
+ */
+const PAID_PLAN_FEATURES: readonly (readonly string[])[] = PAID_TIERS.map(
+  ({ plan }) => plan.features,
+);
+const SHARED_PAID_FEATURES = PAID_PLAN_FEATURES[0].filter((feature) =>
+  PAID_PLAN_FEATURES.every((features) => features.includes(feature)),
+);
+const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(feature);
 
 const CHANNEL_RULES = [
   {
@@ -191,7 +210,7 @@ export default function Pricing() {
   const annual = billingInterval === "year";
 
   return (
-    <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
+    <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
         title="Pricing | Wireline Voice Agents from $19/month"
         description="Build a voice agent free, launch from $19/month, and optionally add Live Video for business agents. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
@@ -203,30 +222,30 @@ export default function Pricing() {
       />
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="pt-16" tabIndex={-1}>
-        <MarketingHero
-          // The one price story: "Build free. Go live from $19/mo." A bare
-          // "$19." reads as one-time and gave the money line two phrasings.
-          title="Build free. Go live from $19/mo. Scale when it pays."
-          primaryAction={{
-            label: annual ? "Go live · $190/yr" : "Go live · $19/mo",
-            to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
-          }}
-          secondaryAction={{
-            label: "Build free first",
-            to: "/signup?plan=personal",
-            tone: "secondary",
-          }}
-        />
+      <main id="main-content" className="marketing-flow" tabIndex={-1}>
+        {/*
+          The pricing page has no hero, on purpose.
 
-        <section id="plans" className="wl-public-section">
+          It used to open with a three-line display headline carrying the whole
+          price story ("Build free. Go live from $19/mo. Scale when it pays"),
+          its own pair of CTAs, and then a *second* full-size headline directly
+          beneath it — roughly 450 vertical pixels spent restating, in prose,
+          numbers that four cards state exactly, eight hundred pixels further
+          down. On a pricing page the plans are the content and the plan buttons
+          are the call to action; a hero can only delay both.
+
+          What stands in its place is a mast: the page's name, the one control
+          it owns, and the one fact that is true of every card and printed on
+          none of them. It uses the full width, it is 44px tall, and every plan
+          is above the fold behind it.
+        */}
+        <section id="plans" className="marketing-section marketing-section--screen">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">
-                Start with one. Add when demand earns it.
-              </h2>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-4 lg:justify-between">
+              <p className="wl-eyebrow text-muted-foreground">Pricing</p>
+
               <div
-                className="mx-auto mt-8 inline-flex rounded-full border border-border bg-muted/40 p-1"
+                className="inline-flex rounded-full border border-border bg-muted/40 p-1"
                 role="group"
                 aria-label="Billing interval"
               >
@@ -257,31 +276,41 @@ export default function Pricing() {
                   Annual
                 </button>
               </div>
+
+              {/* The one thing true of every paid card and printed on none of
+                  them. It earns the third slot of the mast because it answers
+                  the question the grid otherwise leaves open. */}
+              <p className="text-xs text-muted-foreground">
+                Every paid plan includes a Wireline number
+              </p>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <article className="rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center">
-                <div className="flex flex-col items-center justify-center gap-3 text-center">
-                  <div>
-                    <h3 className="text-2xl font-semibold">Free Builder</h3>
-                  </div>
-                  <WalletCards className="h-6 w-6 text-primary" aria-hidden="true" />
+            <div className="mt-6 grid items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <WalletCards className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title">Free Builder</h3>
                 </div>
-                <div className="mt-6 flex items-end justify-center gap-2">
-                  <span className="text-4xl font-semibold tracking-[-0.04em]">$0</span>
-                  <span className="pb-1 text-sm text-muted-foreground">forever</span>
+                <div className="mt-3 flex items-end justify-center gap-1.5">
+                  <span className="text-[2.35rem] font-semibold leading-none tracking-[-0.04em]">
+                    $0
+                  </span>
+                  <span className="text-xs text-muted-foreground">forever</span>
                 </div>
-                <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
+                <ul className="mx-auto mt-5 w-full flex-1 space-y-2 text-left text-[13px] leading-5">
                   {planById.personal.features.map((feature) => (
-                    <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <li key={feature} className="flex gap-2">
+                      <Check
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Link
                   to="/signup?plan=personal"
-                  className="marketing-btn-secondary mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
+                  className="marketing-btn-secondary mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
                 >
                   Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
@@ -297,31 +326,29 @@ export default function Pricing() {
                   return (
                     <article
                       key={plan.id}
-                      className={`relative rounded-[var(--radius-xl)] border p-6 text-center ${
+                      className={`relative flex flex-col rounded-[var(--radius-xl)] border p-5 text-center ${
                         featured
-                          ? "border-primary/50 bg-card ring-2 ring-primary/45 xl:-translate-y-1"
+                          ? "border-primary/50 bg-card pt-7 ring-2 ring-primary/45"
                           : "border-border bg-card"
                       }`}
                     >
                       {featured ? (
                         <span
-                          className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-sm"
+                          className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground shadow-sm"
                           aria-label="Most popular plan"
                         >
-                          Most popular
+                          Most Popular
                         </span>
                       ) : null}
-                      <div className="flex flex-col items-center justify-center gap-3 text-center">
-                        <div>
-                          <h3 className="text-2xl font-semibold tracking-[-0.03em]">
-                            {publicName}
-                          </h3>
-                        </div>
-                        <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                      <div className="flex items-center justify-center gap-2">
+                        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                        <h3 className="wl-card-title">{publicName}</h3>
                       </div>
-                      <div className="mt-5 flex items-end justify-center gap-2">
-                        <span className="text-4xl font-semibold tracking-[-0.04em]">${price}</span>
-                        <span className="pb-1 text-sm text-muted-foreground">{priceSuffix}</span>
+                      <div className="mt-3 flex items-end justify-center gap-1.5">
+                        <span className="text-[2.35rem] font-semibold leading-none tracking-[-0.04em]">
+                          ${price}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{priceSuffix}</span>
                       </div>
                       {showAnnual && savings ? (
                         <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
@@ -332,20 +359,22 @@ export default function Pricing() {
                             : `or $${plan.price_usd_annual}/yr`}
                         </p>
                       ) : null}
-                      <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="flex gap-3">
-                            <Check
-                              className="mt-0.5 h-4 w-4 shrink-0 text-primary"
-                              aria-hidden="true"
-                            />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
+                      <ul className="mx-auto mt-5 w-full flex-1 space-y-2 text-left text-[13px] leading-5">
+                        {plan.features
+                          .filter((f) => !isSharedPaidFeature(f))
+                          .map((feature) => (
+                            <li key={feature} className="flex gap-2">
+                              <Check
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                                aria-hidden="true"
+                              />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
                       </ul>
                       <Link
                         to={path}
-                        className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+                        className={`mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
                           featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
                         }`}
                       >
@@ -356,41 +385,40 @@ export default function Pricing() {
                   );
                 },
               )}
-
-              <article
-                id="scale"
-                className="scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center"
-              >
-                <div className="flex flex-col items-center justify-center gap-3 text-center">
-                  <div>
-                    <h3 className="text-2xl font-semibold">Scale &amp; Enterprise</h3>
-                  </div>
-                  <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
-                </div>
-                <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
-                <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
-                  {[
-                    "25+ live agent capacity",
-                    "Committed voice, SMS, email, and data economics",
-                    "Custom telephony and integrations",
-                    "Security, rollout, and support plan",
-                  ].map((feature) => (
-                    <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/contact?topic=enterprise"
-                  className="marketing-btn-secondary mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
-                >
-                  Design a scale plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </article>
             </div>
 
-            <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-3 text-center text-xs text-muted-foreground">
+            <article
+              id="scale"
+              className="mt-3 flex scroll-mt-24 flex-col items-center gap-4 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-4 text-center lg:flex-row lg:justify-between lg:text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <h3 className="wl-card-title">Scale &amp; Enterprise</h3>
+                <span className="text-sm text-muted-foreground">Custom</span>
+              </div>
+              <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
+                25+ live agent capacity · committed voice, SMS, email, and data economics · custom
+                telephony and integrations · security, rollout, and support plan
+              </p>
+              <Link
+                to="/contact?topic=enterprise"
+                className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+              >
+                Design a Scale Plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </article>
+
+            <p className="mx-auto mt-4 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
+              <span className="font-semibold text-foreground">Every paid plan</span>{" "}
+              {SHARED_PAID_FEATURES.join(" · ").toLowerCase()}
+            </p>
+
+            <p className="mx-auto mt-4 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
+              <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
+              {SHARED_PAID_FEATURES.join(" · ")}
+            </p>
+
+            <div className="mx-auto mt-3 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-3 text-center text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Live Video · $19/mo</span>
               <span>60 reserved minutes</span>
               <span>5-minute wall-clock session max</span>
@@ -400,22 +428,20 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="wl-public-section border-y border-border bg-muted/35">
+        <section className="marketing-section border-t border-border bg-muted/35">
           <div className="wl-public-rail mx-auto max-w-[1400px]">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">
-                One voice agent. No seat tax. Clear costs.
-              </h2>
-            </div>
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <h2 className="wl-public-section-heading mx-auto text-center">
+              One voice agent. No seat tax. Clear costs
+            </h2>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center"
+                  className="rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center"
                 >
-                  <Icon className="mx-auto h-6 w-6" aria-hidden="true" />
-                  <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                  <Icon className="mx-auto h-5 w-5 text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title mt-3">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
                 </article>
               ))}
             </div>
@@ -430,47 +456,32 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="wl-public-section">
-          <div className="wl-public-rail mx-auto max-w-[1000px]">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-public-section-heading">Before launch.</h2>
-            </div>
-            <div className="mx-auto mt-10 max-w-3xl space-y-3">
+        {/* Answers open in place, two columns wide. As ten stacked full-width
+            rows this read as 500px of identical grey bars — and it was followed
+            by a closing CTA band whose only content was a headline and a
+            "Build your voice agent" button that already appears on the Free
+            Builder card, in the header, and in the mobile sticky bar. */}
+        <section className="marketing-section border-t border-border">
+          <div className="wl-public-rail mx-auto max-w-[1100px]">
+            <h2 className="wl-public-section-heading mx-auto text-center">Before launch</h2>
+            <div className="mt-7 grid gap-2 md:grid-cols-2">
               {FAQ.map(([question, answer]) => (
                 <details
                   key={question}
-                  className="group rounded-2xl border border-border bg-card p-5 text-center"
+                  className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
                 >
-                  <summary className="cursor-pointer list-none text-sm font-semibold">
+                  <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
                     {question}
                   </summary>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{answer}</p>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{answer}</p>
                 </details>
               ))}
             </div>
           </div>
         </section>
-
-        <section className="wl-public-section">
-          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[1.35rem] marketing-ink-panel p-8 sm:p-12">
-            <div className="grid justify-items-center gap-8 text-center">
-              <div className="mx-auto max-w-3xl">
-                <h2 className="wl-public-section-heading text-[var(--wireline-color-text-primary)]">
-                  Build first. Let demand choose the plan.
-                </h2>
-              </div>
-              <Link
-                to="/signup?plan=personal"
-                className="marketing-btn-primary min-h-12 justify-center px-6 text-sm font-semibold"
-              >
-                Build your voice agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
 
-      <MarketingFooter />
+      <MarketingChromeBar />
     </div>
   );
 }
