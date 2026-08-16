@@ -197,16 +197,21 @@ router.get("/api/public/stats", async (req, res) => {
 });
 
 /**
- * Legacy configuration inspection only. The browser no longer receives a Vapi
- * credential or starts this payload directly; every platform-funded call uses
- * the ticketed private-key proxy below.
+ * Compatibility metadata only. The private prompt, speech pipeline, provider
+ * payload, and credentials are constructed exclusively after ticket admission.
  */
 router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) => {
   const name = String(req.params.agentName || "").trim();
   const agent = publicAgent(name);
   if (!agent) throw AppError.fromHttpStatus(404, `Showcase agent '${name}' not found`);
-  res.setHeader("Cache-Control", "no-store");
-  res.json(buildPublicBrowserAssistant(agent));
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=900");
+  res.json({
+    name: agent.name,
+    role: agent.role,
+    mode: "protected_browser_preview",
+    maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
+    sessionEndpoint: "/api/public/demo-session",
+  });
 });
 
 router.post("/api/public/demo-session", async (req, res) => {
