@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useLayoutEffect, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -63,6 +63,29 @@ function UnknownRoute() {
   return user ? <AppShell /> : <PublicNotFound />;
 }
 
+function ViewportModeRoot({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const mode = isWorkspaceRoute(pathname) ? "workspace" : "document";
+
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.dataset.wirelineViewport = mode;
+    body.dataset.wirelineViewport = mode;
+
+    return () => {
+      if (html.dataset.wirelineViewport === mode) delete html.dataset.wirelineViewport;
+      if (body.dataset.wirelineViewport === mode) delete body.dataset.wirelineViewport;
+    };
+  }, [mode]);
+
+  return (
+    <div className={`wl-ui-caps wl-ui-caps--${mode} w-full max-w-[100vw] overflow-x-hidden`}>
+      {children}
+    </div>
+  );
+}
+
 function AppRouter() {
   return (
     <Suspense fallback={<RouteLoading />}>
@@ -120,8 +143,8 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <div className="wl-ui-caps w-full max-w-[100vw] overflow-x-hidden">
-      <BrowserRouter>
+    <BrowserRouter>
+      <ViewportModeRoot>
         <RouteChangeA11y />
         <AuthProvider>
           <ThemeProvider>
@@ -138,7 +161,7 @@ export default function App() {
             </ToastProvider>
           </ThemeProvider>
         </AuthProvider>
-      </BrowserRouter>
-    </div>
+      </ViewportModeRoot>
+    </BrowserRouter>
   );
 }
