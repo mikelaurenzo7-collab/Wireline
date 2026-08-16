@@ -22,12 +22,6 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
-/**
- * The retired experiment used chrome="hidden", variant="phone", landing-phone,
- * landing-phone__call, landing-stage__device, landing-stage__dock, and
- * landing-os__tray to imitate an iPhone/iPad home screen. The live proof
- * remains; the borrowed OS metaphor does not.
- */
 const HERO_LOOP = MARKETING_VOICE.spine;
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
 const PERSONAL_SIGNUP = "/signup?plan=personal";
@@ -65,7 +59,7 @@ const CHANNELS = [
   { label: "Voice", icon: PhoneCall },
   { label: "Text", icon: MessageSquareText },
   { label: "Email", icon: Mail },
-  { label: "Live Video", icon: Video },
+  { label: "Live Video Add-on", icon: Video },
 ] as const;
 
 const EXAMPLE_RUN = [
