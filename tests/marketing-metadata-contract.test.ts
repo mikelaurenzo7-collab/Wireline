@@ -41,7 +41,7 @@ describe("marketing metadata contract", () => {
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
-    expect(security).toContain("How Wireline earns live calls.");
+    expect(security).toContain("How Wireline earns live calls");
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
     expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
@@ -116,9 +116,13 @@ describe("marketing metadata contract", () => {
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
 
-    // The money line follows the launch source of truth verbatim — "Go live
-    // from $19/mo" — so pricing can never drift into a second phrasing.
-    expect(pricing).toContain("Build free. Go live from $19/mo. Scale when it pays.");
+    // The money line follows the launch source of truth verbatim, so pricing
+    // can never drift into a second phrasing. It is no longer carried by a
+    // hero headline (the plan cards state every number exactly, so a display
+    // line above them could only restate and delay them) but by the page
+    // description and the catalog-driven card prices.
+    expect(pricing).toContain("launch from $19/month");
+    expect(pricing).toContain("plan.price_usd_monthly");
     expect(contact).toContain('planById("starter")');
     expect(contact).toContain('planById("team")');
     expect(contact).toContain("Starter launches at ${STARTER_PRICE}/mo");

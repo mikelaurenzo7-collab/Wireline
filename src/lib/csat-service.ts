@@ -205,7 +205,7 @@ export async function processCsatReply(params: {
       .limit(1);
 
     if (!recent) {
-      log.warn("CSAT reply — no matching call found", {
+      log.warn("CSAT reply, no matching call found", {
         userId,
         customerNumber: phoneSuffixForLog(e164),
       });

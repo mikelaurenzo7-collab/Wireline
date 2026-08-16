@@ -23,7 +23,7 @@ export function CoachForm({
   return (
     <FormShell>
       {!callId && (
-        <Field label="Transcript" hint="Paste a transcript — partial (live coaching) or complete.">
+        <Field label="Transcript" hint="Paste a transcript. Partial (live coaching) or complete.">
           <TextArea
             value={transcript}
             onChange={setTranscript}

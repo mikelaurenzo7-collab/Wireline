@@ -93,7 +93,7 @@ router.post(
 
     // Role-grant hierarchy: the invite enum already caps at admin, but the
     // SOC2 grant rule (granter strictly above target) was never enforced
-    // here — an admin could mint peer admins. requirePermission cached the
+    // here, an admin could mint peer admins. requirePermission cached the
     // granter's resolved role on req.role.
     const granterRole = (req as { role?: AccessRole }).role;
     const targetRole = resolveStoredRole(role || "member");

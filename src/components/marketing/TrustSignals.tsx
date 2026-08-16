@@ -4,7 +4,7 @@ import { Link } from "react-router";
 const TRUST_POINTS = [
   {
     icon: LockKeyhole,
-    title: "Private by default",
+    title: "Private by Default",
     detail: "Build, train, and test before the agent reaches a real conversation.",
   },
   {
@@ -14,18 +14,18 @@ const TRUST_POINTS = [
     // was hidden a click deep in /trust. The spend story this tile replaced
     // is already told by the plan cards on the same page.
     icon: ShieldCheck,
-    title: "Compliant by default",
+    title: "Compliant by Default",
     detail:
       "Calling-hour rules, Do Not Call checks, and instant opt-outs are enforced in the runtime before any dial.",
   },
   {
     icon: Route,
-    title: "Controlled handoff",
+    title: "Controlled Handoff",
     detail: "Escalations reach the right person with the conversation context intact.",
   },
   {
     icon: FileCheck2,
-    title: "Outcome record",
+    title: "Outcome Record",
     detail: "Calls, texts, email, approvals, and next steps stay in one auditable history.",
   },
 ] as const;

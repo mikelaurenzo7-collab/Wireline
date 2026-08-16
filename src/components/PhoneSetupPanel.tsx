@@ -255,7 +255,7 @@ export default function PhoneSetupPanel() {
                   className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
-                  Agent list unavailable — reload to try again.
+                  Agent list unavailable. Reload to try again.
                 </div>
               ) : (
                 <Button asChild variant="secondary" className="w-full justify-center">

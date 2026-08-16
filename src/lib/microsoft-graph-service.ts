@@ -380,7 +380,7 @@ export async function sendTeamsMessage(params: {
 }): Promise<boolean> {
   const token = await getAccessToken(params.userId, "microsoft_teams");
   if (!token) {
-    log.warn("Microsoft Teams not connected — skipping message");
+    log.warn("Microsoft Teams not connected, skipping message");
     return false;
   }
   const conn = await getConnection(params.userId, "microsoft_teams");
@@ -530,7 +530,7 @@ export async function logToExcel(params: {
 }): Promise<boolean> {
   const token = await getAccessToken(params.userId, "microsoft_excel");
   if (!token) {
-    log.warn("Microsoft Excel not connected — skipping log");
+    log.warn("Microsoft Excel not connected, skipping log");
     return false;
   }
   const conn = await getConnection(params.userId, "microsoft_excel");

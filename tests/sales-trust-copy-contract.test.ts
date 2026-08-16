@@ -3,8 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TRUST_DISCLOSURE_FAQ } from "../src/lib/product-copy";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
   {
@@ -86,9 +85,7 @@ describe("sales trust copy contract", () => {
     expect(wedges).toContain("Profit Recovery Phone Agents");
     expect(wedges).toContain("speed to lead");
     expect(wedges).toContain("Approved actions sync");
-    expect(wedges).toContain(
-      'import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"',
-    );
+    expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
   });
 
@@ -106,8 +103,7 @@ describe("sales trust copy contract", () => {
     const checked = compare.match(
       /Public prices were checked on the linked official pages on\s+([A-Z][a-z]+ \d{1,2},\s+20\d{2})/,
     );
-    if (!checked)
-      throw new Error("Market comparison verification date is missing.");
+    if (!checked) throw new Error("Market comparison verification date is missing.");
     expect(compare).not.toMatch(/Verified [A-Z][a-z]+ \d{1,2}, 20\d{2}/);
     const checkedAt = checked[1].replace(/\s+/g, " ");
     const verifiedAt = Date.parse(`${checkedAt} 00:00:00 UTC`);
@@ -122,8 +118,8 @@ describe("sales trust copy contract", () => {
     expect(compare).toContain(
       "not a claim that unlike products are feature for feature equivalents",
     );
-    expect(compare).toContain(
-      'primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}',
-    );
+    // The hero and the closing CTA band both went; the free-start path now
+    // sits inline at the point of comparison, under the before-and-after list.
+    expect(compare).toContain('to="/signup?plan=personal"');
   });
 });

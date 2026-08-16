@@ -421,9 +421,9 @@ export async function sendDailyBriefEmail(
   if (!recipient) throw new Error("No recipient configured (dailyBriefRecipient).");
   const account: any = accountRow;
   if (!account?.refreshToken)
-    throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
+    throw new Error("No connected Gmail account, connect one in Carrier Bridge first.");
 
-  // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
+  // Compute the brief (uses the per-day cache), may throw CLAUDE_OFFLINE.
   const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
   const dateLabel = localDateKey(new Date());
   const { subject, html, text } = renderDailyBriefEmail(payload, {
@@ -443,7 +443,7 @@ export async function sendDailyBriefEmail(
   const google = await googleApis();
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-  // Multipart/alternative — text part first, then HTML, per RFC 2046.
+  // Multipart/alternative, text part first, then HTML, per RFC 2046.
   const boundary = `----wirelineboundary${Date.now().toString(36)}`;
   const messageParts = [
     `From: ${account.emailAddress || "me"}`,

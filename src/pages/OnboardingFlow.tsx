@@ -32,10 +32,10 @@ export default function OnboardingFlow() {
 
   return (
     <>
-      <PageMeta title="Opening create flow - Wireline" noIndex />
+      <PageMeta title="Create" noIndex />
       <TransitionSurface
         eyebrow="Create"
-        title={`Opening your first ${language.singular}`}
+        title={language.createCta}
         busyLabel="Opening"
         actions={
           showFallback

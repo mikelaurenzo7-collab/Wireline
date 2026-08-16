@@ -118,6 +118,7 @@
 @import "./styles/modal-hierarchy.css";
 @import "./styles/e2e-design-polish.css";
 @import "./styles/prestige-polish.css";
+@import "./styles/safe-area-ownership.css";
 
 body {
   /* `background-color`, not the `background` shorthand: this rule sits after the
@@ -148,6 +149,11 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.wl-ui-caps > .marketing-surface,
+.wl-ui-caps > .wl-stitch-auth-shell {
+  overflow: hidden;
 }
 
 /* Current-production auth QA: keep compact CTA labels readable instead of novelty-spaced. */

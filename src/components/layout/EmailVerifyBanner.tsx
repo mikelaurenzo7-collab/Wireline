@@ -143,11 +143,11 @@ export default function EmailVerifyBanner() {
         <Mail className="wl-banner__icon" aria-hidden />
         <span className="min-w-0 text-left">
           {outcome === "sent" ? (
-            <>Verification email resent — check your inbox + spam folder.</>
+            <>Verification email resent. Check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (
             <>
               <AlertTriangle className="inline w-3.5 h-3.5 mb-0.5 mr-1" aria-hidden />
-              Mail transport temporarily down. Try again in a few minutes — your account isn&apos;t
+              Mail transport temporarily down. Try again in a few minutes. Your account isn&apos;t
               affected.
             </>
           ) : outcome === "error" ? (

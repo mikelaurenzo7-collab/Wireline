@@ -221,7 +221,7 @@ export function buildOutboundVoicemailMessage(
   const callback = callbackNumberSpoken?.trim()
     ? `you can reach us at ${callbackNumberSpoken.trim()}`
     : "you can reach us back at this number";
-  return `Hi, this is ${identity}. Sorry I missed you — I'll try you again soon, or ${callback}. Thank you!`;
+  return `Hi, this is ${identity}. Sorry I missed you. I'll try you again soon, or ${callback}. Thank you!`;
 }
 
 export function getVoiceLatencyProfile(input: {

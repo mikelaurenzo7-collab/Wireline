@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { runLaunchBrowserAuditIfRequested } from "./run-launch-browser-audit.mjs";
 
 const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
@@ -146,6 +147,32 @@ requirePattern(
 );
 
 requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /\[launch-browser-audit\]/,
+  "The browser audit must require an explicit one-shot commit tag.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /WIRELINE_BROWSER_AUDIT_CAPABLE/,
+  "Browser certification must require an explicitly browser-capable runner.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /SKIPPED_RUNNER_UNAVAILABLE/,
+  "Unavailable browser infrastructure must be reported separately from a failed product test.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /marketing-viewport-lock\.spec\.ts[\s\S]*marketing-a11y\.spec\.ts[\s\S]*public-demo-fallback\.spec\.ts/,
+  "The browser audit must cover geometry, accessibility, and protected-demo fallback.",
+);
+requirePattern(
+  "scripts/run-launch-browser-audit.mjs",
+  /playwright[\s\S]*install[\s\S]*chromium/,
+  "A capable browser-audit runner must install the pinned Chromium build before execution.",
+);
+
+requirePattern(
   "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   /CREATE TRIGGER wireline_agents_managed_voice/,
   "Managed voice invariants must be enforced in the database.",
@@ -208,3 +235,4 @@ if (failures.length) {
 }
 
 console.log("Operational-core contract passed.");
+runLaunchBrowserAuditIfRequested();

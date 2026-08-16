@@ -10,6 +10,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   const letterpressPolish = read("src/styles/letterpress-polish.css");
   const indexCss = read("src/index.css");
   const responsiveCss = read("src/styles/responsive.css");
+  const safeAreaOwnership = read("src/styles/safe-area-ownership.css");
   const lightTheme = read("src/styles/theme-light.css");
   const themeContext = read("src/contexts/ThemeContext.tsx");
   const input = read("src/components/atoms/Input.tsx");
@@ -21,7 +22,12 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "package.json",
     packageJson,
-    /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/check-command-palette-contract\.mjs)?"/,
+    // The contract is now three scripts, not one: the clear-system modules, the
+    // command palette, and the marketing viewport frame. The pattern is
+    // open-ended on the right so adding a fourth gate does not require editing
+    // the gate that checks the gates -- but the clear-system check stays
+    // anchored first, because it is the one that fails loudest.
+    /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/[\w-]+\.mjs)*"/,
     "design:check must run the executable design contract",
   );
   mustExclude(
@@ -100,10 +106,16 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   );
 
   mustInclude(
+    "src/styles/safe-area-ownership.css",
+    safeAreaOwnership,
+    /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
+    "mobile workspace scroller must clear the fixed dock",
+  );
+  mustExclude(
     "src/styles/responsive.css",
     responsiveCss,
     /padding-bottom:\s*calc\(5\.25rem \+ env\(safe-area-inset-bottom\)\)/,
-    "mobile workspace content must clear the fixed dock",
+    "responsive.css must not restack dock clearance on the main column",
   );
   for (const [file, source] of [
     ["src/components/atoms/Input.tsx", input],

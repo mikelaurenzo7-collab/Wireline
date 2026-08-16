@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
 /**
@@ -110,7 +109,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             // metaTitles use either an em-dash or a pipe to separate the crumb
             // from the SEO tail — split on both so pipe-titled verticals don't
             // emit the entire title as the breadcrumb name.
-            name: cfg.metaTitle.split(/\s*[—|]\s*/)[0].trim() || slug,
+            name: cfg.metaTitle.split(/\s*[\u2014|]\s*/)[0].trim() || slug,
             item: `https://trywireline.com/for/${slug}`,
           },
         ],
@@ -119,7 +118,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -127,17 +126,29 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <MarketingHero
-        title={cfg.headline}
-        primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
-        secondaryAction={{
-          label: cfg.secondaryCta.label,
-          to: cfg.secondaryCta.href,
-          tone: "secondary",
-        }}
-      />
-
-      <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      {/* Headline, actions, and the pains they answer, on one screen. A wedge
+          page's headline names a problem; making the reader scroll past an
+          empty viewport to reach the problem is the wrong first move. */}
+      <section className="marketing-section marketing-section--screen mx-auto max-w-6xl">
+        <div className="mb-9 text-center">
+          <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            {cfg.headline}
+          </h1>
+          <div className="marketing-hero__actions mt-7">
+            <Link
+              to={cfg.primaryCta.href}
+              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+            >
+              {cfg.primaryCta.label}
+            </Link>
+            <Link
+              to={cfg.secondaryCta.href}
+              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+            >
+              {cfg.secondaryCta.label}
+            </Link>
+          </div>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = PAIN_ICONS[pain.icon];
@@ -162,7 +173,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="wl-stitch-display text-balance">
@@ -182,7 +193,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section mx-auto max-w-4xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
             {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
@@ -211,7 +222,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="border-t border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto max-w-6xl">
           <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
             <div className="grid justify-items-center gap-7 text-center">

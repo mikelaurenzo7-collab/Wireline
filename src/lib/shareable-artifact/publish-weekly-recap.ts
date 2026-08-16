@@ -109,7 +109,7 @@ export async function maybePublishWeeklyRecap(
       content,
     });
   } catch (error) {
-    log.warn("weekly recap artifact publish skipped — non-fatal", {
+    log.warn("weekly recap artifact publish skipped, non-fatal", {
       userId: input.userId,
       weekLabel: input.weekLabel,
       error: getErrorMessage(error),

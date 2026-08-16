@@ -85,20 +85,20 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               {
                 icon: Gauge,
                 label: "TTFT p50",
-                value: latestTrend?.avgTtftMs ? `${latestTrend.avgTtftMs}ms` : "—",
+                value: latestTrend?.avgTtftMs ? `${latestTrend.avgTtftMs}ms` : "N/A",
                 healthy: ttftHealthy,
               },
               {
                 icon: Gauge,
                 label: "TTFT p95",
-                value: latestTrend?.p95TtftMs ? `${latestTrend.p95TtftMs}ms` : "—",
+                value: latestTrend?.p95TtftMs ? `${latestTrend.p95TtftMs}ms` : "N/A",
                 healthy: ttftHealthy,
               },
               {
                 icon: Activity,
                 label: "Pipeline errors",
                 value:
-                  latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
+                  latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "N/A",
                 healthy: errorRateHealthy,
               },
             ].map((tile) => (
@@ -143,7 +143,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                       key={t.date}
                       className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
                       style={{ height: `${height}%` }}
-                      title={`${t.date}: avg ${t.avgTtftMs ?? "—"}ms, p95 ${t.p95TtftMs ?? "—"}ms`}
+                      title={`${t.date}: avg ${t.avgTtftMs ?? "N/A"}ms, p95 ${t.p95TtftMs ?? "N/A"}ms`}
                     />
                   );
                 })}
@@ -210,7 +210,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           <p className="wl-insight-label text-brand/70 mb-4">Slowest actions</p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
-              <p className="text-sm text-muted">—</p>
+              <p className="text-sm text-muted">N/A</p>
             ) : (
               slowest.map((a) => (
                 <div

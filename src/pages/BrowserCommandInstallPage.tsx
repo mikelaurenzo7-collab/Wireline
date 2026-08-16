@@ -26,14 +26,14 @@ const DOWNLOADS = [
       "Unzip the package on your computer.",
       "Open about:debugging#/runtime/this-firefox.",
       "Click Load Temporary Add-on… and select manifest.json in the unzipped folder.",
-      "Note: temporary add-ons are removed when Firefox restarts — use Chromium for day-to-day use.",
+      "Note: temporary add-ons are removed when Firefox restarts. Use Chromium for day-to-day use.",
     ],
   },
 ] as const;
 
 export default function BrowserCommandInstallPage() {
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
         <div className="mb-4">
           <Button asChild variant="link" className="px-0 text-sm text-muted-foreground">
@@ -44,7 +44,7 @@ export default function BrowserCommandInstallPage() {
         </div>
         <WorkspacePageIntro
           title="Install Wireline Command"
-          description={`${CLIENT_SURFACE_POSTURE.browser.status}. Explicit page context only — no background browsing, no token storage, no outbound from the extension.`}
+          description={`${CLIENT_SURFACE_POSTURE.browser.status}. Explicit page context only. No background browsing, no token storage, no outbound from the extension.`}
         />
 
         <section className="mt-2 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">

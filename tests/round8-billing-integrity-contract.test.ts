@@ -77,7 +77,7 @@ describe("round-8 billing integrity", () => {
     expect(usage).toContain(".onConflictDoNothing({");
     expect(usage).toContain("if (prepared.chargedAt) return;");
     expect(usage).toContain(".set({ chargedAt: new Date(), updatedAt: new Date() })");
-    expect(usage).toContain("trackVoiceMinutes failed — provider retry required");
+    expect(usage).toContain("trackVoiceMinutes failed, provider retry required");
     expect(usage).toContain("throw error;");
   });
 });

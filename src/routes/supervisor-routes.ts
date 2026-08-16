@@ -83,9 +83,9 @@ router.post(
       subscription: row,
       message:
         mode === "listen"
-          ? "Bookmarked for live monitoring. Audio streaming lands later this quarter — for now you can review the recording the moment the call ends."
+          ? "Bookmarked for live monitoring. Audio streaming lands later this quarter, for now you can review the recording the moment the call ends."
           : mode === "whisper"
-            ? "Whisper-coach intent captured. Real-time audio streaming is in beta — your note will be surfaced to the agent on its next call."
+            ? "Whisper-coach intent captured. Real-time audio streaming is in beta, your note will be surfaced to the agent on its next call."
             : "Barge-in queued. The supervisor cockpit will attach you to the line as soon as the live-audio channel is wired up.",
     });
   },

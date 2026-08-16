@@ -47,7 +47,7 @@ describe("static marketing metadata", () => {
     expect(hero).toMatch(
       /aria-label=\{[\s\S]*?isHomeHero && typeof title === "string" \? title : undefined[\s\S]*?\}/,
     );
-    expect(hero).toContain("text-[clamp(2.45rem,5vw,4.75rem)]");
+    expect(hero).toContain("text-[clamp(2.2rem,3.9vw,3.6rem)]");
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).not.toContain("uppercase leading");
     expect(landing).toContain('title="Wireline | Voice agents that get the work done"');

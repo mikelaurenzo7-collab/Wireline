@@ -222,7 +222,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       setNotice(
         body?.message ||
           (body?.fetched
-            ? `Inbox refreshed — ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`
+            ? `Inbox refreshed. ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`
             : "Inbox refresh started."),
       );
     } catch (cause) {
@@ -300,7 +300,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   const frameClass = embedded
     ? "flex h-full min-h-0 flex-col bg-background"
-    : "min-h-screen bg-background px-5 py-8 sm:px-6";
+    : "h-full min-h-0 bg-background px-5 py-8 sm:px-6";
   if (loading) return <InboxLoadingState frameClass={frameClass} />;
 
   if (threads.length === 0 && error) {
@@ -560,7 +560,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   ) : (
                     <EmptyState
                       density="compact"
-                      title="Message bodies are not stored for this conversation."
+                      title="No stored message bodies"
                     />
                   )}
                 </div>

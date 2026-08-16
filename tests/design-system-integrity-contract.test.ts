@@ -158,6 +158,6 @@ describe("the shell keeps the workspace reachable at high zoom", () => {
   it("names the mobile dock tabs so their visible label is in the accessible name", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     expect(shell).toContain("item.shortLabel && item.shortLabel !== item.label");
-    expect(shell).toContain("`${item.shortLabel} — ${item.label}`");
+    expect(shell).toContain("`${item.shortLabel}, ${item.label}`");
   });
 });

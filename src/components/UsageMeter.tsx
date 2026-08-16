@@ -96,9 +96,9 @@ export default function UsageMeter({
   const lowCredit = credit > 0 && credit < 5;
   const compactTitle = isBlocked
     ? completionDue > 0
-      ? `New live calls paused — restore $${completionDue.toFixed(2)} after the previous call finished normally.`
-      : `New live calls paused — add ${BALANCE_TITLE} or wait for the monthly reset.`
-    : `${used} of ${included} included voice minutes used — resets ${resetLabel}`;
+      ? `New live calls paused. Restore $${completionDue.toFixed(2)} after the previous call finished normally.`
+      : `New live calls paused. Add ${BALANCE_TITLE} or wait for the monthly reset.`
+    : `${used} of ${included} included voice minutes used, resets ${resetLabel}`;
 
   if (compact) {
     return (
@@ -209,8 +209,8 @@ export default function UsageMeter({
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching your {included.toLocaleString()} included minutes. After that, new calls use{" "}
-            {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic overage
-            invoice.
+            {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min. Never an automatic
+            overage invoice.
           </span>
         </div>
       )}
@@ -254,7 +254,7 @@ export default function UsageMeter({
                 ${credit.toFixed(2)}
               </span>
               <span className="block wl-label text-foreground/55 font-medium">
-                {lowCredit ? "running low — top up below" : "available for controlled extra usage"}
+                {lowCredit ? "running low, top up below" : "available for controlled extra usage"}
               </span>
             </span>
           ) : (

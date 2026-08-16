@@ -22,7 +22,7 @@ export async function handleDeviceToolCall(
 
   const unavailable = (): ToolCallResult => ({
     toolCallId,
-    result: "I can't reach your phone right now — try again in a moment.",
+    result: "I can't reach your phone right now, try again in a moment.",
   });
 
   if (fn === "navigate_to") {
@@ -49,7 +49,7 @@ export async function handleDeviceToolCall(
       args: { title, datetime },
       title: `Reminder: ${title}`,
     });
-    return { toolCallId, result: `Done — I'll add a reminder to ${title} on your phone.` };
+    return { toolCallId, result: `Done, I'll add a reminder to ${title} on your phone.` };
   }
 
   if (fn === "play_music") {

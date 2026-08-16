@@ -307,7 +307,7 @@ export async function handleWorkflowToolCall(
         title: warmTransferPhone ? "Live Transfer Incoming" : "Agent Escalate to Human",
         message: warmTransferPhone
           ? `Caller is being warm-transferred to ${warmTransferPhone} now. Agent: ${agentVoiceName || "unknown"}. Reason: ${reason}`
-          : `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
+          : `Agent ${agentVoiceName || "unknown"}, Reason: ${reason}`,
         callId: callId || "unknown",
       });
 
@@ -323,7 +323,7 @@ export async function handleWorkflowToolCall(
         }
         return {
           toolCallId,
-          result: "Transferring you now — please hold.",
+          result: "Transferring you now, please hold.",
           destination: {
             type: "number",
             number: warmTransferPhone,

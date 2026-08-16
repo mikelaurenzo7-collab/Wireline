@@ -195,7 +195,7 @@ describe("double-pass launch honesty", () => {
     expect(vendorProbe).toMatch(/commercialEmailPostalAddressReady \? "ready" : "blocked"/);
     expect(emailService).toContain("getPostalAddress");
     expect(emailService).toContain("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing");
-    expect(emailCompliance).toContain("isEmailSuppressed check failed — treating as suppressed");
+    expect(emailCompliance).toContain("isEmailSuppressed check failed, treating as suppressed");
     expect(emailCompliance).toMatch(/isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/);
   });
 

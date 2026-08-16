@@ -328,7 +328,7 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
       <main
         id="main-content"
         className={cn(
-          "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
+          "wl-auth-form-panel flex h-[100dvh] max-h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-4 sm:px-6",
           compact ? "py-3 sm:py-4" : "py-8 sm:py-12",
         )}
       >
@@ -669,7 +669,7 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={`${pageTitle} - Wireline`}
+        title={pageTitle}
         description={pageDescription}
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
@@ -710,7 +710,7 @@ export default function AuthPortal() {
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                Sign in
+                Sign In
               </button>
               <button
                 type="button"
@@ -723,7 +723,7 @@ export default function AuthPortal() {
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                Create account
+                Create Account
               </button>
             </div>
           )}
@@ -984,12 +984,12 @@ export default function AuthPortal() {
                   </>
                 ) : isSignUp ? (
                   <>
-                    Create account
+                    Create Account
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 ) : (
                   <>
-                    Sign in
+                    Sign In
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 )}

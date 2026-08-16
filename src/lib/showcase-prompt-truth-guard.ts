@@ -77,7 +77,9 @@ function setCompatibleFallbacks(
 
 function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined): void {
   if (!model) return;
-  const provider = String(model.provider || "").trim().toLowerCase();
+  const provider = String(model.provider || "")
+    .trim()
+    .toLowerCase();
   const primary = String(model.model || "").trim();
   const configured = Array.isArray(model.fallbackModels) ? model.fallbackModels : [];
 
@@ -109,7 +111,9 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
  * provider-sync script from re-publishing unverified claims or cross-provider
  * fallback model IDs that Vapi rejects at the assistant boundary.
  */
-export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayload>(payload: T): T {
+export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayload>(
+  payload: T,
+): T {
   const promptRow = systemPrompt(payload);
   if (!promptRow) return payload;
 
@@ -141,8 +145,8 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   );
   prompt = replaceLiteral(
     prompt,
-    "If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap — say that plainly.",
-    "If asked about HIPAA: Wireline is not HIPAA-certified and BAA support is not currently available — say that plainly.",
+    "If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.",
+    "If asked about HIPAA: Wireline is not HIPAA-certified and BAA support is not currently available, say that plainly.",
   );
 
   prompt = prompt.replace(
@@ -170,7 +174,9 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   return payload;
 }
 
-function isShowcaseAssistantResponse(body: unknown): body is { assistant: ShowcaseAssistantPayload } {
+function isShowcaseAssistantResponse(
+  body: unknown,
+): body is { assistant: ShowcaseAssistantPayload } {
   if (!body || typeof body !== "object") return false;
   const assistant = (body as { assistant?: unknown }).assistant;
   if (!assistant || typeof assistant !== "object") return false;
@@ -179,11 +185,7 @@ function isShowcaseAssistantResponse(body: unknown): body is { assistant: Showca
 }
 
 /** Apply the same truth guard to dynamic /api/vapi-webhook assistant responses. */
-export function showcasePromptTruthGuard(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function showcasePromptTruthGuard(req: Request, res: Response, next: NextFunction): void {
   const originalJson = res.json.bind(res);
   res.json = ((body: unknown) => {
     if (!isShowcaseAssistantResponse(body)) return originalJson(body);

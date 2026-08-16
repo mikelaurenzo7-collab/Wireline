@@ -160,7 +160,7 @@ async function getClient(userId: string): Promise<SquareClient | null> {
           .where(eq(schema.crmConnections.id, conn.id));
         token = refreshed.access_token;
       } catch (refreshErr) {
-        log.warn("Square token refresh failed — using existing token", {
+        log.warn("Square token refresh failed, using existing token", {
           error: getErrorMessage(refreshErr),
         });
       }
@@ -239,7 +239,7 @@ export async function squareLookupOrder(params: {
 }): Promise<SquareOrderResult | null> {
   const client = await getClient(params.userId);
   if (!client) {
-    log.warn("Square not connected — skipping order lookup");
+    log.warn("Square not connected, skipping order lookup");
     return null;
   }
 
@@ -312,7 +312,7 @@ export async function squareLookupCustomer(params: {
 }): Promise<SquareCustomerResult | null> {
   const client = await getClient(params.userId);
   if (!client) {
-    log.warn("Square not connected — skipping customer lookup");
+    log.warn("Square not connected, skipping customer lookup");
     return null;
   }
 
@@ -374,7 +374,7 @@ export async function squareCheckInventory(params: {
 }): Promise<SquareItemResult[]> {
   const client = await getClient(params.userId);
   if (!client) {
-    log.warn("Square not connected — skipping inventory check");
+    log.warn("Square not connected, skipping inventory check");
     return [];
   }
 
@@ -471,7 +471,7 @@ export async function squareCreatePaymentLink(params: {
   try {
     const locationIds = await getMerchantLocationIds(client.token);
     if (locationIds.length === 0) {
-      return { ok: false, message: "No active Square location found — check your Square account." };
+      return { ok: false, message: "No active Square location found, check your Square account." };
     }
 
     const r = await fetchWithTimeout(

@@ -212,7 +212,7 @@ export function NoKeyInline() {
     <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
       <p className="text-xs text-foreground/80 leading-relaxed">
-        Wireline AI is warming up — try again in a moment. If this persists, our team is on it.
+        Wireline AI is warming up. Try again in a moment. If this persists, our team is on it.
       </p>
     </div>
   );

@@ -35,9 +35,10 @@
 }
 
 /* ── Wired eyebrow ──────────────────────────────────────────────────────
-   Section eyebrows on public pages carry the node-and-dash: a silver node,
-   a short strand carrying the signal to violet, then the label. Centered
-   variants get the mirrored strand on the right. */
+   Section eyebrows are clean centered labels. The founder brand rule forbids
+   dash-like flourishes around copy, so the flanking node-and-strand is removed;
+   the wire identity is carried by the mark and the signal art, not by strands
+   around every label. */
 .wl-eyebrow--wired {
   display: inline-flex;
   align-items: center;
@@ -46,25 +47,7 @@
 
 .wl-eyebrow--wired::before,
 .wl-eyebrow--wired::after {
-  content: "";
-  height: 1px;
-  width: 1.75rem;
-  background: linear-gradient(
-    90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent)
-  );
-}
-
-.wl-eyebrow--wired::before {
-  /* Node on the leading strand. */
-  box-shadow: -6px 0 0 -0.5px var(--wireline-color-action-secondary-default);
-  border-radius: 999px;
-}
-
-.wl-eyebrow--wired::after {
-  transform: scaleX(-1);
-  border-radius: 999px;
+  content: none;
 }
 
 /* ── Marketing hero ─────────────────────────────────────────────────────
@@ -94,16 +77,6 @@
    single currentColor token (favicon, native icon). */
 .wl-mark-signal {
   fill: var(--wireline-color-action-secondary-default);
-}
-
-/* On the dark auth panel the strand settles into canvas, not violet. */
-.wl-auth-brand-label.wl-eyebrow--wired::before,
-.wl-auth-brand-label.wl-eyebrow--wired::after {
-  background: linear-gradient(
-    90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-canvas-default) 40%, transparent)
-  );
 }
 
 /* ── Steps on the wire ────────────────────────────────────────────────

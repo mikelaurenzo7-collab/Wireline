@@ -140,7 +140,7 @@ function MobileDockLink({
       // driving the app by voice, on the first tab of the primary navigation.
       aria-label={
         item.shortLabel && item.shortLabel !== item.label
-          ? `${item.shortLabel} — ${item.label}`
+          ? `${item.shortLabel}, ${item.label}`
           : item.label
       }
       aria-current={active ? "page" : undefined}
@@ -300,9 +300,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </div>
       ) : null}
 
-      <div className="min-h-3 flex-1" />
+      <div className="min-h-3 max-h-20 flex-1" />
 
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
+        <div className="px-2.5 pb-2">
+          <WiredEyebrow>Operate</WiredEyebrow>
+        </div>
         {OPERATE_NAV.filter(
           (item) => item.href !== "/settings" && isRouteAvailableForAccount(accountType, item.href),
         ).map((item) => (
@@ -375,7 +378,7 @@ export default function WorkspaceShell({
   description,
   action,
   children,
-  contentClassName = "pt-2 pb-8",
+  contentClassName = "pt-2 pb-5",
   fullBleed = false,
 }: {
   title?: string;
@@ -391,11 +394,11 @@ export default function WorkspaceShell({
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
   const mainSpacing = fullBleed
-    ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
-    : "px-3 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
+    ? "p-0 lg:pb-0"
+    : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
   const contentInner = fullBleed
     ? "wl-workspace-content-inner mx-0 flex h-full min-h-0 w-full max-w-none flex-col"
-    : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col";
+    : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-1 flex-col";
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
@@ -441,7 +444,7 @@ export default function WorkspaceShell({
               with the content also means a dismissible notice stops competing
               with the work once the reader moves past it. */}
           <div
-            className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
+            className={`wl-workspace-content flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain ${contentClassName}`}
           >
             <div className="mx-3 sm:mx-6">
               <EmailVerifyBanner />

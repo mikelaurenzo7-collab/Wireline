@@ -328,7 +328,7 @@ export async function getAiTokenQuotaExceeded(
     const limit = profile.claude_tokens_daily;
     return limit > 0 && used >= limit ? { limit, used } : null;
   } catch (error) {
-    log.error("AI token quota check failed — allowing request", {
+    log.error("AI token quota check failed, allowing request", {
       user_id: userId,
       error: getErrorMessage(error),
     });
@@ -352,7 +352,7 @@ export function withAudit(actionPrefix: string) {
         return res.status(429).json({
           code: "AI_TOKEN_QUOTA_EXCEEDED",
           error:
-            "You've reached today's AI usage limit for your plan. It resets at midnight UTC — scheduled calls and texts are unaffected.",
+            "You've reached today's AI usage limit for your plan. It resets at midnight UTC, scheduled calls and texts are unaffected.",
           limit: exceeded.limit,
           used: exceeded.used,
           recovery_path: "/settings/billing",

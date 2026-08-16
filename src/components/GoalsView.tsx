@@ -266,7 +266,7 @@ function GoalCard({
           <span className="wl-label-muted">{goal.unit}</span>
           <div className="mt-1 text-[length:var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed">
             {goal.status === "achieved" ? (
-              <span className="text-brand font-medium">Target reached — nice work.</span>
+              <span className="text-brand font-medium">Target reached. Nice work.</span>
             ) : (
               <>
                 <span className="tabular-nums">{num(goal.remaining)}</span> to go ·{" "}

@@ -64,7 +64,7 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
   // far more expensive) realtime models at platform cost.
   const requestedModel = input.model?.trim();
   if (requestedModel && requestedModel !== OPENAI_REALTIME_DEFAULT_MODEL) {
-    log.warn("openai realtime session requested non-platform model — using default", {
+    log.warn("openai realtime session requested non-platform model, using default", {
       requested: requestedModel.slice(0, 80),
     });
   }
@@ -168,7 +168,7 @@ export async function createOpenAIRealtimeClientSecret(
         path: "/v1/realtime/client_secrets",
         status: response.status,
         unavailableMessage:
-          "Live simulation is temporarily unavailable. Wireline has been notified — real phone calls are unaffected.",
+          "Live simulation is temporarily unavailable. Wireline has been notified, real phone calls are unaffected.",
       });
     }
 

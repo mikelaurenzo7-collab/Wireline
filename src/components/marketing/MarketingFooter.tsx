@@ -19,13 +19,13 @@ const PRODUCT_LINKS = [
 // /for/* fallback stay personal-first).
 const WHO_ITS_FOR_LINKS = [
   { to: "/for/personal", label: "Personal" },
-  { to: "/for/home-services", label: "Home services" },
+  { to: "/for/home-services", label: "Home Services" },
   { to: "/for/insurance", label: "Insurance" },
   { to: "/for/legal", label: "Legal" },
   { to: "/for/medical", label: "Medical" },
-  { to: "/for/real-estate", label: "Real estate" },
+  { to: "/for/real-estate", label: "Real Estate" },
   { to: "/for/restaurants", label: "Restaurants" },
-  { to: "/for/sales", label: "Sales teams" },
+  { to: "/for/sales", label: "Sales Teams" },
 ] as const;
 
 const COMPANY_LINKS = [

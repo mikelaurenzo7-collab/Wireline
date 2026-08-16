@@ -78,7 +78,7 @@ export async function handleShopifyToolCall(
           const v = p.variants
             .map(
               (vr) =>
-                `${vr.title} — $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
+                `${vr.title}, $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
             )
             .join("; ");
           return `${p.title}: ${v}`;

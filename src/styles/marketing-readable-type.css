@@ -1,0 +1,101 @@
+/* Public typography quality layer.
+ *
+ * The shipped webfonts provide 500, 600, and 700 weight faces. Public labels
+ * use those exact weights and retain a 12px minimum so compact text stays
+ * crisp on standard and high-density displays.
+ */
+
+.marketing-surface {
+  --wl-public-label-size: 0.75rem;
+  --wl-public-caption-size: 0.8125rem;
+  --wl-public-control-size: 0.875rem;
+}
+
+.marketing-surface :where(.wl-overline, .wl-eyebrow) {
+  font-size: var(--wl-public-label-size);
+}
+
+.marketing-surface.landing-home
+  :where(
+    .landing-stage__eyebrow,
+    .landing-stage__spine li,
+    .landing-stage__spine li > span,
+    .landing-stage__lanes-label,
+    .landing-console__status,
+    .landing-demo__presence,
+    .landing-demo__role,
+    .landing-demo__signal,
+    .landing-console__activity-kicker,
+    .landing-console__event-index,
+    .landing-console__outcome span,
+    .landing-console__channels li,
+    .landing-stage__footer p,
+    .landing-stage__footer a,
+    .landing-home__price-badge
+  ) {
+  font-size: var(--wl-public-label-size);
+  font-weight: 600;
+}
+
+.marketing-surface.landing-home
+  :where(
+    .landing-stage__economics,
+    .landing-stage__lane strong,
+    .landing-demo__microcopy,
+    .landing-demo__alert,
+    .landing-console__event-copy small,
+    .landing-console__outcome,
+    .landing-console__control-note,
+    .landing-home__price span
+  ) {
+  font-size: var(--wl-public-caption-size);
+}
+
+.marketing-surface.landing-home
+  :where(
+    .landing-stage__primary,
+    .landing-stage__secondary,
+    .landing-demo__button,
+    .landing-console__brand,
+    .landing-console__event-copy strong,
+    .landing-home__price-card > a
+  ) {
+  font-size: var(--wl-public-control-size);
+}
+
+.marketing-surface.landing-home
+  :where(
+    .landing-stage__eyebrow,
+    .landing-stage__spine li,
+    .landing-stage__lanes-label,
+    .landing-stage__lane strong,
+    .landing-console__brand,
+    .landing-console__status,
+    .landing-demo__presence,
+    .landing-demo__name,
+    .landing-demo__role,
+    .landing-demo__signal,
+    .landing-console__activity-kicker,
+    .landing-console__activity-title,
+    .landing-console__event-copy strong,
+    .landing-console__outcome span,
+    .landing-console__outcome strong,
+    .landing-console__channels li
+  ) {
+  font-weight: 600;
+}
+
+.marketing-surface.landing-home
+  :where(
+    .landing-stage__title,
+    .landing-stage__primary,
+    .landing-demo__button,
+    .landing-home__price-badge,
+    .landing-home__price strong
+  ) {
+  font-weight: 700;
+}
+
+.marketing-surface.landing-home .landing-stage__economics {
+  font-weight: 500;
+}

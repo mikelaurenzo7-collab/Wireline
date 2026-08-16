@@ -251,7 +251,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     try {
       signingSecret = decryptSecret(hook.secretEncrypted);
     } catch (err: unknown) {
-      log.error("Webhook delivery blocked — secret decryption failed", {
+      log.error("Webhook delivery blocked, secret decryption failed", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
         error: getErrorMessage(err),
@@ -300,7 +300,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     const response = await postWebhookSafely(hook.url, headers, body, 10_000);
     if (response.status === "blocked") {
       lastError = blockedDeliveryReason(response.reason);
-      log.warn("Webhook delivery blocked — destination guard", {
+      log.warn("Webhook delivery blocked, destination guard", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
         reason: lastError,
@@ -326,7 +326,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       statusCode = response.statusCode;
       if (response.redirect) {
         lastError = "redirect_blocked";
-        log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
+        log.warn("Webhook delivery blocked, endpoint attempted a redirect", {
           deliveryId: String(deliveryId),
           webhookId: hook.id,
           statusCode,

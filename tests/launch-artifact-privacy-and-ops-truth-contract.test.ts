@@ -33,9 +33,30 @@ describe("launch artifact privacy and operations truth", () => {
     );
   });
 
+  it("makes unauthenticated browser proof shorter, private, and non-retained", () => {
+    const policy = read("src/lib/public-browser-demo.ts");
+    const route = read("src/routes/marketing-runtime-routes.ts");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
+    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+    const budget = read("src/lib/public-demo-budget.ts");
+
+    expect(policy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
+    expect(policy).toContain("recordingEnabled: false");
+    expect(policy).toContain("loggingEnabled: false");
+    expect(policy).toContain("transcriptPlan: { enabled: false }");
+    expect(route).toContain("process.env.VAPI_PRIVATE_KEY");
+    expect(route).toContain('router.post("/api/public/demo-vapi/call/web"');
+    expect(route).toContain("buildPublicBrowserDemoArtifactPlan()");
+    expect(hook).toContain('fetch("/api/public/demo-session"');
+    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
+    expect(widget).not.toContain("/api/public/assistant/");
+    expect(budget).toContain("distributedLimiterStatus");
+    expect(budget).toContain('bucket: "public-demo-global-daily"');
+  });
+
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
-    expect(security).toContain("365-day default; supported range 90–365 days");
+    expect(security).toContain("365-day default; supported range 90 to 365 days");
     expect(security).toContain("Managed full-call provider audio recording is disabled by default");
     expect(security).not.toContain("transcript retention defaults to 90 days");
   });
@@ -43,7 +64,7 @@ describe("launch artifact privacy and operations truth", () => {
   it("does not publish unsupported self-serve SLA or recovery guarantees", () => {
     const sla = read("docs/SLA.md");
     expect(sla).toContain("do **not** include a contractual uptime SLA");
-    expect(sla).toContain("365-day default, minimum 90 days, and a supported 90–365 day range");
+    expect(sla).toContain("365-day default, minimum 90 days, and a supported 90 to 365 day range");
     expect(sla).not.toContain("99.95%");
     expect(sla).not.toContain("Dedicated Slack channel");
     expect(sla).not.toContain("Synthetic monitoring:");

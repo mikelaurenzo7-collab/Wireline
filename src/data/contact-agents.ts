@@ -67,14 +67,14 @@ export type ContactAgent = {
  * right department" — whoever picks up can do it all.
  */
 const ALL_ENCOMPASSING_SCOPE =
-  "A complete Wireline specialist — handles every kind of call end to end: " +
+  "A complete Wireline specialist. Handles every kind of call end to end: " +
   "general support and how-to, account help, pricing and plan comparison, " +
   "ROI questions, enterprise quotes, billing (invoices, refunds, plan changes, " +
   "overages), technical questions (integrations, webhooks, API, voice quality, " +
   "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
   "a payment/checkout link, AND create a Wireline account for the caller right " +
   "on the call if they want to sign up by phone. Never says 'let me transfer you " +
-  "to the right department' — each specialist can do it all.";
+  "to the right department'. Each specialist can do it all.";
 
 const ALL_ENCOMPASSING_HANDLES =
   "general, how-to, account, pricing, plans, demo, billing, invoice, refund, " +
@@ -86,7 +86,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Sarah",
     role: "Wireline Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
-    firstMessage: "Hey — Sarah with Wireline. Who do I have the pleasure of speaking with today?",
+    firstMessage: "Hey, Sarah with Wireline. Who do I have the pleasure of speaking with today?",
     voiceLabel: "Savannah · Warm & Confident",
     vapiVoiceId: "Savannah",
     handles: ALL_ENCOMPASSING_HANDLES,
@@ -100,7 +100,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Wireline Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage:
-      "Hey — Liam with Wireline. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
+      "Hey, Liam with Wireline. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
     voiceLabel: "Elliot · Steady & Professional",
     vapiVoiceId: "Elliot",
     handles: ALL_ENCOMPASSING_HANDLES,
@@ -120,11 +120,11 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Jordan",
     role: "Inbound Customer Service Demo",
     scope:
-      "Role-plays a small-business front desk — captures why the caller reached out, " +
+      "Role-plays a small-business front desk: captures why the caller reached out, " +
       "schedules service or callback windows, answers common FAQs, and takes clean messages. " +
       "Home-services / general inbound CS showcase; never pages a human owner.",
     firstMessage:
-      "Hi — Jordan on the Wireline inbound demo. I'll answer as your front desk — what's your name?",
+      "Hi, Jordan on the Wireline inbound demo. I'll answer as your front desk. What's your name?",
     voiceLabel: "Kai · Friendly & Relaxed",
     vapiVoiceId: "Kai",
     handles:
@@ -140,7 +140,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Asks which Wireline demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
-      "Hey, Ria here — I can demo medical, legal, home services, insurance, real estate, or outbound sales. Which one sounds fun?",
+      "Hey, Ria here. I can demo medical, legal, home services, insurance, real estate, or outbound sales. Which one sounds fun?",
     voiceLabel: "Emma · Warm & Conversational",
     vapiVoiceId: "Emma",
     handles:
@@ -154,9 +154,9 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Marcus",
     role: "Medical Practice Demo",
     scope:
-      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; Wireline is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
+      "Role-plays a clinic front desk: greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; Wireline is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
     firstMessage:
-      "Good afternoon — Marcus on the Wireline medical demo. May I have your name, please?",
+      "Good afternoon. Marcus on the Wireline medical demo. May I have your name, please?",
     voiceLabel: "Sagar · Steady & Professional",
     vapiVoiceId: "Sagar",
     handles: "medical, healthcare, clinic, patient intake, appointment",
@@ -169,8 +169,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Diana",
     role: "Law Firm Demo",
     scope:
-      "Role-plays a law-firm intake line — runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
-    firstMessage: "Diana here — Wireline legal intake demo. May I have your full name?",
+      "Role-plays a law-firm intake line: runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
+    firstMessage: "Diana here. Wireline legal intake demo. May I have your full name?",
     voiceLabel: "Clara · Warm & Professional",
     vapiVoiceId: "Clara",
     handles: "legal, law firm, intake, conflict check, consultation",
@@ -183,9 +183,9 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Aisha",
     role: "Real Estate Demo",
     scope:
-      "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
+      "Role-plays a real-estate front desk: answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
     firstMessage:
-      "Aisha here — Wireline real estate demo. Are you calling about a listing or looking to buy?",
+      "Aisha here. Wireline real estate demo. Are you calling about a listing or looking to buy?",
     voiceLabel: "Layla · Warm & Cheerful",
     vapiVoiceId: "Layla",
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
@@ -198,9 +198,9 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Elena",
     role: "Insurance Demo",
     scope:
-      "Role-plays an insurance line — handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
+      "Role-plays an insurance line: handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
-      "Elena with the Wireline insurance demo — are you starting a quote or reporting a claim?",
+      "Elena with the Wireline insurance demo. Are you starting a quote or reporting a claim?",
     voiceLabel: "Naina · Calm & Professional",
     vapiVoiceId: "Naina",
     handles: "insurance, claim, loss, FNOL, quote, policy",
@@ -213,9 +213,9 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Jake",
     role: "Outbound Sales Demo",
     scope:
-      "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
+      "Role-plays a cold-call SDR: calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
     firstMessage:
-      "Hey — Jake on the Wireline outbound sales demo. You're hearing a live SDR open — who's this?",
+      "Hey, Jake on the Wireline outbound sales demo. You're hearing a live SDR open. Who's this?",
     voiceLabel: "Godfrey · Young & Energetic",
     vapiVoiceId: "Godfrey",
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",

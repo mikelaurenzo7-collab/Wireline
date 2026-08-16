@@ -1,0 +1,294 @@
+/* Homepage narrative, conversion paths, and work-lane entry points. */
+
+.marketing-surface.landing-home {
+  --wl-marketing-chrome-top: 4rem;
+  --wl-marketing-chrome-bottom: 0px;
+}
+
+.marketing-surface.landing-home .marketing-flow {
+  padding-top: var(--wl-marketing-chrome-top);
+}
+
+.marketing-surface .landing-stage.marketing-section--screen {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: clamp(0.7rem, 1.25vw, 1rem);
+  min-height: calc(100dvh - var(--wl-marketing-chrome-top));
+  padding: clamp(0.95rem, 1.55vw, 1.4rem) var(--wl-public-gutter-inline);
+  overflow: hidden;
+}
+
+.landing-stage__ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse 54% 44% at 75% 42%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 92% 80%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 3%, transparent),
+      transparent 76%
+    ),
+    var(--wireline-color-canvas-default);
+}
+
+.landing-stage__rail {
+  display: grid;
+  grid-template-columns: minmax(0, 0.93fr) minmax(34rem, 1.07fr);
+  align-items: center;
+  gap: clamp(2rem, 3.6vw, 4.2rem);
+  width: min(100%, 86rem);
+  min-width: 0;
+  min-height: 0;
+  margin-inline: auto;
+}
+
+.landing-stage__copy,
+.landing-stage__proof {
+  min-width: 0;
+}
+
+.landing-stage__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 37rem;
+}
+
+.landing-stage__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: clamp(0.78rem, 1.55vh, 1.08rem);
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: var(--wl-caps-label-tracking);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.landing-stage__live-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--wireline-color-status-success);
+  box-shadow: 0 0 0 0.22rem
+    color-mix(in srgb, var(--wireline-color-status-success) 12%, transparent);
+}
+
+.landing-stage__subline,
+.landing-stage__economics,
+.landing-stage__footer,
+.landing-demo__microcopy,
+.landing-console__control-note {
+  color: var(--wireline-color-text-secondary);
+}
+
+.landing-stage__title {
+  max-width: 11ch;
+  margin: 0;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(3.15rem, 4.65vw, 5.2rem);
+  /* Display tier at the home hero: the headline is the whole argument, so it
+     carries the full display weight (720) rather than a step down. */
+  font-weight: 720;
+  letter-spacing: -0.048em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.landing-stage__subline {
+  max-width: 36rem;
+  margin-top: clamp(0.95rem, 1.85vh, 1.3rem);
+  font-size: clamp(1rem, 1.08vw, 1.08rem);
+  line-height: 1.58;
+}
+
+.landing-stage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.72rem;
+  margin-top: clamp(1.15rem, 2.25vh, 1.55rem);
+}
+
+.landing-stage__primary,
+.landing-stage__secondary {
+  min-height: 3.05rem;
+  padding-inline: 1.12rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.landing-stage__economics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.7rem;
+  margin-top: 0.78rem;
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.71rem;
+  font-weight: 560;
+  letter-spacing: 0.018em;
+  line-height: 1.4;
+}
+
+.landing-stage__economics :is(span, a) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.landing-stage__economics a {
+  color: var(--wireline-color-text-primary);
+  text-underline-offset: 0.18rem;
+}
+
+.landing-stage__economics a:hover {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-stage__economics span + span::before {
+  content: "";
+  width: 1px;
+  height: 0.78rem;
+  margin-right: 0.65rem;
+  background: var(--wireline-color-border-default);
+}
+
+.landing-stage__spine {
+  display: flex;
+  width: 100%;
+  margin: clamp(1rem, 1.9vh, 1.35rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-block: 1px solid var(--wireline-color-border-default);
+}
+
+.landing-stage__spine li {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 0.48rem;
+  min-height: 2.55rem;
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: var(--wl-caps-label-tracking);
+  text-transform: uppercase;
+}
+
+.landing-stage__spine li + li {
+  padding-left: 0.72rem;
+  border-left: 1px solid var(--wireline-color-border-default);
+}
+
+.landing-stage__spine li > span {
+  color: var(--wireline-color-action-primary-default);
+  font-size: 0.61rem;
+}
+
+.landing-stage__lane-group {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.72rem;
+  margin-top: 0.72rem;
+}
+
+.landing-stage__lanes-label {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--wireline-color-text-tertiary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.61rem;
+  font-weight: 650;
+  letter-spacing: var(--wl-caps-label-tracking);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.landing-stage__lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.landing-stage__lane {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.46rem;
+  min-height: 2.7rem;
+  padding: 0.48rem 0.58rem;
+  overflow: hidden;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-lg);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 72%,
+    var(--wireline-color-canvas-default)
+  );
+  color: var(--wireline-color-text-primary);
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.landing-stage__lane:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 52%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-container) 16%,
+    var(--wireline-color-surface-default)
+  );
+  transform: translateY(-1px);
+}
+
+.landing-stage__lane:focus-visible,
+.landing-demo__button:focus-visible,
+.landing-stage__footer a:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+.landing-stage__lane-icon {
+  width: 0.88rem;
+  height: 0.88rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-stage__lane strong {
+  overflow: hidden;
+  font-family: var(--wireline-font-family-display);
+  font-size: 0.73rem;
+  font-weight: 650;
+  letter-spacing: -0.008em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.landing-stage__lane-arrow {
+  width: 0.7rem;
+  height: 0.7rem;
+  color: var(--wireline-color-text-tertiary);
+  transition: transform 160ms ease;
+}
+
+.landing-stage__lane:hover .landing-stage__lane-arrow {
+  transform: translateX(2px);
+}

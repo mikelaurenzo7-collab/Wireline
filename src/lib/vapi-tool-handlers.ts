@@ -120,7 +120,7 @@ export async function handleCreateAccount(
       const msg = String((e as { message?: string })?.message || "").toLowerCase();
       if (msg.includes("exist")) {
         return {
-          result: `Good news — ${to_email} already has a Wireline account. Tell the caller to sign in at trywireline.com, or offer to send a password reset link.`,
+          result: `Good news, ${to_email} already has a Wireline account. Tell the caller to sign in at trywireline.com, or offer to send a password reset link.`,
         };
       }
       throw e;
@@ -141,7 +141,7 @@ export async function handleCreateAccount(
 
     return {
       result: emailed
-        ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
+        ? `Account created for ${to_email}. I've emailed them a link to set their password. Once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
         : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
     };
   } catch (err: unknown) {
@@ -150,7 +150,7 @@ export async function handleCreateAccount(
     });
     return {
       result:
-        "I hit a snag creating the account. Ask the caller to sign up themselves at trywireline.com/signup — it takes about a minute.",
+        "I hit a snag creating the account. Ask the caller to sign up themselves at trywireline.com/signup, it takes about a minute.",
     };
   }
 }

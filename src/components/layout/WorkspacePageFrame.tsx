@@ -32,7 +32,7 @@ export function WorkspacePageFrame({
     <div
       data-wireline-page-mode={resolvedMode}
       className={cn(
-        "wl-workspace-page mx-auto flex w-full flex-col gap-5 pb-8 sm:gap-6",
+        "wl-workspace-page mx-auto flex w-full flex-col gap-4 pb-5 sm:gap-5",
         MODE_MAX_WIDTH[resolvedMode],
         resolvedMode === "operate" && "gap-4 px-3 pt-3 sm:px-5 lg:px-6 lg:pt-4",
         className,
@@ -148,8 +148,17 @@ export function WorkspaceOperateIntro({
   action,
   titleHidden = false,
 }: WorkspaceOperateIntroProps) {
+  const showBarAlways = Boolean(tabs || action);
   return (
-    <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
+    <header
+      className={cn(
+        "wl-operate-surface shrink-0 border-b border-border/60 pb-3",
+        // First-run Insights has a page title on the phone and nothing else.
+        // Keep that name under the dock's More sheet, and drop the empty
+        // bordered bar on desktop where the rail already says Activity.
+        !showBarAlways && titleHidden && "lg:hidden",
+      )}
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1

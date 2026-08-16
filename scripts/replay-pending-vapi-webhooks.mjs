@@ -28,7 +28,7 @@ const rows = await sql`
 
 console.log(`Found ${rows.length} pending vapi_webhook job(s)`);
 
-for (const row of rows) {
+if (rows.length > 0) {
   const base =
     process.env.WIRELINE_REPLAY_BASE_URL ||
     (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
@@ -41,7 +41,6 @@ for (const row of rows) {
   const res = await fetch(sweepUrl, { method: "POST", headers });
   const body = await res.text();
   console.log(`Sweep ${res.status}: ${body.slice(0, 500)}`);
-  break;
 }
 
 await sql.end();

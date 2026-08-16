@@ -19,7 +19,10 @@ export const BRAND_SYSTEM = {
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the agent.",
     "On broad and default product surfaces, prefer Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
-    "Use sentence case for headlines, buttons, tabs, and labels.",
+    "Rank by case. Titles, headers, heroes, tabs, and buttons render uppercase; sentences do not.",
+    "Write titles, labels, tabs, and buttons of three words or fewer in Title Case at the source, so they read as deliberate labels wherever the uppercase tier does not apply.",
+    "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
+    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, and stacked claims on public buying surfaces.",
   ],
@@ -39,6 +42,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create personal voice agent",
+    createCtaShort: "Create voice agent",
     setupLabel: "Personal voice agent in about a minute",
     setupPrompt: "What should your personal voice agent handle?",
     setupDescription: "Start with one call, appointment, or personal task.",
@@ -51,6 +55,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create business voice agent",
+    createCtaShort: "Create voice agent",
     setupLabel: "Business voice agent in about a minute",
     setupPrompt: "What job should this voice agent own?",
     setupDescription: "Start with one customer-facing job.",
@@ -65,6 +70,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: string;
     navShort: string;
     createCta: string;
+    createCtaShort: string;
     setupLabel: string;
     setupPrompt: string;
     setupDescription: string;
@@ -92,7 +98,12 @@ export const AGENT_DIRECTION_MODES = {
       "Answers live demand, continues by text or email when useful, and routes only what needs a person.",
   },
   hybrid: {
-    label: "All purpose",
+    // Title Case, not sentence case: this is a two-word tab label, not a
+    // sentence. Wireline's case rule is that anything three words or fewer in a
+    // title/label/tab/button slot is Title Case at the source and UPPERCASE
+    // where the tier applies, so it reads as a deliberate label in the places
+    // that do not uppercase it (native clients, aria labels, document titles).
+    label: "All Purpose",
     eyebrow: "Voice agent for daily operations",
     loop: ["Answer", "Sell", "Follow up", "Sync"],
     promise:
@@ -105,7 +116,7 @@ export const AGENT_NUMBER_PROMISE =
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "A voice agent that moves growth work forward.",
+  headline: "A voice agent that moves growth work forward",
   subline:
     "Start with one capable voice agent that researches leads, calls, texts, emails, sells, books, follows up, and logs proof. Add specialists only when volume or workflow complexity calls for them.",
   lanes: [
@@ -126,9 +137,13 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "Voice agents that get the work done.",
+  /* No terminal period. The hero renders in the cased display tier at up to
+     76px, where a full stop after seven words of caps reads as a stray mark rather
+     than as punctuation. Sentence-case copy keeps its periods; cased titles are
+     labels and do not take them. */
+  headline: "Voice agents that get the work done",
   /** Public hero CTA broad enough for personal and business buyers. */
-  primaryCta: "Build your voice agent",
+  primaryCta: "Build Your Voice Agent",
   subline:
     "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
   channelProof: [

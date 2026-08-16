@@ -19,6 +19,17 @@ describe("public route fallbacks", () => {
     expect(isSessionOptionalPublicPath("/not-found")).toBe(true);
   });
 
+  it("defaults first paint to document flow and then scopes workspace routes", () => {
+    const index = read("index.html");
+    const app = read("src/App.tsx");
+
+    expect(index).toContain('<html lang="en" data-wireline-viewport="document">');
+    expect(index).toContain('<body data-wireline-viewport="document">');
+    expect(app).toContain('const mode = isWorkspaceRoute(pathname) ? "workspace" : "document"');
+    expect(app).toContain("html.dataset.wirelineViewport = mode");
+    expect(app).toContain("body.dataset.wirelineViewport = mode");
+  });
+
   it("keeps anonymous and authenticated wildcard destinations distinct", () => {
     const app = read("src/App.tsx");
     const appRoutes = read("src/routes/AppRoutes.tsx");
@@ -27,9 +38,17 @@ describe("public route fallbacks", () => {
     expect(app).toContain("if (isWorkspaceRoute(pathname)) return <AppShell />");
     expect(app).toContain('path="/*" element={<UnknownRoute />}');
     expect(appRoutes).toContain('path="*" element={<AuthNotFound />}');
-    for (const path of ["/overview", "/overview/", "/studio/abc", "/settings/phone/"]) {
+    for (const path of [
+      "/overview",
+      "/overview/",
+      "/studio/abc",
+      "/settings/phone/",
+      "/email",
+      "/email/",
+    ]) {
       expect(isWorkspaceRoute(path), path).toBe(true);
     }
+    expect(isSessionOptionalPublicPath("/email")).toBe(false);
     expect(isWorkspaceRoute("/totally-unknown")).toBe(false);
     expect(isWorkspaceRoute("/pricing")).toBe(false);
   });

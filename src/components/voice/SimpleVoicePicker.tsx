@@ -202,19 +202,19 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
             )}
           </span>
           <span className="min-w-0">
-            {/* Catalog names embed the character after an em-dash
-                ("Savannah — Warm & Confident"). One truncating line cut off
+            {/* Catalog names embed the character after a middot separator
+                ("Savannah · Warm & Confident"). One truncating line cut off
                 exactly the half a listener chooses by, so the given name and
                 the descriptor each get their own line. */}
             <span className="block truncate text-sm font-semibold text-foreground">
-              {voice.name.split("—")[0].trim()}
+              {voice.name.split("·")[0].trim()}
             </span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {selected
                 ? "Live"
                 : voice.category === "cloned"
                   ? "Private"
-                  : voice.name.split("—").slice(1).join("—").trim() || "Choose"}
+                  : voice.name.split("·").slice(1).join("·").trim() || "Choose"}
             </span>
           </span>
         </button>

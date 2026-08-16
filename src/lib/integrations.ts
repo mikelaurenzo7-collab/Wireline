@@ -223,7 +223,7 @@ export class IntegrationService {
    * and the manual "Sync inbox" button. Returns a unified shape
    * regardless of provider so callers don't branch.
    *
-   * Yahoo is intentionally a no-op for now — Yahoo killed their
+   * Yahoo is intentionally a no-op for now, Yahoo killed their
    * REST mail API and the modern path is XOAUTH2 over IMAP, which
    * is touchier and lands in a follow-up phase. The connection
    * token is already stored from the Yahoo mailbox-connect OAuth
@@ -247,8 +247,8 @@ export class IntegrationService {
       // Most tenants have 1 mailbox; some have one per channel.
       //
       // A per-account failure is REPORTED, not just logged. Swallowing it and
-      // returning [] made a dead mailbox — expired refresh token, revoked
-      // OAuth grant, provider outage — indistinguishable from an empty inbox,
+      // returning [] made a dead mailbox, expired refresh token, revoked
+      // OAuth grant, provider outage, indistinguishable from an empty inbox,
       // so the account holder saw a cheerful "No new inbox messages found."
       // every time while mail piled up unreachable behind a broken connection.
       const perAccount = await Promise.all(
@@ -298,9 +298,9 @@ export class IntegrationService {
       return this.fetchMicrosoftInbox(account, opts);
     }
     if (account.provider === "yahoo") {
-      // Phase 2 — XOAUTH2 over IMAP. For now, log so the Account Holder can
+      // Phase 2, XOAUTH2 over IMAP. For now, log so the Account Holder can
       // see we received the call and know it's not silently broken.
-      log.info("Yahoo inbox fetch skipped — XOAUTH2 IMAP not yet wired", {
+      log.info("Yahoo inbox fetch skipped, XOAUTH2 IMAP not yet wired", {
         accountId: account.id,
       });
       return [];
@@ -434,13 +434,13 @@ export class IntegrationService {
           } = await import("./email-compliance");
           const identity = await getTenantMarketingIdentity(this.userId);
           if (!identity) {
-            log.warn("Marketing email skipped — tenant sender identity is incomplete", {
+            log.warn("Marketing email skipped, tenant sender identity is incomplete", {
               userId: this.userId,
             });
             return false;
           }
           if (await isTenantEmailSuppressed(this.userId, params.to)) {
-            log.info("Marketing email skipped — recipient opted out of this sender", {
+            log.info("Marketing email skipped, recipient opted out of this sender", {
               userId: this.userId,
               to: params.to,
             });
@@ -480,7 +480,7 @@ export class IntegrationService {
       // customer's marketing campaign through Wireline's transactional Resend
       // identity would misidentify the commercial sender and blur opt-out scope.
       if (params.marketing) {
-        log.warn("Marketing email skipped — connect a tenant mailbox before sending cadences", {
+        log.warn("Marketing email skipped, connect a tenant mailbox before sending cadences", {
           userId: this.userId,
         });
         return false;
@@ -520,7 +520,7 @@ export class IntegrationService {
 
   private async getAccounts(type: "calendar" | "mail") {
     // Tag every row with its source table. Token refresh used to infer the
-    // table from `emailAddress` presence — but calendar rows deliberately
+    // table from `emailAddress` presence, but calendar rows deliberately
     // mirror the email address (see schema), so a Microsoft *calendar*
     // account's refreshed tokens were written to wireline_email_accounts
     // WHERE id = <calendar uuid>: zero rows, tokens never persisted, and the

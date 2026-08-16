@@ -162,11 +162,7 @@ export class CRMService {
       }
     } else if (resolved === "salesforce") {
       try {
-        return await salesforce.updateOpportunityStage(
-          params.deal_id,
-          params.stage,
-          this.userId,
-        );
+        return await salesforce.updateOpportunityStage(params.deal_id, params.stage, this.userId);
       } catch (err) {
         log.error("salesforce update opportunity stage failed", { error: err });
         return false;
@@ -209,7 +205,7 @@ export class CRMService {
     if (createdId) {
       const ch = await getDefaultChannel(this.userId);
       if (ch) {
-        const amt = params.amount != null ? ` — $${params.amount}` : "";
+        const amt = params.amount != null ? `, $${params.amount}` : "";
         void slackPostMessage(
           this.userId,
           ch,
@@ -270,7 +266,7 @@ export class CRMService {
 
     const contactId = await this.resolveContactId(crm, params.customerNumber);
     if (!contactId) {
-      log.warn("Contact not found in CRM — skipping enriched sync", {
+      log.warn("Contact not found in CRM, skipping enriched sync", {
         customerNumber: params.customerNumber,
       });
       return false;

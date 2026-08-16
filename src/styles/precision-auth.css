@@ -2,7 +2,10 @@
 .wl-stitch-auth-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   background: var(--wireline-color-canvas-default);
 }
 

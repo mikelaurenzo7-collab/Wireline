@@ -21,7 +21,7 @@ function resolveDisplayName(provider: CuratedPreviewProvider, voiceId: string): 
   const pool = provider === "xai" ? WIRELINE_LIVE_VOICES : VAPI_CURATED_VOICES;
   const match = pool.find((voice) => voice.id === voiceId);
   if (!match) return voiceId;
-  return match.name.split(" — ")[0]?.trim() || match.name;
+  return match.name.split(" · ")[0]?.trim() || match.name;
 }
 
 export function isCuratedPreviewProvider(value: string): value is CuratedPreviewProvider {

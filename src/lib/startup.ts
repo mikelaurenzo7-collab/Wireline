@@ -50,7 +50,7 @@ export function validateStartupEnv() {
     (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
   ) {
     log.error(
-      "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production — " +
+      "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production, " +
         "rate limits are per-invocation only and provide no protection in serverless. " +
         "Set both vars in Vercel project settings before serving real traffic.",
     );
@@ -92,7 +92,7 @@ export function validateStartupEnv() {
         log.info("Environment setup checklist generated. See logs above for details.");
       }
     } else {
-      log.warn("Required env vars missing (dev mode — continuing with placeholders)", {
+      log.warn("Required env vars missing (dev mode, continuing with placeholders)", {
         missing,
         count: missing.length,
       });
@@ -101,13 +101,13 @@ export function validateStartupEnv() {
 
   if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
-      "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key) — marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",
+      "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key), marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",
     );
   }
 
   if (!importSmokeWithoutDatabase && IS_PROD && !process.env.SENTRY_DSN) {
     log.warn(
-      "SENTRY_DSN not set in production — 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic.",
+      "SENTRY_DSN not set in production, 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic.",
     );
   }
 

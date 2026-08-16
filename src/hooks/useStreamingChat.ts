@@ -531,13 +531,13 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         if ((e as Error)?.name === "AbortError") {
           if (finishWithPartialReply()) return;
           if (handshakeTimedOut) {
-            const msg = "Took too long to connect — try again or refresh";
+            const msg = "Took too long to connect, try again or refresh";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
             return;
           }
           if (prepareTimedOut) {
-            const msg = "Still preparing your turn — try again in a moment";
+            const msg = "Still preparing your turn, try again in a moment";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
             return;

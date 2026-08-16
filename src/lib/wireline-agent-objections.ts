@@ -77,11 +77,11 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "pricey",
     ],
     response_template:
-      "I get it — the price tag stands out. But compare it to a part-time receptionist at twenty hours a week or an answering service charging per minute. We're typically a third of either, and we never call out sick.",
+      "I get it. The price tag stands out. But compare it to a part-time receptionist at twenty hours a week or an answering service charging per minute. We're typically a third of either, and we never call out sick.",
     follow_up_question:
-      "What are you spending right now on call handling, roughly — and can I pencil out where you'd land with us?",
+      "What are you spending right now on call handling, roughly, and can I pencil out where you'd land with us?",
     rationale:
-      "Grounded comparison vs. true alternatives (human FTE + answering services). No discount-leading — Sales has 10% authority if they need to use it later.",
+      "Grounded comparison vs. true alternatives (human FTE + answering services). No discount-leading. Sales has 10% authority if they need to use it later.",
   },
   {
     id: "sounds_like_ai",
@@ -100,8 +100,8 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "is this ai",
     ],
     response_template:
-      "Honest answer — yes, it's AI, but it's the best AI voice on the planet right now. Most callers don't realize until we tell them. Want me to have a demo agent call your phone in thirty seconds so you can hear it?",
-    follow_up_question: "What's the best number for a quick demo call — same one you're on?",
+      "Honest answer: yes, it's AI, but it's the best AI voice on the planet right now. Most callers don't realize until we tell them. Want me to have a demo agent call your phone in thirty seconds so you can hear it?",
+    follow_up_question: "What's the best number for a quick demo call, same one you're on?",
     rationale:
       "Honesty disarms. Hard-pivot to experience: hearing the voice in <30s is the single highest-conversion moment in our sales funnel.",
   },
@@ -121,11 +121,11 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "get back to you",
     ],
     response_template:
-      "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind — pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
+      "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind: pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
     follow_up_question:
-      "And in the meantime — want me to set you up with a free agent, no card needed, so you can build and test it instead of imagining it?",
+      "And in the meantime, want me to set you up with a free agent, no card needed, so you can build and test it instead of imagining it?",
     rationale:
-      "Surfaces the real blocker (almost never 'thinking' — it's a specific concern) and offers the lowest-friction next step (a free, no-card agent build).",
+      "Surfaces the real blocker (almost never 'thinking'; it's a specific concern) and offers the lowest-friction next step (a free, no-card agent build).",
   },
   {
     id: "already_have_competitor",
@@ -146,10 +146,10 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "using goto",
     ],
     response_template:
-      "Smart — you're not flying blind. Quick question though: what's the one thing about ${competitor} that bugs you the most? Usually that's where we shine, and if it's not, I'll tell you straight up.",
+      "Smart. You're not flying blind. Quick question though: what's the one thing about ${competitor} that bugs you the most? Usually that's where we shine, and if it's not, I'll tell you straight up.",
     follow_up_question: "What's the part of your current setup you wish worked differently?",
     rationale:
-      "Doesn't trash the competitor. Asks for their grievance — answer reveals fit. Honest-broker positioning ('I'll tell you straight up') builds trust faster than a feature sheet.",
+      "Doesn't trash the competitor. Asks for their grievance. Answer reveals fit. Honest-broker positioning ('I'll tell you straight up') builds trust faster than a feature sheet.",
   },
   {
     id: "integration_question",
@@ -166,7 +166,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "sync with",
     ],
     response_template:
-      "Great question. We connect to most CRMs and calendars natively — HubSpot, Salesforce, Calendly, Google Workspace, Zapier covers anything else. Tell me the specific ${tool} and I'll confirm in one second.",
+      "Great question. We connect to most CRMs and calendars natively: HubSpot, Salesforce, Calendly, Google Workspace, Zapier covers anything else. Tell me the specific ${tool} and I'll confirm in one second.",
     follow_up_question: "Which tool are you most worried about losing in the move?",
     rationale:
       "Confident positive framing + concrete name-drops (avoids vague 'yes we integrate'). Asks for the specific tool so we don't promise something we don't have.",
@@ -214,7 +214,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "messes up",
     ],
     response_template:
-      "Honest answer — it'll happen occasionally. The safety net is built in: any time the AI isn't confident, it transfers to a human. Every call is recorded and transcribed, so you see exactly what was said.",
+      "Honest answer: it'll happen occasionally. The safety net is built in: any time the AI isn't confident, it transfers to a human. Every call is recorded and transcribed, so you see exactly what was said.",
     follow_up_question: "Want me to show you the live transfer flow and call review in Studio?",
     rationale:
       "Don't oversell. Lead with humility, then pivot to the safety net (graceful escalation + observability). Invites a product walkthrough.",
@@ -271,7 +271,7 @@ export function findObjectionMatch(utterance: string): ObjectionEntry | null {
  */
 export function renderPlaybookForSystemPrompt(): string {
   const lines: string[] = [];
-  lines.push("OBJECTION HANDLING PLAYBOOK — paraphrase, don't read verbatim:");
+  lines.push("OBJECTION HANDLING PLAYBOOK (paraphrase, don't read verbatim):");
   for (const o of WIRELINE_OBJECTIONS) {
     lines.push(`- ${o.label}: ${renderObjectionResponse(o)} Follow-up: ${o.follow_up_question}`);
   }

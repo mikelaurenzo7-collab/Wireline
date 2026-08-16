@@ -29,7 +29,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   crm: {
     integration: "crm",
     label: "CRM",
-    headline: "Every call updates Salesforce or HubSpot — not a sticky note.",
+    headline: "Every call updates Salesforce or HubSpot, not a sticky note.",
     orbitHint: "Search, log, create deals",
     connectPath: "/connections",
     tasks: [
@@ -41,7 +41,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
       {
         id: "crm-log",
-        callerMoment: "Call ends — outcome, notes, disposition",
+        callerMoment: "Call ends: outcome, notes, disposition",
         agentAction: "Writes the call summary and disposition to the CRM timeline.",
         tools: ["crm_log_call", "update_lead_status"],
       },
@@ -71,7 +71,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   x: {
     integration: "x",
     label: "X",
-    headline: "Engage on X — post, reply, like, repost, DM, and read ad performance.",
+    headline: "Engage on X: post, reply, like, repost, DM, and read ad performance.",
     orbitHint: "Post, reply, like, DM, ads",
     connectPath: "/connections",
     tasks: [
@@ -141,7 +141,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   calendar: {
     integration: "calendar",
     label: "Calendar",
-    headline: "Real availability — no double-books, no 'let me check and call back'.",
+    headline: "Real availability. No double-books, no 'let me check and call back'.",
     orbitHint: "Check slots · book live",
     connectPath: "/connections",
     tasks: [
@@ -162,7 +162,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   shopify: {
     integration: "shopify",
     label: "Shopify",
-    headline: "Store support calls that actually change orders — not ticket promises.",
+    headline: "Store support calls that actually change orders, not ticket promises.",
     orbitHint: "Orders · returns · draft checkout",
     connectPath: "/connections",
     tasks: [
@@ -201,7 +201,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   square: {
     integration: "square",
     label: "Square",
-    headline: "Phone orders and invoices for Square sellers — same call, paid faster.",
+    headline: "Phone orders and invoices for Square sellers: same call, paid faster.",
     orbitHint: "Orders · pay links · invoices",
     connectPath: "/connections",
     tasks: [
@@ -228,7 +228,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   docusign: {
     integration: "docusign",
     label: "DocuSign",
-    headline: "Close on the call — contract hits their inbox before they hang up.",
+    headline: "Close on the call. Contract hits their inbox before they hang up.",
     orbitHint: "E-sign on verbal yes",
     connectPath: "/connections",
     tasks: [
@@ -249,7 +249,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     tasks: [
       {
         id: "apollo-enrich",
-        callerMoment: "New inbound lead — little context in CRM",
+        callerMoment: "New inbound lead: little context in CRM",
         agentAction: "Enriches title, company size, and LinkedIn from the phone number.",
         tools: ["enrich_lead"],
       },
@@ -258,7 +258,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   meta: {
     integration: "meta",
     label: "Meta",
-    headline: "Paid social leads get server-side credit when they call — not just form fills.",
+    headline: "Paid social leads get server-side credit when they call, not just form fills.",
     orbitHint: "CAPI on qualified calls",
     connectPath: "/connections",
     tasks: [
@@ -288,7 +288,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   microsoft_excel: {
     integration: "microsoft_excel",
     label: "Excel",
-    headline: "Every call becomes a row in your Wireline log workbook — no manual export.",
+    headline: "Every call becomes a row in your Wireline log workbook, no manual export.",
     orbitHint: "Append call log row",
     connectPath: "/connections",
     tasks: [
@@ -303,8 +303,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   google_sheets: {
     integration: "google_sheets",
     label: "Google Sheets",
-    headline:
-      "Every call becomes a row in your Google Sheets call log workbook — no manual export.",
+    headline: "Every call becomes a row in your Google Sheets call log workbook, no manual export.",
     orbitHint: "Append call log row",
     connectPath: "/connections",
     tasks: [

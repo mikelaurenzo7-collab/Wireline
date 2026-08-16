@@ -305,9 +305,34 @@ describe("video presenter integration", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain('window.addEventListener("pagehide", settleOnHide)');
     expect(page).toContain("keepalive: true");
-    expect(page).toContain("credentials: \"include\"");
+    expect(page).toContain('credentials: "include"');
     expect(page).toContain("isLiveVideoProvider(presenter?.provider)");
     expect(page).not.toMatch(/presenter\?\.provider === ["']liveavatar["']/);
+  });
+
+  it("keeps live-video provider membership client-safe (build-breaking server graph stays out of browser bundles)", () => {
+    // LiveVideoStudioPage is a browser bundle. Importing live-video-addon from
+    // it drags liveavatar-service -> server-context -> auth-utils (node:crypto)
+    // into the Vite client build, which fails with
+    // '"createHmac" is not exported by "__vite-browser-external"'.
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).toContain('from "../lib/video-presenter/live-video-providers"');
+    expect(page).not.toContain('from "../lib/video-presenter/live-video-addon"');
+
+    // The shared membership module must stay pure: type-only imports, no
+    // provider services, no server context, no node builtins.
+    const providers = source("src/lib/video-presenter/live-video-providers.ts");
+    const valueImports = providers
+      .split("\n")
+      .filter((line) => /^import\s/.test(line) && !/^import\s+type\s/.test(line));
+    expect(valueImports).toEqual([]);
+
+    // Server routes keep their single import site; the addon module re-exports
+    // membership so the split cannot silently fork the provider list.
+    const addon = source("src/lib/video-presenter/live-video-addon.ts");
+    expect(addon).toContain(
+      'export { agentLiveVideoOptedIn, isLiveVideoProvider } from "./live-video-providers"',
+    );
   });
 
   it("bridges PSTN call audio from Vapi listenUrl into LiveAvatar lip-sync", () => {

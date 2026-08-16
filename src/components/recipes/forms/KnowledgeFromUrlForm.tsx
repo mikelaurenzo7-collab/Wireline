@@ -54,14 +54,14 @@ export function KnowledgeFromUrlForm({
         throw new Error(pollBody.job?.error || "Site crawl failed");
       }
       setCrawlProgress(
-        status === "running" ? "Crawling pages and extracting facts…" : "Queued — starting crawl…",
+        status === "running" ? "Crawling pages and extracting facts…" : "Queued. Starting crawl…",
       );
       await sleep(2500);
       if (status === "pending") {
         await authFetch(`/api/jobs/${jobId}/run`, { method: "POST" });
       }
     }
-    throw new Error("Crawl timed out — check back in a few minutes or try fewer pages.");
+    throw new Error("Crawl timed out. Check back in a few minutes or try fewer pages.");
   };
 
   const run = async () => {
@@ -82,7 +82,7 @@ export function KnowledgeFromUrlForm({
         const enqueueBody = await enqueueRes.json();
         if (!enqueueRes.ok) throw new Error(enqueueBody.error);
         if (!enqueueBody.jobId) throw new Error("Crawl job was not created");
-        setCrawlProgress("Queued — starting crawl…");
+        setCrawlProgress("Queued. Starting crawl…");
         data = await pollJobUntilDone(enqueueBody.jobId);
       } else {
         const r = await authFetch("/api/claude/knowledge-from-url", {
@@ -109,7 +109,7 @@ export function KnowledgeFromUrlForm({
       }
       if (!data?.entries?.length) {
         throw new Error(
-          "No knowledge entries extracted — try a different URL or add agent context.",
+          "No knowledge entries extracted. Try a different URL or add agent context.",
         );
       }
       setResult(data);
@@ -153,8 +153,8 @@ export function KnowledgeFromUrlForm({
         label="URL"
         hint={
           crawl
-            ? "Root URL — Wireline AI follows nav links from here."
-            : "A homepage, services page, FAQ, pricing page — anything customer-facing."
+            ? "Root URL. Wireline AI follows nav links from here."
+            : "A homepage, services page, FAQ, pricing page. Anything customer-facing."
         }
       >
         <TextInput

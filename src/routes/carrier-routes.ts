@@ -17,10 +17,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
 import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
-import {
-  listVapiNumbers,
-  POPULAR_AREA_CODES,
-} from "../lib/vapi-phone-numbers";
+import { listVapiNumbers, POPULAR_AREA_CODES } from "../lib/vapi-phone-numbers";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 
@@ -263,7 +260,7 @@ router.patch(
       if (Object.keys(patch).length === 0) {
         return res
           .status(400)
-          .json({ error: "Nothing to update — pass agent_id or campaign_label." });
+          .json({ error: "Nothing to update, pass agent_id or campaign_label." });
       }
 
       const numberId = parseBigIntId(req.params.id);

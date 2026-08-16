@@ -230,7 +230,7 @@ export async function maybeRecordTenantActivation(args: {
 
     if (updated.length === 0) return false;
 
-    log.info("Tenant activated — first useful production call", {
+    log.info("Tenant activated, first useful production call", {
       userId: args.userId,
       callLogId: args.callLogId.toString(),
       timeToActivationSeconds,

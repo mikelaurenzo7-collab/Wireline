@@ -86,7 +86,8 @@ describe("agent navigation contract", () => {
   });
 
   it("makes Overview answer customer-demand questions before configuration questions", () => {
-    expect(overviewPage).toMatch(/function dayGreeting/);
+    // Overview leads with the demand metrics below, not with a salutation.
+    expect(overviewPage).not.toMatch(/function dayGreeting/);
     expect(overviewPage).toMatch(/Customer conversations today/);
     expect(overviewPage).toMatch(/High-intent today/);
     expect(overviewPage).toMatch(/Appointments booked/);

@@ -12,6 +12,8 @@ describe("authenticated mobile cleanup", () => {
     const approvals = read("src/components/ApprovalInbox.tsx");
 
     expect(tabStrip).toContain("shortLabel?: string");
+    expect(tabStrip).toContain('wrap?: boolean | "always"');
+    expect(tabStrip).toContain("wrapAlways");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
     expect(tabStrip).toContain("tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)");
@@ -24,6 +26,7 @@ describe("authenticated mobile cleanup", () => {
     expect(settingsTabs).toContain('label: "Billing"');
     expect(settingsTabs).toContain('label: "Appearance"');
     expect(settingsTabs).toContain('label: "Compliance"');
+    expect(settingsTabs).toContain('wrap="always"');
     expect(settingsTabs).not.toContain("shortLabel:");
     expect(settingsTabs).not.toContain('shortLabel: "Acct"');
     expect(settingsTabs).not.toContain('shortLabel: "Bill"');
@@ -112,6 +115,29 @@ describe("authenticated mobile cleanup", () => {
     expect(inbox).toContain("Refresh inbox");
     expect(inbox).not.toContain("Connect Gmail or Outlook to sync customer threads.");
     expect(inbox).not.toContain("Summary + controls live here.");
+  });
+
+  it("keeps first-run authenticated chrome free of leftover strands and shouted periods", () => {
+    const overview = read("src/pages/OverviewPage.tsx");
+    const accounts = read("src/components/admin/AccountsPanel.tsx");
+    const insights = read("src/components/insights/shared.tsx");
+    const insightsPage = read("src/pages/InsightsPage.tsx");
+    const insightsView = read("src/components/insights/InsightsView.tsx");
+    const operateIntro = read("src/components/layout/WorkspacePageFrame.tsx");
+    const polish = read("src/styles/authenticated-visual-qa.css");
+
+    expect(overview).toContain("hasAgents ? (");
+    expect(overview).toContain("wl-overview-greeting");
+    expect(polish).toContain(".wl-workspace-page.wl-overview--first-run");
+    expect(polish).toContain("gap: 0");
+    expect(accounts).toContain("Keep personal and business work separate");
+    expect(accounts).not.toContain("Keep personal and business work separate.");
+    expect(insights).toContain("No conversations yet");
+    expect(insights).toContain("Activity appears once a voice agent starts taking calls.");
+    expect(insightsPage).toContain("tabs={firstRun ? undefined : <AppChromeSubTabs density=\"compact\" />}");
+    expect(insightsView).toContain("if (firstRun) {");
+    expect(insightsView).toContain('<InsightEmpty configKey="funnel"');
+    expect(operateIntro).toContain("!showBarAlways && titleHidden && \"lg:hidden\"");
   });
 
   it("uses Wireline language and iconography on active work surfaces", () => {

@@ -138,7 +138,7 @@ export function buildComplianceFooterText(
 ): string {
   const lines = [
     "",
-    "—",
+    "--",
     footerReasonText(audience, normalizeEmail(email)),
     `Unsubscribe from ${footerUnsubscribeLabel(audience)}: ${unsubscribeUrl(email)}`,
   ];
@@ -186,7 +186,7 @@ export async function isEmailSuppressed(email: string): Promise<boolean> {
       .limit(1);
     return !!row;
   } catch (err) {
-    log.error("isEmailSuppressed check failed — treating as suppressed", {
+    log.error("isEmailSuppressed check failed, treating as suppressed", {
       error: getErrorMessage(err),
     });
     return true;
@@ -297,7 +297,7 @@ export function buildTenantComplianceFooterText(args: {
 }): string {
   return [
     "",
-    "—",
+    "--",
     `Marketing message from ${args.identity.senderName}.`,
     `Unsubscribe from future marketing email from ${args.identity.senderName}: ${tenantUnsubscribeUrl(args.userId, args.email)}`,
     args.identity.physicalPostalAddress,
@@ -358,7 +358,7 @@ export async function getTenantMarketingIdentity(
     if (!senderName || !physicalPostalAddress) return null;
     return { senderName, physicalPostalAddress };
   } catch (err) {
-    log.error("Tenant marketing identity check failed — suppressing send", {
+    log.error("Tenant marketing identity check failed, suppressing send", {
       userId,
       error: getErrorMessage(err),
     });
@@ -380,7 +380,7 @@ export async function isTenantEmailSuppressed(userId: string, email: string): Pr
       .limit(1);
     return !!row;
   } catch (err) {
-    log.error("Tenant email suppression check failed — treating as suppressed", {
+    log.error("Tenant email suppression check failed, treating as suppressed", {
       userId,
       error: getErrorMessage(err),
     });

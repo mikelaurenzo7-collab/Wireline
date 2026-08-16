@@ -35,7 +35,7 @@ const dialSchema = z.object({
   customerNumber: z
     .string()
     .min(1, "customerNumber is required")
-    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format — expected E.164"),
+    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format, expected E.164"),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),

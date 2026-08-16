@@ -90,7 +90,7 @@ test("settings sign-out followed by direct personal signup always enters Fast St
     redirectKey: AUTH_REDIRECT_KEY,
   });
 
-  await page.getByRole("button", { name: "Create account", exact: true }).last().click();
+  await page.getByRole("button", { name: "Create Account", exact: true }).last().click();
   await expect(page).toHaveURL(/\/studio\?create=1$/);
   expect(
     await page.evaluate(

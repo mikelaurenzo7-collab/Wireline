@@ -1,0 +1,100 @@
+@import "./type-integrity.css";
+
+/*
+ * Safe-area ownership
+ *
+ * The application root is exactly 100dvh and never pads itself. Padding that
+ * root while its children also claim 100dvh subtracts the notch twice and clips
+ * the bottom of the app. Each physical chrome surface owns only the edges it
+ * renders against instead.
+ */
+
+.marketing-surface {
+  --wl-marketing-chrome-top: calc(4rem + env(safe-area-inset-top, 0px));
+  --wl-marketing-chrome-bottom: calc(2.1rem + env(safe-area-inset-bottom, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.marketing-surface.landing-home {
+  --wl-marketing-chrome-bottom: 0px;
+}
+
+.wl-public-header {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.marketing-chrome-bar__row {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.wl-stitch-auth-shell {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* AuthPortal historically claimed 100dvh inside another 100dvh shell. Once the
+ * shell owns the notch, the form must fill the shell's content box instead of
+ * recreating the full viewport and losing its bottom edge. */
+.wl-stitch-auth-shell .wl-auth-form-panel {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+@media (max-width: 639px) {
+  /* The shell now owns env() values, so the mobile form keeps only its authored
+   * breathing room rather than charging the safe area a second time. */
+  .wl-stitch-auth-shell .wl-auth-form-panel {
+    padding: 1.25rem 1rem 2rem;
+  }
+}
+
+.wl-workspace-shell {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* The rail fills the shell's safe content box. A nested 100dvh rail would undo
+ * the shell padding and clip its account control at the bottom. */
+.wl-workspace-shell > .wl-workspace-frame > aside {
+  height: 100%;
+}
+
+.wl-workspace-shell > nav[aria-label="Workspace navigation"] {
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+}
+
+@media (max-width: 767px) {
+  /* Dock clearance belongs on the scrollport once. The shell already owns
+   * the home-indicator inset, and the main column fills that safe box.
+   * Padding the column AND this scroller reserved two empty bands above the
+   * dock, which left first-run Overview with a 200px void under the only card. */
+  .wl-workspace-shell .wl-workspace-content {
+    padding-bottom: 5.25rem;
+  }
+}
+
+/* Loading, OAuth-complete, and degraded-state transitions can be the first
+ * surface mounted. They therefore own all four edges directly rather than
+ * relying on public or workspace chrome that may not exist yet. The base
+ * transition padding remains the comfortable floor. */
+.wl-transition-shell {
+  padding-top: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-top, 0px));
+  padding-right: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-right, 0px));
+  padding-bottom: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px));
+  padding-left: max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-left, 0px));
+}
+
+.wl-transition-shell .wl-transition-rail {
+  min-height: calc(
+    100dvh - max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-top, 0px)) -
+      max(clamp(1rem, 3vw, 2rem), env(safe-area-inset-bottom, 0px))
+  );
+}

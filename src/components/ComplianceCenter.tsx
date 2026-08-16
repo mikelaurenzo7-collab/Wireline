@@ -174,7 +174,7 @@ export default function ComplianceCenter() {
               <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Recent disclosure and consent events (rule version{" "}
-                {summary?.consent_rule_version || "—"}).
+                {summary?.consent_rule_version || "N/A"}).
               </p>
             </div>
             <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">

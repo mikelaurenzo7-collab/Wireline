@@ -93,7 +93,7 @@ struct WhatNeedsAttentionIntent: AppIntent {
         do {
             let recent = try await WirelineAPI.shared.recentCalls(limit: 20)
             if recent.calls.isEmpty {
-                return .result(dialog: "Nothing needs your attention — no recent calls.")
+                return .result(dialog: "Nothing needs your attention. No recent calls.")
             }
             let followups = recent.needsAttention
             if followups == 0 {

@@ -9,13 +9,14 @@
     line-height: 1.4;
   }
 
-  /* Settings/billing: keep the last card clear of the mobile dock when scrolled. */
+  /* Settings/billing: keep the last card in view when scrolling toward the dock.
+   * Dock clearance itself lives on `.wl-workspace-content` once, in
+   * safe-area-ownership.css. Do not restack padding-bottom here. */
   [data-wireline-route^="/settings"] .wl-workspace-content,
   [data-wireline-route="/apps"] .wl-workspace-content,
   [data-wireline-route="/overview"] .wl-workspace-content,
   [data-wireline-route="/inbox"] .wl-workspace-content {
     scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-    padding-bottom: max(2.5rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
   }
 
   /* Operate empties: keep framed empty states inside the visible panel. */

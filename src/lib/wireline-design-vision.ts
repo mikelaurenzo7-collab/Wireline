@@ -11,7 +11,7 @@ export const WIRELINE_DESIGN_VISION = {
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
     "Electric violet is action. Ink is structure. Cool obsidian is calm.",
-    "Silver is the wire — it carries the signal, never decorates.",
+    "Silver is the wire, it carries the signal, never decorates.",
     "One voice module, one composer dock, one elevation language.",
     "Centered marketing storytelling; left/task-first authenticated work.",
     "Inter Tight carries big ideas; Inter carries work; IBM Plex Mono carries labels.",
@@ -19,8 +19,8 @@ export const WIRELINE_DESIGN_VISION = {
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
     "Letterpress depth: inset highlights on surfaces, restrained glow only on active affordances.",
     "Route load → RouteFallback; panel load → skeleton presets; sole empty → EmptyState; errors → StatusNotice.",
-    "Primary actions use atoms/Button — not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
-    "Navigation IA lives in constants/navigation.ts — never duplicate nav arrays in shell components.",
+    "Primary actions use atoms/Button, not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
+    "Navigation IA lives in constants/navigation.ts, never duplicate nav arrays in shell components.",
   ],
   tokens: {
     canvas: "#0A0A0E",

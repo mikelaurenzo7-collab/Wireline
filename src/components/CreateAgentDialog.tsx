@@ -99,7 +99,7 @@ function safeCreateAgentError(
     return "You're going a bit fast. Take a breath and try again in a moment.";
   }
   if (status >= 500) {
-    return "Wireline is having a hiccup. Try again in a moment — nothing was billed.";
+    return "Wireline is having a hiccup. Try again in a moment. Nothing was billed.";
   }
   if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
     return raw.trim();
@@ -492,7 +492,14 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? "Creating…" : language.createCta}
+              {creating ? (
+                "Creating…"
+              ) : (
+                <>
+                  <span className="sm:hidden">{language.createCtaShort}</span>
+                  <span className="hidden sm:inline">{language.createCta}</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

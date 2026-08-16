@@ -198,7 +198,7 @@ export default function StudioAgentWorkspacePanel({
           setSetupNotice(null);
           setSetupError(
             isBusinessAgent
-              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts — hours, pricing, service area, what to do with a lead — and apply again."
+              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts (hours, pricing, service area, what to do with a lead) and apply again."
               : "Tone and greeting were saved, but nothing concrete could be pulled out of your preferences. Rewrite them as short, specific statements and apply again.",
           );
           return;

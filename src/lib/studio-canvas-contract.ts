@@ -86,7 +86,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
-    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
+    { id: "overview-title", pattern: /wl-app-page-title/ },
     { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
     { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
@@ -102,7 +102,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Start with one job\./ },
+    { id: "empty-state", pattern: /Start with one job/ },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [

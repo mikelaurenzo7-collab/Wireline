@@ -29,7 +29,7 @@ type CheckoutReturnNotice = {
 };
 
 function formatUsd(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "N/A";
   const absolute = Math.abs(value);
   return value < 0 ? `-$${absolute.toFixed(2)}` : `$${absolute.toFixed(2)}`;
 }
@@ -216,7 +216,7 @@ export default function BillingSettings() {
   }
 
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         <WorkspacePageIntro title="Billing" titleHidden />
@@ -286,7 +286,7 @@ export default function BillingSettings() {
                       ? "Available after a live plan is active."
                       : balanceDue > 0
                         ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
-                        : "Extra usage draws only from this balance — never an automatic overage invoice."}
+                        : "Extra usage draws only from this balance, never an automatic overage invoice."}
                 </p>
 
                 {canAddBalance ? (

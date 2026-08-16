@@ -98,7 +98,7 @@ export function AccountsPanel() {
       <header className="max-w-2xl">
         <p className="text-eyebrow text-primary">Account profile</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-          Keep personal and business work separate.
+          Keep personal and business work separate
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Switch personalization and defaults between personal and business context. Every agent

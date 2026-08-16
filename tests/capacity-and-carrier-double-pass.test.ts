@@ -127,7 +127,7 @@ describe("carrier teardown integration", () => {
     expect(failureGuard).toBeGreaterThan(releaseCall);
     expect(localDelete).toBeGreaterThan(failureGuard);
     expect(source).toContain("releaseTwilioByE164");
-    expect(source).toContain("Carrier number release failed — preserving local ownership row");
+    expect(source).toContain("Carrier number release failed, preserving local ownership row");
   });
 
   it("makes provisioning compensation strict, truthful, and durable", () => {

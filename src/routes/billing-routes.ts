@@ -332,14 +332,14 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             });
             claimed = true;
           } else {
-            log.warn("Stripe webhook still processing — asking Stripe to retry", {
+            log.warn("Stripe webhook still processing, asking Stripe to retry", {
               eventId: idempotencyKey,
               eventType: event.type,
             });
             throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
           }
         } else {
-          log.warn("Stripe webhook still processing — asking Stripe to retry", {
+          log.warn("Stripe webhook still processing, asking Stripe to retry", {
             eventId: idempotencyKey,
             eventType: event.type,
           });
@@ -380,7 +380,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     // a paid top-up outright. Returning normally here lets execution reach the
     // handler `try` below, which is what the reclaim was written to do.
     if (!claimed) {
-      log.warn("Stripe idempotency claim failed — refusing to process event", {
+      log.warn("Stripe idempotency claim failed, refusing to process event", {
         error: getErrorMessage(err),
         eventId: idempotencyKey,
         eventType: event.type,

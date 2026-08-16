@@ -55,7 +55,7 @@ interface SmsMessage {
 }
 
 function formatSmsTime(value: string) {
-  return formatDate(value, { hour: "numeric", minute: "2-digit" }, "—", "en-US");
+  return formatDate(value, { hour: "numeric", minute: "2-digit" }, "N/A", "en-US");
 }
 
 function SmsLoadingState() {
@@ -263,7 +263,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         // would turn the natural next click into a duplicate customer message.
         setMessages((current) => current.filter((message) => message.id !== optimistic.id));
         setThreadErr(warning);
-        toastError("SMS status unknown — do not resend", warning);
+        toastError("SMS status unknown. Do not resend", warning);
         return;
       }
       if (!response.ok || !result.ok) {
@@ -417,7 +417,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     {formatDate(
                       thread.last_message_at,
                       { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
-                      "—",
+                      "N/A",
                       "en-US",
                     )}
                   </p>

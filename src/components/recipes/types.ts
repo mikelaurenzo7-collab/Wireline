@@ -54,7 +54,7 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "enrich-lead": {
     title: "Enrich Lead",
-    tagline: "Wireline AI searches the web — identity, employer, hooks.",
+    tagline: "Wireline AI searches the web: identity, employer, hooks.",
     icon: Search,
     accent: BRAND.colors.primary,
     thinking: false,
@@ -96,7 +96,7 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   coach: {
     title: "Live Call Coach",
-    tagline: "Real-time take on a transcript — what to say next.",
+    tagline: "Real-time take on a transcript: what to say next.",
     icon: Headphones,
     accent: BRAND.colors.primary,
     thinking: false,
@@ -110,7 +110,7 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "knowledge-from-document": {
     title: "Ingest from PDF",
-    tagline: "Upload a brochure, menu, or policy doc — Wireline AI reads it.",
+    tagline: "Upload a brochure, menu, or policy doc. Wireline AI reads it.",
     icon: FileUp,
     accent: BRAND.colors.outlineVariant,
     thinking: false,
@@ -124,7 +124,7 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "call-playbook": {
     title: "Call Playbook",
-    tagline: "Full script — opener, discovery, objections, close, voicemail.",
+    tagline: "Full script: opener, discovery, objections, close, voicemail.",
     icon: ScrollText,
     accent: BRAND.colors.outlineVariant,
     thinking: true,

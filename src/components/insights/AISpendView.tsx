@@ -146,12 +146,12 @@ function SpendBudgetCard() {
     : isWarn
       ? BRAND.colors.outlineVariant
       : BRAND.colors.primary;
-  const period = status?.period || "—";
+  const period = status?.period || "N/A";
   const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
   const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Provider spend guard";
   const capReachedCopy = isSimulationAllowance
-    ? "Simulation allowance reached — private simulation is paused"
-    : "Provider spend limit reached — new provider work is paused";
+    ? "Simulation allowance reached. Private simulation is paused"
+    : "Provider spend limit reached. New provider work is paused";
   const maximumHelper = isSimulationAllowance
     ? `Up to $${safeFixed(maximumLimit, 2)} for private setup, training, and simulation. Activate a paid plan to go live.`
     : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the provider-cost envelope funded by the plan.`;

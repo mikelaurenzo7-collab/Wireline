@@ -26,19 +26,10 @@ import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
-import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
-
-function dayGreeting(date = new Date()) {
-  const hour = date.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
 
 function metricRows(
   conversationsToday: number,
@@ -125,9 +116,9 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <h2 id="first-run-title" className="text-xl font-semibold text-foreground sm:text-2xl">
-            Start with one job.
-          </h2>
+          <h1 id="first-run-title" className="wl-app-page-title text-balance">
+            Start with one job
+          </h1>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
             {posture === "personal"
               ? "Give it one personal task. Wireline handles the call, the follow-up, and the record."
@@ -142,7 +133,8 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
                     : "/studio?create=1&posture=business"
                 }
               >
-                {language.createCta}
+                <span className="sm:hidden">{language.createCtaShort}</span>
+                <span className="hidden sm:inline">{language.createCta}</span>
                 <ArrowRight size={15} aria-hidden="true" />
               </Link>
             </Button>
@@ -196,7 +188,7 @@ function DemandReadinessCard({
   const state = !hasLiveLine
     ? {
         eyebrow: "Phone line",
-        title: "Connect a phone line.",
+        title: "Connect a phone line",
         detail: undefined,
         primaryHref: "/settings/phone",
         primaryLabel: "Connect phone",
@@ -206,8 +198,8 @@ function DemandReadinessCard({
     : !hasConversationHistory
       ? {
           eyebrow: "Line ready",
-          title: "Your line is live. Put it where customers already call.",
-          detail: undefined,
+          title: "Your line is live",
+          detail: "Put it where customers already call.",
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
@@ -216,7 +208,7 @@ function DemandReadinessCard({
       : activeWork > 0
         ? {
             eyebrow: "Action required",
-            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} your attention.`,
+            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} attention`,
             detail: "Review approvals and human handoffs while the context is fresh.",
             primaryHref: "/approvals",
             primaryLabel: "Review work",
@@ -225,11 +217,11 @@ function DemandReadinessCard({
           }
         : {
             eyebrow: conversationsToday > 0 ? "Customer demand today" : "Line ready",
-            title:
+            title: conversationsToday > 0 ? "Handling conversations" : "No new conversations today",
+            detail:
               conversationsToday > 0
-                ? "Wireline is handling conversations and recording what happened."
-                : "No new conversations today. Your customer line is still ready.",
-            detail: undefined,
+                ? "Outcomes are being recorded as they happen."
+                : "Your customer line is still ready.",
             primaryHref: "/inbox",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,
@@ -422,7 +414,6 @@ function conversationChannelLabel(channel: RecentConversation["channel"]) {
 }
 
 export default function OverviewPage() {
-  const { user } = useAuth();
   const { accountType } = useAccount();
   const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
   const language = customerAgentLanguage(accountType);
@@ -582,14 +573,20 @@ export default function OverviewPage() {
     : emptyStudioHref;
 
   return (
-    <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
-      <WorkspacePageFrame mode="standard" className="wl-overview">
-        <section className="relative wl-overview-greeting text-left">
-          <div className="flex flex-col items-start gap-5">
-            <h1 className="wl-preserve-case wl-display-2 text-balance">
-              {`${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
-            </h1>
-            {hasAgents ? (
+    <WorkspaceShell contentClassName="pt-4 pb-5 lg:pt-5">
+      {/* First run has one card and no data, so the page rendered a 540px void
+          under it: the activation panel sat pinned to the top of an otherwise
+          empty screen. Centring the block in the content area turns that into
+          composition. Once the workspace has agents, the page fills normally
+          and the modifier is not applied. */}
+      <WorkspacePageFrame
+        mode="standard"
+        className={hasAgents ? "wl-overview" : "wl-overview wl-overview--first-run"}
+      >
+        {hasAgents ? (
+          <section className="relative wl-overview-greeting text-left">
+            <div className="flex flex-col items-start gap-5">
+              <h1 className="wl-app-page-title text-balance">Overview</h1>
               <div className="flex flex-wrap items-center justify-start gap-2">
                 <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                   <Link to={primaryStudioHref}>
@@ -620,9 +617,9 @@ export default function OverviewPage() {
                   </Button>
                 )}
               </div>
-            ) : null}
-          </div>
-        </section>
+            </div>
+          </section>
+        ) : null}
 
         {isFirstRun ? (
           <FirstRunLaunchpad posture={accountType} />
@@ -690,7 +687,7 @@ export default function OverviewPage() {
 
             {degraded ? (
               <StatusNotice tone="warning" title="Status partial">
-                Agent links are recovering — showing the last safe state.
+                Agent links are recovering, showing the last safe state.
               </StatusNotice>
             ) : null}
 
@@ -702,8 +699,8 @@ export default function OverviewPage() {
 
             {statsUnavailable && !loadingDashboard ? (
               <StatusNotice tone="warning" title="Home data partial">
-                We couldn&apos;t load every Home data source. Refresh to try again — affected
-                metrics or recent activity may not be current.
+                We couldn&apos;t load every Home data source. Refresh to try again. Affected metrics
+                or recent activity may not be current.
               </StatusNotice>
             ) : null}
 

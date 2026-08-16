@@ -121,7 +121,7 @@ export function normalizeShopDomain(raw: unknown): string | null {
 export function getShopifyAuthUrl(shop: string, redirectUri: string, state: string): string {
   const normalized = normalizeShopDomain(shop);
   if (!normalized) {
-    throw new Error("Invalid Shopify shop domain — expected {store}.myshopify.com");
+    throw new Error("Invalid Shopify shop domain, expected {store}.myshopify.com");
   }
   const params = new URLSearchParams({
     client_id: process.env.SHOPIFY_CLIENT_ID!,
@@ -189,7 +189,7 @@ export async function exchangeShopifyCode(
 ): Promise<{ access_token: string; scope: string; shop: string }> {
   const normalized = normalizeShopDomain(shop);
   if (!normalized) {
-    throw new Error("Invalid Shopify shop domain — expected {store}.myshopify.com");
+    throw new Error("Invalid Shopify shop domain, expected {store}.myshopify.com");
   }
 
   const r = await fetchWithTimeout(
@@ -331,7 +331,7 @@ export async function lookupOrder(params: {
 }): Promise<ShopifyOrderResult | null> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping order lookup");
+    log.warn("Shopify not connected, skipping order lookup");
     return null;
   }
 
@@ -377,7 +377,7 @@ export async function searchProducts(params: {
 }): Promise<ShopifyProductResult[]> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping product search");
+    log.warn("Shopify not connected, skipping product search");
     return [];
   }
 
@@ -420,7 +420,7 @@ export async function lookupCustomer(params: {
 }): Promise<ShopifyCustomerResult | null> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping customer lookup");
+    log.warn("Shopify not connected, skipping customer lookup");
     return null;
   }
 
@@ -493,7 +493,7 @@ export async function startReturn(params: {
 }): Promise<{ ok: boolean; returnId?: string; message: string }> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping return start");
+    log.warn("Shopify not connected, skipping return start");
     return { ok: false, message: "Shopify is not connected." };
   }
 
@@ -589,7 +589,7 @@ export async function cancelOrder(params: {
 }): Promise<{ ok: boolean; message: string }> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping order cancel");
+    log.warn("Shopify not connected, skipping order cancel");
     return { ok: false, message: "Shopify is not connected." };
   }
 
@@ -636,7 +636,7 @@ export async function updateOrderShippingAddress(params: {
 }): Promise<{ ok: boolean; message: string }> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping address update");
+    log.warn("Shopify not connected, skipping address update");
     return { ok: false, message: "Shopify is not connected." };
   }
 
@@ -683,7 +683,7 @@ export async function createDraftOrder(params: {
 }): Promise<{ ok: boolean; draftOrderId?: string; invoiceUrl?: string; message: string }> {
   const client = await getStoreClient(params.userId);
   if (!client) {
-    log.warn("Shopify not connected — skipping draft order create");
+    log.warn("Shopify not connected, skipping draft order create");
     return { ok: false, message: "Shopify is not connected." };
   }
 

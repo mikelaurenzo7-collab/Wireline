@@ -185,8 +185,9 @@ async function getAccessToken(userId: string): Promise<string | null> {
     } catch (err) {
       const message = getErrorMessage(err);
       log.error("Google Sheets token refresh failed", { error: message });
-      const isTerminal =
-        /invalid_grant|invalid_rapt|token has been expired or revoked/i.test(message);
+      const isTerminal = /invalid_grant|invalid_rapt|token has been expired or revoked/i.test(
+        message,
+      );
       if (isTerminal) {
         await drizzle
           .update(schema.crmConnections)
@@ -318,7 +319,7 @@ export async function logToGoogleSheets(params: {
 }): Promise<boolean> {
   const token = await getAccessToken(params.userId);
   if (!token) {
-    log.warn("Google Sheets not connected — skipping log");
+    log.warn("Google Sheets not connected, skipping log");
     return false;
   }
   const conn = await getConnection(params.userId);

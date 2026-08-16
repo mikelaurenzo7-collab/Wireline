@@ -79,7 +79,7 @@ public struct WirelineWidgetSnapshot: Codable, Hashable {
             WirelineWidgetCall(
                 id: "call-1",
                 title: "Doctor's Office",
-                subtitle: "Prescription ready — picked up",
+                subtitle: "Prescription ready. Picked up",
                 direction: "outbound",
                 sentiment: "positive",
                 needsFollowUp: false
@@ -95,7 +95,7 @@ public struct WirelineWidgetSnapshot: Codable, Hashable {
             WirelineWidgetCall(
                 id: "call-3",
                 title: "Airline Support",
-                subtitle: "Seat change requested — awaiting confirmation",
+                subtitle: "Seat change requested. Awaiting confirmation",
                 direction: "outbound",
                 sentiment: "neutral",
                 needsFollowUp: true

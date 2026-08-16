@@ -277,7 +277,7 @@ export const quotaTracker = new QuotaTracker({
       // Demoting to free-tier quotas is the safe direction for spend, but a
       // paying tenant silently hitting free limits mid-session is a real
       // incident — it must at least be visible in logs.
-      log.error("plan lookup failed — falling back to free-tier quotas", {
+      log.error("plan lookup failed, falling back to free-tier quotas", {
         userId,
         error: err instanceof Error ? err.message : String(err),
       });

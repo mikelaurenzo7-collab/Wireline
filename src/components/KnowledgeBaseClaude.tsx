@@ -394,7 +394,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <MetricTile
             key={stat.label}
             label={stat.label}
-            value={loading ? "—" : stat.value}
+            value={loading ? "N/A" : stat.value}
             reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
             className="wl-metric-tile--compact min-w-0 items-center px-2 text-center [&_.wl-metric-tile__label]:text-[9px] [&_.wl-metric-tile__label]:tracking-[0.08em]"
           />
@@ -515,7 +515,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
-            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF) — max {KNOWLEDGE_ASSET_MAX_LABEL} per file
+            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF), max {KNOWLEDGE_ASSET_MAX_LABEL} per file
           </div>
         </div>
         <div

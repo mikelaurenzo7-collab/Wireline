@@ -127,10 +127,7 @@ const dialSchema = z.object({
     .string()
     .min(1, "customerNumber is required")
     // Accept E.164 (+1XXXXXXXXXX) or common US formats (10-15 digits)
-    .regex(
-      /^\+?[1-9]\d{6,14}$/,
-      "Invalid phone number format — expected E.164 (e.g. +15551234567)",
-    ),
+    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format, expected E.164 (e.g. +15551234567)"),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),

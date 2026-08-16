@@ -34,7 +34,9 @@ export async function handleSquareToolCall(
             "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
         };
       }
-      const itemList = order.lineItems.map((lineItem) => `${lineItem.quantity}x ${lineItem.name}`).join(", ");
+      const itemList = order.lineItems
+        .map((lineItem) => `${lineItem.quantity}x ${lineItem.name}`)
+        .join(", ");
       return {
         toolCallId,
         result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
@@ -95,7 +97,7 @@ export async function handleSquareToolCall(
         .slice(0, 5)
         .map((item) => {
           const inStock = item.variations.some((variation) => (variation.stockCount ?? 0) > 0);
-          return `${item.name}: ${item.variations.map((variation) => `${variation.name} ${variation.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
+          return `${item.name}: ${item.variations.map((variation) => `${variation.name} ${variation.price}`).join(", ")}, ${inStock ? "in stock" : "out of stock"}`;
         })
         .join(" | ");
       return {
@@ -130,7 +132,7 @@ export async function handleSquareToolCall(
       }
       return {
         toolCallId,
-        result: `Payment link created: ${link.url} — $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
+        result: `Payment link created: ${link.url}, $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
       };
     } catch {
       return {

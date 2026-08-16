@@ -33,9 +33,9 @@ type PreferenceResponse = {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 function formatConnectedAt(value?: string): string {
-  if (!value) return "—";
+  if (!value) return "N/A";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "N/A";
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
@@ -189,7 +189,7 @@ export default function SalesforceIntegrationPage() {
   };
 
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
         {/* Title anchors the header row; without it the badge and Refresh
             floated alone at the far right with nothing naming the page. */}

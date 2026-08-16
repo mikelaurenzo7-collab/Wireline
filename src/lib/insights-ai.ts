@@ -98,7 +98,7 @@ export async function clusterFailureModes(input: {
   const payload = input.failedCalls
     .map((c, i) => {
       const excerpt = (c.transcript || c.summary || "").slice(0, 400);
-      return `${i + 1}. score=${c.lead_score ?? "—"} intent=${c.intent_label || "—"} ${excerpt}`;
+      return `${i + 1}. score=${c.lead_score ?? "N/A"} intent=${c.intent_label || "N/A"} ${excerpt}`;
     })
     .join("\n\n");
   return runStructured<{

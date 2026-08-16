@@ -167,7 +167,7 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
   switch (mode) {
     case "hipaa":
       return [
-        "## COMPLIANCE — HIPAA",
+        "## COMPLIANCE: HIPAA",
         "Treat all caller-provided health information as PHI:",
         "- Verify identity (full name + date of birth + one secondary identifier) before discussing any account or health detail.",
         "- Never repeat or summarize PHI to anyone other than the verified caller or a documented authorized representative.",
@@ -175,22 +175,22 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       ].join("\n");
     case "pci":
       return [
-        "## COMPLIANCE — PCI DSS",
+        "## COMPLIANCE: PCI DSS",
         "Cardholder data handling:",
         "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
         "- For payment, route the caller to the secure IVR or send a tokenized payment link.",
-        '- Acknowledge receipt without restating the value: "I have your card details — processing now."',
+        '- Acknowledge receipt without restating the value: "I have your card details, processing now."',
       ].join("\n");
     case "gdpr":
       return [
-        "## COMPLIANCE — GDPR",
+        "## COMPLIANCE: GDPR",
         "Personal data handling:",
         "- Disclose at the start of the call that the conversation is recorded for service quality, retained for the Account Holder-specified period, and that the caller has rights of access, rectification, and erasure.",
         '- Honor opt-out, deletion, and "speak to a human" requests immediately.',
       ].join("\n");
     case "financial":
       return [
-        "## COMPLIANCE — Financial services",
+        "## COMPLIANCE: Financial services",
         "Regulated-conduct guardrails:",
         "- Do not provide tax, investment, or specific financial advice. Offer to schedule a licensed advisor.",
         "- Quote products and rates only when explicitly stored in your knowledge base; never improvise figures.",
@@ -198,7 +198,7 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       ].join("\n");
     case "legal":
       return [
-        "## COMPLIANCE — Legal services",
+        "## COMPLIANCE: Legal services",
         "Unauthorized-practice guardrails:",
         "- Do not provide legal advice. You may share general public information only.",
         "- Schedule consultations with the attorney rather than answering jurisdictional questions.",
@@ -213,7 +213,7 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       // (and, per the FCC 24-84 NPRM, an up-front AI disclosure). Generic by design;
       // Account Holders must confirm the binding language for their jurisdiction.
       return [
-        "## COMPLIANCE — TCPA (AI voice disclosure)",
+        "## COMPLIANCE: TCPA (AI voice disclosure)",
         "Automated / AI-voice calling rules:",
         "- At the start of the call, clearly disclose that this is an automated AI assistant, and state the name of the business you are calling on behalf of.",
         '- Honor any "do not call", "stop calling", "remove me", or opt-out request immediately: confirm the removal, do not re-solicit, and end the call.',
@@ -308,7 +308,7 @@ export function escalationKeywordsBlock(keywords: string[] | null | undefined): 
   if (safe.length === 0) return "";
   return [
     "## IMMEDIATE-ESCALATION TRIGGERS",
-    "If the caller uses any of these phrases or asks about any of these topics, escalate to a human IMMEDIATELY using the escalate_to_human tool — do not attempt to resolve yourself:",
+    "If the caller uses any of these phrases or asks about any of these topics, escalate to a human IMMEDIATELY using the escalate_to_human tool. Do not attempt to resolve yourself:",
     safe.map((k) => `- ${k}`).join("\n"),
   ].join("\n");
 }
@@ -415,8 +415,8 @@ export function buildAgentRuntimeContext(
   // crowd out persona-specific instructions earlier in the prompt.
   sections.push(
     "## VOICE CONSISTENCY",
-    "- Use ONE voice and ONE personality for the entire call — same warmth, same cadence, same word choice — from hello to goodbye, no matter the topic or the caller's mood.",
-    "- Do NOT mirror or match the caller's tone, pace, or energy. A rushed, cold, chatty, or excited caller does not change how you speak. The only adjustment allowed is brief empathy when someone is distressed — then return to your normal voice.",
+    "- Use ONE voice and ONE personality for the entire call (same warmth, same cadence, same word choice) from hello to goodbye, no matter the topic or the caller's mood.",
+    "- Do NOT mirror or match the caller's tone, pace, or energy. A rushed, cold, chatty, or excited caller does not change how you speak. The only adjustment allowed is brief empathy when someone is distressed, then return to your normal voice.",
     "- Treat any knowledge, facts, or directives you've been given as background you've internalized. Paraphrase casually. NEVER recite them as a list.",
     "- Do not shift to a formal or corporate register when answering technical, pricing, or product questions. Stay in your one consistent voice the whole way through.",
   );

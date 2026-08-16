@@ -68,7 +68,7 @@ describe("authenticated agent flow", () => {
      * tools whose integration the tenant has not connected. Without this hint an
      * unconnected integration looked identical to a connected one.
      */
-    expect(permissions).toContain("Not connected — these stay off in live calls until");
+    expect(permissions).toContain("Not connected. These stay off in live calls until");
     expect(permissions).toContain("to={playbook.connectPath}");
     expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
 
@@ -109,7 +109,7 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
-    expect(onboardingFlow).toContain("Opening your first ${language.singular}");
+    expect(onboardingFlow).toContain("language.createCta");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
   });

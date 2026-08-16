@@ -207,7 +207,7 @@ export class CampaignDialerService {
   private async processCampaignLeads(campaign: any) {
     const federalGate = assertFederalDncForMarketing();
     if (!federalGate.allowed) {
-      log.warn("Campaign dialing paused — federal DNC vendor not configured", {
+      log.warn("Campaign dialing paused, federal DNC vendor not configured", {
         campaignId: campaign.id,
         code: federalGate.code,
       });
@@ -332,7 +332,7 @@ export class CampaignDialerService {
             .update(schema.outboundLeads)
             .set({ status: priorStatus })
             .where(eq(schema.outboundLeads.id, lead.id));
-          log.warn("Skipping dial — federal DNC vendor not configured", {
+          log.warn("Skipping dial, federal DNC vendor not configured", {
             leadId: leadIdStr,
             campaignId: campaign.id,
           });

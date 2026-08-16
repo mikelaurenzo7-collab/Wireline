@@ -2,10 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 
-import {
-  emitProductEvent,
-  emitProductEventOnce,
-} from "../../lib/product-event-client";
+import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";
 import { cn } from "../../lib/utils";
 
@@ -27,7 +24,6 @@ type MarketingHeroProps = {
   metrics?: readonly HeroMetric[];
   visual?: ReactNode;
   className?: string;
-  compact?: boolean;
 };
 
 function isExternalHref(href: string): boolean {
@@ -44,13 +40,9 @@ export default function MarketingHero({
   metrics = [],
   visual,
   className,
-  compact = false,
 }: MarketingHeroProps) {
-  const actions = [primaryAction, secondaryAction].filter(
-    Boolean,
-  ) as HeroAction[];
-  const isHomeHero =
-    typeof title === "string" && title === MARKETING_VOICE.headline;
+  const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
+  const isHomeHero = typeof title === "string" && title === MARKETING_VOICE.headline;
 
   useEffect(() => {
     if (!isHomeHero) return;
@@ -72,12 +64,12 @@ export default function MarketingHero({
   return (
     <section
       className={cn(
-        "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
-        compact
-          ? "py-10 sm:py-12 lg:py-16"
-          : isHomeHero
-            ? "py-14 sm:py-20 lg:py-24"
-            : "py-12 sm:py-16 lg:py-20",
+        // No bottom border and no vertical padding of its own: the hero is now
+        // composed inside a `.marketing-section`, which owns the section rhythm
+        // and draws the boundary. Carrying both drew a rule straight through
+        // the middle of the opening screen, cutting the headline away from the
+        // demo that proves it.
+        "marketing-hero px-5 sm:px-8 lg:px-10",
         isHomeHero && "wireline-home-hero",
         className,
       )}
@@ -90,14 +82,12 @@ export default function MarketingHero({
           )}
         >
           <h1
-            aria-label={
-              isHomeHero && typeof title === "string" ? title : undefined
-            }
+            aria-label={isHomeHero && typeof title === "string" ? title : undefined}
             className={cn(
               "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
               "mt-0",
               isHomeHero &&
-                "max-w-[19ch] text-[clamp(2.45rem,5vw,4.75rem)] leading-[0.99] tracking-[-.04em]",
+                "max-w-[19ch] text-[clamp(2.2rem,3.9vw,3.6rem)] leading-[1] tracking-[-.04em]",
             )}
           >
             {title}
@@ -114,9 +104,7 @@ export default function MarketingHero({
                 const children = (
                   <>
                     {action.label}
-                    {primary ? (
-                      <ArrowRight size={16} aria-hidden="true" />
-                    ) : null}
+                    {primary ? <ArrowRight size={16} aria-hidden="true" /> : null}
                   </>
                 );
 
@@ -125,11 +113,7 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     href={action.to}
                     className={actionClassName}
-                    onClick={
-                      primary
-                        ? () => trackPrimaryCta(action.label, action.to)
-                        : undefined
-                    }
+                    onClick={primary ? () => trackPrimaryCta(action.label, action.to) : undefined}
                   >
                     {children}
                   </a>
@@ -138,11 +122,7 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     to={action.to}
                     className={actionClassName}
-                    onClick={
-                      primary
-                        ? () => trackPrimaryCta(action.label, action.to)
-                        : undefined
-                    }
+                    onClick={primary ? () => trackPrimaryCta(action.label, action.to) : undefined}
                   >
                     {children}
                   </Link>

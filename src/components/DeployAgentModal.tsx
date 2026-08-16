@@ -233,7 +233,7 @@ export default function DeployAgentModal({
                         sublabel={
                           allVoices
                             .find((v) => v.id === MANAGED_VOICE_BY_GENDER.female)
-                            ?.name.split(" —")[0] || "Female default"
+                            ?.name.split(" · ")[0] || "Female default"
                         }
                         icon={User2}
                         onClick={() => handleGenderChange("female")}
@@ -244,7 +244,7 @@ export default function DeployAgentModal({
                         sublabel={
                           allVoices
                             .find((v) => v.id === MANAGED_VOICE_BY_GENDER.male)
-                            ?.name.split(" —")[0] || "Male default"
+                            ?.name.split(" · ")[0] || "Male default"
                         }
                         icon={Users2}
                         onClick={() => handleGenderChange("male")}

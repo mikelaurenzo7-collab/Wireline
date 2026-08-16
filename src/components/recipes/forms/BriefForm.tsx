@@ -51,7 +51,7 @@ export function BriefForm({
           value={agentId}
           onChange={setAgentId}
           options={[
-            { value: "", label: "(no agent — generic brief)" },
+            { value: "", label: "(no agent, generic brief)" },
             ...agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` })),
           ]}
         />
@@ -72,7 +72,7 @@ export function BriefForm({
           rows={3}
         />
       </Field>
-      <Field label="Past Interaction" hint="Optional — paste the last interaction or notes.">
+      <Field label="Past Interaction" hint="Optional. Paste the last interaction or notes.">
         <TextArea
           value={past}
           onChange={setPast}

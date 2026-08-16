@@ -57,7 +57,7 @@ const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] 
       {
         type: "sms",
         delayHours: 24,
-        template: "Hi {{name}}, following up on our call — got a minute later today?",
+        template: "Hi {{name}}, following up on our call. Got a minute later today?",
       },
       { type: "call", delayHours: 48 },
     ],
@@ -76,7 +76,7 @@ const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] 
       {
         type: "sms",
         delayHours: 48,
-        template: "Hey {{name}}, sent you a note — happy to jump on a call whenever's good.",
+        template: "Hey {{name}}, sent you a note. Happy to jump on a call whenever's good.",
       },
       { type: "call", delayHours: 96 },
     ],
@@ -539,7 +539,7 @@ export default function Cadences() {
                         placeholder={
                           s.type === "sms"
                             ? "Hi {{name}}, ..."
-                            : "Subject + body — vars: {{name}}, {{email}}"
+                            : "Subject + body, vars: {{name}}, {{email}}"
                         }
                         className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)]"
                       />

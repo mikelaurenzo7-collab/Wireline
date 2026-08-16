@@ -7,6 +7,7 @@ import {
   STRIPE_PUBLIC_BRAND,
   STRIPE_PUBLIC_SUPPORT_EMAIL,
   STRIPE_PUBLIC_SUPPORT_URL,
+  hasWirelineDescriptor,
 } from "./lib/stripe-account-identity.mjs";
 import {
   FOUNDER_CATALOG_VERSION,

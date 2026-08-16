@@ -42,7 +42,7 @@ export function estimateVoiceMinutesFromBalance(
 
 export function formatVoiceMinutesEstimate(balanceUsd: number): string {
   const minutes = estimateVoiceMinutesFromBalance(balanceUsd);
-  if (minutes <= 0) return "—";
+  if (minutes <= 0) return "N/A";
   return `≈ ${minutes.toLocaleString()} extra min`;
 }
 

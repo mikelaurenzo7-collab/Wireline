@@ -147,7 +147,7 @@ router.put(
         );
       }
       if (!Number.isInteger(warn) || warn < 1 || warn > 99) {
-        throw AppError.fromHttpStatus(400, "warn_threshold_pct must be 1–99");
+        throw AppError.fromHttpStatus(400, "warn_threshold_pct must be 1 to 99");
       }
       if (req.body.hard_cap === false || req.body.enabled === false) {
         throw AppError.fromHttpStatus(

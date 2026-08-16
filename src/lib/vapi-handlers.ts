@@ -768,7 +768,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         sentiment_delta: sentimentDelta,
         intent_delta: intentDelta,
         miss_delta: missDelta,
-        rationale: result.coaching_note || "Routine call — no specific coaching note.",
+        rationale: result.coaching_note || "Routine call, no specific coaching note.",
         scored_at: new Date().toISOString(),
       };
 

@@ -1,0 +1,176 @@
+/* Public pages use the document as the scroll owner. Workspace routes keep the
+ * fixed viewport contract defined by the authenticated shell. */
+
+:root {
+  /* The self-hosted files are static faces. Request only weights that exist so
+   * browsers do not synthesize intermediate strokes. */
+  --wireline-typography-display-weight: 700;
+  --wireline-typography-h2-weight: 700;
+  --wireline-typography-h3-weight: 600;
+  --wireline-typography-bodyStrong-weight: 600;
+  --wireline-typography-overline-size: 12px;
+  --wireline-typography-overline-letterSpacing: 0.075em;
+}
+
+html body {
+  font-synthesis: none;
+  text-rendering: auto;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+html[data-wireline-viewport="document"],
+body[data-wireline-viewport="document"] {
+  height: auto;
+  min-height: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
+}
+
+body[data-wireline-viewport="document"] #root,
+body[data-wireline-viewport="document"] .wl-ui-caps,
+.wl-ui-caps.wl-ui-caps--document {
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  overflow: visible;
+}
+
+.wl-ui-caps.wl-ui-caps--document > :not(.sr-only) {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+
+.wl-ui-caps.wl-ui-caps--document > .marketing-surface,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface {
+  display: block;
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  overflow: visible;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-flow {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+  overscroll-behavior: auto;
+  scroll-padding-top: 5rem;
+  scroll-snap-type: none;
+  padding-top: var(--wl-marketing-chrome-top, 4rem);
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .marketing-flow
+  > .marketing-frame-stack {
+  display: block;
+  min-height: 0;
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .marketing-flow
+  > .marketing-frame-stack
+  > * {
+  flex-shrink: 1;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--screen {
+  min-height: 0;
+  max-height: none;
+  align-content: start;
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section {
+  padding-block: clamp(3.5rem, 6vw, 6.5rem);
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--tight {
+  padding-block: clamp(2.25rem, 4vw, 4rem);
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--longform,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-longform {
+  align-content: start;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-features-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-showcase-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-about-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.landing-home .marketing-flow {
+  overflow: visible;
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .landing-stage.marketing-section--screen {
+  grid-template-rows: auto;
+  min-height: 0;
+  height: auto;
+  align-content: start;
+  overflow: visible;
+  padding-block: clamp(3.25rem, 6vw, 6.5rem);
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-chrome-bar {
+  position: relative;
+  inset: auto;
+  width: 100%;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-chrome-bar__panel {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Keep the fixed header clear when a document page owns its own sticky section
+ * navigation. */
+.wl-ui-caps.wl-ui-caps--document .marketing-flow > .sticky {
+  top: var(--wl-marketing-chrome-top, 4rem);
+}
+
+.marketing-surface :where(.wl-overline, .wl-eyebrow) {
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: var(--wireline-typography-overline-weight);
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
+}
+
+.marketing-surface :where(.landing-stage__title) {
+  font-weight: 700;
+}
+
+.marketing-surface :where(
+    .landing-stage__eyebrow,
+    .landing-stage__primary,
+    .landing-stage__secondary,
+    .landing-stage__spine li,
+    .landing-stage__lanes-label,
+    .landing-stage__lane strong,
+    .landing-stage__footer a
+  ) {
+  font-weight: 600;
+}
+
+.marketing-surface .landing-stage__economics {
+  font-weight: 500;
+}
+
+@media (max-width: 700px) {
+  .wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section {
+    padding-block: 3.25rem;
+  }
+
+  .wl-ui-caps.wl-ui-caps--document
+    .marketing-surface
+    .landing-stage.marketing-section--screen {
+    padding-block: 2.5rem 3.5rem;
+  }
+}

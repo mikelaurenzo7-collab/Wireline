@@ -39,7 +39,7 @@ export function KnowledgeFromDocumentForm({
       return;
     }
     if (f.size > 32 * 1024 * 1024) {
-      setErr(`PDF is ${(f.size / 1024 / 1024).toFixed(1)} MB — the per-file limit is 32 MB.`);
+      setErr(`PDF is ${(f.size / 1024 / 1024).toFixed(1)} MB. The per-file limit is 32 MB.`);
       return;
     }
     setErr(null);
@@ -124,7 +124,7 @@ export function KnowledgeFromDocumentForm({
         <>
           <Field
             label="Document"
-            hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets — anything customer-facing."
+            hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets, anything customer-facing."
           >
             <label
               onDragOver={(e) => e.preventDefault()}

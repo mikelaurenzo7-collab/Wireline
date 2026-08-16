@@ -69,6 +69,5 @@ for (const t of targets) {
   });
   const png = resvg.render().asPng();
   writeFileSync(resolve(root, t.out), png);
-  // eslint-disable-next-line no-console
   console.log(`✔ rendered ${t.out} (${png.length} bytes)`);
 }

@@ -45,10 +45,10 @@ interface WebhookRow {
 
 const EVENT_DESCRIPTIONS: Record<string, string> = {
   "call.completed":
-    "After each voice call — includes lead scores, extracted data, and CRM-ready payload",
+    "After each voice call. Includes lead scores, extracted data, and CRM-ready payload",
   "call.escalated": "Call flagged as angry or requiring human escalation",
   "lead.received": "New lead pushed via your inbound intake API key",
-  "lead.hot": "Lead score crossed 70 — high intent detected",
+  "lead.hot": "Lead score crossed 70. High intent detected",
   "email.received": "Inbound email synced from a connected Gmail or Outlook account",
   "appointment.booked": "New appointment booked by an agent or via API",
   "slack.message_sent":
@@ -263,7 +263,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         <label className="app-section-title">
           Signing Secret{" "}
           <span className="text-muted/70">
-            (optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
+            (optional, when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
           </span>
         </label>
         <Input

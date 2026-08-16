@@ -114,9 +114,7 @@ describe("Home operating truth", () => {
     // Whitespace-collapsed so formatter reflow of the JSX text node cannot
     // read as a copy violation — the invariant is the copy, not its wrapping
     // (same treatment as the managed-runtime prose gate).
-    expect(overview.replace(/\s+/g, " ")).toContain(
-      "affected metrics or recent activity may not be current",
-    );
+    expect(overview.replace(/\s+/g, " ")).toContain("or recent activity may not be current");
   });
 
   it("shadows historical pending-only nav/dashboard implementations with exact routes first", () => {

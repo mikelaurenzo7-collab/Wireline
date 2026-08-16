@@ -418,7 +418,7 @@ router.get(
         return res.json({
           topics: [],
           total_analyzed: rows?.length || 0,
-          message: "Not enough data yet — run more calls.",
+          message: "Not enough data yet, run more calls.",
         });
       }
       const result = await insightsAi.clusterTopics({
@@ -478,7 +478,7 @@ router.get(
       if (!rows || rows.length < 2) {
         return res.json({
           modes: [],
-          message: "Not enough failed calls yet — system is performing well.",
+          message: "Not enough failed calls yet, system is performing well.",
         });
       }
 

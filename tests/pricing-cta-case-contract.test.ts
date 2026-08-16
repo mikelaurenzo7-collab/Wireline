@@ -25,13 +25,15 @@ const pricing = readFileSync(resolve(root, "src/pages/Pricing.tsx"), "utf8");
 function planCtaLinks(): string[] {
   return [...pricing.matchAll(/<Link\b[\s\S]*?<\/Link>/g)]
     .map((m) => m[0])
-    .filter((block) => /min-h-11[^"]*w-full/.test(block));
+    .filter((block) => /min-h-11/.test(block) && /rounded-xl/.test(block));
 }
 
 describe("pricing plan CTA case contract", () => {
   it("finds the plan CTAs it is meant to guard", () => {
     // Three call sites render six buttons: the Free card, one template mapped
-    // over the paid tiers, and the Scale card. Asserting the count keeps a
+    // over the paid tiers, and the Scale strip. (Scale left the grid when five
+    // plans in one row squeezed the four comparable ones; it is a full-width
+    // strip now, so it is no longer `w-full`.) Asserting the count keeps a
     // markup refactor from silently reducing this file to an empty loop that
     // passes because it found nothing to check.
     expect(planCtaLinks().length, "plan CTA links not found -- the markup changed").toBe(3);

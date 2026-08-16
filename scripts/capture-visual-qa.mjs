@@ -159,14 +159,6 @@ function fileName(route) {
   );
 }
 
-function describeControl(element) {
-  return (
-    element.getAttribute("aria-label") ||
-    element.textContent?.replace(/\s+/g, " ").trim().slice(0, 80) ||
-    element.tagName.toLowerCase()
-  );
-}
-
 function isIgnoredRequestFailure(request) {
   try {
     return ignoredRequestHosts.has(new URL(request.url()).hostname);

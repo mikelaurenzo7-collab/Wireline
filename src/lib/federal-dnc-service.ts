@@ -121,7 +121,7 @@ async function lookupFederalDncGenericPost(
   // the dial proceed to a registered number. The DNCScrub path already fails
   // closed on unrecognized dispositions; this path must match.
   if (typeof data?.listed !== "boolean") {
-    log.warn("federal DNC vendor returned an unrecognized payload — failing closed");
+    log.warn("federal DNC vendor returned an unrecognized payload, failing closed");
     return { listed: true, source: "error", checked_at };
   }
   return { listed: data.listed, source: "vendor", checked_at };

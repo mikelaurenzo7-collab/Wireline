@@ -107,6 +107,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">Try the demo</p>
                 <p className="text-sm text-foreground font-medium truncate">{DEMO_LINE.display}</p>
               </div>
+              <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
             </a>
             <NotFoundCard
               to="/pricing"
@@ -155,7 +156,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="wl-label-muted !tracking-[0.38em] text-muted/80"
+          className="wl-label-muted text-muted/80"
         >
           Already have an account?{" "}
           <Link to="/signin" className="text-brand hover:opacity-80 transition-opacity">

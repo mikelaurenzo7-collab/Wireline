@@ -63,7 +63,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
-    headline: "Turn after hours calls into scheduled work.",
+    headline: "Turn after hours calls into scheduled work",
     pains: [
       {
         icon: "Clock",
@@ -97,7 +97,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
-        a: 'Wireline agents use the company identity, disclosure language, and jurisdiction rules you configure — for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: 'Wireline agents use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What happens if the agent doesn't know the answer?",
@@ -109,7 +109,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Wireline plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, and follow up—not only the per minute rate—against any answering service you use today.",
+        a: "Wireline plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, and follow up (not only the per minute rate) against any answering service you use today.",
       },
     ],
   },
@@ -120,7 +120,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
-    headline: "Patients on hold become patients on the schedule.",
+    headline: "Patients on hold become patients on the schedule",
     pains: [
       {
         icon: "Phone",
@@ -177,7 +177,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
-    headline: "Give every routed intake a clear next step.",
+    headline: "Give every routed intake a clear next step",
     pains: [
       {
         icon: "Phone",
@@ -207,11 +207,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Call legal demo", href: "tel:+15727269365" },
     secondaryCta: { label: "Create legal intake agent", href: signupHrefForWedge("legal") },
     trustLine:
-      "Audit log preserves every disclosure and opt out. Not a substitute for legal counsel — Wireline is the intake layer, your attorneys deliver the advice.",
+      "Audit log preserves every disclosure and opt out. Not a substitute for legal counsel. Wireline is the intake layer, your attorneys deliver the advice.",
     faqs: [
       {
         q: "Does the agent give legal advice?",
-        a: "No. The agent is an intake specialist — captures the matter, schedules the consult, hands off to an attorney. It explicitly tells callers it can't provide legal advice and that anything substantive needs the attorney. Refusal is hardcoded in the directive layer.",
+        a: "No. The agent is an intake specialist: captures the matter, schedules the consult, hands off to an attorney. It explicitly tells callers it can't provide legal advice and that anything substantive needs the attorney. Refusal is hardcoded in the directive layer.",
       },
       {
         q: "How does it handle conflict checks?",
@@ -234,7 +234,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
-    headline: "Work more listing calls without losing control.",
+    headline: "Work more listing calls without losing control",
     pains: [
       {
         icon: "Phone",
@@ -249,7 +249,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Sparkles",
         title: "Cold lead reactivation",
-        body: "That lead from 4 months ago who said 'maybe later'? Your agent calls them back at the right cadence — references their original search, asks if anything's changed.",
+        body: "That lead from 4 months ago who said 'maybe later'? Your agent calls them back at the right cadence, references their original search, asks if anything's changed.",
       },
       {
         icon: "DollarSign",
@@ -268,7 +268,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it know my listings?",
-        a: "Yes. Paste listing URLs or details into the agent's knowledge base and it answers price, beds/baths, square footage, and neighborhood basics from that source — then pivots to scheduling a showing when the caller shows real interest. Direct MLS feed sync is on the roadmap.",
+        a: "Yes. Paste listing URLs or details into the agent's knowledge base and it answers price, beds/baths, square footage, and neighborhood basics from that source, then pivots to scheduling a showing when the caller shows real interest. Direct MLS feed sync is on the roadmap.",
       },
       {
         q: "Does it work for a single agent or full brokerage?",
@@ -291,7 +291,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A personal voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
-    headline: "Hand off the calls you keep avoiding.",
+    headline: "Hand off the calls you keep avoiding",
     pains: [
       {
         icon: "Clock",
@@ -301,7 +301,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Appointment booking you keep putting off",
-        body: "Doctor's appointment three weeks overdue. Dentist cleaning. Salon. Auto shop. Veterinarian. Restaurant reservation for Saturday. Tell your agent the window that works and the office to call — it handles the back and forth and texts you the confirmation.",
+        body: "Doctor's appointment three weeks overdue. Dentist cleaning. Salon. Auto shop. Veterinarian. Restaurant reservation for Saturday. Tell your agent the window that works and the office to call. It handles the back and forth and texts you the confirmation.",
       },
       {
         icon: "DollarSign",
@@ -353,7 +353,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
-    headline: "Keep quote intake and renewal follow up moving.",
+    headline: "Keep quote intake and renewal follow up moving",
     pains: [
       {
         icon: "Phone",
@@ -363,7 +363,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Clock",
         title: "FNOL (first notice of loss) capture",
-        body: "After hours claim calls don't have to go to voicemail. Agent captures policy #, date/time/location of loss, parties involved, injuries — texts you immediately if it's serious, emails the desk for routine.",
+        body: "After hours claim calls don't have to go to voicemail. Agent captures policy #, date/time/location of loss, parties involved, injuries. Texts you immediately if it's serious, emails the desk for routine.",
       },
       {
         icon: "MailCheck",
@@ -376,7 +376,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Configured rules keep the agent from quoting binding coverage or making coverage promises. Outbound work still requires your approved consent basis, calling windows, DNC policy, and state specific script.",
       },
     ],
-    scriptPreview: `"Hi, this is Alex with [Your Agency] — I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
+    scriptPreview: `"Hi, this is Alex with [Your Agency]. I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
     statValue: "Configurable",
     statLabel:
       "Renewal timing, channels, retry limits, opt outs, and staff handoff stay under the agency's control.",
@@ -410,7 +410,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",
-    headline: "The phone rings during dinner rush. The agent picks up.",
+    headline: "The phone rings during dinner rush. The agent picks up",
     pains: [
       {
         icon: "Calendar",
@@ -444,7 +444,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it integrate with Resy / OpenTable / Tock?",
-        a: 'Today the agent books against your connected Google or Outlook calendar — caller hears "I have 7pm or 8:15pm, which works?" from real availability, and the reservation writes straight back. Direct Resy, OpenTable, and Tock sync is on the roadmap; tell us which one you use and we\'ll prioritize it.',
+        a: 'Today the agent books against your connected Google or Outlook calendar. Caller hears "I have 7pm or 8:15pm, which works?" from real availability, and the reservation writes straight back. Direct Resy, OpenTable, and Tock sync is on the roadmap; tell us which one you use and we\'ll prioritize it.',
       },
       {
         q: "Can it handle dietary restrictions + allergens correctly?",
@@ -467,7 +467,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Compliance first phone agents for sales teams. Speed to lead, quote follow up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",
-    headline: "Your sales voice agent works the queue while your team works the deals.",
+    headline: "Your sales voice agent works the queue while your team works the deals",
     pains: [
       {
         icon: "Phone",
@@ -490,7 +490,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "The ledger records configured disclosures, opt outs, and suppression decisions. Workspace calling windows and attempt caps are checked before dial; marketing outreach remains blocked if required platform DNC coverage is not ready.",
       },
     ],
-    scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
+    scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week. Got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
     statValue: "Fast follow up",
     statLabel:
       "Governed queues can respond quickly to inbound requests and approved warm leads while preserving consent, caps, and an audit trail.",

@@ -1,0 +1,598 @@
+/*
+ * Viewport-first marketing
+ *
+ * One rule governs every public page: the browser window is the frame, and the
+ * frame never scrolls. Chrome (header, footer bar) is pinned; the story scrolls
+ * inside a bounded region between them.
+ *
+ * The measurement that produced this file: at 1440x900 the public pages ran
+ * 2.4 to 5.8 viewports tall, and mobile ran 8.7 to 9.1. A visitor met the
+ * headline, then five screens of restatement. Three mechanisms fix it and they
+ * belong together, which is why they are one file rather than three more
+ * override layers:
+ *
+ *   1. The frame. `.marketing-surface` is exactly 100dvh with `overflow:hidden`;
+ *      `.marketing-flow` is the single scroller inside it. No public page has a
+ *      document scrollbar, on any route, at any width.
+ *   2. The panel. Content is composed in `.marketing-section` units, each one
+ *      sized to a screen and centred in it. This is an editorial rule, not a
+ *      CSS one — see the note on that selector for why a `max-height` here is
+ *      actively harmful — and it is held by measurement in
+ *      `scripts/check-marketing-viewport-fit.mjs`.
+ *   3. The snap. `proximity` (never `mandatory`): scrolling settles on a section
+ *      boundary when it lands near one, and is otherwise free. Mandatory snap
+ *      traps keyboard and screen-reader users mid-panel; proximity does not.
+ *
+ * The panel is the unit the copy is edited against: if a panel does not fit its
+ * screen, the panel has too much in it.
+ */
+
+.marketing-surface {
+  /* One beat, tightened twice. Section padding originally resolved to 52-76px
+     per edge, stacking to ~150px of empty canvas at every boundary — a sixth of
+     the viewport spent on nothing, four to seven times per page. The second
+     pass took it to 24-36px: at one panel per screen the boundary is carried by
+     the panel change itself, not by the gap. */
+  --wl-public-section-space: clamp(1.5rem, 2.2vw, 2.25rem);
+  --wl-public-section-space-tight: clamp(1rem, 1.6vw, 1.5rem);
+  --wl-marketing-chrome-top: 4rem;
+  /* The pinned chrome bar is one nowrap row. A full-screen panel has to subtract
+     it as well as the header, or `--screen` means "one viewport" while the
+     space a visitor can actually see is shorter. Home hides the bar. */
+  --wl-marketing-chrome-bottom: 2.1rem;
+
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+/* Home is the product, not a brochure. No pinned legal bar: those links live
+   in the header menu, a visually hidden legal nav, and every other public page. */
+.marketing-surface.landing-home {
+  --wl-marketing-chrome-top: 0px;
+  --wl-marketing-chrome-bottom: 0px;
+}
+
+/*
+ * The app shell (`.wl-ui-caps > :not(.wl-workspace-shell, .sr-only)`) turns
+ * every non-workspace route into a 100dvh scroller. That is correct for
+ * leftover pages. It is fatal for the marketing frame: it scrolls the header
+ * and chrome bar with the story, which is the document scrollbar this file
+ * exists to prevent. The surface is the frame. Only `.marketing-flow` scrolls.
+ */
+.wl-ui-caps > .marketing-surface,
+.wl-ui-caps > .wl-stitch-auth-shell {
+  overflow: hidden;
+}
+
+/* The one scroller. `overscroll-behavior` keeps a section's inner scroll from
+   chaining into the page behind it, and `scroll-padding-top` keeps an anchored
+   `#section` clear of the fixed header instead of landing under it. */
+.marketing-surface .marketing-flow {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-top: var(--wl-marketing-chrome-top);
+  scroll-snap-type: y proximity;
+  padding-top: var(--wl-marketing-chrome-top);
+}
+
+/*
+ * MarketingPageFrame wraps panels in a stack. That stack has to be a flex
+ * child of the flow, or a one-screen panel never grows: `align-content: center`
+ * is a no-op on a content-sized box, and the headline sits on the header.
+ * Measured at 1440x900, /solutions and /showcase had 6px from header to H1
+ * and a void under the evidence. The stack fills; the panel centres inside it.
+ */
+.marketing-surface .marketing-flow > .marketing-frame-stack {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.marketing-surface .marketing-flow > .marketing-frame-stack > * {
+  flex-shrink: 0;
+}
+
+/* The section is the screen.
+ *
+ * There is deliberately no `max-height` here. The first draft of this file
+ * capped every section at the viewport, and CSS has no way to honour that
+ * except by clipping: the five-column plan grid on /pricing simply lost its
+ * bottom two rows of features off the edge of the panel. A stylesheet cannot
+ * make content fit — only editing can. So the ceiling is an editorial rule
+ * enforced by measurement (`scripts/check-marketing-viewport-fit.mjs`), and
+ * what this rule owns is the *alignment*: a section that does fit is centred in
+ * its screen, and every section starts flush with the top of the viewport when
+ * scrolling settles, so a panel is never half-shown by accident.
+ */
+.marketing-surface .marketing-section {
+  display: grid;
+  align-content: safe center;
+  padding-block: var(--wl-public-section-space);
+  padding-inline: var(--wl-public-gutter-inline);
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+/* A first panel is the only one that may claim the whole screen. Everything
+   below earns its height from content.
+
+   The extra bottom padding is optical centring, not a gap: a headline placed at
+   the exact mathematical centre of a field reads as sitting low, and the pinned
+   chrome bar takes ~45px off the bottom of the visible field on top of that.
+   Measured, the hero block sat 22px below the optical centre of the space a
+   visitor actually sees; this lifts it. Half a rem, not the 3.5rem it started
+   at: the lift is only doing work on a panel with room to spare, and on a full
+   one it is 56px charged against the panel that can least afford it. */
+.marketing-surface .marketing-section--screen {
+  min-height: calc(
+    100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
+  );
+  padding-bottom: calc(var(--wl-public-section-space) + 0.5rem);
+}
+
+.marketing-surface.wl-features-page .marketing-flow,
+.marketing-surface.wl-showcase-page .marketing-flow,
+.marketing-surface.wl-about-page .marketing-flow {
+  overflow: hidden;
+}
+
+.marketing-surface.wl-features-page .marketing-section--screen,
+.marketing-surface.wl-pricing-page .marketing-section--screen,
+.marketing-surface.wl-showcase-page .marketing-section--screen,
+.marketing-surface.wl-about-page .marketing-section--screen {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.marketing-surface .marketing-section--tight {
+  padding-block: var(--wl-public-section-space-tight);
+}
+
+.marketing-surface .marketing-section--longform {
+  align-content: start;
+  scroll-snap-align: none;
+}
+
+/* Legacy section class kept in step with the new one so pages that have not
+   been recomposed still lose the old 150px boundaries. */
+.marketing-surface .wl-public-section {
+  padding-block: var(--wl-public-section-space);
+}
+
+.marketing-surface .wl-public-section--tight {
+  padding-block: var(--wl-public-section-space-tight);
+}
+
+/*
+ * A hero claims no more room than its content needs.
+ *
+ * It used to take a full screen wherever a page rendered it straight into the
+ * flow. That is right for a landing page and wrong everywhere else: on
+ * /showcase, /solutions/*, /blog and /contact the hero is a headline, two
+ * buttons and a demo widget — roughly 400px — and reserving 733px for it was
+ * single-handedly what pushed each of those pages from one screen to two. The
+ * page decides what deserves a whole screen, by marking a panel `--screen`; the
+ * hero just sizes to itself.
+ */
+.marketing-surface .marketing-hero {
+  display: grid;
+  align-content: safe center;
+  min-height: 0;
+  padding-block: var(--wl-public-section-space);
+  scroll-snap-align: start;
+}
+
+/* Composed inside a panel, the panel owns all of that. */
+.marketing-surface .marketing-section .marketing-hero {
+  display: block;
+  min-height: 0;
+  padding-block: 0;
+  scroll-snap-align: none;
+}
+
+/* The gap between a headline and its actions was authored when the hero owned a
+   whole screen. Composed into a panel with the page's evidence beneath it, 36px
+   is the beat. */
+.marketing-surface .marketing-section .marketing-hero__actions {
+  margin-top: 1.25rem;
+}
+
+.marketing-surface.wl-features-page .marketing-section .marketing-hero__actions,
+.marketing-surface.wl-features-page .marketing-hero__actions {
+  margin-top: 0.7rem;
+}
+
+.marketing-surface.wl-features-page .marketing-hero__title {
+  max-width: 22ch;
+  font-size: clamp(1.15rem, 1rem + 1.15vw, 1.85rem);
+}
+
+/* Same story for the hero's visual slot: 48px of margin and 36px of padding on
+   a bordered card, sized for a hero that owned a screen.
+
+   It also sizes to its content now. At `max-w-4xl` the slot drew an 896px band
+   around a single 240px button and a phone number, so the demo read as a wide
+   empty panel with something small adrift in the middle of it. `fit-content`
+   with a cap keeps the frame around the widget rather than around the column. */
+.marketing-surface .marketing-hero__experience {
+  width: fit-content;
+  max-width: min(100%, 34rem);
+  margin-top: 1.75rem;
+  margin-inline: auto;
+  padding: 1.25rem 2rem;
+}
+
+.marketing-surface .marketing-section--screen .marketing-hero__experience {
+  margin-top: 1.5rem;
+}
+
+/*
+ * Ambience belongs to the screen, not to the headline box.
+ *
+ * The hero carried its own radial wash, a canvas gradient, and a decorative
+ * centre line on `::before`. That was correct while the hero *was* the full
+ * top of the page. Composed inside a centred panel it is a ~450px box in an
+ * 836px screen, so all three effects drew to the box's edges and stopped —
+ * rendering as a lit horizontal band with two visible seams straight across
+ * the opening screen. (Reported as "a glare middle behind main hero", which is
+ * exactly what a gradient clipped to the wrong element looks like.)
+ *
+ * The hero goes flat and the panel takes over the wash, so the light falls
+ * across the whole screen and has no edge to end on.
+ */
+.marketing-surface .marketing-section .marketing-hero {
+  background: none;
+  overflow: visible;
+}
+
+.marketing-surface .marketing-section .marketing-hero::before {
+  content: none;
+}
+
+.marketing-surface .marketing-section--screen:first-child {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(
+      ellipse 60% 42% at 50% 8%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-canvas-warmer) 22%, transparent),
+      transparent 72%
+    );
+}
+
+/*
+ * A max-width with no auto margins is a left-aligned block pretending to be
+ * centred.
+ *
+ * The typography layer gives every `p, li, dd, dt, summary` inside
+ * `.marketing-surface` a 72ch measure, which is right — it keeps line length in
+ * the readable band on wide screens. What it does not do is centre the resulting
+ * box. Inside a container narrower than 72ch that is invisible. Inside a wider
+ * one the paragraph is a narrow block sitting hard against the left edge with
+ * its text centred *within itself*, which reads as one element mysteriously out
+ * of alignment with everything above it.
+ *
+ * Measured on /solutions/support: the demo line's phone number was a 545px box
+ * in an 854px panel, 154px left of the centre every other element shared.
+ *
+ * Only containers that actually centre get this. `.wl-public-rail` is centred by
+ * clarity-system.css on the marketing surface, but /about opts out with
+ * `!text-left`, and a left-aligned column must not have its paragraphs pushed to
+ * the middle — hence the `:not([class*="text-left"])`.
+ *
+ * Paragraphs only, deliberately. `margin-inline: auto` on a flex item does not
+ * centre it, it distributes the row's free space into the gaps: applied to `li`
+ * as well, it blew the landing page's three lane chips apart across a
+ * thousand pixels. The measure that creates the bug is a block-level one.
+ */
+.marketing-surface
+  :is(.wl-public-rail, .wl-marketing-center, .marketing-hero__experience, [class*="text-center"]):not(
+    [class*="text-left"]
+  )
+  :where(p) {
+  margin-inline: auto;
+}
+
+/*
+ * A row of cards reserves one title height for all of them.
+ *
+ * Card titles are one or two lines depending on how long the words happen to
+ * be, so a three-up row rendered "Your Voice And Playbook" on one line next to
+ * "Booking That Closes The Loop" on two, and every body paragraph in the row
+ * started on a different baseline. Measured across the public surface: four
+ * rows on three routes, titles at 24px beside titles at 48px.
+ *
+ * Two lines are reserved rather than clamping to one, because the second line
+ * is real content on the longer titles. Only above the breakpoint where the
+ * grid actually has columns — stacked on a phone, a row is one card wide and
+ * reserving a second line would just add dead space to every one of them.
+ */
+@media (min-width: 640px) {
+  .marketing-surface :where(.grid) :where(.wl-card-title, .wl-display-4) {
+    display: flex;
+    min-height: 2.24em;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marketing-surface :where(.grid) :where([class*="text-left"]) :where(.wl-card-title) {
+    justify-content: flex-start;
+  }
+}
+
+/*
+ * The signature graphic (src/components/marketing/WireSignalArt.tsx).
+ *
+ * Pages with thin content used to pad it with another paragraph. This is the
+ * alternative — a voice, on a line — and it costs no words.
+ *
+ * Everything animated here is a `transform` or an `opacity` on an SVG child, so
+ * it composites on the GPU: no layout, no paint of the surrounding text, no
+ * animation frame, no JS. The per-element delay comes from a custom property
+ * the component sets inline, which is what makes thirty bars read as one
+ * travelling utterance instead of thirty synchronised blinks.
+ */
+.wire-signal-art {
+  color: var(--wireline-color-action-primary-default);
+  width: 100%;
+}
+
+.wire-signal-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wire-signal-art__bar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wire-signal-bar 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--wire-bar-index) * -0.09s);
+  opacity: 0.55;
+}
+
+.wire-signal-art__node {
+  animation: wire-signal-node 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--wire-bar-index) * 0.18s);
+  opacity: 0.5;
+}
+
+.wire-signal-art__packet {
+  animation: wire-signal-packet 4.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  opacity: 0;
+}
+
+@keyframes wire-signal-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes wire-signal-node {
+  0%,
+  100% {
+    r: 3;
+    opacity: 0.35;
+  }
+  50% {
+    r: 5;
+    opacity: 0.9;
+  }
+}
+
+@keyframes wire-signal-packet {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(600px);
+    opacity: 0;
+  }
+}
+
+/* Still, but not blank: the waveform silhouette is the image, and it reads
+   perfectly well without moving. */
+@media (prefers-reduced-motion: reduce) {
+  .wire-signal-art__bar,
+  .wire-signal-art__node,
+  .wire-signal-art__packet {
+    animation: none;
+  }
+
+  .wire-signal-art__bar {
+    opacity: 0.7;
+  }
+
+  .wire-signal-art__packet {
+    opacity: 0;
+  }
+}
+
+/*
+ * Case doctrine — optical corrections for the uppercase tiers.
+ *
+ * Wireline ranks by case: short things shout, sentences do not. The rule the
+ * product now follows is three lines long:
+ *
+ *   - Three words or fewer, in a title/label/tab/button slot: UPPERCASE.
+ *     Source copy is written in Title Case so it reads correctly in the places
+ *     that do not uppercase it (document titles, meta descriptions, aria
+ *     labels, native clients) and shouts where the tier applies.
+ *   - Longer titles and heroes: still uppercase — that is the Wireline voice —
+ *     but never with terminal punctuation. A period ends a sentence; a cased
+ *     title is a label, and "CONNECTIONS." reads as a typo at 56px.
+ *   - Anything that is genuinely a sentence — subheads, body, empty-state
+ *     explanations, prose — stays sentence case.
+ *
+ * Punctuation is removed from the copy strings themselves, not faked here:
+ * `content` tricks would strip the period from the accessible name too. What
+ * this block owns is the optics — caps need looser tracking than the tight
+ * lowercase display they inherited from, and a hair of extra word-spacing so
+ * multi-word caps titles do not read as one long word.
+ */
+.marketing-surface :is(.marketing-hero__title, .wl-public-section-heading, .wl-stitch-display) {
+  word-spacing: 0.02em;
+}
+
+/* Caps have no descenders and no lowercase x-height to separate the lines, so
+   the leading that suited sentence case closes up. */
+.marketing-surface :is(.wl-public-section-heading, .wl-stitch-display) {
+  line-height: 1.04;
+}
+
+/*
+ * Rank by size as well as by case.
+ *
+ * The section tier clamped to 57px and the hero to 56px, so a panel heading and
+ * the page's own headline arrived at the same weight one screen apart and
+ * neither read as subordinate. At one panel per screen that is also unaffordable
+ * in pure height: /features spent 360px — 43% of its screen — on two headlines
+ * that between them carried nine words.
+ *
+ * The hero keeps the display size. Section headings drop a full step, which is
+ * what a supporting heading was always meant to be, and stops most of them
+ * wrapping to a second line at all.
+ */
+.marketing-surface :is(.wl-public-section-heading, .wl-stitch-display) {
+  font-size: clamp(1.5rem, 1.15rem + 1.1vw, 2.25rem);
+  max-width: 26ch;
+}
+
+/* Heroes on the pages that are not the landing page: the same step down. The
+   landing keeps its full display scale — it is the one page whose headline is
+   the entire argument. */
+.marketing-surface .marketing-hero__title:not(.wireline-home-hero__content .marketing-hero__title) {
+  font-size: clamp(1.85rem, 1.35rem + 1.9vw, 3rem);
+  max-width: 24ch;
+}
+
+/*
+ * Compact chrome bar. The full four-column sitemap footer ran 300px on desktop
+ * and 700px on mobile — on the landing page it was the single tallest block on
+ * the page, below a trust section that already repeated three of its links.
+ * Pinned to the frame, it costs 52px and stays reachable from every panel.
+ */
+.marketing-chrome-bar {
+  position: relative;
+  z-index: 10;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-canvas-default);
+}
+
+/* The sitemap panel is painted above the bar row (source order), so opening it
+   grows the bar into the page rather than past the bottom edge of a frame that
+   cannot scroll. */
+.marketing-chrome-bar__panel {
+  border-bottom: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  max-height: min(60dvh, 26rem);
+  overflow-y: auto;
+}
+
+.marketing-chrome-bar__row {
+  display: flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .marketing-chrome-bar__row {
+    padding-inline: 2rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .marketing-chrome-bar__copy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* The bar's links stay in the caps control tier: each is one or two words, and
+   the doctrine puts anything three words or fewer in a control slot in caps.
+   The copyright beside them is not a label and stays sentence case. */
+
+@media (max-width: 1023px) {
+  .marketing-surface {
+    --wl-marketing-chrome-top: 4rem;
+  }
+
+  /* A phone viewport cannot hold a desktop panel, and squeezing one produces
+     8px type. Below the lg breakpoint the ceiling lifts and sections stack
+     normally — the frame still does not scroll, the flow inside it does.
+     Home is the exception: the phone stage is composed to the frame, so the
+     flow itself does not scroll. */
+  .marketing-surface .marketing-section {
+    align-content: start;
+    scroll-snap-align: none;
+  }
+
+  .marketing-surface .marketing-section--screen {
+    min-height: 0;
+  }
+
+  .marketing-surface .marketing-flow {
+    scroll-snap-type: none;
+  }
+
+  .marketing-surface.landing-home .marketing-flow {
+    overflow: hidden;
+  }
+
+  .marketing-surface.landing-home .marketing-section--screen {
+    height: 100%;
+    flex: 1 1 auto;
+  }
+}
+
+/* Snap fights assistive scrolling and any user who has asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .marketing-surface .marketing-flow {
+    scroll-snap-type: none;
+  }
+}
+
+/* Short desktop windows (a 1280x720 laptop, a browser with three toolbars) hit
+   the ceiling first. Release it rather than clip the panel. */
+@media (min-width: 1024px) and (max-height: 700px) {
+  .marketing-surface .marketing-section {
+    align-content: start;
+    scroll-snap-align: none;
+  }
+
+  .marketing-surface .marketing-section--screen {
+    min-height: 0;
+  }
+}

@@ -61,6 +61,8 @@ describe("current-state UI contract", () => {
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
     expect(commandBar).toContain('label: "Companion surfaces"');
+    expect(commandBar).toContain("language.navLabel");
+    expect(commandBar).toContain('command.id === "agents"');
     expect(commandBar).not.toContain("Wireline everywhere");
     expect(security).toContain("The web app is the GA product");
     expect(security).toContain("Marketing and campaign outbound fail closed");
@@ -70,11 +72,14 @@ describe("current-state UI contract", () => {
   it("makes the account-bound MCP apps public without overstating their authority", () => {
     const developers = read("src/pages/Developers.tsx");
 
-    expect(developers).toContain("Connect once.");
+    // The heading dropped its terminal period with the rest of the cased title
+    // tier; the ban on the longer restatement stands.
+    expect(developers).toContain("Connect once");
     expect(developers).not.toContain(
       "Connect once. Draft and simulate in the client you already open.",
     );
-    expect(developers).toContain("View MCP endpoint");
+    // Title Case at the source: a three-word button label.
+    expect(developers).toContain("View MCP Endpoint");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");
@@ -105,8 +110,8 @@ describe("current-state UI contract", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const auth = read("src/components/AuthPortal.tsx");
 
-    expect(landing).toContain('name: "Starter"');
-    expect(landing).toContain("planCatalog.starter.price_usd_monthly");
+    expect(landing).toContain("STRIPE_PLANS");
+    expect(landing).toContain("price_usd_monthly");
     expect(landing).toContain("/signup?plan=starter&mode=outbound");
     expect(landing).toContain("/signup?plan=starter&mode=inbound");
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
@@ -151,9 +156,11 @@ describe("current-state UI contract", () => {
     expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
     expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
-    for (const step of ["Build", "Train", "Launch", "Improve"]) {
-      expect(features).toContain(`step: "${step}"`);
-    }
+    // The loop is still on /features, but as the four words in sequence rather
+    // than four cards with a paragraph each: the landing page carries the
+    // explanation, and this page now fits one screen. It reads them from the
+    // shared voice constant, so the canonical order cannot drift.
+    expect(features).toContain("MARKETING_VOICE.proof.map");
   });
 
   it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {
@@ -172,7 +179,11 @@ describe("current-state UI contract", () => {
       /system-hardening\.css";[\s\S]*responsive\.css";[\s\S]*ruthless-mobile-cleanup\.css";[\s\S]*agent-tabs-compact\.css";/,
     );
     expect(index).toContain("font-size: 16px");
-    expect(responsive).toContain("padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));");
+    expect(responsive).toContain(".wl-workspace-main");
+    expect(responsive).toContain("padding-inline: 1rem");
+    expect(responsive).not.toContain(
+      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
+    );
     for (const source of [input, select]) {
       expect(source).toContain("h-11");
       expect(source).toContain("text-base");

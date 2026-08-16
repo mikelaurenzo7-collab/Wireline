@@ -7,20 +7,30 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
-  it("keeps the landing concise", () => {
+  it("keeps one concise product theater instead of a brochure stack", () => {
     expect(landing).not.toContain("REASSURANCES");
-    expect(landing).toContain("Live Video");
-    expect(landing).toContain("Start free.");
+    expect(landing).not.toContain("Live Video");
+    expect(landing).toContain('variant="stage"');
+    expect(landing).toContain("Illustrative Workflow");
+    expect(landing).toContain("From first answer to confirmed next step");
+    expect(landing).not.toContain("From first answer to confirmed next step.");
+    expect(landing).toContain("Booked and logged");
+    expect(landing).not.toContain("00:42");
   });
 
-  it("keeps free and paid capacity distinct", () => {
-    expect(landing).toContain("Live channels unlock after activation");
-    expect(landing).toContain("Wireline number");
+  it("keeps free and paid capacity distinct without crowding the hero", () => {
+    expect(landing).toContain("Build free");
+    expect(landing).toContain("Launch from $");
+    expect(landing).toContain("Number included");
+    expect(landing).toContain("Channels unlock at activation");
     expect(landing).toContain("Runtime Balance");
   });
 
-  it("closes with one action", () => {
-    expect(landing).toContain("Put your first voice agent to work.");
+  it("keeps conversion explicit and owner control visible", () => {
+    expect(landing).toContain("View Pricing");
+    expect(landing).toContain("MARKETING_VOICE.primaryCta");
+    expect(landing).toContain("rules, approvals, spend, and handoffs");
+    expect(landing).not.toContain("Put your first voice agent to work");
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");
   });

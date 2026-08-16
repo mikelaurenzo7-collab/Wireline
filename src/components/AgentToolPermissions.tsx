@@ -289,7 +289,7 @@ export default function AgentToolPermissions({
                        */}
                       {!configured ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                          Not connected — these stay off in live calls until {playbook.label} is
+                          Not connected. These stay off in live calls until {playbook.label} is
                           connected.{" "}
                           <Link
                             to={playbook.connectPath}

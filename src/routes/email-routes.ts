@@ -58,7 +58,7 @@ router.patch(
       // `.set()` left drizzle with no columns and it threw "No values to set",
       // which surfaced as a 500 for what is really a malformed request.
       if (agent_id === undefined) {
-        throw AppError.fromHttpStatus(400, "agent_id is required — pass null to unassign.");
+        throw AppError.fromHttpStatus(400, "agent_id is required, pass null to unassign.");
       }
 
       if (agent_id) {

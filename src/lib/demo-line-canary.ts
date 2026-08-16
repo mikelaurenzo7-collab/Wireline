@@ -242,7 +242,7 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
   }
 
   const unhealthy = run.lines.filter((l) => !l.numberOk || !l.assistantOk);
-  const subject = `🚨 Wireline Demo Line Alert — ${unhealthy.length} line${unhealthy.length !== 1 ? "s" : ""} degraded`;
+  const subject = `🚨 Wireline Demo Line Alert, ${unhealthy.length} line${unhealthy.length !== 1 ? "s" : ""} degraded`;
 
   const textLines = [
     "Demo-Line Canary detected issues:",
@@ -252,7 +252,7 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
     "",
     `Healthy lines: ${run.lines.filter((l) => l.numberOk && l.assistantOk).length}/${run.lines.length}`,
     run.voiceWindow
-      ? `Voice window (${run.voiceWindow.windowMinutes}m): ${run.voiceWindowHealthy ? "healthy" : "degraded"} · calls=${run.voiceWindow.totalCalls} · ttft_p95=${run.voiceWindow.ttftP95Ms ?? "—"}ms`
+      ? `Voice window (${run.voiceWindow.windowMinutes}m): ${run.voiceWindowHealthy ? "healthy" : "degraded"} · calls=${run.voiceWindow.totalCalls} · ttft_p95=${run.voiceWindow.ttftP95Ms != null ? `${run.voiceWindow.ttftP95Ms}ms` : "n/a"}`
       : "",
     "",
     "Check: GET /api/health/voice-status for full details.",

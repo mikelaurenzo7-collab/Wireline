@@ -51,13 +51,13 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Aug 11, 2026",
     tag: "launch",
     title: "Deeper release checks before anything ships",
-    body: "Every release now clears a wider battery of automated checks — code quality, dependency advisories, the non-E2E test suite, and database safety. Post-promotion health checks verify the live service, and demo or test activity stays strictly separate from real customer evidence.",
+    body: "Every release now clears a wider battery of automated checks: code quality, dependency advisories, the non-E2E test suite, and database safety. Post-promotion health checks verify the live service, and demo or test activity stays strictly separate from real customer evidence.",
   },
   {
     date: "Jul 25, 2026",
     tag: "infra",
     title: "One managed reasoning policy across demos and Studio",
-    body: "Structured reasoning and every live-voice demo surface (Studio, private simulation, guest previews) now run on a single managed model policy with governed continuity layers behind it, so behavior is consistent everywhere you try an agent. Production phone calling keeps its own dedicated, carrier-grade runtime — demo surfaces never take over customer calls.",
+    body: "Structured reasoning and every live-voice demo surface (Studio, private simulation, guest previews) now run on a single managed model policy with governed continuity layers behind it, so behavior is consistent everywhere you try an agent. Production phone calling keeps its own dedicated, carrier-grade runtime. Demo surfaces never take over customer calls.",
   },
   {
     date: "Jul 13, 2026",
@@ -81,7 +81,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jun 4, 2026",
     tag: "polish",
     title: "Every console page fills the screen, top to bottom",
-    body: "On larger monitors several authenticated pages — Insights, Recaps and others — left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
+    body: "On larger monitors several authenticated pages (Insights, Recaps and others) left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
   },
   {
     date: "Jun 4, 2026",
@@ -99,13 +99,13 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Warm-transfer escalation",
-    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default - explicit opt-in.",
+    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Per-agent escalation routing",
-    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent - escalation phone (SMS) and escalation email - override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
+    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent, escalation phone (SMS) and escalation email, override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
   },
   {
     date: "Jan 27, 2026",
@@ -128,7 +128,7 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "polish",
-    title: "Sidebar rail — desktop chrome rebuild",
+    title: "Sidebar rail: desktop chrome rebuild",
     body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs for Overview, Phone, Insights, Studio, and More.",
   },
   {
@@ -140,13 +140,13 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "/api/health/models — live LLM canary",
+    title: "/api/health/models: live LLM canary",
     body: "Auth-gated endpoint probes every configured structured-reasoning provider with a tiny completion and reports {ok, latency_ms} per layer. Catches silent model-id drift before callers feel it.",
   },
   {
     date: "May 19, 2026",
     tag: "feature",
-    title: "Per-agent Workspace — private DM with each voice agent",
+    title: "Per-agent Workspace: private DM with each voice agent",
     body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply.',
   },
 ];
@@ -172,7 +172,7 @@ export default function PublicChangelog() {
             className="mb-10"
           >
             <h1 className="marketing-hero-title text-3xl sm:text-4xl">
-              Every change we've shipped.
+              Every change we've shipped
             </h1>
           </motion.div>
 

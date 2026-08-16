@@ -178,36 +178,36 @@ export default function PrivacyPolicyPage() {
 
           <Section title="2. Data We Collect">
             <p>
-              <strong>Account data</strong> — Email address, password hashes, authentication tokens,
+              <strong>Account data</strong>: Email address, password hashes, authentication tokens,
               and account preferences provided during sign-up and use of the platform.
             </p>
             <p>
-              <strong>Agent configuration</strong> — Names, personas, directives, knowledge entries,
+              <strong>Agent configuration</strong>: Names, personas, directives, knowledge entries,
               connected tools, and voice settings you create for your voice agents.
             </p>
             <p>
-              <strong>Conversation data</strong> — Phone numbers, message addresses, recordings,
+              <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
               transcripts, summaries, message content, and operational metadata needed to provide
               the calling, texting, and email service you configure.
             </p>
             <p>
-              <strong>Authorized voice data</strong> — When the account owner creates a custom
-              voice, we process the submitted recording, voice characteristics, a one-way sample
+              <strong>Authorized voice data</strong>: When the account owner creates a custom voice,
+              we process the submitted recording, voice characteristics, a one-way sample
               fingerprint, voice-model identifier, consent record, review audio, approval status,
               and lifecycle audit events. Voice characteristics may be biometric or sensitive data
               under applicable law.
             </p>
             <p>
-              <strong>Usage and billing data</strong> — Feature usage, AI-model consumption, plan
-              and balance records, and Stripe billing information. We do not store full payment-card
+              <strong>Usage and billing data</strong>: Feature usage, AI-model consumption, plan and
+              balance records, and Stripe billing information. We do not store full payment-card
               numbers.
             </p>
             <p>
-              <strong>Log and diagnostic data</strong> — Server logs, security events, error
-              reports, and performance metrics used to secure, operate, and improve the service.
+              <strong>Log and diagnostic data</strong>: Server logs, security events, error reports,
+              and performance metrics used to secure, operate, and improve the service.
             </p>
             <p>
-              <strong>Website measurement data</strong> — Plausible provides aggregate product
+              <strong>Website measurement data</strong>: Plausible provides aggregate product
               analytics such as page, referrer, browser, device, and approximate country information
               without advertising cookies. If you explicitly allow advertising measurement, Meta may
               also receive limited browser/device identifiers, IP address, page and referrer URLs,
@@ -243,61 +243,61 @@ export default function PrivacyPolicyPage() {
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
               <li>
-                <strong>Supabase</strong> — Managed Postgres storage and backup
+                <strong>Supabase</strong>: Managed Postgres storage and backup
               </li>
               <li>
-                <strong>Vapi, Twilio, and Deepgram</strong> — Calls, phone numbers, SMS, and
+                <strong>Vapi, Twilio, and Deepgram</strong>: Calls, phone numbers, SMS, and
                 transcription
               </li>
               <li>
-                <strong>ElevenLabs</strong> — Managed text-to-speech, authorized private voice-model
+                <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model
                 creation, quality proofs, and voice-model deletion
               </li>
               <li>
-                <strong>OpenAI</strong> — Primary managed AI inference, call models, and realtime
+                <strong>OpenAI</strong>: Primary managed AI inference, call models, and realtime
                 voice sessions
               </li>
               <li>
-                <strong>Google Gemini</strong> — Managed continuity inference and grounded search
+                <strong>Google Gemini</strong>: Managed continuity inference and grounded search
               </li>
               <li>
-                <strong>Perplexity</strong> — Optional live public research
+                <strong>Perplexity</strong>: Optional live public research
               </li>
               <li>
-                <strong>Vercel AI Gateway</strong> — Governed multi-model continuity, budgets, and
+                <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
                 inference observability
               </li>
               <li>
-                <strong>xAI</strong> — Optional experiment infrastructure when explicitly enabled
+                <strong>xAI</strong>: Optional experiment infrastructure when explicitly enabled
               </li>
               <li>
-                <strong>Stripe</strong> — Payment processing, billing, and tax calculation
+                <strong>Stripe</strong>: Payment processing, billing, and tax calculation
               </li>
               <li>
-                <strong>Resend</strong> — Transactional email delivery
+                <strong>Resend</strong>: Transactional email delivery
               </li>
               <li>
-                <strong>Vercel</strong> — Hosting, functions, and edge delivery
+                <strong>Vercel</strong>: Hosting, functions, and edge delivery
               </li>
               <li>
-                <strong>Upstash</strong> — Distributed rate limits and spend controls
+                <strong>Upstash</strong>: Distributed rate limits and spend controls
               </li>
               <li>
-                <strong>HeyGen and LiveAvatar</strong> — Optional presenter video and voice features
+                <strong>HeyGen and LiveAvatar</strong>: Optional presenter video and voice features
               </li>
               <li>
-                <strong>Plausible</strong> — Privacy-oriented aggregate website analytics
+                <strong>Plausible</strong>: Privacy-oriented aggregate website analytics
               </li>
               <li>
-                <strong>Meta</strong> — Optional advertising measurement and campaign attribution,
+                <strong>Meta</strong>: Optional advertising measurement and campaign attribution,
                 only after explicit consent and subject to Global Privacy Control
               </li>
               <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong> —
+                <strong>Have I Been Pwned Pwned Passwords</strong>:{" "}
                 {"Compromised-password screening using a k-anonymous partial hash prefix"}
               </li>
               <li>
-                <strong>Services you connect</strong> — Such as Google, Microsoft, CRM, commerce,
+                <strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce,
                 calendar, or team tools, only when you authorize them
               </li>
             </ul>

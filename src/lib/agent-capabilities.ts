@@ -327,7 +327,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "gemini_ground",
     label: "Grounded web search",
     description:
-      "Looks up fresh public info when the answer is not in the agent's knowledge base — pricing, hours, regulations, news. Platform capability; not a merchant OAuth integration.",
+      "Looks up fresh public info when the answer is not in the agent's knowledge base: pricing, hours, regulations, news. Platform capability; not a merchant OAuth integration.",
     group: "core",
   },
   // E-commerce — Shopify
@@ -357,7 +357,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "shopify_start_return",
     label: "Start Shopify return",
     description:
-      "Opens a return request for an order. Does not issue a refund — that stays merchant-approved.",
+      "Opens a return request for an order. Does not issue a refund. That stays merchant-approved.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -396,7 +396,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "square_lookup_order",
     label: "Look up Square order",
     description:
-      "Finds a Square order by order ID or customer email — returns status, items, and totals.",
+      "Finds a Square order by order ID or customer email. Returns status, items, and totals.",
     group: "ecommerce",
     integration: "square",
   },
@@ -435,7 +435,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_excel",
     label: "Log call to Excel",
     description:
-      "Appends a row — caller, outcome, and details — to the Account Holder's Wireline Call Log spreadsheet in OneDrive.",
+      "Appends a row (caller, outcome, and details) to the Account Holder's Wireline Call Log spreadsheet in OneDrive.",
     group: "core",
     integration: "microsoft_excel",
   },
@@ -443,7 +443,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_google_sheets",
     label: "Log call to Google Sheets",
     description:
-      "Appends a row — caller, outcome, and details — to the Account Holder's Wireline Call Log spreadsheet in Google Drive.",
+      "Appends a row (caller, outcome, and details) to the Account Holder's Wireline Call Log spreadsheet in Google Drive.",
     group: "core",
     integration: "google_sheets",
   },
@@ -478,7 +478,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "shopify_apply_discount",
     label: "Apply Shopify discount",
     description:
-      "Not available on live calls yet — do not promise a discount was applied. Collect details and offer human follow-up, or use draft-order / order-note tools.",
+      "Not available on live calls yet. Do not promise a discount was applied. Collect details and offer human follow-up, or use draft-order / order-note tools.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -487,7 +487,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "square_send_invoice",
     label: "Send Square invoice",
     description:
-      "Not available on live calls yet — do not claim an invoice was sent. Prefer square_create_payment_link or record the request for the account holder.",
+      "Not available on live calls yet. Do not claim an invoice was sent. Prefer square_create_payment_link or record the request for the account holder.",
     group: "ecommerce",
     integration: "square",
   },

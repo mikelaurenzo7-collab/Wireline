@@ -65,18 +65,10 @@ export interface ConversationState {
  * from the Founder's Dashboard.
  */
 export type WirelinePersonaId =
-  | "reception"
-  | "sales"
-  | "support"
-  | "technical"
-  | "onboarding"
-  | "success";
+  "reception" | "sales" | "support" | "technical" | "onboarding" | "success";
 
 export type EscalationAction =
-  | "transfer_to_owner"
-  | "send_sms_to_owner"
-  | "send_email_to_owner"
-  | "ai_handles";
+  "transfer_to_owner" | "send_sms_to_owner" | "send_email_to_owner" | "ai_handles";
 
 export interface EscalationRule {
   /** Stable identifier — referenced in tests + analytics. */
@@ -126,7 +118,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "Free Builder tier questions (build/test one agent free, no card, no time limit)",
   "password reset link",
   "receipt or invoice resend",
-  "cancellation (confirms + emails Mike a record — no live transfer)",
+  "cancellation (confirms + emails Mike a record, no live transfer)",
   "demo booking via Calendly",
   "showcase audio trigger ('can I hear it')",
   "competitor comparison (factual, no disparagement)",
@@ -244,7 +236,7 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     priority: 20,
     trigger: (s) => containsAny(s.transcript, HUMAN_REQUEST_KEYWORDS),
     action: "transfer_to_owner",
-    message_to_caller: "Absolutely. Let me get a human on the line for you right now — one moment.",
+    message_to_caller: "Absolutely. Let me get a human on the line for you right now. One moment.",
     rationale: "Caller explicitly asked for a human/supervisor/manager.",
   },
   {
@@ -254,7 +246,7 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     action: "transfer_to_owner",
     message_to_caller:
       "I'm sorry I'm not catching this. Let me get a human on the line who can help you faster.",
-    rationale: "Caller said 'I don't understand' 3+ times — we're not landing.",
+    rationale: "Caller said 'I don't understand' 3+ times. We're not landing.",
   },
 
   // --- 40s: financial-threshold escalations ---------------------------
@@ -270,8 +262,8 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     // a 24-hour follow-up. Mike processes these in batch overnight so a
     // refund request never wakes him up.
     message_to_caller:
-      "Got it. I'll have our team review this and follow up within 24 hours — you'll hear back from us at the number you called from.",
-    rationale: `Refund request above auto-issue threshold ($${SUPPORT_AUTO_REFUND_MAX_USD}). Queue for Mike's batch review — no live transfer.`,
+      "Got it. I'll have our team review this and follow up within 24 hours. You'll hear back from us at the number you called from.",
+    rationale: `Refund request above auto-issue threshold ($${SUPPORT_AUTO_REFUND_MAX_USD}). Queue for Mike's batch review. No live transfer.`,
   },
 
   // --- 50s: prospect-quality signals ----------------------------------
@@ -281,8 +273,8 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     trigger: (s) => s.persona === "sales" && containsAny(s.transcript, ENTERPRISE_KEYWORDS),
     action: "send_sms_to_owner",
     message_to_caller:
-      "This sounds like exactly the kind of conversation our founder Mike loves. Let me have him call you back in about ten minutes — he handles all enterprise inquiries personally.",
-    rationale: "Enterprise-tier signal detected on a sales call — Mike wants the warm handoff.",
+      "This sounds like exactly the kind of conversation our founder Mike loves. Let me have him call you back in about ten minutes. He handles all enterprise inquiries personally.",
+    rationale: "Enterprise-tier signal detected on a sales call. Mike wants the warm handoff.",
   },
 
   // --- 60s: emotional-state escalations -------------------------------
@@ -338,7 +330,7 @@ export function evaluateEscalation(state: ConversationState): EscalationDecision
     rule_id: null,
     action: "ai_handles",
     message_to_caller: "",
-    rationale: "No escalation rule matched — AI handles directly.",
+    rationale: "No escalation rule matched. AI handles directly.",
   };
 }
 

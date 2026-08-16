@@ -419,7 +419,7 @@ export default function PostCreateActivationWizard({
                 </div>
               </div>
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Opens Wire in this tab — return to Studio to resume this guide.
+                Opens Wire in this tab. Return to Studio to resume this guide.
               </p>
               <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
                 <MessageSquare
@@ -427,7 +427,7 @@ export default function PostCreateActivationWizard({
                   className="mt-0.5 shrink-0 text-primary"
                   aria-hidden="true"
                 />
-                Studio is your chat-first run surface — test voice and script before you wire more
+                Studio is your chat-first run surface. Test voice and script before you wire more
                 channels.
               </p>
               <Button type="button" size="sm" onClick={() => setStep("wire")}>

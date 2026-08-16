@@ -19,7 +19,7 @@ type TrustPack = {
 const PACKS: Record<string, TrustPack> = {
   medical: {
     eyebrow: "Healthcare-sensitive workflows",
-    title: "Controls before credentials.",
+    title: "Controls before credentials",
     subtitle:
       "A practical review of the safeguards available today, with explicit boundaries for protected health information.",
     controls: [
@@ -60,7 +60,7 @@ const PACKS: Record<string, TrustPack> = {
   },
   legal: {
     eyebrow: "Legal & professional services",
-    title: "Confidentiality-aware, never presumptive.",
+    title: "Confidentiality-aware, never presumptive",
     subtitle:
       "Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
     controls: [
@@ -101,7 +101,7 @@ const PACKS: Record<string, TrustPack> = {
   },
   insurance: {
     eyebrow: "Insurance agencies",
-    title: "Logged work, licensed decisions.",
+    title: "Logged work, licensed decisions",
     subtitle:
       "Operational controls for policyholder communication while keeping regulated advice and carrier-specific decisions with qualified people.",
     controls: [
@@ -142,7 +142,7 @@ const PACKS: Record<string, TrustPack> = {
   },
   enterprise: {
     eyebrow: "Enterprise review",
-    title: "Proof that matches the product.",
+    title: "Proof that matches the product",
     subtitle:
       "A concise starting point for security, procurement, and operations teams evaluating Wireline today.",
     controls: [
@@ -200,7 +200,7 @@ export default function TrustPackPage() {
   if (!pack) {
     return (
       <MarketingChrome>
-        <PageMeta title="Trust pack not found — Wireline" noIndex />
+        <PageMeta title="Trust pack not found | Wireline" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-muted">Trust pack not found.</p>
           <Link to="/security" className="wl-label mt-4 inline-block text-brand">
@@ -302,7 +302,7 @@ export default function TrustPackPage() {
         </section>
 
         <section className="mt-10 border-t border-border pt-8 text-center">
-          <h2 className="font-display text-2xl text-foreground">Review the real workflow.</h2>
+          <h2 className="font-display text-2xl text-foreground">Review the real workflow</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             Bring your use case, data map, and approval rules. Wireline will separate what is
             available today from anything that still needs contractual or technical work.

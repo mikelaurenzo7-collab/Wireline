@@ -102,7 +102,7 @@ export function ThreadSummaryForm({
                   <span>
                     {a.description}
                     {a.due_hint ? (
-                      <span className="text-muted ml-2 italic text-xs">— {a.due_hint}</span>
+                      <span className="text-muted ml-2 italic text-xs">({a.due_hint})</span>
                     ) : null}
                   </span>
                 </li>

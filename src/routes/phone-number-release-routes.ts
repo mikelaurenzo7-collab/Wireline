@@ -61,7 +61,7 @@ router.delete(
           return res.json({ success: true, already_released: true });
         }
 
-        log.warn("Tenant phone-number release failed — preserving ownership row", {
+        log.warn("Tenant phone-number release failed, preserving ownership row", {
           userId: req.user.id,
           phoneNumber: owned.phoneNumber,
           error: released.error,

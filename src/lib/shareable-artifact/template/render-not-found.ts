@@ -30,5 +30,5 @@ export function renderNotFound(brand: WorkspaceBrand = FALLBACK_BRAND): string {
       </p>
       <div class="wl-wire-rule" role="separator" aria-hidden="true"><span></span></div>
     </section>`;
-  return renderShell({ title: "Recap unavailable — Wireline", eyebrow, body, brand });
+  return renderShell({ title: "Recap unavailable, Wireline", eyebrow, body, brand });
 }

@@ -46,7 +46,7 @@ export async function inboundConcurrencyExceeded(userId: string): Promise<boolea
       );
     return Number(row?.live ?? 0) >= inboundConcurrentCallCeiling();
   } catch (error: unknown) {
-    log.error("inbound concurrency check failed — admitting call", {
+    log.error("inbound concurrency check failed, admitting call", {
       userId,
       error: getErrorMessage(error),
     });

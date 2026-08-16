@@ -1,0 +1,359 @@
+/*
+ * Homepage product theater.
+ *
+ * Desktop balances a concise buying narrative with a proprietary Wireline live
+ * console. Tablet and mobile retain the same hierarchy inside one bounded
+ * marketing scroller without fake hardware, hidden navigation, or icon-only
+ * conversion paths.
+ */
+
+@import "./landing-stage-layout.css";
+@import "./landing-live-console.css";
+
+.landing-stage__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  width: min(100%, 86rem);
+  margin-inline: auto;
+  padding-top: 0.68rem;
+  border-top: 1px solid var(--wireline-color-border-default);
+}
+
+.landing-stage__footer p {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.landing-stage__footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.85rem;
+}
+
+.landing-stage__footer a {
+  display: inline-flex;
+  min-height: 1.9rem;
+  align-items: center;
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: var(--wl-caps-label-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.landing-stage__footer a:hover {
+  color: var(--wireline-color-text-primary);
+}
+
+@media (max-width: 1120px) {
+  .marketing-surface.landing-home .marketing-flow {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .marketing-surface .landing-stage.marketing-section--screen {
+    height: auto;
+    min-height: 100%;
+    flex: 0 0 auto;
+    align-content: start;
+    overflow: visible;
+  }
+
+  .landing-stage__rail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.7rem;
+    max-width: 48rem;
+  }
+
+  .landing-stage__copy {
+    max-width: 44rem;
+  }
+
+  .landing-stage__title {
+    max-width: 11.5ch;
+  }
+
+  .landing-console {
+    min-height: 30rem;
+  }
+
+  .landing-stage__footer {
+    max-width: 48rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .marketing-surface .landing-stage.marketing-section--screen {
+    gap: 0.85rem;
+    padding-block: 1.5rem 1.2rem;
+  }
+
+  .landing-stage__eyebrow {
+    margin-bottom: 0.78rem;
+  }
+
+  .landing-stage__title {
+    max-width: 11ch;
+    font-size: clamp(2.55rem, 12vw, 3.9rem);
+    line-height: 0.97;
+  }
+
+  .landing-stage__subline {
+    margin-top: 0.88rem;
+    font-size: 1rem;
+  }
+
+  .landing-stage__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    margin-top: 1.08rem;
+  }
+
+  .landing-stage__primary,
+  .landing-stage__secondary {
+    width: 100%;
+    min-height: 3.1rem;
+    justify-content: center;
+  }
+
+  .landing-stage__economics {
+    gap: 0.32rem 0.58rem;
+  }
+
+  .landing-stage__economics span + span::before {
+    display: none;
+  }
+
+  .landing-stage__spine {
+    margin-top: 0.95rem;
+  }
+
+  .landing-stage__spine li {
+    min-height: 2.5rem;
+    font-size: 0.65rem;
+  }
+
+  .landing-stage__lane-group {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.42rem;
+    margin-top: 0.62rem;
+  }
+
+  .landing-stage__lanes {
+    gap: 0.38rem;
+  }
+
+  .landing-stage__lane {
+    display: flex;
+    min-height: 3rem;
+    justify-content: center;
+    gap: 0.36rem;
+    padding: 0.5rem 0.3rem;
+    text-align: center;
+  }
+
+  .landing-stage__lane strong {
+    font-size: 0.66rem;
+  }
+
+  .landing-stage__lane-arrow {
+    display: none;
+  }
+
+  .landing-console {
+    min-height: 0;
+    border-radius: 1.1rem;
+  }
+
+  .landing-console__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-demo {
+    min-height: 20.5rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--wireline-color-border-default);
+  }
+
+  .landing-demo__face-frame {
+    width: 8.8rem;
+  }
+
+  .landing-console__activity {
+    min-height: 19rem;
+  }
+
+  .landing-console__events li {
+    min-height: 2.9rem;
+  }
+
+  .landing-console__footer,
+  .landing-stage__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .landing-console__channels,
+  .landing-stage__footer nav {
+    justify-content: flex-start;
+  }
+
+  .landing-stage__footer {
+    gap: 0.32rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .landing-stage__lane-icon {
+    display: none;
+  }
+
+  .landing-stage__lane strong {
+    font-size: 0.64rem;
+  }
+
+  .landing-console__activity-title {
+    max-width: 16ch;
+  }
+}
+
+@media (min-width: 1121px) and (max-height: 790px) {
+  .marketing-surface .landing-stage.marketing-section--screen {
+    gap: 0.5rem;
+    padding-block: 0.62rem;
+  }
+
+  .landing-stage__rail {
+    gap: clamp(1.4rem, 2.8vw, 3rem);
+  }
+
+  .landing-stage__eyebrow {
+    margin-bottom: 0.46rem;
+  }
+
+  .landing-stage__title {
+    font-size: clamp(2.8rem, 4.25vw, 4.2rem);
+  }
+
+  .landing-stage__subline {
+    margin-top: 0.62rem;
+    font-size: 0.93rem;
+  }
+
+  .landing-stage__actions {
+    margin-top: 0.74rem;
+  }
+
+  .landing-stage__economics {
+    margin-top: 0.46rem;
+  }
+
+  .landing-stage__spine {
+    margin-top: 0.62rem;
+  }
+
+  .landing-stage__spine li {
+    min-height: 2.2rem;
+  }
+
+  .landing-stage__lane-group {
+    margin-top: 0.46rem;
+  }
+
+  .landing-stage__lane {
+    min-height: 2.55rem;
+    padding: 0.42rem 0.5rem;
+  }
+
+  .landing-console {
+    min-height: 26.5rem;
+    max-height: calc(100dvh - 7rem);
+  }
+
+  .landing-console__header {
+    min-height: 2.8rem;
+  }
+
+  .landing-demo,
+  .landing-console__activity {
+    padding: 0.78rem;
+  }
+
+  .landing-demo__face-frame {
+    width: clamp(7.2rem, 10.5vw, 8.5rem);
+  }
+
+  .landing-demo__name {
+    margin-top: 0.42rem;
+  }
+
+  .landing-demo__controls {
+    gap: 0.36rem;
+    margin-top: 0.42rem;
+  }
+
+  .landing-demo__microcopy {
+    font-size: 0.67rem;
+  }
+
+  .landing-console__activity-title {
+    margin-top: 0.28rem;
+    font-size: 1.25rem;
+  }
+
+  .landing-console__events {
+    margin-top: 0.5rem;
+  }
+
+  .landing-console__events li {
+    min-height: 2.55rem;
+  }
+
+  .landing-console__outcome {
+    min-height: 2.45rem;
+    margin-top: 0.5rem;
+  }
+
+  .landing-console__footer {
+    min-height: 2.9rem;
+    padding-block: 0.42rem;
+  }
+
+  .landing-stage__footer {
+    padding-top: 0.38rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-stage__lane,
+  .landing-stage__lane-arrow,
+  .landing-demo__button {
+    transition: none;
+  }
+
+  .landing-stage__lane:hover,
+  .landing-demo__button:hover {
+    transform: none;
+  }
+}
+
+/* The terminal marketing body rule sentence-cases p/li nodes. These homepage
+ * nodes are operational labels and retain the mono label tier. */
+.marketing-surface.landing-home .landing-stage__spine li,
+.marketing-surface.landing-home .landing-stage__lanes-label,
+.marketing-surface.landing-home .landing-console__channels li,
+.marketing-surface.landing-home .landing-demo__role,
+.marketing-surface.landing-home .landing-console__activity-kicker {
+  font-family: var(--wireline-font-family-mono);
+  letter-spacing: var(--wl-caps-label-tracking);
+  line-height: 1.25;
+  text-transform: uppercase;
+}

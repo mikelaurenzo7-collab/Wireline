@@ -221,7 +221,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       await quotaTracker
         .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
         .catch((e: unknown) => {
-          log.warn("quota token increment failed — usage may be under-counted", {
+          log.warn("quota token increment failed, usage may be under-counted", {
             user_id: p.userId,
             error: getErrorMessage(e),
           });
@@ -480,7 +480,7 @@ export async function handleJob(job: JobRow): Promise<void> {
           { db: drizzle },
         );
         if (!claim.ready) {
-          log.info("purge_deleted_account skipped — terminal claim unavailable", {
+          log.info("purge_deleted_account skipped, terminal claim unavailable", {
             jobId: job.id,
             user_id: p.user_id,
             reason: claim.reason,
@@ -645,7 +645,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxPages?: number;
     };
     if (!claudeBrain.isBrainAvailable()) {
-      throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
+      throw new Error("Claude is not configured, cannot crawl URL for knowledge.");
     }
     const result = await claudeBrain.knowledgeFromUrl({
       url: p.url,
@@ -692,7 +692,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId: string };
     if (!claudeBrain.isBrainAvailable()) {
-      log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
+      log.warn("auto_qa_score skipped, claude unavailable", { callLogId: p.callLogId });
       return;
     }
 
@@ -702,7 +702,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     try {
       callLogIdBig = BigInt(p.callLogId as any);
     } catch {
-      log.warn("auto_qa_score skipped — unparseable callLogId", { callLogId: p.callLogId });
+      log.warn("auto_qa_score skipped, unparseable callLogId", { callLogId: p.callLogId });
       return;
     }
 
@@ -725,7 +725,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       .limit(1);
 
     if (!call || !call.transcript) {
-      log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
+      log.info("auto_qa_score skipped, no call or transcript", { callLogId: p.callLogId });
       return;
     }
 
@@ -740,7 +740,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     // `adaptive_optimization` job that low rubric scores chain into — the whole
     // agent-learning loop — was unreachable.
     if (!qaRubricShouldRun(call.qaBreakdown)) {
-      log.info("auto_qa_score skipped — rubric already scored", { callLogId: p.callLogId });
+      log.info("auto_qa_score skipped, rubric already scored", { callLogId: p.callLogId });
       return;
     }
 
@@ -748,7 +748,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     // unreachable / voicemail / wrong-number and carry no coachable
     // signal. Saves a Claude call per dead-call without losing learning.
     if ((call.durationSeconds || 0) < 30) {
-      log.info("auto_qa_score skipped — call too short for useful coaching", {
+      log.info("auto_qa_score skipped, call too short for useful coaching", {
         callLogId: p.callLogId,
         durationSeconds: call.durationSeconds,
       });
@@ -928,7 +928,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     const lines = top
       .map(
         (t) =>
-          `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "—"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
+          `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "N/A"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
       )
       .join("\n");
     const result = await sendEmail({
@@ -951,7 +951,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 export function initJobWorker(opts?: { dbReady?: boolean }) {
   if (process.env.VERCEL === "1") return null;
   if (opts?.dbReady === false) {
-    log.warn("job worker skipped — database not connected");
+    log.warn("job worker skipped, database not connected");
     return null;
   }
 

@@ -183,8 +183,6 @@
   }
   .wl-workspace-main {
     padding-inline: 1rem;
-    /* Preserve the complete scroll clearance owned by the fixed mobile dock. */
-    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
   }
   .wl-workspace-header {
     min-height: 3.75rem;

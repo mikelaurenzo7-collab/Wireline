@@ -21,7 +21,11 @@ type WorkspaceTabStripProps = {
   className?: string;
   density?: "default" | "compact";
   align?: "center" | "start";
-  wrap?: boolean;
+  /**
+   * `true` scrolls on small screens and wraps from `lg` up.
+   * `"always"` wraps at every width so a late tab cannot clip mid-word.
+   */
+  wrap?: boolean | "always";
 };
 
 function tabClassName(active: boolean, density: "default" | "compact") {
@@ -61,6 +65,8 @@ export function WorkspaceTabStrip({
   wrap = false,
 }: WorkspaceTabStripProps) {
   const compact = density === "compact";
+  const wrapAlways = wrap === "always";
+  const wrapAtLarge = wrap === true;
   const navRef = useRef<HTMLElement | null>(null);
   // Deliberately a count, not `tabs` itself. Three callers build the array
   // inline (`[...PHONE_TABS]`, `VALID_TABS.map(...)`, the approvals `.map(...)`),
@@ -78,7 +84,7 @@ export function WorkspaceTabStrip({
    */
   useEffect(() => {
     const nav = navRef.current;
-    if (!nav) return;
+    if (!nav || wrapAlways) return;
     if (nav.scrollWidth <= nav.clientWidth + 1) return;
 
     const active = nav.querySelector<HTMLElement>('[data-active="true"]');
@@ -93,7 +99,7 @@ export function WorkspaceTabStrip({
     } else if (activeRect.right > navRect.right - gutter) {
       nav.scrollLeft += activeRect.right - (navRect.right - gutter);
     }
-  }, [activeId, tabCount]);
+  }, [activeId, tabCount, wrapAlways]);
 
   /*
    * Edge fades for hidden tabs. The scrollbar is hidden by design, so on a
@@ -104,7 +110,7 @@ export function WorkspaceTabStrip({
   const [edges, setEdges] = useState({ left: false, right: false });
   useEffect(() => {
     const nav = navRef.current;
-    if (!nav) return;
+    if (!nav || wrapAlways) return;
     const update = () => {
       setEdges((current) => {
         const next = {
@@ -122,10 +128,10 @@ export function WorkspaceTabStrip({
       nav.removeEventListener("scroll", update);
       observer.disconnect();
     };
-  }, [tabCount]);
+  }, [tabCount, wrapAlways]);
 
   const edgeMask =
-    edges.left || edges.right
+    !wrapAlways && (edges.left || edges.right)
       ? `linear-gradient(to right, ${edges.left ? "transparent, black 28px" : "black"}, black calc(100% - ${
           edges.right ? "28px" : "0px"
         })${edges.right ? ", transparent" : ""})`
@@ -140,9 +146,11 @@ export function WorkspaceTabStrip({
       style={edgeMask ? { maskImage: edgeMask, WebkitMaskImage: edgeMask } : undefined}
       className={cn(
         "wl-workspace-tabs w-full",
-        wrap
-          ? "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
-          : "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        wrapAlways
+          ? "overflow-visible"
+          : wrapAtLarge
+            ? "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+            : "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         compact ? "min-h-10" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
         className,
       )}
@@ -150,13 +158,21 @@ export function WorkspaceTabStrip({
       <div
         className={cn(
           "flex items-center",
-          wrap ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap" : "min-w-max",
+          wrapAlways
+            ? "w-full min-w-0 flex-wrap"
+            : wrapAtLarge
+              ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap"
+              : "min-w-max",
           compact ? "gap-1" : "gap-2",
-          wrap
+          wrapAlways
             ? align === "start"
               ? "justify-start"
-              : "lg:justify-center"
-            : align === "center" && "mx-auto",
+              : "justify-center"
+            : wrapAtLarge
+              ? align === "start"
+                ? "justify-start"
+                : "lg:justify-center"
+              : align === "center" && "mx-auto",
         )}
       >
         {tabs.map((tab) => {

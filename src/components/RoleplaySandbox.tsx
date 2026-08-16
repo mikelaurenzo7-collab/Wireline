@@ -91,7 +91,7 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
         </p>
       ) : nearLimit ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-          Running low — a paid plan removes the simulation ceiling and adds a live number.
+          Running low. A paid plan removes the simulation ceiling and adds a live number.
         </p>
       ) : null}
     </div>

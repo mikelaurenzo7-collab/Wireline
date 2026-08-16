@@ -54,7 +54,7 @@ function renderSparkline(content: WeeklyRecapContent): string {
     .join("");
 
   return `
-      <svg viewBox="0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}" role="img" aria-label="Daily call volume — peak on ${escapeHtml(points[peakIndex].label)}" width="100%" height="${SPARKLINE_HEIGHT}" preserveAspectRatio="none" style="display:block;overflow:visible;">
+      <svg viewBox="0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}" role="img" aria-label="Daily call volume, peak on ${escapeHtml(points[peakIndex].label)}" width="100%" height="${SPARKLINE_HEIGHT}" preserveAspectRatio="none" style="display:block;overflow:visible;">
         <line x1="${SPARKLINE_PADDING_X.toFixed(1)}" x2="${(SPARKLINE_WIDTH - SPARKLINE_PADDING_X).toFixed(1)}" y1="${baselineY.toFixed(1)}" y2="${baselineY.toFixed(1)}" stroke="var(--wl-borderSoft)" stroke-width="1" />
         <path d="${areaPath}" fill="var(--wl-accent)" fill-opacity="0.08" />
         <path d="${path}" fill="none" stroke="var(--wl-accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -182,7 +182,7 @@ function renderFollowUps(content: WeeklyRecapContent): string {
 
 export function renderWeeklyRecap(content: WeeklyRecapContent, brand: WorkspaceBrand): string {
   const eyebrow = `Weekly review · ${content.period.label}`;
-  const title = `Weekly review · ${content.period.label} — ${brand.displayName}`;
+  const title = `Weekly review · ${content.period.label}, ${brand.displayName}`;
   const hero = content.headline?.trim() ? content.headline : buildDefaultHeadline(content);
 
   const body = `
@@ -207,7 +207,7 @@ function buildDefaultHeadline(content: WeeklyRecapContent): string {
   const { calls, booked, qualified } = content.totals;
   if (calls === 0) return "A quiet week on the wire.";
   if (booked === 0 && qualified === 0) {
-    return `${calls} conversations this week — none advanced to a booking or qualified opportunity yet.`;
+    return `${calls} conversations this week, none advanced to a booking or qualified opportunity yet.`;
   }
   return `${calls} conversations · ${booked} booked · ${qualified} qualified.`;
 }

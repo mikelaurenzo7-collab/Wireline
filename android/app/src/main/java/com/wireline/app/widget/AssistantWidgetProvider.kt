@@ -84,7 +84,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                 )
                 Text(
                     text = when {
-                        !snapshot.signedIn -> "—"
+                        !snapshot.signedIn -> "Signed out"
                         snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} call(s)"
                         else -> "No active calls"
                     },

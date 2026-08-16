@@ -42,7 +42,7 @@ export async function claimLeadEnrichmentSlot(
       const set = await r.set(key, "1", { nx: true, ex: DEBOUNCE_TTL_SECONDS });
       return set === "OK";
     } catch (err) {
-      log.warn("Enrichment debounce Redis failed — allowing enqueue", {
+      log.warn("Enrichment debounce Redis failed, allowing enqueue", {
         error: (err as Error).message,
       });
     }

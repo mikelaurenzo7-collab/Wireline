@@ -79,7 +79,7 @@ function selfServeTiers(
       disabledReason: !monthlyReady
         ? "This plan is not available for checkout yet."
         : wantAnnual && !annualReady
-          ? "Annual billing is not configured for this plan yet — monthly is shown."
+          ? "Annual billing is not configured for this plan yet. Monthly is shown."
           : undefined,
     };
   });
@@ -102,7 +102,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
         title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Choose a live plan to keep going — your data and agent stay exactly as they are.`
+            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Choose a live plan to keep going. Your data and agent stay exactly as they are.`
             : "You've hit your legacy trial limit. Choose a live plan to keep going.",
       };
     case "TRIAL_EXPIRED":
@@ -417,13 +417,13 @@ export default function TrialGateModal() {
                   </ShadButton>
                   {resend === "sent" && (
                     <p className="text-xs leading-relaxed text-foreground/65">
-                      Sent — check your inbox and spam folder for a link from Wireline.
+                      Sent. Check your inbox and spam folder for a link from Wireline.
                     </p>
                   )}
                   {resend === "no-transport" && (
                     <p className="flex items-start gap-1.5 text-xs leading-relaxed text-amber-600">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      Mail is temporarily unavailable. Try again in a few minutes — your account
+                      Mail is temporarily unavailable. Try again in a few minutes. Your account
                       isn&apos;t affected.
                     </p>
                   )}
@@ -468,7 +468,7 @@ export default function TrialGateModal() {
                 <>
                   {annualFallbackNote && (
                     <p className="mb-3 text-xs leading-relaxed text-foreground/65">
-                      Annual billing is not configured for checkout yet — monthly prices are shown.
+                      Annual billing is not configured for checkout yet. Monthly prices are shown.
                     </p>
                   )}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -20,10 +20,10 @@ export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 const CHAT_COLLABORATOR_OVERLAY = `
 
 CHAT MODE (operator workspace):
-You are also a full AI collaborator in private chat — not just a voice agent. In chat you can:
+You are also a full AI collaborator in private chat, not just a voice agent. In chat you can:
 - Draft business plans, GTM strategies, SOPs, email sequences, and marketing copy tailored to the operator's business.
 - Outline logo concepts, brand voice guides, and pitch decks (for production logo SVGs, suggest the Director chat).
-- Propose config changes, tool toggles, and outbound actions via approval cards — never mutate settings silently.
+- Propose config changes, tool toggles, and outbound actions via approval cards. Never mutate settings silently.
 - Coach the operator on call performance, objection handling, and agent strategy using your role expertise.
 Be substantive, structured, and actionable. Match the operator's industry when known.`;
 
@@ -172,7 +172,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     team: "revenue",
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
-    emailSignature: "— The Wireline Team",
+    emailSignature: "The Wireline Team",
     websiteUrl: "https://trywireline.com",
   },
   {
@@ -247,8 +247,8 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   sales: [
     "Lead with outcome before features. Always propose a concrete next step before ending the conversation.",
     "Qualify on the phone problem first: what call is being missed, who handles it now, and what a missed call costs.",
-    "Common objection — 'will callers know it is AI?': yes, disclosure is built in and the agent identifies itself. Never claim an agent passes as human.",
-    "Common objection — 'what if it goes wrong?': sensitive actions sit behind approvals, and escalation hands the conversation to a person with context intact.",
+    "Common objection, 'will callers know it is AI?': yes, disclosure is built in and the agent identifies itself. Never claim an agent passes as human.",
+    "Common objection, 'what if it goes wrong?': sensitive actions sit behind approvals, and escalation hands the conversation to a person with context intact.",
     "Never promise a capability that is not live today. Beta and planned surfaces are described as such.",
   ],
   customer_service: [
@@ -275,9 +275,9 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
 
 const DIRECTIVE_SNIPPETS: string[] = [
   "Always confirm spelling of names and callback numbers before ending a call.",
-  "If the caller asks for a human, escalate immediately — no friction.",
+  "If the caller asks for a human, escalate immediately. No friction.",
   "In chat, draft deliverables (plans, copy, briefs) in structured sections the operator can approve or edit.",
-  "Never invent integration credentials — say when an integration needs to be connected in Settings.",
+  "Never invent integration credentials. Say when an integration needs to be connected in Settings.",
 ];
 
 const LESSON_SNIPPETS: string[] = [

@@ -8,12 +8,12 @@ export const ACTIVATION_PENDING_COPY = {
   title: "Make your first",
   titleAccent: "real call",
   subtitle: (agentName: string) =>
-    `${agentName} is provisioned. Dial your line from your phone — activation counts when a customer-quality conversation completes.`,
+    `${agentName} is provisioned. Dial your line from your phone. Activation counts when a customer-quality conversation completes.`,
   phoneLabel: "Your live number",
   dialCta: "Call now to activate",
   browserTestTitle: "Browser test (optional)",
   browserTestDetail:
-    "Preview voice and script in Studio — simulator calls do not count toward activation.",
+    "Preview voice and script in Studio. Simulator calls do not count toward activation.",
   browserTestAction: "Open Studio",
   opsTitle: "Watch Recaps",
   opsDetail: "See the call land in real time once you dial in.",
@@ -22,7 +22,7 @@ export const ACTIVATION_PENDING_COPY = {
 
 export const ACTIVATION_NUDGE_COPY = {
   eyebrow: "Activation",
-  body: "Dial your line for a real conversation — that's when Wireline counts you as live.",
+  body: "Dial your line for a real conversation. That's when Wireline counts you as live.",
   cta: "Call to activate",
 } as const;
 
@@ -50,7 +50,7 @@ export const POST_CREATE_WIZARD_COPY = {
       detail:
         "Phone is the default lane. Open Connections when you need CRM, SMS, email, or other tools linked.",
       phoneTitle: "Business phone line",
-      phoneDetail: "Provision a US number on the next step — callers reach this agent directly.",
+      phoneDetail: "Provision a US number on the next step. Callers reach this agent directly.",
       connectionsTitle: "Connections",
       connectionsDetail: "Mailbox, Salesforce, SMS threads, and routing live under Connections.",
       connectionsCta: "Open Connections",
@@ -66,7 +66,7 @@ export const POST_CREATE_WIZARD_COPY = {
       // The highest-intent moment in the product: the customer has built,
       // trained, and voice-tested an agent and just asked for its number.
       // Plain language + a direct path to plans — never internal jargon.
-      activationRequired: "Your agent is trained and ready — its live number just needs a plan.",
+      activationRequired: "Your agent is trained and ready. Its live number just needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
         `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
       activationCta: "Choose your plan",
@@ -75,14 +75,14 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Test",
       title: "Hear your agent",
       detail:
-        "Run a private browser test — simulator calls do not count toward activation. Dial your line when you're ready for a real call.",
+        "Run a private browser test. Simulator calls do not count toward activation. Dial your line when you're ready for a real call.",
       primary: "Finish setup",
     },
   },
   complete: {
     wiredTitle: "You're live",
     wiredDetail: (agentName: string, phone: string) =>
-      `${agentName} is on ${phone}. Dial from your phone when you're ready — that's activation.`,
+      `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
     deferredTitle: "Ready in Studio",
     deferredDetail: (agentName: string) =>
       `${agentName} is trained and waiting. Connect a number under Settings → Phone when you're ready to go live.`,

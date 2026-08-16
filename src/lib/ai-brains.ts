@@ -38,7 +38,7 @@ const ROLE_ANALYSIS_GUIDANCE: Record<string, string> = {
 const POST_CALL_ANALYSIS_TOOL: StructuredToolSchema = {
   name: "record_post_call_analysis",
   description:
-    "Record the complete post-call analysis: lead score, intent, sentiment, lessons, action items, compliance flags, and knowledge gaps — all in one structured payload.",
+    "Record the complete post-call analysis: lead score, intent, sentiment, lessons, action items, compliance flags, and knowledge gaps, all in one structured payload.",
   input_schema: {
     type: "object",
     properties: {
@@ -78,7 +78,7 @@ const POST_CALL_ANALYSIS_TOOL: StructuredToolSchema = {
         type: "array",
         items: { type: "string" },
         description:
-          "Topics the agent could not answer authoritatively — should be added to the knowledge base.",
+          "Topics the agent could not answer authoritatively. Add these to the knowledge base.",
       },
       coaching_note: {
         type: "string",
@@ -145,7 +145,7 @@ const BUSINESS_ACTIONS_TOOL: StructuredToolSchema = {
 const QA_SCORE_TOOL: StructuredToolSchema = {
   name: "score_call_quality",
   description:
-    "Score a call recording/transcript against a 5-dimension QA rubric. Each dimension is 0–20 points (total 0–100). Be precise and evidence-based — cite specific moments in the transcript where the score was earned or lost.",
+    "Score a call recording/transcript against a 5-dimension QA rubric. Each dimension is 0 to 20 points (total 0 to 100). Be precise and evidence-based. Cite specific moments in the transcript where the score was earned or lost.",
   input_schema: {
     type: "object",
     properties: {
@@ -154,50 +154,50 @@ const QA_SCORE_TOOL: StructuredToolSchema = {
         minimum: 0,
         maximum: 20,
         description:
-          "Opening & Greeting — professional, warm, identified company and purpose clearly.",
+          "Opening & Greeting: professional, warm, identified company and purpose clearly.",
       },
       discovery: {
         type: "integer",
         minimum: 0,
         maximum: 20,
         description:
-          "Problem Discovery — asked thoughtful open-ended questions, understood the customer's actual situation.",
+          "Problem Discovery: asked thoughtful open-ended questions, understood the customer's actual situation.",
       },
       solution: {
         type: "integer",
         minimum: 0,
         maximum: 20,
         description:
-          "Solution Presentation — clear, relevant, directly addressed the customer's stated needs.",
+          "Solution Presentation: clear, relevant, directly addressed the customer's stated needs.",
       },
       objection: {
         type: "integer",
         minimum: 0,
         maximum: 20,
         description:
-          "Objection Handling — handled pushback calmly, didn't oversell, addressed concerns with evidence.",
+          "Objection Handling: handled pushback calmly, didn't oversell, addressed concerns with evidence.",
       },
       closing: {
         type: "integer",
         minimum: 0,
         maximum: 20,
         description:
-          "Closing & Next Steps — strong close, set clear next steps or outcome, no ambiguity.",
+          "Closing & Next Steps: strong close, set clear next steps or outcome, no ambiguity.",
       },
       coaching_note: {
         type: "string",
         description:
-          "One sentence the operator should act on — the single highest-leverage improvement for this agent.",
+          "One sentence the operator should act on: the single highest-leverage improvement for this agent.",
       },
       strengths: {
         type: "array",
         items: { type: "string" },
-        description: "1–3 specific things the agent did well on this call.",
+        description: "1 to 3 specific things the agent did well on this call.",
       },
       improvements: {
         type: "array",
         items: { type: "string" },
-        description: "1–3 specific, actionable improvements for next time.",
+        description: "1 to 3 specific, actionable improvements for next time.",
       },
     },
     required: ["greeting", "discovery", "solution", "objection", "closing", "coaching_note"],
@@ -235,17 +235,17 @@ export async function postCallAnalysis(input: PostCallInput): Promise<PostCallAn
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
     if (!roleGuidance)
-      log.warn(`postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`, {
+      log.warn(`postCallAnalysis: unknown role "${input.role}", no scoring lens applied.`, {
         role: input.role,
       });
   }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
-- score lead intent honestly (0–100); if there's no signal, score low.
+- score lead intent honestly (0 to 100); if there's no signal, score low.
 - extract ONE specific tactical lesson (or empty string if nothing worth promoting).
 - list every concrete follow-up the agent promised or the customer asked for.
 - flag compliance issues (recording consent, TCPA, GDPR, refund-policy mismatch, etc.).
 - list topics the agent couldn't answer authoritatively (knowledge gaps).
-${roleGuidance ? `\nRole-specific scoring lens — ${roleGuidance}` : ""}
+${roleGuidance ? `\nRole-specific scoring lens: ${roleGuidance}` : ""}
 Use plain English. No jargon, no ALL CAPS, no emoji.`;
 
   const user = `Agent: ${input.agentName} (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""})
@@ -299,11 +299,11 @@ const QA_ROLE_GUIDANCE: Record<string, string> = {
   scheduler:
     "Scheduler context: booking accuracy is the primary metric. A confirmed appointment with date/time/reference ID is a strong close. Failing to check availability before confirming is a critical error.",
   technical_support:
-    "Support context: diagnostic rigor is paramount. Award discovery points for structured troubleshooting (one question at a time, systematic elimination). Closing is verified resolution — not just 'let me know if it happens again'.",
+    "Support context: diagnostic rigor is paramount. Award discovery points for structured troubleshooting (one question at a time, systematic elimination). Closing is verified resolution, not just 'let me know if it happens again'.",
   customer_service:
     "Customer service context: emotional acknowledgment and resolution completeness matter most. Award discovery points for understanding the root issue (not just the surface complaint). Closing = customer confirmed satisfaction.",
   receptionist:
-    "Receptionist context: routing accuracy and message completeness are everything. Score closing on whether the caller's need was fully addressed — message taken or correct transfer made.",
+    "Receptionist context: routing accuracy and message completeness are everything. Score closing on whether the caller's need was fully addressed: message taken or correct transfer made.",
   marketing:
     "Marketing context: engagement and next-step conversion are the metrics. Score closing based on whether the prospect agreed to any concrete next step (demo, trial, callback). Disengaged exit with no next step = low closing score.",
 };
@@ -311,7 +311,7 @@ const QA_ROLE_GUIDANCE: Record<string, string> = {
 export async function qaScore(input: QaScoreInput): Promise<QaScoreResult> {
   const roleGuidance = input.agentRole ? (QA_ROLE_GUIDANCE[input.agentRole] ?? "") : "";
 
-  const system = `You are a call quality auditor for an enterprise voice AI platform. Evaluate calls objectively and with specificity — cite concrete moments from the transcript when scoring.${roleGuidance ? `\n\n${roleGuidance}` : ""}`;
+  const system = `You are a call quality auditor for an enterprise voice AI platform. Evaluate calls objectively and with specificity. Cite concrete moments from the transcript when scoring.${roleGuidance ? `\n\n${roleGuidance}` : ""}`;
 
   const user = `Score this ${input.direction} call against the 5-dimension QA rubric.
 
@@ -323,7 +323,7 @@ ${input.agentRole ? `Agent role: ${input.agentRole.replace(/_/g, " ")}` : ""}
 Transcript (up to 3000 chars):
 ${input.transcript ? input.transcript.slice(0, 3000) + (input.transcript.length > 3000 ? "…" : "") : "(not available)"}
 
-Score each dimension 0–20 and provide a concise, actionable coaching note.`;
+Score each dimension 0 to 20 and provide a concise, actionable coaching note.`;
 
   return runStructured<QaScoreResult>({
     system,

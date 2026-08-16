@@ -73,7 +73,7 @@ const tabs: Array<{
 ];
 
 function formatDuration(seconds: number | null | undefined): string {
-  if (!seconds || seconds < 0) return "—";
+  if (!seconds || seconds < 0) return "N/A";
   const minutes = Math.floor(seconds / 60);
   const rest = Math.floor(seconds % 60);
   return `${minutes}:${rest.toString().padStart(2, "0")}`;
@@ -375,7 +375,7 @@ export default function CallLogsClaude() {
                 className="wl-metric-tile__value tabular-nums"
                 style={isWarning ? { color: "var(--wireline-color-status-warning)" } : undefined}
               >
-                {metricsLoading || metricsError ? "—" : kpi.value}
+                {metricsLoading || metricsError ? "N/A" : kpi.value}
               </div>
             </article>
           );
@@ -600,7 +600,7 @@ function IntelTab({
   if (!items.length) {
     return (
       <EmptyState
-        title="No follow-ups queued."
+        title="No follow-ups queued"
         description="High-value and callback-tagged calls land here."
         density="compact"
         withHalo={false}
@@ -669,7 +669,7 @@ function TriageTab({
   if (!items.length) {
     return (
       <EmptyState
-        title="Nothing to triage."
+        title="Nothing to triage"
         description="Escalations and negative-sentiment calls surface here."
         density="compact"
         withHalo={false}
@@ -717,7 +717,7 @@ function TriageTab({
               </span>
             </div>
             <div className="text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)]">
-              {call.summary || call.coaching_note || "No summary yet — open the call to review."}
+              {call.summary || call.coaching_note || "No summary yet. Open the call to review."}
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <span className="text-[var(--wireline-color-text-tertiary)]">

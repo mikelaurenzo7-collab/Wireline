@@ -56,7 +56,7 @@ router.post(
         report,
         loginInstructions: {
           email: targetEmail,
-          note: "Password is set out-of-band — see ops doc.",
+          note: "Password is set out-of-band, see ops doc.",
         },
       });
     } catch (e: any) {

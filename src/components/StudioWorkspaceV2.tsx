@@ -62,7 +62,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
     <EmptyState
       fill
       icon={Sparkles}
-      title="Start with one job."
+      title="Start with one job"
       description={
         posture === "business"
           ? "Give it one customer job. You can change everything later."
@@ -199,7 +199,7 @@ export default function StudioWorkspaceV2() {
     window.setTimeout(() => {
       workroomRef.current?.focusComposer(
         personal
-          ? "Hi — can you help me book something and text me what happened?"
+          ? "Hi, can you help me book something and text me what happened?"
           : "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
       );
     }, 120);

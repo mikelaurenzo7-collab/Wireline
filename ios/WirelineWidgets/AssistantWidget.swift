@@ -12,7 +12,7 @@ struct AssistantWidget: Widget {
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("Wireline Agents")
-        .description("Open Wireline agents with mono clarity — coverage, handoff, and live work.")
+        .description("Open Wireline agents for coverage, handoff, and live work.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 

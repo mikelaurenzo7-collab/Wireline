@@ -89,11 +89,11 @@ describe("Wireline Letterpress polish layer", () => {
     }
   });
 
-  it("uses platinum wire as the eyebrow rule and tokenized press highlight", () => {
+  it("renders eyebrows as clean labels with no decorative strand, and keeps the tokenized press highlight", () => {
     const polish = read("src/styles/letterpress-polish.css");
-    expect(polish).toMatch(
-      /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,
-    );
+    // Founder brand rule: no dash-like strand before a label (it reads as a
+    // stray em dash). The eyebrow ::before pseudo-element is removed outright.
+    expect(polish).toMatch(/\.wl-eyebrow::before[\s\S]{0,160}content: none/);
     expect(polish).toMatch(
       /\.wl-press-highlight::before[\s\S]*var\(--wireline-color-pressHighlight\)/,
     );

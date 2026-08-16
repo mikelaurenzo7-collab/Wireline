@@ -69,7 +69,7 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   "/about": {
     title: "About Wireline | Voice Agents for Calls and Follow up",
     description:
-      "Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations.",
+      "Wireline is an independent voice agent platform. How we build, what we enforce in the runtime, and how to reach the people who make it.",
   },
   "/showcase": {
     title: "Try Wireline",
@@ -154,12 +154,12 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
       "Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
   },
   "/solutions/sales": {
-    title: "Every good lead gets a next step. | Wireline",
+    title: "Every good lead gets a next step | Wireline",
     description:
       "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
   },
   "/solutions/support": {
-    title: "A front desk that answers before demand goes cold. | Wireline",
+    title: "A front desk that answers before demand goes cold | Wireline",
     description:
       "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
   },

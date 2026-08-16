@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Wireline Command",
   "version": "0.1.2",
-  "description": "Send the current page into Wireline Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only—no background browsing.",
+  "description": "Send the current page into Wireline Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only. No background browsing.",
   "homepage_url": "https://trywireline.com",
   "action": {
     "default_title": "Open Wireline Command",

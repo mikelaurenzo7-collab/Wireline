@@ -1,98 +1,87 @@
-import { Link } from "react-router";
-import { ArrowRight, Check, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
+import WireSignalArt from "../components/marketing/WireSignalArt";
 
-const PRINCIPLES = [
+/* Positions, not benefits. Each line says something a visitor cannot learn from
+   the plan cards or the feature grid: how the thing is built and who decides.
+   The product claims live on /features and /pricing, and repeating them here is
+   what turned this page into a second landing page. */
+const POSITIONS = [
   {
-    title: "Voice agents that sound like you.",
-    copy: "Custom-trained on your tone, scripts, and service knowledge.",
+    heading: "Independent",
+    copy: "No reseller in the middle, and no account manager between you and the people who build it. Support goes to the same inbox we read.",
   },
   {
-    title: "Built around every agent.",
-    copy: "Your knowledge. Your playbook. Your tools. Built in.",
+    heading: "Trained, Not Templated",
+    copy: "An agent learns your tone, your scripts, and your service knowledge. It does not ship as a generic script you edit around.",
   },
   {
-    title: "One voice agent, complete context.",
-    copy: "Handles calls, follows up by text or email, books, and logs your way.",
+    heading: "Under Your Control",
+    copy: "Calling-hour rules, Do Not Call checks, and opt-outs are enforced in the runtime: before a dial, not after a complaint.",
+  },
+  {
+    heading: "One Record",
+    copy: "The call, the follow-up text, the email, and the outcome stay on one thread. Nothing is finished until it is written down.",
   },
 ] as const;
 
+/**
+ * About — a statement page, not a second landing page.
+ *
+ * It used to open with a headline and two buttons in an otherwise empty
+ * viewport, then show three benefit cards and close with a "Build your voice
+ * agent" band: the landing page's shape, the landing page's vocabulary, and the
+ * landing page's call to action, four screens long, on the page a visitor opens
+ * precisely because they want something *other* than the pitch.
+ *
+ * So this one is built to be unmistakable at a glance. It is left-aligned where
+ * every other public page is centred, it is a numbered column rather than a card
+ * grid, and it has no primary CTA — the header carries Start Free on every route
+ * already. What it offers instead is the thing an About page owes a buyer: a
+ * position, and a way to reach a person.
+ */
 export default function About() {
   return (
-    <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame className="wl-about-page">
       <PageMeta
         title="About Wireline | Voice Agents for Calls and Follow up"
-        description="Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations."
+        description="Wireline is an independent voice agent platform. How we build, what we enforce in the runtime, and how to reach the people who make it."
         path="/about"
       />
 
-      <MarketingHero
-        title="Agents that run calls like you would."
-        primaryAction={{ label: "Build your Voice Agent", to: "/pricing" }}
-        secondaryAction={{
-          label: "Contact support",
-          to: "/contact",
-          tone: "secondary",
-        }}
-      />
-
-      <section className="wl-public-section border-y border-border bg-card">
-        <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
-          <div className="bg-card px-5 pb-4 pt-9 text-center sm:px-8 sm:py-12 lg:px-10 lg:py-12">
-            <h2 className="wl-stitch-display text-balance">Independent. Direct line to us.</h2>
-          </div>
-          <div className="bg-card px-5 pb-9 pt-4 text-center sm:px-8 sm:py-12 lg:px-10 lg:py-12">
+      <section className="marketing-section marketing-section--screen">
+        <div className="wl-public-rail grid gap-10 !text-left lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div>
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">About</p>
+            <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+              Built by the people who answer the support email
+            </h1>
+            <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a
               href="mailto:support@trywireline.com"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+              className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
-              <Mail className="h-4 w-4" />
+              <Mail className="h-4 w-4" aria-hidden="true" />
               support@trywireline.com
             </a>
           </div>
-        </div>
-      </section>
 
-      <section className="wl-public-section">
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto grid max-w-4xl gap-6 text-center">
-            <div>
-              <h2 className="wl-stitch-display text-balance">Predictable, trained, brand-safe.</h2>
-            </div>
-          </div>
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {PRINCIPLES.map((principle) => (
-              <article
-                className="wl-stitch-card group p-6 text-center transition-all hover:-translate-y-px"
-                key={principle.title}
-              >
-                <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary transition group-hover:bg-primary/10">
-                  <Check className="h-4 w-4 transition group-hover:scale-110" />
+          <ol className="grid content-center gap-px overflow-hidden rounded-[16px] border border-border bg-border">
+            {POSITIONS.map(({ heading, copy }, index) => (
+              <li key={heading} className="grid gap-1 bg-card px-6 py-5 sm:grid-cols-[3rem_1fr]">
+                <span className="font-mono text-xs font-semibold tracking-[.08em] text-primary">
+                  {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
-                  {principle.title}
-                </h3>
-              </article>
+                <div>
+                  <h2 className="wl-card-title">{heading}</h2>
+                  <p className="mt-1.5 max-w-[52ch] text-sm leading-6 text-muted-foreground">
+                    {copy}
+                  </p>
+                </div>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="wl-public-section border-t border-border bg-card">
-        <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
-          <div>
-            <h2 className="wl-stitch-display mx-auto max-w-2xl text-balance">
-              Create your first voice agent.
-            </h2>
-          </div>
-          <Link
-            to="/pricing"
-            className="marketing-btn-primary min-h-12 px-6 text-[length:var(--wireline-typography-body-size)] font-semibold"
-          >
-            Build your Voice Agent <ArrowRight className="h-4 w-4" />
-          </Link>
+          </ol>
         </div>
       </section>
     </MarketingPageFrame>

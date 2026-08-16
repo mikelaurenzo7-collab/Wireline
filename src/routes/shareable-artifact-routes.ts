@@ -49,7 +49,7 @@ async function ipRateLimit(req: Request, res: Response, next: NextFunction) {
       return;
     }
   } catch (err) {
-    log.warn("recap ip rate limiter failed — fail open", { error: getErrorMessage(err) });
+    log.warn("recap ip rate limiter failed, fail open", { error: getErrorMessage(err) });
   }
   next();
 }
@@ -69,7 +69,7 @@ async function slugRateLimit(req: Request, res: Response, next: NextFunction) {
       return;
     }
   } catch (err) {
-    log.warn("recap slug rate limiter failed — fail open", { error: getErrorMessage(err) });
+    log.warn("recap slug rate limiter failed, fail open", { error: getErrorMessage(err) });
   }
   next();
 }

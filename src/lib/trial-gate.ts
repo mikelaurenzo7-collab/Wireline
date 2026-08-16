@@ -206,7 +206,7 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
       lookupFailed: false,
     };
   } catch (error: any) {
-    log.error("subscription gate state lookup failed — blocking provider spend", {
+    log.error("subscription gate state lookup failed, blocking provider spend", {
       userId,
       error: error?.message ?? String(error),
     });
@@ -241,7 +241,7 @@ async function getEmailVerificationState(
       .limit(1);
     return { verified: Boolean(row?.verifiedAt), lookupFailed: false };
   } catch (error: any) {
-    log.error("email verification lookup failed — blocking provider spend", {
+    log.error("email verification lookup failed, blocking provider spend", {
       userId,
       error: error?.message ?? String(error),
     });
@@ -277,7 +277,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       402,
       "EMAIL_UNVERIFIED",
-      "Verify your email to continue — check your inbox for a link from Wireline.",
+      "Verify your email to continue. Check your inbox for a link from Wireline.",
     );
     return null;
   }
@@ -305,7 +305,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
     return null;
   }
   if (state.status === "trial_expired" || state.status === "canceled") {
-    block(res, 402, "TRIAL_EXPIRED", "Your live access has ended — choose a plan to continue.", {
+    block(res, 402, "TRIAL_EXPIRED", "Your live access has ended. Choose a plan to continue.", {
       trial_ended_at: state.trialEndsAt?.toISOString() ?? null,
       recovery_path: "/settings/billing",
     });
@@ -316,7 +316,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       402,
       "SUBSCRIPTION_REQUIRED",
-      "Your subscription is past due — update payment before starting another live action.",
+      "Your subscription is past due. Update payment before starting another live action.",
       { recovery_path: "/settings/billing" },
     );
     return null;
@@ -377,7 +377,7 @@ export async function assertLiveWorkEntitlementForUser(
       ok: false,
       httpStatus: 402,
       code: "EMAIL_UNVERIFIED",
-      error: "Verify your email to continue — check your inbox for a link from Wireline.",
+      error: "Verify your email to continue. Check your inbox for a link from Wireline.",
     };
   }
 
@@ -407,7 +407,7 @@ export async function assertLiveWorkEntitlementForUser(
       ok: false,
       httpStatus: 402,
       code: "TRIAL_EXPIRED",
-      error: "Your live access has ended — choose a plan to continue.",
+      error: "Your live access has ended. Choose a plan to continue.",
       recovery_path: "/settings/billing",
     };
   }
@@ -416,7 +416,7 @@ export async function assertLiveWorkEntitlementForUser(
       ok: false,
       httpStatus: 402,
       code: "SUBSCRIPTION_REQUIRED",
-      error: "Your subscription is past due — update payment before starting another live action.",
+      error: "Your subscription is past due. Update payment before starting another live action.",
       recovery_path: "/settings/billing",
     };
   }
@@ -451,7 +451,7 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
       res,
       402,
       "SUBSCRIPTION_REQUIRED",
-      "Legacy trial outbound has ended — choose a plan to start dialing.",
+      "Legacy trial outbound has ended. Choose a plan to start dialing.",
       { recovery_path: "/settings/billing" },
     );
     return;

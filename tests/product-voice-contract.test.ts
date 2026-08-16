@@ -14,6 +14,7 @@ import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const withoutComments = (value: string) => value.replace(/\/\*[\s\S]*?\*\//g, "");
 
 const CORE_BUYING_SURFACES = [
   "src/lib/product-copy.ts",
@@ -51,8 +52,8 @@ describe("product voice cohesion", () => {
     );
 
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done.");
-    expect(MARKETING_VOICE.primaryCta).toBe("Build your voice agent");
+    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done");
+    expect(MARKETING_VOICE.primaryCta).toBe("Build Your Voice Agent");
     expect(MARKETING_VOICE.subline).toBe(
       "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
     );
@@ -78,7 +79,7 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps growth, service, and all purpose positioning concrete", () => {
-    expect(OUTBOUND_WEDGE.headline).toBe("A voice agent that moves growth work forward.");
+    expect(OUTBOUND_WEDGE.headline).toBe("A voice agent that moves growth work forward");
     for (const verb of ["researches", "calls", "texts", "emails", "books", "logs proof"]) {
       expect(OUTBOUND_WEDGE.subline).toContain(verb);
     }
@@ -98,11 +99,13 @@ describe("product voice cohesion", () => {
       singular: "personal voice agent",
       plural: "personal voice agents",
       createCta: "Create personal voice agent",
+      createCtaShort: "Create voice agent",
     });
     expect(customerAgentLanguage("business")).toMatchObject({
       singular: "business voice agent",
       plural: "business voice agents",
       createCta: "Create business voice agent",
+      createCtaShort: "Create voice agent",
     });
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
 
@@ -127,14 +130,12 @@ describe("product voice cohesion", () => {
     const features = read("src/pages/Features.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const authPortal = read("src/components/AuthPortal.tsx");
-    for (const step of ["Build", "Train", "Launch", "Improve"]) {
-      expect(features).toContain(step);
-    }
+    expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
-    expect(features).toContain("Build. Train. Launch. Improve.");
+    expect(features).toContain("MARKETING_VOICE.proof");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
-    expect(features).toContain("Voice Agents for every customer conversation.");
+    expect(features).toContain("Voice agents for every customer conversation");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -142,24 +143,36 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("keeps public landing copy broad, agent first, and action oriented", () => {
+  it("keeps public landing copy broad, agent first, action oriented, and visibly navigable", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const executableLanding = withoutComments(landing);
     const about = read("src/pages/About.tsx");
     const compare = read("src/pages/Compare.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const contactAgents = read("src/data/contact-agents.ts");
 
-    // "Every channel. One agent." now lives only where it is not immediately
-    // restated: the Features section heading. On the landing it sat as an
-    // eyebrow directly above "One agent. Now on screen.", saying the same
-    // thing twice in two type sizes.
-    expect(read("src/pages/Features.tsx")).toContain("Every channel. One voice agent.");
-    expect(landing).toContain("Live Video");
-    expect(landing).toContain("Build your voice agent");
-    expect(landing).toContain("Hear it live");
-    expect(landing).toContain("Start free.");
-    expect(about).toContain("Agents that run calls like you would.");
-    expect(compare).toContain("Wireline vs. other voice AI.");
+    expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
+    expect(executableLanding).toContain('aria-label="Core agent channels"');
+    expect(executableLanding).toContain('{ label: "Voice", icon: PhoneCall }');
+    expect(executableLanding).toContain('{ label: "Text", icon: MessageSquareText }');
+    expect(executableLanding).toContain('{ label: "Email", icon: Mail }');
+    expect(executableLanding).not.toContain("Live Video");
+    expect(executableLanding).toContain("MARKETING_VOICE.primaryCta");
+    expect(executableLanding).toContain("MARKETING_VOICE.subline");
+    expect(executableLanding).toContain("Hear It Live");
+    expect(executableLanding).toContain('variant="stage"');
+    expect(executableLanding).toContain("landing-console");
+    expect(executableLanding).toContain("landing-console__activity");
+    expect(executableLanding).toContain("Illustrative Workflow");
+    expect(executableLanding).toContain("Booked and logged");
+    expect(executableLanding).toContain("<PrecisionPublicHeader />");
+    expect(executableLanding).not.toContain('variant="phone"');
+    expect(executableLanding).not.toContain("landing-phone");
+    expect(executableLanding).not.toContain("landing-os__tray");
+    expect(executableLanding).not.toContain('chrome="hidden"');
+
+    expect(about).toContain("Built by the people who answer the support email");
+    expect(compare).toContain("Wireline vs. other voice AI");
     expect(privacy).toContain("voice agent platform");
     expect(contactAgents).toContain("Wireline specialists");
 
@@ -222,12 +235,12 @@ describe("product voice cohesion", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
-    // The landing hero is deliberately minimal: the headline, capability chips,
-    // and live demo carry the pitch, so the subline is no longer rendered as a
-    // hero subhead. It still backs the SEO description in index.html.
+    expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
+    expect(landing).toContain("MARKETING_VOICE.spine");
+    expect(landing).not.toContain("HERO_LOOP = MARKETING_VOICE.proof");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
     expect(extension).toContain('data-action="call"');
@@ -238,15 +251,15 @@ describe("product voice cohesion", () => {
   it("keeps landing examples broad across profit, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     for (const phrase of [
-      "Lead response",
-      "Quote follow up",
-      "Appointment setting",
-      "Front desk",
-      "Lead qualifier",
-      "Support triage",
-      "Sales desk",
-      "Collections desk",
-      "Appointment desk",
+      "Lead Response",
+      "Quote Follow Up",
+      "Appointment Setting",
+      "Front Desk",
+      "Lead Qualifier",
+      "Support Triage",
+      "Sales Desk",
+      "Collections Desk",
+      "Appointment Desk",
       "AGENT_DIRECTION_MODES",
     ]) {
       expect(landing).toContain(phrase);
@@ -294,17 +307,17 @@ describe("product voice cohesion", () => {
   it("keeps public entry paths broad instead of defaulting to home services", () => {
     const app = read("src/App.tsx");
     const precisionHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
-    // The legacy PublicSiteHeader was removed; PrecisionPublicHeader is the
-    // only public chrome and must stay that way.
+    const chromeBar = read("src/components/marketing/MarketingChromeBar.tsx");
+    const landingFooter = read("src/components/marketing/LandingFooter.tsx");
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
     const footer = read("src/components/marketing/MarketingFooter.tsx");
     expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
-    expect(precisionHeader).toContain('to: "/solutions/support"');
-    expect(precisionHeader).toContain('path.startsWith("/for/")');
-    // The footer lists EVERY wedge symmetrically with Personal first — broad
-    // entry means no single industry is privileged, not that seven of the
-    // eight built wedge pages (each with its own live demo line) go unlinked.
-    // Signup CTAs and the /for/* fallback below still enforce personal-first.
+    expect(precisionHeader).not.toContain('to: "/solutions/support"');
+    expect(precisionHeader).not.toContain('path.startsWith("/for/")');
+    expect(precisionHeader).not.toContain('aria-label="Site"');
+    expect(chromeBar).toContain('to: "/solutions/support", label: "Support"');
+    expect(chromeBar).toContain('to: "/for/personal", label: "Personal"');
+    expect(landingFooter).toContain("<MarketingChromeBar />");
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     for (const wedgePath of [
       "/for/home-services",
@@ -321,13 +334,10 @@ describe("product voice cohesion", () => {
       footer.indexOf('to: "/for/home-services"'),
     );
 
-    // Generic acquisition promises "free", so they must override any paid
-    // signup intent left in local storage from a previous pricing visit.
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
-    expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
-    expect(landing).toContain('to: "/signup?plan=personal"');
-    expect(landing).toContain('to="/signup?plan=personal"');
+    expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(1);
+    expect(landing).toContain('"/signup?plan=personal"');
     expect(sticky).toContain('href = "/signup?plan=personal"');
     expect(landing).not.toContain('to: "/signup"');
     expect(landing).not.toContain('to="/signup"');
@@ -368,8 +378,6 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps authenticated setup examples broad across support and call coverage", () => {
-    // The unrouted PhoneAgentBlueprint mock was removed; the recipe forms are
-    // the real authenticated setup surface and carry the breadth contract.
     expect(existsSync("src/components/PhoneAgentBlueprint.tsx")).toBe(false);
     const wireForm = read("src/components/recipes/forms/AgentWireForm.tsx");
     const documentForm = read("src/components/recipes/forms/KnowledgeFromDocumentForm.tsx");

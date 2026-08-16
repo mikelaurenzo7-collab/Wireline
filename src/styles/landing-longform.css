@@ -1,0 +1,504 @@
+/* Consolidated homepage sections. The page tells one product story and keeps
+ * each block concise enough to scan without behaving like separate landers. */
+
+.landing-home__section,
+.landing-home__final-section {
+  position: relative;
+  border-top: 1px solid var(--wireline-color-border-soft);
+}
+
+.landing-home__section--tinted {
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 6%, transparent),
+      transparent 42%
+    ),
+    color-mix(
+      in srgb,
+      var(--wireline-color-surface-subtle) 58%,
+      var(--wireline-color-canvas-default)
+    );
+}
+
+.landing-home__section-heading {
+  max-width: 48rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.landing-home__section-heading > * {
+  margin-inline: auto;
+}
+
+.landing-home__section-heading .wl-eyebrow {
+  margin-bottom: 0.8rem;
+}
+
+.landing-home__section-heading .wl-public-section-heading {
+  max-width: 22ch;
+  margin-block: 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(2rem, 3.4vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.landing-home__section-heading > p:last-child {
+  max-width: 58ch;
+  margin-top: 1rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 1rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.landing-home__solution-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-home__solution-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-surface-raised) 42%, transparent),
+      transparent 54%
+    ),
+    var(--wireline-color-surface-default);
+  box-shadow: var(--wireline-elevation-card);
+}
+
+.landing-home__solution-icon,
+.landing-home__compact-icon {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 28%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--wireline-radius-lg);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-container) 54%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-home__solution-icon svg,
+.landing-home__compact-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.landing-home__solution-card .wl-eyebrow {
+  margin: 1.2rem 0 0;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-home__solution-card h3 {
+  margin: 0.5rem 0 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.landing-home__solution-card ul,
+.landing-home__price-card ul {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-home__solution-card li,
+.landing-home__price-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.landing-home__solution-card li svg,
+.landing-home__price-card li svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-home__solution-card > a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 1.35rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.landing-home__solution-card > a:hover {
+  color: var(--wireline-color-action-primary-hover);
+}
+
+.landing-home__solution-card > a svg,
+.landing-home__pricing-note a svg,
+.landing-home__trust-link svg,
+.landing-home__final-card a svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.landing-home__compact-grid,
+.landing-home__control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-home__compact-card {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-lg);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 82%,
+    var(--wireline-color-canvas-default)
+  );
+}
+
+.landing-home__compact-card h3 {
+  margin: 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.landing-home__compact-card p {
+  margin: 0.42rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.landing-home__pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.85rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-home__price-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.4rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-color-surface-default);
+  box-shadow: var(--wireline-elevation-card);
+}
+
+.landing-home__price-card.is-featured {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 58%,
+    var(--wireline-color-border-default)
+  );
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-action-primary-container) 38%, transparent),
+      transparent 48%
+    ),
+    var(--wireline-color-surface-default);
+  box-shadow: var(--wireline-elevation-wirelineRing);
+}
+
+.landing-home__price-badge {
+  position: absolute;
+  top: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  padding-inline: 0.65rem;
+  border-radius: var(--wireline-radius-pill);
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-text-onAction);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.landing-home__price-card > .wl-eyebrow {
+  margin: 0;
+  color: var(--wireline-color-text-primary);
+}
+
+.landing-home__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 1.15rem;
+}
+
+.landing-home__price strong {
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: 2.55rem;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+
+.landing-home__price span {
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.landing-home__price-description {
+  min-height: 3.2rem;
+  margin: 0.9rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.landing-home__price-card > a {
+  width: 100%;
+  min-height: 2.85rem;
+  margin-top: auto;
+  padding-inline: 0.85rem;
+  font-size: 0.8rem;
+}
+
+.landing-home__price-card ul {
+  margin-bottom: 1.5rem;
+}
+
+.landing-home__pricing-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.5rem;
+  color: var(--wireline-color-text-secondary);
+  text-align: center;
+}
+
+.landing-home__pricing-note p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.landing-home__pricing-note a {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.landing-home__trust-layout {
+  display: grid;
+  justify-items: center;
+}
+
+.landing-home__control-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+}
+
+.landing-home__control-grid .landing-home__compact-card {
+  display: grid;
+  justify-items: center;
+  gap: 0.85rem;
+  text-align: center;
+}
+
+.landing-home__trust-link {
+  margin-top: 2rem;
+}
+
+.landing-home__final-section {
+  background:
+    radial-gradient(
+      ellipse 55% 70% at 50% 40%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 11%, transparent),
+      transparent 74%
+    ),
+    var(--wireline-color-canvas-default);
+}
+
+.landing-home__final-card {
+  display: grid;
+  max-width: 52rem;
+  justify-items: center;
+  padding: clamp(2.5rem, 6vw, 4.5rem);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 32%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--wireline-radius-2xl);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 88%,
+    transparent
+  );
+  box-shadow: var(--wireline-elevation-lg);
+  text-align: center;
+}
+
+.landing-home__final-mark {
+  width: 3rem;
+  height: 3rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.landing-home__final-card > .wl-eyebrow {
+  margin: 1rem 0 0;
+}
+
+.landing-home__final-card h2 {
+  max-width: 18ch;
+  margin: 0.7rem 0 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(2.1rem, 4.8vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.landing-home__final-card > p:not(.wl-eyebrow) {
+  margin: 1rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 1rem;
+}
+
+.landing-home__final-card > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.landing-home__final-card a {
+  min-height: 3rem;
+  padding-inline: 1.15rem;
+}
+
+@media (max-width: 1023px) {
+  .landing-home__pricing-grid,
+  .landing-home__control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .landing-home__solution-grid,
+  .landing-home__compact-grid,
+  .landing-home__pricing-grid,
+  .landing-home__control-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-home__solution-card,
+  .landing-home__price-card {
+    padding: 1.25rem;
+  }
+
+  .landing-home__price-description {
+    min-height: 0;
+  }
+
+  .landing-home__pricing-note {
+    flex-direction: column;
+  }
+
+  .landing-home__control-grid .landing-home__compact-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    text-align: left;
+  }
+
+  .landing-home__trust-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .landing-home__final-card {
+    padding-inline: 1.25rem;
+  }
+
+  .landing-home__final-card > div,
+  .landing-home__final-card a {
+    width: 100%;
+  }
+
+  .landing-home__final-card > div {
+    display: grid;
+  }
+
+  .landing-home__final-card a {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-home__solution-card,
+  .landing-home__compact-card,
+  .landing-home__price-card {
+    transition: none;
+  }
+}

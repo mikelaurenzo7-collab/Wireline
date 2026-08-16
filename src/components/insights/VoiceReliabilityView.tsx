@@ -25,12 +25,12 @@ import {
 import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
-function formatPct(value: number | null, fallback = "—"): string {
+function formatPct(value: number | null, fallback = "N/A"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
 }
 
 function formatUsd(value: number | null, digits = 3): string {
-  return value == null ? "—" : `$${value.toFixed(digits)}`;
+  return value == null ? "N/A" : `$${value.toFixed(digits)}`;
 }
 
 export default function VoiceReliabilityView({ days }: { days: number }) {
@@ -81,7 +81,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     {
       icon: Gauge,
       label: "TTFT p95",
-      value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "—",
+      value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "N/A",
       sub: "target <1.2s",
       healthy: summary.latency.healthy,
     },

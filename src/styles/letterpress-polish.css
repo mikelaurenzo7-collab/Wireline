@@ -461,35 +461,24 @@
   color: var(--wireline-color-text-secondary);
 }
 
-.wl-eyebrow::before {
-  content: "";
-  width: 1.5rem;
-  height: 1px;
-  background: var(--wireline-color-action-secondary-default);
-  box-shadow: 0 0 8px var(--wireline-color-glow-wire);
-  flex-shrink: 0;
-}
-
+/* Eyebrows are clean, minimal labels with no leading rule. The founder brand
+   rule forbids dash-like flourishes before copy: a short strand before a label
+   reads as a stray em dash. The Wireline wire identity lives in the mark, the
+   signal art, and dividers, not before every label. `content: none` removes the
+   pseudo-element outright, so the colour variants below and every downstream
+   ::before override never generate a strand. --no-rule is retained as a
+   harmless explicit opt-out. */
+.wl-eyebrow::before,
 .wl-eyebrow--no-rule::before {
-  display: none;
+  content: none;
 }
 
 .wl-eyebrow--primary {
   color: var(--wireline-color-action-primary-default);
 }
 
-.wl-eyebrow--primary::before {
-  background: var(--wireline-color-action-primary-default);
-  box-shadow: 0 0 8px var(--wireline-color-glow-primary);
-}
-
 .wl-eyebrow--muted {
   color: var(--wireline-color-text-tertiary);
-}
-
-.wl-eyebrow--muted::before {
-  background: var(--wireline-color-border-strong);
-  box-shadow: none;
 }
 
 /* ----------------------------------------------------------------------------

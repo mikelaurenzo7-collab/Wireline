@@ -43,7 +43,7 @@ function canonicalHttpsUrl(value) {
   }
 }
 
-function hasWirelineDescriptor(value) {
+export function hasWirelineDescriptor(value) {
   const normalized = normalizeText(value).toUpperCase();
   return /^WIRELINE(?:$|[\s*-])/.test(normalized);
 }

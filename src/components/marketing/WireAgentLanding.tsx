@@ -1,449 +1,590 @@
-import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, Phone, Volume2 } from "lucide-react";
+import { useEffect } from "react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarCheck2,
+  Check,
+  ClipboardCheck,
+  Headphones,
+  Mail,
+  MessageSquareText,
+  Phone,
+  PhoneCall,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  WalletCards,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "react-router";
 
-import MarketingFooter from "./MarketingFooter";
-import MarketingHero from "./MarketingHero";
-import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import TrustSignals from "./TrustSignals";
+import LandingFooter from "./LandingFooter";
 import BrowserCallWidget from "./BrowserCallWidget";
-import LiveVideoSpotlight from "./LiveVideoSpotlight";
+import WirelineMark from "../brand/WirelineMark";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
-import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
+import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
-import { emitProductEvent } from "../../lib/product-event-client";
+import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
-type AgentMode = "outbound" | "inbound" | "hybrid";
-
-type ModeDetail = {
-  title: string;
-  lead: string;
-  bestFor: readonly string[];
-  cta: string;
-  ctaPath: string;
-};
-
-const HERO_LOOP = MARKETING_VOICE.proof;
-const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
-  { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
-  { key: "inbound", label: AGENT_DIRECTION_MODES.inbound.label },
-  { key: "hybrid", label: AGENT_DIRECTION_MODES.hybrid.label },
-];
-
-const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
-  outbound: {
-    title: "A sales agent that follows through.",
-    lead: "Call warm lists, revive leads, promote offers, send the follow up, book the meeting, and log the outcome.",
-    bestFor: ["Lead response", "Quote follow up", "Appointment setting"],
-    cta: "Start with Starter",
-    ctaPath: "/signup?plan=starter&mode=outbound",
-  },
-  inbound: {
-    title: "Answer every valuable call.",
-    lead: "Catch the call, qualify the need, schedule the next step, cover after hours, and continue by text or email from one record.",
-    bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Start with Starter",
-    ctaPath: "/signup?plan=starter&mode=inbound",
-  },
-  hybrid: {
-    title: "A voice agent for the work between conversations.",
-    lead: "Keep sales, service, callbacks, scheduling, and CRM updates moving in one visible workflow.",
-    bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
-    cta: "Start with Starter",
-    ctaPath: "/signup?plan=starter&mode=hybrid",
-  },
-};
-
-const LOOP_COPY = [
-  "Set the outcome, audience, limits, and rules.",
-  "Add voice, knowledge, objections, approvals, and handoff logic.",
-  "Choose a paid plan, claim the number, connect channels, and set spend controls.",
-  "Let it answer, sell, support, book, follow up, and log the result.",
-] as const;
-
-const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
-  StripePlanId,
-  (typeof STRIPE_PLANS)[number]
->;
-
-const PLAN_PREVIEW = [
-  {
-    name: "Free Builder",
-    price: "$0",
-    period: "to create",
-    facts: [
-      "1 private draft agent",
-      "Training and private simulation",
-      "Live channels unlock after activation",
-    ],
-    cta: "Start free",
-    ctaPath: "/signup?plan=personal",
-    highlight: false,
-  },
-  {
-    name: "Starter",
-    price: `$${planCatalog.starter.price_usd_monthly}`,
-    period: "/mo",
-    facts: [
-      `${planCatalog.starter.max_agents} live voice agent`,
-      `${planCatalog.starter.included_phone_numbers} Wireline number`,
-      `${planCatalog.starter.voice_minutes_monthly} voice minutes each month`,
-      "SMS, email, and Lead Hunt access",
-    ],
-    cta: "Choose Starter",
-    ctaPath: "/signup?plan=starter",
-    highlight: false,
-  },
-  {
-    name: "Starter Plus",
-    price: `$${planCatalog.team.price_usd_monthly}`,
-    period: "/mo",
-    facts: [
-      `${planCatalog.team.max_agents} live agents`,
-      `${planCatalog.team.included_phone_numbers} Wireline numbers`,
-      `${planCatalog.team.voice_minutes_monthly} voice minutes each month`,
-      "Full Lead Hunt and enrichment",
-    ],
-    cta: "Choose Starter Plus",
-    ctaPath: "/signup?plan=team",
-    highlight: true,
-  },
-  {
-    name: "Pro",
-    price: `$${planCatalog.business.price_usd_monthly}`,
-    period: "/mo",
-    facts: [
-      `${planCatalog.business.max_agents} live voice agents`,
-      `${planCatalog.business.included_phone_numbers} Wireline numbers`,
-      `${planCatalog.business.voice_minutes_monthly} voice minutes each month`,
-      "Shared channels, analytics, and approvals",
-    ],
-    cta: "Choose Pro",
-    ctaPath: "/signup?plan=business",
-    highlight: false,
-  },
-] as const;
-
-function modeTabId(key: AgentMode) {
-  return `wire-agent-${key}-tab`;
-}
-
-function modePanelId(key: AgentMode) {
-  return `wire-agent-${key}-panel`;
-}
-
+const HERO_LOOP = MARKETING_VOICE.spine;
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
-/* Names the feature the section is about. It deliberately does not restate the
-   headline underneath it: the channel row already shows "every channel, one
-   agent" without a label claiming it twice. */
-const LIVE_VIDEO_EYEBROW = "Live Video";
+const PERSONAL_SIGNUP = "/signup?plan=personal";
+const STARTER_PRICE =
+  STRIPE_PLANS.find((plan) => plan.id === "starter")?.price_usd_monthly ?? 19;
+
+const AUDIENCES = [
+  {
+    key: "outbound" as const,
+    label: AGENT_DIRECTION_MODES.outbound.label,
+    detail: "Lead response and follow through",
+    uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
+    href: "/signup?plan=starter&mode=outbound",
+    icon: PhoneCall,
+  },
+  {
+    key: "inbound" as const,
+    label: AGENT_DIRECTION_MODES.inbound.label,
+    detail: "Front desk and support triage",
+    uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
+    href: "/signup?plan=starter&mode=inbound",
+    icon: Headphones,
+  },
+  {
+    key: "hybrid" as const,
+    label: AGENT_DIRECTION_MODES.hybrid.label,
+    detail: "Daily calls, booking, and handoffs",
+    uses: ["Sales Desk", "Collections Desk", "Appointment Desk"],
+    href: "/signup?plan=starter&mode=hybrid",
+    icon: Sparkles,
+  },
+] as const;
+
+const CORE_CHANNELS = [
+  { label: "Voice", icon: PhoneCall },
+  { label: "Text", icon: MessageSquareText },
+  { label: "Email", icon: Mail },
+] as const;
+
+const EXAMPLE_RUN = [
+  {
+    label: "Call answered",
+    detail: "Need captured",
+    icon: PhoneCall,
+  },
+  {
+    label: "Lead qualified",
+    detail: "Right service matched",
+    icon: BadgeCheck,
+  },
+  {
+    label: "Appointment booked",
+    detail: "Tuesday at 2:30 PM",
+    icon: CalendarCheck2,
+  },
+  {
+    label: "Confirmation sent",
+    detail: "Text and email",
+    icon: MessageSquareText,
+  },
+] as const;
+
+const CAPABILITIES = [
+  {
+    title: "Voice",
+    body: "Answer, call, qualify, book, transfer, and recap.",
+    icon: PhoneCall,
+  },
+  {
+    title: "Text",
+    body: "Confirm, remind, nurture, and recover under consent rules.",
+    icon: MessageSquareText,
+  },
+  {
+    title: "Email",
+    body: "Follow up, reply, and preserve the conversation record.",
+    icon: Mail,
+  },
+  {
+    title: "Shared Memory",
+    body: "One identity, knowledge base, history, and rule set.",
+    icon: Workflow,
+  },
+  {
+    title: "Approvals",
+    body: "Keep sensitive actions behind explicit owner control.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Outcomes",
+    body: "Log what happened, what changed, and what comes next.",
+    icon: BadgeCheck,
+  },
+] as const;
+
+const CONTROL_POINTS = [
+  {
+    title: "Approvals",
+    body: "Require a person before sensitive actions.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Spend",
+    body: "Set prepaid limits with no automatic overages.",
+    icon: WalletCards,
+  },
+  {
+    title: "Handoffs",
+    body: "Escalate with context, not a cold transfer.",
+    icon: Users,
+  },
+  {
+    title: "Proof",
+    body: "Keep transcripts, outcomes, and audit history.",
+    icon: ShieldCheck,
+  },
+] as const;
+
+const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
+
+const PLAN_PRESENTATION = {
+  personal: {
+    name: "Free Builder",
+    description: "Build, train, and privately simulate one draft agent.",
+    cta: "Build Free",
+  },
+  starter: {
+    name: "Starter",
+    description: "Put one focused communications agent live.",
+    cta: "Choose Starter",
+  },
+  team: {
+    name: "Starter Plus",
+    description: "Run a personal and business agent together.",
+    cta: "Choose Starter Plus",
+  },
+  business: {
+    name: "Pro",
+    description: "Operate a supervised team of specialized agents.",
+    cta: "Choose Pro",
+  },
+} as const;
+
+const PLAN_CARDS = PUBLIC_PLAN_IDS.map((id) => {
+  const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
+  if (!plan) throw new Error(`Missing public plan: ${id}`);
+  return { id, plan, presentation: PLAN_PRESENTATION[id] };
+});
+
+function SectionHeading({
+  eyebrow,
+  title,
+  body,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="landing-home__section-heading">
+      <p className="wl-eyebrow text-primary">{eyebrow}</p>
+      <h2 className="wl-public-section-heading">{title}</h2>
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function CompactCard({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="landing-home__compact-card">
+      <span className="landing-home__compact-icon">
+        <Icon aria-hidden="true" />
+      </span>
+      <div>
+        <h3>{title}</h3>
+        <p>{body}</p>
+      </div>
+    </article>
+  );
+}
 
 export default function WireAgentLanding() {
-  const [mode, setMode] = useState<AgentMode>("outbound");
-  const detail = MODE_DETAILS[mode];
+  useEffect(() => {
+    emitProductEventOnce({
+      event: "landing_viewed",
+      surface: "marketing_web",
+      metadata: { path: window.location.pathname || "/", scope: "consolidated_home" },
+    });
+  }, []);
 
-  const selectMode = (key: AgentMode, focusAfterSelect = false) => {
-    setMode(key);
+  const selectAudience = (audience: (typeof AUDIENCES)[number]["key"]) => {
     emitProductEvent({
       event: "landing_audience_selected",
       surface: "marketing_web",
-      metadata: { audience: key, source: "hero_work_lane" },
+      metadata: { audience, source: "solutions_section" },
     });
-
-    if (focusAfterSelect) {
-      window.requestAnimationFrame(() => document.getElementById(modeTabId(key))?.focus());
-    }
   };
 
-  const handleModeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = MODE_OPTIONS.findIndex(({ key }) => key === mode);
-    const lastIndex = MODE_OPTIONS.length - 1;
-    let nextIndex = currentIndex;
-
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
-    } else if (event.key === "Home") {
-      nextIndex = 0;
-    } else if (event.key === "End") {
-      nextIndex = lastIndex;
-    } else {
-      return;
-    }
-
-    event.preventDefault();
-    selectMode(MODE_OPTIONS[nextIndex].key, true);
+  const trackPrimaryAction = () => {
+    emitProductEvent({
+      event: "landing_primary_cta_clicked",
+      surface: "marketing_web",
+      metadata: {
+        label: MARKETING_VOICE.primaryCta,
+        destination: PERSONAL_SIGNUP,
+        source: "marketing_hero",
+      },
+    });
   };
 
   return (
-    <div className="marketing-surface wl-viewport-frame bg-background text-foreground">
+    <div className="marketing-surface landing-home bg-background text-foreground">
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        <MarketingHero
-          title={MARKETING_VOICE.headline}
-          primaryAction={{
-            label: MARKETING_VOICE.primaryCta,
-            to: "/signup?plan=personal",
-          }}
-          secondaryAction={{
-            label: "Hear it live",
-            to: "#hear-a-demo",
-            tone: "secondary",
-          }}
-          visual={
-            <div id="hear-a-demo" className="flex flex-col justify-between text-center">
-              {/* One eyebrow names the widget, one button performs it. This
-                  previously stacked a label, a sentence, and a button that all
-                  said "call a live demo". */}
-              <div className="inline-flex items-center justify-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                <Volume2 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                Live voice demo
-              </div>
-              {/* The widget carries its own frame (orb, mark, button). Wrapping
-                  it in a second bordered box nested a card inside a card, and
-                  in the phone-fallback state that read as a wide empty panel
-                  with one small button adrift in it. */}
-              <div className="mt-6">
-                <BrowserCallWidget
-                  agentName={HERO_DEMO_AGENT.name}
-                  buttonLabel="Start the live demo"
-                  fallback={
-                    <a
-                      href={`tel:${HERO_DEMO_AGENT.tel}`}
-                      className="marketing-btn-secondary mx-auto inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
-                      onClick={() =>
-                        emitProductEvent({
-                          event: "landing_demo_clicked",
-                          surface: "marketing_web",
-                          metadata: {
-                            agent: HERO_DEMO_AGENT.name,
-                            mode: "phone",
-                          },
-                        })
-                      }
-                    >
-                      <Phone className="h-4 w-4" aria-hidden="true" />
-                      Call the live demo
-                    </a>
-                  }
-                />
-              </div>
-            </div>
-          }
-        />
+      <main id="main-content" className="marketing-flow landing-home__flow" tabIndex={-1}>
+        <section className="marketing-section marketing-section--screen landing-stage">
+          <div className="landing-stage__ambient" aria-hidden="true" />
 
-        {/* No heading above this row on purpose: the four steps are titled
-            Build, Train, Launch, and Improve, so a "Build. Train. Launch.
-            Improve." headline over them was the same four words at display
-            size. The cards carry the section. */}
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <h2 className="sr-only">How Wireline works</h2>
-            <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
-              {HERO_LOOP.map((step, index) => (
-                <article
-                  key={step}
-                  className={`wl-wire-step p-7 text-center transition-colors hover:bg-muted/40 ${
-                    index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
-                  }`}
+          <div className="landing-stage__rail">
+            <div className="landing-stage__copy">
+              <div className="landing-stage__eyebrow">
+                <span className="landing-stage__live-dot" aria-hidden="true" />
+                Live Voice Demo
+              </div>
+
+              <h1 className="landing-stage__title">{MARKETING_VOICE.headline}</h1>
+              <p className="landing-stage__subline">{MARKETING_VOICE.subline}</p>
+
+              <div className="landing-stage__actions">
+                <Link
+                  to={PERSONAL_SIGNUP}
+                  className="marketing-btn-primary landing-stage__primary"
+                  onClick={trackPrimaryAction}
                 >
-                  <div className="wl-wire-step__marker mb-5">
-                    <span className="wl-wire-step__node" aria-hidden="true" />
-                  </div>
-                  <span className="block font-mono text-xs font-semibold tracking-[.08em] text-primary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="wl-display-4 mt-2">{step}</h3>
-                  <p className="mt-3 text-sm leading-[1.65] text-muted-foreground">
-                    {LOOP_COPY[index]}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="wl-public-section border-b border-border bg-card/40">
-          <div className="wl-public-rail">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="wl-display-2 mx-auto max-w-[18ch]">Choose the outcome.</h2>
-              <div
-                className="wl-segmented mx-auto mt-6 flex w-fit max-w-full"
-                role="tablist"
-                aria-label="Agent work lane"
-                onKeyDown={handleModeKeyDown}
-              >
-                {MODE_OPTIONS.map(({ key, label }) => {
-                  const selected = mode === key;
-                  return (
-                    <button
-                      key={key}
-                      id={modeTabId(key)}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      aria-controls={modePanelId(key)}
-                      tabIndex={selected ? 0 : -1}
-                      data-active={selected ? "true" : undefined}
-                      onClick={() => selectMode(key)}
-                      className="wl-segmented__item px-4 sm:px-5"
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+                  {MARKETING_VOICE.primaryCta}
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+                <a href="#hear-a-demo" className="marketing-btn-secondary landing-stage__secondary">
+                  Hear It Live
+                </a>
               </div>
-            </div>
 
-            <div className="wl-paper mx-auto mt-8 max-w-3xl rounded-[18px] p-6 text-center sm:p-8">
-              {MODE_OPTIONS.map(({ key, label }) => (
-                <div
-                  key={key}
-                  id={modePanelId(key)}
-                  role="tabpanel"
-                  aria-labelledby={modeTabId(key)}
-                  aria-label={`${label} agent details`}
-                  hidden={mode !== key}
-                >
-                  {mode === key ? (
-                    <div className="space-y-6 text-center">
-                      <div>
-                        <h3 className="wl-display-3 mx-auto max-w-[20ch]">{detail.title}</h3>
-                        <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-[1.65] text-muted-foreground">
-                          {detail.lead}
-                        </p>
-                      </div>
-                      <div>
-                        <ul className="grid gap-2 sm:grid-cols-3">
-                          {detail.bestFor.map((item) => (
-                            <li
-                              key={item}
-                              className="rounded-[12px] border border-border bg-muted px-4 py-3 text-center text-sm font-semibold text-foreground"
-                            >
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <Link
-                        to={detail.ctaPath}
-                        className="marketing-btn-primary mx-auto min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit"
+              <div className="landing-stage__economics" aria-label="Plan summary">
+                <span>Build free</span>
+                <span>Launch from ${STARTER_PRICE}/mo</span>
+                <span>Number included</span>
+                <a href="#pricing">View Pricing</a>
+                <span className="sr-only">
+                  Channels unlock at activation. Paid plans include a Wireline number. Extra usage
+                  uses prepaid Runtime Balance.
+                </span>
+              </div>
+
+              <h2 className="sr-only">How Wireline works</h2>
+              <ol className="landing-stage__spine" aria-label="How Wireline works">
+                {HERO_LOOP.map((step, index) => (
+                  <li key={step}>
+                    <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+
+              <div className="landing-stage__lane-group">
+                <p className="landing-stage__lanes-label">Start With</p>
+                <nav className="landing-stage__lanes" aria-label="Agent work lane">
+                  {AUDIENCES.map((audience) => {
+                    const Icon = audience.icon;
+                    return (
+                      <a
+                        key={audience.key}
+                        href="#solutions"
+                        className="landing-stage__lane"
+                        onClick={() => selectAudience(audience.key)}
                       >
-                        {detail.cta}
-                        <ArrowRight size={14} aria-hidden="true" />
-                      </Link>
+                        <Icon className="landing-stage__lane-icon" aria-hidden="true" />
+                        <strong>{audience.label}</strong>
+                        <span className="sr-only">
+                          {audience.detail}. {audience.uses.join(", ")}.
+                        </span>
+                        <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
+                      </a>
+                    );
+                  })}
+                </nav>
+              </div>
+            </div>
+
+            <div className="landing-stage__proof">
+              <div id="hear-a-demo" className="landing-console">
+                <header className="landing-console__header">
+                  <div className="landing-console__brand">
+                    <WirelineMark signal className="landing-console__mark" />
+                    <span>Wireline Live</span>
+                  </div>
+                  <div className="landing-console__status">
+                    <span aria-hidden="true" />
+                    Demo Ready
+                  </div>
+                </header>
+
+                <div className="landing-console__body">
+                  <BrowserCallWidget
+                    variant="stage"
+                    agentName={HERO_DEMO_AGENT.name}
+                    buttonLabel="Hear It Live"
+                    fallback={
+                      <a
+                        href={`tel:${HERO_DEMO_AGENT.tel}`}
+                        className="landing-demo__button"
+                        aria-label="Call the Public Demo Line"
+                        onClick={() =>
+                          emitProductEvent({
+                            event: "landing_demo_clicked",
+                            surface: "marketing_web",
+                            metadata: {
+                              agent: HERO_DEMO_AGENT.name,
+                              mode: "phone",
+                            },
+                          })
+                        }
+                      >
+                        <Phone className="size-4" aria-hidden="true" />
+                        <span>Call Demo Line</span>
+                      </a>
+                    }
+                  />
+
+                  <aside
+                    className="landing-console__activity"
+                    aria-label="Illustrative completed workflow"
+                  >
+                    <div className="landing-console__activity-heading">
+                      <div>
+                        <p className="landing-console__activity-kicker">Illustrative Workflow</p>
+                        <h2 className="landing-console__activity-title">
+                          From first answer to confirmed next step
+                        </h2>
+                      </div>
                     </div>
-                  ) : null}
+
+                    <ol className="landing-console__events">
+                      {EXAMPLE_RUN.map((event, index) => {
+                        const Icon = event.icon;
+                        return (
+                          <li key={event.label}>
+                            <span className="landing-console__event-icon">
+                              <Icon aria-hidden="true" />
+                            </span>
+                            <span className="landing-console__event-copy">
+                              <strong>{event.label}</strong>
+                              <small>{event.detail}</small>
+                            </span>
+                            <span className="landing-console__event-index" aria-hidden="true">
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+
+                    <div className="landing-console__outcome">
+                      <span>Outcome</span>
+                      <strong>Booked and logged</strong>
+                    </div>
+                  </aside>
                 </div>
+
+                <footer className="landing-console__footer">
+                  <div className="landing-console__control-note">
+                    <ShieldCheck aria-hidden="true" />
+                    <span>You set the rules, approvals, spend, and handoffs.</span>
+                  </div>
+                  <ul className="landing-console__channels" aria-label="Core agent channels">
+                    {CORE_CHANNELS.map((channel) => {
+                      const Icon = channel.icon;
+                      return (
+                        <li key={channel.label}>
+                          <Icon aria-hidden="true" />
+                          {channel.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </footer>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="solutions" className="marketing-section landing-home__section">
+          <div className="wl-public-rail">
+            <SectionHeading
+              eyebrow="Solutions"
+              title="Start with one job"
+              body="Choose the work. Wireline keeps every channel, rule, and outcome together."
+            />
+
+            <div className="landing-home__solution-grid">
+              {AUDIENCES.map((audience) => {
+                const Icon = audience.icon;
+                return (
+                  <article key={audience.key} className="landing-home__solution-card">
+                    <span className="landing-home__solution-icon">
+                      <Icon aria-hidden="true" />
+                    </span>
+                    <p className="wl-eyebrow">{audience.label}</p>
+                    <h3>{audience.detail}</h3>
+                    <ul>
+                      {audience.uses.map((use) => (
+                        <li key={use}>
+                          <Check aria-hidden="true" />
+                          {use}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link to={audience.href} onClick={() => selectAudience(audience.key)}>
+                      Start Here
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="marketing-section landing-home__section landing-home__section--tinted">
+          <div className="wl-public-rail">
+            <SectionHeading
+              eyebrow="Product"
+              title="One agent across every conversation"
+              body="Voice, text, email, memory, approvals, and proof stay in one operating system."
+            />
+
+            <div className="landing-home__compact-grid">
+              {CAPABILITIES.map((capability) => (
+                <CompactCard key={capability.title} {...capability} />
               ))}
             </div>
           </div>
         </section>
 
-        <LiveVideoSpotlight eyebrow={LIVE_VIDEO_EYEBROW} />
-
-        <section className="wl-public-section border-b border-border">
+        <section id="pricing" className="marketing-section landing-home__section">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Start free.</h2>
-            </div>
-            <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {PLAN_PREVIEW.map((plan) => (
-                <article
-                  key={plan.name}
-                  className={`wl-paper relative flex min-h-[310px] flex-col rounded-[16px] p-7 text-center ${
-                    plan.highlight ? "ring-2 ring-primary/60 shadow-lg" : ""
-                  }`}
-                >
-                  {plan.highlight ? (
-                    <span
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm"
-                      aria-label="Most popular plan"
+            <SectionHeading
+              eyebrow="Pricing"
+              title="Build free. Launch when ready"
+              body="Every paid plan includes a Wireline number. No automatic overages."
+            />
+
+            <div className="landing-home__pricing-grid">
+              {PLAN_CARDS.map(({ id, plan, presentation }) => {
+                const free = id === "personal";
+                const featured = id === "team";
+                const agentCount = free
+                  ? "1 private draft"
+                  : `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}`;
+                const capacity = free
+                  ? `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} private simulation`
+                  : `${plan.voice_minutes_monthly} voice minutes`;
+                const numberCount = free
+                  ? "Activate to go live"
+                  : `${plan.included_phone_numbers} number${
+                      plan.included_phone_numbers === 1 ? "" : "s"
+                    } included`;
+
+                return (
+                  <article
+                    key={id}
+                    className={`landing-home__price-card${featured ? " is-featured" : ""}`}
+                  >
+                    {featured ? <span className="landing-home__price-badge">Most Popular</span> : null}
+                    <p className="wl-eyebrow">{presentation.name}</p>
+                    <div className="landing-home__price">
+                      <strong>${plan.price_usd_monthly}</strong>
+                      <span>{free ? "forever" : "/month"}</span>
+                    </div>
+                    <p className="landing-home__price-description">{presentation.description}</p>
+                    <ul>
+                      {[agentCount, capacity, numberCount].map((fact) => (
+                        <li key={fact}>
+                          <Check aria-hidden="true" />
+                          {fact}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={`/signup?plan=${id}`}
+                      className={featured ? "marketing-btn-primary" : "marketing-btn-secondary"}
                     >
-                      Most popular
-                    </span>
-                  ) : null}
-                  <h3 className="wl-display-4">{plan.name}</h3>
-                  <div className="mt-5 flex items-baseline justify-center gap-1">
-                    <span className="wl-display-2 leading-none">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{plan.period}</span>
-                  </div>
-                  <ul
-                    className="wl-info-list mx-auto w-full max-w-[30ch] flex-1"
-                    aria-label={`${plan.name} highlights`}
-                  >
-                    {plan.facts.map((fact) => (
-                      <li key={fact}>{fact}</li>
-                    ))}
-                  </ul>
-                  <Link
-                    to={plan.ctaPath}
-                    className={`mt-6 min-h-11 justify-center text-sm font-semibold ${
-                      plan.highlight ? "marketing-btn-primary" : "marketing-btn-secondary"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                </article>
-              ))}
+                      {presentation.cta}
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
-            <div className="mt-8 text-center">
-              <p className="mx-auto max-w-[50ch] text-sm leading-[1.65] text-muted-foreground">
-                Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
-                Runtime Balance that you control. There is no surprise postpaid invoice.
-              </p>
-              <Link
-                to="/pricing"
-                className="mt-5 inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-primary hover:underline"
-              >
-                Compare every plan <ArrowRight size={14} aria-hidden="true" />
+
+            <div className="landing-home__pricing-note">
+              <p>Extra live work uses prepaid Runtime Balance.</p>
+              <Link to="/pricing">
+                Full Plan Details
+                <ArrowRight aria-hidden="true" />
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="wl-public-section">
-          <div className="wl-public-rail">
-            <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-16">
-              <div
-                className="pointer-events-none absolute inset-0"
-                aria-hidden="true"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 0%, var(--wireline-color-glow-primary), transparent 60%)",
-                }}
-              />
-              <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[24ch]">
-                  Put your first voice agent to work.
-                </h2>
-                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <Link
-                    to="/signup?plan=personal"
-                    className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
-                  >
-                    Build your voice agent
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
-                  <Link
-                    to="/showcase"
-                    className="marketing-btn-secondary min-h-12 w-full justify-center border-border/40 bg-transparent px-7 text-[15px] font-medium text-[var(--wireline-color-text-secondary)] hover:bg-white/5 hover:text-[var(--wireline-color-text-primary)] sm:w-auto"
-                  >
-                    Hear it live
-                  </Link>
-                </div>
-              </div>
+        <section id="trust" className="marketing-section landing-home__section landing-home__section--tinted">
+          <div className="wl-public-rail landing-home__trust-layout">
+            <SectionHeading
+              eyebrow="Trust"
+              title="Control stays with you"
+              body="Wireline can act. You decide where it stops, asks, escalates, and records proof."
+            />
+
+            <div className="landing-home__control-grid">
+              {CONTROL_POINTS.map((control) => (
+                <CompactCard key={control.title} {...control} />
+              ))}
             </div>
+
+            <Link to="/trust" className="marketing-btn-secondary landing-home__trust-link">
+              Open Trust Center
+              <ArrowRight aria-hidden="true" />
+            </Link>
           </div>
         </section>
 
-        <TrustSignals />
-        <MarketingFooter aboveStickyCta />
+        <section className="marketing-section landing-home__final-section">
+          <div className="wl-public-rail landing-home__final-card">
+            <WirelineMark signal className="landing-home__final-mark" />
+            <p className="wl-eyebrow text-primary">Wireline</p>
+            <h2>Build your voice agent</h2>
+            <p>Start free. Go live when the work is ready.</p>
+            <div>
+              <Link to={PERSONAL_SIGNUP} className="marketing-btn-primary">
+                Start Free
+                <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/signin" className="marketing-btn-secondary">
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
-      <MarketingStickyCta />
+
+      <LandingFooter />
     </div>
   );
 }

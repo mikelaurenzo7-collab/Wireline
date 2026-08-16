@@ -5,7 +5,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function PhoneSettings() {
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-8">
+    <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         {/* The selected Settings tab already reads "Phone"; the heading stays

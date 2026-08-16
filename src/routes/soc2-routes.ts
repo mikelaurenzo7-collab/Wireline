@@ -51,7 +51,7 @@ router.get(
       const review = await runAccessReview(drizzle, tenantId);
       const incidentTemplate = buildIncidentRow({
         severity: "P3",
-        title: "[Template] Service degradation — brief description",
+        title: "[Template] Service degradation, brief description",
         description:
           "Describe detection source, customer impact, containment, and remediation. Replace before external sharing.",
         detected_at: new Date().toISOString(),
@@ -66,17 +66,17 @@ router.get(
           {
             id: "SOC2_CC6",
             summary:
-              "Logical access — RBAC enforced via wireline_team_members + requirePermission middleware.",
+              "Logical access, RBAC enforced via wireline_team_members + requirePermission middleware.",
           },
           {
             id: "SOC2_CC7",
             summary:
-              "Operations monitoring — platform health, job queue sweeps, webhook retries, and AI audit logging provide traceability.",
+              "Operations monitoring, platform health, job queue sweeps, webhook retries, and AI audit logging provide traceability.",
           },
           {
             id: "SOC2_CC8",
             summary:
-              "Change management — configuration mutations emit wireline_audit_log rows with actor context.",
+              "Change management, configuration mutations emit wireline_audit_log rows with actor context.",
           },
         ],
         rbac_snapshot: {

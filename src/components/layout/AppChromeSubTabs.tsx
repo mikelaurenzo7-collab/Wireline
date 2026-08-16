@@ -45,7 +45,7 @@ export default function AppChromeSubTabs({
         tabs={primary.tabs}
         activeId={primary.activeId}
         onChange={primary.setActiveId}
-        aria-label={secondary ? `${primary.ariaLabel} — choose category` : primary.ariaLabel}
+        aria-label={secondary ? `${primary.ariaLabel}, choose category` : primary.ariaLabel}
         layoutIdPrefix={primary.layoutIdPrefix}
         instanceId={`${instanceId}-primary`}
         density={density}
@@ -61,7 +61,7 @@ export default function AppChromeSubTabs({
             tabs={secondary.tabs}
             activeId={secondary.activeId}
             onChange={secondary.setActiveId}
-            aria-label={`${secondary.ariaLabel} — choose view`}
+            aria-label={`${secondary.ariaLabel}, choose view`}
             layoutIdPrefix={secondary.layoutIdPrefix}
             instanceId={`${instanceId}-secondary`}
             density={density}

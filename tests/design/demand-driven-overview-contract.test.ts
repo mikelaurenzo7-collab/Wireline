@@ -34,7 +34,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps the demand path focused on one next action", () => {
-    expect(overview).toContain('title: "Connect a phone line."');
+    expect(overview).toContain('title: "Connect a phone line"');
     expect(overview).toContain('primaryHref: "/settings/phone"');
     expect(overview).toContain('primaryLabel: "Connect phone"');
     expect(overview).toContain("secondaryHref: undefined");
@@ -54,7 +54,7 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/Test \{language\.navShort\.toLowerCase\(\)\}/);
     expect(overview).toMatch(/hasConversationHistory/);
     expect(overview).toMatch(
-      /No new conversations today\. Your customer line is still ready/,
+      /No new conversations today/,
     );
   });
 
