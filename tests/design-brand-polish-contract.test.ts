@@ -177,9 +177,14 @@ describe("E2E design and brand polish", () => {
     expect(landing).toContain('chrome="hidden"');
     expect(landing).toContain("landing-os__tray");
     const stage = read("src/styles/landing-call-stage.css");
+    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
     expect(stage).toContain("aspect-ratio: auto");
     expect(stage).toContain("landing-os__tray");
+    expect(stage).toContain("#wireline-mobile-navigation.landing-os-nav");
+    expect(stage).toContain("grid-template-areas");
     expect(stage).not.toContain("max-width: min(21.25rem, 72vw)");
+    expect(header).toContain("landing-os-nav");
+    expect(header).not.toContain("92dvh");
     expect(landing).toContain("See Plans");
     expect(landing).toContain("Start free.");
     expect(landing).toContain("MARKETING_VOICE.spine");

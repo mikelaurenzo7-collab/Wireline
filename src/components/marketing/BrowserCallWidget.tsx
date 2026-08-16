@@ -225,55 +225,59 @@ export default function BrowserCallWidget({
             <div className="landing-phone__glass" aria-hidden="true" />
             {island ?? <div className="landing-phone__island" aria-hidden="true" />}
             {heading}
-            <div className="landing-phone__status">
-              <span className="landing-phone__dot" aria-hidden="true" />
-              {callActive ? "Live" : "Incoming"}
-            </div>
-            <AgentFace
-              seed={`public-demo:${agentName}`}
-              size={196}
-              speaking={speaking}
-              className="landing-phone__face"
-              title={`${agentName} agent avatar`}
-            />
-            <p className="landing-phone__name wl-preserve-case">{agentName}</p>
-            <p className="sr-only landing-phone__role">Voice Agent</p>
-            <div
-              className={cn("landing-phone__wave", !(speaking || callActive) && "is-quiet")}
-              aria-hidden="true"
-            >
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            {useFallbackControl ? (
-              fallback
-            ) : (
-              <button
-                type="button"
-                className={cn("landing-phone__call", callActive && "is-end")}
-                onClick={() => void handleToggleCall()}
-                disabled={connecting}
-                aria-busy={connecting}
-                aria-label={buttonText}
+            <div className="landing-phone__person">
+              <div className="landing-phone__status">
+                <span className="landing-phone__dot" aria-hidden="true" />
+                {callActive ? "Live" : "Incoming"}
+              </div>
+              <AgentFace
+                seed={`public-demo:${agentName}`}
+                size={196}
+                speaking={speaking}
+                className="landing-phone__face"
+                title={`${agentName} agent avatar`}
+              />
+              <p className="landing-phone__name wl-preserve-case">{agentName}</p>
+              <p className="sr-only landing-phone__role">Voice Agent</p>
+              <div
+                className={cn("landing-phone__wave", !(speaking || callActive) && "is-quiet")}
+                aria-hidden="true"
               >
-                {connecting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                ) : callActive ? (
-                  <PhoneOff className="h-5 w-5" aria-hidden="true" />
-                ) : (
-                  <Phone className="h-5 w-5" aria-hidden="true" />
-                )}
-              </button>
-            )}
-            <p className="landing-phone__cta">{buttonText}</p>
-            {error ? (
-              <p className="landing-phone__alert" role="alert">
-                {error}
-              </p>
-            ) : null}
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+            <div className="landing-phone__answer">
+              {useFallbackControl ? (
+                fallback
+              ) : (
+                <button
+                  type="button"
+                  className={cn("landing-phone__call", callActive && "is-end")}
+                  onClick={() => void handleToggleCall()}
+                  disabled={connecting}
+                  aria-busy={connecting}
+                  aria-label={buttonText}
+                >
+                  {connecting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                  ) : callActive ? (
+                    <PhoneOff className="h-5 w-5" aria-hidden="true" />
+                  ) : (
+                    <Phone className="h-5 w-5" aria-hidden="true" />
+                  )}
+                </button>
+              )}
+              <p className="landing-phone__cta">{buttonText}</p>
+              {error ? (
+                <p className="landing-phone__alert" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </div>
             {dock}
             <div className="landing-phone__home" aria-hidden="true" />
           </div>

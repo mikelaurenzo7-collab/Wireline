@@ -34,14 +34,21 @@ async function viewportMetrics(page: Page) {
     const body = document.body;
     const flow = document.querySelector(".marketing-flow");
     const phone = document.querySelector(".landing-phone");
+    const device = document.querySelector(".landing-phone__device");
     const title = document.querySelector(".landing-stage__title");
     const phoneRect = phone?.getBoundingClientRect();
     const titleRect = title?.getBoundingClientRect();
     const header = document.querySelector(".marketing-surface > header");
     const call = document.querySelector(".landing-phone__call");
     const homeBar = document.querySelector(".landing-phone__home");
+    const face = document.querySelector(".landing-phone__face");
+    const tray = document.querySelector(".landing-os__tray");
     const callRect = call?.getBoundingClientRect();
     const homeRect = homeBar?.getBoundingClientRect();
+    const faceRect = face?.getBoundingClientRect();
+    const trayRect = tray?.getBoundingClientRect();
+    const deviceStyle = device ? getComputedStyle(device) : null;
+    const phoneStyle = phone ? getComputedStyle(phone) : null;
     return {
       docOverflow: root.scrollHeight - root.clientHeight,
       bodyOverflow: body.scrollHeight - body.clientHeight,
@@ -55,7 +62,16 @@ async function viewportMetrics(page: Page) {
       headerCount: header ? 1 : 0,
       callWidth: callRect?.width ?? 0,
       callHeight: callRect?.height ?? 0,
+      callLeft: callRect?.left ?? 0,
       homeBottom: homeRect?.bottom ?? 0,
+      homeHeight: homeRect?.height ?? 0,
+      homeTop: homeRect?.top ?? 0,
+      faceLeft: faceRect?.left ?? 0,
+      faceRight: faceRect?.right ?? 0,
+      faceHeight: faceRect?.height ?? 0,
+      trayBottom: trayRect?.bottom ?? 0,
+      deviceRadius: deviceStyle ? Number.parseFloat(deviceStyle.borderTopLeftRadius) : 0,
+      phonePad: phoneStyle ? Number.parseFloat(phoneStyle.paddingTop) : 0,
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
     };
@@ -87,6 +103,14 @@ test("home phone stage fills the canvas without inner scroll", async ({ page }) 
   expect(metrics.phoneWidth).toBeGreaterThan(metrics.viewportWidth * 0.92);
   expect(metrics.titleTop, "headline lives inside the glass").toBeGreaterThan(metrics.phoneTop);
   expect(metrics.titleBottom).toBeLessThan(metrics.phoneBottom);
+  expect(metrics.phonePad, "iPad glass is inset from the window").toBeGreaterThan(12);
+  expect(metrics.deviceRadius, "iPad glass is rounded").toBeGreaterThan(16);
+  expect(metrics.homeHeight, "home indicator is on the glass").toBeGreaterThan(3);
+  expect(metrics.homeBottom).toBeLessThanOrEqual(metrics.viewportHeight + 2);
+  expect(metrics.trayBottom, "dock stays on the glass").toBeLessThan(metrics.homeTop + 2);
+  expect(metrics.faceRight, "Jordan sits in the left pane on iPad").toBeLessThan(
+    metrics.callLeft + 8,
+  );
 });
 
 test("home phone stage still fits a short laptop", async ({ page }) => {
@@ -103,6 +127,7 @@ test("home phone stage still fits a short laptop", async ({ page }) => {
   );
   expect(Math.abs(metrics.callHeight - metrics.callWidth)).toBeLessThan(8);
   expect(metrics.homeBottom).toBeLessThanOrEqual(metrics.viewportHeight + 2);
+  expect(metrics.homeHeight, "home indicator stays on a short laptop").toBeGreaterThan(3);
 });
 
 test("home hides the chrome bar and does not scroll on a phone", async ({ page }) => {
@@ -125,6 +150,8 @@ test("home hides the chrome bar and does not scroll on a phone", async ({ page }
   expect(metrics.phoneHeight).toBeGreaterThan(metrics.viewportHeight * 0.92);
   expect(metrics.phoneWidth).toBeGreaterThan(metrics.viewportWidth * 0.92);
   expect(metrics.titleTop, "headline lives inside the glass").toBeGreaterThan(metrics.phoneTop);
+  expect(metrics.homeHeight, "home indicator is on the glass").toBeGreaterThan(3);
+  expect(metrics.homeBottom).toBeLessThanOrEqual(metrics.viewportHeight + 2);
 });
 
 test("home island names Wireline and opens a closable sheet", async ({ page }) => {
@@ -136,6 +163,24 @@ test("home island names Wireline and opens a closable sheet", async ({ page }) =
   await expect(sheet).toBeVisible();
   await expect(sheet.locator(".wl-overline")).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Close" })).toBeVisible();
+  const sheetBox = await sheet.boundingBox();
+  expect(sheetBox, "island sheet is on screen").toBeTruthy();
+  expect(sheetBox!.height, "island sheet stays a compact card").toBeLessThan(844 * 0.62);
+  expect(sheetBox!.width, "island sheet is not full-bleed").toBeLessThan(380);
+  await sheet.getByRole("button", { name: "Close" }).click();
+  await expect(sheet).toHaveCount(0);
+});
+
+test("home island sheet stays a compact card on the iPad canvas", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await openCanvas(page, "/");
+  await page.getByRole("button", { name: "Wireline menu" }).click();
+  const sheet = page.locator("#wireline-mobile-navigation");
+  await expect(sheet).toBeVisible();
+  const sheetBox = await sheet.boundingBox();
+  expect(sheetBox).toBeTruthy();
+  expect(sheetBox!.height, "island sheet does not swallow the iPad").toBeLessThan(900 * 0.58);
+  expect(sheetBox!.width, "island sheet hangs from the island").toBeLessThan(420);
   await sheet.getByRole("button", { name: "Close" }).click();
   await expect(sheet).toHaveCount(0);
 });
@@ -148,6 +193,10 @@ test("home answer control stays circular on a short wide laptop", async ({ page 
   expect(metrics.callHeight).toBeGreaterThan(52);
   expect(Math.abs(metrics.callHeight - metrics.callWidth)).toBeLessThan(8);
   expect(metrics.homeBottom).toBeLessThanOrEqual(metrics.viewportHeight + 2);
+  expect(metrics.homeHeight).toBeGreaterThan(3);
+  expect(metrics.faceRight, "short iPad still keeps Jordan left of the answer").toBeLessThan(
+    metrics.callLeft + 8,
+  );
 });
 
 test("features canvas stays inside 1365x900", async ({ page }) => {

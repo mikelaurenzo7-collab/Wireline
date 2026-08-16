@@ -121,11 +121,7 @@ export default function PrecisionPublicHeader({
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        className={
-          deviceChrome
-            ? "landing-os-nav !top-0 !bottom-auto h-auto max-h-[min(92dvh,42rem)] rounded-b-[1.75rem] border-b"
-            : undefined
-        }
+        className={deviceChrome ? "landing-os-nav" : undefined}
         overlayClassName={
           deviceChrome
             ? "!top-0 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
@@ -139,11 +135,17 @@ export default function PrecisionPublicHeader({
         <div
           className={
             deviceChrome
-              ? "mx-auto flex w-full max-w-lg flex-col px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+              ? "mx-auto flex w-full max-w-lg flex-col px-4 py-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]"
               : "mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           }
         >
-          <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
+          <div
+            className={
+              deviceChrome
+                ? "flex items-center justify-between gap-4 border-b border-border pb-3"
+                : "flex items-center justify-between gap-4 border-b border-border pb-4"
+            }
+          >
             <p className="wl-overline">Wireline</p>
             {deviceChrome ? (
               <DialogClose className="inline-flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-foreground transition-[background-color,color,transform] hover:bg-secondary hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
@@ -165,7 +167,7 @@ export default function PrecisionPublicHeader({
                   to={link.to}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
-                  className={`group flex min-h-14 items-center justify-between border-b border-border text-[1.0625rem] font-semibold tracking-[-.025em] transition-colors ${active ? "text-primary" : "text-foreground hover:text-primary"}`}
+                  className={`group flex items-center justify-between border-b border-border font-semibold tracking-[-.025em] transition-colors ${deviceChrome ? "min-h-11 text-[0.975rem]" : "min-h-14 text-[1.0625rem]"} ${active ? "text-primary" : "text-foreground hover:text-primary"}`}
                 >
                   {link.label}
                   <span
@@ -178,24 +180,28 @@ export default function PrecisionPublicHeader({
               );
             })}
           </nav>
-          <div className={deviceChrome ? "grid gap-2 pt-6" : "mt-auto grid gap-2 pt-6"}>
+          <div
+            className={
+              deviceChrome ? "grid grid-cols-2 gap-2 pt-3" : "mt-auto grid gap-2 pt-6"
+            }
+          >
             <Link
               to="/signup?plan=personal"
               onClick={() => setOpen(false)}
-              className="marketing-btn-primary min-h-12 text-[length:var(--wireline-typography-body-size)] font-semibold"
+              className={`marketing-btn-primary text-[length:var(--wireline-typography-body-size)] font-semibold ${deviceChrome ? "min-h-11" : "min-h-12"}`}
             >
               Start Free
             </Link>
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
-              className="marketing-btn-secondary min-h-12 text-[length:var(--wireline-typography-body-size)] font-semibold"
+              className={`marketing-btn-secondary text-[length:var(--wireline-typography-body-size)] font-semibold ${deviceChrome ? "min-h-11" : "min-h-12"}`}
             >
               Sign In
             </Link>
             <nav
               aria-label="Legal"
-              className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+              className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground ${deviceChrome ? "col-span-2 mt-1" : "mt-3"}`}
             >
               {legalLinks.map((link) => (
                 <Link
