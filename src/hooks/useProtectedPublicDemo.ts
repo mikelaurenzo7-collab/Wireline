@@ -4,6 +4,12 @@ import type Vapi from "@vapi-ai/web";
 import { emitProductEvent } from "../lib/product-event-client";
 
 const DEFAULT_MAX_DURATION_SECONDS = 45;
+/**
+ * The SDK requires a typed assistant ID or assistant DTO even when a proxy owns
+ * the real assistant. Wireline's proxy ignores this sentinel and injects the
+ * fixed, budgeted server configuration after ticket and quota validation.
+ */
+const PROTECTED_DEMO_ASSISTANT_SENTINEL = "wireline-protected-public-demo";
 
 type DemoSessionResponse = {
   token: string;
@@ -182,7 +188,7 @@ export function useProtectedPublicDemo(
       setMaxDurationSeconds(duration);
       const instance = await createVapi(session.token, session.proxyUrl, duration);
       vapiRef.current = instance;
-      await instance.start({ agentName, source });
+      await instance.start(PROTECTED_DEMO_ASSISTANT_SENTINEL);
     } catch (reason: unknown) {
       console.error("[wireline:public-demo] Call start failed:", reason);
       startedRef.current = false;
