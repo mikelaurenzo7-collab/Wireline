@@ -32,8 +32,9 @@ interface MarketingPageFrameProps {
  * Public routes use normal document scrolling. The fixed header, relative
  * footer chrome, route-mode root, and section primitives are reconciled by
  * `marketing-document-flow.css`, which intentionally loads after the older
- * viewport-first base layer. Workspace routes retain their fixed-viewport,
- * bounded-scroll ownership independently.
+ * viewport-first base layer. That final route-mode layer is the effective
+ * contract; the base file remains only as shared composition geometry.
+ * Workspace routes retain their fixed-viewport, bounded-scroll ownership.
  */
 export default function MarketingPageFrame({
   children,
