@@ -69,8 +69,12 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("attemptRef.current += 1");
     expect(hook).toContain("The live connection took too long");
     expect(hook).toContain("vapiRef.current?.stop()");
-    expect(hook).not.toContain("voice bridge error:", "provider exceptions must not be dumped raw");
-    expect(hook).not.toContain("call start failed:", "provider exceptions must not be dumped raw");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "voice bridge error:",
+    );
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "call start failed:",
+    );
   });
 
   it("uses Express's trusted proxy identity instead of caller-controlled forwarding input", () => {
