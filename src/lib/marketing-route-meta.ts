@@ -1,26 +1,22 @@
 /**
- * Per-route head metadata for build-time prerendering of the marketing SPA.
+ * Per-route head metadata for build-time prerendering of the public SPA.
  *
- * The app is a client-rendered SPA: on Vercel, `vercel.json` rewrites every
- * marketing route to the static `/index.html` served straight from the CDN,
- * and per-page `<title>`/description/canonical/OG/Twitter tags are only
- * applied client-side by `PageMeta` (`src/lib/page-meta.tsx`). Social/link
- * crawlers (X, LinkedIn, Slack, Facebook, iMessage, Discord) do not execute
- * JS, so every share of a campaign landing page (`/for/*`, `/pricing`,
- * `/solutions/*`, …) unfurled as the generic homepage card, and every page's
- * raw canonical pointed at `/` (a duplicate-content risk for the exact pages
- * paid campaigns target).
+ * The app is a client-rendered SPA: on Vercel, `vercel.json` rewrites routes
+ * to the static `/index.html` served straight from the CDN, and per-page
+ * `<title>`/description/canonical/robots/OG/Twitter tags are otherwise applied
+ * client-side by `PageMeta` (`src/lib/page-meta.tsx`). Social/link crawlers and
+ * first-wave search indexing do not reliably execute JS, so campaign pages need
+ * route-specific share metadata and account/transition pages need `noindex`
+ * before hydration.
  *
  * `scripts/prerender-marketing-meta.mts` runs after `vite build` and writes a
- * per-route `dist/<route>/index.html` with these values injected. Vercel
- * serves filesystem matches before applying rewrites, so crawlers get the
- * right head; if a file were ever missing, the SPA rewrite still serves the
- * generic shell — the failure mode is the status quo, never a broken page.
- * After hydration, `PageMeta` keeps the head in sync exactly as before.
+ * per-route `dist/<route>/index.html` with these values injected. Vercel serves
+ * filesystem matches before applying rewrites, so crawlers get the intended
+ * head. After hydration, `PageMeta` keeps the head in sync exactly as before.
  *
- * The `/for/:slug` values come straight from `WEDGES` so there is one source
- * of truth; the handful of inline-page values below are kept verbatim in sync
- * with each page's `PageMeta` call by `tests/marketing-route-meta-contract.test.ts`.
+ * The `/for/:slug` values come straight from `WEDGES` so there is one source of
+ * truth; inline-page values below are kept verbatim in sync with each page's
+ * `PageMeta` call by `tests/marketing-route-meta-contract.test.ts`.
  */
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 
@@ -33,12 +29,24 @@ export const HOME_DESCRIPTION =
   "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
 const HOME_OG_URL_TAG = '<meta property="og:url" content="https://trywireline.com/" />';
+const HOME_ROBOTS_TAG =
+  '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
+const HOME_GOOGLEBOT_TAG =
+  '<meta name="googlebot" content="index, follow, max-image-preview:large" />';
 
 export interface RouteMeta {
   title: string;
   description: string;
   canonical: string;
+  noIndex?: boolean;
 }
+
+type StaticRouteMeta = {
+  title: string;
+  description: string;
+  canonicalPath?: string;
+  noIndex?: boolean;
+};
 
 /** Mirror `PageMeta`'s brand-suffix rule so server + client titles match. */
 function withBrand(title: string): string {
@@ -48,9 +56,9 @@ function withBrand(title: string): string {
 /**
  * Commercial routes whose meta lives inline in their page component, kept
  * verbatim in sync with each page's `PageMeta` call (contract-tested).
- * `/for/*` is intentionally absent here — it derives from `WEDGES`.
+ * `/for/*` is intentionally absent here because it derives from `WEDGES`.
  */
-const STATIC_ROUTE_META: Record<string, { title: string; description: string }> = {
+const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "Pricing | Wireline Voice Agents from $19/month",
     description:
@@ -105,14 +113,6 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
     description:
       "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
   },
-  // The four vertical trust packs are submitted in sitemap.xml and are the
-  // pages regulated buyers get sent to. Without their own prerendered meta
-  // they fell through to dist/index.html, whose canonical is the homepage —
-  // so Google saw four submitted URLs that self-canonicalized away as
-  // duplicates, and every share of one unfurled as the generic homepage card.
-  // These are the source: TrustPackPage reads them back through
-  // resolveRouteMeta so the hydrated head cannot drift from the prerendered
-  // one. It previously carried its own wording and drifted.
   "/trust/medical": {
     title: "Trust Pack: Healthcare sensitive workflows | Wireline",
     description:
@@ -165,18 +165,97 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   },
 };
 
-/** Every route the build prerenders — the campaign/commercial landing set. */
-export const PRERENDERED_MARKETING_ROUTES: readonly string[] = [
+/**
+ * Account and transition routes are publicly reachable but must never be search
+ * results. Their client components already set `PageMeta noIndex`; this registry
+ * closes the pre-hydration gap and gives aliases one canonical destination.
+ */
+const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
+  "/signin": {
+    title: "Sign in",
+    description: "Access your Wireline account.",
+    noIndex: true,
+  },
+  "/signup": {
+    title: "Create your account",
+    description: "Create a Wireline account and build your first voice agent.",
+    noIndex: true,
+  },
+  "/get-started": {
+    title: "Create your account",
+    description: "Create a Wireline account and build your first voice agent.",
+    canonicalPath: "/signup",
+    noIndex: true,
+  },
+  "/auth": {
+    title: "Sign in",
+    description: "Access your Wireline account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/login": {
+    title: "Sign in",
+    description: "Access your Wireline account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/reset": {
+    title: "Sign in",
+    description: "Access your Wireline account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/reset-password": {
+    title: "Reset your password",
+    description: "Choose a new password for your Wireline account.",
+    noIndex: true,
+  },
+  "/accept-invite": {
+    title: "Accept your invitation",
+    description: "Join the Wireline workspace that invited you.",
+    noIndex: true,
+  },
+  "/onboarding": {
+    title: "Set up Wireline",
+    description: "Finish configuring your Wireline workspace.",
+    noIndex: true,
+  },
+  "/auth/oauth-complete": {
+    title: "Completing sign in",
+    description: "Wireline is completing your secure sign in.",
+    noIndex: true,
+  },
+  "/oauth-complete": {
+    title: "Completing sign in",
+    description: "Wireline is completing your secure sign in.",
+    canonicalPath: "/auth/oauth-complete",
+    noIndex: true,
+  },
+  "/404": {
+    title: "Page not found",
+    description: "The requested Wireline page could not be found.",
+    noIndex: true,
+  },
+  "/not-found": {
+    title: "Page not found",
+    description: "The requested Wireline page could not be found.",
+    canonicalPath: "/404",
+    noIndex: true,
+  },
+};
+
+/** Every route for which the build emits a route-specific static shell. */
+export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [
   ...Object.keys(WEDGES).map((slug) => `/for/${slug}`),
   ...Object.keys(STATIC_ROUTE_META),
+  ...Object.keys(NON_INDEXED_ROUTE_META),
 ];
 
-/** Resolve per-route marketing meta, or `null` to serve the static HTML as-is. */
+/** Resolve per-route public meta, or `null` to serve the static HTML as-is. */
 export function resolveRouteMeta(pathname: string): RouteMeta | null {
   if (typeof pathname !== "string" || !pathname) return null;
-  // Normalize: drop query/hash (defensive) and trailing slashes.
   const clean = pathname.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
-  if (clean === "/") return null; // homepage defaults are already correct
+  if (clean === "/") return null;
 
   const forMatch = clean.match(/^\/for\/([a-z-]+)$/);
   if (forMatch) {
@@ -189,12 +268,13 @@ export function resolveRouteMeta(pathname: string): RouteMeta | null {
     };
   }
 
-  const staticMeta = STATIC_ROUTE_META[clean];
+  const staticMeta = STATIC_ROUTE_META[clean] ?? NON_INDEXED_ROUTE_META[clean];
   if (staticMeta) {
     return {
       title: withBrand(staticMeta.title),
       description: staticMeta.description,
-      canonical: `${SITE_URL}${clean}`,
+      canonical: `${SITE_URL}${staticMeta.canonicalPath ?? clean}`,
+      ...(staticMeta.noIndex ? { noIndex: true } : {}),
     };
   }
 
@@ -211,19 +291,26 @@ export function escapeHtml(value: string): string {
 }
 
 /**
- * Rewrite the homepage title/description/canonical/OG/Twitter tags in the
- * static HTML shell with `meta`. Uses exact-string replacement of the known
- * homepage values (each appears only in its meta tags), so it never touches
- * unrelated markup, the JSON-LD graph, or the hashed asset tags.
+ * Rewrite the homepage defaults in the static shell with `meta`. Exact-string
+ * replacement keeps unrelated markup, JSON-LD, and hashed asset tags intact.
  */
 export function injectMarketingMeta(html: string, meta: RouteMeta): string {
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
+  const robots = meta.noIndex
+    ? '<meta name="robots" content="noindex, nofollow" />'
+    : HOME_ROBOTS_TAG;
+  const googlebot = meta.noIndex
+    ? '<meta name="googlebot" content="noindex, nofollow" />'
+    : HOME_GOOGLEBOT_TAG;
+
   return html
     .split(HOME_TITLE)
-    .join(title) // <title>, og:title, twitter:title
+    .join(title)
     .split(HOME_DESCRIPTION)
-    .join(description) // description, og:description, twitter:description
+    .join(description)
     .replace(HOME_CANONICAL_TAG, `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`)
-    .replace(HOME_OG_URL_TAG, `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`);
+    .replace(HOME_OG_URL_TAG, `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`)
+    .replace(HOME_ROBOTS_TAG, robots)
+    .replace(HOME_GOOGLEBOT_TAG, googlebot);
 }
