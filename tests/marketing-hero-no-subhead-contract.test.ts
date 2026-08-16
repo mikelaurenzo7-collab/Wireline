@@ -30,9 +30,7 @@ describe("marketing hero has no subhead", () => {
     expect(hero, "MarketingHero must not retain an unused eyebrow prop").not.toMatch(
       /^\s*eyebrow\?:/m,
     );
-    expect(hero, "MarketingHero must not retain an unused proof prop").not.toMatch(
-      /^\s*proof\?:/m,
-    );
+    expect(hero, "MarketingHero must not retain an unused proof prop").not.toMatch(/^\s*proof\?:/m);
     expect(hero, "MarketingHero must not render a hero subhead").not.toContain(
       "marketing-hero__description",
     );
@@ -47,8 +45,14 @@ describe("marketing hero has no subhead", () => {
       .filter((f) => source(f).includes("<MarketingHero"))
       .sort();
 
+    // The floor is a guard against this test silently passing on an empty set,
+    // not a target. Five pages have since dropped their hero outright — /about,
+    // /compare, /pricing, /developers and /for/* each opened with a headline and
+    // two buttons filling a viewport above the content a visitor came for — so
+    // the honest floor is "some page still uses the shared hero", not "at least
+    // five do".
     expect(files.length, "no MarketingHero call sites found -- the glob changed").toBeGreaterThan(
-      4,
+      1,
     );
 
     for (const file of files) {

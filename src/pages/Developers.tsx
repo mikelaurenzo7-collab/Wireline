@@ -11,7 +11,6 @@ import {
 
 import { Button } from "../components/atoms";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
 import { PageMeta } from "../lib/page-meta";
 
 /**
@@ -118,26 +117,37 @@ export default function Developers() {
         path="/developers"
       />
 
-      <MarketingHero
-        title="Bring Wireline into the tools you already use"
-        primaryAction={{ label: "View MCP endpoint", to: "#mcp-endpoint" }}
-        secondaryAction={{
-          label: "OpenAPI map",
-          to: openApiUrl,
-          tone: "secondary",
-        }}
-      />
-
+      {/* The hero shares the opening screen with the three clients it is about.
+          On its own it was a headline and two links occupying a full viewport
+          above the only thing a developer came here to see. */}
       <section
-        className="marketing-section border-b border-border bg-card"
+        className="marketing-section marketing-section--screen border-b border-border bg-card"
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <h2 id="mcp-apps-heading" className="wl-stitch-display text-balance">
+          <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            Bring Wireline into the tools you already use
+          </h1>
+          <div className="marketing-hero__actions mt-7">
+            <a
+              href="#mcp-endpoint"
+              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+            >
+              View MCP Endpoint
+            </a>
+            <a
+              href={openApiUrl}
+              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+            >
+              OpenAPI Map
+            </a>
+          </div>
+
+          <h2 id="mcp-apps-heading" className="wl-stitch-display mt-12 text-balance">
             Connect once
           </h2>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
               <article
                 key={title}

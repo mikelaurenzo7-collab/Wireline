@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import MarketingFooter from "./MarketingFooter";
+import MarketingChromeBar from "./MarketingChromeBar";
 import MarketingStickyCta from "./MarketingStickyCta";
 import { cn } from "../../lib/utils";
 
@@ -15,8 +15,15 @@ type Props = {
 };
 
 /**
- * Header + optional footer + optional mobile sticky CTA without the full page frame.
- * Use for legal, support, or nested layouts that bring their own content width.
+ * Header, pinned chrome bar, and an optional mobile sticky CTA, for pages that
+ * bring their own content width: legal, trust, status, changelog, support.
+ *
+ * These are the long-form routes, and they are exactly why the frame is a frame
+ * rather than a per-page decision. A terms-of-service page has to scroll; what
+ * it must not do is scroll the *window*, because then the header detaches, the
+ * chrome bar drops off the bottom, and the route stops matching every other
+ * public page. So it gets the same 100dvh surface as the composed pages, and
+ * the document flows inside the same single `.marketing-flow` scroller.
  */
 export default function MarketingChrome({
   children,
@@ -28,7 +35,7 @@ export default function MarketingChrome({
   return (
     <div
       className={cn(
-        "marketing-surface min-h-dvh flex flex-col text-foreground",
+        "marketing-surface text-foreground",
         authCanvas ? "auth-portal-canvas" : "bg-card",
         className,
       )}
@@ -38,19 +45,15 @@ export default function MarketingChrome({
         id="main-content"
         tabIndex={-1}
         className={cn(
-          /* No nested scroller here: the chrome's root div is the scroll
-             container (foundation's `.wl-ui-caps >` rule). A second
-             overflow-y-auto viewport squeezed long content (legal pages)
-             into the space left over by the always-visible footer. */
-          "relative z-10 flex-1 flex flex-col",
-          /* PrecisionPublicHeader is fixed h-16 — reserve space so hero copy isn't clipped. */
-          !authCanvas && "pt-16 sm:pt-20",
+          /* One scroller, and it is this one. The header offset is authored on
+             `.marketing-flow` itself, so no page reserves h-16 of its own. */
+          "marketing-flow marketing-longform relative z-10 flex flex-col",
           stickyCta && "marketing-has-sticky-cta",
         )}
       >
         {children}
       </main>
-      {footer && <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta} />}
+      {footer && <MarketingChromeBar />}
       {stickyCta && <MarketingStickyCta />}
     </div>
   );

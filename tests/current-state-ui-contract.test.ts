@@ -76,7 +76,8 @@ describe("current-state UI contract", () => {
     expect(developers).not.toContain(
       "Connect once. Draft and simulate in the client you already open.",
     );
-    expect(developers).toContain("View MCP endpoint");
+    // Title Case at the source: a three-word button label.
+    expect(developers).toContain("View MCP Endpoint");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");

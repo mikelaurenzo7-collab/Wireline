@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
 /**
@@ -127,17 +126,29 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <MarketingHero
-        title={cfg.headline}
-        primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
-        secondaryAction={{
-          label: cfg.secondaryCta.label,
-          to: cfg.secondaryCta.href,
-          tone: "secondary",
-        }}
-      />
-
-      <section className="marketing-section mx-auto max-w-6xl">
+      {/* Headline, actions, and the pains they answer, on one screen. A wedge
+          page's headline names a problem; making the reader scroll past an
+          empty viewport to reach the problem is the wrong first move. */}
+      <section className="marketing-section marketing-section--screen mx-auto max-w-6xl">
+        <div className="mb-9 text-center">
+          <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            {cfg.headline}
+          </h1>
+          <div className="marketing-hero__actions mt-7">
+            <Link
+              to={cfg.primaryCta.href}
+              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+            >
+              {cfg.primaryCta.label}
+            </Link>
+            <Link
+              to={cfg.secondaryCta.href}
+              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+            >
+              {cfg.secondaryCta.label}
+            </Link>
+          </div>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = PAIN_ICONS[pain.icon];
