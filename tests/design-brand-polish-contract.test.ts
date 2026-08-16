@@ -183,6 +183,12 @@ describe("E2E design and brand polish", () => {
     expect(stage).toContain("#wireline-mobile-navigation.landing-os-nav");
     expect(stage).toContain("grid-template-areas");
     expect(stage).not.toContain("max-width: min(21.25rem, 72vw)");
+    expect(stage).not.toContain("#4ade80");
+    expect(stage).not.toContain("#fbbf24");
+    expect(stage).not.toContain("#7dd3fc");
+    expect(stage).not.toContain("#2563eb");
+    expect(stage).toContain("--wireline-color-action-primary-default");
+    expect(stage).toContain("--wireline-color-action-secondary-default");
     expect(header).toContain("landing-os-nav");
     expect(header).not.toContain("92dvh");
     expect(landing).toContain("See Plans");
