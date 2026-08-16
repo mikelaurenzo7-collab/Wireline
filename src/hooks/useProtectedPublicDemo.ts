@@ -171,12 +171,6 @@ export function useProtectedPublicDemo(
         metadata: { agent: agentName, mode: "protected_browser_voice", source },
       });
 
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("This browser does not support microphone-based voice demos.");
-      }
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      for (const track of permissionStream.getTracks()) track.stop();
-
       const response = await fetch("/api/public/demo-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -189,6 +183,12 @@ export function useProtectedPublicDemo(
       if (!session.token || !session.proxyUrl) {
         throw new Error("The protected live demo is temporarily unavailable.");
       }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("This browser does not support microphone-based voice demos.");
+      }
+      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      for (const track of permissionStream.getTracks()) track.stop();
 
       const duration = Math.max(
         15,
