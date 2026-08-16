@@ -43,9 +43,14 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /\.wl-stitch-auth-shell \.wl-auth-form-panel \{[^}]*height: 100% !important;[^}]*max-height: 100% !important;/s,
     );
-    expect(ownership).toContain(".wl-workspace-shell {");
+    expect(ownership).toMatch(
+      /\.wl-workspace-shell \{[^}]*safe-area-inset-top[^}]*safe-area-inset-bottom/s,
+    );
     expect(ownership).toContain(".wl-workspace-shell > .wl-workspace-frame > aside");
     expect(ownership).toContain('nav[aria-label="Workspace navigation"]');
+    expect(ownership).toMatch(
+      /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
+    );
     expect(workspace).toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
   });
 
@@ -56,6 +61,9 @@ describe("safe-area spacing ownership", () => {
     expect(transition).toContain("wl-transition-shell");
     expect(ownership).toMatch(
       /\.wl-transition-shell \{[\s\S]*safe-area-inset-top[\s\S]*safe-area-inset-right[\s\S]*safe-area-inset-bottom[\s\S]*safe-area-inset-left/,
+    );
+    expect(ownership).toMatch(
+      /\.wl-transition-shell \.wl-transition-rail \{[\s\S]*min-height: calc\([\s\S]*safe-area-inset-top[\s\S]*safe-area-inset-bottom/,
     );
   });
 
