@@ -66,16 +66,6 @@ function isFederalDncVendorConfigured() {
   }
 }
 
-function validHttpsUrl(name) {
-  const raw = process.env[name]?.trim();
-  if (!raw) return false;
-  try {
-    return new URL(raw).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 function hasWirelineSmsRetryPolicy(value) {
   if (typeof value !== "string" || !value.trim()) return false;
   try {

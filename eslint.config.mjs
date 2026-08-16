@@ -35,7 +35,6 @@ export default [
       "*.cjs", // built CJS output
       "public/**",
       "supabase/**",
-      "scripts/*.mjs", // maintenance scripts use console intentionally
       "*.config.ts", // vite.config.ts, vitest.config.ts
       "*.config.js",
     ],
@@ -110,7 +109,11 @@ export default [
     },
   },
 
-  // ── Node maintenance scripts outside the root scripts/*.mjs ignore ───
+  // ── Node maintenance scripts (ops layer) ─────────────────────────────
+  // These scripts run the launch gates, provider audits, and deploy flow.
+  // `no-undef` is the load-bearing rule here: a missing import in an ops
+  // script fails at the worst moment (mid-release), not in CI type checks,
+  // because plain .mjs files are outside every tsconfig.
   {
     files: ["**/scripts/**/*.mjs", "scripts/lib/**/*.mjs"],
     languageOptions: {
@@ -118,6 +121,31 @@ export default [
     },
     rules: {
       "no-console": "off",
+      "no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+
+  // ── Scripts that drive a browser via Playwright page.evaluate() ──────
+  // Their inline callbacks legitimately reference window/document/etc.
+  {
+    files: [
+      "scripts/build-official-assets.mjs",
+      "scripts/capture-prod-visual-qa.mjs",
+      "scripts/capture-visual-qa.mjs",
+      "scripts/dogfood-marketing.mjs",
+      "scripts/marketing-kit.mjs",
+      "scripts/prod-dogfood.mjs",
+    ],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 

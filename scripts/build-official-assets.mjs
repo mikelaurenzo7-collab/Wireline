@@ -20,7 +20,6 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "official-assets");
-const visualQa = path.join(repoRoot, "visual-qa");
 const marketingKit = path.join(repoRoot, "marketing-kit");
 
 function loadEnv(filePath) {

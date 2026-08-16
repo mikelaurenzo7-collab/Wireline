@@ -16,7 +16,6 @@ import {
   FOUNDER_CATALOG_VERSION,
   FOUNDER_PRICES,
   FOUNDER_PRODUCTS,
-  PRODUCT_BY_KEY,
 } from "./lib/stripe-founder-catalog.mjs";
 import {
   EXPECTED_PRODUCT_URL,

@@ -352,7 +352,7 @@ try {
   if (loopState && typeof loopState.currentTurn === "number") {
     currentTurn = loopState.currentTurn;
   }
-} catch (e) {
+} catch {
   // Ignore error if loop state file doesn't exist
 }
 

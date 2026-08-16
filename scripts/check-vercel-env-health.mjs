@@ -120,7 +120,7 @@ async function main() {
     "  AI Gateway: deployed Vercel functions can use VERCEL_OIDC_TOKEN; AI_GATEWAY_API_KEY remains recommended for local and non-Vercel execution.",
   );
   console.log(
-    `  Informational gaps — gateway: ${missingGateway}, operations: ${missingRecommended}, voice: ${missingVoice}.`,
+    `  Informational gaps — gateway: ${missingGateway}, operations: ${missingRecommended}, voice: ${missingVoice}, billing add-ons: ${missingBilling}.`,
   );
 }
 
