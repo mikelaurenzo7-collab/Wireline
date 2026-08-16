@@ -14,6 +14,9 @@
  *   with. FULL costs 2 provider credits per minute against LITE's 1 and needs a
  *   plan that includes it.
  *
+ * HeyGen Video Agent is not a third Live Video engine. It renders an MP4 on
+ * `HEYGEN_API_KEY` and must not appear here.
+ *
  * Every payload here follows the published session-token schema. The two mode
  * bodies are a discriminated union on `mode`, `avatar_persona` and `voice_agent`
  * are mutually exclusive, and a FULL session with neither a context nor a voice

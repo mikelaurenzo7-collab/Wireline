@@ -147,11 +147,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "heygen",
     "HeyGen presenter voices",
-    "Presenter voice previews and matched avatar voice generation.",
+    "Presenter voice previews and fail-closed presence-clip capability (Video Agent is prompt-to-MP4, not live video).",
     "voice",
     false,
     ["HEYGEN_API_KEY"],
-    "Requires a HeyGen Studio API key; LiveAvatar credentials are intentionally not reused.",
+    "Requires a HeyGen Studio API key; LiveAvatar credentials are intentionally not reused. Presence-clip minting stays off until per-tenant billing exists.",
   ),
   item(
     "google-workspace",

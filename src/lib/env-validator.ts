@@ -250,7 +250,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "HEYGEN_API_KEY",
     group: "voice",
     required: false,
-    description: "HeyGen Studio API credential for optional presenter voice previews",
+    description: "HeyGen Studio API credential for presenter voice previews and fail-closed presence clips (not Live Video sessions)",
     validate: nonEmpty,
   },
   {

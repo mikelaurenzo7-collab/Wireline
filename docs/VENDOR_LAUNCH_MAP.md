@@ -42,7 +42,7 @@ Required production configuration to offer the add-on:
 - active Stripe webhook synchronization
 - an active paid base subscription for the tenant
 
-`HEYGEN_API_KEY` is optional for presenter voice-preview features; LiveAvatar session creation is authenticated by `LIVEAVATAR_API_KEY`.
+`HEYGEN_API_KEY` is optional for presenter voice previews and a fail-closed presence-clip supply line (HeyGen Video Agent / classic video APIs). It is not the LiveAvatar session credential, and Video Agent spend must not be treated as Live Video minutes.
 
 Provider/account proof is distinct from code readiness. Before advertising Live Video as generally available, verify the production LiveAvatar credential, public avatar inventory, one real five-minute-or-less session, explicit end-session behavior, lip-sync audio, allowance decrement, Stripe checkout → webhook entitlement, cancellation behavior, and the production kill switch.
 
