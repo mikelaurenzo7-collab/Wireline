@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   issuePublicDemoTicket,
+  publicDemoTicketingReady,
   PUBLIC_DEMO_TICKET_TTL_SECONDS,
   verifyPublicDemoTicket,
 } from "../src/lib/public-demo-ticket";
@@ -84,5 +85,27 @@ describe("protected public demo tickets", () => {
         nowMs,
       }),
     ).toEqual({ ok: false, reason: "invalid_signature" });
+  });
+
+  it("fails closed when no sufficiently strong server signing secret exists", () => {
+    vi.stubEnv("WIRELINE_PUBLIC_DEMO_SIGNING_SECRET", "");
+    vi.stubEnv("INTERNAL_JWT_SECRET", "too-short");
+    vi.stubEnv("VAPI_WEBHOOK_SECRET", "");
+
+    expect(publicDemoTicketingReady()).toBe(false);
+    expect(() =>
+      issuePublicDemoTicket({
+        ip: "203.0.113.9",
+        host: "trywireline.com",
+        agentName: "Liam",
+      }),
+    ).toThrow("Public demo ticket signing is not configured");
+    expect(
+      verifyPublicDemoTicket({
+        token: "payload.signature",
+        ip: "203.0.113.9",
+        host: "trywireline.com",
+      }),
+    ).toEqual({ ok: false, reason: "unavailable" });
   });
 });
