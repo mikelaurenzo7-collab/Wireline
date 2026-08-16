@@ -3,6 +3,9 @@
  * Wireline Vercel environment health audit.
  *
  * Reads environment-variable metadata only. Secret values are never printed.
+ * Production is the only target this report may require; preview credential
+ * isolation is enforced separately inside every build by
+ * scripts/check-deployment-boundaries.mjs.
  *
  * Usage:
  *   VERCEL_TOKEN=... node scripts/check-vercel-env-health.mjs
