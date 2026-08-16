@@ -2,6 +2,7 @@
 import { spawnSync } from "node:child_process";
 
 const BROWSER_AUDIT_TAG = "[launch-browser-audit]";
+const BROWSER_CAPABILITY_FLAG = "WIRELINE_BROWSER_AUDIT_CAPABLE";
 const TESTS = [
   "tests/e2e/marketing-viewport-lock.spec.ts",
   "tests/e2e/marketing-a11y.spec.ts",
@@ -22,6 +23,14 @@ export function runLaunchBrowserAuditIfRequested() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
   if (environment !== "preview" || !commitMessage.includes(BROWSER_AUDIT_TAG)) return;
 
+  if (process.env[BROWSER_CAPABILITY_FLAG] !== "true") {
+    console.warn(
+      "Browser audit requested but not executed: set WIRELINE_BROWSER_AUDIT_CAPABLE=true only on a runner with Chromium system libraries and network access to the preview. Source, security, unit, and build certification continue independently.",
+    );
+    console.warn("WIRELINE_BROWSER_AUDIT_RESULT=SKIPPED_RUNNER_UNAVAILABLE");
+    return;
+  }
+
   const browsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH || "/tmp/wireline-playwright";
   const auditEnv = {
     ...process.env,
@@ -39,6 +48,7 @@ export function runLaunchBrowserAuditIfRequested() {
     ["playwright", "test", ...TESTS, "--project=chromium", "--reporter=line"],
     auditEnv,
   );
+  console.log("WIRELINE_BROWSER_AUDIT_RESULT=PASSED");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
