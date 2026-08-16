@@ -17,6 +17,9 @@ async function openCanvas(page: Page, path: string) {
     await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
     try {
       await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByRole("heading", { name: "Loading", exact: true })).toHaveCount(0, {
+        timeout: 60_000,
+      });
       return;
     } catch (error) {
       lastError = error;
@@ -68,6 +71,7 @@ test("home phone stage fills the canvas without inner scroll", async ({ page }) 
 test("home phone stage still fits a short laptop", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openCanvas(page, "/");
+  await expect(page.locator(".landing-phone")).toBeVisible();
   const metrics = await viewportMetrics(page);
   expect(metrics.docOverflow).toBeLessThanOrEqual(2);
   expect(metrics.flowOverflow).toBeLessThanOrEqual(12);

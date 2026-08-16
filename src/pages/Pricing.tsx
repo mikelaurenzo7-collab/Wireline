@@ -241,7 +241,7 @@ export default function Pricing() {
         */}
         <section id="plans" className="marketing-section marketing-section--screen">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-4 lg:justify-between">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-border pb-3 lg:justify-between">
               <p className="wl-eyebrow text-muted-foreground">Pricing</p>
 
               <div
@@ -389,7 +389,7 @@ export default function Pricing() {
 
             <article
               id="scale"
-              className="mt-3 flex scroll-mt-24 flex-col items-center gap-4 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-4 text-center lg:flex-row lg:justify-between lg:text-left"
+              className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
             >
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -408,11 +408,6 @@ export default function Pricing() {
               </Link>
             </article>
 
-            <p className="mx-auto mt-3 max-w-4xl text-center text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
-              {SHARED_PAID_FEATURES.join(". ")}
-            </p>
-
             <div className="mx-auto mt-2 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-2 text-center text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Live Video $19/mo</span>
               <span>60 reserved minutes</span>
@@ -420,11 +415,15 @@ export default function Pricing() {
               <span>no automatic overage</span>
             </div>
 
-            <details className="pricing-more mx-auto mt-3 w-full max-w-5xl text-left">
+            <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
               <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">
                 Channel rules and launch questions
               </summary>
               <div className="pricing-more__body mt-3">
+                <p className="mx-auto max-w-4xl text-center text-xs leading-5 text-muted-foreground">
+                  <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
+                  {SHARED_PAID_FEATURES.join(". ")}
+                </p>
                 <h2 className="wl-public-section-heading mx-auto text-center">
                   One voice agent. No seat tax. Clear costs
                 </h2>

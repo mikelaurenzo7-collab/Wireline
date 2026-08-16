@@ -44,13 +44,13 @@ test("homepage stages a live agent on a phone with no serious axe violations", a
   const workLane = page.getByRole("navigation", { name: "Agent work lane" });
   await expect(workLane).toBeVisible();
   await expect(
-    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.outbound.label, "i") }),
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.outbound.label}\\b`) }),
   ).toBeVisible();
   await expect(
-    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.inbound.label, "i") }),
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.inbound.label}\\b`) }),
   ).toBeVisible();
   await expect(
-    workLane.getByRole("link", { name: new RegExp(AGENT_DIRECTION_MODES.hybrid.label, "i") }),
+    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.hybrid.label}\\b`) }),
   ).toBeVisible();
 
   await expect(page.getByRole("button", { name: /Hear It Live/i }).or(page.getByRole("link", { name: /Hear It Live/i }))).toBeVisible();
