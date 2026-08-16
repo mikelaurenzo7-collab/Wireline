@@ -5,45 +5,59 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-const nestedSurfaces = [
-  "src/pages/Features.tsx",
-  "src/pages/Pricing.tsx",
-  "src/pages/About.tsx",
-  "src/components/AuthPortal.tsx",
-  "src/components/StudioWorkspaceV2.tsx",
-  "src/components/AgentToolPermissions.tsx",
-  "src/components/layout/MarketingPageFrame.tsx",
-] as const;
-
 describe("safe-area spacing ownership", () => {
-  it("keeps safe-area padding on the outer application frame only", () => {
-    expect(read("src/App.tsx")).toContain(
-      "wl-ui-caps w-full max-w-[100vw] overflow-x-hidden safe-area-insets",
-    );
-    expect(read("src/styles/foundation.css")).toContain(".safe-area-insets {");
+  it("keeps the exact-height application root unpadded", () => {
+    const app = read("src/App.tsx");
+    const ownership = read("src/styles/safe-area-ownership.css");
+    const index = read("src/index.css");
 
-    for (const path of nestedSurfaces) {
-      expect(read(path), path).not.toContain("safe-area-insets");
-    }
+    expect(app).toContain("wl-ui-caps w-full max-w-[100vw] overflow-x-hidden");
+    expect(app).not.toContain("safe-area-insets");
+    expect(ownership).toContain("The application root is exactly 100dvh and never pads itself");
+    expect(index.indexOf("safe-area-ownership.css")).toBeGreaterThan(
+      index.indexOf("prestige-polish.css"),
+    );
   });
 
-  it("preserves the authored header, form, loading, and tool padding", () => {
-    // The header offset is authored once, on the shared scroller
-    // (`.marketing-flow { padding-top: var(--wl-marketing-chrome-top) }`),
-    // rather than as a pt-16 repeated on each page's <main>.
+  it("assigns notches and home indicators to physical public chrome", () => {
+    const ownership = read("src/styles/safe-area-ownership.css");
+    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
+
+    expect(ownership).toContain(
+      "--wl-marketing-chrome-top: calc(4rem + env(safe-area-inset-top, 0px))",
+    );
+    expect(ownership).toContain("--wl-marketing-chrome-bottom: calc(2.1rem + env(");
+    expect(ownership).toContain(".wl-public-header {");
+    expect(ownership).toContain(".wl-public-nav-overlay {");
+    expect(ownership).toContain(".marketing-chrome-bar__row");
+    expect(header).toContain("wl-public-header fixed");
+    expect(header).toContain("wl-public-nav-overlay");
+    expect(header).not.toContain("!top-16");
+  });
+
+  it("keeps auth and workspace children inside their safe content boxes", () => {
+    const ownership = read("src/styles/safe-area-ownership.css");
+    const workspace = read("src/components/WorkspaceShell.tsx");
+
+    expect(ownership).toContain(".wl-stitch-auth-shell {");
+    expect(ownership).toMatch(
+      /\.wl-stitch-auth-shell \.wl-auth-form-panel \{[^}]*height: 100% !important;[^}]*max-height: 100% !important;/s,
+    );
+    expect(ownership).toContain(".wl-workspace-shell {");
+    expect(ownership).toContain(".wl-workspace-shell > .wl-workspace-frame > aside");
+    expect(ownership).toContain('nav[aria-label="Workspace navigation"]');
+    expect(workspace).toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
+  });
+
+  it("preserves the one-scroller public and form contracts", () => {
     expect(read("src/styles/viewport-first-marketing.css")).toContain(
       "padding-top: var(--wl-marketing-chrome-top);",
     );
     for (const path of ["src/pages/Features.tsx", "src/pages/Pricing.tsx", "src/pages/About.tsx"]) {
       expect(read(path), path).not.toContain('className="pt-16"');
     }
-    const authPortal = read("src/components/AuthPortal.tsx");
-    expect(authPortal).toContain(
+    expect(read("src/components/AuthPortal.tsx")).toContain(
       "wl-auth-form-panel flex h-[100dvh] max-h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-4 sm:px-6",
-    );
-    expect(authPortal).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
-      "flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6",
     );
   });
 });
