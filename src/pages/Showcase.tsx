@@ -27,7 +27,7 @@ export default function Showcase() {
       <section className="marketing-section marketing-section--screen">
         <MarketingHero
           title="Hear what your customer hears"
-          primaryAction={{ label: "Create an Agent", to: PERSONAL_SIGNUP }}
+          primaryAction={{ label: "Build Your Voice Agent", to: PERSONAL_SIGNUP }}
           secondaryAction={{
             label: "Call a Demo Line",
             to: "#demo-lines",
