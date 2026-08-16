@@ -20,7 +20,7 @@ import {
 import { Link } from "react-router";
 
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import MarketingChromeBar from "./MarketingChromeBar";
+import LandingFooter from "./LandingFooter";
 import BrowserCallWidget from "./BrowserCallWidget";
 import WirelineMark from "../brand/WirelineMark";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
@@ -495,7 +495,7 @@ export default function WireAgentLanding() {
                   ? "1 private draft"
                   : `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}`;
                 const capacity = free
-                  ? "$1.50 private simulation"
+                  ? `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} private simulation`
                   : `${plan.voice_minutes_monthly} voice minutes`;
                 const numberCount = free
                   ? "Activate to go live"
@@ -584,7 +584,7 @@ export default function WireAgentLanding() {
         </section>
       </main>
 
-      <MarketingChromeBar />
+      <LandingFooter />
     </div>
   );
 }
