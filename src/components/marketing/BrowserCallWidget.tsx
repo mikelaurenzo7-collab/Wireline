@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertCircle, Loader2, Mic, PhoneOff, Volume2 } from "lucide-react";
+import { AlertCircle, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-react";
 
 import { useProtectedPublicDemo } from "../../hooks/useProtectedPublicDemo";
 import { cn } from "../../lib/utils";
@@ -56,6 +56,7 @@ export default function BrowserCallWidget({
     agentName,
     variant === "stage" ? "landing_product_theater" : "showcase_browser_demo",
   );
+  const showPhoneFallback = Boolean(fallback) && (Boolean(demo.error) || demo.completed);
   const buttonText = demo.connecting
     ? "Connecting…"
     : demo.callActive
@@ -69,8 +70,8 @@ export default function BrowserCallWidget({
       ? "Live"
       : demo.connecting
         ? "Connecting"
-        : demo.completed
-          ? "Complete"
+        : showPhoneFallback
+          ? "Phone Option"
           : "Ready";
 
     return (
@@ -109,10 +110,10 @@ export default function BrowserCallWidget({
                 <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                 <span>Securing private preview</span>
               </>
-            ) : demo.completed ? (
+            ) : showPhoneFallback ? (
               <>
-                <Volume2 className="size-3.5" aria-hidden="true" />
-                <span>Protected preview complete</span>
+                <Phone className="size-3.5" aria-hidden="true" />
+                <span>Public demo line available</span>
               </>
             ) : (
               <>
@@ -134,6 +135,8 @@ export default function BrowserCallWidget({
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : demo.callActive ? (
               <PhoneOff className="size-4" aria-hidden="true" />
+            ) : demo.completed ? (
+              <Volume2 className="size-4" aria-hidden="true" />
             ) : (
               <Mic className="size-4" aria-hidden="true" />
             )}
@@ -143,8 +146,8 @@ export default function BrowserCallWidget({
           <p className="landing-demo__microcopy">
             {demo.callActive
               ? `This preview ends automatically after ${demo.maxDurationSeconds} seconds. End it sooner at any time.`
-              : demo.completed
-                ? "The private preview has ended. Build your own agent free, or call the public demo line below."
+              : showPhoneFallback
+                ? "Call the public demo line below. Standard carrier rates may apply."
                 : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}
           </p>
 
@@ -258,9 +261,19 @@ export default function BrowserCallWidget({
             <span>{demo.error}</span>
           </div>
           {fallback}
+          {fallback ? (
+            <p className="wl-preserve-case text-center text-xs text-muted-foreground">
+              Standard carrier rates may apply.
+            </p>
+          ) : null}
         </div>
       ) : demo.completed && fallback ? (
-        <div className="grid justify-items-center gap-2">{fallback}</div>
+        <div className="grid justify-items-center gap-2">
+          {fallback}
+          <p className="wl-preserve-case text-center text-xs text-muted-foreground">
+            Standard carrier rates may apply.
+          </p>
+        </div>
       ) : null}
     </div>
   );
