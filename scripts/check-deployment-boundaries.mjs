@@ -58,8 +58,8 @@ if (isProduction) {
   validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
-    notices.push(
-      "VITE_VAPI_PUBLIC_KEY is legacy configuration. Public browser demos now use a short-lived server ticket and VAPI_PRIVATE_KEY proxy; rotate and remove the browser key after release.",
+    failures.push(
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and the server-only VAPI_PRIVATE_KEY proxy",
     );
   }
 
