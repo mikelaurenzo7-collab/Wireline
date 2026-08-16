@@ -21,15 +21,19 @@ describe("activation path contract", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
-    expect(overview).toContain("Start with one job.");
+    expect(overview).toContain("Start with one job");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     expect(studio).toContain("Start with one job.");
     expect(studio).toContain("Give it one customer job. You can change everything later.");
     expect(studio).not.toContain("Start with one customer-facing job.");
     expect(studio).toContain('{posture === "personal" ? (');
     expect(overview).toContain("{language.createCta}");
-    expect(overview).toContain("dayGreeting()");
-    expect(overview).toContain("workspaceFirstName(");
+    // The time-of-day greeting is gone: it was the largest type on the most
+    // important screen in activation, carrying the least information on it, and
+    // it changed three times a day for no decision a visitor makes. On first
+    // run the activation panel's own heading is the page's title.
+    expect(overview).not.toContain("dayGreeting");
+    expect(overview).toContain('id="first-run-title" className="wl-app-page-title');
     expect(overview).not.toContain("Let's put your first");
     expect(overview).not.toContain("text-center");
     expect(overview).toContain('className="relative wl-overview-greeting text-left"');

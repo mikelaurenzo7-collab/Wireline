@@ -90,7 +90,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   overview: [
     // Nav carries the "Overview" label; the page itself leads with a
     // personalized greeting headline and the first-agent path.
-    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
+    { id: "overview-title", pattern: /wl-app-page-title/ },
     { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
     { id: "full-roster", pattern: /agents\.map/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },

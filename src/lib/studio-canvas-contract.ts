@@ -86,7 +86,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
-    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
+    { id: "overview-title", pattern: /wl-app-page-title/ },
     { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
     { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },

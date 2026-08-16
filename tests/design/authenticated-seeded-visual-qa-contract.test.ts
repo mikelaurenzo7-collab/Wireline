@@ -36,7 +36,7 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toContain(":has(> section:first-child .wl-empty-state)");
   });
 
-  it("keeps the Overview greeting as a short left-aligned personal line", () => {
+  it("keeps the Overview header a short left-aligned line, with no salutation", () => {
     const css = read("src/styles/authenticated-visual-qa.css");
     const overview = read("src/pages/OverviewPage.tsx");
 
@@ -44,9 +44,14 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toContain("max-width: 22ch");
     expect(css).toContain("margin: 0.9rem 0 0");
     expect(css).not.toContain("margin: 0.9rem auto 0");
-    expect(overview).toContain("dayGreeting()");
+    // No "Good morning, <name>": it was the largest type in the product
+    // carrying the least information, and on first run it sat directly above a
+    // panel whose own heading said the only thing worth saying.
+    expect(overview).not.toContain("dayGreeting");
     expect(overview).not.toContain("Let's put your first");
     expect(overview).toContain("wl-overview-greeting text-left");
+    // First run has exactly one title, and it is the activation heading.
+    expect(overview).toContain('id="first-run-title"');
   });
 
   it("removes the decorative ledger treatment from authenticated task surfaces", () => {
@@ -74,9 +79,10 @@ describe("authenticated seeded-state visual QA contract", () => {
           /:where\(\[role="tablist"\]\.tab-strip-scroll, \.app-tab-strip\)\s*\{[^}]*\}/,
         )?.[0] ?? "";
 
-    expect(rule, "tab rails must declare overflow-x so Revenue cannot escape the viewport").not.toBe(
-      "",
-    );
+    expect(
+      rule,
+      "tab rails must declare overflow-x so Revenue cannot escape the viewport",
+    ).not.toBe("");
     expect(rule).toContain("overflow-x: auto");
     expect(rule).toContain("max-width: 100%");
     expect(tabs).toContain("tab-strip-scroll");

@@ -258,3 +258,26 @@
     min-height: 3rem;
   }
 }
+
+
+/*
+ * Overview, first run.
+ *
+ * The activation panel is the only thing on the screen until the workspace has
+ * an agent, and it was pinned to the top of the content area with ~540px of
+ * empty canvas beneath it — 58% of the most important screen in activation,
+ * showing nothing. The block is centred instead, the same correction the public
+ * heroes needed: the emptiness does not go away, it stops being on one side.
+ *
+ * `flex`, not `min-height: 100%`: the parent is a column flex wrapper whose own
+ * height is `auto` (it carries `min-h-full`, not `height`), so a percentage
+ * min-height on the child resolves against `auto` and does nothing — measured
+ * at 318px inside a 788px parent. Growing as a flex item fills the same box for
+ * real, and still lets the panel scroll normally when a short window makes it
+ * taller than the viewport.
+ */
+.wl-overview--first-run {
+  flex: 1 1 auto;
+  justify-content: center;
+  padding-bottom: 0;
+}

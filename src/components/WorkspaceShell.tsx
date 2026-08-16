@@ -300,9 +300,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </div>
       ) : null}
 
-      <div className="min-h-3 flex-1" />
+      <div className="min-h-3 max-h-20 flex-1" />
 
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
+        <div className="px-2.5 pb-2">
+          <WiredEyebrow>Operate</WiredEyebrow>
+        </div>
         {OPERATE_NAV.filter(
           (item) => item.href !== "/settings" && isRouteAvailableForAccount(accountType, item.href),
         ).map((item) => (
