@@ -124,18 +124,21 @@ function validateProductionEnvironment() {
   run("node", ["scripts/check-prod-env.mjs"]);
 }
 
-function reconcileStripePortalIfRequested() {
+function verifyStripePortalIfRequested() {
   if (!isCanonicalProduction) return;
   if (process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true") {
     console.error(
       "Refusing canonical production build without WIRELINE_RECONCILE_STRIPE_PORTAL=true. " +
-        "The managed customer portal must be reconciled and verified on every production release.",
+        "The managed customer portal must be verified on every production release.",
     );
     process.exit(1);
   }
 
-  console.log("Reconciling the canonical Stripe customer portal after build certification.");
-  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts", "--apply"]);
+  // Preserve the historical environment-variable name for deployed compatibility,
+  // but keep artifact construction read-only with respect to Stripe. Drift must be
+  // repaired explicitly through the operator command and then re-verified here.
+  console.log("Verifying the canonical Stripe customer portal after build certification.");
+  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
@@ -305,4 +308,4 @@ run("npx", [
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
 syncShowcaseIfRequested();
-reconcileStripePortalIfRequested();
+verifyStripePortalIfRequested();
