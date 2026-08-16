@@ -58,7 +58,16 @@
 }
 
 @media (max-width: 1120px) {
+  .marketing-surface.landing-home .marketing-flow {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
   .marketing-surface .landing-stage.marketing-section--screen {
+    height: auto;
+    min-height: 100%;
+    flex: 0 0 auto;
     align-content: start;
     overflow: visible;
   }
