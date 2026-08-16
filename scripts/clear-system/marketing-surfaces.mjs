@@ -11,6 +11,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
+  const landingFooter = read("src/components/marketing/LandingFooter.tsx");
   const landingStageCss = read("src/styles/landing-call-stage.css");
   const landingLayoutCss = read("src/styles/landing-stage-layout.css");
   const landingConsoleCss = read("src/styles/landing-live-console.css");
@@ -115,7 +116,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/MARKETING_VOICE\.primaryCta/, "landing must consume the shared primary action"],
     [/MARKETING_VOICE\.spine/, "landing must consume the shared Build Train Launch spine"],
     [/<PrecisionPublicHeader\s*\/>/, "landing must use the minimal shared public header"],
-    [/<MarketingChromeBar\s*\/>/, "landing must retain full footer wayfinding"],
+    [/<LandingFooter\s*\/>/, "landing must retain full footer wayfinding"],
     [/id="solutions"/, "landing must include solutions in the main story"],
     [/id="features"/, "landing must include product capabilities in the main story"],
     [/id="pricing"/, "landing must include pricing in the main story"],
@@ -139,6 +140,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       description,
     );
   }
+
+  mustInclude(
+    "src/components/marketing/LandingFooter.tsx",
+    landingFooter,
+    /<MarketingChromeBar\s*\/>/,
+    "landing footer must render the shared public link bar",
+  );
 
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
