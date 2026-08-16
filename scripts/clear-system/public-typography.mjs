@@ -1,11 +1,15 @@
 /**
- * Public typography quality contract for shipped weights, platform rendering,
- * and a readable compact-text floor.
+ * Typography quality contract for shipped weights, platform rendering,
+ * readable compact text, and consistent connected widget surfaces.
  */
 export function checkPublicTypography({ failures, read, mustInclude, mustExclude }) {
+  const appCss = read("src/index.css");
   const surfaceIndex = read("src/styles/wireline-marketing-surfaces.css");
   const readableType = read("src/styles/marketing-readable-type.css");
   const documentFlow = read("src/styles/marketing-document-flow.css");
+  const safeArea = read("src/styles/safe-area-ownership.css");
+  const terminalType = read("src/styles/type-integrity.css");
+  const widgetType = read("src/lib/wireline-mcp-widget-styles.ts");
   const fonts = read("public/fonts.css");
   const index = read("index.html");
 
@@ -54,10 +58,71 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     "public type layer must request only shipped static weights",
   );
 
+  mustInclude(
+    "src/styles/safe-area-ownership.css",
+    safeArea,
+    /^@import "\.\/type-integrity\.css";/,
+    "terminal type integrity must load through the final visual tier",
+  );
+  mustInclude(
+    "src/index.css",
+    appCss,
+    /@import "\.\/styles\/safe-area-ownership\.css";\s*body\s*\{/,
+    "safe-area ownership and terminal type integrity must remain the final imported tier",
+  );
+
   for (const [pattern, description] of [
-    [/font-synthesis:\s*none;/, "font synthesis must remain disabled"],
-    [/-webkit-font-smoothing:\s*auto;/, "font smoothing must follow the platform"],
-    [/text-rendering:\s*auto;/, "text rendering must follow the platform"],
+    [/font-synthesis:\s*none;/, "synthetic font weights must be disabled globally"],
+    [/-webkit-font-smoothing:\s*auto;/, "font smoothing must follow the platform globally"],
+    [/-moz-osx-font-smoothing:\s*auto;/, "macOS font smoothing must follow the platform"],
+    [/text-rendering:\s*auto;/, "text rendering must follow the platform globally"],
+    [
+      /\.marketing-surface \.marketing-hero__title,[\s\S]*font-weight:\s*700;/,
+      "public hero copy must use a shipped display weight",
+    ],
+    [/\.wl-chip,[\s\S]*\.marketing-hero-proof span[\s\S]*font-weight:\s*600;/,
+      "shared mono labels must use the shipped semibold face"],
+    [/\.marketing-proof-chip,[\s\S]*\.wl-workspace-header \.wl-overline[\s\S]*font-size:\s*0\.75rem;/,
+      "compact public and workspace labels must retain a 12px floor"],
+  ]) {
+    mustInclude("src/styles/type-integrity.css", terminalType, pattern, description);
+  }
+
+  mustExclude(
+    "src/styles/type-integrity.css",
+    terminalType,
+    /font-weight:\s*(?:560|650|680|720)\s*;/,
+    "terminal type integrity must request only shipped static weights",
+  );
+
+  for (const [pattern, description] of [
+    [/font-synthesis:\s*none;/, "connected widgets must disable synthetic weights"],
+    [/\.eyebrow \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
+      "connected widget eyebrows must use readable static type"],
+    [/\.meta strong \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
+      "connected widget metadata must use readable static type"],
+    [/button, a\.button \{[\s\S]*font-weight:\s*600;/,
+      "connected widget controls must use a shipped weight"],
+  ]) {
+    mustInclude("src/lib/wireline-mcp-widget-styles.ts", widgetType, pattern, description);
+  }
+  mustExclude(
+    "src/lib/wireline-mcp-widget-styles.ts",
+    widgetType,
+    /font-weight:\s*(?:560|650|680|720)\s*;/,
+    "connected widgets must not request synthetic weights",
+  );
+  mustExclude(
+    "src/lib/wireline-mcp-widget-styles.ts",
+    widgetType,
+    /font-size:\s*11px;/,
+    "connected widget labels must not fall below 12px",
+  );
+
+  for (const [pattern, description] of [
+    [/font-synthesis:\s*none;/, "public document font synthesis must remain disabled"],
+    [/-webkit-font-smoothing:\s*auto;/, "public document font smoothing must follow the platform"],
+    [/text-rendering:\s*auto;/, "public document text rendering must follow the platform"],
   ]) {
     mustInclude(
       "src/styles/marketing-document-flow.css",
