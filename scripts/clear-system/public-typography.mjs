@@ -76,9 +76,17 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     );
   }
 
-  for (const family of ["Inter Tight display", "Inter body", "IBM Plex Mono labels"]) {
-    if (!index.includes(family)) {
-      failures.push(`index.html: missing preload rationale for ${family}`);
-    }
+  for (const [path, family] of [
+    ["/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2", "Inter Tight display"],
+    ["/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2", "Inter body"],
+    ["/fonts/-F6qfjptAgt5VM-kVkqdyU8n3pQPwlBFgg.woff2", "IBM Plex Mono labels"],
+  ]) {
+    const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    mustInclude(
+      "index.html",
+      index,
+      new RegExp(`<link[\\s\\S]*?rel="preload"[\\s\\S]*?as="font"[\\s\\S]*?href="${escapedPath}"`),
+      `${family} must be preloaded above the fold`,
+    );
   }
 }
