@@ -38,11 +38,12 @@ test("homepage live console has visible navigation and no serious axe violations
   await expect(page.locator(".landing-console")).toBeVisible();
   await expect(page.getByText("Booked and logged", { exact: true })).toBeVisible();
 
-  const channelList = page.getByRole("list", { name: "Agent channels" });
+  const channelList = page.getByRole("list", { name: "Core agent channels" });
   await expect(channelList).toBeVisible();
-  for (const label of ["Voice", "Text", "Email", "Live Video"]) {
+  for (const label of ["Voice", "Text", "Email"]) {
     await expect(channelList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
+  await expect(channelList.getByText("Live Video", { exact: false })).toHaveCount(0);
 
   const workLane = page.getByRole("navigation", { name: "Agent work lane" });
   await expect(workLane).toBeVisible();
