@@ -12,7 +12,7 @@
   --wireline-typography-overline-letterSpacing: 0.075em;
 }
 
-body {
+html body {
   font-synthesis: none;
   text-rendering: auto;
   -webkit-font-smoothing: auto;
@@ -31,22 +31,22 @@ body[data-wireline-viewport="document"] {
 
 body[data-wireline-viewport="document"] #root,
 body[data-wireline-viewport="document"] .wl-ui-caps,
-.wl-ui-caps--document {
+.wl-ui-caps.wl-ui-caps--document {
   height: auto;
   min-height: 100dvh;
   max-height: none;
   overflow: visible;
 }
 
-.wl-ui-caps--document > :not(.sr-only) {
+.wl-ui-caps.wl-ui-caps--document > :not(.sr-only) {
   height: auto;
   min-height: 0;
   overflow: visible;
   overscroll-behavior: auto;
 }
 
-.wl-ui-caps--document > .marketing-surface,
-.wl-ui-caps--document .marketing-surface {
+.wl-ui-caps.wl-ui-caps--document > .marketing-surface,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface {
   display: block;
   height: auto;
   min-height: 100dvh;
@@ -54,7 +54,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   overflow: visible;
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-flow {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-flow {
   display: block;
   min-height: 0;
   overflow: visible;
@@ -64,17 +64,24 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   padding-top: var(--wl-marketing-chrome-top, 4rem);
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-flow > .marketing-frame-stack {
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .marketing-flow
+  > .marketing-frame-stack {
   display: block;
   min-height: 0;
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-flow > .marketing-frame-stack > * {
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .marketing-flow
+  > .marketing-frame-stack
+  > * {
   flex-shrink: 1;
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-section,
-.wl-ui-caps--document .marketing-surface .marketing-section--screen {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--screen {
   min-height: 0;
   max-height: none;
   align-content: start;
@@ -82,27 +89,29 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   scroll-snap-stop: normal;
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-section {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section {
   padding-block: clamp(3.5rem, 6vw, 6.5rem);
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-section--tight {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--tight {
   padding-block: clamp(2.25rem, 4vw, 4rem);
 }
 
-.wl-ui-caps--document .marketing-surface .marketing-section--longform,
-.wl-ui-caps--document .marketing-surface .marketing-longform {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--longform,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-longform {
   align-content: start;
 }
 
-.wl-ui-caps--document .marketing-surface.wl-features-page .marketing-flow,
-.wl-ui-caps--document .marketing-surface.wl-showcase-page .marketing-flow,
-.wl-ui-caps--document .marketing-surface.wl-about-page .marketing-flow,
-.wl-ui-caps--document .marketing-surface.landing-home .marketing-flow {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-features-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-showcase-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.wl-about-page .marketing-flow,
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.landing-home .marketing-flow {
   overflow: visible;
 }
 
-.wl-ui-caps--document .marketing-surface .landing-stage.marketing-section--screen {
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface
+  .landing-stage.marketing-section--screen {
   grid-template-rows: auto;
   min-height: 0;
   height: auto;
@@ -111,20 +120,20 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   padding-block: clamp(3.25rem, 6vw, 6.5rem);
 }
 
-.wl-ui-caps--document .marketing-chrome-bar {
+.wl-ui-caps.wl-ui-caps--document .marketing-chrome-bar {
   position: relative;
   inset: auto;
   width: 100%;
 }
 
-.wl-ui-caps--document .marketing-chrome-bar__panel {
+.wl-ui-caps.wl-ui-caps--document .marketing-chrome-bar__panel {
   max-height: none;
   overflow: visible;
 }
 
 /* Keep the fixed header clear when a document page owns its own sticky section
  * navigation. */
-.wl-ui-caps--document .marketing-flow > .sticky {
+.wl-ui-caps.wl-ui-caps--document .marketing-flow > .sticky {
   top: var(--wl-marketing-chrome-top, 4rem);
 }
 
@@ -155,11 +164,13 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 }
 
 @media (max-width: 700px) {
-  .wl-ui-caps--document .marketing-surface .marketing-section {
+  .wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section {
     padding-block: 3.25rem;
   }
 
-  .wl-ui-caps--document .marketing-surface .landing-stage.marketing-section--screen {
+  .wl-ui-caps.wl-ui-caps--document
+    .marketing-surface
+    .landing-stage.marketing-section--screen {
     padding-block: 2.5rem 3.5rem;
   }
 }
