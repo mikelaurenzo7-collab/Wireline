@@ -42,17 +42,18 @@
   line-height: 1.6;
 }
 
-/* Labels authored as `p` / `li` still have to outrank the body rule. The
- * call stage and channel chips are controls, not supporting copy. */
+/* Labels authored as `p` / `li` still have to outrank the body rule. These are
+ * operational controls and metadata, not supporting copy. */
 .marketing-surface
   :is(
-    .landing-phone__status,
-    .landing-phone__role,
-    .landing-phone__cta,
-    .landing-stage__channel,
+    .landing-stage__live-label,
+    .landing-stage__spine li,
     .landing-stage__lane,
-    .landing-stage__plans,
-    .landing-os__label,
+    .landing-console__status,
+    .landing-console__channels li,
+    .landing-demo__presence,
+    .landing-demo__role,
+    .landing-console__activity-kicker,
     .wl-channel-chip
   ) {
   font-family: var(--wireline-font-family-mono);
@@ -144,6 +145,25 @@
   line-height: 1.6;
 }
 
+/* Compact must not mean illegible. The viewport-first pages deliberately reduce
+ * padding, but their buying copy still needs a 13px floor on desktop and a
+ * comfortable 1.5 line-height. This overrides one-off text-xs utilities without
+ * inflating labels, prices, or controls. */
+.marketing-surface.wl-features-page .wl-stitch-card > p:not(.sr-only),
+.marketing-surface.wl-pricing-page #plans article ul,
+.marketing-surface.wl-pricing-page #scale > p,
+.marketing-surface.wl-solutions-page .wl-stitch-card > p:not(.sr-only),
+.marketing-surface.wl-showcase-page #demo-lines a span > span:last-child {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* A plan comparison is transactional information. It may be visually compact,
+ * but each row needs enough separation to scan without merging into the next. */
+.marketing-surface.wl-pricing-page #plans article ul {
+  row-gap: 0.4rem;
+}
+
 /* Segmented items are tabs/controls. Keep the compact measure, but use the same
  * cased control voice and tracking as every other tab and button. */
 .marketing-surface .wl-segmented__item {
@@ -190,46 +210,3 @@
     font-size: clamp(2.2rem, 10.5vw, 3rem) !important;
   }
 }
-
-/* Home is the device glass. The public drawer used to hide the Wireline
- * overline because a header already named the product. The island sheet has
- * no header, so the overline has to come back, with a close control.
- * Layout is a compact island card (not a full-bleed 92dvh sheet). */
-#wireline-mobile-navigation.landing-os-nav {
-  inset: auto;
-  top: max(0.5rem, env(safe-area-inset-top));
-  right: 0;
-  bottom: auto;
-  left: 0;
-  width: min(23.5rem, calc(100vw - 1.5rem));
-  height: auto;
-  max-height: min(64dvh, 30rem);
-  margin-inline: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-  border-radius: 1.65rem;
-  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
-}
-
-#wireline-mobile-navigation.landing-os-nav .wl-overline {
-  display: block;
-}
-
-#wireline-mobile-navigation.landing-os-nav > div > div:first-child {
-  justify-content: space-between;
-}
-
-#wireline-mobile-navigation.landing-os-nav nav a {
-  min-height: 2.75rem;
-}
-
-@media (max-width: 639px) {
-  #wireline-mobile-navigation.landing-os-nav .wl-overline {
-    display: block;
-  }
-
-  #wireline-mobile-navigation.landing-os-nav > div > div:first-child {
-    justify-content: space-between;
-  }
-}
-
