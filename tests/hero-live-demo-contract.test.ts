@@ -29,7 +29,9 @@ describe("homepage hero live demo + funnel instrumentation", () => {
 
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     expect(widget).toContain('variant?: "compact" | "stage"');
-    expect(widget).toContain("!VAPI_PUBLIC_KEY && Boolean(fallback)");
+    expect(widget).toContain("browserUnavailable");
+    expect(widget).toContain("activateFallback");
+    expect(widget).toContain("(!VAPI_PUBLIC_KEY || browserUnavailable) && Boolean(fallback)");
     expect(widget).toContain('variant !== "stage"');
     expect(widget).toContain("Public Demo Line");
     expect(widget).toContain("Standard carrier rates may apply");
