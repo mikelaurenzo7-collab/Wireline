@@ -27,9 +27,17 @@ describe("public route fallbacks", () => {
     expect(app).toContain("if (isWorkspaceRoute(pathname)) return <AppShell />");
     expect(app).toContain('path="/*" element={<UnknownRoute />}');
     expect(appRoutes).toContain('path="*" element={<AuthNotFound />}');
-    for (const path of ["/overview", "/overview/", "/studio/abc", "/settings/phone/"]) {
+    for (const path of [
+      "/overview",
+      "/overview/",
+      "/studio/abc",
+      "/settings/phone/",
+      "/email",
+      "/email/",
+    ]) {
       expect(isWorkspaceRoute(path), path).toBe(true);
     }
+    expect(isSessionOptionalPublicPath("/email")).toBe(false);
     expect(isWorkspaceRoute("/totally-unknown")).toBe(false);
     expect(isWorkspaceRoute("/pricing")).toBe(false);
   });
