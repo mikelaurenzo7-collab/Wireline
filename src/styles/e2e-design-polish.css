@@ -190,3 +190,17 @@
     font-size: clamp(2.2rem, 10.5vw, 3rem) !important;
   }
 }
+
+/* Home is the device glass. The public drawer used to hide the Wireline
+ * overline because a header already named the product. The island sheet has
+ * no header, so the overline has to come back, with a close control. */
+@media (max-width: 639px) {
+  #wireline-mobile-navigation.landing-os-nav .wl-overline {
+    display: block;
+  }
+
+  #wireline-mobile-navigation.landing-os-nav > div > div:first-child {
+    justify-content: space-between;
+  }
+}
+

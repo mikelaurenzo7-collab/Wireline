@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 
 import { MARKETING_VOICE } from "../../lib/product-copy";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../atoms";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../atoms";
 import WirelineMark from "../brand/WirelineMark";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
@@ -121,7 +121,11 @@ export default function PrecisionPublicHeader({
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        className={deviceChrome ? "!top-0" : undefined}
+        className={
+          deviceChrome
+            ? "landing-os-nav !top-0 !bottom-auto h-auto max-h-[min(92dvh,42rem)] rounded-b-[1.75rem] border-b"
+            : undefined
+        }
         overlayClassName={
           deviceChrome
             ? "!top-0 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
@@ -132,12 +136,25 @@ export default function PrecisionPublicHeader({
         <DialogDescription className="sr-only">
           Browse Wireline product pages or open your account.
         </DialogDescription>
-        <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div
+          className={
+            deviceChrome
+              ? "mx-auto flex w-full max-w-lg flex-col px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+              : "mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+          }
+        >
           <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
             <p className="wl-overline">Wireline</p>
-            <span className="text-right font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
-              {MARKETING_VOICE.buyingNoun}
-            </span>
+            {deviceChrome ? (
+              <DialogClose className="inline-flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-foreground transition-[background-color,color,transform] hover:bg-secondary hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <X size={21} aria-hidden="true" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
+            ) : (
+              <span className="text-right font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
+                {MARKETING_VOICE.buyingNoun}
+              </span>
+            )}
           </div>
           <nav className="mt-2" aria-label="Mobile site">
             {links.map((link) => {
@@ -161,7 +178,7 @@ export default function PrecisionPublicHeader({
               );
             })}
           </nav>
-          <div className="mt-auto grid gap-2 pt-6">
+          <div className={deviceChrome ? "grid gap-2 pt-6" : "mt-auto grid gap-2 pt-6"}>
             <Link
               to="/signup?plan=personal"
               onClick={() => setOpen(false)}

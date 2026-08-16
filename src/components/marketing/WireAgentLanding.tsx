@@ -179,6 +179,15 @@ export default function WireAgentLanding() {
                       ))}
                     </ul>
 
+                    <p className="landing-stage__note">
+                      Start free. Live from ${STARTER_PRICE}/mo.
+                      <span className="sr-only">
+                        {" "}
+                        Channels unlock at activation. Paid plans include a Wireline number. Extra
+                        usage is prepaid Runtime Balance.
+                      </span>
+                    </p>
+
                     <div className="landing-os__tray">
                       <OsApp
                         to={PERSONAL_SIGNUP}
@@ -219,15 +228,6 @@ export default function WireAgentLanding() {
                         <UserRound className="landing-os__glyph" />
                       </OsApp>
                     </div>
-
-                    <p className="landing-stage__note">
-                      Start free. Live from ${STARTER_PRICE}/mo.
-                      <span className="sr-only">
-                        {" "}
-                        Channels unlock at activation. Paid plans include a Wireline number. Extra
-                        usage is prepaid Runtime Balance.
-                      </span>
-                    </p>
                   </div>
                 }
                 fallback={
