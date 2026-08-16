@@ -63,7 +63,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
-    headline: "Turn after hours calls into scheduled work.",
+    headline: "Turn after hours calls into scheduled work",
     pains: [
       {
         icon: "Clock",
@@ -120,7 +120,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
-    headline: "Patients on hold become patients on the schedule.",
+    headline: "Patients on hold become patients on the schedule",
     pains: [
       {
         icon: "Phone",
@@ -177,7 +177,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
-    headline: "Give every routed intake a clear next step.",
+    headline: "Give every routed intake a clear next step",
     pains: [
       {
         icon: "Phone",
@@ -234,7 +234,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
-    headline: "Work more listing calls without losing control.",
+    headline: "Work more listing calls without losing control",
     pains: [
       {
         icon: "Phone",
@@ -291,7 +291,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A personal voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
-    headline: "Hand off the calls you keep avoiding.",
+    headline: "Hand off the calls you keep avoiding",
     pains: [
       {
         icon: "Clock",
@@ -353,7 +353,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
-    headline: "Keep quote intake and renewal follow up moving.",
+    headline: "Keep quote intake and renewal follow up moving",
     pains: [
       {
         icon: "Phone",
@@ -410,7 +410,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",
-    headline: "The phone rings during dinner rush. The agent picks up.",
+    headline: "The phone rings during dinner rush. The agent picks up",
     pains: [
       {
         icon: "Calendar",
@@ -467,7 +467,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Compliance first phone agents for sales teams. Speed to lead, quote follow up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",
-    headline: "Your sales voice agent works the queue while your team works the deals.",
+    headline: "Your sales voice agent works the queue while your team works the deals",
     pains: [
       {
         icon: "Phone",

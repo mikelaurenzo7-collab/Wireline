@@ -1,6 +1,5 @@
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import {
-  ArrowRight,
   CalendarClock,
   Headphones,
   MessageSquareText,
@@ -17,7 +16,7 @@ import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 const SOLUTIONS = {
   sales: {
     eyebrow: "Sales conversations",
-    title: "Every good lead gets a next step.",
+    title: "Every good lead gets a next step",
     description:
       "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
@@ -50,7 +49,7 @@ const SOLUTIONS = {
   },
   support: {
     eyebrow: "Customer coverage",
-    title: "A front desk that answers before demand goes cold.",
+    title: "A front desk that answers before demand goes cold",
     description:
       "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
     icon: Headphones,
@@ -121,7 +120,7 @@ export default function SolutionsPage() {
         }}
         visual={
           <div className="text-center">
-            <div className="rounded-[16px] border border-border bg-background/70 p-4">
+            <div>
               <BrowserCallWidget
                 agentName={demoAgentName}
                 fallback={
@@ -145,66 +144,49 @@ export default function SolutionsPage() {
         }
       />
 
-      <section className="marketing-section wl-public-rail mx-auto">
-        <div className="wl-marketing-center mx-auto max-w-2xl">
-          <h2 className="wl-stitch-display text-balance">From contact to next step</h2>
-        </div>
-        <ol className="mt-10 grid gap-4 lg:grid-cols-3">
+      <section className="marketing-section marketing-section--tight wl-public-rail mx-auto">
+        <p className="wl-eyebrow text-center text-muted-foreground">From contact to next step</p>
+        <ol className="mt-4 grid gap-3 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
-              <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[length:var(--wireline-typography-caption-size)] font-semibold text-primary">
-                0{index + 1}
+            <li key={title} className="wl-stitch-card relative p-4 text-center">
+              <span className="flex items-center justify-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
+                  0{index + 1}
+                </span>
+                <h3 className="wl-card-title">{title}</h3>
               </span>
-              <h3 className="wl-card-title mx-auto mt-5 min-h-[2.24em] max-w-[18ch]">{title}</h3>
-              <p className="mx-auto mt-3 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+              <p className="mx-auto mt-1.5 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                 {copy}
               </p>
             </li>
           ))}
         </ol>
-      </section>
 
-      <section className="marketing-section border-t border-border bg-card">
-        <div className="wl-public-rail mx-auto">
-          <div className="wl-marketing-center mx-auto max-w-3xl">
-            <h2 className="wl-stitch-display text-balance">What it handles</h2>
-          </div>
-          <div className="mt-9 grid gap-3 sm:grid-cols-3">
-            {page.capabilities.map(([title, copy], index) => {
-              const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
-                index
-              ] as LucideIcon;
-              return (
-                <article
-                  key={title}
-                  className="wl-stitch-card bg-background p-5 text-center sm:p-6"
-                >
-                  <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
-                  <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                    {copy}
-                  </p>
-                </article>
-              );
-            })}
-          </div>
+        <p className="wl-eyebrow mt-5 text-center text-muted-foreground">What it handles</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {page.capabilities.map(([title, copy], index) => {
+            const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
+              index
+            ] as LucideIcon;
+            return (
+              <article key={title} className="wl-stitch-card bg-background p-4 text-center">
+                <span className="flex items-center justify-center gap-2">
+                  <CapabilityIcon size={16} className="text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title">{title}</h3>
+                </span>
+                <p className="mx-auto mt-1.5 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                  {copy}
+                </p>
+              </article>
+            );
+          })}
         </div>
-      </section>
 
-      <section className="marketing-section wl-public-rail mx-auto">
-        <div className="wl-stitch-card wl-stitch-card-tinted wl-marketing-center grid justify-items-center gap-6 p-6 sm:p-8">
-          <div className="max-w-2xl">
-            <p className="text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">
-              {page.proof}
-            </p>
-          </div>
-          <Link
-            to={page.primary.href}
-            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[length:var(--wireline-typography-caption-size)] font-semibold"
-          >
-            Build this agent <ArrowRight size={15} aria-hidden="true" />
-          </Link>
-        </div>
+        {/* The proof line keeps its place; the button under it was the hero's
+            own CTA a second time, and the hero is on the same screen now. */}
+        <p className="mx-auto mt-5 max-w-2xl text-center text-[15px] leading-[1.6] text-muted-foreground">
+          {page.proof}
+        </p>
       </section>
     </MarketingPageFrame>
   );

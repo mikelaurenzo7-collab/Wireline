@@ -87,7 +87,11 @@ describe("marketing centering contract", () => {
     );
     expect(solutionsPage).not.toContain("HeroCallPreview");
     expect(solutionsPage).not.toContain("Sarah");
-    expect(solutionsPage).toContain("wl-marketing-center");
+    // The two `wl-marketing-center` blocks were the wrappers around two display
+    // headings that have since become eyebrow labels — one screen carries one
+    // headline. The page still declares its alignment explicitly, which is what
+    // the blanket centering rule in clarity-system.css requires.
+    expect(solutionsPage).toContain("text-center");
     expect(solutionsPage).toContain("BrowserCallWidget");
   });
 

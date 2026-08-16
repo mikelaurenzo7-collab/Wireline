@@ -146,6 +146,13 @@
   margin-top: 2.25rem;
 }
 
+/* Same story for the hero's visual slot: 48px of margin and 36px of padding on
+   a bordered card, sized for a hero that owned a screen. */
+.marketing-surface .marketing-hero__experience {
+  margin-top: 1.75rem;
+  padding: 1.25rem;
+}
+
 /*
  * Ambience belongs to the screen, not to the headline box.
  *
