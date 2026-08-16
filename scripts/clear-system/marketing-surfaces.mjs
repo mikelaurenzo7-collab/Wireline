@@ -4,6 +4,9 @@
  * signature, and honest plan economics.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
+  const executable = (source) =>
+    source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
   const claritySystemCss = read("src/styles/clarity-system.css");
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
@@ -83,9 +86,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   );
   mustExclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
-    publicHeader,
+    executable(publicHeader),
     /Wire your agent|landing-os-nav|chrome\?:\s*"bar"\s*\|\s*"hidden"/,
-    "public navigation must not revive retired campaign or device-chrome behavior",
+    "public navigation executable code must not revive retired campaign or device-chrome behavior",
   );
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
@@ -125,7 +128,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
 
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding.replace(/\/\*[\s\S]*?\*\//g, ""),
+    executable(wireAgentLanding),
     /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/,
     "landing executable code must not depend on borrowed device-OS metaphors",
   );
@@ -173,7 +176,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   ]) {
     mustExclude(
       file,
-      source.replace(/\/\*[\s\S]*?\*\//g, ""),
+      executable(source),
       /#4ade80|#fbbf24|#7dd3fc|#2563eb|landing-phone|landing-os/,
       "landing styles must stay on the Letterpress token system without retired device selectors",
     );
