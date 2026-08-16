@@ -8,15 +8,20 @@ const source = readFileSync(
 );
 
 describe("expensive admission boundaries", () => {
-  it("fails the authenticated or cron job sweep closed when distributed limiting is unavailable", () => {
+  it("fails the authenticated or cron job sweep closed behind one canonical cron bucket", () => {
     const start = source.indexOf("export const jobsSweepRateLimit");
     const end = source.indexOf("export const tcpaRateLimit", start);
-    const block = source.slice(start, end);
+    const declarationStart = source.indexOf("const JOBS_SWEEP_WINDOW_MS");
+    const block = source.slice(declarationStart, end);
 
     expect(start).toBeGreaterThan(-1);
+    expect(declarationStart).toBeGreaterThan(-1);
     expect(end).toBeGreaterThan(start);
     expect(block).toContain("distributedLimiterStatus()");
     expect(block).toContain("failClosedOnError: true");
+    expect(block).toContain('JOBS_SWEEP_CRON_KEY = "cron:wireline-job-sweep"');
+    expect(block).toContain('sweepMode === "cron" ? JOBS_SWEEP_CRON_KEY : null');
+    expect(block).not.toContain('`cron:${req.ip');
     expect(block).toContain("job sweep limiter unavailable, failing closed");
     expect(block).toContain("job sweep rate limiter error, failing closed");
     expect(block).toContain("res.status(503).json");
