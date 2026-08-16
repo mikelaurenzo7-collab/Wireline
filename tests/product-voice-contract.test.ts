@@ -307,11 +307,17 @@ describe("product voice cohesion", () => {
   it("keeps public entry paths broad instead of defaulting to home services", () => {
     const app = read("src/App.tsx");
     const precisionHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    const chromeBar = read("src/components/marketing/MarketingChromeBar.tsx");
+    const landingFooter = read("src/components/marketing/LandingFooter.tsx");
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
     const footer = read("src/components/marketing/MarketingFooter.tsx");
     expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
-    expect(precisionHeader).toContain('to: "/solutions/support"');
-    expect(precisionHeader).toContain('path.startsWith("/for/")');
+    expect(precisionHeader).not.toContain('to: "/solutions/support"');
+    expect(precisionHeader).not.toContain('path.startsWith("/for/")');
+    expect(precisionHeader).not.toContain('aria-label="Site"');
+    expect(chromeBar).toContain('to: "/solutions/support", label: "Support"');
+    expect(chromeBar).toContain('to: "/for/personal", label: "Personal"');
+    expect(landingFooter).toContain("<MarketingChromeBar />");
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     for (const wedgePath of [
       "/for/home-services",
@@ -330,7 +336,7 @@ describe("product voice cohesion", () => {
 
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
-    expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
+    expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(1);
     expect(landing).toContain('"/signup?plan=personal"');
     expect(sticky).toContain('href = "/signup?plan=personal"');
     expect(landing).not.toContain('to: "/signup"');
