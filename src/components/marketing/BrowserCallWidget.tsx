@@ -227,8 +227,8 @@ export default function BrowserCallWidget({
         )}
       </ShadButton>
 
-      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-        {demo.maxDurationSeconds}-second private preview · no retained call artifacts
+      <p className="wl-preserve-case max-w-xs text-center text-xs leading-5 text-muted-foreground">
+        {demo.maxDurationSeconds}-second private preview. No retained call artifacts.
       </p>
 
       {demo.callActive ? (
