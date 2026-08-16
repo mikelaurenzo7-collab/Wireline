@@ -24,10 +24,11 @@ import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-
 
 /**
  * The retired experiment used chrome="hidden", variant="phone", landing-phone,
- * landing-stage__device, landing-stage__dock, and landing-os__tray to imitate
- * an iPhone/iPad home screen. The live proof remains; the borrowed OS metaphor
- * does not.
+ * landing-phone__call, landing-stage__device, landing-stage__dock, and
+ * landing-os__tray to imitate an iPhone/iPad home screen. The live proof
+ * remains; the borrowed OS metaphor does not.
  */
+const HERO_LOOP = MARKETING_VOICE.spine;
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
 const PERSONAL_SIGNUP = "/signup?plan=personal";
 const STARTER_PRICE =
@@ -38,6 +39,7 @@ const AUDIENCES = [
     key: "outbound" as const,
     label: AGENT_DIRECTION_MODES.outbound.label,
     detail: "Lead response and follow through",
+    uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
     href: "/signup?plan=starter&mode=outbound",
     icon: PhoneCall,
   },
@@ -45,6 +47,7 @@ const AUDIENCES = [
     key: "inbound" as const,
     label: AGENT_DIRECTION_MODES.inbound.label,
     detail: "Front desk and support triage",
+    uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
     href: "/signup?plan=starter&mode=inbound",
     icon: Headphones,
   },
@@ -52,6 +55,7 @@ const AUDIENCES = [
     key: "hybrid" as const,
     label: AGENT_DIRECTION_MODES.hybrid.label,
     detail: "Daily calls, booking, and handoffs",
+    uses: ["Sales Desk", "Collections Desk", "Appointment Desk"],
     href: "/signup?plan=starter&mode=hybrid",
     icon: Sparkles,
   },
@@ -171,7 +175,7 @@ export default function WireAgentLanding() {
 
               <h2 className="sr-only">How Wireline works</h2>
               <ol className="landing-stage__spine" aria-label="How Wireline works">
-                {MARKETING_VOICE.spine.map((step, index) => (
+                {HERO_LOOP.map((step, index) => (
                   <li key={step}>
                     <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                     {step}
@@ -193,6 +197,7 @@ export default function WireAgentLanding() {
                       <span>
                         <strong>{audience.label}</strong>
                         <small>{audience.detail}</small>
+                        <span className="sr-only">{audience.uses.join(", ")}</span>
                       </span>
                       <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
                     </Link>
