@@ -115,6 +115,14 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
+.marketing-surface .landing-phone__status,
+.marketing-surface .landing-phone__role,
+.marketing-surface .landing-phone__cta,
+.marketing-surface .landing-stage__channel,
+.marketing-surface .landing-stage__lane {
+  text-transform: uppercase;
+}
+
 .landing-phone__status {
   display: inline-flex;
   align-items: center;
