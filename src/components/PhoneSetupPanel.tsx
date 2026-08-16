@@ -59,7 +59,10 @@ export default function PhoneSetupPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
-  const activeNumber = numbers[0] || null;
+  const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
+  const [addingLine, setAddingLine] = useState(false);
+  const activeNumber =
+    numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
   const attachedAgent = useMemo(
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
@@ -93,7 +96,13 @@ export default function PhoneSetupPanel() {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
-      setNumbers(Array.isArray(body?.numbers) ? body.numbers : []);
+      const nextNumbers = Array.isArray(body?.numbers) ? body.numbers : [];
+      setNumbers(nextNumbers);
+      setSelectedNumberId((current) =>
+        current && nextNumbers.some((number: PhoneNumberRecord) => number.id === current)
+          ? current
+          : (nextNumbers[0]?.id ?? null),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Phone numbers unavailable.");
     } finally {
@@ -143,6 +152,7 @@ export default function PhoneSetupPanel() {
           : "Your dedicated number is active and ready for calls.",
       );
       await loadNumbers();
+      setAddingLine(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not activate a number.");
     } finally {
@@ -209,7 +219,7 @@ export default function PhoneSetupPanel() {
           </span>
         </div>
 
-        {!activeNumber ? (
+        {!activeNumber || addingLine ? (
           <div className="mt-6 grid gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
@@ -290,12 +300,22 @@ export default function PhoneSetupPanel() {
               onClick={() => void provisionNumber()}
             >
               <Plus size={16} aria-hidden="true" />
-              {working ? "Activating…" : "Activate number"}
+              {working ? "Activating…" : addingLine ? "Activate another number" : "Activate number"}
             </Button>
             <p className="text-xs text-primary-foreground/72 sm:col-span-3">
               Every paid plan includes a dedicated number. If yours needs attention, activation
               points you to Billing.
             </p>
+            {addingLine ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-primary-foreground/80 sm:col-span-3"
+                onClick={() => setAddingLine(false)}
+              >
+                Cancel
+              </Button>
+            ) : null}
           </div>
         ) : (
           <div className="mt-6 flex flex-col gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -316,6 +336,48 @@ export default function PhoneSetupPanel() {
             </Button>
           </div>
         )}
+        {numbers.length > 1 ? (
+          <div className="mt-4 grid gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary-foreground/70">
+              Your lines
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {numbers.map((number) => (
+                <Button
+                  key={number.id}
+                  type="button"
+                  size="sm"
+                  variant={number.id === activeNumber?.id ? "secondary" : "ghost"}
+                  className={
+                    number.id === activeNumber?.id
+                      ? "bg-primary-foreground text-primary"
+                      : "text-primary-foreground/85 hover:bg-primary-foreground/10"
+                  }
+                  onClick={() => {
+                    setSelectedNumberId(number.id);
+                    setAddingLine(false);
+                  }}
+                >
+                  {formatPhone(number.phone_number)}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {activeNumber && !addingLine ? (
+          <div className="mt-4">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="text-primary-foreground/85 hover:bg-primary-foreground/10"
+              onClick={() => setAddingLine(true)}
+            >
+              <Plus size={14} aria-hidden="true" />
+              Add another number
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       {activeNumber ? (

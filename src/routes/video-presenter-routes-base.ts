@@ -10,6 +10,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log } from "../lib/server-context";
 import {
   getLiveAvatarStatus,
+  getPublicAvatar,
   listPublicAvatars,
   mintLiveAvatarSessionToken,
 } from "../lib/video-presenter/liveavatar-service";
@@ -33,6 +34,7 @@ import {
   reserveLiveVideoSessionMinutes,
 } from "../lib/video-presenter/live-video-usage";
 import {
+  isLiveVideoSettlementStoreReady,
   settleLiveVideoSession,
   signLiveVideoSettlementReceipt,
   verifyLiveVideoSettlementReceipt,
@@ -85,7 +87,6 @@ const sessionLimiter = createRateLimiter({
 const patchPresenterSchema = z.object({
   avatarId: z.string().uuid().optional(),
   provider: z.enum(["liveavatar", "heygen", "synthetic", "tavus", "d-id", "simli"]).optional(),
-  consentStatus: z.enum(["not_started", "pending", "approved", "rejected"]).optional(),
 });
 
 async function ownedAgent(agentId: string, userId: string) {
@@ -162,10 +163,16 @@ router.get(
   "/api/video-presenter/avatars",
   authenticateUser,
   presenterLimiter,
-  async (_req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     const status = getLiveAvatarStatus();
     if (!status.configured) {
       throw AppError.fromHttpStatus(503, "Live video catalog is not configured.");
+    }
+    const entitlement = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    if (!entitlement.billingEntitled && !entitlement.liveVideoCheckoutAvailable) {
+      throwLiveVideoBillingError(entitlement);
     }
     const avatars = await listPublicAvatars();
     res.json({ avatars, sandbox: status.sandbox });
@@ -266,9 +273,9 @@ router.patch(
     }
 
     const patch: Record<string, string | null> = {};
-    if (req.body.avatarId !== undefined) patch.videoPresenterAvatarId = req.body.avatarId;
-    if (req.body.consentStatus !== undefined) {
-      patch.videoPresenterConsentStatus = req.body.consentStatus;
+    if (req.body.avatarId !== undefined) {
+      await getPublicAvatar(req.body.avatarId);
+      patch.videoPresenterAvatarId = req.body.avatarId;
     }
 
     if (Object.keys(patch).length) {
@@ -318,6 +325,13 @@ router.post(
       faceId: agent.videoPresenterAvatarId,
     });
 
+    if (!isLiveVideoSettlementStoreReady()) {
+      throw AppError.fromHttpStatus(
+        503,
+        "Live video is temporarily unavailable. Wireline has been notified — calls, texts, and follow-up are unaffected.",
+      );
+    }
+
     if (presenter.status !== "ready" || !presenter.avatarId) {
       const code = !agentLiveVideoOptedIn(agent)
         ? "LIVE_VIDEO_NOT_ENABLED"
@@ -338,6 +352,8 @@ router.post(
       });
       return;
     }
+
+    await getPublicAvatar(presenter.avatarId);
 
     // Resolve the engine before reserving: FULL-mode engines burn provider
     // credits at 2× LITE for the same wall-clock session, so the allowance

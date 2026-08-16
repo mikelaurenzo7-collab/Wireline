@@ -55,6 +55,16 @@ function isProductionRuntime(): boolean {
 }
 
 /**
+ * Settlement refunds are single-use through Redis. Production must not mint a
+ * session it cannot later settle, or a blocked WebRTC path burns the month.
+ */
+export function isLiveVideoSettlementStoreReady(): boolean {
+  if (process.env.NODE_ENV === "test") return true;
+  if (getRedis()) return true;
+  return !isProductionRuntime();
+}
+
+/**
  * Fails closed in production rather than falling back to a public constant.
  *
  * The receipt authorizes a write against the allowance ledger. Signing it with
