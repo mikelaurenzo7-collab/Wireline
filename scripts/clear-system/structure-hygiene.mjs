@@ -21,7 +21,12 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "package.json",
     packageJson,
-    /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/check-command-palette-contract\.mjs)?"/,
+    // The contract is now three scripts, not one: the clear-system modules, the
+    // command palette, and the marketing viewport frame. The pattern is
+    // open-ended on the right so adding a fourth gate does not require editing
+    // the gate that checks the gates -- but the clear-system check stays
+    // anchored first, because it is the one that fails loudest.
+    /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/[\w-]+\.mjs)*"/,
     "design:check must run the executable design contract",
   );
   mustExclude(

@@ -19,7 +19,10 @@ export const BRAND_SYSTEM = {
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the agent.",
     "On broad and default product surfaces, prefer Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
-    "Use sentence case for headlines, buttons, tabs, and labels.",
+    "Rank by case. Titles, headers, heroes, tabs, and buttons render uppercase; sentences do not.",
+    "Write titles, labels, tabs, and buttons of three words or fewer in Title Case at the source, so they read as deliberate labels wherever the uppercase tier does not apply.",
+    "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
+    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, and stacked claims on public buying surfaces.",
   ],
@@ -95,7 +98,7 @@ export const AGENT_DIRECTION_MODES = {
     // Title Case, not sentence case: this is a two-word tab label, not a
     // sentence. Wireline's case rule is that anything three words or fewer in a
     // title/label/tab/button slot is Title Case at the source and UPPERCASE
-    // where the tier applies — so it reads as a deliberate label in the places
+    // where the tier applies, so it reads as a deliberate label in the places
     // that do not uppercase it (native clients, aria labels, document titles).
     label: "All Purpose",
     eyebrow: "Voice agent for daily operations",
@@ -132,8 +135,8 @@ export const OUTBOUND_WEDGE = {
 export const MARKETING_VOICE = {
   eyebrow: null,
   /* No terminal period. The hero renders in the cased display tier at up to
-     76px, where a full stop after seven words of caps reads as a stray mark,
-     not as punctuation. Sentence-case copy keeps its periods; cased titles are
+     76px, where a full stop after seven words of caps reads as a stray mark rather
+     than as punctuation. Sentence-case copy keeps its periods; cased titles are
      labels and do not take them. */
   headline: "Voice agents that get the work done",
   /** Public hero CTA broad enough for personal and business buyers. */

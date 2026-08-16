@@ -80,8 +80,8 @@ const PAID_TIERS = [
  * Features every paid tier lists verbatim, computed rather than hand-listed so
  * a catalog edit cannot leave this out of step.
  *
- * Three lines — the +$15/mo add-agent rate, the post-call record, and "no
- * automatic overages" — were printed identically on Starter, Starter Plus and
+ * Three lines (the +$15/mo add-agent rate, the post-call record, and "no
+ * automatic overages") were printed identically on Starter, Starter Plus and
  * Pro. At four columns each wrapped to two or three lines, so one shared fact
  * cost roughly 130 vertical pixels three times over, and a visitor comparing
  * plans had to read the same sentence three times to discover it did not
@@ -229,7 +229,7 @@ export default function Pricing() {
           It used to open with a three-line display headline carrying the whole
           price story ("Build free. Go live from $19/mo. Scale when it pays"),
           its own pair of CTAs, and then a *second* full-size headline directly
-          beneath it — roughly 450 vertical pixels spent restating, in prose,
+          beneath it: roughly 450 vertical pixels spent restating, in prose,
           numbers that four cards state exactly, eight hundred pixels further
           down. On a pricing page the plans are the content and the plan buttons
           are the call to action; a hero can only delay both.
@@ -457,7 +457,7 @@ export default function Pricing() {
         </section>
 
         {/* Answers open in place, two columns wide. As ten stacked full-width
-            rows this read as 500px of identical grey bars — and it was followed
+            rows this read as 500px of identical grey bars, and it was followed
             by a closing CTA band whose only content was a headline and a
             "Build your voice agent" button that already appears on the Free
             Builder card, in the header, and in the mobile sticky bar. */}

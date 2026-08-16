@@ -156,11 +156,13 @@ describe("E2E design and brand polish", () => {
 
   it("keeps the landing journey punchy and outcome led", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("Choose the outcome.");
-    expect(landing).toContain("Put your first voice agent to work.");
-    expect(landing).toContain('max-w-[24ch]');
-    expect(landing).toContain('max-w-[18ch]">Choose the outcome.');
-    expect(landing).toContain("Start free.");
+    // Cased titles carry no terminal punctuation.
+    expect(landing).toContain("Choose the outcome");
+    expect(landing).not.toContain("Choose the outcome.");
+    expect(landing).toContain("Start free, scale when it pays");
+    // The closing band that repeated the hero's headline and both of its
+    // buttons verbatim is gone: the plan cards are the close.
+    expect(landing).not.toContain("Put your first voice agent to work");
     // The four step cards are titled Build/Train/Launch/Improve, so a display
     // heading repeating those same four words is banned, not merely absent.
     expect(landing).not.toContain('wl-display-2">Build. Train. Launch. Improve.');

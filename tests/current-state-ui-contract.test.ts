@@ -70,7 +70,9 @@ describe("current-state UI contract", () => {
   it("makes the account-bound MCP apps public without overstating their authority", () => {
     const developers = read("src/pages/Developers.tsx");
 
-    expect(developers).toContain("Connect once.");
+    // The heading dropped its terminal period with the rest of the cased title
+    // tier; the ban on the longer restatement stands.
+    expect(developers).toContain("Connect once");
     expect(developers).not.toContain(
       "Connect once. Draft and simulate in the client you already open.",
     );
@@ -152,7 +154,7 @@ describe("current-state UI contract", () => {
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
     expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
     for (const step of ["Build", "Train", "Launch", "Improve"]) {
-      expect(features).toContain(`step: "${step}"`);
+      expect(features).toContain(`title: "${step}"`);
     }
   });
 

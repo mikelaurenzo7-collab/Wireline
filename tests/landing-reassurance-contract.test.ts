@@ -10,17 +10,22 @@ describe("home landing launch clarity", () => {
   it("keeps the landing concise", () => {
     expect(landing).not.toContain("REASSURANCES");
     expect(landing).toContain("Live Video");
-    expect(landing).toContain("Start free.");
+    // Cased titles carry no terminal punctuation, and the plans heading no
+    // longer repeats the word on the button directly beneath it.
+    expect(landing).toContain("Start free, scale when it pays");
   });
 
   it("keeps free and paid capacity distinct", () => {
-    expect(landing).toContain("Live channels unlock after activation");
+    expect(landing).toContain("Channels unlock at activation");
     expect(landing).toContain("Wireline number");
     expect(landing).toContain("Runtime Balance");
   });
 
   it("closes with one action", () => {
-    expect(landing).toContain("Put your first voice agent to work.");
+    // The closing band repeated the hero headline and both hero buttons
+    // verbatim. The plan cards are the close now, and each carries its own
+    // action, so the page still ends on exactly one thing to do per plan.
+    expect(landing).not.toContain("Put your first voice agent to work");
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");
   });

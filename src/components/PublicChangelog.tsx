@@ -172,7 +172,7 @@ export default function PublicChangelog() {
             className="mb-10"
           >
             <h1 className="marketing-hero-title text-3xl sm:text-4xl">
-              Every change we've shipped.
+              Every change we've shipped
             </h1>
           </motion.div>
 

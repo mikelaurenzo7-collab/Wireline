@@ -28,9 +28,15 @@ describe("safe-area spacing ownership", () => {
   });
 
   it("preserves the authored header, form, loading, and tool padding", () => {
-    expect(read("src/pages/Features.tsx")).toContain('className="pt-16"');
-    expect(read("src/pages/Pricing.tsx")).toContain('className="pt-16"');
-    expect(read("src/pages/About.tsx")).toContain('mainClassName="!px-0 pb-0 pt-16"');
+    // The header offset is authored once, on the shared scroller
+    // (`.marketing-flow { padding-top: var(--wl-marketing-chrome-top) }`),
+    // rather than as a pt-16 repeated on each page's <main>.
+    expect(read("src/styles/viewport-first-marketing.css")).toContain(
+      "padding-top: var(--wl-marketing-chrome-top);",
+    );
+    for (const path of ["src/pages/Features.tsx", "src/pages/Pricing.tsx", "src/pages/About.tsx"]) {
+      expect(read(path), path).not.toContain('className="pt-16"');
+    }
     const authPortal = read("src/components/AuthPortal.tsx");
     expect(authPortal).toContain(
       "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",

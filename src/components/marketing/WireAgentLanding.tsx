@@ -20,6 +20,8 @@ type ModeDetail = {
   title: string;
   lead: string;
   bestFor: readonly string[];
+  /** Carries the wedge into signup so the flow opens on the lane the visitor picked. */
+  ctaPath: string;
 };
 
 const HERO_LOOP = MARKETING_VOICE.proof;
@@ -38,16 +40,19 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "A sales agent that follows through",
     lead: "Call warm lists, revive leads, send the follow up, book the meeting, and log the outcome.",
     bestFor: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
+    ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
     title: "Answer every valuable call",
     lead: "Catch the call, qualify the need, schedule the next step, and cover after hours from one record.",
     bestFor: ["Front Desk", "Lead Qualifier", "Support Triage"],
+    ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
     title: "One agent for the work between conversations",
     lead: "Keep sales, service, callbacks, scheduling, and CRM updates moving in one visible workflow.",
     bestFor: ["Sales Desk", "Collections Desk", "Appointment Desk"],
+    ctaPath: "/signup?plan=starter&mode=hybrid",
   },
 };
 
@@ -91,8 +96,8 @@ const PLAN_PREVIEW = [
     period: "/mo",
     facts: [
       `${planCatalog.starter.max_agents} live voice agent`,
+      `${planCatalog.starter.included_phone_numbers} Wireline number`,
       `${planCatalog.starter.voice_minutes_monthly} voice minutes a month`,
-      "SMS, email, and Lead Hunt",
     ],
     cta: "Choose Starter",
     ctaPath: "/signup?plan=starter",
@@ -104,8 +109,8 @@ const PLAN_PREVIEW = [
     period: "/mo",
     facts: [
       `${planCatalog.team.max_agents} live agents`,
+      `${planCatalog.team.included_phone_numbers} Wireline numbers`,
       `${planCatalog.team.voice_minutes_monthly} voice minutes a month`,
-      "Full Lead Hunt and enrichment",
     ],
     cta: "Choose Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -117,8 +122,8 @@ const PLAN_PREVIEW = [
     period: "/mo",
     facts: [
       `${planCatalog.business.max_agents} live voice agents`,
+      `${planCatalog.business.included_phone_numbers} Wireline numbers`,
       `${planCatalog.business.voice_minutes_monthly} voice minutes a month`,
-      "Shared channels and approvals",
     ],
     cta: "Choose Pro",
     ctaPath: "/signup?plan=business",
@@ -180,7 +185,7 @@ export default function WireAgentLanding() {
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
         {/*
-          Screen 1 — what it is, what it costs you to try, and proof you can
+          Screen 1: what it is, what it costs you to try, and proof you can
           hear in ten seconds. Everything a first-time visitor needs to decide
           is above the fold; the four screens below are for the ones who want
           more, not for the ones who have already decided.
@@ -249,7 +254,7 @@ export default function WireAgentLanding() {
         </section>
 
         {/*
-          Screen 2 — the work, chosen by the visitor. The four-step loop sits in
+          Screen 2: the work, chosen by the visitor. The four-step loop sits in
           the same screen as the outcome picker because they answer one
           question in sequence: what do you want done, and what does it take to
           get there. They used to be two full sections a screen apart.
@@ -313,6 +318,15 @@ export default function WireAgentLanding() {
                           </li>
                         ))}
                       </ul>
+                      {/* The lane rides into signup on the query string, so the
+                          flow opens where the visitor pointed it. */}
+                      <Link
+                        to={detail.ctaPath}
+                        className="marketing-btn-primary mx-auto min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit"
+                      >
+                        Start with Starter
+                        <ArrowRight size={14} aria-hidden="true" />
+                      </Link>
                     </div>
                   ) : null}
                 </div>
@@ -338,19 +352,18 @@ export default function WireAgentLanding() {
         </section>
 
         {/*
-          Screen 3 — Live Video. A paid product surface with a real visual,
+          Screen 3: Live Video. A paid product surface with a real visual,
           standing where an empty bordered box used to sit on screen one.
         */}
         <section className="marketing-section border-t border-border">
           <div className="wl-public-rail">
             <div className="grid items-center gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
               <div className="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
-                <p className="wl-eyebrow wl-eyebrow--wired text-primary">Live Video</p>
-                <h2 className="wl-public-section-heading mt-4 lg:mx-0">
+                <h2 className="wl-public-section-heading lg:mx-0">
                   Your voice agent, now on screen
                 </h2>
                 <p className="mx-auto mt-4 max-w-[46ch] text-[15px] leading-[1.65] text-muted-foreground lg:mx-0">
-                  {`The same agent that answers your calls, with the same training and approved knowledge — on camera. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
+                  {`The same agent that answers your calls, with the same training and approved knowledge, on camera. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
                 </p>
                 <Link
                   to="/signup?plan=starter"
@@ -367,7 +380,7 @@ export default function WireAgentLanding() {
         </section>
 
         {/*
-          Screen 4 — plans, and the close. The closing call to action lives on
+          Screen 4: plans, and the close. The closing call to action lives on
           the plan cards where the decision is actually made; the separate
           full-width CTA band that repeated the hero verbatim is gone.
         */}
@@ -420,7 +433,7 @@ export default function WireAgentLanding() {
 
             <p className="mx-auto mt-6 max-w-[62ch] text-center text-sm leading-[1.6] text-muted-foreground">
               Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
-              Runtime Balance that you control — never a surprise invoice.{" "}
+              Runtime Balance that you control, never a surprise invoice.{" "}
               <Link to="/pricing" className="font-semibold text-primary hover:underline">
                 Compare every plan
               </Link>

@@ -47,9 +47,10 @@ describe("marketing centering contract", () => {
 
     expect(polishIndex).toBeGreaterThanOrEqual(0);
     expect(hierarchyIndex).toBeGreaterThan(polishIndex);
-    expect(marketingBundle.trimEnd()).toMatch(
-      /@import "\.\/marketing-information-hierarchy\.css";$/,
-    );
+    // The viewport frame is last in the tier: it overrides the section rhythm,
+    // hero sizing, and ambience that the files above it establish.
+    expect(marketingBundle.indexOf("viewport-first-marketing.css")).toBeGreaterThan(hierarchyIndex);
+    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/viewport-first-marketing\.css";$/);
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");
@@ -65,11 +66,17 @@ describe("marketing centering contract", () => {
     expect(mark).toContain('<stop offset="0" stopColor="#8B5CF6" />');
   });
 
-  it("lets scroll marketing pages grow before rendering the footer", () => {
+  it("gives every public route exactly one bounded scroller", () => {
     const frame = read("src/components/layout/MarketingPageFrame.tsx");
 
-    expect(frame).toContain('scroll ? "grow" : "min-h-0 flex-1"');
-    expect(frame).not.toContain('"relative z-10 min-h-0 flex-1"');
+    // The frame no longer grows with content: the window is the frame. Every
+    // public route is 100dvh with one scroller between a fixed header and a
+    // pinned chrome bar, so no public page has a document scrollbar at any
+    // width. See src/styles/viewport-first-marketing.css.
+    expect(frame).toContain('"marketing-flow relative z-10"');
+    expect(frame).toContain("marketing-surface");
+    // Long-form document routes still need a way out of panel composition.
+    expect(frame).toContain("marketing-longform");
   });
 
   it("keeps the retired Sarah call preview fully removed from use cases", () => {
@@ -103,9 +110,12 @@ describe("marketing centering contract", () => {
       "src/pages/SolutionsPage.tsx",
       "src/pages/VerticalLanding.tsx",
     ]) {
+      // `!text-left` is the deliberate opt-out: /about is built to be
+      // identifiable at a glance as *not* the landing page, and the blanket
+      // centering rule in clarity-system.css would otherwise re-centre it.
       expect(
-        /text-center|wl-marketing-center/.test(read(path)),
-        `${path} should carry explicit centered marketing copy`,
+        /text-center|wl-marketing-center|!text-left/.test(read(path)),
+        `${path} should explicitly declare its copy alignment`,
       ).toBe(true);
     }
   });

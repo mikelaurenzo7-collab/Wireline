@@ -51,7 +51,10 @@ describe("product voice cohesion", () => {
     );
 
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done.");
+    // No terminal period: the hero renders in the cased display tier, where a
+    // full stop after seven words of caps reads as a stray mark. See the case
+    // doctrine in src/styles/viewport-first-marketing.css.
+    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done");
     expect(MARKETING_VOICE.primaryCta).toBe("Build your voice agent");
     expect(MARKETING_VOICE.subline).toBe(
       "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
@@ -134,7 +137,7 @@ describe("product voice cohesion", () => {
     expect(features).toContain("Build. Train. Launch. Improve.");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
-    expect(features).toContain("Voice Agents for every customer conversation.");
+    expect(features).toContain("Voice agents for every customer conversation");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -153,13 +156,23 @@ describe("product voice cohesion", () => {
     // restated: the Features section heading. On the landing it sat as an
     // eyebrow directly above "One agent. Now on screen.", saying the same
     // thing twice in two type sizes.
-    expect(read("src/pages/Features.tsx")).toContain("Every channel. One voice agent.");
+    // The three channel cards carry this claim on the opening screen; the
+    // headline that restated it in words above them was removed.
+    expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
     expect(landing).toContain("Live Video");
-    expect(landing).toContain("Build your voice agent");
-    expect(landing).toContain("Hear it live");
-    expect(landing).toContain("Start free.");
-    expect(about).toContain("Agents that run calls like you would.");
-    expect(compare).toContain("Wireline vs. other voice AI.");
+    // The literal used to appear because the page ended with a CTA band that
+    // repeated the hero's headline and both of its buttons. That band is gone,
+    // so the assertion holds what actually matters: the landing takes its
+    // primary call to action from the shared voice constant rather than
+    // hand-typing a second wording of it.
+    expect(landing).toContain("MARKETING_VOICE.primaryCta");
+    expect(landing).toContain("Hear It Live");
+    expect(landing).toContain("Start free, scale when it pays");
+    // /about is a statement page now, not a second landing page: it opens on
+    // who answers the support email, not on a restatement of the product pitch.
+    // Cased titles carry no terminal punctuation.
+    expect(about).toContain("Built by the people who answer the support email");
+    expect(compare).toContain("Wireline vs. other voice AI");
     expect(privacy).toContain("voice agent platform");
     expect(contactAgents).toContain("Wireline specialists");
 
@@ -237,16 +250,19 @@ describe("product voice cohesion", () => {
 
   it("keeps landing examples broad across profit, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    // Title Case at the source: each is a three-word-or-fewer label, which the
+    // case doctrine writes in Title Case so it reads deliberately wherever the
+    // uppercase tier does not apply.
     for (const phrase of [
-      "Lead response",
-      "Quote follow up",
-      "Appointment setting",
-      "Front desk",
-      "Lead qualifier",
-      "Support triage",
-      "Sales desk",
-      "Collections desk",
-      "Appointment desk",
+      "Lead Response",
+      "Quote Follow Up",
+      "Appointment Setting",
+      "Front Desk",
+      "Lead Qualifier",
+      "Support Triage",
+      "Sales Desk",
+      "Collections Desk",
+      "Appointment Desk",
       "AGENT_DIRECTION_MODES",
     ]) {
       expect(landing).toContain(phrase);
@@ -327,7 +343,8 @@ describe("product voice cohesion", () => {
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
     expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
     expect(landing).toContain('to: "/signup?plan=personal"');
-    expect(landing).toContain('to="/signup?plan=personal"');
+    // The hero CTA is a prop on the shared hero, not a literal attribute.
+    expect(landing).toContain('to: "/signup?plan=personal"');
     expect(sticky).toContain('href = "/signup?plan=personal"');
     expect(landing).not.toContain('to: "/signup"');
     expect(landing).not.toContain('to="/signup"');

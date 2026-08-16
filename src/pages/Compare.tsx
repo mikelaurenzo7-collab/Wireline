@@ -15,52 +15,51 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
 
 const DIFFERENCES = [
   {
     icon: PhoneCall,
-    title: "It makes the call.",
+    title: "Makes the Call",
     copy: "Handles the conversation on voice, email, or text.",
   },
   {
     icon: MessageSquare,
-    title: "You explain it normally.",
+    title: "Plain Instructions",
     copy: "Your voice, playbook, and training. No scripts, no flowcharts.",
   },
   {
     icon: Clock3,
-    title: "You get the answer back.",
+    title: "A Clear Next Step",
     copy: "A clear next step: booked, handed off, or logged.",
   },
   {
     icon: Brain,
-    title: "It remembers what you taught it.",
+    title: "Persistent Memory",
     copy: "Every lesson, objection, and preference stays in the agent's memory.",
   },
   {
     icon: CalendarCheck,
-    title: "It books real time on your calendar.",
+    title: "Real Calendar Booking",
     copy: "Availability checks, timezone aware, no double booking.",
   },
   {
     icon: Workflow,
-    title: "It works across channels.",
+    title: "Across Channels",
     copy: "Starts on voice, follows up by email or text. Connected and coherent.",
   },
   {
     icon: Globe,
-    title: "It handles after hours coverage.",
+    title: "After Hours Coverage",
     copy: "24/7 without overtime, burnout, or missed calls.",
   },
   {
     icon: BarChart3,
-    title: "You see every outcome.",
+    title: "Every Outcome Visible",
     copy: "Transcripts, summaries, and analytics for every conversation.",
   },
   {
     icon: Sparkles,
-    title: "It improves with every call.",
+    title: "Improves With Use",
     copy: "Post call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
   },
 ] as const;
@@ -136,26 +135,24 @@ export default function Compare() {
         path="/compare"
       />
 
-      <MarketingHero
-        title="Wireline vs. other voice AI."
-        primaryAction={{ label: "Start Free", to: "/signup?plan=personal" }}
-        secondaryAction={{
-          label: "Hear a Demo",
-          to: "/showcase",
-          tone: "secondary",
-        }}
-      />
-
-      <section className="marketing-section border-t border-border bg-card">
+      {/* No hero. A comparison page's answer to "versus what" is the nine
+          differences, not a headline and two buttons occupying the screen above
+          them — and the buttons were a third copy of the header's Start Free and
+          the header's Demos. The title rides the same screen as its evidence. */}
+      <section className="marketing-section marketing-section--screen">
+        <div className="mx-auto mb-8 max-w-6xl text-center">
+          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Compare</p>
+          <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            Wireline vs. other voice AI
+          </h1>
+        </div>
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
           {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
-            <article className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10" key={title}>
+            <article className="bg-card px-5 py-6 text-center sm:px-6" key={title}>
               <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                 <Icon className="h-4 w-4" />
               </span>
-              <h2 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
-                {title}
-              </h2>
+              <h2 className="wl-card-title mt-4">{title}</h2>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
                 {copy}
               </p>
@@ -167,7 +164,7 @@ export default function Compare() {
       <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Compare the model, not the sticker.</h2>
+            <h2 className="wl-stitch-display text-balance">Compare the model, not the sticker</h2>
           </div>
 
           <div className="mt-8 overflow-x-auto border border-border bg-card">
@@ -259,7 +256,7 @@ export default function Compare() {
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="text-center">
             <h2 className="wl-stitch-display text-balance">
-              The routine call should not become a project.
+              The routine call should not become a project
             </h2>
           </div>
           <div className="overflow-hidden border border-border bg-card">
@@ -278,22 +275,18 @@ export default function Compare() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      <section className="marketing-section border-t border-border bg-card">
-        <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
-          <div>
-            <h2 className="wl-stitch-display mx-auto max-w-2xl text-balance">
-              You stay in control of every agent.
-            </h2>
-          </div>
-          <Link
-            to="/signup?plan=personal"
-            className="marketing-btn-primary min-h-12 px-6 text-[length:var(--wireline-typography-body-size)] font-semibold"
-          >
-            Start free <ArrowRight className="h-4 w-4" />
-          </Link>
+          {/* One line, at the point of comparison. Removing the closing CTA
+              band left this page with no way to act on what it had just
+              proved: the fixed header carries Start Free, but a visitor who has
+              read eight rows of before-and-after should not have to travel back
+              up to the chrome to use it. A band is not the fix; a link is. */}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            <Link to="/signup?plan=personal" className="font-semibold text-primary hover:underline">
+              Start free
+            </Link>{" "}
+            and build one before you compare another.
+          </p>
         </div>
       </section>
     </MarketingPageFrame>

@@ -32,7 +32,7 @@
     "test:run": "vitest run --exclude 'tests/e2e/**'",
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --exclude 'tests/e2e/**' --coverage",
-    "design:check": "node scripts/check-wireline-clear-system.mjs && node scripts/check-command-palette-contract.mjs",
+    "design:check": "node scripts/check-wireline-clear-system.mjs && node scripts/check-command-palette-contract.mjs && node scripts/check-marketing-viewport-fit.mjs",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "vendor:readiness": "node scripts/check-vendor-readiness.mjs",
@@ -97,7 +97,8 @@
     "economics:report": "node --import tsx scripts/report-plan-economics.mts",
     "lint:strict:candidates": "node scripts/strict-coverage.mjs",
     "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts",
-    "db:drift": "node scripts/check-migration-drift.mjs"
+    "db:drift": "node scripts/check-migration-drift.mjs",
+    "design:viewport:check": "node scripts/check-marketing-viewport-fit.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

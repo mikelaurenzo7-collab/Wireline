@@ -27,11 +27,24 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
     "marketing actions must center by default",
   );
+  // The frame no longer grows with content: the window *is* the frame. Every
+  // public route is 100dvh with a single bounded scroller between a fixed
+  // header and a pinned chrome bar, so no public page has a document
+  // scrollbar at any width. What this contract now holds is that invariant —
+  // the shared frame must render the one scroller, and long-form document
+  // routes must still have a way to opt out of the panel composition.
+  // See src/styles/viewport-first-marketing.css for the three mechanisms.
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
-    /scroll \? "grow" : "min-h-0 flex-1"/,
-    "scroll marketing pages must grow with content before the footer",
+    /className=\{cn\(\s*"marketing-flow relative z-10"/,
+    "the shared marketing frame must render exactly one bounded scroller",
+  );
+  mustInclude(
+    "src/components/layout/MarketingPageFrame.tsx",
+    marketingPageFrame,
+    /longform \? "marketing-section--longform"|longform && "marketing-longform"/,
+    "long-form document routes must be able to opt out of panel composition",
   );
 
   for (const file of [
@@ -44,11 +57,15 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/SolutionsPage.tsx",
     "src/pages/VerticalLanding.tsx",
   ]) {
+    // `!text-left` is the deliberate opt-out, not an oversight. /about is
+    // built to be identifiable at a glance as *not* the landing page, and a
+    // left-aligned column is the cheapest signal available; the blanket
+    // centering rule in clarity-system.css would otherwise re-centre it.
     mustInclude(
       file,
       read(file),
-      /text-center|wl-marketing-center/,
-      "public marketing page must explicitly center hero or section copy",
+      /text-center|wl-marketing-center|!text-left/,
+      "public marketing page must explicitly declare its copy alignment",
     );
   }
 

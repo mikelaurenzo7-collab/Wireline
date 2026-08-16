@@ -24,7 +24,7 @@ export default function Showcase() {
       />
 
       <MarketingHero
-        title="Hear what your customer hears."
+        title="Hear what your customer hears"
         primaryAction={{ label: "Create an Agent", to: "/signup" }}
         secondaryAction={{
           label: "Call a demo line",
@@ -62,7 +62,7 @@ export default function Showcase() {
       <section id="demo-lines" className="marketing-section border-b border-border bg-card">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="wl-stitch-display text-balance">Call a live demo line.</h2>
+            <h2 className="wl-stitch-display text-balance">Call a live demo line</h2>
           </div>
 
           <div className="mt-9 grid gap-3 sm:grid-cols-2">

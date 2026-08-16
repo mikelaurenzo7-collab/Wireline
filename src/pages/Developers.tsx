@@ -119,7 +119,7 @@ export default function Developers() {
       />
 
       <MarketingHero
-        title="Bring Wireline into the tools you already use."
+        title="Bring Wireline into the tools you already use"
         primaryAction={{ label: "View MCP endpoint", to: "#mcp-endpoint" }}
         secondaryAction={{
           label: "OpenAPI map",
@@ -134,7 +134,7 @@ export default function Developers() {
       >
         <div className="mx-auto max-w-5xl text-center">
           <h2 id="mcp-apps-heading" className="wl-stitch-display text-balance">
-            Connect once.
+            Connect once
           </h2>
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -179,7 +179,7 @@ export default function Developers() {
       <section className="marketing-section border-b border-border">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Connect. Draft. Launch.</h2>
+            <h2 className="wl-stitch-display text-balance">Connect. Draft. Launch</h2>
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -210,7 +210,7 @@ export default function Developers() {
             <ShieldCheck className="h-5 w-5" />
           </span>
           <h2 className="wl-stitch-display mx-auto mt-5 max-w-[22ch] text-balance">
-            OAuth for MCP. Session auth for the product API.
+            OAuth for MCP. Session auth for the product API
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
             MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
@@ -223,7 +223,7 @@ export default function Developers() {
       <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Draft. Simulate. Continue in Studio.</h2>
+            <h2 className="wl-stitch-display text-balance">Draft. Simulate. Continue in Studio</h2>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2">
             {MCP_BOUNDARIES.map((endpoint) => (

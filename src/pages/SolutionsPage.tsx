@@ -147,7 +147,7 @@ export default function SolutionsPage() {
 
       <section className="marketing-section wl-public-rail mx-auto">
         <div className="wl-marketing-center mx-auto max-w-2xl">
-          <h2 className="wl-stitch-display text-balance">From contact to next step.</h2>
+          <h2 className="wl-stitch-display text-balance">From contact to next step</h2>
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
@@ -167,7 +167,7 @@ export default function SolutionsPage() {
       <section className="marketing-section border-t border-border bg-card">
         <div className="wl-public-rail mx-auto">
           <div className="wl-marketing-center mx-auto max-w-3xl">
-            <h2 className="wl-stitch-display text-balance">What it handles.</h2>
+            <h2 className="wl-stitch-display text-balance">What it handles</h2>
           </div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
             {page.capabilities.map(([title, copy], index) => {
