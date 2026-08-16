@@ -59,6 +59,24 @@ describe("public browser demo cost protection", () => {
     expect(ticketIssue).toBeGreaterThan(providerReadiness);
   });
 
+  it("fences canceled and stalled starts before they can reclaim provider ownership", () => {
+    expect(hook).toContain("PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000");
+    expect(hook).toContain("PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000");
+    expect(hook).toContain("const attemptRef = useRef(0)");
+    expect(hook).toContain("const sessionAbortRef = useRef<AbortController | null>(null)");
+    expect(hook).toContain("signal: controller.signal");
+    expect(hook).toContain("if (attempt !== attemptRef.current) return");
+    expect(hook).toContain("attemptRef.current += 1");
+    expect(hook).toContain("The live connection took too long");
+    expect(hook).toContain("vapiRef.current?.stop()");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "voice bridge error:",
+    );
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "call start failed:",
+    );
+  });
+
   it("uses Express's trusted proxy identity instead of caller-controlled forwarding input", () => {
     const requestIpStart = routes.indexOf("function requestIp(req: Request)");
     const requestIpEnd = routes.indexOf("function requestHost", requestIpStart);
