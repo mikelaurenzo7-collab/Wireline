@@ -32,7 +32,7 @@ import {
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
-import { isLiveVideoProvider } from "../lib/video-presenter/live-video-addon";
+import { isLiveVideoProvider } from "../lib/video-presenter/live-video-providers";
 import { sessionExpectsWirelineAudio } from "../lib/video-presenter/types";
 import { CUSTOMER_AGENT_LANGUAGE } from "../lib/product-copy";
 import type {
