@@ -63,10 +63,10 @@ test("a protected-demo outage fails before microphone permission and exposes the
   );
   await expect(console.getByText("Public demo line available", { exact: true })).toBeVisible();
   await expect(console.getByText("Standard carrier rates may apply.", { exact: true })).toBeVisible();
-  await expect(console.getByRole("link", { name: "Hear It Live", exact: true })).toHaveAttribute(
-    "href",
-    /^tel:/,
-  );
+  await expect(
+    console.getByRole("link", { name: "Call the Public Demo Line", exact: true }),
+  ).toHaveAttribute("href", /^tel:/);
+  await expect(console.getByRole("button", { name: "Hear It Live", exact: true })).toBeEnabled();
 
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
 });
