@@ -250,7 +250,7 @@ button.landing-phone__island:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.7rem;
+  margin-top: auto;
   font-family: var(--wireline-font-mono);
   font-size: 0.625rem;
   font-weight: 600;
@@ -691,8 +691,8 @@ button.landing-phone__island:focus-visible {
 
 @media (min-width: 1024px) {
   .landing-phone__device {
-    padding: 0.55rem;
-    border-radius: 1.65rem;
+    padding: 0.85rem;
+    border-radius: 1.85rem;
     background:
       linear-gradient(160deg, rgba(255, 255, 255, 0.16), transparent 32%),
       linear-gradient(180deg, #2a2a32 0%, #0c0c10 42%, #050506 100%);
@@ -702,7 +702,7 @@ button.landing-phone__island:focus-visible {
   }
 
   .landing-phone__bezel {
-    border-radius: 1.15rem;
+    border-radius: 1.25rem;
     padding-top: 0.55rem;
     padding-bottom: 0.35rem;
   }
@@ -723,11 +723,25 @@ button.landing-phone__island:focus-visible {
   }
 
   .landing-phone__face {
-    width: min(28%, 11rem);
+    width: min(22vw, 15rem);
+    margin-top: 0.85rem;
+  }
+
+  .landing-phone__name {
+    font-size: 1.4rem;
+  }
+
+  .landing-phone__call {
+    width: 4.15rem;
+    height: 4.15rem;
+  }
+
+  .landing-stage__lanes {
+    gap: 1.5rem;
   }
 
   .landing-stage__dock {
-    width: min(34rem, 72%);
+    width: min(42rem, 58%);
   }
 
   .landing-os__tray {
