@@ -105,14 +105,22 @@ describe("current-state UI contract", () => {
 
   it("keeps public conversion routes on the selected launch plan", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const pricing = read("src/pages/Pricing.tsx");
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const auth = read("src/components/AuthPortal.tsx");
 
-    expect(landing).toContain('name: "Starter"');
-    expect(landing).toContain("planCatalog.starter.price_usd_monthly");
-    expect(landing).toContain("/signup?plan=starter&mode=outbound");
-    expect(landing).toContain("/signup?plan=starter&mode=inbound");
-    expect(landing).toContain("/signup?plan=starter&mode=hybrid");
+    // The singular landing owns free-builder conversion and protected product
+    // proof. Plan comparison and paid intent live on /pricing, where Stripe is
+    // the source of truth instead of a duplicate homepage catalog.
+    expect(landing).toContain('const PRIMARY_CTA_PATH = "/signup?plan=personal"');
+    expect(landing).toContain("useProtectedPublicDemo");
+    expect(landing).toContain("Talk Live");
+    expect(landing).not.toContain("STRIPE_PLANS");
+    expect(landing).not.toContain("planCatalog");
+    expect(landing).not.toContain("/signup?plan=starter&mode=");
+    expect(pricing).toContain("STRIPE_PLANS");
+    expect(pricing).toContain("plan.price_usd_monthly");
+    expect(pricing).toContain("Starter");
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
     expect(hero).not.toContain("MARKETING_VOICE.spine.map");

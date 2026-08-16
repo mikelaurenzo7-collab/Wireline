@@ -38,19 +38,29 @@ describe("marketing centering contract", () => {
     );
   });
 
-  it("loads public polish then hierarchy, and keeps centered labels on the shared axis", () => {
+  it("loads shared public foundations before route-specific theater and terminal viewport polish", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polishIndex = marketingBundle.indexOf("public-marketing-polish.css");
     const hierarchyIndex = marketingBundle.indexOf("marketing-information-hierarchy.css");
+    const viewportIndex = marketingBundle.indexOf("viewport-first-marketing.css");
+    const theaterIndex = marketingBundle.indexOf("landing-product-theater.css");
+    const scenesIndex = marketingBundle.indexOf("landing-product-theater-scenes.css");
+    const demoIndex = marketingBundle.indexOf("landing-product-theater-demo.css");
+    const finalViewportIndex = marketingBundle.indexOf("viewport-final-polish.css");
 
     expect(polishIndex).toBeGreaterThanOrEqual(0);
     expect(hierarchyIndex).toBeGreaterThan(polishIndex);
-    // The viewport frame is last in the tier: it overrides the section rhythm,
-    // hero sizing, and ambience that the files above it establish.
-    expect(marketingBundle.indexOf("viewport-first-marketing.css")).toBeGreaterThan(hierarchyIndex);
-    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/viewport-first-marketing\.css";$/);
+    expect(viewportIndex).toBeGreaterThan(hierarchyIndex);
+    expect(theaterIndex).toBeGreaterThan(viewportIndex);
+    expect(scenesIndex).toBeGreaterThan(theaterIndex);
+    expect(demoIndex).toBeGreaterThan(scenesIndex);
+    expect(finalViewportIndex).toBeGreaterThan(demoIndex);
+    // Shared frame rules establish the system; route-specific landing rules may
+    // specialize it, and terminal viewport polish owns real-device insets and
+    // short/landscape composition after every preceding marketing layer.
+    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/viewport-final-polish\.css";$/);
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");

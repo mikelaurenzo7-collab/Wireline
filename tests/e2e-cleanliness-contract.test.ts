@@ -46,14 +46,22 @@ describe("E2E cleanliness contracts", () => {
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
   });
 
-  it("cleans up browser microphone permission streams and safely addresses demo agents", () => {
+  it("cleans up browser microphone permission streams and routes demo agents through the protected proxy", () => {
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
 
-    expect(widget).toContain("encodeURIComponent(agentName)");
-    expect(widget).toContain("permissionStream.getTracks()");
-    expect(widget).toContain("track.stop()");
-    expect(widget).toContain("await instance.start(assistantPayload)");
-    expect(widget).not.toContain(
+    expect(widget).toContain("useProtectedPublicDemo");
+    expect(hook).toContain("navigator.mediaDevices.getUserMedia");
+    expect(hook).toContain("permissionStream.getTracks()");
+    expect(hook).toContain("track.stop()");
+    expect(hook).toContain('fetch("/api/public/demo-session"');
+    expect(hook).toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
+    expect(hook).toContain("await instance.start(PROTECTED_DEMO_ASSISTANT_SENTINEL)");
+    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
+    expect(hook).not.toContain("VITE_VAPI_PUBLIC_KEY");
+    expect(widget).not.toContain("/api/public/assistant/");
+    expect(hook).not.toContain("/api/public/assistant/");
+    expect(hook).not.toContain(
       'setError(reason instanceof Error ? reason.message : "Voice connection failed.")',
     );
   });

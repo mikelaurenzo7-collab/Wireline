@@ -2,9 +2,9 @@
  * Landing product theater
  *
  * The homepage is not a compressed catalog. It is one conversion scene: a
- * brand-specific, deterministic preview of the agent at work. The animation is
- * CSS-only, performs no provider calls, and preserves a still composition when
- * reduced motion is requested.
+ * brand-specific, deterministic preview that becomes protected live proof only
+ * after the visitor explicitly chooses Talk Live. Reduced motion keeps a still,
+ * fully legible composition.
  */
 
 .wireline-theater-surface .marketing-flow {
@@ -82,7 +82,7 @@
 .wireline-theater__eyebrow {
   margin: 0;
   color: var(--wireline-color-action-primary-default);
-  letter-spacing: 0.13em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
 }
 
 .wireline-theater__title {
