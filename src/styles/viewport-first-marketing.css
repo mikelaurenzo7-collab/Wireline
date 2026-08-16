@@ -170,6 +170,105 @@
 }
 
 /*
+ * The signature graphic (src/components/marketing/WireSignalArt.tsx).
+ *
+ * Pages with thin content used to pad it with another paragraph. This is the
+ * alternative — a voice, on a line — and it costs no words.
+ *
+ * Everything animated here is a `transform` or an `opacity` on an SVG child, so
+ * it composites on the GPU: no layout, no paint of the surrounding text, no
+ * animation frame, no JS. The per-element delay comes from a custom property
+ * the component sets inline, which is what makes thirty bars read as one
+ * travelling utterance instead of thirty synchronised blinks.
+ */
+.wire-signal-art {
+  color: var(--wireline-color-action-primary-default);
+  width: 100%;
+}
+
+.wire-signal-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wire-signal-art__bar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wire-signal-bar 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--wire-bar-index) * -0.09s);
+  opacity: 0.55;
+}
+
+.wire-signal-art__node {
+  animation: wire-signal-node 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--wire-bar-index) * 0.18s);
+  opacity: 0.5;
+}
+
+.wire-signal-art__packet {
+  animation: wire-signal-packet 4.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  opacity: 0;
+}
+
+@keyframes wire-signal-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes wire-signal-node {
+  0%,
+  100% {
+    r: 3;
+    opacity: 0.35;
+  }
+  50% {
+    r: 5;
+    opacity: 0.9;
+  }
+}
+
+@keyframes wire-signal-packet {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(600px);
+    opacity: 0;
+  }
+}
+
+/* Still, but not blank: the waveform silhouette is the image, and it reads
+   perfectly well without moving. */
+@media (prefers-reduced-motion: reduce) {
+  .wire-signal-art__bar,
+  .wire-signal-art__node,
+  .wire-signal-art__packet {
+    animation: none;
+  }
+
+  .wire-signal-art__bar {
+    opacity: 0.7;
+  }
+
+  .wire-signal-art__packet {
+    opacity: 0;
+  }
+}
+
+/*
  * Case doctrine — optical corrections for the uppercase tiers.
  *
  * Wireline ranks by case: short things shout, sentences do not. The rule the

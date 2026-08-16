@@ -189,7 +189,7 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:right-4 sm:left-auto sm:max-w-[340px]",
+            "fixed z-[9999] left-3 right-3 sm:right-4 sm:left-auto sm:max-w-[420px]",
             // Bottom placement everywhere. Authenticated app shell has a
             // mobile bottom nav (~4.25rem); clear it so Overview CTAs stay
             // tappable. Marketing sticky CTAs need a taller offset.
