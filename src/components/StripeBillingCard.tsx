@@ -50,7 +50,7 @@ const PLAN_ACCENTS: Record<string, string> = {
 };
 
 const CHECKOUT_RELEASE_MESSAGE =
-  "New purchases are temporarily paused while this deployment completes launch certification.";
+  "New purchases are temporarily unavailable. Please try again soon.";
 
 type StripeBillingCardProps = {
   /**
@@ -692,8 +692,8 @@ function PlanPicker({
                 {!canSubscribe && (
                   <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
                     {checkoutReleased
-                      ? "Stripe catalog still being consolidated for this tier"
-                      : "Self-serve checkout opens after this deployment is launch-certified"}
+                      ? "Online checkout is not yet available for this plan"
+                      : "Online checkout is temporarily unavailable"}
                   </p>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
