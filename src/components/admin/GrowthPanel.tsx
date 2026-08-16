@@ -50,9 +50,9 @@ function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
     advice =
       "Add target industries so prospecting matches businesses that fit Wireline's sweet spot.";
   } else if (settings.prospecting_enabled && states.length === 0) {
-    advice = "Geographic filters reduce wasted dials — start with your primary state or region.";
+    advice = "Geographic filters reduce wasted dials. Start with your primary state or region.";
   } else if (settings.prospecting_enabled) {
-    advice = `ICP targets ${industryLabel} — queue a prospecting run from Recaps when you're ready to ingest leads.`;
+    advice = `ICP targets ${industryLabel}. Queue a prospecting run from Recaps when you're ready to ingest leads.`;
   }
 
   return { completeness, industryLabel, advice };
@@ -380,7 +380,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
               <p className="wl-micro-meta--muted leading-relaxed">
                 ICP configuration completeness for{" "}
-                {settings.prospecting_enabled ? "autonomous prospecting" : "saved targeting"} —{" "}
+                {settings.prospecting_enabled ? "autonomous prospecting" : "saved targeting"},{" "}
                 {icp.industryLabel}.
               </p>
               <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">

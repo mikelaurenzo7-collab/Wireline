@@ -162,7 +162,7 @@ function renderSummary(content: CallRecapContent): string {
 export function renderCallRecap(content: CallRecapContent, brand: WorkspaceBrand): string {
   const outcomeClass = OUTCOME_DOT_CLASS[content.outcome] ?? "";
   const eyebrow = "Call recap";
-  const title = `Call recap · ${content.outcomeLabel} — ${brand.displayName}`;
+  const title = `Call recap · ${content.outcomeLabel}, ${brand.displayName}`;
   const agentLabel = content.agent.role
     ? `${content.agent.name}, ${content.agent.role}`
     : content.agent.name;

@@ -392,7 +392,7 @@ router.post(
             id: req.user.id,
             userId: req.user.id,
             // Match signup (`startTrialForUser`): Free Builder tenants start
-            // pending_activation. Never omit status — the DB default is a
+            // pending_activation. Never omit status, the DB default is a
             // footgun (`active`) and would bypass enforceLiveWorkActivation.
             subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "pending_activation",
             businessName: nextBusinessName,

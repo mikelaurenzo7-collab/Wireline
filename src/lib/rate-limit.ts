@@ -106,7 +106,7 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
     warnedNoRedis = true;
     if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
       log.warn(
-        "[rate-limit] UPSTASH_REDIS_REST_URL not set — rate limits are per-invocation only " +
+        "[rate-limit] UPSTASH_REDIS_REST_URL not set, rate limits are per-invocation only " +
           "and provide no real protection in serverless. Configure Upstash Redis for production.",
       );
     }

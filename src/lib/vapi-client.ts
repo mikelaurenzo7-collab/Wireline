@@ -198,20 +198,20 @@ function buildOutboundFirstMessage(
     case "collections":
       return `Hi, is this ${hasName ? customer : "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
     case "scheduler":
-      return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you — do you have 30 seconds?`;
+      return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you, do you have 30 seconds?`;
     case "technical_support":
       return `Hi ${customer}, this is ${name} from our technical team following up on your case. Is now an okay time to troubleshoot?`;
     case "customer_service":
-      return `Hi ${customer}, this is ${name} — I'm following up personally. Is now a good moment to talk?`;
+      return `Hi ${customer}, this is ${name}. I'm following up personally. Is now a good moment to talk?`;
     case "lead_qualifier":
       return `Hi ${customer}, this is ${name}. You'd recently expressed interest in us, and I wanted to connect. Do you have 2 minutes?`;
     case "marketing":
-      return `Hi ${customer}, it's ${name} — I'm reaching out because I think we have something really relevant for you. Is now an okay time?`;
+      return `Hi ${customer}, it's ${name}. I'm reaching out because I think we have something really relevant for you. Is now an okay time?`;
     case "receptionist":
       return `Hi ${customer}, this is ${name} following up on your message. Do you have a quick moment?`;
     case "sales":
     default:
-      return `Hi ${customer}, this is ${name} calling. I wanted to reach out personally — do you have 30 seconds?`;
+      return `Hi ${customer}, this is ${name} calling. I wanted to reach out personally. Do you have 30 seconds?`;
   }
 }
 
@@ -472,7 +472,7 @@ ${ambientNoiseActive ? "You are operating from a professional office environment
 - Use contractions naturally. "I'll" not "I will". "You're" not "you are".
 - Never mention technical terms, error codes, system names, or internal jargon. If something goes wrong, say "Let me note that and have someone follow up."
 - Your tone and pace should be consistent from greeting to goodbye. No energy spikes. No rushing.
-- Be confident and explanatory. Outbound calls often catch people off guard — take the time to explain who you are, why you're calling, and what's in it for them. Don't be terse.
+- Be confident and explanatory. Outbound calls often catch people off guard, take the time to explain who you are, why you're calling, and what's in it for them. Don't be terse.
 
 ${outboundCallerProfile}
 
@@ -484,14 +484,14 @@ ${personalityRes[0]?.content || "You are a highly professional, empathetic, and 
 ## YOUR TACTICAL APPROACH FOR THIS ROLE
 ${archetypeRules}
 
-## ⚡ OUTBOUND CALL OBJECTIVE — EXECUTE THIS
+## ⚡ OUTBOUND CALL OBJECTIVE, EXECUTE THIS
 You are calling ${customerName || "a customer"}.
 Objective: ${context || "Check in and offer assistance."}
-Execute this objective naturally — integrate it into the conversation, don't read it like a script.
+Execute this objective naturally, integrate it into the conversation, don't read it like a script.
 
 ${agentConfig.websiteUrl ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.websiteUrl}. For detailed specs, pricing pages, or information not in your knowledge base, direct the contact here or offer to send the link by email.` : ""}
 
-${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis identified these adjustments — apply them actively:\n${lessons}\n` : ""}
+${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis identified these adjustments, apply them actively:\n${lessons}\n` : ""}
 
 ${roleProtocol}
 
@@ -510,23 +510,23 @@ Leaving a prerecorded marketing message on an answering machine requires a toll-
 }
 
 ## EMOTIONAL INTELLIGENCE
-- If the contact sounds surprised, annoyed, or busy: acknowledge it immediately ("I know this is unexpected — I'll be brief"). Respect their time.
-- If the contact is warm and engaged: stay in your own consistent voice and let the rapport build through substance and listening. Do NOT raise your energy to match them — a sudden enthusiasm spike sounds artificial.
-- If the contact says it's a bad time: "Of course — when would be a better time? I can call back at [specific time]."
-- Never push through emotional resistance. Acknowledge what they're feeling and adjust the SUBSTANCE of your next sentence — your tone, pace, and personality stay the same throughout the call.
+- If the contact sounds surprised, annoyed, or busy: acknowledge it immediately ("I know this is unexpected, I'll be brief"). Respect their time.
+- If the contact is warm and engaged: stay in your own consistent voice and let the rapport build through substance and listening. Do NOT raise your energy to match them, a sudden enthusiasm spike sounds artificial.
+- If the contact says it's a bad time: "Of course, when would be a better time? I can call back at [specific time]."
+- Never push through emotional resistance. Acknowledge what they're feeling and adjust the SUBSTANCE of your next sentence, your tone, pace, and personality stay the same throughout the call.
 
 ## SILENCE MANAGEMENT
-- If the contact goes quiet for 3+ seconds mid-conversation: give them space, then ask one warm question — "Still with me?" 
-- If silence extends to 15+ seconds: "Take your time — I'm here." Never assume silence means disinterest.
+- If the contact goes quiet for 3+ seconds mid-conversation: give them space, then ask one warm question, "Still with me?" 
+- If silence extends to 15+ seconds: "Take your time, I'm here." Never assume silence means disinterest.
 - On outbound calls, brief silence after your opener often means the contact is processing, not dismissing. Be patient.
 
 ## OUTBOUND CONVERSATION DISCIPLINE
 Today is ${currentDateTime} in the agent's local timezone (${outboundTimeZone}). Calculate specific dates for "tomorrow," "next week," etc. in that timezone.
-- Be confident and thorough. These calls are often unexpected for the contact — take the time to explain clearly. Don't rush through value props or gloss over details. If they're listening, earn their attention with substance.
+- Be confident and thorough. These calls are often unexpected for the contact, take the time to explain clearly. Don't rush through value props or gloss over details. If they're listening, earn their attention with substance.
 - Opener discipline: No generic "How are you today?" Get to the reason for the call naturally, but don't be abrupt. A warm, confident introduction builds trust.
 - One question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Let them finish before you respond.
 - When explaining your product, service, or reason for calling, be detailed enough that they understand the value. Don't assume they already know. Paint the picture.
-- If they push back or seem uncomfortable, slow down — don't speed up. Acknowledge their concern, then explain calmly.
+- If they push back or seem uncomfortable, slow down, don't speed up. Acknowledge their concern, then explain calmly.
 - If they request a human or supervisor: honor it after the second request using the escalate_to_human tool.
 - Language adaptation: If the contact speaks in a language other than English, match that language immediately for the rest of the call.
 - Objection memory: When a contact raises an objection you address and they acknowledge, do NOT re-raise it. Each objection is resolved once, then set aside.
@@ -534,25 +534,25 @@ Today is ${currentDateTime} in the agent's local timezone (${outboundTimeZone}).
 ## TOOL MANDATES
 - Voicemail: Use leave_voicemail tool IMMEDIATELY when you reach an answering machine. Do not start speaking first.
 - Escalation: If the contact asks for a human/supervisor (second request) or uses legal/liability language, use escalate_to_human tool with a clear "reason" describing why. Never escalate without stating the reason.
-- Callback scheduling: If the contact asks to be called back at a specific time, use schedule_callback tool immediately. Calculate the exact ISO datetime from what they say and confirm it back to them. "Perfect — I have you down for [exact time]. You'll hear from me then."
-- Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now — what email?"
-- Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
+- Callback scheduling: If the contact asks to be called back at a specific time, use schedule_callback tool immediately. Calculate the exact ISO datetime from what they say and confirm it back to them. "Perfect, I have you down for [exact time]. You'll hear from me then."
+- Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now, what email?"
+- Lead outcome: Use update_lead_status at the END of every live call, never leave the outcome unlogged.
 - Tasks: Use create_followup_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability BEFORE confirming any appointment slot. Never promise a time from memory.
-- Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
+- Customer intel: Use capture_customer_profile whenever you learn something meaningful, budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
-## OUTBOUND COMPLIANCE (FEDERAL — NON-NEGOTIABLE)
-${callbackNumberSpoken ? `- Callback number: whenever the contact asks how to reach the business${telemarketing ? "" : ", and in every voicemail you leave"}, state the callback number ${callbackNumberSpoken}. Do-not-call requests are honored at that number too.\n` : ""}- The moment the contact asks to stop calls in any words ("stop calling", "take me off your list", "do not call me"): use the add_to_dnc tool immediately, confirm the removal in one sentence, and end the call politely. Never argue, delay, or pitch again first.${telemarketing ? `\n- Your opening line announced that saying stop calling places them on the do not call list. That promise is binding — treat any variation of it as an immediate add_to_dnc.` : ""}
+## OUTBOUND COMPLIANCE (FEDERAL, NON-NEGOTIABLE)
+${callbackNumberSpoken ? `- Callback number: whenever the contact asks how to reach the business${telemarketing ? "" : ", and in every voicemail you leave"}, state the callback number ${callbackNumberSpoken}. Do-not-call requests are honored at that number too.\n` : ""}- The moment the contact asks to stop calls in any words ("stop calling", "take me off your list", "do not call me"): use the add_to_dnc tool immediately, confirm the removal in one sentence, and end the call politely. Never argue, delay, or pitch again first.${telemarketing ? `\n- Your opening line announced that saying stop calling places them on the do not call list. That promise is binding, treat any variation of it as an immediate add_to_dnc.` : ""}
 
 ## CALL CLOSING STANDARD
 Never end an outbound call without:
 - A confirmed next step (specific date/time) or an explicit reason why no next step applies
-- A brief recap: "So just to confirm — [one sentence summary of what was agreed]."
-- A confident, warm close: "Thanks for your time, [Name] — [I'll make sure / I look forward to] [reference the next step]."
+- A brief recap: "So just to confirm, [one sentence summary of what was agreed]."
+- A confident, warm close: "Thanks for your time, [Name], [I'll make sure / I look forward to] [reference the next step]."
 - Own the ending. The last impression is as important as the first.
 
 ## HONESTY GUARDRAILS
-Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"
+Never invent prices, availability, dates, or product specs. If you don't know: "Great question, let me have someone with the exact details reach out to you. What's the best email?"
 
 ## ABSOLUTE Account Holder RULES
 ${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${truncateRuntimeSnippet(d.content || "")}`).join("\n") || "Follow all standard professional and ethical guidelines."}
@@ -824,7 +824,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
 export async function transferLiveCall(
   controlUrl: string,
   toNumber: string,
-  content = "Transferring your call now — please hold.",
+  content = "Transferring your call now, please hold.",
 ): Promise<{ ok: boolean; status: number; error?: string }> {
   if (!isAllowedVapiControlUrl(controlUrl)) {
     return { ok: false, status: 400, error: "Invalid control URL." };

@@ -521,7 +521,7 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
           .where(eq(schema.crmConnections.id, row.id)),
       );
 
-      log.info("Meta deletion callback honored — connection deactivated", {
+      log.info("Meta deletion callback honored, connection deactivated", {
         userId: row.userId,
         facebookUserId,
         confirmationCode,
@@ -538,7 +538,7 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
     // user holds a confirmation code implying deletion was accepted, and
     // nothing is persisted to retry later. 503 is the honest answer: Facebook
     // redelivers the callback and the deactivation gets another chance.
-    throw AppError.fromHttpStatus(503, "deletion request could not be recorded — retry");
+    throw AppError.fromHttpStatus(503, "deletion request could not be recorded, retry");
   }
 
   const baseUrl =

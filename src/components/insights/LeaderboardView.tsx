@@ -113,7 +113,11 @@ export default function LeaderboardView({ days }: { days: number }) {
                         : "text-muted/70",
                   )}
                 >
-                  {a.rank_delta > 0 ? `+${a.rank_delta}` : a.rank_delta === 0 ? "—" : a.rank_delta}
+                  {a.rank_delta > 0
+                    ? `+${a.rank_delta}`
+                    : a.rank_delta === 0
+                      ? "N/A"
+                      : a.rank_delta}
                 </span>
               )}
             </div>
@@ -132,13 +136,13 @@ export default function LeaderboardView({ days }: { days: number }) {
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
-                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
+                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "N/A"}
                 />
                 <Stat
                   label="$/Outcome"
-                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
+                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "N/A"}
                 />
-                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
+                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "N/A"} />
               </div>
             </div>
           </motion.div>

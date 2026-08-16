@@ -170,10 +170,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     if (!ISSUE_TYPES.has(cleanIssueType)) {
       throw AppError.fromHttpStatus(400, "Pick a valid issue type.");
     }
-    if (
-      cleanEmail.length > 320 ||
-      !/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(cleanEmail)
-    ) {
+    if (cleanEmail.length > 320 || !/^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(cleanEmail)) {
       throw AppError.fromHttpStatus(400, "Valid email required.");
     }
     if (cleanSubject.length < 3 || cleanSubject.length > 200) {
@@ -186,7 +183,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     const ts = new Date().toISOString();
     const emailSubject = `[Wireline Support / ${cleanIssueType}] ${cleanSubject}`;
     const emailBody = [
-      `Wireline support ticket — ${ts}`,
+      `Wireline support ticket, ${ts}`,
       ``,
       `From:        ${cleanEmail}`,
       `Issue type:  ${cleanIssueType}`,
@@ -223,7 +220,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     log.error("Support ticket route failed", { error: getErrorMessage(e) });
     return res
       .status(500)
-      .json({ error: "Couldn't submit ticket — please email support@trywireline.com directly." });
+      .json({ error: "Couldn't submit ticket, please email support@trywireline.com directly." });
   }
 });
 

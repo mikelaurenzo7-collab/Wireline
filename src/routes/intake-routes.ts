@@ -219,7 +219,7 @@ async function processIntakeLead(
   if (!PHONE_RE.test(phoneClean)) {
     return {
       ok: false,
-      error: "customer_number must be a valid phone number (7–20 digits, optional leading +).",
+      error: "customer_number must be a valid phone number (7 to 20 digits, optional leading +).",
       code: "INVALID_NUMBER",
     };
   }

@@ -193,7 +193,7 @@ export async function createMeeting(
 ): Promise<ZoomMeeting | null> {
   const token = await getValidToken(userId);
   if (!token) {
-    log.warn("Zoom not connected — skipping meeting creation");
+    log.warn("Zoom not connected, skipping meeting creation");
     return null;
   }
 

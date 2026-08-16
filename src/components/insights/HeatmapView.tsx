@@ -91,7 +91,7 @@ export default function HeatmapView({ days }: { days: number }) {
                       <div
                         className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer bg-brand"
                         style={{ opacity: cell && cell.count > 0 ? opacity : 0.05 }}
-                        title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
+                        title={`${wd} ${h}:00, ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                       />
                     </td>
                   );

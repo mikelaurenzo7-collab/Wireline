@@ -66,8 +66,8 @@ export function evaluateAccountHolderSloHealth(input: {
   if (input.pendingJobs > 50) {
     notes.push(
       input.pendingJobs > 200
-        ? "Job backlog is very high — confirm cron POST /api/jobs/sweep is scheduled on serverless deployments."
-        : "Job backlog elevated — sweep latency may affect enrichment and outbound tasks.",
+        ? "Job backlog is very high, confirm cron POST /api/jobs/sweep is scheduled on serverless deployments."
+        : "Job backlog elevated, sweep latency may affect enrichment and outbound tasks.",
     );
   }
 

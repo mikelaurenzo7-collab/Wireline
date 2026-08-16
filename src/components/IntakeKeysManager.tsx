@@ -203,7 +203,7 @@ export default function IntakeKeysManager() {
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="app-section-title flex items-center gap-2 text-brand">
-                <Check className="w-3.5 h-3.5" /> Save this key now — it will not be shown again
+                <Check className="w-3.5 h-3.5" /> Save this key now. It will not be shown again
               </div>
               <ShadButton
                 type="button"
@@ -287,7 +287,7 @@ export default function IntakeKeysManager() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— None —</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {agents.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}
@@ -509,21 +509,21 @@ export default function IntakeKeysManager() {
         </div>
         <div className="mt-3 wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>{" "}
-            — optional, any string ≤ 255 chars. Same key + same Account Holder returns the original{" "}
+            <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>
+            : optional, any string ≤ 255 chars. Same key + same Account Holder returns the original{" "}
             <code className="text-foreground/80">lead_id</code> with{" "}
             <code className="text-foreground/80">idempotent_replay: true</code>. Safe for
             form-submission retries.
           </div>
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> — 60
+            <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span>: 60
             requests / minute per intake key. Excess returns{" "}
             <code className="text-foreground/80">HTTP 429</code> with{" "}
             <code className="text-foreground/80">Retry-After</code>.
           </div>
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> —
-            when on, the response includes{" "}
+            <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span>: when
+            on, the response includes{" "}
             <code className="text-foreground/80">auto_dial_initiated: true</code> and the call is
             dispatched in the background; the lead row gets{" "}
             <code className="text-foreground/80">call_id</code> +{" "}

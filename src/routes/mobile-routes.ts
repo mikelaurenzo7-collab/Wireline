@@ -662,10 +662,7 @@ const mobileDialSchema = z.object({
   customerNumber: z
     .string()
     .min(1, "customerNumber is required")
-    .regex(
-      /^\+?[1-9]\d{6,14}$/,
-      "Invalid phone number format — expected E.164 (e.g. +15551234567)",
-    ),
+    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format, expected E.164 (e.g. +15551234567)"),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
@@ -996,7 +993,7 @@ router.post(
       if (!presence.controlUrl) {
         return res.status(409).json({
           code: "HANDOFF_UNAVAILABLE",
-          error: "This call can't be taken over yet — the carrier hasn't reported control info.",
+          error: "This call can't be taken over yet, the carrier hasn't reported control info.",
         });
       }
 

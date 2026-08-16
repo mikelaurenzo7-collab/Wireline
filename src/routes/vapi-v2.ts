@@ -144,7 +144,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
   const auth = evaluateVapiWebhookAuth(req);
   if (!auth.ok) {
     if (auth.status === 503) {
-      log.error("VAPI_WEBHOOK_SECRET unset in production — rejecting webhook");
+      log.error("VAPI_WEBHOOK_SECRET unset in production, rejecting webhook");
     }
     const messageType =
       ((req.body as Record<string, unknown>)?.message as { type?: string } | undefined)?.type ??
@@ -157,7 +157,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
     return res.status(auth.status).json({ code: "ERROR", error: auth.error });
   }
   if (!process.env.VAPI_WEBHOOK_SECRET && !_warnedAboutVapiSecret) {
-    log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
+    log.warn("VAPI_WEBHOOK_SECRET unset, accepting all webhook requests (dev only)");
     _warnedAboutVapiSecret = true;
   }
 
@@ -326,7 +326,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           .then(({ getVoiceWalletSnapshot }) => getVoiceWalletSnapshot(agent.user_id))
           .catch(() => null);
         if (wallet && wallet.completion_grace_due_usd >= INBOUND_TAKE_MESSAGE_GRACE_USD) {
-          log.warn("Inbound routed to take-a-message assistant — completion grace due", {
+          log.warn("Inbound routed to take-a-message assistant, completion grace due", {
             agentId: webhookAgentId,
             completionGraceDueUsd: wallet.completion_grace_due_usd,
           });
@@ -345,7 +345,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         // to the same bounded take-a-message assistant (fail-open on error).
         const { inboundConcurrencyExceeded } = await import("../lib/inbound-concurrency");
         if (await inboundConcurrencyExceeded(agent.user_id)) {
-          log.warn("Inbound routed to take-a-message assistant — concurrency ceiling", {
+          log.warn("Inbound routed to take-a-message assistant, concurrency ceiling", {
             agentId: webhookAgentId,
           });
           return res.json({
@@ -371,7 +371,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           .checkAndIncrement(agent.user_id, "voice_minutes_daily", 0)
           .catch(() => null);
         if (dailyDecision && !dailyDecision.allowed) {
-          log.warn("Inbound routed to take-a-message assistant — daily minute ceiling", {
+          log.warn("Inbound routed to take-a-message assistant, daily minute ceiling", {
             agentId: webhookAgentId,
             used: dailyDecision.used,
             limit: dailyDecision.limit,

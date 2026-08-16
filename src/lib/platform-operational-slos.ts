@@ -138,7 +138,7 @@ export function evaluatePlatformOperationalSlos(input: {
         },
         notes: input.dbOk
           ? undefined
-          : ["Database probe failed — treat platform availability as degraded."],
+          : ["Database probe failed, treat platform availability as degraded."],
       },
       incident_response: {
         configured: incidentConfigured,

@@ -140,7 +140,7 @@ function MobileDockLink({
       // driving the app by voice, on the first tab of the primary navigation.
       aria-label={
         item.shortLabel && item.shortLabel !== item.label
-          ? `${item.shortLabel} — ${item.label}`
+          ? `${item.shortLabel}, ${item.label}`
           : item.label
       }
       aria-current={active ? "page" : undefined}

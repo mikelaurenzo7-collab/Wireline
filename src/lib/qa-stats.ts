@@ -14,11 +14,11 @@ type QaBreakdown = {
 };
 
 const DISTRIBUTION_BUCKETS = [
-  { label: "90–100", min: 90, max: 100, color: "#A78BFA" },
-  { label: "75–89", min: 75, max: 89, color: "#A78BFA" },
-  { label: "60–74", min: 60, max: 74, color: "#8B87A0" },
-  { label: "40–59", min: 40, max: 59, color: "#C77DFF" },
-  { label: "0–39", min: 0, max: 39, color: "#EF4444" },
+  { label: "90 to 100", min: 90, max: 100, color: "#A78BFA" },
+  { label: "75 to 89", min: 75, max: 89, color: "#A78BFA" },
+  { label: "60 to 74", min: 60, max: 74, color: "#8B87A0" },
+  { label: "40 to 59", min: 40, max: 59, color: "#C77DFF" },
+  { label: "0 to 39", min: 0, max: 39, color: "#EF4444" },
 ] as const;
 
 export async function computeQaStats(userId: string, windowDays: number) {

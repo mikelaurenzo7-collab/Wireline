@@ -205,9 +205,9 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     "",
     opts.resetUrl,
     "",
-    "If you did not request this, you can ignore this email — your password stays unchanged.",
+    "If you did not request this, you can ignore this email, your password stays unchanged.",
     "",
-    "— Wireline",
+    "Wireline",
   ].join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
@@ -216,7 +216,7 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
       <p style="margin: 0 0 24px; line-height: 1.55;">Click the button below to set a new password. The link expires in <strong>${expiresHuman}</strong>.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.resetUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.resetUrl)}</span></p>
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email — your password stays unchanged.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email, your password stays unchanged.</p>
     </div>
   `;
 
@@ -276,7 +276,7 @@ export async function sendPaymentLinkEmail(opts: {
     "",
     "Any questions, just call us back on the same number you reached us on.",
     "",
-    "— Wireline",
+    "Wireline",
   ].join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
@@ -284,12 +284,12 @@ export async function sendPaymentLinkEmail(opts: {
       <p style="margin: 0 0 16px; line-height: 1.55;">Here's your secure link to activate your Wireline plan${planSuffix}.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.payUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Open payment link</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.payUrl)}</span></p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Wireline</p>
     </div>
   `;
 
   if (!process.env.RESEND_API_KEY?.trim()) {
-    log.warn("send_payment_link called but RESEND_API_KEY is not set — failing loud.", {
+    log.warn("send_payment_link called but RESEND_API_KEY is not set, failing loud.", {
       ...emailLogContext(opts.to),
       ...redactPayUrlForLog(opts.payUrl),
     });
@@ -320,30 +320,30 @@ export async function sendSignupLinkEmail(opts: {
   const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
   const greetingHtml = firstNameGreeting(opts.callerName);
   const greetingText = opts.callerName ? `Hi ${opts.callerName.trim().split(/\s+/)[0]},` : "Hi,";
-  const fromAgentHtml = opts.agentName ? ` — ${escapeHtml(opts.agentName)}` : "";
-  const fromAgentText = opts.agentName ? ` — ${opts.agentName}` : "";
+  const fromAgentHtml = opts.agentName ? `, ${escapeHtml(opts.agentName)}` : "";
+  const fromAgentText = opts.agentName ? `, ${opts.agentName}` : "";
 
   const subject = "Your Wireline sign-up link";
   const text = [
     greetingText,
     "",
-    "Thanks for the call. Here's the link to create your free Wireline agent — no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number:",
+    "Thanks for the call. Here's the link to create your free Wireline agent, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number:",
     "",
     signupUrl,
     "",
-    "If you have any follow-up questions, just call back — same number you reached me on. Looking forward to hearing how your agent turns out.",
+    "If you have any follow-up questions, just call back, same number you reached me on. Looking forward to hearing how your agent turns out.",
     "",
-    `— Wireline${fromAgentText}`,
+    `Wireline${fromAgentText}`,
   ].join("\n");
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free Wireline agent</strong> — no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free Wireline agent</strong>, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(signupUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your agent</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(signupUrl)}</span></p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back — same number you reached me on.</p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgentHtml}</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back, same number you reached me on.</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Wireline${fromAgentHtml}</p>
     </div>
   `;
 
@@ -376,7 +376,7 @@ export async function sendSignupLinkEmail(opts: {
   // Fail loud in prod so the agent reads back the URL by mouth and
   // ends the call honestly:
   log.warn(
-    "send_signup_link called but RESEND_API_KEY is not set — failing loud so the agent doesn't lie about delivery.",
+    "send_signup_link called but RESEND_API_KEY is not set, failing loud so the agent doesn't lie about delivery.",
     {
       ...emailLogContext(opts.to),
       agentName: opts.agentName,
@@ -416,7 +416,7 @@ export async function sendEmailVerification(opts: {
     "",
     "The link expires in 24 hours. If you didn't sign up, you can ignore this email.",
     "",
-    "— Wireline",
+    "Wireline",
   ].join("\n");
 
   const html = `
@@ -438,7 +438,7 @@ export async function sendEmailVerification(opts: {
   // "check your email" but no email actually goes out. Bad UX, worse
   // brand. Better to surface the transport failure so the user can
   // see "verification email transport down — try again in a few".
-  log.warn("sendEmailVerification called but RESEND_API_KEY is not set — failing loud.", {
+  log.warn("sendEmailVerification called but RESEND_API_KEY is not set, failing loud.", {
     ...emailLogContext(opts.to),
   });
   return {
@@ -472,7 +472,7 @@ export async function sendUrgentEscalationEmail(opts: {
     "",
     "This alert was generated by your Wireline voice agent. Reply to your customer at your earliest convenience.",
     "",
-    "— Wireline",
+    "Wireline",
   ]
     .filter((s) => s !== "")
     .join("\n");
@@ -493,7 +493,7 @@ export async function sendUrgentEscalationEmail(opts: {
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
   log.warn(
-    "[email-service] urgent escalation email skipped — RESEND_API_KEY missing. Configure to enable.",
+    "[email-service] urgent escalation email skipped, RESEND_API_KEY missing. Configure to enable.",
     { ...emailLogContext(opts.to) },
   );
   return {
@@ -523,9 +523,9 @@ export async function sendPaymentFailedEmail(opts: {
     "",
     opts.invoiceUrl ? `View invoice: ${opts.invoiceUrl}` : "",
     "",
-    "If you have questions, reply to this email — we're happy to help.",
+    "If you have questions, reply to this email, we're happy to help.",
     "",
-    "— Wireline",
+    "Wireline",
   ]
     .filter((s) => s !== undefined)
     .join("\n");
@@ -536,7 +536,7 @@ export async function sendPaymentFailedEmail(opts: {
       <p style="margin: 0 0 24px; line-height: 1.55;">To keep your agents live, update your payment method.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.updateCardUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
       ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${escapeHtml(opts.invoiceUrl)}" style="color: ${BRAND.colors.primary};">View invoice</a></p>` : ""}
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email — we're happy to help.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email, we're happy to help.</p>
     </div>
   `;
   if (process.env.RESEND_API_KEY) {
@@ -548,7 +548,7 @@ export async function sendPaymentFailedEmail(opts: {
       idempotencyKey: opts.idempotencyKey,
     });
   }
-  log.warn("[email-service] payment failed email skipped — RESEND_API_KEY missing.", {
+  log.warn("[email-service] payment failed email skipped, RESEND_API_KEY missing.", {
     ...emailLogContext(opts.to),
   });
   return {
@@ -583,7 +583,7 @@ export async function sendTrialEndingSoonEmail(opts: {
   // (Transactional mail above is exempt.) The demo-line recap in
   // lib/demo-funnel.ts is the other commercial sender and mirrors this shape.
   if (await isEmailSuppressed(opts.to)) {
-    log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
+    log.info("[email-service] trial-ending-soon email skipped, recipient unsubscribed.", {
       ...emailLogContext(opts.to),
     });
     return {
@@ -602,19 +602,19 @@ export async function sendTrialEndingSoonEmail(opts: {
       "",
       `Your Wireline activation window closes in ${dayWord}.`,
       "",
-      "Choose Starter or higher to keep your agents live — your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
+      "Choose Starter or higher to keep your agents live, your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
       "",
       opts.checkoutUrl,
       "",
       "If you decide not to fund live work, your agents will stop answering calls when activation lapses.",
       "",
-      "— Wireline",
+      "Wireline",
     ].join("\n") + buildComplianceFooterText(opts.to);
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your agents live — your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your agents live, your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your agents will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}
@@ -630,7 +630,7 @@ export async function sendTrialEndingSoonEmail(opts: {
       idempotencyKey: opts.idempotencyKey,
     });
   }
-  log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
+  log.warn("[email-service] trial-ending-soon email skipped, RESEND_API_KEY missing.", {
     ...emailLogContext(opts.to),
     daysLeft: opts.daysLeft,
   });

@@ -17,7 +17,7 @@ export const GROK_MODEL_OPTIONS = {
 
 export const GROK_AGENT_STRENGTHS = {
   realtimeSearch:
-    "Search approved Training knowledge during live voice tests for accurate, grounded answers — never the open web.",
+    "Search approved Training knowledge during live voice tests for accurate, grounded answers, never the open web.",
   personalityTuning: "Optional experimental personality tuning.",
   advancedReasoning: "Optional experimental reasoning evaluation.",
   creativeCustomization: "Optional experimental customization evaluation.",

@@ -219,7 +219,7 @@ export async function searchContacts(query: string, userId?: string): Promise<Hu
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping contact search");
+    log.warn("HubSpot not connected, skipping contact search");
     return [];
   }
 
@@ -261,7 +261,7 @@ export async function updateDealStage(
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping deal stage update");
+    log.warn("HubSpot not connected, skipping deal stage update");
     return false;
   }
 
@@ -300,7 +300,7 @@ export async function createContact(
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping contact create");
+    log.warn("HubSpot not connected, skipping contact create");
     return null;
   }
 
@@ -335,7 +335,7 @@ export async function logCall(entry: HubSpotCallLog, userId?: string): Promise<s
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping call log");
+    log.warn("HubSpot not connected, skipping call log");
     return null;
   }
 
@@ -390,7 +390,7 @@ export async function createDeal(
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping deal create");
+    log.warn("HubSpot not connected, skipping deal create");
     return null;
   }
 
@@ -452,7 +452,7 @@ export async function updateContact(
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
-    log.warn("HubSpot not connected — skipping contact update");
+    log.warn("HubSpot not connected, skipping contact update");
     return false;
   }
 

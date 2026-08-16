@@ -103,7 +103,7 @@ const MARKET_OPTIONS = [
   },
   {
     name: "Retell",
-    price: "$0.07–$0.31/min",
+    price: "$0.07 to $0.31/min",
     usage: "Pay as you go voice components; phone numbers and messaging have separate rates",
     fit: "Developers optimizing model, voice, telephony, and add on choices per deployment",
     href: "https://www.retellai.com/pricing",

@@ -446,7 +446,7 @@ export const phoneNumberPatchSchema = z
     campaign_label: z.string().max(200).optional().nullable(),
   })
   .refine((data) => data.agent_id !== undefined || data.campaign_label !== undefined, {
-    message: "Nothing to update — pass agent_id or campaign_label.",
+    message: "Nothing to update, pass agent_id or campaign_label.",
   });
 
 /** POST /api/phone-numbers/provision — buy or assign a tenant line (onboarding + self-serve). */

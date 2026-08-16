@@ -43,7 +43,7 @@ async function getAccessToken(): Promise<string | null> {
  */
 export async function sendContract(params: SendContractParams): Promise<DocuSignEnvelope | null> {
   if (!DOCUSIGN_ACCOUNT_ID) {
-    log.warn("DOCUSIGN_ACCOUNT_ID not set — skipping e-signature send");
+    log.warn("DOCUSIGN_ACCOUNT_ID not set, skipping e-signature send");
     return null;
   }
 

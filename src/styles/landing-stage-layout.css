@@ -100,7 +100,9 @@
   margin: 0;
   font-family: var(--wireline-font-family-display);
   font-size: clamp(3.15rem, 4.65vw, 5.2rem);
-  font-weight: 660;
+  /* Display tier at the home hero: the headline is the whole argument, so it
+     carries the full display weight (720) rather than a step down. */
+  font-weight: 720;
   letter-spacing: -0.048em;
   line-height: 0.95;
   text-wrap: balance;

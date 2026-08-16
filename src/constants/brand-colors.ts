@@ -43,9 +43,9 @@ export const BRAND = {
   },
 
   typography: {
-    display: `${token["font.family.display"].replace(/"/g, "")} — editorial interface headings`,
-    body: `${token["font.family.body"].replace(/"/g, "")} — neutral, highly legible interface copy`,
-    mono: `${token["font.family.mono"].replace(/"/g, "")} — metadata, status, and technical labels`,
+    display: `${token["font.family.display"].replace(/"/g, "")}: editorial interface headings`,
+    body: `${token["font.family.body"].replace(/"/g, "")}: neutral, highly legible interface copy`,
+    mono: `${token["font.family.mono"].replace(/"/g, "")}: metadata, status, and technical labels`,
     scale: "Fluid modular steps with clamp() for responsive hierarchy",
     headingStrategy:
       "Short, single-layer headings only. Concise and purposeful across the app shell.",

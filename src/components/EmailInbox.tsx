@@ -222,7 +222,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       setNotice(
         body?.message ||
           (body?.fetched
-            ? `Inbox refreshed — ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`
+            ? `Inbox refreshed. ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`
             : "Inbox refresh started."),
       );
     } catch (cause) {

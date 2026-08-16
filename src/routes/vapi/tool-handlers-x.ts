@@ -31,7 +31,7 @@ export async function handleXToolCall(
     return {
       toolCallId,
       result: tweetId
-        ? "Done — the post is live on X."
+        ? "Done, the post is live on X."
         : "X isn't connected for this account yet, so I couldn't publish that.",
     };
   }
@@ -47,7 +47,7 @@ export async function handleXToolCall(
       toolCallId,
       result: tweetId
         ? "Reply posted on X."
-        : "Couldn't post that reply — check the X connection and tweet ID.",
+        : "Couldn't post that reply, check the X connection and tweet ID.",
     };
   }
 
@@ -80,7 +80,7 @@ export async function handleXToolCall(
       toolCallId,
       result: sent
         ? "DM sent on X."
-        : "Couldn't send that DM — check the recipient and X connection.",
+        : "Couldn't send that DM, check the recipient and X connection.",
     };
   }
 
@@ -99,10 +99,10 @@ export async function handleXToolCall(
     if (!campaigns.length) {
       return {
         toolCallId,
-        result: "No X ad campaigns found — Ads API credentials may not be configured.",
+        result: "No X ad campaigns found, Ads API credentials may not be configured.",
       };
     }
-    const summary = campaigns.map((c) => `- ${c.name} (${c.id}) — ${c.entity_status}`).join("\n");
+    const summary = campaigns.map((c) => `- ${c.name} (${c.id}), ${c.entity_status}`).join("\n");
     return { toolCallId, result: `X ad campaigns:\n${summary}` };
   }
 
@@ -111,7 +111,7 @@ export async function handleXToolCall(
     if (!stats) {
       return {
         toolCallId,
-        result: "Couldn't load stats for that campaign — verify X Ads credentials and campaign ID.",
+        result: "Couldn't load stats for that campaign, verify X Ads credentials and campaign ID.",
       };
     }
     return {

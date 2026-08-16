@@ -303,7 +303,7 @@ async function ensureMcpSchema(): Promise<void> {
           END LOOP;
         END $$;
       `);
-      // Match migrations 0104 + 0115 — a runtime CREATE TABLE IF NOT EXISTS on a
+      // Match migrations 0104 + 0115, a runtime CREATE TABLE IF NOT EXISTS on a
       // fresh environment must not leave wireline_server without grants or a
       // permissive policy (tenant-context queries run as SET LOCAL ROLE
       // wireline_server and would otherwise default-deny to zero rows, silently

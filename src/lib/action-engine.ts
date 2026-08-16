@@ -167,7 +167,7 @@ async function resolveActionPolicy(
       connections,
     );
     if (!allowedTools.includes(requiredTool)) {
-      log.warn("Action blocked — agent tool or connection is unavailable", {
+      log.warn("Action blocked, agent tool or connection is unavailable", {
         userId,
         agentId: scopedAction.agentId,
         actionType: scopedAction.type,
@@ -452,7 +452,7 @@ async function handleSendTextMessage(
       };
     }
   } catch (err: unknown) {
-    log.warn("action-engine SMS compliance gate failed — failing closed", {
+    log.warn("action-engine SMS compliance gate failed, failing closed", {
       userId,
       error: getErrorMessage(err),
     });

@@ -328,7 +328,7 @@ export async function trackVoiceMinutes(opts: {
       });
     }
   } catch (error: any) {
-    log.error("trackVoiceMinutes failed — provider retry required", {
+    log.error("trackVoiceMinutes failed, provider retry required", {
       userId,
       callId: vapiCallId,
       error: error?.message,

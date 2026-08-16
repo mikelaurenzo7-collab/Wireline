@@ -752,7 +752,7 @@ function ActiveSubCard({
               {sub.cancel_at_period_end && <Chip tone="warning">Cancels at period end</Chip>}
             </div>
             <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
-              {sub.plan_name || sub.plan || "—"}
+              {sub.plan_name || sub.plan || "N/A"}
             </h3>
             <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
@@ -773,7 +773,7 @@ function ActiveSubCard({
               )}
               {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
                 <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
-                  Near capacity — add a voice agent from Manage subscription or upgrade your plan.
+                  Near capacity. Add a voice agent from Manage subscription or upgrade your plan.
                 </span>
               ) : null}
               {renews && (

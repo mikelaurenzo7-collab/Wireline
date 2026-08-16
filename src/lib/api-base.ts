@@ -261,7 +261,7 @@ export function isAuthHttpStatus(status: number): boolean {
   return status === 401;
 }
 
-export const AUTH_SESSION_EXPIRED_MESSAGE = "Your session expired — sign in again to continue.";
+export const AUTH_SESSION_EXPIRED_MESSAGE = "Your session expired, sign in again to continue.";
 
 /** Parse JSON or plain-text API error bodies from fetch responses. */
 export function parseApiErrorFromText(text: string, status: number): ApiErrorBody {

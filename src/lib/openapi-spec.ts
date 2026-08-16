@@ -265,7 +265,7 @@ const IntakeLeadRequest: JsonSchema = {
       additionalProperties: true,
       description: "Free-form pass-through (utm_*, source, etc.).",
     },
-    agent_id: { type: "string", description: "Optional — pin this lead to a specific agent." },
+    agent_id: { type: "string", description: "Optional: pin this lead to a specific agent." },
     idempotency_key: {
       type: "string",
       description:
@@ -407,7 +407,7 @@ const BillingStatus: JsonSchema = {
     phone_lines_included: {
       type: "integer",
       description:
-        "Max provisioned voice numbers while active — equals the subscribed plan agent cap (one number slot per purchased agent seat).",
+        "Max provisioned voice numbers while active, equals the subscribed plan agent cap (one number slot per purchased agent seat).",
     },
     email_verified: { type: "boolean" },
     subscription: {
@@ -419,7 +419,7 @@ const BillingStatus: JsonSchema = {
         plan_name: { type: ["string", "null"] },
         max_agents: {
           type: ["integer", "null"],
-          description: "Agent seat cap — also the voice-number slot cap.",
+          description: "Agent seat cap, also the voice-number slot cap.",
         },
         status: { type: ["string", "null"] },
         current_period_end: { type: ["string", "null"], format: "date-time" },
@@ -462,7 +462,7 @@ const BillingStatus: JsonSchema = {
 const SloSnapshot: JsonSchema = {
   type: "object",
   description:
-    "Evidence-backed SLO snapshot. `status` is ok, degraded, or insufficient_data — never an unconditional SLA claim.",
+    "Evidence-backed SLO snapshot. `status` is ok, degraded, or insufficient_data. Never an unconditional SLA claim.",
   properties: {
     status: { type: "string", enum: ["ok", "degraded", "insufficient_data"] },
     banner_status: { type: "string", enum: ["healthy", "degraded", "critical"] },
@@ -572,7 +572,7 @@ const errorResponse = (description: string): ResponseObject => ({
 });
 
 const COMMON_ERROR_RESPONSES: Record<string, ResponseObject> = {
-  "400": errorResponse("Invalid request — see `error` and `code`."),
+  "400": errorResponse("Invalid request, see `error` and `code`."),
   "401": errorResponse("Missing or invalid credentials."),
   "403": errorResponse("Authenticated but not authorized for this resource."),
   "404": errorResponse("Resource not found, or owned by another tenant."),
@@ -599,7 +599,7 @@ const PATHS: Record<string, PathItem> = {
     get: {
       summary: "Health probe",
       description:
-        "Public. Returns process uptime, database probe, and capability flags. Stable contract — external monitors may key on the response shape.",
+        "Public. Returns process uptime, database probe, and capability flags. Stable contract, so external monitors may key on the response shape.",
       operationId: "getHealth",
       tags: ["Health"],
       security: auth.none,
@@ -868,7 +868,7 @@ const PATHS: Record<string, PathItem> = {
     },
     post: {
       summary: "Update the caller's tenant settings",
-      description: "Partial update — only provided fields are written.",
+      description: "Partial update, only provided fields are written.",
       operationId: "updateSettings",
       tags: ["Settings"],
       security: auth.bearer,
@@ -887,7 +887,7 @@ const PATHS: Record<string, PathItem> = {
   // ── Triage / Insights ─────────────────────────────────────────────
   "/api/triage": {
     get: {
-      summary: "Triage Inbox — five buckets of what needs attention",
+      summary: "Triage Inbox: five buckets of what needs attention",
       operationId: "getTriage",
       tags: ["Insights"],
       security: auth.bearer,
@@ -902,7 +902,7 @@ const PATHS: Record<string, PathItem> = {
   },
   "/api/insights/daily-brief": {
     get: {
-      summary: "Daily Brief — Claude-authored summary of yesterday vs the 7-day baseline",
+      summary: "Daily Brief: Claude-authored summary of yesterday vs the 7-day baseline",
       operationId: "getDailyBrief",
       tags: ["Insights"],
       security: auth.bearer,
@@ -1019,7 +1019,7 @@ const PATHS: Record<string, PathItem> = {
         "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
         "403": COMMON_ERROR_RESPONSES["403"],
-        "503": errorResponse("Secret Vault not configured — set WIRELINE_DATA_KEY."),
+        "503": errorResponse("Secret Vault not configured. Set WIRELINE_DATA_KEY."),
       },
     },
   },
@@ -1112,7 +1112,7 @@ function buildWebhookEntries(): Record<string, PathItem> {
   for (const event of WEBHOOK_EVENTS) {
     entries[event] = {
       post: {
-        summary: `Outbound webhook — ${event}`,
+        summary: `Outbound webhook: ${event}`,
         description: `POST sent to the URL you registered. Verify the \`X-Wireline-Signature\` header with HMAC-SHA256(body, your_signing_secret).`,
         operationId: `webhook_${event.replace(/\W+/g, "_")}`,
         tags: ["Webhooks"],
@@ -1151,16 +1151,16 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
       description: [
         "Wireline's public API. Designed for three audiences:",
         "",
-        "1. **CRM / form / Zapier integrations** — push leads in via `POST /api/intake/lead`.",
-        "2. **Account Holders & ops dashboards** — read agents, calls, settings, quotas, SLOs.",
-        "3. **AI-agent frameworks** — consume this spec as a tool catalog (Claude Desktop, Cursor, ChatGPT custom GPTs, etc).",
+        "1. **CRM / form / Zapier integrations**: push leads in via `POST /api/intake/lead`.",
+        "2. **Account Holders & ops dashboards**: read agents, calls, settings, quotas, SLOs.",
+        "3. **AI-agent frameworks**: consume this spec as a tool catalog (Claude Desktop, Cursor, ChatGPT custom GPTs, etc).",
         "",
         "Authentication:",
         "",
-        "- `bearerAuth` — Wireline session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
-        "- `intakeKeyAuth` — Wireline-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
+        "- `bearerAuth`: Wireline session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
+        "- `intakeKeyAuth`: Wireline-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
         "",
-        "Outbound webhook deliveries are documented under `webhooks:` — each entry shows the body shape your receiver will get.",
+        "Outbound webhook deliveries are documented under `webhooks:`. Each entry shows the body shape your receiver will get.",
       ].join("\n"),
       contact: { name: "Wireline" },
       license: { name: "Proprietary" },

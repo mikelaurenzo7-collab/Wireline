@@ -44,7 +44,7 @@ const AGENT_TEMPLATES = [
   {
     id: "sales-sdr",
     category: "Sales & Revenue",
-    name: "SDR — Outbound Prospecting",
+    name: "SDR: Outbound Prospecting",
     description:
       "Works your outbound queue with BANT qualification, books demos, handles objections, and passes hot leads to your CRM.",
     role: "sales",
@@ -53,12 +53,12 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Most popular",
     firstMessage:
-      "Hi, this is Alex from [Company]. I saw you were interested in [Product] — got 2 minutes to see if we'd be a fit?",
+      "Hi, this is Alex from [Company]. I saw you were interested in [Product]. Got 2 minutes to see if we'd be a fit?",
   },
   {
     id: "sales-closer",
     category: "Sales & Revenue",
-    name: "Closer — Late Stage Deals",
+    name: "Closer: Late Stage Deals",
     description:
       "Handles warm follow-ups, pricing discussions, and closing calls with empathy and authority.",
     role: "sales",
@@ -67,7 +67,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hey [Name], following up on our conversation — happy to answer any final questions and get you started today.",
+      "Hey [Name], following up on our conversation. Happy to answer any final questions and get you started today.",
   },
   {
     id: "lead-qualifier-inbound",
@@ -87,7 +87,7 @@ const AGENT_TEMPLATES = [
   {
     id: "support-tier1",
     category: "Customer Support",
-    name: "Tier 1 — General Support",
+    name: "Tier 1: General Support",
     description:
       "Handles FAQs, account questions, and basic troubleshooting. Escalates to a human when needed.",
     role: "customer_service",
@@ -95,7 +95,7 @@ const AGENT_TEMPLATES = [
     icon: Headphones,
     accent: BRAND.colors.primary,
     badge: null,
-    firstMessage: "Thank you for calling support. I'm your agent — how can I help you today?",
+    firstMessage: "Thank you for calling support. I'm your agent. How can I help you today?",
   },
   {
     id: "support-email",
@@ -124,7 +124,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Healthcare",
     firstMessage:
-      "Hello, thank you for calling. I can help schedule or reschedule your appointment — what works best for you?",
+      "Hello, thank you for calling. I can help schedule or reschedule your appointment. What works best for you?",
   },
   {
     id: "scheduler-salon",
@@ -152,13 +152,13 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Real Estate",
     firstMessage:
-      "Hi! I'm calling about [Property Address] — are you still interested in scheduling a showing?",
+      "Hi! I'm calling about [Property Address]. Are you still interested in scheduling a showing?",
   },
   // === COLLECTIONS & FINANCE ===
   {
     id: "collections-soft",
     category: "Collections & Finance",
-    name: "Soft Collections — Payment Reminders",
+    name: "Soft Collections: Payment Reminders",
     description:
       "Friendly payment reminder calls with empathy. Offers payment plans and avoids escalation.",
     role: "collections",
@@ -172,7 +172,7 @@ const AGENT_TEMPLATES = [
   {
     id: "collections-hard",
     category: "Collections & Finance",
-    name: "Hard Collections — Recovery",
+    name: "Hard Collections: Recovery",
     description:
       "Direct payment recovery calls. Compliant with FDCPA guidelines. Structured call flow with objection handling.",
     role: "collections",
@@ -196,7 +196,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers — do you have 60 seconds?",
+      "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers. Do you have 60 seconds?",
   },
   {
     id: "marketing-survey",
@@ -210,7 +210,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
+      "Hi! I'm calling on behalf of [Company]. We'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
   // === E-COMMERCE ===
   {
@@ -218,7 +218,7 @@ const AGENT_TEMPLATES = [
     category: "E-commerce",
     name: "Shopify / Square Support",
     description:
-      "Handles 'Where is my order?', returns, inventory questions, address changes, and discount codes — connected to your live store.",
+      "Handles 'Where is my order?', returns, inventory questions, address changes, and discount codes, connected to your live store.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Headphones,
@@ -232,7 +232,7 @@ const AGENT_TEMPLATES = [
     category: "E-commerce",
     name: "Phone Order Agent",
     description:
-      "Takes orders over the phone, builds draft orders, applies discounts, sends payment links, and handles address corrections — all live.",
+      "Takes orders over the phone, builds draft orders, applies discounts, sends payment links, and handles address corrections, all live.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Receipt,
@@ -269,7 +269,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Personal · inbound",
     firstMessage:
-      "Hi, you've reached [Your Name]'s line — I'm their agent. Can I take a quick message or let them know what this is about?",
+      "Hi, you've reached [Your Name]'s line. I'm their agent. Can I take a quick message or let them know what this is about?",
   },
   {
     id: "personal-errand",
@@ -283,7 +283,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Personal · outbound",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
+      "Hi, I'm calling on behalf of [Your Name]. They asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
   },
   {
     id: "personal-negotiator",
@@ -297,7 +297,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Personal · saves money",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",
+      "Hi, I'm calling on behalf of [Your Name], account [Account #]. They've asked me to discuss their current plan and pricing.",
   },
 ] as const;
 

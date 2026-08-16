@@ -219,7 +219,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "team_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "2 live agents — personal Concierge + business voice agent",
+      "2 live agents, personal Concierge + business voice agent",
       "2 production-number slots, provisioned when needed",
       "100 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,

@@ -21,8 +21,7 @@ import {
 const router = Router();
 
 type UnsubscribeTarget =
-  | { scope: "wireline"; email: string }
-  | { scope: "tenant"; userId: string; email: string };
+  { scope: "wireline"; email: string } | { scope: "tenant"; userId: string; email: string };
 
 function targetFromToken(token: string): UnsubscribeTarget | null {
   const tenant = verifyTenantUnsubscribeToken(token);
@@ -56,7 +55,7 @@ async function unsubscribeRateLimit(req: Request, res: Response, next: NextFunct
     }
   } catch (err) {
     if (err instanceof AppError) throw err;
-    log.warn("unsubscribe rate limiter error — fail open", { error: getErrorMessage(err) });
+    log.warn("unsubscribe rate limiter error, fail open", { error: getErrorMessage(err) });
   }
   next();
 }

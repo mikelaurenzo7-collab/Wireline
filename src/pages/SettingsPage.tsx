@@ -186,8 +186,8 @@ function DangerZone() {
           title={
             renewalStopNeedsAttention
               ? deletionScheduled
-                ? "Deletion scheduled — billing action needed"
-                : "Deletion canceled — billing review needed"
+                ? "Deletion scheduled: billing action needed"
+                : "Deletion canceled: billing review needed"
               : deletionScheduled
                 ? "Deletion scheduled"
                 : "Deletion canceled"
@@ -299,7 +299,7 @@ export default function SettingsPage() {
           <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
           <div className="mt-5 grid gap-3">
             <ProfileRow icon={UserRound} label="Name" value={displayName} />
-            <ProfileRow icon={Mail} label="Email" value={email || "—"} wrapValue />
+            <ProfileRow icon={Mail} label="Email" value={email || "N/A"} wrapValue />
           </div>
         </section>
 

@@ -500,7 +500,7 @@ export default function CrmConnectionCard() {
                     ) : (
                       <div className="wl-micro-meta--muted leading-snug mt-0.5">
                         {apolloPlatformOnly
-                          ? `${group} · Platform API active — connecting your workspace is optional`
+                          ? `${group} · Platform API active. Connecting your workspace is optional`
                           : platformReady && oauthConnectAvailable
                             ? group
                             : platformReady
@@ -660,7 +660,7 @@ export default function CrmConnectionCard() {
                     )}
                     <p className="wl-micro-meta leading-snug">
                       After OAuth we auto-pick #general when possible. Agents post bookings and
-                      alerts here — change anytime.
+                      alerts here. Change anytime.
                     </p>
                   </div>
                 )}

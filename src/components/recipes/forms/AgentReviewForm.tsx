@@ -120,7 +120,7 @@ export function AgentReviewForm({
             </ResultCard>
           </div>
           <div className="space-y-2.5">
-            <h4 className="wl-label text-brand">Suggested Directives — One-Click Apply</h4>
+            <h4 className="wl-label text-brand">Suggested Directives: One-Click Apply</h4>
             {review.suggested_directives.map((d: any, i: number) => (
               <div
                 key={i}

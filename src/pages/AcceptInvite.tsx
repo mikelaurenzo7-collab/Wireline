@@ -86,7 +86,7 @@ export default function AcceptInvite() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Accept workspace invitation — Wireline"
+        title="Accept workspace invitation | Wireline"
         description="Join a shared Wireline workspace."
         path="/accept-invite"
         noIndex

@@ -83,7 +83,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
     label: "sales",
     defaultPlanId: "business",
     templateId: "sales-sdr",
-    templateLabel: "SDR — Outbound Prospecting",
+    templateLabel: "SDR, Outbound Prospecting",
   },
   support: {
     label: "customer coverage",

@@ -163,7 +163,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "HTTP timeout for mid-call public web research (Perplexity/Gemini) — not PSTN call length",
+      "HTTP timeout for mid-call public web research (Perplexity/Gemini), not PSTN call length",
     validate: isPositiveNumber,
     formatHint: "milliseconds, e.g. 8000",
   },
@@ -250,7 +250,8 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "HEYGEN_API_KEY",
     group: "voice",
     required: false,
-    description: "HeyGen Studio API credential for presenter voice previews and fail-closed presence clips (not Live Video sessions)",
+    description:
+      "HeyGen Studio API credential for presenter voice previews and fail-closed presence clips (not Live Video sessions)",
     validate: nonEmpty,
   },
   {

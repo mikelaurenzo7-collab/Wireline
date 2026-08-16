@@ -22,7 +22,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "One private draft agent",
       "Full setup, training, and knowledge tools unlocked",
-      "Private simulation only — no live calls, texts, or number until you activate a paid plan",
+      "Private simulation only: no live calls, texts, or number until you activate a paid plan",
     ],
   },
   {
@@ -77,7 +77,7 @@ export const WIRELINE_PLANS = [
       "Web checkout only",
       "One-time top-ups",
       "Ledger-backed funding for calls, texts, and follow-up beyond included capacity",
-      "Active calls always finish normally — depleted coverage only blocks the next action",
+      "Active calls always finish normally. Depleted coverage only blocks the next action",
     ],
   },
 ] as const;

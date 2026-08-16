@@ -140,7 +140,7 @@ function normalizeDuration(value: unknown): number {
     duration < MIN_CLONE_DURATION_SECONDS ||
     duration > MAX_CLONE_DURATION_SECONDS
   ) {
-    throw AppError.badRequest("Use a 10–90 second single-speaker sample.");
+    throw AppError.badRequest("Use a 10 to 90 second single-speaker sample.");
   }
   return Math.round(duration);
 }
@@ -148,7 +148,7 @@ function normalizeDuration(value: unknown): number {
 function cleanVoiceName(value: unknown): string {
   const name = typeof value === "string" ? value.trim() : "";
   if (name.length < 2 || name.length > 80) {
-    throw AppError.badRequest("Voice name must be 2–80 characters.");
+    throw AppError.badRequest("Voice name must be 2 to 80 characters.");
   }
   return name;
 }

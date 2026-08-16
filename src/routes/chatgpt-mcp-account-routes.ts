@@ -588,7 +588,7 @@ router.post("/mcp", async (req, res) => {
           quotaTracker.checkAndIncrement(authed.userId, "simulation_minutes_daily", 5),
         )
         .catch((err: unknown) => {
-          log.error("chatgpt simulation quota tracker unavailable — refusing mint", {
+          log.error("chatgpt simulation quota tracker unavailable, refusing mint", {
             userId: authed.userId,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -599,12 +599,12 @@ router.post("/mcp", async (req, res) => {
         });
       if (!quota.allowed)
         throw AppError.tooManyRequests(
-          "Today's live-simulation minutes are used. They reset at midnight UTC — continue testing from Wireline.",
+          "Today's live-simulation minutes are used. They reset at midnight UTC, continue testing from Wireline.",
         );
       if (!quota.persisted) {
         // Read-only fallback decision: the increment was not durably
         // recorded, so an allowance here would be an unmetered vendor mint.
-        log.error("chatgpt simulation quota increment not durable — refusing mint", {
+        log.error("chatgpt simulation quota increment not durable, refusing mint", {
           userId: authed.userId,
         });
         throw AppError.fromHttpStatus(

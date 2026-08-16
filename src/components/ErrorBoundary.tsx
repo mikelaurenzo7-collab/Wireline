@@ -86,7 +86,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     const title = staleChunk ? "Wireline updated" : "This view crashed";
     const body = staleChunk
       ? "A new version is available. Reload once to fetch the current app bundle and keep working."
-      : "The rest of the app is fine — only this view failed. Try again, reload, or head back to the workspace.";
+      : "The rest of the app is fine. Only this view failed. Try again, reload, or head back to the workspace.";
 
     return (
       /* `wl-ui-caps` is carried here rather than inherited: this boundary wraps

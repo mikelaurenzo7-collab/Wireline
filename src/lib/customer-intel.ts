@@ -50,6 +50,6 @@ export function buildCustomerIntelBlock(
   const intel = extractCapturedProfileIntel(rawDescription);
   if (!intel) return "";
   return isOutbound
-    ? `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: This contact has shared this intel before. Reference it naturally to show continuity and build immediate trust.`
-    : `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: Weave this context in naturally. It tells you what this contact cares about and where they stand.`;
+    ? `## ⚡ CUSTOMER INTEL, FROM PREVIOUS CALLS\n${intel}\nUSE THIS: This contact has shared this intel before. Reference it naturally to show continuity and build immediate trust.`
+    : `## ⚡ CUSTOMER INTEL, FROM PREVIOUS CALLS\n${intel}\nUSE THIS: Weave this context in naturally. It tells you what this contact cares about and where they stand.`;
 }

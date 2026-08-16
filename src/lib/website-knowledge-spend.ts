@@ -217,7 +217,7 @@ export async function runWithWebsiteKnowledgeSpend<T>(
     throw new AppError(
       429,
       "AI_TOKEN_QUOTA_EXCEEDED",
-      "You've reached today's AI usage limit for your plan. It resets at midnight UTC — scheduled calls and texts are unaffected.",
+      "You've reached today's AI usage limit for your plan. It resets at midnight UTC, scheduled calls and texts are unaffected.",
       {
         limit: exceeded.limit,
         used: exceeded.used,

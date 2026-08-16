@@ -48,7 +48,7 @@ export const OPS_COPY = {
   floorLoading: "Loading Active calls",
   floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
-  intelEmpty: "All clear – no Account Holder approvals waiting.",
+  intelEmpty: "All clear, no Account Holder approvals waiting.",
   telemetryTitle: "Agent activity",
   telemetryActive: "Streaming",
   growthTitle: "Autonomous outreach",
@@ -62,7 +62,7 @@ export const OPS_COPY = {
   roiLabel: "Agent efficiency",
   setupEyebrow: "Agent setup",
   setupBody: (done: number, total: number) =>
-    `${done} of ${total} complete – agent, Training, number, and first useful call.`,
+    `${done} of ${total} complete, agent, Training, number, and first useful call.`,
   setupHint: "Activation = one real phone conversation, not browser test alone.",
   testCallNumber: "(630) 642-5661",
   testCallHref: "tel:+16306425661",
@@ -250,7 +250,7 @@ export const OPS_TRIAGE_COPY = {
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
   hotStripCta: "Brief agent",
   hotStripPrompt: (n: number) =>
-    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now – who they are, why they're hot, and what the agent is doing to close them.`,
+    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now, who they are, why they're hot, and what the agent is doing to close them.`,
   escalationCoachPrompt: (number: string, summary: string) =>
     `Coach me through the escalated call from ${number}. Context: ${summary.slice(0, 400)}`,
 } as const;
@@ -268,7 +268,7 @@ export const OPS_TRAINING_ASSISTS = [
   {
     label: "Clone persona",
     prompt:
-      "Clone this agent's persona into a new agent – keep the voice and tone, and summarize what carries over.",
+      "Clone this agent's persona into a new agent, keep the voice and tone, and summarize what carries over.",
   },
   {
     label: "Ingest a URL",
@@ -309,7 +309,7 @@ export const OPS_STUDIO_ASSISTS = [
   {
     label: "Sharpen the persona",
     prompt:
-      "Rewrite this agent's personality block – keep the role, make it sharper, warmer, and more specific to my business.",
+      "Rewrite this agent's personality block, keep the role, make it sharper, warmer, and more specific to my business.",
   },
   {
     label: "Set the schedule",

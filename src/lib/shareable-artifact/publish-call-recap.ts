@@ -47,7 +47,7 @@ function pickHero(input: {
   if (summary && summary.length <= 140) return summary;
   const caller = input.customerName?.trim();
   const label = input.outcomeLabel;
-  if (caller && label) return `${label} — ${caller}`;
+  if (caller && label) return `${label}, ${caller}`;
   if (caller) return `Call with ${caller}`;
   return `${input.outcomeLabel} call`;
 }
@@ -236,7 +236,7 @@ export async function maybePublishCallRecap(
       content,
     });
   } catch (error) {
-    log.warn("recap artifact publish skipped — non-fatal", {
+    log.warn("recap artifact publish skipped, non-fatal", {
       userId: input.userId,
       callLogId: String(input.callLogId),
       error: getErrorMessage(error),

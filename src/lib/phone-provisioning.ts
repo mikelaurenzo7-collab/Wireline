@@ -52,7 +52,7 @@ import {
  * was not one the customer owns.
  */
 const NUMBER_PROVISIONING_UNAVAILABLE =
-  "Wireline could not activate a number right now. This is on our side and the team has been notified — your agent still works for texts, email, and follow-up in the meantime.";
+  "Wireline could not activate a number right now. This is on our side and the team has been notified, your agent still works for texts, email, and follow-up in the meantime.";
 
 const NUMBER_RELEASE_UNAVAILABLE =
   "Wireline could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
@@ -254,8 +254,7 @@ async function removeTwilioNumberByE164Strict(
   phoneNumber: string,
   client: ReturnType<typeof getTwilioClient> = getTwilioClient(),
 ): Promise<void> {
-  if (!client)
-    throw new Error("Twilio client is unavailable — carrier release cannot be verified.");
+  if (!client) throw new Error("Twilio client is unavailable, carrier release cannot be verified.");
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
   if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
 }
@@ -383,7 +382,7 @@ export async function provisionTenantNumber(
   // go to the operator log where they are useful and where they are not an
   // information disclosure on a page any signed-in tenant can reach.
   if (!isAutoProvisioningEnabled()) {
-    log.error("number provisioning refused — auto-provisioning is disabled", {
+    log.error("number provisioning refused, auto-provisioning is disabled", {
       userId,
       hint: "non-prod, or WIRELINE_AUTO_PROVISION_NUMBERS=false",
     });
@@ -391,7 +390,7 @@ export async function provisionTenantNumber(
   }
 
   if (!process.env.VAPI_PRIVATE_KEY?.trim()) {
-    log.error("number provisioning refused — VAPI_PRIVATE_KEY is not set", { userId });
+    log.error("number provisioning refused, VAPI_PRIVATE_KEY is not set", { userId });
     return { ok: false, error: NUMBER_PROVISIONING_UNAVAILABLE };
   }
 
@@ -611,7 +610,7 @@ export async function releaseTenantNumber(
   );
 
   if (!release.ok) {
-    log.warn("Carrier number release failed — preserving local ownership row", {
+    log.warn("Carrier number release failed, preserving local ownership row", {
       userId,
       phoneNumber,
       carrierId,

@@ -130,7 +130,7 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
         });
       } else {
         summary.failed++;
-        log.warn("number reclamation release failed — will retry next run", {
+        log.warn("number reclamation release failed, will retry next run", {
           userId: candidate.userId,
           phoneSuffix: phoneSuffixForLog(candidate.phoneNumber),
           error: result.error,
@@ -138,7 +138,7 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
       }
     } catch (error) {
       summary.failed++;
-      log.error("number reclamation release threw — will retry next run", {
+      log.error("number reclamation release threw, will retry next run", {
         userId: candidate.userId,
         phoneSuffix: phoneSuffixForLog(candidate.phoneNumber),
         error: getErrorMessage(error),

@@ -284,7 +284,7 @@ export async function searchLeads(
 ): Promise<ApolloContact[]> {
   const auth = await getApolloAuth(userId);
   if (!auth) {
-    log.warn("Apollo not configured — skipping lead search");
+    log.warn("Apollo not configured, skipping lead search");
     return [];
   }
 

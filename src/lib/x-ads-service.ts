@@ -92,7 +92,7 @@ function oauth1Authorization(
 
 async function adsGet<T>(path: string, query: Record<string, string> = {}): Promise<T | null> {
   if (!xAdsConfigured()) {
-    log.warn("X Ads not configured — missing platform OAuth 1.0a credentials");
+    log.warn("X Ads not configured, missing platform OAuth 1.0a credentials");
     return null;
   }
 

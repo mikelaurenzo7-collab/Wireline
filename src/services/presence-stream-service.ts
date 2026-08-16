@@ -149,7 +149,7 @@ export async function startPresenceListener() {
     });
 
     client.on("error", (err: any) => {
-      log.error("Presence Postgres listener encountered an error — reconnecting", {
+      log.error("Presence Postgres listener encountered an error, reconnecting", {
         error: err.message,
       });
       // Clean up the client to prevent socket/connection leaks

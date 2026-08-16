@@ -200,7 +200,7 @@ export default function TrustPackPage() {
   if (!pack) {
     return (
       <MarketingChrome>
-        <PageMeta title="Trust pack not found — Wireline" noIndex />
+        <PageMeta title="Trust pack not found | Wireline" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-muted">Trust pack not found.</p>
           <Link to="/security" className="wl-label mt-4 inline-block text-brand">

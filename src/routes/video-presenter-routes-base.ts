@@ -328,7 +328,7 @@ router.post(
     if (!isLiveVideoSettlementStoreReady()) {
       throw AppError.fromHttpStatus(
         503,
-        "Live video is temporarily unavailable. Wireline has been notified — calls, texts, and follow-up are unaffected.",
+        "Live video is temporarily unavailable. Wireline has been notified, calls, texts, and follow-up are unaffected.",
       );
     }
 

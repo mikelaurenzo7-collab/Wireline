@@ -51,7 +51,7 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Register Wireline as a remote MCP server in Cursor. Same OAuth + draft/simulate tools — no separate Cursor plugin package.",
+      "Register Wireline as a remote MCP server in Cursor. Same OAuth + draft/simulate tools. No separate Cursor plugin package.",
     action: "Cursor MCP docs",
     href: "https://docs.cursor.com/context/mcp",
     icon: Terminal,

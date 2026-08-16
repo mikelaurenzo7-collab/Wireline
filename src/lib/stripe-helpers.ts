@@ -505,7 +505,7 @@ async function mirrorPointsAtNewerSubscription(
     return mirrored.created > sub.created;
   } catch (error) {
     if (isMissingStripeResource(error)) {
-      log.warn("Stripe sync: mirrored subscription is missing in Stripe — allowing repair", {
+      log.warn("Stripe sync: mirrored subscription is missing in Stripe, allowing repair", {
         mirroredSubscriptionId,
         eventSubscriptionId: sub.id,
       });
@@ -550,7 +550,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       // deliberate: this state can never resolve, so a retry loop would only
       // poison the webhook endpoint's delivery health.
       log.error(
-        "Stripe sync: no subscription row and no wireline_user_id metadata — cannot attribute",
+        "Stripe sync: no subscription row and no wireline_user_id metadata, cannot attribute",
         { customerId, subscriptionId: incomingSub.id },
       );
       return;
@@ -635,7 +635,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   // known-good plan down to null / maxAgents=1 (catalog/env drift footgun).
   if ((stripeStatus === "active" || stripeStatus === "trialing") && !plan) {
     log.error(
-      "Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite",
+      "Stripe sync: active subscription price did not map to a catalog plan, refusing overwrite",
       {
         userId,
         customerId,

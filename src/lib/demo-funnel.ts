@@ -181,11 +181,11 @@ export async function sendDemoRecapEmail(args: {
     } = await import("./email-compliance");
 
     if (!getPostalAddress()) {
-      log.warn("demo recap email skipped — WIRELINE_POSTAL_ADDRESS is not configured");
+      log.warn("demo recap email skipped, WIRELINE_POSTAL_ADDRESS is not configured");
       return false;
     }
     if (await isEmailSuppressed(args.to)) {
-      log.info("demo recap email skipped — recipient is suppressed");
+      log.info("demo recap email skipped, recipient is suppressed");
       return false;
     }
 

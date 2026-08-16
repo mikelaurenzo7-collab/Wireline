@@ -383,7 +383,7 @@ async function releaseExternalResourcesOutsideTenantContext(
       // config incident — throw instead so the purge job retries and the
       // deletion completes once billing config is restored.
       throw new Error(
-        "Stripe is not configured but the account holds Stripe ids — deferring purge so a live subscription is not orphaned.",
+        "Stripe is not configured but the account holds Stripe ids, deferring purge so a live subscription is not orphaned.",
       );
     }
     const ids = new Set<string>();
@@ -419,7 +419,7 @@ async function releaseExternalResourcesOutsideTenantContext(
         subscriptionsCanceled++;
       } catch (err) {
         if (isStripeAlreadyGone(err)) continue;
-        log.error("purge subscription cancel failed — deferring purge", {
+        log.error("purge subscription cancel failed, deferring purge", {
           userId,
           subscriptionId: id,
           error: getErrorMessage(err),
@@ -452,7 +452,7 @@ async function releaseExternalResourcesOutsideTenantContext(
       } else {
         const errorText = res.error ?? "unknown";
         numberErrors.push(`${phoneNumber}: ${errorText}`);
-        log.warn("purge number release failed — handing off to orphan ledger", {
+        log.warn("purge number release failed, handing off to orphan ledger", {
           userId,
           phoneNumber,
           error: errorText,
@@ -482,7 +482,7 @@ async function releaseExternalResourcesOutsideTenantContext(
               resolved_at = NULL
           `);
         } catch (ledgerErr) {
-          log.error("orphan carrier handoff failed — deferring account purge", {
+          log.error("orphan carrier handoff failed, deferring account purge", {
             userId,
             phoneNumber,
             error: getErrorMessage(ledgerErr),
@@ -509,7 +509,7 @@ async function releaseExternalResourcesOutsideTenantContext(
     try {
       await eraseProviderCallArtifacts(callArtifactPointers);
     } catch (err) {
-      log.error("provider call-data deletion failed — deferring account purge", {
+      log.error("provider call-data deletion failed, deferring account purge", {
         userId,
         error: getErrorMessage(err),
       });
@@ -538,7 +538,7 @@ async function releaseExternalResourcesOutsideTenantContext(
         await deleteElevenLabsVoice(row.voiceId);
         clonedVoicesDeleted++;
       } catch (err) {
-        log.error("cloned voice provider deletion failed — deferring account purge", {
+        log.error("cloned voice provider deletion failed, deferring account purge", {
           userId,
           error: getErrorMessage(err),
         });
@@ -563,7 +563,7 @@ async function releaseExternalResourcesOutsideTenantContext(
       });
     }
   } catch (err) {
-    log.warn("purge oauth revoke failed — continuing with local erasure", {
+    log.warn("purge oauth revoke failed, continuing with local erasure", {
       userId,
       error: getErrorMessage(err),
     });

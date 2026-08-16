@@ -333,7 +333,7 @@ export function AuditActivityPanel() {
                       <span className="wl-micro-badge font-mono text-foreground/70 tabular-nums w-16 text-right">
                         {(entry.costUsd ?? entry.cost_usd) != null
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
-                          : "—"}
+                          : "N/A"}
                       </span>
                       <span className="wl-micro-meta--muted tabular-nums w-24 text-right">
                         {formatDateTime(

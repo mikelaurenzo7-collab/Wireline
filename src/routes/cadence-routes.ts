@@ -172,7 +172,7 @@ router.post(
       .limit(1);
     if (!cadence) throw AppError.fromHttpStatus(404, "Cadence not found");
     if (cadence.active === false) {
-      throw AppError.fromHttpStatus(400, "Cadence is inactive — re-enable before enrolling.");
+      throw AppError.fromHttpStatus(400, "Cadence is inactive, re-enable before enrolling.");
     }
 
     // CRITICAL: verify the lead belongs to the requesting tenant. Without this,

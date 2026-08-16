@@ -49,19 +49,11 @@ const PUBLIC_MARKETING_STATS = {
 } as const;
 
 function requestIp(req: Request): string {
-  return (
-    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
-    req.ip ||
-    "unknown"
-  ).trim();
+  return (req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.ip || "unknown").trim();
 }
 
 function requestHost(req: Request): string {
-  return (
-    req.headers["x-forwarded-host"]?.toString().split(",")[0] ||
-    req.get("host") ||
-    ""
-  )
+  return (req.headers["x-forwarded-host"]?.toString().split(",")[0] || req.get("host") || "")
     .trim()
     .toLowerCase();
 }
@@ -126,7 +118,7 @@ function buildPublicBrowserAssistant(agent: ContactAgent) {
   ].join("\n\n");
 
   return {
-    name: `Wireline Protected Web Demo — ${agent.name}`,
+    name: `Wireline Protected Web Demo, ${agent.name}`,
     firstMessage:
       "Hi, I’m a live Wireline voice agent. Give me a customer situation or task, and I’ll show you how I’d handle it.",
     model: {
@@ -220,7 +212,9 @@ router.post("/api/public/demo-session", async (req, res) => {
     throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
   }
 
-  const agentName = String(req.body?.agentName || "Liam").trim().slice(0, 80);
+  const agentName = String(req.body?.agentName || "Liam")
+    .trim()
+    .slice(0, 80);
   const agent = publicAgent(agentName);
   if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
 

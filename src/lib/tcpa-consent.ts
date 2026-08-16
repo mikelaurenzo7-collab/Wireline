@@ -455,7 +455,7 @@ export function buildConsentDisclosure(opts: {
   const biz = opts.businessName?.trim() || "this business";
   if (opts.rule === "two_party") {
     return [
-      `Hi — quick note before we begin: this call is being recorded for `,
+      `Hi, quick note before we begin: this call is being recorded for `,
       `quality, training, and compliance purposes by ${biz}. `,
       `If you'd prefer not to be recorded, please let me know now and `,
       `I'll either stop the recording or transfer you to a representative `,

@@ -114,7 +114,7 @@ async function liveAvatarFetch<T>(
       status: response.status,
       detail: typeof body?.message === "string" ? body.message : undefined,
       unavailableMessage:
-        "Live video is temporarily unavailable. Wireline has been notified — calls, texts, and follow-up are unaffected.",
+        "Live video is temporarily unavailable. Wireline has been notified, calls, texts, and follow-up are unaffected.",
     });
   }
 

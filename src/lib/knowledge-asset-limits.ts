@@ -63,7 +63,7 @@ export function knowledgeAssetTooLargeMessage(fileName: string, bytes?: number):
 export function knowledgeAssetFileCountNotice(picked: number): string | null {
   if (picked <= KNOWLEDGE_ASSET_MAX_FILES) return null;
   const dropped = picked - KNOWLEDGE_ASSET_MAX_FILES;
-  return `Only the first ${KNOWLEDGE_ASSET_MAX_FILES} files were uploaded — ${dropped} more ${dropped === 1 ? "was" : "were"} skipped. Add them in another batch.`;
+  return `Only the first ${KNOWLEDGE_ASSET_MAX_FILES} files were uploaded, ${dropped} more ${dropped === 1 ? "was" : "were"} skipped. Add them in another batch.`;
 }
 
 /**
@@ -72,5 +72,5 @@ export function knowledgeAssetFileCountNotice(picked: number): string | null {
  */
 export function knowledgeTextTruncationNotice(originalChars: number): string | null {
   if (originalChars <= KNOWLEDGE_TEXT_EXTRACT_CHARS) return null;
-  return `Only the first ${KNOWLEDGE_TEXT_EXTRACT_CHARS.toLocaleString()} of ${originalChars.toLocaleString()} characters were read — split the document if the rest matters.`;
+  return `Only the first ${KNOWLEDGE_TEXT_EXTRACT_CHARS.toLocaleString()} of ${originalChars.toLocaleString()} characters were read, split the document if the rest matters.`;
 }

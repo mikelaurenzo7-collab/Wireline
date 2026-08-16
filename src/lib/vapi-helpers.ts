@@ -46,7 +46,7 @@ export function truncateRuntimeSnippet(text: string, max = MAX_RUNTIME_SNIPPET_C
 
 export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS): string {
   if (text.length <= max) return text;
-  return `${text.slice(0, max)}\n\n[Context trimmed for voice latency — use tools for account-specific detail.]`;
+  return `${text.slice(0, max)}\n\n[Context trimmed for voice latency, use tools for account-specific detail.]`;
 }
 
 /**
@@ -66,7 +66,7 @@ const RUNTIME_GUARDRAIL_MARKERS = [
 ] as const;
 
 const RUNTIME_TRIM_NOTICE =
-  "\n\n[Context trimmed for voice latency — use tools for account-specific detail.]";
+  "\n\n[Context trimmed for voice latency, use tools for account-specific detail.]";
 
 /**
  * Clamp an assembled runtime prompt without dropping the compliance /
@@ -209,8 +209,8 @@ export const SENTIMENT_POSITIVE_SIGNALS = [
 export function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): string {
   if (!pastCalls || pastCalls.length === 0) return "";
   const heading = isOutbound
-    ? "## ⚡ CONTACT HISTORY — PRE-LOADED"
-    : "## ⚡ CALLER PROFILE — PRE-LOADED";
+    ? "## ⚡ CONTACT HISTORY, PRE-LOADED"
+    : "## ⚡ CALLER PROFILE, PRE-LOADED";
   const instruction = isOutbound
     ? "INSTRUCTION: Reference this naturally. Do not recite it verbatim."
     : "INSTRUCTION: Reference this history naturally within the first 2 exchanges. Do not recite it verbatim.";
@@ -218,7 +218,7 @@ export function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): s
     (c: any) =>
       `- [${new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}] ${(c.direction || "call").toUpperCase()} | Intent: ${c.intent_label || "unknown"} | Tone: ${c.sentiment || "neutral"} | ${c.summary}`,
   );
-  return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
+  return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately, do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
 }
 
 /** Map Wireline persona roles (wireline_sales, etc.) to voice-runtime role keys. */
@@ -251,7 +251,7 @@ export function getArchetypeConfig(archetype: string): { rules: string; temp: nu
     case "The Closer":
       return {
         rules:
-          "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.",
+          "You are a consultative closer. Lead with discovery, uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.",
         temp: 0.7,
       };
     case "Support Tech":
@@ -263,7 +263,7 @@ export function getArchetypeConfig(archetype: string): { rules: string; temp: nu
     case "The Empath":
       return {
         rules:
-          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always. Hold your own calm, steady voice throughout — do not raise your energy or speed up to match an upset caller; your steadiness is what de-escalates them.",
+          "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always. Hold your own calm, steady voice throughout, do not raise your energy or speed up to match an upset caller; your steadiness is what de-escalates them.",
         temp: 0.6,
       };
     case "The Collector":
@@ -317,7 +317,7 @@ export const VAPI_TOOL_DEFS = {
         reason: {
           type: "string",
           description:
-            "Brief reason for the escalation (e.g. 'Caller requested a supervisor', 'Legal threat — needs manager', 'Complex billing dispute beyond agent authority'). Used to brief the human agent taking the call.",
+            "Brief reason for the escalation (e.g. 'Caller requested a supervisor', 'Legal threat, needs manager', 'Complex billing dispute beyond agent authority'). Used to brief the human agent taking the call.",
         },
       },
       required: ["reason"],
@@ -495,7 +495,7 @@ export const VAPI_TOOL_DEFS = {
   log_payment_promise: {
     name: "log_payment_promise",
     description:
-      "Records a payment promise made by the customer during a collections call. REQUIRED whenever a payment commitment is made — FDCPA compliance.",
+      "Records a payment promise made by the customer during a collections call. REQUIRED whenever a payment commitment is made, FDCPA compliance.",
     parameters: {
       type: "object",
       properties: {
@@ -559,19 +559,19 @@ export const VAPI_TOOL_DEFS = {
   schedule_callback: {
     name: "schedule_callback",
     description:
-      "Schedules an automatic callback for this contact at a specific date and time they requested. Use when the contact says they are busy and asks to be called back later. The system will automatically re-dial them at the promised time — confirm the time to the caller before ending the call.",
+      "Schedules an automatic callback for this contact at a specific date and time they requested. Use when the contact says they are busy and asks to be called back later. The system will automatically re-dial them at the promised time, confirm the time to the caller before ending the call.",
     parameters: {
       type: "object",
       properties: {
         callback_datetime: {
           type: "string",
           description:
-            "ISO 8601 datetime for the callback in the contact's local timezone (e.g. '2026-05-07T14:00:00-05:00'). Calculate this from what the caller says — 'Tuesday at 2pm', 'tomorrow morning at 10', 'next Monday afternoon'. Today is injected into your system prompt so you can calculate the correct date.",
+            "ISO 8601 datetime for the callback in the contact's local timezone (e.g. '2026-05-07T14:00:00-05:00'). Calculate this from what the caller says, 'Tuesday at 2pm', 'tomorrow morning at 10', 'next Monday afternoon'. Today is injected into your system prompt so you can calculate the correct date.",
         },
         notes: {
           type: "string",
           description:
-            "Context to include when calling back — what you were discussing, what to follow up on.",
+            "Context to include when calling back, what you were discussing, what to follow up on.",
         },
       },
       required: ["callback_datetime", "notes"],
@@ -580,7 +580,7 @@ export const VAPI_TOOL_DEFS = {
   capture_customer_profile: {
     name: "capture_customer_profile",
     description:
-      "Saves structured notes about the customer gathered during this call. Call this any time you learn something meaningful — budget range, timeline, key pain points, objections, decision-maker status, or interests. This enriches the customer's profile so the next agent has full context and doesn't repeat questions.",
+      "Saves structured notes about the customer gathered during this call. Call this any time you learn something meaningful, budget range, timeline, key pain points, objections, decision-maker status, or interests. This enriches the customer's profile so the next agent has full context and doesn't repeat questions.",
     parameters: {
       type: "object",
       properties: {
@@ -592,7 +592,7 @@ export const VAPI_TOOL_DEFS = {
         budget_range: {
           type: "string",
           description:
-            "Any budget or price range mentioned (e.g., '$5,000–$10,000/year', 'Under $500/month'). Leave blank if not discussed.",
+            "Any budget or price range mentioned (e.g., '$5,000 to $10,000/year', 'Under $500/month'). Leave blank if not discussed.",
         },
         timeline: {
           type: "string",
@@ -625,7 +625,7 @@ export const VAPI_TOOL_DEFS = {
   send_slack_notification: {
     name: "send_slack_notification",
     description:
-      "Notify the team via Slack about an important call outcome — hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
+      "Notify the team via Slack about an important call outcome, hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
     parameters: {
       type: "object",
       properties: {
@@ -715,13 +715,13 @@ export const VAPI_TOOL_DEFS = {
   list_x_mentions: {
     name: "list_x_mentions",
     description:
-      "List recent @mentions for the connected X account — useful before replying to comments.",
+      "List recent @mentions for the connected X account, useful before replying to comments.",
     parameters: {
       type: "object",
       properties: {
         limit: {
           type: "number",
-          description: "How many mentions to return (1–25, default 10).",
+          description: "How many mentions to return (1 to 25, default 10).",
         },
       },
     },
@@ -764,7 +764,7 @@ export const VAPI_TOOL_DEFS = {
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Search query — name, email, phone, or company." },
+        query: { type: "string", description: "Search query, name, email, phone, or company." },
       },
       required: ["query"],
     },
@@ -832,14 +832,14 @@ export const VAPI_TOOL_DEFS = {
   gemini_ground: {
     name: "gemini_ground",
     description:
-      "Looks up fresh public information via live web research (Perplexity when configured, otherwise grounded search). Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info — competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise answer with citations. Do NOT use for internal customer data — that's what search_leads / crm_search_contacts / view_recent_interactions are for.",
+      "Looks up fresh public information via live web research (Perplexity when configured, otherwise grounded search). Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info, competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise answer with citations. Do NOT use for internal customer data, that's what search_leads / crm_search_contacts / view_recent_interactions are for.",
     parameters: {
       type: "object",
       properties: {
         query: {
           type: "string",
           description:
-            "The search query. Phrase as a self-contained question — e.g. 'current AWS S3 standard storage pricing per GB' or 'restaurant Chicago Lou Malnati closing time Thursday'.",
+            "The search query. Phrase as a self-contained question, e.g. 'current AWS S3 standard storage pricing per GB' or 'restaurant Chicago Lou Malnati closing time Thursday'.",
         },
       },
       required: ["query"],
@@ -859,7 +859,7 @@ export const VAPI_TOOL_DEFS = {
         email: {
           type: "string",
           description:
-            "The customer's email — use to find their most recent order when no order number is known.",
+            "The customer's email, use to find their most recent order when no order number is known.",
         },
       },
       required: [],
@@ -896,7 +896,7 @@ export const VAPI_TOOL_DEFS = {
   shopify_start_return: {
     name: "shopify_start_return",
     description:
-      "Opens a return request for a Shopify order. This STARTS the return only — it does NOT issue a refund; a team member reviews and approves any money back. Confirm the order and reason with the caller first.",
+      "Opens a return request for a Shopify order. This STARTS the return only, it does NOT issue a refund; a team member reviews and approves any money back. Confirm the order and reason with the caller first.",
     parameters: {
       type: "object",
       properties: {
@@ -908,7 +908,7 @@ export const VAPI_TOOL_DEFS = {
         reason: {
           type: "string",
           description:
-            "Why the customer wants to return — e.g. 'wrong size', 'item defective', 'arrived late'.",
+            "Why the customer wants to return, e.g. 'wrong size', 'item defective', 'arrived late'.",
         },
       },
       required: ["order_id", "reason"],
@@ -997,7 +997,7 @@ export const VAPI_TOOL_DEFS = {
         email: {
           type: "string",
           description:
-            "The customer's email — use to find their most recent order when no order ID is known.",
+            "The customer's email, use to find their most recent order when no order ID is known.",
         },
       },
       required: [],
@@ -1053,7 +1053,7 @@ export const VAPI_TOOL_DEFS = {
   send_teams_message: {
     name: "send_teams_message",
     description:
-      "Notify the team via Microsoft Teams about an important call outcome — hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
+      "Notify the team via Microsoft Teams about an important call outcome, hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
     parameters: {
       type: "object",
       properties: {
@@ -1072,7 +1072,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_excel: {
     name: "log_to_excel",
     description:
-      "Append a row to the Account Holder's Wireline Call Log spreadsheet in OneDrive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Excel.",
+      "Append a row to the Account Holder's Wireline Call Log spreadsheet in OneDrive, records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Excel.",
     parameters: {
       type: "object",
       properties: {
@@ -1083,7 +1083,7 @@ export const VAPI_TOOL_DEFS = {
         outcome: {
           type: "string",
           description:
-            "Short outcome label — e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
+            "Short outcome label, e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
         },
         details: {
           type: "string",
@@ -1096,7 +1096,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_google_sheets: {
     name: "log_to_google_sheets",
     description:
-      "Append a row to the Account Holder's Wireline Call Log spreadsheet in Google Drive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Google Sheets.",
+      "Append a row to the Account Holder's Wireline Call Log spreadsheet in Google Drive, records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Google Sheets.",
     parameters: {
       type: "object",
       properties: {
@@ -1107,7 +1107,7 @@ export const VAPI_TOOL_DEFS = {
         outcome: {
           type: "string",
           description:
-            "Short outcome label — e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
+            "Short outcome label, e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
         },
         details: {
           type: "string",
@@ -1170,7 +1170,7 @@ export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
   customer_service:
     "Be helpful and empathetic. Use view_recent_interactions to see if they've called about this issue before. If the issue is complex, create_followup_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
   collections:
-    "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments — this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
+    "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments, this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
   technical_support:
     "Be methodical. Use search_leads to find their product version or history. If you cannot solve it, use create_support_ticket to escalate to engineering.",
   scheduler:

@@ -111,7 +111,7 @@ async function heygenFetch<T>(path: string, init?: RequestInit): Promise<T> {
         (typeof body?.error === "string" && body.error) ||
         undefined,
       unavailableMessage:
-        "Presenter voices are temporarily unavailable. Wireline has been notified — your agent's other channels are unaffected.",
+        "Presenter voices are temporarily unavailable. Wireline has been notified, your agent's other channels are unaffected.",
     });
   }
   return body as T;

@@ -63,7 +63,7 @@ const structuredData = {
       "@type": "CollectionPage",
       name: "Wireline Notes",
       description:
-        "Practical guides for voice agents — appointments, support queues, handoff boundaries, and getting time back.",
+        "Practical guides for voice agents: appointments, support queues, handoff boundaries, and getting time back.",
       url: `${SITE_URL}/blog`,
     },
   ],

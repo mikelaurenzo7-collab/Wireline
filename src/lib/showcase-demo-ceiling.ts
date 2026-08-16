@@ -67,7 +67,7 @@ export async function admitShowcaseDemoCall(
 
     return { admitted: true };
   } catch (error: unknown) {
-    log.error("showcase demo ceiling check failed — admitting call", {
+    log.error("showcase demo ceiling check failed, admitting call", {
       error: getErrorMessage(error),
     });
     return { admitted: true };

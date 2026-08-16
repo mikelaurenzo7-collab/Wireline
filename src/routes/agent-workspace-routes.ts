@@ -196,7 +196,7 @@ router.post(
 
       if (!isRuntimeAvailable()) {
         reply =
-          "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
+          "I can't respond right now, the LLM isn't configured. Your message is saved; try again later.";
       } else {
         try {
           const plan = await planWorkspace({
@@ -215,7 +215,7 @@ router.post(
           if (e instanceof AppError) throw e;
           log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
           reply =
-            "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
+            "Sorry, I'm having trouble responding right now. Your message is saved; try again in a moment.";
         }
       }
 
@@ -497,7 +497,7 @@ router.post(
       // Append an "agent" message to the workspace thread acknowledging
       // the file. Account Holder sees this immediately as if the agent
       // reviewed the upload. Keeps the chat surface coherent.
-      const ack = `Got it — I read **${fileName || "the file"}** and pulled out ${inserted} knowledge ${inserted === 1 ? "item" : "items"} I'll reference on future calls. Want me to summarize what stood out?`;
+      const ack = `Got it, I read **${fileName || "the file"}** and pulled out ${inserted} knowledge ${inserted === 1 ? "item" : "items"} I'll reference on future calls. Want me to summarize what stood out?`;
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,

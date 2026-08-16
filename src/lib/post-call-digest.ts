@@ -686,7 +686,7 @@ async function syncPostCallCrm(
     }
 
     const crmPayload = {
-      subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call — ${outcomeTag}`,
+      subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call, ${outcomeTag}`,
       description: ctx.summary || "(no summary)",
       to_number: ctx.customerNumber || "",
       duration_minutes: Math.round((ctx.durationSeconds || 0) / 60),
@@ -1327,7 +1327,7 @@ export async function pickAccountHolderEmail(userId: string): Promise<string | n
 function crmDigestStatusLine(crmLogged: boolean, crmQueuedForApproval: boolean): string {
   if (crmLogged) return "Logged to your CRM.";
   if (crmQueuedForApproval) return "CRM note queued for approval in your Approval Inbox.";
-  return "No CRM connected — connect HubSpot or Salesforce to auto-log.";
+  return "No CRM connected, connect HubSpot or Salesforce to auto-log.";
 }
 
 function escapeHtml(value: string): string {
@@ -1355,7 +1355,7 @@ export function renderDigestEmail(d: {
 }): string {
   const dur = Math.round((d.durationSeconds || 0) / 60);
   const next = nextActionFromOutcome(d.outcomeTag);
-  const identity = `${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
+  const identity = `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
   const metadata = `${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
   const recapBlock = d.recapUrl
     ? `<p style="margin:0 0 24px;">
@@ -1395,7 +1395,7 @@ export function renderDigestEmailText(d: {
   return [
     "Wireline · Post-call digest",
     "",
-    `${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`,
+    `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`,
     `${d.direction || "Call"} · ${durationMinutes} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`,
     "",
     d.summary || "(no summary captured)",

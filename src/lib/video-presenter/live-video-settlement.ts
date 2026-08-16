@@ -308,7 +308,7 @@ export async function settleLiveVideoSession(input: {
   if (claimed === "unavailable") {
     // Declining is the conservative direction: the tenant keeps today's
     // behavior instead of risking a refund applied twice.
-    log.warn("Live Video settlement declined — idempotency store unavailable", {
+    log.warn("Live Video settlement declined, idempotency store unavailable", {
       periodKey: input.claim.periodKey,
       refundedMinutes,
     });

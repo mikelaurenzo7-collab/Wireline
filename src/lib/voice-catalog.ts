@@ -20,225 +20,225 @@ export type VoiceOption = {
  * curated Vapi fallback.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
-  { id: "eve", name: "Eve — Bright & Energetic", provider: "xai" },
-  { id: "ara", name: "Ara — Warm & Professional", provider: "xai" },
-  { id: "rex", name: "Rex — Clear & Confident", provider: "xai" },
-  { id: "sal", name: "Sal — Balanced & Friendly", provider: "xai" },
-  { id: "leo", name: "Leo — Direct & Energetic", provider: "xai" },
+  { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },
+  { id: "ara", name: "Ara · Warm & Professional", provider: "xai" },
+  { id: "rex", name: "Rex · Clear & Confident", provider: "xai" },
+  { id: "sal", name: "Sal · Balanced & Friendly", provider: "xai" },
+  { id: "leo", name: "Leo · Direct & Energetic", provider: "xai" },
 ] as const;
 
 /**
- * Vapi native voices — included with your phone line, no extra voice provider required.
+ * Vapi native voices · included with your phone line, no extra voice provider required.
  * Curated for reception and sales calls.
  */
 export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
   {
     id: "Elliot",
-    name: "Elliot — Steady & Professional",
+    name: "Elliot · Steady & Professional",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Savannah",
-    name: "Savannah — Warm & Confident",
+    name: "Savannah · Warm & Confident",
     provider: "vapi",
     gender: "female",
   },
   {
     id: "Rohan",
-    name: "Rohan — Bright & Energetic",
+    name: "Rohan · Bright & Energetic",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Emma",
-    name: "Emma — Warm & Conversational",
+    name: "Emma · Warm & Conversational",
     provider: "vapi",
     gender: "female",
   },
   {
     id: "Clara",
-    name: "Clara — Warm & Professional",
+    name: "Clara · Warm & Professional",
     provider: "vapi",
     gender: "female",
   },
   {
     id: "Nico",
-    name: "Nico — Casual & Natural",
+    name: "Nico · Casual & Natural",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Kai",
-    name: "Kai — Friendly & Relaxed",
+    name: "Kai · Friendly & Relaxed",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Sagar",
-    name: "Sagar — Steady & Professional",
+    name: "Sagar · Steady & Professional",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Godfrey",
-    name: "Godfrey — Young & Energetic",
+    name: "Godfrey · Young & Energetic",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Neil",
-    name: "Neil — Clear & Professional",
+    name: "Neil · Clear & Professional",
     provider: "vapi",
     gender: "male",
   },
   {
     id: "Layla",
-    name: "Layla — Warm & Cheerful",
+    name: "Layla · Warm & Cheerful",
     provider: "vapi",
     gender: "female",
   },
-  { id: "Sid", name: "Sid — Smooth & Deep", provider: "vapi", gender: "male" },
+  { id: "Sid", name: "Sid · Smooth & Deep", provider: "vapi", gender: "male" },
   {
     id: "Naina",
-    name: "Naina — Calm & Professional",
+    name: "Naina · Calm & Professional",
     provider: "vapi",
     gender: "female",
   },
 ] as const;
 
 /**
- * Curated low-latency studio catalog of ElevenLabs *premade* voices — a broad
+ * Curated low-latency studio catalog of ElevenLabs *premade* voices · a broad
  * set of professional options for tenants who want a distinct studio voice,
  * each auto-paired with a Wireline Phone (Vapi) fallback in
  * `buildManagedVoiceRuntime`. The curation rule is unchanged in spirit: only
  * vetted premade voices are offered. Wireline never mirrors the founder
- * provider account — generated, cloned, or unrelated private voices stay out
+ * provider account · generated, cloned, or unrelated private voices stay out
  * of customer-facing responses, and a tenant's own clone reaches the runtime
  * only through the approved-clone path, never this list.
  *
  * `ELEVENLABS_CORE_VOICE_IDS` below is the subset the launch readiness gate
- * hard-requires; the rest are best-effort — if a given account's library has
+ * hard-requires; the rest are best-effort · if a given account's library has
  * rotated one out, the picker simply omits it and any live call falls back to
  * the paired Vapi voice, so a broad catalog never becomes a launch blocker.
  */
 export const ELEVENLABS_CURATED_VOICES: readonly VoiceOption[] = [
-  // Core — verified present in the connected account; the readiness gate
+  // Core · verified present in the connected account; the readiness gate
   // requires these (ids in ELEVENLABS_CORE_VOICE_IDS).
   {
     id: "EXAVITQu4vr4xnSDxMaL",
-    name: "Sarah — Mature & Reassuring",
+    name: "Sarah · Mature & Reassuring",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "cgSgspJ2msm6clMCkdW9",
-    name: "Jessica — Bright & Playful",
+    name: "Jessica · Bright & Playful",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "pNInz6obpgDQGcFmaJgB",
-    name: "Adam — Firm & Confident",
+    name: "Adam · Firm & Confident",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "JBFqnCBsd6RMkjVDRZzb",
-    name: "George — Warm & Captivating",
+    name: "George · Warm & Captivating",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "nPczCjzI2devNBz1zQrb",
-    name: "Brian — Deep & Comforting",
+    name: "Brian · Deep & Comforting",
     provider: "11labs",
     gender: "male",
   },
-  // Extended — all verified premade voices in the account; any that a future
+  // Extended · all verified premade voices in the account; any that a future
   // library rotation drops simply degrade to the paired Vapi fallback.
   {
     id: "hpp4J3VqNfWAUOO0d1Us",
-    name: "Bella — Professional & Warm",
+    name: "Bella · Professional & Warm",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "Xb7hH8MSUJpSbSDYk0k2",
-    name: "Alice — Clear & Engaging",
+    name: "Alice · Clear & Engaging",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "FGY2WhTYpPnrIDTdsKH5",
-    name: "Laura — Upbeat & Spirited",
+    name: "Laura · Upbeat & Spirited",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "pFZP5JQG7iQjIQuC4Bku",
-    name: "Lily — Smooth & Confident",
+    name: "Lily · Smooth & Confident",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "XrExE9yKIg1WjnnlVkGX",
-    name: "Matilda — Warm & Professional",
+    name: "Matilda · Warm & Professional",
     provider: "11labs",
     gender: "female",
   },
-  { id: "SAz9YHcvj6GT2YYXdXww", name: "River — Relaxed & Neutral", provider: "11labs" },
+  { id: "SAz9YHcvj6GT2YYXdXww", name: "River · Relaxed & Neutral", provider: "11labs" },
   {
     id: "onwK4e9ZLuTAKqWW03F9",
-    name: "Daniel — Steady Broadcaster",
+    name: "Daniel · Steady Broadcaster",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "cjVigY5qzO86Huf0OWal",
-    name: "Eric — Smooth & Trustworthy",
+    name: "Eric · Smooth & Trustworthy",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "iP95p4xoKVk53GoZ742B",
-    name: "Chris — Charming & Down-to-Earth",
+    name: "Chris · Charming & Down-to-Earth",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "CwhRBWXzGAHq8TQ4Fs17",
-    name: "Roger — Laid-Back & Resonant",
+    name: "Roger · Laid-Back & Resonant",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "bIHbv24MWmeRgasZH58o",
-    name: "Will — Relaxed & Optimistic",
+    name: "Will · Relaxed & Optimistic",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "pqHfZKP75CvOlQylNhV4",
-    name: "Bill — Wise & Balanced",
+    name: "Bill · Wise & Balanced",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "IKne3meq5aSn9XLyUdCD",
-    name: "Charlie — Confident & Energetic",
+    name: "Charlie · Confident & Energetic",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "N2lVS1w4EtoT3dr4eOWO",
-    name: "Callum — Characterful & Husky",
+    name: "Callum · Characterful & Husky",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "TX3LPaxmHKxFdv7VOQHJ",
-    name: "Liam — Energetic & Confident",
+    name: "Liam · Energetic & Confident",
     provider: "11labs",
     gender: "male",
   },
@@ -348,7 +348,7 @@ export function resolveVoiceLabel(voiceId: string | null | undefined): string {
   return "Custom voice";
 }
 
-/** User-facing provider family — no third-party vendor names. */
+/** User-facing provider family · no third-party vendor names. */
 export function providerLabel(provider: string | null | undefined): string {
   if (provider === "xai") return "Wireline Preview";
   if (provider === "vapi") return "Wireline Phone";

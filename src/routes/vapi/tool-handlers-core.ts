@@ -193,7 +193,7 @@ async function recordCommsFollowUpTask(
       taskType: values.channel === "email" ? "send_email" : "send_text_message",
       description: `${values.channel === "email" ? "Email" : "Text"} follow-up to ${
         values.recipient || "caller"
-      } — flagged for human review from a live call`,
+      }, flagged for human review from a live call`,
       status: "pending",
       priority: "high",
       targetChannel: values.channel,
@@ -414,7 +414,7 @@ export async function handleCoreToolCall(
         toolCallId,
         result: recorded
           ? "I've logged your request so our team can send that to you directly."
-          : "I couldn't complete that right now — please reach out to us directly and we'll get it to you.",
+          : "I couldn't complete that right now, please reach out to us directly and we'll get it to you.",
       };
     }
   }
@@ -531,14 +531,14 @@ export async function handleCoreToolCall(
         return {
           toolCallId,
           result: isDncBlock
-            ? "I can't text that number — it's on a do-not-contact list."
+            ? "I can't text that number, it's on a do-not-contact list."
             : gate.reason === "outside_permitted_calling_hours"
               ? recorded
-                ? "I can't text that number right now — it's outside permitted contact hours. I've logged the request for human follow-up."
-                : "I can't text that number right now — it's outside permitted contact hours. Please contact us directly."
+                ? "I can't text that number right now, it's outside permitted contact hours. I've logged the request for human follow-up."
+                : "I can't text that number right now, it's outside permitted contact hours. Please contact us directly."
               : recorded
                 ? "I wasn't able to send that text, but I've logged it for human follow-up."
-                : "I wasn't able to send that text right now — please reach out to us directly.",
+                : "I wasn't able to send that text right now, please reach out to us directly.",
         };
       }
 
@@ -649,7 +649,7 @@ export async function handleCoreToolCall(
         toolCallId,
         result: recorded
           ? "I've logged that text for our team to follow up on."
-          : "I wasn't able to send that text right now — please reach out to us directly.",
+          : "I wasn't able to send that text right now, please reach out to us directly.",
       };
     }
   }

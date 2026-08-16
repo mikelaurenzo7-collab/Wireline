@@ -96,7 +96,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     if (owner?.userId) tenantUserId = owner.userId;
   }
   if (claimedTenantId && tenantUserId !== claimedTenantId) {
-    log.warn("Escalation tenant claim ignored — tenant is bound to the invoked number", {
+    log.warn("Escalation tenant claim ignored, tenant is bound to the invoked number", {
       sourceNumber: sourceNumber.slice(0, 8),
       resolved: !!tenantUserId,
     });
@@ -155,7 +155,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
         if (channelId) {
           const urgencyEmoji = urgency === "urgent" ? "🚨" : "📞";
           const text = [
-            `${urgencyEmoji} *Wireline escalation — ${urgency.toUpperCase()}*`,
+            `${urgencyEmoji} *Wireline escalation, ${urgency.toUpperCase()}*`,
             `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
             `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
             `*Summary:* ${summary}`,

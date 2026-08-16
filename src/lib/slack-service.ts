@@ -167,7 +167,7 @@ export async function bootstrapDefaultChannel(userId: string): Promise<string | 
 function buildSlackBlocks(text: string, ctx?: SlackNotifyContext): unknown[] {
   const header =
     ctx?.urgency === "high"
-      ? ":rotating_light: *Wireline — urgent*"
+      ? ":rotating_light: *Wireline, urgent*"
       : ":robot_face: *Wireline agent*";
   const fields: string[] = [];
   if (ctx?.agentName) fields.push("*Agent:* " + ctx.agentName);
@@ -193,7 +193,7 @@ export async function postAgentNotification(
 ): Promise<boolean> {
   const channel = (await getDefaultChannel(userId)) || (await bootstrapDefaultChannel(userId));
   if (!channel) {
-    log.warn("Slack: no default channel — connect Slack and pick a channel in Admin");
+    log.warn("Slack: no default channel, connect Slack and pick a channel in Admin");
     return false;
   }
   const fallback = ctx?.urgency === "high" ? "🚨 " + message : message;
@@ -208,7 +208,7 @@ export async function postMessage(
 ): Promise<boolean> {
   const token = await getToken(userId);
   if (!token) {
-    log.warn("Slack not connected — skipping message");
+    log.warn("Slack not connected, skipping message");
     return false;
   }
 

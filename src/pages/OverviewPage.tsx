@@ -686,7 +686,7 @@ export default function OverviewPage() {
 
             {degraded ? (
               <StatusNotice tone="warning" title="Status partial">
-                Agent links are recovering — showing the last safe state.
+                Agent links are recovering, showing the last safe state.
               </StatusNotice>
             ) : null}
 
@@ -698,8 +698,8 @@ export default function OverviewPage() {
 
             {statsUnavailable && !loadingDashboard ? (
               <StatusNotice tone="warning" title="Home data partial">
-                We couldn&apos;t load every Home data source. Refresh to try again — affected
-                metrics or recent activity may not be current.
+                We couldn&apos;t load every Home data source. Refresh to try again. Affected metrics
+                or recent activity may not be current.
               </StatusNotice>
             ) : null}
 

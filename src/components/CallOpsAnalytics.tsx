@@ -87,11 +87,11 @@ export default function CallOpsAnalytics() {
       value:
         analytics.avgDurationSeconds > 0
           ? `${(analytics.avgDurationSeconds / 60).toFixed(1)} min`
-          : "—",
+          : "N/A",
     },
     {
       label: "Avg QA score",
-      value: analytics.avgQaScore != null ? analytics.avgQaScore.toFixed(1) : "—",
+      value: analytics.avgQaScore != null ? analytics.avgQaScore.toFixed(1) : "N/A",
     },
   ];
 
@@ -118,7 +118,10 @@ export default function CallOpsAnalytics() {
         </div>
         <div className="flex h-40 items-end gap-2">
           {weekdayTrend.map((day) => (
-            <div key={day.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+            <div
+              key={day.label}
+              className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+            >
               <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
                 {day.count}
               </span>

@@ -78,7 +78,7 @@ export default function CallbacksPanel() {
         >
           <span className="font-mono text-sm">{cb.customer_number || "Unknown"}</span>
           <span className="text-sm text-muted-foreground">
-            {cb.scheduled_at ? new Date(cb.scheduled_at).toLocaleString() : "—"}
+            {cb.scheduled_at ? new Date(cb.scheduled_at).toLocaleString() : "N/A"}
           </span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted w-fit">
             {cb.status || "pending"}

@@ -146,7 +146,7 @@ export function TermsOfService() {
           </li>
           <li>
             Call or text contacts from purchased, rented, or third-party lead lists, or on the basis
-            of consent collected by anyone other than your own registered brand — messaging consent
+            of consent collected by anyone other than your own registered brand. Messaging consent
             cannot be bought, sold, or shared across brands
           </li>
           <li>
@@ -213,7 +213,7 @@ export function TermsOfService() {
 
       <Section title="6. SMS and Messaging Terms">
         <p>
-          <strong>Consumer notice — reply STOP to opt out, HELP for help.</strong> Wireline numbers
+          <strong>Consumer notice: reply STOP to opt out, HELP for help.</strong> Wireline numbers
           can send transactional and business communications by SMS. Recipients may reply
           <strong> STOP</strong>, <strong>UNSUBSCRIBE</strong>, <strong>CANCEL</strong>,{" "}
           <strong>QUIT</strong>, or <strong>END</strong> at any time to stop further messages from
@@ -260,10 +260,10 @@ export function TermsOfService() {
           <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
           for any reason within 30 days of your first paid invoice, email{" "}
           <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
-          refund that month's charge in full — no forms, no escalation, no questions about your
+          refund that month's charge in full. No forms, no escalation, no questions about your
           reason. The 30-day window starts on the date of your first paid invoice. Outbound call
-          minutes consumed prior to the refund request are not separately deducted — the refund is
-          on the subscription line item.
+          minutes consumed prior to the refund request are not separately deducted. The refund is on
+          the subscription line item.
         </p>
         <p>
           After the 30-day window, no refunds are issued for partial periods, but you can cancel

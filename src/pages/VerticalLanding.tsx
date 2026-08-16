@@ -109,7 +109,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             // metaTitles use either an em-dash or a pipe to separate the crumb
             // from the SEO tail — split on both so pipe-titled verticals don't
             // emit the entire title as the breadcrumb name.
-            name: cfg.metaTitle.split(/\s*[—|]\s*/)[0].trim() || slug,
+            name: cfg.metaTitle.split(/\s*[\u2014|]\s*/)[0].trim() || slug,
             item: `https://trywireline.com/for/${slug}`,
           },
         ],

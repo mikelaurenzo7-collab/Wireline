@@ -50,7 +50,7 @@ const clientSurfaces = [
   {
     icon: Terminal,
     title: "Cursor",
-    blurb: "Register Wireline as a remote MCP server — OAuth, no separate plugin package.",
+    blurb: "Register Wireline as a remote MCP server: OAuth, no separate plugin package.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
@@ -70,7 +70,7 @@ const clientSurfaces = [
   {
     icon: Smartphone,
     title: "iPhone",
-    blurb: "Planned native app. Join the waitlist — web Studio remains the full product.",
+    blurb: "Planned native app. Join the waitlist. Web Studio remains the full product.",
     status: CLIENT_SURFACE_POSTURE.ios.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.ios.action,
@@ -174,8 +174,8 @@ export default function ClientAppsPage() {
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> as a remote MCP
-            connector, then sign in with your Wireline account. Draft and privately simulate here —
-            numbers, dialing, training, billing, and launch stay in Studio.
+            connector, then sign in with your Wireline account. Draft and privately simulate here.
+            Numbers, dialing, training, billing, and launch stay in Studio.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild variant="editorial" size="sm">

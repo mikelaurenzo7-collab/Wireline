@@ -78,7 +78,7 @@ export async function claudeRateLimiter(req: Request, res: Response, next: NextF
   if (!result.allowed) {
     res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
-      error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
+      error: `Rate limit exceeded, ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
       code: "CLAUDE_RATE_LIMIT",
     });
   }
@@ -107,7 +107,7 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
       return res.status(429).json({
         code: "SIMULATION_QUOTA_EXCEEDED",
         error:
-          "You've reached today's live-simulation limit. It resets at midnight UTC — real phone calls are unaffected.",
+          "You've reached today's live-simulation limit. It resets at midnight UTC, real phone calls are unaffected.",
         limit: decision.limit,
         used: decision.used,
         reset_at: decision.reset_at,
@@ -117,11 +117,11 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
       // The tracker's read-only fallback allowed the request but could not
       // record the increment (write-degraded DB). For a vendor-metered mint an
       // unrecorded allowance is the same as no ceiling — refuse like an outage.
-      log.error("simulation quota increment not durable — refusing session mint", { userId });
+      log.error("simulation quota increment not durable, refusing session mint", { userId });
       return res.status(503).json({
         code: "SIMULATION_QUOTA_UNAVAILABLE",
         error:
-          "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
+          "Live simulation is briefly unavailable. Try again shortly, phone calls are unaffected.",
       });
     }
     (
@@ -145,14 +145,14 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     // the tracker down there is no daily ceiling at all, so allowing mints
     // here would hand out unbounded provider spend to $0 accounts exactly
     // when accounting is blind.
-    log.error("simulation quota tracker unavailable — refusing session mint", {
+    log.error("simulation quota tracker unavailable, refusing session mint", {
       userId,
       error: getErrorMessage(err),
     });
     return res.status(503).json({
       code: "SIMULATION_QUOTA_UNAVAILABLE",
       error:
-        "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
+        "Live simulation is briefly unavailable. Try again shortly, phone calls are unaffected.",
     });
   }
   next();

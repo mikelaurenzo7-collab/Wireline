@@ -42,12 +42,12 @@ export function ColdEmailForm({
 
   return (
     <FormShell>
-      <Field label="Sending Agent" hint="Optional — applies the agent's role lens to the email.">
+      <Field label="Sending Agent" hint="Optional. Applies the agent's role lens to the email.">
         <Select
           value={agentId}
           onChange={setAgentId}
           options={[
-            { value: "", label: "(no agent — generic copy)" },
+            { value: "", label: "(no agent, generic copy)" },
             ...agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` })),
           ]}
         />
@@ -89,7 +89,7 @@ export function ColdEmailForm({
       </div>
       <Field
         label="Lead Hook"
-        hint="Specific reason to reach out — recent news, mutual contact, etc."
+        hint="Specific reason to reach out: recent news, mutual contact, etc."
       >
         <TextArea
           value={form.leadHook}

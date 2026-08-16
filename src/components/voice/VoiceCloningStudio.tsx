@@ -140,7 +140,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
       const duration = await audioDuration(next);
       if (selection !== fileSelectionRef.current) return;
       if (duration < 10 || duration > 90) {
-        setError("Use a 10–90 second single-speaker sample.");
+        setError("Use a 10 to 90 second single-speaker sample.");
         return;
       }
       setFile(next);
@@ -356,7 +356,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
               className="mt-1.5 block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-semibold file:text-foreground"
             />
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              10–90 seconds · under 3 MB
+              10 to 90 seconds · under 3 MB
               {durationSeconds ? ` · ${Math.round(durationSeconds)}s` : ""}
             </span>
           </label>

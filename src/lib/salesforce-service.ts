@@ -240,7 +240,7 @@ export async function createContact(
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping contact create");
+    log.warn("Salesforce not connected, skipping contact create");
     return null;
   }
 
@@ -285,7 +285,7 @@ export async function updateOpportunityStage(
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping opportunity stage update");
+    log.warn("Salesforce not connected, skipping opportunity stage update");
     return false;
   }
 
@@ -314,7 +314,7 @@ export async function searchContacts(query: string, userId?: string): Promise<Sa
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping contact search");
+    log.warn("Salesforce not connected, skipping contact search");
     return [];
   }
 
@@ -354,7 +354,7 @@ export async function logCall(entry: SalesforceCallLog, userId?: string): Promis
 
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping call log");
+    log.warn("Salesforce not connected, skipping call log");
     return null;
   }
 
@@ -403,7 +403,7 @@ export async function createOpportunity(
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping opportunity create");
+    log.warn("Salesforce not connected, skipping opportunity create");
     return null;
   }
 
@@ -463,7 +463,7 @@ export async function updateContact(
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
-    log.warn("Salesforce not connected — skipping contact update");
+    log.warn("Salesforce not connected, skipping contact update");
     return false;
   }
 

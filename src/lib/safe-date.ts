@@ -17,7 +17,7 @@
 //  Pure functions only. Tested in tests/safe-date.test.ts.
 // ────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_FALLBACK = "—";
+const DEFAULT_FALLBACK = "N/A";
 
 /**
  * Coerce an arbitrary value into a Date that we can call toLocale*() on.

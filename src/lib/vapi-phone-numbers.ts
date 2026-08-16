@@ -51,7 +51,7 @@ interface RawJsonError {
 async function vapiFetch(path: string, init?: RequestInit): Promise<any> {
   const key = vapiKey();
   if (!key) {
-    throw new Error("VAPI_PRIVATE_KEY is not configured — cannot reach Vapi.");
+    throw new Error("VAPI_PRIVATE_KEY is not configured, cannot reach Vapi.");
   }
   const res = await fetch(`${VAPI_BASE}${path}`, {
     ...init,

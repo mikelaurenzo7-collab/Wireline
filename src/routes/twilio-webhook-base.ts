@@ -211,7 +211,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       !process.env.TWILIO_AUTH_TOKEN &&
       (process.env.NODE_ENV === "production" || process.env.VERCEL === "1")
     ) {
-      log.error("TWILIO_AUTH_TOKEN not configured in production — rejecting webhook");
+      log.error("TWILIO_AUTH_TOKEN not configured in production, rejecting webhook");
     } else {
       log.warn("Twilio webhook signature verification failed", { path: req.path });
     }
@@ -422,7 +422,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       // Provisioned Messaging URLs opt into 5xx retries. Combined with the
       // provider-SID unique index above, a transient database failure becomes
       // retry-safe at-least-once delivery instead of an acknowledged data loss.
-      log.error("Inbound SMS persist failed — requesting Twilio redelivery", {
+      log.error("Inbound SMS persist failed, requesting Twilio redelivery", {
         error: e?.message,
       });
       return res.status(503).send(twimlEmpty());

@@ -411,7 +411,7 @@ export default function LiveVideoStudioPage() {
         mic.getTracks().forEach((track) => track.stop());
       } catch {
         setError(
-          "Live video needs microphone access to hold a conversation. Allow the microphone in your browser and start the stage again — no session minutes were used.",
+          "Live video needs microphone access to hold a conversation. Allow the microphone in your browser and start the stage again. No session minutes were used.",
         );
         return;
       }
@@ -876,7 +876,7 @@ export default function LiveVideoStudioPage() {
                       // The provider produces speech in this mode. Opening a
                       // second Wireline audio stream would talk over it.
                       <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm leading-6 text-muted-foreground shadow-sm">
-                        This presenter answers on the stage itself — speak into your microphone and
+                        This presenter answers on the stage itself. Speak into your microphone and
                         it will reply. Wireline is not adding a second audio stream.
                       </div>
                     )

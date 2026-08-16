@@ -18,7 +18,7 @@ const POSITIONS = [
   },
   {
     heading: "Under Your Control",
-    copy: "Calling-hour rules, Do Not Call checks, and opt-outs are enforced in the runtime — before a dial, not after a complaint.",
+    copy: "Calling-hour rules, Do Not Call checks, and opt-outs are enforced in the runtime: before a dial, not after a complaint.",
   },
   {
     heading: "One Record",

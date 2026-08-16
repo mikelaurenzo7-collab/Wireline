@@ -113,7 +113,7 @@ router.post(
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error instanceof AuthConfigurationError) {
-        log.error("Auth: Sign in unavailable — JWT secret missing", { error });
+        log.error("Auth: Sign in unavailable, JWT secret missing", { error });
         return res.status(503).json({
           error: "Sign-in is temporarily unavailable. Platform configuration is incomplete.",
           code: "AUTH_NOT_CONFIGURED",
@@ -231,7 +231,7 @@ router.post(
           fullName: result.user.full_name,
         });
         if (!emailRes.ok) {
-          log.warn("Verification email not delivered (transport down) — user can resend", {
+          log.warn("Verification email not delivered (transport down), user can resend", {
             userId: result.user.id,
             reason: emailRes.error,
           });
@@ -249,7 +249,7 @@ router.post(
         return sendPasswordRejected(res, error);
       }
       if (error instanceof AuthConfigurationError) {
-        log.error("Auth: Sign up unavailable — JWT secret missing", { error });
+        log.error("Auth: Sign up unavailable, JWT secret missing", { error });
         return res.status(503).json({
           error: "Sign-up is temporarily unavailable. Platform configuration is incomplete.",
           code: "AUTH_NOT_CONFIGURED",

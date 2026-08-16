@@ -352,7 +352,7 @@ export async function handleJob(job: JobRow): Promise<void> {
           .where(eq(schema.users.id, userId))
           .limit(1);
         if (!liveUser) {
-          log.warn("tenant job skipped — account already erased", {
+          log.warn("tenant job skipped, account already erased", {
             jobId: job.id,
             jobType: job.type,
             userId,
@@ -391,7 +391,7 @@ export async function handleJob(job: JobRow): Promise<void> {
           perform: () => dispatchJob(job),
         });
         if (!outcome.performed) {
-          log.warn("tenant job skipped — terminal account deletion has begun", {
+          log.warn("tenant job skipped, terminal account deletion has begun", {
             jobId: job.id,
             jobType: job.type,
             userId,
@@ -406,7 +406,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 export function initJobWorker(opts?: { dbReady?: boolean }) {
   if (process.env.VERCEL === "1") return null;
   if (opts?.dbReady === false) {
-    log.warn("job worker skipped — database not connected");
+    log.warn("job worker skipped, database not connected");
     return null;
   }
 
