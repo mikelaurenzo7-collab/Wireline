@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import WirelineMark from "../brand/WirelineMark";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
-// The retired landing-os-nav path hid desktop navigation inside a faux device.
-// Every public route now shares this visible, predictable header.
+// Every public route shares this visible, predictable navigation system.
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const links = [
