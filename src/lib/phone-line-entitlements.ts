@@ -39,8 +39,12 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
 
-  const slots = includedPhoneSlotsForPlan(sub?.plan || undefined, settings?.extraAgents);
-  if (slots > 0) return slots;
+  const planId = sub?.plan || undefined;
+  const tier = planById(planId);
+  const slots = includedPhoneSlotsForPlan(planId, settings?.extraAgents);
+  // A resolved plan with zero included numbers is a real catalog answer
+  // (Free Builder). Only an unresolved plan id is a degraded lookup.
+  if (tier) return slots;
 
   // Degraded catalog lookup for an active subscriber: fail SAFE, not generous.
   // A `return 999` here let an outage hand out effectively unlimited carrier

@@ -35,14 +35,23 @@ describe("E2E design and brand polish", () => {
     expect(dialog).toContain("overflow-y-auto overscroll-contain");
   });
 
-  it("casts every public heading and supporting line in one uppercase display voice", () => {
+  it("casts public headings in the uppercase title tier and keeps supporting copy in sentence case", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polish = read("src/styles/e2e-design-polish.css");
-    // Case carries the hierarchy across the whole marketing surface: headings
-    // and supporting copy are uppercased in CSS (the copy strings themselves are
-    // never changed), so hero, section, and card read as one cased voice.
+    // Case is the ranking system: titles shout, supporting copy stays quieter.
+    // Uppercasing every marketing p/li collapsed Trust, Features, Compare,
+    // Status, and Developers into one stacked-subtitle shout.
     expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
-    expect(polish).toContain(":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {");
+    const bodyRule =
+      polish
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .match(
+          /\.marketing-surface :is\(p, li, \.wl-public-copy, \.wl-route-copy, \.wl-page-copy\)\s*\{[^}]*\}/,
+        )?.[0] ?? "";
+    expect(bodyRule, "marketing supporting copy needs a sentence-case body rule").not.toBe("");
+    expect(bodyRule).toContain("text-transform: none");
+    expect(bodyRule).toContain("letter-spacing: normal");
+    expect(bodyRule).not.toContain("text-transform: uppercase");
     // The hero-subhead node is gone from the DOM, so it must not survive in the
     // stylesheets either. Six rules across three files still styled it, and
     // pinning one of those selector strings here had made the dead rule
@@ -149,6 +158,8 @@ describe("E2E design and brand polish", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("Choose the outcome.");
     expect(landing).toContain("Put your first voice agent to work.");
+    expect(landing).toContain('max-w-[24ch]');
+    expect(landing).toContain('max-w-[18ch]">Choose the outcome.');
     expect(landing).toContain("Start free.");
     // The four step cards are titled Build/Train/Launch/Improve, so a display
     // heading repeating those same four words is banned, not merely absent.

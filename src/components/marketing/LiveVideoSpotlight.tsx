@@ -36,7 +36,7 @@ export default function LiveVideoSpotlight({ eyebrow }: LiveVideoSpotlightProps)
             {/* "One agent" read as a cap on how many you get. docs/ONE-AGENT-STRATEGY.md
                 is explicit that "one agent" is an onboarding posture, not the
                 product promise, and that broad surfaces lead with voice agents. */}
-            <h2 className="wl-display-2 mx-auto mt-5 max-w-[18ch] lg:mx-0">
+            <h2 className="wl-display-2 mx-auto mt-5 max-w-[24ch] lg:mx-0">
               Your voice agent, now on screen.
             </h2>
             <p className="mx-auto mt-4 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">

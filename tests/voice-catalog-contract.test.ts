@@ -70,6 +70,12 @@ describe("voice catalog", () => {
     expect(heygenService).not.toContain("process.env.LIVEAVATAR_API_KEY");
     expect(liveAvatarService).toContain("process.env.LIVEAVATAR_API_KEY?.trim() || null");
     expect(liveAvatarService).not.toContain("process.env.HEYGEN_API_KEY");
+    expect(read("src/lib/video-presenter/heygen-presence-clips.ts")).toContain(
+      "process.env.HEYGEN_API_KEY?.trim() || null",
+    );
+    expect(read("src/lib/video-presenter/heygen-presence-clips.ts")).not.toContain(
+      "process.env.LIVEAVATAR_API_KEY",
+    );
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
     const routes = read("src/routes/grok-voice-routes.ts");

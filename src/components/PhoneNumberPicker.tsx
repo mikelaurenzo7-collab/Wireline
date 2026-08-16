@@ -43,6 +43,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
+  const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     setLoading(true);
@@ -65,6 +66,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         );
       }
       setAvailable(availableResult.data.available || []);
+      setPreviewNumbers(new Set());
       setAreaCodes(areaCodesResult.ok ? areaCodesResult.data.area_codes || [] : []);
     } catch (e: any) {
       setAvailable([]);
@@ -84,6 +86,22 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     setClaiming(phoneNumber);
     setError(null);
     try {
+      if (previewNumbers.has(phoneNumber)) {
+        const res = await authFetch("/api/phone-numbers/provision", {
+          method: "POST",
+          body: JSON.stringify({
+            phone_number: phoneNumber,
+            ...(agentId ? { agent_id: agentId } : {}),
+            ...(searchAreaCode ? { area_code: searchAreaCode } : {}),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "Could not activate that number");
+        }
+        onClaim?.(data.phone_number || phoneNumber);
+        return;
+      }
       const res = await authFetch("/api/phone-numbers/claim", {
         method: "POST",
         body: JSON.stringify({ phone_number: phoneNumber, agent_id: agentId }),
@@ -95,7 +113,6 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       onClaim?.(phoneNumber);
     } catch (e: any) {
       setError(e?.message || "Claim failed");
-      // Refresh in case the number was taken between list + claim
       await refresh();
     } finally {
       setClaiming(null);
@@ -118,10 +135,16 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       if (!res.ok) {
         throw new Error(data.error || "No numbers in that area code");
       }
-      // Newly-bought number is now in the pool — refresh + auto-claim it
-      await refresh();
-      await claim(data.phone_number);
-      setSearchAreaCode("");
+      const found: AvailableNumber[] = Array.isArray(data.available)
+        ? data.available
+        : data.phone_number
+          ? [{ phone_number: data.phone_number, area_code: searchAreaCode, region: null }]
+          : [];
+      if (found.length === 0) {
+        throw new Error("No numbers in that area code");
+      }
+      setAvailable(found);
+      setPreviewNumbers(new Set(found.map((row) => row.phone_number)));
     } catch (e: any) {
       setError(e?.message || "Search failed");
     } finally {
@@ -235,7 +258,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           ) : (
             <div className="rounded-md wl-panel border border-border p-5 text-center">
               <p className="text-[length:var(--wireline-typography-caption-size)] text-muted">
-                No numbers in pool right now. Search by area code below to find one.
+                No numbers in pool right now. Search by area code to preview available lines
+                without buying one until you pick it.
               </p>
             </div>
           )}
@@ -274,7 +298,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 ) : (
                   <>
                     <Phone className="w-3.5 h-3.5" />
-                    Get number
+                    Find numbers
                   </>
                 )}
               </ShadButton>

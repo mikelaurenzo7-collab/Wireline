@@ -116,7 +116,7 @@ describe("video presenter integration", () => {
     // story, so the row is truthful for subscribed and unsubscribed accounts.
     const overview = source("src/pages/OverviewPage.tsx");
     expect(overview).toContain('to="/studio/live-video"');
-    expect(overview).toContain("Live Video — put an agent on screen");
+    expect(overview).toContain("Live Video · put an agent on screen");
     expect(overview).toContain('kind === "business"');
   });
 
@@ -291,9 +291,23 @@ describe("video presenter integration", () => {
     expect(picker).toContain("aspect-[4/5]");
     expect(picker).toContain("catalogRequestSerial");
     expect(picker).toContain("onSelectedAvatarChange");
+    expect(picker).toContain('placeholder="Search presenters"');
     expect(picker).not.toContain("Presence catalog paused");
+    const liveAvatar = source("src/lib/video-presenter/liveavatar-service.ts");
+    expect(liveAvatar).toContain("export async function getPublicAvatar");
+    expect(liveAvatar).toContain("WIRELINE_LIVE_VIDEO_AVATAR_ALLOWLIST");
+    expect(routes).toContain("billingEntitled && !entitlement.liveVideoCheckoutAvailable");
     const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
     expect(resolve).toContain("chosenAvatarId");
+  });
+
+  it("settles unused minutes on pagehide and treats any live provider as on", () => {
+    const page = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(page).toContain('window.addEventListener("pagehide", settleOnHide)');
+    expect(page).toContain("keepalive: true");
+    expect(page).toContain("credentials: \"include\"");
+    expect(page).toContain("isLiveVideoProvider(presenter?.provider)");
+    expect(page).not.toMatch(/presenter\?\.provider === ["']liveavatar["']/);
   });
 
   it("bridges PSTN call audio from Vapi listenUrl into LiveAvatar lip-sync", () => {

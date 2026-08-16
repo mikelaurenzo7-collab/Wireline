@@ -6,7 +6,7 @@
  * stored per agent and remains independent from the always-on in-app identity badge.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Search } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { presenterCustomizationMessage } from "../lib/video-presenter/copy";
@@ -60,6 +60,7 @@ export default function AgentPresenceAvatarPicker({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState("");
   const catalogRequestSerial = useRef(0);
   const customizationNote = presenterCustomizationMessage(presenter);
   const selectedId = presenter.chosenAvatarId || workspaceDefaultAvatarId || null;
@@ -110,9 +111,15 @@ export default function AgentPresenceAvatarPicker({
     );
   }, [avatars, onSelectedAvatarChange, selectedId]);
 
+  const filteredAvatars = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return avatars;
+    return avatars.filter((avatar) => avatar.name.toLowerCase().includes(needle));
+  }, [avatars, query]);
+
   const visibleAvatars = useMemo(
-    () => (expanded ? avatars : avatars.slice(0, INITIAL_VISIBLE_AVATARS)),
-    [avatars, expanded],
+    () => (expanded ? filteredAvatars : filteredAvatars.slice(0, INITIAL_VISIBLE_AVATARS)),
+    [expanded, filteredAvatars],
   );
 
   if (!platformConfigured) return null;
@@ -173,6 +180,25 @@ export default function AgentPresenceAvatarPicker({
         </div>
       ) : avatars.length ? (
         <>
+          {avatars.length > INITIAL_VISIBLE_AVATARS ? (
+            <label className="relative mt-4 block">
+              <span className="sr-only">Search presenters</span>
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setExpanded(false);
+                }}
+                placeholder="Search presenters"
+                className="h-10 w-full rounded-xl border border-border bg-secondary/40 pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]"
+              />
+            </label>
+          ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {visibleAvatars.map((avatar) => {
               const selected = avatar.id === selectedId;
@@ -227,7 +253,7 @@ export default function AgentPresenceAvatarPicker({
               );
             })}
           </div>
-          {avatars.length > INITIAL_VISIBLE_AVATARS ? (
+          {filteredAvatars.length > INITIAL_VISIBLE_AVATARS ? (
             <Button
               type="button"
               size="sm"
@@ -235,8 +261,11 @@ export default function AgentPresenceAvatarPicker({
               className="mt-4"
               onClick={() => setExpanded((current) => !current)}
             >
-              {expanded ? "Show fewer" : `Show all ${avatars.length}`}
+              {expanded ? "Show fewer" : `Show all ${filteredAvatars.length}`}
             </Button>
+          ) : null}
+          {query.trim() && filteredAvatars.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">No presenters match that search.</p>
           ) : null}
         </>
       ) : (

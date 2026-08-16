@@ -36,6 +36,19 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toContain(":has(> section:first-child .wl-empty-state)");
   });
 
+  it("keeps the Overview greeting as a short left-aligned personal line", () => {
+    const css = read("src/styles/authenticated-visual-qa.css");
+    const overview = read("src/pages/OverviewPage.tsx");
+
+    expect(css).toContain(".wl-overview-greeting .wl-display-2");
+    expect(css).toContain("max-width: 22ch");
+    expect(css).toContain("margin: 0.9rem 0 0");
+    expect(css).not.toContain("margin: 0.9rem auto 0");
+    expect(overview).toContain("dayGreeting()");
+    expect(overview).not.toContain("Let's put your first");
+    expect(overview).toContain("wl-overview-greeting text-left");
+  });
+
   it("removes the decorative ledger treatment from authenticated task surfaces", () => {
     const css = read("src/styles/workspace-polish.css");
     expect(css).toMatch(/\.wl-workspace-shell::before\s*\{[\s\S]*content: none;/);
@@ -48,5 +61,26 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain("captureInternalScrollEnd");
     expect(visualQa).toContain('file.replace(/\\.png$/, "-end.png")');
     expect(visualQa).toContain("issues.some");
+    expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
+  });
+
+  it("keeps Insights category tabs inside a real horizontal scroller on phones", () => {
+    const css = read("src/styles/system-refinement-pass-two.css");
+    const tabs = read("src/components/layout/ClientSubTabs.tsx");
+    const rule =
+      css
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .match(
+          /:where\(\[role="tablist"\]\.tab-strip-scroll, \.app-tab-strip\)\s*\{[^}]*\}/,
+        )?.[0] ?? "";
+
+    expect(rule, "tab rails must declare overflow-x so Revenue cannot escape the viewport").not.toBe(
+      "",
+    );
+    expect(rule).toContain("overflow-x: auto");
+    expect(rule).toContain("max-width: 100%");
+    expect(tabs).toContain("tab-strip-scroll");
+    expect(tabs).toContain("min-w-0 max-w-full");
+    expect(tabs).not.toContain("flex shrink-0 items-center");
   });
 });

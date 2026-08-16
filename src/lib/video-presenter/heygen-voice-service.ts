@@ -224,8 +224,10 @@ export async function generatePresenterSpeech(args: {
 }
 
 /**
- * Resolve the default public voice paired with a catalog avatar / look id.
- * LiveAvatar avatar ids map to HeyGen look ids in the same ecosystem.
+ * Resolve the default public voice paired with a HeyGen look id.
+ *
+ * LiveAvatar session UUIDs and HeyGen look ids are different catalogs.
+ * A miss (404/400) is normal for a live-video UUID and must not throw.
  */
 export async function resolveAvatarDefaultVoice(
   avatarId: string,

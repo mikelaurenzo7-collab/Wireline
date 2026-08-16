@@ -84,7 +84,7 @@ export async function resolveAgentSmsFromNumber(
 /** Set tenant-wide telecom defaults when the first line is provisioned. */
 export async function ensureTenantTelecomDefaults(
   userId: string,
-  opts: { vapiPhoneNumberId?: string; phoneNumberE164?: string },
+  opts: { vapiPhoneNumberId?: string; phoneNumberE164?: string; smsCapable?: boolean },
 ): Promise<void> {
   const [settings] = await drizzle
     .select({
@@ -105,7 +105,10 @@ export async function ensureTenantTelecomDefaults(
   ) {
     patch.vapiPhoneNumberId = opts.vapiPhoneNumberId;
   }
-  if (opts.phoneNumberE164 && !settings.twilioSmsFromNumber?.trim()) {
+  // SMS "from" must be a Twilio-owned sender. Vapi-only voice lines can place
+  // calls after import, but Twilio will reject (or silently fail) STOP/HELP
+  // identity on a number it does not own.
+  if (opts.smsCapable && opts.phoneNumberE164 && !settings.twilioSmsFromNumber?.trim()) {
     patch.twilioSmsFromNumber = opts.phoneNumberE164;
   }
 

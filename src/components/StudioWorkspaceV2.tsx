@@ -62,11 +62,11 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
     <EmptyState
       fill
       icon={Sparkles}
-      title={`Create your first ${language.singular}`}
+      title="Start with one job."
       description={
         posture === "business"
-          ? "Start with one customer-facing job."
-          : "Start with one call, appointment, or personal task."
+          ? "Give it one customer job. You can change everything later."
+          : "Give it one call, appointment, or personal task."
       }
       className="wl-composer-dock"
     >
@@ -97,7 +97,9 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
               Start setup
             </Link>
           </Button>
-          <span className="text-xs text-muted-foreground">You can change everything later.</span>
+          {posture === "personal" ? (
+            <span className="text-xs text-muted-foreground">You can change everything later.</span>
+          ) : null}
         </div>
       </div>
     </EmptyState>

@@ -30,16 +30,19 @@ So the two vendors are not competing for one slot; they occupy two:
 | The voice and the conversation inside that session | Speech vendor | It orchestrates the audio; the renderer only draws |
 | Pre-rendered creative — reels, explainers, recaps | **Speech vendor’s avatar product** | Script-in/file-out is the right shape, and it removes a render-quota dependency from the launch creative path |
 
-**What this changes in practice.** Consolidating the *creative* renders onto the speech vendor is a real win: the launch reel pack records a Wireline Host concept blocked on the video vendor’s render quota, and that blocker disappears when pre-rendered creative stops competing with live sessions for the same account. Consolidating the *live* session is not available at any price today.
+**What this changes in practice.** Live minutes and creative renders must not share a quota. LiveAvatar credits and HeyGen credits do not transfer. Pre-rendered clips should use the HeyGen Video Agent / classic video APIs (`HEYGEN_API_KEY`) so they cannot starve Live Video sessions (`LIVEAVATAR_API_KEY`). Consolidating the *live* session onto HeyGen Video Agent is not available: that API returns an MP4, not an interruptible WebRTC stream.
 
-**What to re-check, and what would change the answer.** Real-time avatars from the speech vendor would collapse these two rows into one. Until its own docs describe a streaming, interruptible avatar for its agents — rather than linking out to a rendering partner — assume the split stands. Re-check quarterly with the rest of the vendor pricing review.
+**What to re-check, and what would change the answer.** A streaming, interruptible avatar on `api.heygen.com` that accepts Wireline PCM (or the tenant agent) would be an alternate renderer. HeyGen Avatar Realtime is HLS at about $0.05/sec and is still not that product. HeyGen's own Live Avatar docs point at `docs.liveavatar.com`. Re-check quarterly with the rest of the vendor pricing review.
 
-Verified against the published documentation on 2026-08-14:
+Verified against the published documentation on 2026-08-16:
 
-- The speech vendor's avatar product ("Avatars" in its creative suite) is explicitly pre-rendered — a Generate step produces a finished video — and its docs state **"API access: Not available at launch; planned for future release."** There is nothing to integrate at runtime yet; when that API ships, it becomes the supply line for pre-rendered presence clips and animated character identities, not for live sessions.
+- **HeyGen Video Agent** (`POST /v3/video-agents`) is prompt-to-video. Default `mode: "generate"` is fire-and-forget; `mode: "chat"` pauses for storyboard review, not live talking. Pricing is about **$0.0333/sec** of finished video (~$2/min). Interactive sessions, styles, and brand kits are creative controls. This is the supply line for pre-rendered presence clips now that the API exists.
+- **HeyGen look ids are not LiveAvatar session UUIDs.** `GET /v3/avatars/looks` feeds `POST /v3/videos` and `POST /v3/video-agents`. Live Video mint requires a public LiveAvatar UUID. Saving a look id as a live presenter is rejected (`avatarId` is UUID-only).
+- **Shared `HEYGEN_API_KEY` is a workspace wallet.** Tenant minting is a multi-tenant blocker (same class of problem as workspace-level `LIVEAVATAR_VOICE_AGENT_ID`). `presenceClipMintOffered()` stays hard-false until per-tenant billing exists. See `src/lib/video-presenter/heygen-presence-clips.ts`.
+- The speech vendor's own avatar product remains pre-rendered and is a second creative option when its API is offered; it is still not live conversation.
 - The video vendor's speech-vendor connector requires a **paid** speech-vendor key (free-tier keys are blocked), registers the credential provider-side in exchange for an opaque secret id, outputs PCM 24 kHz, and **rejects per-session language overrides for speech-vendor-backed sessions with a 400** — which is why Wireline's payload builder never sends one.
 
-The integration Wireline implements is the officially documented pairing: a LITE-mode session where the speech vendor orchestrates audio and the video vendor renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. When the agent's own phone voice is a PSTN-approved speech-vendor voice, the session passes it as the connector voice — the presenter speaks the same voice as the agent's live calls. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
+The live integration Wireline implements is the officially documented pairing: a LITE-mode session where Wireline (or a connector) orchestrates audio and LiveAvatar renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. When the agent's own phone voice is a PSTN-approved speech-vendor voice, the session passes it as the connector voice — the presenter speaks the same voice as the agent's live calls. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
 
 **Scope boundary on the connector engines (decision, 2026-08-14).** The Studio-voice connector and FULL managed engine run against **workspace-level** provider identities (`LIVEAVATAR_ELEVENLABS_AGENT_ID`, `LIVEAVATAR_VOICE_AGENT_ID` / `LIVEAVATAR_CONTEXT_ID`) — one shared brain per deployment, not the tenant agent's Training. That is fine for the current founder/dogfood posture and the engine catalog copy now says so explicitly. It becomes a **multi-tenant blocker**: before these engines are offered beyond the founder workspace, either provision per-tenant provider agents or keep the engines operator-only, because pooled provider-side conversation history across tenants is not acceptable. The default Wireline-voice engine has no such issue — it runs the tenant's own agent brain end to end.
 
@@ -50,11 +53,11 @@ The founder direction is a **range of agent identities, not one look**: determin
 | Identity register | Today | Supply line |
 | --- | --- | --- |
 | Deterministic badge | Live on every agent surface | Wireline SVG (owned) |
-| Photoreal live presenter | Live Video catalog picker | Video vendor public catalog |
+| Photoreal live presenter | Live Video catalog picker | Video vendor public catalog (LiveAvatar UUIDs only) |
 | Animated / character live presenter | Possible now — curate stylized entries from the same catalog into the Characters tab | Video vendor catalog (curated subset), Tier 4 character pack |
-| Pre-rendered presence clips (any register) | Creative pipeline only | Speech vendor's avatar product; automate when its API ships |
+| Pre-rendered presence clips (any register) | API exists; tenant product fail-closed | HeyGen Video Agent + classic video APIs on `HEYGEN_API_KEY`; optional speech-vendor avatars when that API is offered |
 
-No new vendor is required for any row. The Characters lane is a curation task on the existing catalog plus the Tier 4 commissioning plan below, and the pre-rendered row upgrades from manual tool use to API automation on the speech vendor's published timeline.
+No new vendor is required for any row. The Characters lane is a curation task on the existing catalog plus the Tier 4 commissioning plan below. Presence clips must not be mixed into the live picker or billed as Live Video minutes.
 
 ---
 
@@ -87,8 +90,9 @@ Do **not** make live video calls the default product center. Voice and phone rem
 | --- | --- | --- |
 | Voice + LLM + PSTN | Vapi, OpenAI, Twilio | Wireline Phone, Voice library, Live |
 | In-app avatar | Wireline SVG | Identity badge across app, training, analytics, and logs |
-| On-screen video | LiveAvatar (HeyGen) LITE mode | Paused/limited until curated catalog is launch-quality |
-| Presenter-matched voice | HeyGen speech API | Retained internally for future lip-sync aligned preview |
+| On-screen video | LiveAvatar (HeyGen) LITE mode | Paid Live Video add-on for eligible business agents |
+| Pre-rendered clips | HeyGen Video Agent / classic video | Fail-closed; not a tenant product until per-tenant billing exists |
+| Presenter-matched voice | HeyGen speech API | Internal matching for catalog faces |
 | PSTN with presenter voice | Falls back to a managed Wireline Phone (Vapi) voice | Routing hint in the voice picker; phone voice stays selectable in Studio |
 
 Architecture: Wireline owns brains, telephony, permissions, consent, and outcomes; video vendors render approved presence assets. This split is correct — do not route PSTN audio through avatar vendors and do not build an in-house neural renderer before PMF.
@@ -238,7 +242,9 @@ Every presence card should include:
 
 ### Tier B — Video-only (not live agents)
 
-Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second turn-taking. Useful for marketing, onboarding, proposals, recaps, social, and YouTube outputs.
+Synthesia, HeyGen classic video, HeyGen Video Agent, Runway — scripted or prompt-to-MP4 renders, not sub-second turn-taking. Useful for marketing, onboarding, proposals, recaps, social, and YouTube outputs.
+
+**HeyGen Video Agent is this tier, not Tier A.** The product name sounds like a live Wireline agent. It is not: the provider owns scripting and rendering, output is a file, and IDs do not mint Live Video sessions. Wireline may use it later as a gated creative add-on; it must never replace LiveAvatar LITE + the tenant brain.
 
 ### Tier C — Build your own
 
@@ -295,7 +301,7 @@ Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second tur
 6. **Provider catalog curation** — list only approved high-quality human presenters.
 7. **Character pack** — commission or generate a cohesive ET / futurist character set for playful brands and content.
 8. **Consent Vault** — required before named-person clone or customer-uploaded likeness.
-9. **Async video outputs** — post-call recap, proposal walkthrough, onboarding welcome, FAQ/social short.
+9. **Async video outputs** — HeyGen Video Agent API is the fail-closed supply line (`heygen-presence-clips.ts`); do not expose tenant minting until per-tenant billing exists. Use for post-call recap, proposal walkthrough, onboarding welcome, FAQ/social short.
 10. **Conversation-to-content loop** — mine calls for recurring questions and turn them into YouTube/Shorts/Reels scripts and videos.
 11. **Failover** — video unavailable → voice/text/identity badge with no broken WebRTC.
 12. **Pricing** — Professional Presence included in higher plans; Custom Presence as setup fee or Business add-on.

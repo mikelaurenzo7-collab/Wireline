@@ -32,7 +32,9 @@ import {
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
+import { isLiveVideoProvider } from "../lib/video-presenter/live-video-addon";
 import { sessionExpectsWirelineAudio } from "../lib/video-presenter/types";
+import { CUSTOMER_AGENT_LANGUAGE } from "../lib/product-copy";
 import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
@@ -140,6 +142,13 @@ export default function LiveVideoStudioPage() {
   const presenterRef = useRef<LiveVideoPresenterHandle>(null);
   /** Guards the settle call so one session can only be settled once. */
   const settledReceiptsRef = useRef(new Set<string>());
+  const sessionRef = useRef<{
+    live: LiveAvatarSessionCredentials;
+    fallbackSeed: string;
+  } | null>(null);
+  const agentIdRef = useRef<string | null>(null);
+  sessionRef.current = session;
+  agentIdRef.current = activeAgentId;
 
   const loadPresenter = useCallback(async () => {
     if (!activeAgentId) {
@@ -292,12 +301,40 @@ export default function LiveVideoStudioPage() {
       } | null;
       // Refresh the allowance so the chip reflects the refund immediately
       // rather than showing a full session's worth spent until the next load.
-      if (body?.settled && (body.refundedMinutes ?? 0) > 0) await refreshUsage();
+      if (body?.settled && (body.refundedMinutes ?? 0) > 0) {
+        await refreshUsage();
+        setNotice(
+          `Returned ${body.refundedMinutes} unused Live Video minute${
+            body.refundedMinutes === 1 ? "" : "s"
+          } to this month's allowance.`,
+        );
+      }
     } catch {
       // Settlement is an optimization on top of a reservation that already
       // succeeded; a network failure here must never surface as a session error.
     }
   }
+
+  useEffect(() => {
+    const settleOnHide = () => {
+      const live = sessionRef.current?.live;
+      const agentId = agentIdRef.current;
+      const receipt = live?.settlementReceipt;
+      if (!receipt || !agentId) return;
+      if (settledReceiptsRef.current.has(receipt)) return;
+      settledReceiptsRef.current.add(receipt);
+      const watchedSeconds = Math.max(0, Math.round(presenterRef.current?.watchedSeconds() ?? 0));
+      void fetch(`/api/agents/${encodeURIComponent(agentId)}/video-presenter/session/settle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receipt, watchedSeconds }),
+        credentials: "include",
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+    window.addEventListener("pagehide", settleOnHide);
+    return () => window.removeEventListener("pagehide", settleOnHide);
+  }, []);
 
   async function refreshUsage() {
     try {
@@ -412,7 +449,7 @@ export default function LiveVideoStudioPage() {
   const addon = state?.addon ?? null;
   const entitled = addon?.billingEntitled === true;
   const checkoutAvailable = addon?.liveVideoCheckoutAvailable === true;
-  const liveVideoOn = presenter?.provider === "liveavatar";
+  const liveVideoOn = isLiveVideoProvider(presenter?.provider);
   const hasFacePick = Boolean(presenter?.avatarId);
   const includedMinutes = usage?.includedMinutes ?? addon?.liveVideoMinutesIncluded ?? 60;
   const sessionMinutes = usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
@@ -446,7 +483,7 @@ export default function LiveVideoStudioPage() {
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"
-          description="Put a business agent on screen. Wireline voice uses that agent's Training and tools; optional presenter-managed voices use their own workspace profile."
+          description="Paid add-on for business agents. Put the same trained voice agent on screen for demos, recaps, and selected web experiences. Calls and texts stay on the phone line."
         />
 
         {agentsLoading ? (
@@ -463,7 +500,9 @@ export default function LiveVideoStudioPage() {
             Create a business agent first, then add its live presenter here.
             <div className="mt-4">
               <Button asChild size="sm" variant="secondary">
-                <Link to="/studio?create=1&posture=business">Create business agent</Link>
+                <Link to="/studio?create=1&posture=business">
+                  {CUSTOMER_AGENT_LANGUAGE.business.createCta}
+                </Link>
               </Button>
             </div>
           </div>
@@ -501,6 +540,11 @@ export default function LiveVideoStudioPage() {
                   <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
                     {sessionMinutes} min wall-clock max
                   </span>
+                  {state?.hasVoice ? (
+                    <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
+                      Same approved voice as the phone line
+                    </span>
+                  ) : null}
                   <span
                     className={`rounded-full border px-3 py-1.5 font-medium ${
                       entitled

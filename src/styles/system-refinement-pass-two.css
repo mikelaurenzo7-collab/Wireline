@@ -60,6 +60,9 @@ html.light {
  * keyboard-scrollable, allow the surrounding page to pan vertically, and stop
  * horizontal scroll chaining into the page. */
 :where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-padding-inline: 0.5rem;
   scrollbar-width: none;

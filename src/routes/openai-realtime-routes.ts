@@ -64,6 +64,8 @@ router.post(
         agentName: req.body.agentName,
         model: req.body.model,
         voice: req.body.voice,
+        tools: [],
+        toolChoice: "none",
       });
     } catch (error) {
       await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);

@@ -4,6 +4,10 @@
  * Wireline keeps Vapi / OpenAI for voice + brains; LiveAvatar
  * renders photoreal lip-sync video into a LiveKit room. Docs:
  * https://docs.liveavatar.com/docs/lite-mode/overview
+ *
+ * HeyGen Video Agent on api.heygen.com is a different product: prompt → MP4,
+ * billed on `HEYGEN_API_KEY`. Do not mint live sessions from HeyGen look ids,
+ * and do not call Video Agent from here. See `heygen-presence-clips.ts`.
  */
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
@@ -254,6 +258,55 @@ export type PublicAvatar = {
   defaultVoiceId?: string | null;
 };
 
+function curatedAvatarAllowlist(): Set<string> | null {
+  const raw = process.env.WIRELINE_LIVE_VIDEO_AVATAR_ALLOWLIST?.trim();
+  if (!raw) return null;
+  const ids = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return ids.length > 0 ? new Set(ids) : null;
+}
+
+function isPresentableAvatar(avatar: PublicAvatar): boolean {
+  return Boolean(avatar.id && avatar.name.trim() && avatar.previewImageUrl?.trim());
+}
+
+function applyCatalogQuality(avatars: PublicAvatar[]): PublicAvatar[] {
+  const allowlist = curatedAvatarAllowlist();
+  const scoped = allowlist ? avatars.filter((avatar) => allowlist.has(avatar.id)) : avatars;
+  const presentable = scoped.filter(isPresentableAvatar);
+  return presentable.length > 0 ? presentable : scoped.filter((avatar) => avatar.id);
+}
+
+/**
+ * Resolve a presenter face only when it belongs to the public catalog (or the
+ * workspace default). Exact-ID provider lookups are forbidden because the
+ * shared LiveAvatar account may also contain private or custom avatars.
+ */
+export async function getPublicAvatar(avatarId: string): Promise<PublicAvatar> {
+  const normalized = avatarId.trim();
+  if (!normalized) {
+    throw AppError.fromHttpStatus(400, "Choose a catalog presenter.");
+  }
+
+  const workspaceDefault = defaultAvatarId();
+  if (workspaceDefault && normalized === workspaceDefault) {
+    return {
+      id: normalized,
+      name: "Workspace presenter",
+      previewImageUrl: null,
+      defaultVoiceId: null,
+    };
+  }
+
+  const match = (await listPublicAvatars()).find((avatar) => avatar.id === normalized);
+  if (!match) {
+    throw AppError.fromHttpStatus(400, "Choose a catalog presenter.");
+  }
+  return match;
+}
+
 /**
  * The public avatar catalog is a global, slowly-changing vendor list — the same
  * fifty rows for every tenant. It was fetched from the provider on every load
@@ -301,7 +354,7 @@ async function fetchPublicAvatars(): Promise<PublicAvatar[]> {
   }>("/v1/avatars/public?page_size=50", { method: "GET", apiKey: true });
 
   const rows = Array.isArray(data.results) ? data.results : [];
-  return rows
+  const mapped = rows
     .map((row) => ({
       id: String(row.id || ""),
       name: String(row.name || "Avatar"),
@@ -309,6 +362,7 @@ async function fetchPublicAvatars(): Promise<PublicAvatar[]> {
       defaultVoiceId: row.default_voice_id?.trim() || null,
     }))
     .filter((row) => row.id);
+  return applyCatalogQuality(mapped);
 }
 
 export function resolveLiveAvatarIdForAgent(agent: {

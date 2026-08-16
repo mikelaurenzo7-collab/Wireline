@@ -456,6 +456,10 @@ export const phoneNumberProvisionSchema = z.object({
     .string()
     .regex(/^\d{3}$/, "area_code must be a 3-digit US code")
     .optional(),
+  phone_number: z
+    .string()
+    .regex(/^\+1\d{10}$/, "phone_number must be a US E.164 number")
+    .optional(),
 });
 
 export const emailThreadsReadStateSchema = z.object({

@@ -38,7 +38,7 @@ To sell Live Video additionally require:
 - `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` (or the supported monthly alias)
 - `WIRELINE_LIVE_VIDEO_DISABLED` unset or `false`
 
-`HEYGEN_API_KEY` is optional for presenter voice-preview features. It is not the LiveAvatar session credential.
+`HEYGEN_API_KEY` is optional for presenter voice previews and fail-closed presence clips. It is not the LiveAvatar session credential. HeyGen Video Agent (`POST /v3/video-agents`) is prompt-to-MP4 billed on that wallet; do not sell it as Live Video.
 
 Do not run catalog writes against production casually. Run the static contract and complete read-only live audit first:
 

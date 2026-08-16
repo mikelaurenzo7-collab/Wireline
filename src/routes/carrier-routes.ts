@@ -19,8 +19,6 @@ import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import {
   listVapiNumbers,
-  provisionVapiNumber,
-  vapiAccountHeadroom,
   POPULAR_AREA_CODES,
 } from "../lib/vapi-phone-numbers";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
@@ -173,6 +171,9 @@ router.post(
     try {
       const agentId = req.body.agent_id ? String(req.body.agent_id).trim() : undefined;
       const areaCode = req.body.area_code ? String(req.body.area_code).trim() : undefined;
+      const preferredPhoneNumber = req.body.phone_number
+        ? String(req.body.phone_number).trim()
+        : undefined;
 
       if (agentId) {
         const [agent] = await drizzle
@@ -192,6 +193,7 @@ router.post(
       const result = await provisionTenantNumber(req.user.id, {
         agentId,
         areaCode,
+        preferredPhoneNumber,
         campaignLabel: "fast-start-provision",
       });
 
@@ -411,9 +413,8 @@ router.get(
 );
 
 /**
- * Try to buy a fresh number in a specific area code. Used when the
- * pool is exhausted OR the user wants a region we don't have in pool.
- * Subject to the Vapi free-tier headroom; returns 409 if cap hit.
+ * Preview carrier inventory for an area code without buying.
+ * Used when the pool is exhausted or the customer wants a specific region.
  */
 router.post(
   "/api/phone-numbers/search",
@@ -427,8 +428,6 @@ router.post(
         throw AppError.fromHttpStatus(400, "area_code must be a 3-digit US code.");
       }
 
-      // Tenant plan capacity first — search provisions a fresh Vapi number, so
-      // an uncapped search+claim path was free carrier spend past plan slots.
       const slots = await getIncludedPhoneLineSlots(req.user.id);
       const [{ held }] = await drizzle
         .select({ held: sql<number>`count(*)` })
@@ -441,26 +440,24 @@ router.post(
         });
       }
 
-      const headroom = await vapiAccountHeadroom();
-      if (headroom.remaining <= 0) {
-        return res.status(409).json({
-          error:
-            "Free phone-number capacity reached. Release an unused number from /admin → Numbers to free a slot, or contact sales for paid numbers.",
-          code: "POOL_CAPACITY_REACHED",
-          headroom,
+      const { listTwilioAvailableLocalNumbers } = await import("../lib/phone-provisioning");
+      const candidates = await listTwilioAvailableLocalNumbers(areaCode);
+      if (candidates.length === 0) {
+        return res.status(404).json({
+          error: "That area code has no inventory right now. Try another nearby code.",
+          code: "AREA_CODE_UNAVAILABLE",
         });
       }
 
-      const fresh = await provisionVapiNumber({
-        areaCode,
-        name: `Wireline · self-serve ${areaCode}`,
-      });
       res.json({
-        phone_number: fresh.number,
-        area_code: areaCode,
+        available: candidates.map((row) => ({
+          phone_number: row.phoneNumber,
+          area_code: areaCode,
+          region: [row.locality, row.region].filter(Boolean).join(", ") || null,
+        })),
       });
     } catch (e: any) {
-      // Vapi rejected — most commonly "area code not available"
+      rethrowIfAppError(e);
       const msg = getErrorMessage(e);
       if (/not available/i.test(msg)) {
         return res.status(404).json({
@@ -548,6 +545,7 @@ router.post(
       await ensureTenantTelecomDefaults(req.user.id, {
         vapiPhoneNumberId: match.id,
         phoneNumberE164: phoneNumber,
+        smsCapable: false,
       });
 
       res.json({ success: true, phone_number: phoneNumber, agent_id: agentId });

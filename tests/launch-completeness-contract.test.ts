@@ -144,6 +144,11 @@ describe("launch completeness contracts", () => {
     expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
     expect(status).not.toMatch(/=\s*AbortSignal\.timeout\(/);
     expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
+    expect(status).toContain("JSON.parse(rawText)");
+    expect(status).toContain("normalizeHealth(parsed)");
+    expect(status).toContain(
+      "Showing the last reported snapshot while the live probe cache is unavailable.",
+    );
     expect(status).toContain("{error && data ? (");
   });
 

@@ -59,4 +59,11 @@ describe("OpenAI/Vapi-only demo architecture", () => {
     expect(service).toContain('"Content-Type": "application/sdp"');
     expect(service).not.toContain("new FormData()");
   });
+
+  it("does not advertise tools on the generic OpenAI session mint", () => {
+    const routes = read("src/routes/openai-realtime-routes.ts");
+    const mint = routes.slice(routes.indexOf('"/api/voice/openai/session"'));
+    expect(mint).toContain("tools: []");
+    expect(mint).toContain('toolChoice: "none"');
+  });
 });

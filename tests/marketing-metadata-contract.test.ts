@@ -41,6 +41,8 @@ describe("marketing metadata contract", () => {
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
+    expect(security).toContain("How Wireline earns live calls.");
+    expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
     expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
     expect(trustPack).not.toMatch(/<main\b/);

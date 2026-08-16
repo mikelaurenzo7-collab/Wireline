@@ -54,18 +54,18 @@
   );
 }
 
-/* Overview: preserve a welcoming hero without letting it dominate the first
- * operational decision. Dense founder accounts should summarize, not scroll
- * through the entire roster. */
+/* Overview: the greeting is a short personal line, always left-aligned with
+ * authenticated work. Keep it one or two words-wide so it never stacks into a
+ * subtitle-like column. The first-run job lives in the launchpad, not here. */
 .wl-overview-greeting .wl-display-2 {
-  max-width: 18ch;
-  font-size: clamp(2.25rem, 1.8rem + 2vw, 3.65rem);
-  line-height: 0.98;
+  max-width: 22ch;
+  font-size: clamp(2.125rem, 1.7rem + 1.6vw, 3.15rem);
+  line-height: 1.06;
 }
 
 .wl-overview-greeting::after {
-  width: min(5rem, 32%);
-  margin: 0.9rem auto 0;
+  width: min(9rem, 42%);
+  margin: 0.9rem 0 0;
 }
 
 .wl-overview [aria-label="Customer readiness checklist"] ol a {
@@ -245,8 +245,9 @@
 
 @media (max-width: 639px) {
   .wl-overview-greeting .wl-display-2 {
-    max-width: 14ch;
-    font-size: clamp(2rem, 10vw, 2.75rem);
+    max-width: 16ch;
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
+    line-height: 1.08;
   }
 
   .wl-overview [aria-label="Customer readiness checklist"] ol {

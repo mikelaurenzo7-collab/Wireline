@@ -74,6 +74,8 @@ interface ProvisionOpts {
   agentId?: string;
   areaCode?: string;
   campaignLabel?: string;
+  /** Exact E.164 the customer picked from a carrier preview. Not purchased until this call. */
+  preferredPhoneNumber?: string;
 }
 
 export interface ProvisionResult {
@@ -134,9 +136,42 @@ async function findFirstUnassignedNumber(userId: string) {
   return row ?? null;
 }
 
+export type TwilioAvailableLocalNumber = {
+  phoneNumber: string;
+  locality: string | null;
+  region: string | null;
+};
+
+/**
+ * Preview Twilio local inventory without buying. Search used to call
+ * `provisionVapiNumber`, which burned pool capacity on abandoned browses.
+ */
+export async function listTwilioAvailableLocalNumbers(
+  areaCode: string,
+): Promise<TwilioAvailableLocalNumber[]> {
+  const client = getTwilioClient();
+  if (!client) return [];
+  if (!/^\d{3}$/.test(areaCode)) return [];
+
+  const candidates = await client.availablePhoneNumbers("US").local.list({
+    voiceEnabled: true,
+    smsEnabled: true,
+    areaCode: Number(areaCode),
+    limit: 8,
+  });
+  return candidates
+    .map((row) => ({
+      phoneNumber: String(row.phoneNumber || ""),
+      locality: row.locality ? String(row.locality) : null,
+      region: row.region ? String(row.region) : null,
+    }))
+    .filter((row) => /^\+1\d{10}$/.test(row.phoneNumber));
+}
+
 async function purchaseTwilioLocalNumber(
   userId: string,
   areaCode?: string,
+  preferredPhoneNumber?: string,
 ): Promise<{ phoneNumber: string; sid: string } | null> {
   const client = getTwilioClient();
   if (!client) return null;
@@ -156,6 +191,32 @@ async function purchaseTwilioLocalNumber(
   // and the Vapi import overwriting it.
   const voiceFallbackUrl = `${appBaseUrl()}/api/twilio-webhook/voice-fallback`;
   const voiceUrl = voiceFallbackUrl;
+  const purchaseFields = {
+    smsUrl,
+    smsMethod: "POST" as const,
+    voiceUrl,
+    voiceMethod: "POST" as const,
+    voiceFallbackUrl,
+    voiceFallbackMethod: "POST" as const,
+    friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
+  };
+
+  const preferred = preferredPhoneNumber?.trim();
+  if (preferred && /^\+1\d{10}$/.test(preferred)) {
+    try {
+      const purchased = await client.incomingPhoneNumbers.create({
+        phoneNumber: preferred,
+        ...purchaseFields,
+      });
+      return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
+    } catch (err) {
+      log.warn("Preferred Twilio number unavailable, falling back to area-code search", {
+        userId,
+        error: getErrorMessage(err),
+      });
+    }
+  }
+
   const searchParams: any = {
     voiceEnabled: true,
     smsEnabled: true,
@@ -176,13 +237,7 @@ async function purchaseTwilioLocalNumber(
   try {
     const purchased = await client.incomingPhoneNumbers.create({
       phoneNumber: chosen.phoneNumber,
-      smsUrl,
-      smsMethod: "POST",
-      voiceUrl,
-      voiceMethod: "POST",
-      voiceFallbackUrl,
-      voiceFallbackMethod: "POST",
-      friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
+      ...purchaseFields,
     });
     return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
   } catch (err) {
@@ -365,6 +420,7 @@ export async function provisionTenantNumber(
       await ensureTenantTelecomDefaults(userId, {
         vapiPhoneNumberId: reusable.vapiNumberId ?? undefined,
         phoneNumberE164: reusable.phoneNumber,
+        smsCapable: false,
       });
       return {
         ok: true,
@@ -383,7 +439,11 @@ export async function provisionTenantNumber(
     let vapiNumberId: string;
     let phoneNumber: string;
 
-    const twilioPurchased = await purchaseTwilioLocalNumber(userId, opts.areaCode);
+    const twilioPurchased = await purchaseTwilioLocalNumber(
+      userId,
+      opts.areaCode,
+      opts.preferredPhoneNumber,
+    );
     if (twilioPurchased) {
       // A Vapi import can time out after the provider accepted it. Compensation
       // therefore rediscovers a partial Vapi row by E.164 and releases both
@@ -502,6 +562,7 @@ export async function provisionTenantNumber(
     await ensureTenantTelecomDefaults(userId, {
       vapiPhoneNumberId: vapiNumberId,
       phoneNumberE164: phoneNumber,
+      smsCapable: Boolean(twilioPurchased),
     });
 
     log.info("Provisioned tenant number", {
