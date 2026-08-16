@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
-import { isWorkspaceRoute } from "../src/lib/workspace-route-scope";
+import { isWorkspaceRoute, usesWorkspaceViewport } from "../src/lib/workspace-route-scope";
 
 const root = resolve(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -19,13 +19,14 @@ describe("public route fallbacks", () => {
     expect(isSessionOptionalPublicPath("/not-found")).toBe(true);
   });
 
-  it("defaults first paint to document flow and then scopes workspace routes", () => {
+  it("defaults first paint to document flow and then resolves physical viewport ownership", () => {
     const index = read("index.html");
     const app = read("src/App.tsx");
 
     expect(index).toContain('<html lang="en" data-wireline-viewport="document">');
     expect(index).toContain('<body data-wireline-viewport="document">');
-    expect(app).toContain('const mode = isWorkspaceRoute(pathname) ? "workspace" : "document"');
+    expect(app).toContain("usesWorkspaceViewport(pathname, Boolean(user))");
+    expect(app).toMatch(/<AuthProvider>[\s\S]*<ViewportModeRoot>/);
     expect(app).toContain("html.dataset.wirelineViewport = mode");
     expect(app).toContain("body.dataset.wirelineViewport = mode");
   });
@@ -47,10 +48,18 @@ describe("public route fallbacks", () => {
       "/email/",
     ]) {
       expect(isWorkspaceRoute(path), path).toBe(true);
+      expect(usesWorkspaceViewport(path, false), `${path} is workspace-owned before auth`).toBe(
+        true,
+      );
     }
     expect(isSessionOptionalPublicPath("/email")).toBe(false);
     expect(isWorkspaceRoute("/totally-unknown")).toBe(false);
+    expect(usesWorkspaceViewport("/totally-unknown", false)).toBe(false);
+    expect(usesWorkspaceViewport("/totally-unknown", true)).toBe(true);
     expect(isWorkspaceRoute("/pricing")).toBe(false);
+    expect(usesWorkspaceViewport("/pricing", true)).toBe(false);
+    expect(usesWorkspaceViewport("/onboarding", true)).toBe(false);
+    expect(usesWorkspaceViewport("/accept-invite", true)).toBe(false);
   });
 
   it("captures the live solution routes rather than the retired personal alias", () => {
