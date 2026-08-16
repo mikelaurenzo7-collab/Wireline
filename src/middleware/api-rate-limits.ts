@@ -261,11 +261,13 @@ export const jobsRateLimit = createRateLimiter({
 
 const JOBS_SWEEP_WINDOW_MS = 15 * 60 * 1000;
 const JOBS_SWEEP_MAX = 20;
+const JOBS_SWEEP_CRON_KEY = "cron:wireline-job-sweep";
 
 /**
  * Rate limiter for POST /api/jobs/sweep only.
- * Manual sweeps key by user id; Vercel cron keys by caller IP (no req.user).
- * Must run after cronOrAdminAuth so `_sweepMode` is set for cron callers.
+ * Manual sweeps key by user id; every Vercel cron invocation shares one global
+ * key so source-IP rotation or a leaked cron credential cannot mint fresh
+ * admission buckets. Must run after cronOrAdminAuth so `_sweepMode` is set.
  * The sweep can enqueue and execute provider-backed work, so limiter outages
  * fail closed rather than turning an infrastructure incident into unbounded
  * queue fan-out.
@@ -279,7 +281,7 @@ export const jobsSweepRateLimit: RateLimitMiddleware = async (req, res, next) =>
   };
   const userId = (req as Request & { user?: { id?: string } }).user?.id;
   const sweepMode = (req as Request & { _sweepMode?: string })._sweepMode;
-  const key = userId ?? (sweepMode === "cron" ? `cron:${req.ip || "anon"}` : null);
+  const key = userId ?? (sweepMode === "cron" ? JOBS_SWEEP_CRON_KEY : null);
   if (!key) {
     res.status(401).json({ error: "Authentication required" });
     return;
