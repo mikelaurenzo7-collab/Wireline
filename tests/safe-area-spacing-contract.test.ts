@@ -49,6 +49,16 @@ describe("safe-area spacing ownership", () => {
     expect(workspace).toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
   });
 
+  it("protects transition surfaces that mount before public or workspace chrome", () => {
+    const ownership = read("src/styles/safe-area-ownership.css");
+    const transition = read("src/components/TransitionSurface.tsx");
+
+    expect(transition).toContain("wl-transition-shell");
+    expect(ownership).toMatch(
+      /\.wl-transition-shell \{[\s\S]*safe-area-inset-top[\s\S]*safe-area-inset-right[\s\S]*safe-area-inset-bottom[\s\S]*safe-area-inset-left/,
+    );
+  });
+
   it("preserves the one-scroller public and form contracts", () => {
     expect(read("src/styles/viewport-first-marketing.css")).toContain(
       "padding-top: var(--wl-marketing-chrome-top);",
