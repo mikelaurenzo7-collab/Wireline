@@ -15,11 +15,18 @@ function canonicalProjectId(): string {
 }
 
 describe("retired client environment sanitizer", () => {
-  it("runs as the first production build module", () => {
+  it("runs through the canonical deployment wrapper", () => {
     const config = JSON.parse(read("vercel.json")) as { buildCommand?: string };
-    expect(config.buildCommand).toMatch(
-      /^node --import \.\/scripts\/sanitize-retired-client-env\.mjs \.\/scripts\/vercel-build\.mjs && /,
+    const deployment = read("scripts/vercel-deploy.mjs");
+
+    expect(config.buildCommand).toBe("node scripts/vercel-deploy.mjs");
+    expect(deployment).toContain('import "./sanitize-retired-client-env.mjs";');
+    expect(deployment).toContain('run(process.execPath, ["scripts/vercel-build.mjs"]);');
+    expect(deployment).toContain(
+      'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"]);',
     );
+    expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
+    expect(deployment).toContain('run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);');
   });
 
   it("removes the retired public key only for canonical production", () => {
