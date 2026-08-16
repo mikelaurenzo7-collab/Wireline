@@ -12,6 +12,7 @@ describe("distributed public health boundary", () => {
     const bridge = read("api/health/public.ts");
     const implementation = read("src/entrypoints/public-health-api.ts");
     const smoke = read("scripts/smoke-public-health-bundle.mjs");
+    const deployment = read("scripts/vercel-deploy.mjs");
     const vercelConfig = JSON.parse(read("vercel.json")) as {
       buildCommand?: string;
       functions?: Record<string, { includeFiles?: string }>;
@@ -25,9 +26,10 @@ describe("distributed public health boundary", () => {
     expect(vercelConfig.functions?.["api/health/public.ts"]?.includeFiles).toBe(
       "dist/public-health-api.cjs",
     );
-    expect(vercelConfig.buildCommand).toContain("src/entrypoints/public-health-api.ts");
-    expect(vercelConfig.buildCommand).toContain("--outfile=dist/public-health-api.cjs");
-    expect(vercelConfig.buildCommand).toContain("scripts/smoke-public-health-bundle.mjs");
+    expect(vercelConfig.buildCommand).toBe("node scripts/vercel-deploy.mjs");
+    expect(deployment).toContain('"src/entrypoints/public-health-api.ts"');
+    expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
+    expect(deployment).toContain('run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);');
     expect(smoke).toContain('require("../dist/public-health-api.cjs")');
     expect(smoke).toContain('typeof handler !== "function"');
     expect(vercelConfig.rewrites).toContainEqual({
