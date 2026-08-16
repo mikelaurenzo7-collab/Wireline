@@ -276,7 +276,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1Tx5Xm8e6If87QKm7rzn3MNS",
+    fallbackPriceId: "price_1Tx5Xm8e6If87QKm7mC84oe8",
     fallbackAnnualPriceId: "price_1Tx5Xs8e6If87QKmGxEvongq",
     lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v6",
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
