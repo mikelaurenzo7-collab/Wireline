@@ -1,390 +1,497 @@
 # Wireline Final Design and Launch Readiness
 
 **Date:** August 16, 2026  
-**Release candidate:** `eecf0b8b83718fe5a852baf44b0f4f65412ed263`  
-**Parent PR:** `#1100` (`claude/wireline-visual-qa-design-hp19br` -> `main`)  
-**Disposition:** **Code/design GO; broad production launch NO-GO; founder-led design-partner release CONDITIONAL GO after the operator gates below.**
+**Validated application head:** `5707de7e2c43999a5c60170907b72ecbe693c634`  
+**Working branch:** `codex/consolidated-landing-launch-readiness-20260816`  
+**Baseline requested by founder:** `e50509d921b9f88aeb36bf1b82b9eebf88cda253`  
+**Disposition:** **Merge GO. Production visual certification pending. Founder-led design-partner launch conditional GO. Broad paid acquisition and cold outbound remain HOLD.**
 
 ## Executive decision
 
-Wireline now has a coherent, restrained, production-grade design system and a protected public-demo runtime. The exact release candidate is Vercel READY and CodeRabbit clean. The landing page is no longer a simulated device shell or a compressed SaaS brochure. It is a purpose-built Wireline product theater with visible navigation, one conversion hierarchy, honest economics, core-channel focus, and illustrative outcome proof.
+Wireline is ready to merge as a coherent release candidate.
 
-The remaining launch risk is not another design rewrite. It is release evidence and business operations:
+The release consolidates public buying content into one continuous landing page, removes public topbar navigation, keeps legal and secondary navigation in the bottom sitemap, preserves fixed viewport ownership for authenticated workspace routes, and corrects the effective font cascade across the web app and ChatGPT widgets.
 
-- production currently serves a known-good rollback commit rather than GitHub `main`;
-- the latest `main` production attempt failed before promotion because a server-only crypto dependency entered the browser graph;
-- the certified release candidate fixes that defect and builds cleanly;
-- no real paid lifecycle or non-demo customer call has been completed;
-- marketing/campaign outbound remains fail-closed until the federal DNC vendor credential exists;
-- manual visual certification of the protected preview is still pending because no available runner could both launch Chromium and reach the protected preview;
-- support mailbox routing, signed email-delivery feedback, carrier account state, backup/PITR, and restore execution need current operator evidence.
+The code, build, route, security, billing, provider, and operational contracts pass. The exact application head is Vercel READY. Current production health is operational.
 
-The safe motion is a controlled 3-5 design-partner certification window, not broad self-serve acquisition, paid media, or cold outbound.
+The remaining work is evidence, not another broad redesign:
 
-## 1. Final design state
+- founder visual QA of the promoted public and authenticated product;
+- one complete live paid subscription lifecycle;
+- one real non-demo customer call and follow-through workflow;
+- support mailbox delivery and response verification;
+- signed Resend delivery-event persistence;
+- backup and restore drill evidence;
+- federal DNC vendor credential before marketing or campaign outbound.
 
-### Landing page
+## 1. Release scope
 
-The final landing experience now provides:
+### Public marketing architecture
 
-- the canonical `Voice agents that get the work done` headline and shared supporting line;
-- visible desktop and mobile navigation;
-- one primary action (`Build Your Voice Agent`), one live-demo action, and one direct pricing path;
-- a deliberate narrative/proof split inside an 86rem desktop rail;
-- concise plan context: `Build free`, `Launch from $19/mo`, `Number included`, and `View Pricing`;
-- a compact `Start With` row for Sales, Service, and All Purpose instead of three competing feature cards;
-- a proprietary Wireline Live console instead of borrowed iOS/device metaphors;
-- three core launch channels only: Voice, Text, and Email;
-- static workflow proof labeled honestly as `Illustrative Workflow`;
-- the line `From first answer to confirmed next step.` and the concrete result `Booked and logged`;
-- no fake `00:42` telemetry, fabricated customer proof, or optional Live Video clutter in the hero;
-- reduced glow, shadow, and decorative intensity;
-- readable microcopy and event labels;
-- copyright and legal wayfinding instead of a repeated closing claim;
-- honest bounded scrolling on short laptops, tablets, and phones rather than clipping content to preserve a screenshot.
+The public experience now uses one main landing document.
 
-### Authenticated product
+- The topbar contains the Wireline mark, Sign In, and Start Free.
+- Public product tabs and the mobile public menu are removed.
+- Solutions, features, pricing, trust, live proof, and conversion paths are part of the landing page.
+- Bottom sitemap links remain available for legal, support, company, developer, vertical, and detailed product routes.
+- The landing page scrolls naturally as a document.
+- Other public pages use document scrolling.
+- Authenticated workspace routes keep bounded viewport and scroll ownership.
+- `/email` remains authenticated.
+- Onboarding remains a focused transitional surface and routes into Studio.
 
-The broader E2E design pass also:
+### Landing information hierarchy
 
-- consolidates workspace height and scrolling ownership;
-- keeps Inbox and route content inside the shared application shell;
-- reduces redundant whitespace across Overview, Settings, Billing, Connections, Approvals, Phone, Live Video, Templates, Team, Compliance, and related routes;
-- normalizes page-frame density, modal overflow, tab geometry, safe-area ownership, and customer-authored casing;
-- raises compressed buying copy to a readable floor;
-- restores useful workflow explanation on Features and Solutions;
-- keeps public and authenticated surfaces on the same Letterpress design language without rewriting tenant business logic.
+The landing presents:
 
-### Visual certification boundary
+1. A concise outcome-led hero.
+2. One primary build action.
+3. One live proof action.
+4. Voice, text, and email as the core channels.
+5. A proprietary Wireline console with illustrative workflow proof.
+6. Solution paths for sales, service, and all-purpose work.
+7. Product capabilities and owner controls.
+8. Honest self-serve pricing from the shared catalog.
+9. Trust, privacy, and operating boundaries.
+10. A compact bottom sitemap.
 
-No fresh manual screenshot signoff is claimed.
+It removes:
 
-- The connected Opera browser was unavailable.
-- The local Chromium runtime launched, but organization policy blocked the protected preview domain.
-- Vercel's build image could not load Chromium because the image lacked `libnspr4.so`.
-- The browser specifications remain mandatory on a runner with Chromium system libraries and protected-preview network access.
-- Release tooling now reports browser infrastructure as `SKIPPED_RUNNER_UNAVAILABLE` instead of misclassifying it as a product failure.
+- duplicated landing-style public pages from the topbar;
+- borrowed phone or operating-system metaphors;
+- fake call duration telemetry;
+- unsupported price claims;
+- decorative eyebrow repetition;
+- optional Live Video clutter from the primary buying story;
+- retired trial, overage, employee, and multi-product language.
 
-Required manual viewports before production promotion:
+### Authenticated product surfaces
 
-- 1440 x 900 desktop;
-- 1365 x 900 desktop;
-- 1280 x 800 short laptop;
-- 1440 x 720 short/wide desktop;
-- 390 x 844 mobile;
-- 360 x 800 mobile.
+The design and contract pass covers the current route map and major nested surfaces:
 
-## 2. Protected public-demo runtime
+- Overview
+- Studio
+- Templates
+- Knowledge
+- Connections
+- Phone and call history
+- Inbox
+- Apps
+- Settings and billing
+- Team
+- Compliance
+- Approvals
+- Insights
+- Admin
+- Salesforce integration
+- onboarding and activation flows
+- create, deploy, trial, and setup dialogs
+- shared tabs, menus, sheets, selectors, notices, loading states, empty states, and error boundaries
 
-The public browser demo is now bounded as a real production feature rather than an exposed reusable provider credential.
+The release preserves application logic while normalizing:
 
-Implemented boundaries:
+- workspace height and scrolling ownership;
+- safe areas and mobile dock clearance;
+- page-frame density;
+- tabs and sub-tabs;
+- modal overflow;
+- responsive card geometry;
+- customer-authored casing;
+- stale authenticated deep links;
+- degraded and unavailable states;
+- minimum touch targets and focus behavior.
 
-- one-use, short-lived Wireline-issued tickets;
-- host, IP fingerprint, agent, and JTI binding;
-- provider access through server-only `VAPI_PRIVATE_KEY`;
-- no `VITE_VAPI_PUBLIC_KEY` launch dependency;
-- 45-second provider ceiling plus a matching client watchdog;
-- distributed admission control that fails closed when the durable limiter is unavailable;
-- per-IP burst/daily and global minute/daily session ceilings;
-- no recording, video recording, packet capture, provider logging, or transcript retention;
-- no real tools, payments, scheduling mutations, owner-routing actions, or external commitments;
-- server availability check before microphone permission;
-- truthful phone fallback with an accessible name and carrier-rate disclosure;
-- readable compact disclosure: `45-second private preview. No retained call artifacts.`
+## 2. Typography correction
 
-## 3. Exact release-candidate evidence
+The reported dull or fuzzy text had multiple verified causes.
+
+### Root causes
+
+- Later CSS requested synthetic weights such as 650 and 720.
+- Those weights were not shipped as static font files.
+- Several live-console and badge labels rendered near 10px or 11px.
+- A terminal visual tier could override earlier marketing typography corrections.
+- Connected ChatGPT widgets repeated the same synthetic-weight and microtype pattern.
+
+### Final type system
+
+Self-hosted fonts remain the source of truth:
+
+- Inter body: 400, 500, 600, 700
+- Inter Tight display: 500, 600, 700, 800
+- IBM Plex Mono labels: 500, 600, 700
+
+The release now enforces:
+
+- no font synthesis;
+- platform text rendering;
+- platform font smoothing;
+- 700 for the public display hero;
+- 600 for shared mono labels;
+- 12px minimum for compact labels;
+- 13px minimum for captions and disclosures;
+- 14px minimum for controls;
+- the same static-weight discipline in ChatGPT widgets;
+- final import order that prevents later design tiers from undoing the type contract.
+
+The executable Clear System checks these rules.
+
+## 3. Exact release evidence
+
+Exact Vercel deployment for the validated application head:
+
+- Deployment ID: `dpl_HTurjNL3FHswyC48knZfDUe73kLP`
+- Preview URL: `wireline-6ded8jben-revaluate.vercel.app`
+- State: READY
+- Application SHA: `5707de7e2c43999a5c60170907b72ecbe693c634`
 
 | Gate | Result |
 | --- | --- |
-| Candidate SHA | `eecf0b8b83718fe5a852baf44b0f4f65412ed263` |
-| Vercel exact-head deployment | READY |
-| CodeRabbit | Success |
-| Clear System contracts | Passed |
-| Full application test suite | Passed |
+| Branch divergence from `main` | 54 ahead, 0 behind |
+| Test files | 99 passed |
+| Tests | 708 passed |
+| Operational-core contract | Passed |
+| Clear System | Passed |
 | Vite production build | Passed |
-| Marketing prerender | 29 route shells written |
+| Modules transformed | 3,148 |
+| Marketing route shells | 29 written |
 | Server import smoke | Passed |
-| ChatGPT MCP bundle | Passed |
 | Public-health bundle smoke | Passed |
-| Review threads | None |
+| Design-token generation | Passed |
+| Vercel deployment | READY |
 | Manual screenshot certification | Pending |
 
-The release candidate's branch alias is:
+### Bundle posture
 
-`wireline-git-claude-wireline-visual-qa-design-hp19br-revaluate.vercel.app`
+| Surface | Raw | Gzip |
+| --- | ---: | ---: |
+| Landing route | 15.44 kB | 4.96 kB |
+| Main application entry | 165.26 kB | 53.17 kB |
+| App shell | 90.86 kB | 28.14 kB |
+| Phone page | 54.96 kB | 15.52 kB |
+| Vapi runtime chunk | 296.22 kB | 77.27 kB |
+| Chart chunk | 363.53 kB | 106.92 kB |
+| Live Video presenter chunk | 466.37 kB | 123.80 kB |
+| Global CSS | 502.75 kB | 68.06 kB |
 
-## 4. Current production truth
+The heavier provider and visualization surfaces remain route split. The landing does not pull them into its route chunk.
 
-### Source/deployment mismatch
+## 4. Visual certification boundary
 
-GitHub `main` currently points to:
+No screenshot-based visual certification is claimed yet.
 
-`17727005bbec4feb388a6bed28ecb2878e3a0ea5`
+During this pass:
 
-That production deployment failed during Vite compilation because the live-video provider membership helper pulled `auth-utils.ts` and `node:crypto` into the browser bundle. The release candidate moves provider membership into a client-safe module and builds cleanly.
+- the browser connector was not attached;
+- the protected preview required Vercel authentication;
+- the available preview fetch could not complete the interactive SSO redirect;
+- the local browser runtime could not reach the protected preview under current network policy.
 
-Production is therefore still serving the known-good rollback commit:
+The next step after merge is founder login through the side-panel browser and live QA of the production build.
 
-`c897d340ae2495403a01398c15ec3f1fec0ee953`
+Required public viewports:
 
-The public health response proves the serving source through `X-Wireline-Source-Commit`.
+- 1440 x 900
+- 1365 x 900
+- 1280 x 800
+- 1440 x 720
+- 390 x 844
+- 360 x 800
 
-### Current production health
+Required authenticated routes:
 
-The serving rollback deployment is operational:
+- `/overview`
+- `/studio`
+- `/templates`
+- `/knowledge`
+- `/connections`
+- `/phone`
+- `/phone?tab=logs`
+- `/inbox`
+- `/apps`
+- `/settings`
+- `/settings/billing`
+- `/settings/team`
+- `/settings/compliance`
+- `/insights`
+- `/admin`
 
-- `/api/health` returns 200 and database health is good;
-- `/api/health/public` reports overall, voice runtime, voice fallback, and reasoning as operational;
-- `/status`, `/pricing`, `/trust`, `/privacy`, `/terms`, `/support`, and `/` return 200;
-- the current serving deployment produced no warning, error, or fatal cluster in the most recent 24-hour log review;
-- the authenticated launch-readiness monitor returned 200 during the review window;
-- unauthenticated 401 responses from the protected readiness route are expected, not incidents.
+Required interaction review:
 
-### Environment correction
+- create agent dialog;
+- deploy agent modal;
+- trial and billing gates;
+- phone activation and agent attachment;
+- settings tabs and nested controls;
+- dropdowns, sheets, selectors, tooltips, menus, and destructive confirmations;
+- mobile workspace navigation;
+- loading, empty, error, and degraded states;
+- long content and modal overflow;
+- keyboard focus and escape behavior.
 
-Initial log noise suggested Upstash was absent. Deeper review proved those messages came from integration fixtures that intentionally strip environment variables. The actual production environment gate did not flag Upstash, and the live public-health probe confirms distributed Redis is operational.
+## 5. Current production health
 
-The genuine deferred environment item is the federal DNC credential.
+Production currently serves the prior known-good release. It has not yet promoted this branch.
 
-## 5. Infrastructure and data security
+Verified on August 16, 2026:
 
-### Vercel and release boundaries
+- `/api/health/public` returned HTTP 200;
+- overall service status was operational;
+- voice runtime was operational;
+- voice fallback was operational;
+- reasoning was operational;
+- `/api/health/voice-status` returned healthy;
+- the reviewed five-minute voice window had zero calls and zero recorded error rates;
+- Vercel reported no production warning, error, or fatal logs in the reviewed 24-hour window;
+- Vercel reported no runtime error cluster in the reviewed 24-hour window.
 
-- production and preview credential isolation is enforced before build/migration work;
-- preview deployments do not run production migrations;
-- production migration execution is journal-bound;
-- browser certification is an explicit runner capability rather than a hidden Vercel assumption;
-- production rollback procedures are documented;
-- GitHub `main` is currently unprotected, which is a release-governance weakness even though PR review is being used operationally.
+A historical Sentry production event on August 9 reported `WL_APP_CLASSES is not defined` on `/phone`. The current branch imports that design-system constant correctly, the production event has not recurred in the current Vercel review window, and the phone route contract passes. The founder session must still exercise `/phone` after promotion.
 
-### Supabase/Postgres
+A development-only August 6 `EADDRINUSE` event is not a production blocker.
 
-Production project status:
+## 6. Live product evidence
 
-- `ACTIVE_HEALTHY`;
-- PostgreSQL 17.6;
-- 49 journaled migrations applied;
-- every public table has RLS enabled and at least one policy;
-- PostgreSQL logs show normal checkpoints and no database error in the reviewed 24-hour window;
-- Supabase API/auth health probes return 200;
-- the only security-advisor finding is Supabase Auth leaked-password protection, which is not Wireline's active custom scrypt/HIBP-screened authentication path;
-- performance advisors report unused indexes only, expected before customer activation.
+Production database snapshot on August 16, 2026:
 
-Backup/PITR status is not exposed by the connected management tools. It must be verified in the Supabase dashboard, and a restore drill must be executed before broad launch. Do not infer backup readiness from database health.
-
-## 6. Production usage and evidence
-
-Live database snapshot:
-
-| Metric | Current evidence |
+| Metric | Evidence |
 | --- | ---: |
 | Users | 136 |
 | Email-verified users | 7 |
-| Workspaces | 137 |
+| Users created in last 30 days | 61 |
+| Accounts | 137 |
+| Organizations | 0 |
+| Memberships | 0 |
 | Agents | 49 |
-| Assigned phone numbers | 17 |
+| Agents created in last 30 days | 19 |
+| Phone numbers | 17 |
+| Phone numbers attached to agents | 17 |
 | Calls | 114 |
 | Demo calls | 114 |
 | Non-demo calls | 0 |
-| Stripe-bound subscriptions | 0 |
+| Calls in last 30 days | 45 |
+| Non-demo calls in last 30 days | 0 |
+| Appointments | 32 |
+| Non-demo appointments | 0 |
+| Knowledge items | 241 |
+| SMS messages | 60 |
+| Email messages | 36 |
 | Connected email accounts | 0 |
+| Connected calendar accounts | 0 |
+| Active CRM connections | 0 |
 | Voice usage events | 0 |
-| Recorded Resend webhook events | 0 |
+| Resend webhook events | 0 |
+| DNC entries | 15 |
 
-Demo-call quality is promising but not full launch proof:
+This is strong dogfood and demo evidence. It is not yet customer production proof.
 
-- approximately 8.5 hours of stored demo calls;
-- average duration about 4.5 minutes;
-- no recorded STT or TTS errors;
-- four pipeline-error records;
-- average QA score about 80;
-- all calls have summaries;
-- 27 calls have structured outcome tags;
-- most legacy calls do not have an ended reason;
-- recorded provider cost remains zero despite the demo volume.
+## 7. Billing and Stripe
 
-This supports controlled dogfooding. It does not prove customer activation, full COGS, retention, or production unit economics.
+### Live Stripe configuration
 
-## 7. Billing and commercial readiness
+Verified live-mode catalog:
 
-### Stripe technical state
+- Starter: $19 monthly, $190 annual
+- Starter Plus: $39 monthly, $390 annual
+- Pro: $79 monthly, $790 annual
 
-Verified live-mode posture:
+The active $159 compatibility product remains in Stripe but is hidden from public pricing and self-serve checkout. The checkout route returns a retired-plan response for that plan.
 
-- charges enabled;
-- payouts enabled;
-- no current account requirements due;
-- one enabled production webhook for `https://trywireline.com/api/stripe-webhook`;
-- customer portal supports payment-method updates, invoice history, customer data updates, end-of-period cancellation, and managed plan changes;
-- portal plan changes are restricted and fingerprinted to Starter, Starter Plus, and Pro;
-- Stripe Tax calculation is enabled;
-- catalog contains the expected $19, $39, and $79 self-serve tiers, extra-agent add-on, Live Video add-on, and prepaid Runtime Balance amounts;
-- the active $159 compatibility price is hidden from public checkout/portal and retained for legacy entitlement resolution.
+Verified live billing infrastructure:
 
-### Commercial evidence still missing
+- account display name is Try Wireline;
+- production webhook is enabled at `/api/stripe-webhook`;
+- webhook events cover checkout, subscriptions, invoices, refunds, disputes, and payment methods;
+- customer portal supports payment method updates, invoice history, customer data updates, and end-of-period cancellation;
+- portal plan changes are constrained to the intended self-serve catalog;
+- privacy and terms URLs are configured;
+- checkout and portal return URLs use the production domain.
 
-- zero live subscriptions;
-- zero PaymentIntents;
-- zero available or pending balance;
-- no completed checkout -> webhook -> entitlement -> portal -> cancellation lifecycle;
-- no active tax registrations;
-- Stripe account is still registered under an individual profile with no company tax ID.
+### Current billing evidence
 
-Self-serve billing remains runtime-closed unless `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` exactly matches the production commit. Set that value only after the final `main` SHA exists and is the intended deployment.
+Stripe currently has zero live subscriptions.
 
-## 8. Voice, messaging, email, and compliance
+Database subscription rows:
 
-### Voice
+- 3 demo Pro entitlements;
+- 1 demo Business Starter entitlement;
+- 1 demo Enterprise entitlement;
+- 1 additional demo row without a plan/status;
+- 1 manual row without a plan/status.
 
-- current production public health reports the primary runtime and fallback operational;
-- protected browser proof is now cost/privacy bounded;
-- no real non-demo customer call has been completed;
-- live provider funding, budgets, alerting, number assignment, retry posture, and carrier dashboards still require operator verification;
-- recorded historical demo COGS is incomplete.
+These are not paid customer subscriptions.
 
-### Messaging and federal DNC
+The database contains:
 
-`FEDERAL_DNC_API_KEY` remains unconfigured pending the external business/vendor credential. Marketing/campaign outbound therefore fails closed by design.
+- 1 open Starter checkout operation created August 16;
+- 1 processed webhook-rotation probe;
+- no completed checkout lifecycle evidence;
+- no production voice usage events.
 
-This does not block an inbound-first design-partner program using:
+Before open self-serve acquisition, complete and record:
+
+1. checkout creation;
+2. payment completion;
+3. signed webhook ingestion;
+4. entitlement activation;
+5. invoice and portal visibility;
+6. plan change;
+7. cancellation at period end;
+8. refund or safe test reversal path;
+9. account state after each event.
+
+`WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` should match the exact promoted production SHA only after founder visual QA and billing certification.
+
+## 8. Voice and carrier readiness
+
+Current production voice health is healthy.
+
+Historical demo-line alerts on July 31 and August 7 reported a timeout while resolving one Marcus assistant. Eight of nine lines were healthy. The current canary includes timeout retry protection, and current voice health reports no active degradation.
+
+The canary verifies Vapi number and assistant wiring plus recent health telemetry. It is not a paid synthetic-call certification.
+
+Before accepting production voice dependence:
+
+- place one inbound non-demo call;
+- place one permitted outbound non-demo call;
+- confirm transcript, summary, outcome, usage, and cost persistence;
+- verify owner handoff;
+- verify failure and retry behavior;
+- verify Twilio funding and number state;
+- verify Vapi funding and provider limits;
+- verify number release and orphan-resource handling;
+- verify monitoring and budget alerts.
+
+## 9. Messaging, email, and compliance
+
+### Messaging
+
+The codebase enforces signed webhooks, consent controls, STOP and HELP behavior, rate limits, retry boundaries, and DNC checks.
+
+`FEDERAL_DNC_API_KEY` remains unavailable. Marketing and campaign outbound must remain fail-closed.
+
+Allowed founder-led pilot motion can focus on:
 
 - inbound calls;
-- missed-call recovery;
-- appointment handling;
-- support;
 - customer-requested follow-up;
-- properly consented non-marketing flows.
+- appointment handling;
+- missed-call recovery;
+- support;
+- consented service communication.
 
-Before production SMS dependence, verify Twilio funding, A2P/toll-free status, STOP/HELP handling, webhook signatures, retry behavior, and number configuration in the live provider dashboard.
+Cold marketing or campaign dialing remains blocked until federal DNC vendor credentials and operating procedures are verified.
 
-### Platform email and support
+### Email
 
-- required production Resend configuration passed the production environment gate;
-- build-time Resend feedback verification passed;
-- the signed webhook receiver, suppression behavior, and rollback path exist;
-- the database currently contains zero recorded Resend delivery events;
-- no connected customer email accounts exist;
-- the support form is fail-closed behind distributed rate limiting and always exposes direct email/phone fallback;
-- no message containing `support@trywireline.com` was found in the connected Gmail account, so mailbox routing and staffing are not independently proven.
+The application contains platform email, customer mailbox, suppression, signed feedback, and fail-closed support controls.
 
-Required tests:
+Current evidence:
 
-1. send a real verification/lifecycle email;
-2. confirm inbox delivery;
+- zero connected customer email accounts;
+- zero recorded Resend webhook events;
+- no customer support tickets found in the connected Gmail review;
+- support addresses and fallbacks are present in product code.
+
+Required operator test:
+
+1. send a verification or lifecycle email;
+2. confirm delivery;
 3. confirm signed Resend webhook persistence;
-4. trigger and verify a bounce/suppression path on a safe test address;
-5. send a message to `support@trywireline.com` from an external account;
-6. confirm receipt, reply identity, and the one-business-day operating process.
+4. verify bounce and suppression behavior using a safe test address;
+5. send an external message to `support@trywireline.com`;
+6. confirm receipt and reply identity;
+7. verify the stated support response process.
 
-## 9. Legal and business operations
+## 10. Supabase and data posture
 
-Public trust, privacy, terms, support, and status surfaces are live. The product has strong technical consent, webhook, tenant-isolation, suppression, deletion, spend, and fail-closed controls.
+Production Supabase status is `ACTIVE_HEALTHY` on PostgreSQL 17.6.
 
-Business-governance work still required before broad commercial launch:
+Verified:
 
-- form/confirm the operating entity and EIN;
-- update Stripe from individual to the correct business profile when legally ready;
-- obtain qualified tax guidance and add registrations when thresholds/jurisdictions require them;
-- confirm the public legal entity name, postal address, and support identity across Stripe, email, terms, invoices, and carrier records;
-- verify appropriate business insurance and customer-contract posture for the target cohort;
-- obtain federal DNC vendor credentials before any marketing/campaign outbound;
-- keep demo/test activity explicitly separate from customer proof.
+- application and API health are good;
+- no current Vercel production database error cluster;
+- API health probes returned 200;
+- auth logs were empty in the reviewed window;
+- performance advisors show unused indexes, which are informational before real traffic;
+- the only security advisor item is leaked-password protection for Supabase Auth, while Wireline uses its own application auth path.
 
-## 10. Monitoring, incident response, and rollback
+Two isolated Postgres query errors requested missing `is_demo` and `plan_id` columns. The actual call-log column is `demo`, and `plan_id` belongs to checkout operations rather than subscriptions. No current application path or Vercel error cluster was found for those queries, so they are classified as audit or probe errors unless runtime evidence proves otherwise.
 
-Present and verified:
+Historical dead jobs:
 
-- public status page;
-- application/database health;
-- public provider health;
-- voice reliability surfaces;
-- Vercel logs and deployment evidence;
-- durable background sweep and daily-brief schedules;
-- nightly demo-line canary posture;
-- written P0-P3 incident procedure;
-- written rollback decision standard;
-- data-integrity/security response procedure.
+- 1 `knowledge_from_url` job on July 22;
+- 4 `purge_old_data` jobs from May 23 to May 28.
 
-Not independently verified:
+There are no pending or running jobs in the reviewed snapshot. The historical rows should remain visible as operational debt, but they do not indicate a current queue outage.
 
-- active Sentry DSN and tested destination/routing rule;
-- external monitor cadence and alert destination;
-- provider-budget alerts;
-- backup/PITR settings and a successful restore drill;
-- founder support/on-call handoff under a simulated incident.
+Backup and PITR settings are not proven by health status. A documented restore drill remains required before broad launch.
 
-## 11. Launch matrix
+## 11. Security and release controls
 
-| Motion | Disposition | Reason |
+The release includes or verifies:
+
+- signed Stripe, Twilio, Vapi, Resend, and managed webhook paths;
+- webhook idempotency and replay boundaries;
+- SSRF and DNS-pinning protections;
+- tenant and account authorization contracts;
+- spend and capacity gates;
+- rate limits and distributed fail-closed behavior;
+- private public-demo tickets and one-use binding;
+- data-deletion and export paths;
+- auth session revocation and deletion gates;
+- preview and production separation;
+- migration journal checks;
+- public health and source-commit identity;
+- no public provider credential requirement for the browser demo;
+- no synthetic font weights in the effective design tier.
+
+Repository governance remains weaker than the product gate if `main` is left unprotected. Apply branch rules when available so production changes require review and successful checks.
+
+## 12. Business readiness
+
+Before broad commercial launch:
+
+- confirm the operating entity and EIN;
+- align legal entity name across Stripe, terms, invoices, email, carrier accounts, and customer contracts;
+- add the correct business tax identity to Stripe when ready;
+- verify tax registrations and filing responsibilities;
+- verify insurance appropriate to the initial customer cohort;
+- document support ownership and incident escalation;
+- complete provider budget and funding checks;
+- complete backup restore evidence;
+- keep demo entitlements and usage separate from customer proof.
+
+## 13. Launch matrix
+
+| Motion | Decision | Basis |
 | --- | --- | --- |
-| Design system and code candidate | **GO** | Exact-head build/review/security gates pass |
-| Merge PR #1100 to `main` | **CONDITIONAL GO** | Requires manual visual signoff and exact release procedure |
-| Promote to production | **NO-GO now** | Current production/main mismatch; operator certification sequence not yet executed |
-| 3-5 founder-led design partners | **CONDITIONAL GO** | Allowed after the first-customer operator checklist below |
-| Open self-serve paid acquisition | **NO-GO** | No live billing lifecycle or customer transaction evidence |
-| Broad public launch / paid media | **NO-GO** | No customer proof, manual visual signoff, restore drill, or live lifecycle evidence |
-| Cold marketing/campaign outbound | **NO-GO** | Federal DNC credential absent; runtime fails closed |
-| Inbound-first / consented design-partner workflows | **CONDITIONAL GO** | Core infrastructure is ready; operator/provider checks remain |
+| Merge this release candidate to `main` | **GO** | Exact application head is READY and all 708 tests pass |
+| Promote the merged tree to production | **GO with immediate smoke** | Production must build from `main` and expose the intended source SHA |
+| Founder side-panel visual QA | **REQUIRED** | Screenshot certification was not possible before merge |
+| 3 to 5 founder-led design partners | **CONDITIONAL GO** | Allowed after live visual, call, support, and provider checks |
+| Open self-serve paid acquisition | **HOLD** | No completed live billing lifecycle |
+| Broad paid media | **HOLD** | No non-demo customer outcomes or paid lifecycle evidence |
+| Cold marketing or campaign outbound | **HOLD** | Federal DNC credential absent |
+| Inbound-first and consented workflows | **CONDITIONAL GO** | Core runtime is healthy; operator certification remains |
 
-## 12. Ordered founder release checklist
+## 14. Merge and production sequence
 
-### A. Visual approval
+1. Create or update the release pull request from `codex/consolidated-landing-launch-readiness-20260816` to `main`.
+2. Confirm branch head and Vercel deployment still match the validated tree.
+3. Merge without introducing unrelated changes.
+4. Let Vercel build production from `main`.
+5. Confirm deployment READY.
+6. Confirm the production source-commit header matches the promoted `main` SHA.
+7. Run public health and voice-health probes.
+8. Confirm no new warning, error, or fatal log cluster.
+9. Founder signs in through the side-panel browser.
+10. Complete public and authenticated visual QA.
+11. Exercise `/phone` and its tabs first because of the historical Sentry event.
+12. Fix only verified production defects.
+13. Re-run the exact gate for any correction.
+14. Complete one live paid lifecycle before enabling open self-serve distribution.
 
-- [ ] Open the exact protected preview on a normal desktop browser.
-- [ ] Review 1440 x 900, 1365 x 900, 1280 x 800, 1440 x 720, 390 x 844, and 360 x 800.
-- [ ] Verify public header, headline wrapping, CTA hierarchy, economics line, work-lane row, console geometry, demo fallback, legal footer, mobile menu, and internal scrolling.
-- [ ] Approve the release candidate without relying on old screenshots or walkthroughs.
+## Final position
 
-### B. Source and production promotion
+Wireline now reflects a deliberate, coherent, industry-grade product and brand system at the code and deployment-contract level.
 
-- [ ] Add/confirm branch protection or repository rules for `main`.
-- [ ] Squash-merge PR #1100 only after visual signoff.
-- [ ] Record the resulting exact `main` SHA.
-- [ ] Configure `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` to that exact SHA only when billing certification is intended.
-- [ ] Keep `WIRELINE_RECONCILE_STRIPE_PORTAL=true` for the production release.
-- [ ] Allow Vercel to build production from `main`; do not promote a preview artifact directly.
-- [ ] Confirm production READY and intended aliases.
-- [ ] Confirm `X-Wireline-Source-Commit` equals the new `main` SHA.
-- [ ] Verify `/api/health`, `/api/health/public`, `/api/health/voice-status`, `/status`, authenticated launch readiness, and fresh production error/fatal logs.
-- [ ] Verify the migration ledger and semantic schema effects after promotion.
-
-### C. First real lifecycle
-
-- [ ] Create a clean founder account and verify its email.
-- [ ] Create the intended workspace and one focused agent.
-- [ ] Train facts, rules, voice, escalation, approval, and handoff posture.
-- [ ] Pass a private test call.
-- [ ] Complete a live paid checkout.
-- [ ] Verify Stripe webhook claim, subscription/entitlement state, portal access, invoice, and cancellation behavior.
-- [ ] Claim or connect the live number.
-- [ ] Complete one real inbound or permitted consented call.
-- [ ] Continue through text/email/booking/approval/handoff where applicable.
-- [ ] Verify transcript, summary, outcome, usage, provider cost, and audit records.
-- [ ] Verify refund/support recovery on a controlled test if applicable.
-
-### D. Provider and operations checks
-
-- [ ] Verify Twilio funding, A2P/toll-free status, STOP/HELP, callback URLs, and number inventory.
-- [ ] Verify Vapi/private runtime funding and budgets.
-- [ ] Verify ElevenLabs budget/alerts and approved voice inventory.
-- [ ] Verify OpenAI and continuity-provider budgets/alerts.
-- [ ] Complete the Resend delivery-feedback and support-inbox tests.
-- [ ] Verify Sentry and external-monitor alert delivery.
-- [ ] Verify Supabase backup/PITR configuration and complete a restore drill.
-- [ ] Run one incident tabletop and one rollback drill against a schema-compatible prior deployment.
-
-### E. Business controls
-
-- [ ] Complete entity/EIN and merchant-profile updates.
-- [ ] Confirm tax-registration posture with qualified advice.
-- [ ] Verify legal entity, postal address, support identity, invoices, and provider records are consistent.
-- [ ] Obtain the federal DNC vendor credential before marketing outbound.
-- [ ] Invite only 3-5 founder-led design partners after the gates above.
-- [ ] Keep paid media, broad acquisition, and fabricated customer proof off until real evidence exists.
-
-## Final disposition
-
-Wireline is technically ready for final visual approval and controlled production certification. It is not yet evidence-ready for a broad commercial launch.
-
-Do not respond to the remaining blockers with another broad refactor. Complete the exact operator sequence, generate real production evidence, and then expand distribution only as the evidence allows.
+The next improvement is not more speculative polish. It is live founder QA and controlled production evidence.
