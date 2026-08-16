@@ -5,12 +5,17 @@ import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import { VAPI_SHOWCASE_MODEL, VAPI_SHOWCASE_PROVIDER } from "../lib/ai-models";
 import { resolveVapiSpeechPipeline } from "../lib/voice-agent-profile";
+import {
+  PUBLIC_BROWSER_DEMO_MAX_SECONDS,
+  PUBLIC_BROWSER_DEMO_REQUESTS_PER_MINUTE,
+  buildPublicBrowserDemoArtifactPlan,
+} from "../lib/public-browser-demo";
 
 const router = Router();
 const assistantRateLimit = createIpRateLimiter({
   bucket: "public_assistant",
   windowMs: 60_000,
-  max: 30,
+  max: PUBLIC_BROWSER_DEMO_REQUESTS_PER_MINUTE,
 });
 
 /** Static marketing counters — no live tenant aggregates (avoids owner-role DB scans). */
@@ -61,6 +66,8 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
   res.json({
     name: `Wireline Showcase — ${agent.name}`,
     firstMessage: agent.firstMessage,
+    maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
+    artifactPlan: buildPublicBrowserDemoArtifactPlan(),
     model: {
       provider: VAPI_SHOWCASE_PROVIDER,
       model: VAPI_SHOWCASE_MODEL,
