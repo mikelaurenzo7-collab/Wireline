@@ -81,7 +81,7 @@ async function main() {
       const covered = new Set(
         entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])),
       );
-      const missingTargets = ["production"].filter((target) => !covered.has(target));
+      const missingTargets = ["production"].filter((t) => !covered.has(t));
       const types = [...new Set(entries.map((entry) => entry.type || "plain"))].join(", ");
       console.log(
         `  ${missingTargets.length ? "△" : "✓"} ${key} — ${types}${
