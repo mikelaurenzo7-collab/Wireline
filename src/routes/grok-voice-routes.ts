@@ -5,7 +5,7 @@ import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
-import { AppError } from "../lib/api-error";
+import { AppError, asyncHandler } from "../lib/api-error";
 import {
   commitRealtimeSessionSpend,
   releaseRealtimeSessionSpendAfterFailure,
@@ -21,10 +21,18 @@ import {
   getOpenAILiveVoiceStatus,
   runOpenAILiveVoiceTool,
 } from "../lib/voice/openai-live-agent-service";
+import { getStudioLiveVoiceStatus } from "../lib/voice/studio-live-test-policy";
+import {
+  createStudioVapiWebSession,
+  proxyStudioVapiWebCall,
+  studioVapiWebTicketingReady,
+  verifyStudioVapiWebTicket,
+} from "../lib/voice/studio-vapi-web-session";
 import liveProfileRouter from "./grok-live-profile-routes";
 
-// Legacy filename retained to avoid route-registry churn. All /api/voice/live/*
-// customer-facing demo traffic is OpenAI Realtime; phone demos remain on Vapi.
+// Legacy filename retained to avoid route-registry churn.
+// Studio live tests default to Vapi web (same xAI brain and voice as PSTN).
+// OpenAI Realtime remains the automatic backup when Vapi is unavailable.
 const router = express.Router();
 const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
@@ -52,6 +60,9 @@ const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),
   sdp: z.string().min(100).max(60_000),
 });
+const webSessionSchema = z.object({
+  agentId: z.string().min(1).max(200),
+});
 const toolSchema = z.object({
   agentId: z.string().min(1).max(200),
   name: z.string().max(80),
@@ -59,6 +70,26 @@ const toolSchema = z.object({
 });
 
 router.use(liveProfileRouter);
+
+function requireStudioVapiWebTicket(
+  req: express.Request,
+  _res: express.Response,
+  next: express.NextFunction,
+) {
+  const authorization = String(req.get("authorization") || "");
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  if (!token) {
+    next(AppError.fromHttpStatus(401, "A live test ticket is required."));
+    return;
+  }
+  const verification = verifyStudioVapiWebTicket(token);
+  if (!verification.ok) {
+    next(AppError.fromHttpStatus(401, "The live test ticket is invalid or expired."));
+    return;
+  }
+  (req as AuthenticatedRequest & { studioVapiWebToken?: string }).studioVapiWebToken = token;
+  next();
+}
 
 router.get(
   "/api/voices/curated/preview",
@@ -82,8 +113,54 @@ router.get(
   authenticateUser,
   statusLimiter,
   async (_req: AuthenticatedRequest, res: Response) => {
-    res.json(getOpenAILiveVoiceStatus());
+    res.json({
+      ...getOpenAILiveVoiceStatus(),
+      ...getStudioLiveVoiceStatus(),
+    });
   },
+);
+
+router.post(
+  "/api/voice/live/web-session",
+  authenticateUser,
+  sessionLimiter,
+  enforceLaunchHardGate,
+  enforceSpendCap,
+  validateBody(webSessionSchema),
+  simulationMinuteQuota,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!studioVapiWebTicketingReady()) {
+      throw AppError.fromHttpStatus(503, "The live phone test is temporarily unavailable.");
+    }
+    const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "live_voice_session");
+    try {
+      const session = await createStudioVapiWebSession({
+        userId: req.user.id,
+        agentId: req.body.agentId,
+      });
+      await commitRealtimeSessionSpend(reservation);
+      res.setHeader("Cache-Control", "no-store");
+      res.json(session);
+    } catch (error) {
+      await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
+      throw error;
+    }
+  },
+);
+
+router.post(
+  "/api/voice/live/vapi/call/web",
+  sessionLimiter,
+  requireStudioVapiWebTicket,
+  asyncHandler(async (req, res) => {
+    const token =
+      (req as AuthenticatedRequest & { studioVapiWebToken?: string }).studioVapiWebToken || "";
+    const upstream = await proxyStudioVapiWebCall(token);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(upstream.status);
+    res.setHeader("Content-Type", upstream.contentType);
+    res.send(upstream.body);
+  }),
 );
 
 router.post(

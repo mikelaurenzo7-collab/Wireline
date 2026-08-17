@@ -21,7 +21,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0150_post_call_digest_job_idempotency.sql`.
+// `drizzle/migrations/0151_xai_grok_46_runtime_defaults.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -145,8 +145,8 @@ export const settings = pgTable("wireline_settings", {
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  voiceLlmProvider: text("voice_llm_provider").default("openai"),
-  voiceLlmModel: text("voice_llm_model").default("gpt-4o"),
+  voiceLlmProvider: text("voice_llm_provider").default("xai"),
+  voiceLlmModel: text("voice_llm_model").default("grok-4.3"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
@@ -359,7 +359,7 @@ export const agents = pgTable(
      *   - Pattern source: Vapi call-control handoff for mid-call voice swaps.
      */
     secondaryVoiceId: text("secondary_voice_id"),
-    voiceProvider: text("voice_provider").default("vapi"),
+    voiceProvider: text("voice_provider").default("xai"),
     /** PSTN line voice when studio voice uses presenter lip-sync. */
     phoneVoiceId: text("phone_voice_id"),
     phoneVoiceProvider: text("phone_voice_provider"),

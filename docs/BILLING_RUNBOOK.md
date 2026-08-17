@@ -20,7 +20,7 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 - Paid tiers include voice minutes, number capacity, and recurring Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
 - Runtime Balance is prepaid overflow. Wireline does not silently create a postpaid voice overage invoice.
 - Extra-agent add-ons include additional capacity and minutes as defined by the catalog.
-- **Live Video is a separate $19/month add-on** for active paid business workspaces: 60 reserved minutes per UTC month, five minutes reserved per session, 300-second provider-session ceiling, and no automatic overage.
+- **Live Video talking-head is retired.** Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed. Video files and clip-script substitutes are not generated.
 - Ops lock: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
 
 ## Required environment
@@ -32,13 +32,7 @@ Minimum self-serve billing variables:
 - `STRIPE_WEBHOOK_SECRET`
 - recurring price ids for public plans in `src/lib/plan-catalog.ts`
 
-To sell Live Video additionally require:
-
-- `LIVEAVATAR_API_KEY`
-- `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` (or the supported monthly alias)
-- `WIRELINE_LIVE_VIDEO_DISABLED` unset or `false`
-
-`HEYGEN_API_KEY` is optional for presenter voice previews and fail-closed presence clips. It is not the LiveAvatar session credential. HeyGen Video Agent (`POST /v3/video-agents`) is prompt-to-MP4 billed on that wallet; do not sell it as Live Video.
+Live talking-head checkout is retired. Do not set LiveAvatar/HeyGen keys to re-enable it. Keep `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` only so leftover subscriptions reconcile.
 
 Do not run catalog writes against production casually. Run the static contract and complete read-only live audit first:
 

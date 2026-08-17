@@ -9,18 +9,16 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents OpenAI as the required primary and xAI as an optional continuity lane", () => {
+  it("presents xAI as the optional-credential primary and OpenAI as required continuity", () => {
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Primary structured runtime, primary Vapi PSTN call model, and optional Realtime voice.",
+      "Continuity structured runtime, Vapi PSTN fallback, and optional Realtime voice.",
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(
-      "Grok structured continuity lane and Wireline Preview voice rendering.",
+      "Grok 4.6 structured primary and Vapi PSTN Grok 4.3 plus xAI voices, plus preview TTS.",
     );
-    // OpenAI stays the managed primary and xAI stays optional: promoting the
-    // lane must never quietly make a second vendor required to launch.
-    expect(source).toContain("OpenAI stays the managed primary");
+    expect(source).toContain("OpenAI remains continuity and Realtime");
     expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);
     expect(compactSource).toMatch(/item\(\s*"xai".{0,500}?, false,/);

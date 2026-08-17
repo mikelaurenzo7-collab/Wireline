@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 11, 2026.
+**Updated:** August 17, 2026.
 
 This document records Wireline's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
@@ -9,42 +9,28 @@ This document records Wireline's intended production provider roles and the evid
 
 | Plane | Primary | Continuity / boundary |
 | --- | --- | --- |
-| Structured reasoning | OpenAI managed structured runtime | Gemini, then Vercel AI Gateway; optional xAI experiment only when explicitly enabled |
-| PSTN orchestration | Vapi | Provider/model fallbacks defined by the managed voice runtime |
+| Structured reasoning | xAI Grok 4.6 managed structured runtime | OpenAI, then Gemini, then Vercel AI Gateway |
+| PSTN orchestration | Vapi | xAI Grok 4.3 call model and xAI voices; OpenAI application-layer fallback |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | ElevenLabs / managed Vapi voices | Curated Vapi fallback per voice |
-| Live browser voice | OpenAI Realtime | Separate from production PSTN orchestration |
+| Live browser voice | Vapi web, same xAI Grok 4.3 + xAI voices as PSTN | OpenAI Realtime automatic backup; ChatGPT widget stays OpenAI |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |
 | Rate limiting / shared cache | Upstash Redis | Production must not rely on per-instance memory limits |
 | Transactional email | Resend | Commercial mail additionally requires a valid postal address |
-| Live Video | LiveAvatar LITE | Wireline owns the agent brain/voice; LiveAvatar is the visual streaming renderer |
+| Live Video | Retired | Identity badges stay. LiveAvatar/HeyGen are not minted. Video files are not generated. |
 
-## Live Video — launch-active add-on
+## Live Video — retired talking-head
 
-Live Video is no longer a paused catalog experiment. The product contract is:
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered (Grok watermark cannot be turned off; AUP forbids stripping it). A later vendor may own real clips. Until then the agent focuses on phone, email, and text.
 
-- **$19/month** recurring add-on on an active paid Wireline workspace.
-- **60 reserved Live Video minutes per UTC month.**
-- Each minted session reserves **5 minutes** atomically before provider token creation.
-- Provider sessions are capped at **300 seconds**.
-- **No automatic overage.** New sessions pause when fewer than five reserved minutes remain.
-- Business agents choose a public presenter through Wireline's authenticated catalog; provider credentials never reach the browser.
-- The Wireline identity badge remains the deterministic fallback outside Live Video.
-- Users can explicitly end a session; the client stops the provider session immediately.
-- `WIRELINE_LIVE_VIDEO_DISABLED=true` is the emergency operator kill switch. The old `WIRELINE_LIVE_VIDEO_CATALOG_READY` launch gate is retired.
+Leftover Stripe Live Video price IDs may still exist so webhooks do not brick billing. App checkout and session mint stay closed.
 
-Required production configuration to offer the add-on:
+- `isLiveVideoCatalogReady()` is always false.
+- `POST /api/billing/live-video-checkout` fails closed.
+- Session, avatar, and enable routes return `410 LIVE_VIDEO_RETIRED`.
 
-- `LIVEAVATAR_API_KEY`
-- `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` (or the supported monthly alias)
-- active Stripe webhook synchronization
-- an active paid base subscription for the tenant
-
-`HEYGEN_API_KEY` is optional for presenter voice previews and a fail-closed presence-clip supply line (HeyGen Video Agent / classic video APIs). It is not the LiveAvatar session credential, and Video Agent spend must not be treated as Live Video minutes.
-
-Provider/account proof is distinct from code readiness. Before advertising Live Video as generally available, verify the production LiveAvatar credential, public avatar inventory, one real five-minute-or-less session, explicit end-session behavior, lip-sync audio, allowance decrement, Stripe checkout → webhook entitlement, cancellation behavior, and the production kill switch.
 
 ## Billing and commercial truth
 

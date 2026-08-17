@@ -12,7 +12,7 @@ import {
   Play,
   PlugZap,
   Sparkles,
-  Video,
+  Badge,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -357,9 +357,15 @@ function AgentSection({
         </span>
       </div>
       <div className="grid min-w-0 gap-2">
-        {agents.map((agent) => (
-          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
-        )).slice(0, OVERVIEW_AGENT_PREVIEW)}
+        {agents
+          .map((agent) => (
+            <CompactAgentRow
+              key={agent.id}
+              agent={agent}
+              phoneLookupDegraded={phoneLookupDegraded}
+            />
+          ))
+          .slice(0, OVERVIEW_AGENT_PREVIEW)}
         {overflowCount > 0 ? (
           <Link
             to="/studio"
@@ -375,16 +381,13 @@ function AgentSection({
           + New {language.singular}
         </Link>
         {kind === "business" ? (
-          // Live Video's only front door used to be inside Studio; give the
-          // paid add-on quiet discovery from the primary surface. The target
-          // page owns the entitlement story, so this row stays truthful for
-          // subscribed and unsubscribed workspaces alike.
+          // Identity: badge only. Live talking-head and clip substitutes are retired.
           <Link
             to="/studio/live-video"
             className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
-            <Video size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Live Video</span>
+            <Badge size={14} className="shrink-0 text-primary" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">Identity</span>
             <ArrowRight
               className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden="true"

@@ -61,22 +61,15 @@ describe("voice catalog", () => {
     expect([...gateCore].sort()).toEqual([...catalogCore].sort());
   });
 
-  it("wires HeyGen presenter voices and matched-face resolution", () => {
-    const heygenService = read("src/lib/video-presenter/heygen-voice-service.ts");
-    const liveAvatarService = read("src/lib/video-presenter/liveavatar-service.ts");
-    expect(heygenService).toContain("listPresenterVoices");
-    expect(heygenService).toContain("resolveAvatarDefaultVoice");
-    expect(heygenService).toContain("process.env.HEYGEN_API_KEY?.trim() || null");
-    expect(heygenService).not.toContain("process.env.LIVEAVATAR_API_KEY");
-    expect(liveAvatarService).toContain("process.env.LIVEAVATAR_API_KEY?.trim() || null");
-    expect(liveAvatarService).not.toContain("process.env.HEYGEN_API_KEY");
-    expect(read("src/lib/video-presenter/heygen-presence-clips.ts")).toContain(
-      "process.env.HEYGEN_API_KEY?.trim() || null",
-    );
-    expect(read("src/lib/video-presenter/heygen-presence-clips.ts")).not.toContain(
+  it("does not wire HeyGen presenter voices after talking-head retirement", () => {
+    expect(read("src/lib/video-presenter/liveavatar-service.ts")).not.toContain(
       "process.env.LIVEAVATAR_API_KEY",
     );
+    expect(read("src/lib/video-presenter/liveavatar-service.ts")).not.toContain(
+      "process.env.HEYGEN_API_KEY",
+    );
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
+    expect(read("src/routes/video-presenter-routes-base.ts")).toContain("throwLiveVideoRetired");
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
     const routes = read("src/routes/grok-voice-routes.ts");
     expect(routes).toContain("/api/voices/curated/preview");

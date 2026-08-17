@@ -43,7 +43,7 @@ import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
-import { pickRotatedVoiceId } from "../data/voice-roster";
+import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   isAgentToolName,
@@ -267,7 +267,7 @@ router.post(
           channel: "voice",
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
-          voiceProvider: "vapi",
+          voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,

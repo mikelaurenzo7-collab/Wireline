@@ -5,37 +5,29 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("live video economics contract", () => {
-  it("keeps the add-on launch-active with an explicit emergency kill switch", () => {
+  it("closes talking-head checkout while keeping leftover Stripe SKU metadata", () => {
     const entitlement = read("src/lib/video-presenter/live-video-entitlements.ts");
     const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
     const routes = read("src/routes/video-presenter-routes-base.ts");
 
-    expect(entitlement).toContain('WIRELINE_LIVE_VIDEO_DISABLED !== "true"');
-    expect(entitlement).not.toContain('WIRELINE_LIVE_VIDEO_CATALOG_READY === "true"');
+    expect(entitlement).toContain("addonOffered: false");
+    expect(entitlement).toContain("return false;");
     expect(manifest).toContain('wireline_catalog_state: "launch_active"');
     expect(manifest).toContain('included_live_video_minutes: "60"');
     expect(manifest).toContain('session_reservation_minutes: "5"');
-    expect(manifest).toContain('overage_policy: "none_pause_at_limit"');
-    expect(routes).toContain("maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS");
-    expect(routes).not.toContain("maxSessionDurationSeconds: 600");
+    expect(routes).toContain("LIVE_VIDEO_RETIRED");
+    expect(routes).not.toContain("mintLiveAvatarSessionToken");
   });
 
-  it("serializes monthly reservations before minting any provider token", () => {
+  it("does not mint a provider token on retired session routes", () => {
     const usage = read("src/lib/video-presenter/live-video-usage.ts");
     const routes = read("src/routes/video-presenter-routes-base.ts");
 
     expect(usage).toContain("drizzle.transaction");
-    expect(usage).toContain("pg_advisory_xact_lock");
     expect(usage).toContain("live_video_reserved_minutes_monthly");
-    expect(usage).toContain(".onConflictDoUpdate");
-    expect(routes).toContain("LIVE_VIDEO_MONTHLY_LIMIT_REACHED");
-
-    const reservation = routes.indexOf("const reservation = await reserveLiveVideoSessionMinutes");
-    const mint = routes.indexOf("await mintLiveAvatarSessionToken", reservation);
-    const release = routes.indexOf("await releaseLiveVideoSessionReservation", mint);
-    expect(reservation).toBeGreaterThan(-1);
-    expect(mint).toBeGreaterThan(reservation);
-    expect(release).toBeGreaterThan(mint);
+    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
+    expect(routes).not.toContain("await mintLiveAvatarSessionToken");
+    expect(routes).not.toContain("reserveLiveVideoSessionMinutes");
   });
 
   it("publishes the same allowance at entitlement and Stripe catalog boundaries", () => {
@@ -103,13 +95,11 @@ describe("live video economics contract", () => {
     const stage = read("src/components/marketing/LiveVideoStage.tsx");
 
     expect(stage).toContain("Math.max(0, value - 1)");
-    expect(stage).not.toContain(
-      "value <= 1 ? LIVE_VIDEO_MAX_SESSION_SECONDS : value - 1",
-    );
+    expect(stage).not.toContain("value <= 1 ? LIVE_VIDEO_MAX_SESSION_SECONDS : value - 1");
     expect(stage).toContain('sessionEnded ? "Paused" : "Live"');
     expect(stage).toContain('sessionEnded ? "Session paused"');
     expect(stage).not.toContain('aria-label="Time left in this session"');
-    expect(stage).toContain('aria-label={`${clock} left in this session');
+    expect(stage).toContain("aria-label={`${clock} left in this session");
   });
 
   it("keeps the retired browser audio bridge deleted", () => {

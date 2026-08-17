@@ -39,11 +39,13 @@ import {
   isCuratedElevenLabsVoiceId,
 } from "./managed-voice-runtime";
 import { sanitizeAmbientNoise } from "./workspace-planner";
+import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "./voice/studio-live-test-policy";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
   agent: { id: string; user_id: string };
   userSettings: any;
+  surface?: "pstn" | "browser_test";
 }
 
 const promptItem = (
@@ -73,11 +75,14 @@ export async function buildVapiAssistant({
   message,
   agent,
   userSettings,
+  surface = "pstn",
 }: AssistantRequestPayload) {
   const agentId = agent.id;
+  const browserTest = surface === "browser_test";
   const isOutbound =
-    message.type === "outboundPhoneCall" ||
-    message.call?.type === "outboundPhoneCall";
+    !browserTest &&
+    (message.type === "outboundPhoneCall" ||
+      message.call?.type === "outboundPhoneCall");
   const [agentRows, directives, knowledge, personalityRows] =
     await drizzle.transaction(async (tx) => {
       // A pg transaction owns one client. Concurrent tx queries are only
@@ -203,6 +208,9 @@ export async function buildVapiAssistant({
       ].join("\n");
   const callSpecificContext = [
     LIVE_CALL_EXECUTION_PROTOCOL,
+    browserTest
+      ? "\n## PRIVATE BROWSER TEST\nThis is a private live test with the account holder. Use the same intelligence and voice as a live phone call. Do not send messages, book, transfer, create records, or change outside systems. Search approved Training when facts are needed.\n"
+      : "",
     personality ? `\n## TONE\n${personality}\n` : "",
     promptItem("OPERATING RULES", directives),
     promptItem("APPROVED TRAINING", knowledge),
@@ -266,7 +274,7 @@ export async function buildVapiAssistant({
   const functionTools = toVapiFunctionTools(
     await buildRoleToolDefsForTenant(
       configured.role || "customer_service",
-      configured.enabledTools,
+      browserTest ? ["search_knowledge_base"] : configured.enabledTools,
       agent.user_id,
       userSettings?.aiTier,
       {
@@ -301,9 +309,11 @@ export async function buildVapiAssistant({
     ...(isOutbound
       ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE }
       : {}),
-    maxDurationSeconds: isOutbound
-      ? VAPI_MAX_OUTBOUND_CALL_SECONDS
-      : VAPI_MAX_INBOUND_CALL_SECONDS,
+    maxDurationSeconds: browserTest
+      ? STUDIO_BROWSER_TEST_MAX_SECONDS
+      : isOutbound
+        ? VAPI_MAX_OUTBOUND_CALL_SECONDS
+        : VAPI_MAX_INBOUND_CALL_SECONDS,
     model: {
       provider: modelSelection.provider,
       model: modelSelection.model,

@@ -1,6 +1,7 @@
 import {
   DEFAULT_MANAGED_VOICE_ID,
   isManagedVapiVoiceId,
+  isXaiPstnVoiceId,
 } from "../data/voice-roster";
 import { ELEVENLABS_CURATED_VOICES, vapiVoiceVersion } from "./voice-catalog";
 
@@ -9,6 +10,7 @@ export const ELEVENLABS_VOICE_CONSENT_VERSION =
   "voice-clone-consent-v3-2026-08-01" as const;
 export const ELEVENLABS_VOICE_QUALITY_VERSION =
   "voice-quality-v1-2026-08-01" as const;
+export const DEFAULT_XAI_PSTN_VOICE_ID = "eve" as const;
 
 const CURATED_ELEVENLABS_IDS = new Set(
   ELEVENLABS_CURATED_VOICES.map((voice) => voice.id),
@@ -41,11 +43,25 @@ export type ManagedVoiceRuntimeInput = {
   fallbackVoiceId?: string | null;
 };
 
+function vapiFallbackVoices(fallbackVoiceId: string) {
+  return [
+    {
+      provider: "vapi" as const,
+      voiceId: fallbackVoiceId,
+      ...(vapiVoiceVersion(fallbackVoiceId)
+        ? { version: vapiVoiceVersion(fallbackVoiceId) }
+        : {}),
+    },
+  ];
+}
+
 /**
  * Build the exact Vapi voice object used by inbound and outbound calls.
- * ElevenLabs is accepted only for the curated catalog or a tenant-owned clone
- * that the database reports as approved. Every external voice carries a
- * different-provider Vapi fallback so a provider incident does not end a call.
+ * xAI Eve/Ara/Rex/Sal/Leo are the managed PSTN default through Vapi's `xai`
+ * voice provider. ElevenLabs is accepted only for the curated catalog or a
+ * tenant-owned clone that the database reports as approved. Every external
+ * voice carries a Vapi fallback so a provider incident does not end a call.
+ * Direct `https://api.x.ai/v1/tts` is never used on this path.
  */
 export function buildManagedVoiceRuntime(input: ManagedVoiceRuntimeInput) {
   const fallbackVoiceId = isManagedVapiVoiceId(input.fallbackVoiceId)
@@ -69,15 +85,24 @@ export function buildManagedVoiceRuntime(input: ManagedVoiceRuntimeInput) {
       speed: clampNumber(input.voiceSpeed, 1, 0.7, 1.2),
       optimizeStreamingLatency: 3,
       fallbackPlan: {
-        voices: [
-          {
-            provider: "vapi" as const,
-            voiceId: fallbackVoiceId,
-            ...(vapiVoiceVersion(fallbackVoiceId)
-              ? { version: vapiVoiceVersion(fallbackVoiceId) }
-              : {}),
-          },
-        ],
+        voices: vapiFallbackVoices(fallbackVoiceId),
+      },
+    };
+  }
+
+  const xaiVoiceId = isXaiPstnVoiceId(voiceId)
+    ? voiceId.trim().toLowerCase()
+    : input.voiceProvider === "xai"
+      ? DEFAULT_XAI_PSTN_VOICE_ID
+      : null;
+  if (xaiVoiceId) {
+    return {
+      provider: "xai" as const,
+      voiceId: xaiVoiceId,
+      language: "en",
+      speed: clampNumber(input.voiceSpeed, 1, 0.7, 1.5),
+      fallbackPlan: {
+        voices: vapiFallbackVoices(fallbackVoiceId),
       },
     };
   }

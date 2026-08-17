@@ -55,6 +55,10 @@ export default function CampaignsPanel() {
   const [agentId, setAgentId] = useState("");
   const [creating, setCreating] = useState(false);
 
+  const [prepSubject, setPrepSubject] = useState("");
+  const [prepBusy, setPrepBusy] = useState(false);
+  const [prepObjective, setPrepObjective] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -82,6 +86,29 @@ export default function CampaignsPanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function runCallPrep() {
+    if (!prepSubject.trim()) return;
+    setPrepBusy(true);
+    try {
+      const res = await authFetch("/api/work-companions/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "call_brief", subject: prepSubject.trim() }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        brief?: { call_objective?: string };
+      };
+      if (!res.ok) throw new Error(body.error || "Could not draft call prep.");
+      setPrepObjective(body.brief?.call_objective || "Call prep is ready for review.");
+      toast.success("Call prep drafted. Review before the next dial.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not draft call prep.");
+    } finally {
+      setPrepBusy(false);
+    }
+  }
 
   async function createCampaign() {
     if (!name.trim()) return;
@@ -228,6 +255,30 @@ export default function CampaignsPanel() {
           {error}
         </div>
       )}
+
+      <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
+        <h3 className="text-sm font-medium">Call prep</h3>
+        <p className="text-xs text-muted-foreground">
+          Your agent drafts a reviewable brief. Nothing is sent or dialed until you launch a
+          campaign.
+        </p>
+        <Input
+          aria-label="Call prep subject"
+          placeholder="Account, person, or offer"
+          value={prepSubject}
+          onChange={(e) => setPrepSubject(e.target.value)}
+        />
+        <ShadButton
+          type="button"
+          size="sm"
+          disabled={prepBusy || !prepSubject.trim()}
+          onClick={() => void runCallPrep()}
+        >
+          {prepBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
+          Draft call prep
+        </ShadButton>
+        {prepObjective ? <p className="text-sm text-foreground">{prepObjective}</p> : null}
+      </div>
 
       {showCreate && (
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">

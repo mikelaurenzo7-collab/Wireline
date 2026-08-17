@@ -83,7 +83,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     requiredInProd: true,
-    description: "Primary managed reasoning and OpenAI Realtime credential",
+    description: "Continuity structured reasoning and OpenAI Realtime credential",
     validate: (value) => value.startsWith("sk-"),
     formatHint: "sk-...",
   },
@@ -107,7 +107,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "xAI credential. Activates the Grok structured continuity lane and Wireline Preview voice rendering; OpenAI stays the managed default",
+      "xAI credential. Activates the Grok 4.6 structured primary and Vapi Grok 4.3 PSTN default; OpenAI remains continuity and Realtime",
     validate: nonEmpty,
   },
   {
@@ -135,7 +135,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "Operator override for the first structured reasoning lane. Unset keeps the managed OpenAI default; the remaining lanes stay as continuity",
+      "Operator override for the first structured reasoning lane. Unset keeps the managed xAI Grok 4.6 default; the remaining lanes stay as continuity",
     // Same acceptance as normalizeReasoningProvider, including the vendor
     // aliases operators actually type — a working config must not be flagged.
     validate: (value) =>
@@ -238,35 +238,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description: "Secret paired with TWILIO_API_KEY for scoped Twilio REST authentication",
     validate: nonEmpty,
-  },
-  {
-    name: "LIVEAVATAR_API_KEY",
-    group: "voice",
-    required: false,
-    description: "LiveAvatar (HeyGen) photoreal video presenter",
-    validate: nonEmpty,
-  },
-  {
-    name: "HEYGEN_API_KEY",
-    group: "voice",
-    required: false,
-    description:
-      "HeyGen Studio API credential for presenter voice previews and fail-closed presence clips (not Live Video sessions)",
-    validate: nonEmpty,
-  },
-  {
-    name: "LIVEAVATAR_DEFAULT_AVATAR_ID",
-    group: "voice",
-    required: false,
-    description:
-      "Ops-only bootstrap UUID for live video add-on previews (not required for core agents)",
-    validate: nonEmpty,
-  },
-  {
-    name: "LIVEAVATAR_SANDBOX",
-    group: "voice",
-    required: false,
-    description: "Force sandbox LiveAvatar sessions (true/false)",
   },
   {
     name: "GOOGLE_CLIENT_ID",
@@ -516,15 +487,16 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const managedRuntime = process.env.OPENAI_API_KEY?.trim() || gateway;
+  const managedRuntime =
+    process.env.XAI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim() || gateway;
   if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
+      var: "XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
       group: "ai",
       message:
-        "Configure the OpenAI managed runtime or Vercel AI Gateway before serving AI requests",
+        "Configure the xAI managed runtime, OpenAI continuity, or Vercel AI Gateway before serving AI requests",
     });
   }
   return result;

@@ -197,131 +197,28 @@ describe("settlement receipts are signed, bound, and single-use", () => {
   });
 });
 
-describe("the session mint hands out a settlement receipt", () => {
+describe("retired talking-head routes do not mint sessions", () => {
   const routes = read("src/routes/video-presenter-routes-base.ts");
-
-  it("signs a receipt bound to the reservation it just took", () => {
-    expect(routes).toContain("signLiveVideoSettlementReceipt({");
-    expect(routes).toContain("reservedMinutes: reservation.reservedMinutes");
-    expect(routes).toContain("creditsPerMinute: engineResolution.creditsPerMinute");
-    expect(routes).toContain("nonce: randomUUID()");
-  });
-
-  it("exposes a settle route that refuses another tenant's receipt", () => {
-    expect(routes).toContain('"/api/agents/:id/video-presenter/session/settle"');
-    expect(routes).toContain("claim.userId !== req.user.id");
-    // An unsettleable receipt is a no-op, never an error thrown at a customer
-    // whose session has already finished.
-    expect(routes).toContain('reason: "receipt_not_settleable"');
-  });
-
-  it("stops telling eligible Starter customers to buy the team plan", () => {
-    expect(routes).not.toContain("upgrade to Starter Plus to stream photoreal presenters");
-    expect(routes).toContain("Available on Starter and above.");
-  });
-});
-
-describe("the stage tells the truth about how a session ended", () => {
   const presenter = read("src/components/LiveVideoPresenter.tsx");
-
-  it("separates the session cap from a fault", () => {
-    expect(presenter).toContain("EXPIRY_MARGIN_SECONDS");
-    expect(presenter).toContain("setExpired(true)");
-    expect(presenter).toContain('reportSessionEnd("expired")');
-    expect(presenter).toContain('"Session complete"');
-    // "Fallback" as the entire explanation of a finished session is gone.
-    expect(presenter).not.toContain("          Fallback\n");
-  });
-
-  it("offers a retry only for a real failure, and names the cost of another session", () => {
-    expect(presenter).toContain(
-      'const actionLabel = expired ? "Start another session" : "Try again"',
-    );
-  });
-
-  it("holds the connecting overlay until a frame has actually painted", () => {
-    expect(presenter).toContain("const markFirstFrame");
-    expect(presenter).toContain('element.addEventListener("playing", markFirstFrame)');
-    expect(presenter).toContain('element.addEventListener("loadeddata", markFirstFrame)');
-    expect(presenter).toContain("{firstFrame ? (");
-  });
-
-  it("gives up on a connection that never arrives instead of spinning forever", () => {
-    expect(presenter).toContain("CONNECT_DEADLINE_MS");
-    expect(presenter).toContain('setFailure("connect_timeout")');
-    expect(presenter).toContain("Could not reach the presenter");
-  });
-
-  it("bounds the lip-sync buffer so a stall cannot dump stale audio", () => {
-    expect(presenter).toContain("MAX_BUFFERED_PCM_BYTES");
-    expect(presenter).toContain("pcmAccumRef.current.slice(-MAX_BUFFERED_PCM_BYTES)");
-  });
-
-  it("reports the outcome exactly once, including on unmount", () => {
-    expect(presenter).toContain("if (endReportedRef.current) return;");
-    expect(presenter).toContain('reportSessionEnd("stopped")');
-  });
-
-  it("announces connection and failure to assistive technology", () => {
-    expect(presenter).toContain('role="status" aria-live="polite"');
-    expect(presenter).toContain('role={expired ? "status" : "alert"}');
-  });
-
-  it("cleans up its first-frame listeners on the element it attached to", () => {
-    expect(presenter).toContain('attachedElement?.removeEventListener("playing", markFirstFrame)');
-    expect(presenter).toContain(
-      'attachedElement?.removeEventListener("loadeddata", markFirstFrame)',
-    );
-  });
-});
-
-describe("the stage spends the allowance honestly", () => {
   const page = read("src/pages/LiveVideoStudioPage.tsx");
+  const service = read("src/lib/video-presenter/liveavatar-service.ts");
 
-  it("asks for the microphone before any allowance is reserved, on every engine", () => {
-    const start = page.slice(page.indexOf("async function startPreview"));
-    const micAt = start.indexOf("navigator.mediaDevices.getUserMedia");
-    const sessionAt = start.indexOf("/video-presenter/session`");
-    expect(micAt).toBeGreaterThan(-1);
-    expect(micAt).toBeLessThan(sessionAt);
-    // The old gate skipped the default engine entirely.
-    expect(start).not.toContain("if (voiceEngine !== DEFAULT_ENGINE) {");
-    expect(page).toContain("No session minutes were used");
+  it("returns 410 instead of signing a settlement receipt", () => {
+    expect(routes).toContain("throwLiveVideoRetired");
+    expect(routes).toContain('"/api/agents/:id/video-presenter/session/settle"');
+    expect(routes).toContain('reason: "live_video_retired"');
+    expect(routes).not.toContain("signLiveVideoSettlementReceipt({");
+    expect(routes).not.toContain("upgrade to Starter Plus to stream photoreal presenters");
   });
 
-  it("settles the reservation when the stage closes and when a session ends itself", () => {
-    expect(page).toContain("async function settleSession(");
-    expect(page).toContain("settledReceiptsRef");
-    expect(page).toContain("await settleSession(closing.live, watched, activeAgentId)");
-    expect(page).toContain("onSessionEnded={");
-  });
-
-  it("settles on every ending, including component cleanup", () => {
-    const handler = page.slice(
-      page.indexOf("onSessionEnded={"),
-      page.indexOf("onSessionEnded={") + 900,
-    );
-    // `stopped` covers unmount — switching agents or navigating away — where no
-    // explicit endPreview runs. Skipping it stopped the provider session while
-    // still charging the tenant the whole reservation.
-    expect(handler).not.toContain('reason !== "stopped"');
-    expect(handler).toContain("void settleSession(session.live, watchedSeconds, activeAgentId)");
-  });
-
-  it("counts the session cap down in the open", () => {
-    expect(page).toContain('role="timer"');
-    expect(page).toContain("left in this\n                            session");
-    // Anchored to a start timestamp, not decremented per tick.
-    expect(page).toContain("const remaining = capSeconds - (Date.now() - startedAt) / 1000");
-  });
-});
-
-describe("the presenter catalog does not bill the vendor per page load", () => {
-  it("caches the global avatar list and de-duplicates concurrent fetches", () => {
-    const service = read("src/lib/video-presenter/liveavatar-service.ts");
-    expect(service).toContain("PUBLIC_AVATAR_CACHE_TTL_MS");
-    expect(service).toContain("publicAvatarInFlight");
-    expect(service).toContain("if (publicAvatarCache && publicAvatarCache.expiresAt > now)");
+  it("renders an identity badge instead of a LiveAvatar stage", () => {
+    expect(presenter).toContain("AgentFace");
+    expect(presenter).not.toContain("@heygen/liveavatar-web-sdk");
+    expect(presenter).not.toContain("abandonedAfterDeadline");
+    expect(page).not.toContain("Draft clip script");
+    expect(page).not.toContain("/video-presenter/session");
+    expect(service).toContain("retired: true");
+    expect(service).not.toContain("PUBLIC_AVATAR_CACHE_TTL_MS");
   });
 });
 
@@ -344,14 +241,6 @@ describe("presenter state is legible", () => {
 });
 
 describe("review-hardening: the fixes Codex found in the first pass", () => {
-  it("stops a session that connects after the stage gave up on it", () => {
-    const presenter = read("src/components/LiveVideoPresenter.tsx");
-    // stop() no-ops while CONNECTING, so a late connection would stay open and
-    // metered behind the failure card after being settled as zero watched time.
-    expect(presenter).toContain("abandonedAfterDeadline = true");
-    expect(presenter).toContain("if (cancelled || abandonedAfterDeadline) await session.stop()");
-  });
-
   it("binds the SMS post-send refresh to the thread that was replied to", () => {
     const sms = read("src/components/SmsThreads.tsx");
     // Reading the ref AFTER the await hands this refresh whichever thread the

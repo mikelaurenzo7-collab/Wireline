@@ -254,8 +254,11 @@ export default function PrivacyPolicyPage() {
                 creation, quality proofs, and voice-model deletion
               </li>
               <li>
-                <strong>OpenAI</strong>: Primary managed AI inference, call models, and realtime
-                voice sessions
+                <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone
+                conversation models (Grok 4.3 plus xAI voices through Vapi)
+              </li>
+              <li>
+                <strong>OpenAI</strong>: Continuity inference and realtime voice sessions
               </li>
               <li>
                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search
@@ -266,9 +269,6 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
                 inference observability
-              </li>
-              <li>
-                <strong>xAI</strong>: Optional experiment infrastructure when explicitly enabled
               </li>
               <li>
                 <strong>Stripe</strong>: Payment processing, billing, and tax calculation
@@ -283,7 +283,8 @@ export default function PrivacyPolicyPage() {
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
               </li>
               <li>
-                <strong>HeyGen and LiveAvatar</strong>: Optional presenter video and voice features
+                <strong>xAI</strong>: Structured reasoning and live-call voices drafted by work
+                companions
               </li>
               <li>
                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics

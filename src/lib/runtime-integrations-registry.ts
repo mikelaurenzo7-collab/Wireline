@@ -49,11 +49,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai",
     "OpenAI",
-    "Primary structured runtime, primary Vapi PSTN call model, and optional Realtime voice.",
+    "Continuity structured runtime, Vapi PSTN fallback, and optional Realtime voice.",
     "ai",
     true,
     ["OPENAI_API_KEY"],
-    "Gemini and the Vercel AI Gateway provide ordered continuity.",
+    "Gemini and the Vercel AI Gateway continue the ordered chain.",
   ),
   item(
     "gemini",
@@ -92,11 +92,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "xai",
     "xAI Grok",
-    "Grok structured continuity lane and Wireline Preview voice rendering.",
+    "Grok 4.6 structured primary and Vapi PSTN Grok 4.3 plus xAI voices, plus preview TTS.",
     "ai",
     false,
     ["XAI_API_KEY"],
-    "Active whenever XAI_API_KEY is configured; OpenAI stays the managed primary. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable.",
+    "Active whenever XAI_API_KEY is configured; OpenAI remains continuity and Realtime. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable.",
   ),
   item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
     "VAPI_PRIVATE_KEY",
@@ -134,24 +134,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "voice",
     false,
     ["OPENAI_API_KEY"],
-  ),
-  item(
-    "liveavatar",
-    "Live video presenter",
-    "Photoreal on-screen agent for business receptionists and embeds (LiveAvatar LITE).",
-    "voice",
-    false,
-    ["LIVEAVATAR_API_KEY", "LIVEAVATAR_DEFAULT_AVATAR_ID"],
-    "Wireline SVG face remains the always-on fallback.",
-  ),
-  item(
-    "heygen",
-    "HeyGen presenter voices",
-    "Presenter voice previews and fail-closed presence-clip capability (Video Agent is prompt-to-MP4, not live video).",
-    "voice",
-    false,
-    ["HEYGEN_API_KEY"],
-    "Requires a HeyGen Studio API key; LiveAvatar credentials are intentionally not reused. Presence-clip minting stays off until per-tenant billing exists.",
   ),
   item(
     "google-workspace",

@@ -5,27 +5,25 @@ import {
   VAPI_OPENAI_FALLBACK_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
-  VAPI_VOICE_FALLBACK_MODEL,
+  VAPI_XAI_FALLBACK_MODEL,
   isDefinitiveVapiVoiceModelRejection,
   resolveVapiVoiceModelSelection,
 } from "../src/lib/ai-models";
 
 /**
  * Managed PSTN / Vapi voice model policy tests.
- * Live browser/mobile voice runs through OpenAI Realtime
- * (`src/lib/voice/openai-live-agent-service.ts` / Studio sandbox).
- * Vapi validates fallbackModels inside the selected provider's model enum, so
- * cross-provider continuity must remain an application retry rather than being
- * encoded inside the provider payload.
+ * Studio live tests use Vapi web with the same Grok 4.3 brain as PSTN.
+ * Vapi's XaiModel DTO rejects fallbackModels, so cross-provider continuity
+ * must remain an application retry rather than being encoded in the payload.
  */
 
 describe("managed PSTN voice model policy", () => {
-  it("keeps OpenAI as primary with a same-provider fallback", () => {
+  it("keeps xAI Grok 4.3 as the Vapi live-call model without XaiModel fallbackModels", () => {
     const selection = resolveVapiVoiceModelSelection();
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
     expect(selection.model).toBe(VAPI_TENANT_DEFAULT_MODEL);
-    expect(selection.fallbackModels).toEqual([VAPI_OPENAI_FALLBACK_MODEL]);
-    expect(selection.fallbackModels?.every((model) => /^gpt-/i.test(model))).toBe(true);
+    expect(selection.fallbackModels).toBeUndefined();
+    expect(VAPI_XAI_FALLBACK_MODEL).toMatch(/grok/i);
   });
 
   it("keeps an explicit native Gemini choice without an invalid OpenAI fallbackModels value", () => {
@@ -55,7 +53,7 @@ describe("managed PSTN voice model policy", () => {
     });
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
     expect(selection.model).toBe(VAPI_TENANT_DEFAULT_MODEL);
-    expect(selection.fallbackModels).toEqual([VAPI_VOICE_FALLBACK_MODEL]);
+    expect(selection.fallbackModels).toBeUndefined();
   });
 
   it("rejects unknown providers and returns to the managed chain", () => {
@@ -64,7 +62,7 @@ describe("managed PSTN voice model policy", () => {
       model: "not a valid model id",
     });
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
-    expect(selection.fallbackModels).toEqual([VAPI_VOICE_FALLBACK_MODEL]);
+    expect(selection.fallbackModels).toBeUndefined();
   });
 
   it("classifies only definitive model/provider validation failures as safe to retry", () => {
@@ -90,16 +88,14 @@ describe("managed PSTN voice model policy", () => {
     expect(isDefinitiveVapiVoiceModelRejection(400, "provider rate limit exceeded")).toBe(false);
   });
 
-  it("retries rejected Gemini outbound models through OpenAI at the application layer", () => {
+  it("retries rejected xAI and Gemini outbound models through OpenAI at the application layer", () => {
     const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
     expect(vapi).toContain("retrying with OpenAI voice fallback");
-    // Cross-provider retry is only safe for a definitive model-validation
-    // rejection. Transient/ambiguous responses must never create a second call.
     expect(vapi).toContain("isDefinitiveVapiVoiceModelRejection(");
     expect(vapi).toContain("await vapiResponse.clone().text()");
     expect(vapi).toContain("!retryTransportErrors");
-    // Whitespace-tolerant: prettier may wrap the fallback expression across lines.
-    expect(vapi).toMatch(/\|\|\s+VAPI_TENANT_DEFAULT_MODEL/);
+    expect(vapi).toContain("voiceSelection.provider === \"xai\"");
+    expect(vapi).toContain("VAPI_VOICE_FALLBACK_MODEL");
     expect(vapi).toContain("delete fallbackPayload.assistant.model.fallbackModels");
   });
 });

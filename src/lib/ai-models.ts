@@ -1,17 +1,31 @@
 /**
  * Wireline model policy.
- * Managed runtime: OpenAI primary for structured reasoning and Vapi call
- * intelligence, with Gemini as the first automatic fallback, the Vercel AI
- * Gateway as the governed multi-model continuity route, and xAI closing the
- * chain whenever XAI_API_KEY is configured. OpenAI remains the launch default;
- * `reasoning-provider-policy.ts` owns eligibility and ordering, including the
- * operator-only promotion of a different lane to primary.
+ *
+ * These are different xAI products and must not be collapsed into one id:
+ *
+ * - **Structured reasoning** uses the xAI Responses API model `grok-4.6`
+ *   (text/image in, text out). That is not a voice model.
+ * - **Live PSTN** uses Vapi. Vapi's published xAI *language* models are
+ *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
+ *   Grok 4.6 is not in that catalog. Live *voice* is a separate Vapi field:
+ *   `voice.provider: "xai"` with Eve/Ara/Rex/Sal/Leo.
+ * - **Studio browser tests** use Vapi web with the same `grok-4.3` language
+ *   model as PSTN. OpenAI Realtime is backup and ChatGPT-widget simulation.
+ * - **Imagine video** exists at xAI as `grok-imagine-video-1.5`. Wireline
+ *   does not generate those files: they include a Grok watermark that cannot
+ *   be turned off. That is not Grok Bot and not live PSTN.
+ *
+ * OpenAI is the first automatic structured continuity lane, then Gemini, then
+ * the Vercel AI Gateway. `reasoning-provider-policy.ts` owns eligibility and
+ * ordering.
  */
 export const XAI_MODELS = {
+  GROK_4_6: "grok-4.6",
   GROK_4_5: "grok-4.5",
-  // Retired 2026-05-15. xAI redirects the old 4.1-fast slug to 4.3, so use
-  // the served model explicitly for predictable behavior and spend records.
+  // Vapi's documented live-call xAI language model (non-reasoning).
   GROK_4_3: "grok-4.3",
+  // Documented xAI video model. Wireline does not generate Imagine files.
+  GROK_IMAGINE_VIDEO: "grok-imagine-video-1.5",
 } as const;
 
 export const OPENAI_MODELS = {
@@ -33,20 +47,20 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
-/** Optional xAI structured model for explicitly enabled experiments. */
+/** Managed structured default through the direct xAI Responses API. */
 export const XAI_STRUCTURED_PRIMARY_MODEL =
-  process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_5;
-/** Managed structured default through the direct OpenAI Responses API. */
+  process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_6;
+/** First automatic continuity lane through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
-/** First automatic fallback if direct OpenAI is unavailable. */
+/** Continuity fallback if direct OpenAI is unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_6;
 
 /** The managed structured default the runtime asks for first. */
-export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL;
 
-export type VapiVoiceProvider = "google" | "openai";
+export type VapiVoiceProvider = "xai" | "google" | "openai";
 export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
 
 export interface VapiVoiceModelSelection {
@@ -67,17 +81,24 @@ export interface VoiceModelOption {
   acceptsCustomModelId?: boolean;
 }
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = "openai" as const;
-export const VAPI_SHOWCASE_PROVIDER = "openai" as const;
-export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_SHOWCASE_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_TENANT_DEFAULT_PROVIDER = "xai" as const;
+export const VAPI_SHOWCASE_PROVIDER = "xai" as const;
+/** Vapi's published xAI live-call language model. Not Grok 4.6. */
+export const VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3;
+export const VAPI_SHOWCASE_MODEL = XAI_MODELS.GROK_4_3;
+export const VAPI_PREMIUM_MODEL = XAI_MODELS.GROK_4_3;
+/**
+ * Same-provider Grok id from Vapi's published xAI catalog.
+ * Do not send this as `model.fallbackModels` on `provider: "xai"` — Vapi's
+ * XaiModel DTO rejects the property. Continuity is application retry to OpenAI.
+ */
+export const VAPI_XAI_FALLBACK_MODEL = "grok-4.20-0309-non-reasoning";
 /** Same-provider fallback accepted by Vapi's OpenAI model schema. */
 export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_5_6_LUNA;
-/** Cross-provider retry is performed by Wireline after a rejected Gemini request. */
+/** Cross-provider retry is performed by Wireline after a rejected xAI or Gemini request. */
 export const VAPI_VOICE_FALLBACK_PROVIDER = "openai" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = VAPI_OPENAI_FALLBACK_MODEL;
-export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_OPENAI_FALLBACK_MODEL];
+export const VAPI_VOICE_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [];
 
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
@@ -124,18 +145,23 @@ export function resolveVapiVoiceModelSelection(input?: {
       // the provider payload.
       userSelected: true,
     };
+  if ((provider === "xai" || provider === "") && isXAIModelId(model))
+    return {
+      provider: "xai",
+      model,
+      userSelected: provider === "xai",
+    };
   if (provider === "openai" && isOpenAIModelId(model))
     return {
       provider: "openai",
       model,
       fallbackModels:
-        model === VAPI_OPENAI_FALLBACK_MODEL ? undefined : [...VAPI_DEFAULT_FALLBACK_MODELS],
+        model === VAPI_OPENAI_FALLBACK_MODEL ? undefined : [VAPI_OPENAI_FALLBACK_MODEL],
       userSelected: false,
     };
   return {
     provider: VAPI_TENANT_DEFAULT_PROVIDER,
     model: VAPI_TENANT_DEFAULT_MODEL,
-    fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
     userSelected: false,
   };
 }
@@ -169,12 +195,20 @@ export function resolveCoherentVoiceModel(
 
 export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   {
+    provider: "xai",
+    model: XAI_MODELS.GROK_4_3,
+    label: "Grok 4.3",
+    speed: "fast",
+    envKey: "XAI_API_KEY",
+    note: "Vapi live-call default. Vapi's XaiModel DTO does not accept fallbackModels; OpenAI retries at the application layer. Structured work uses Grok 4.6 on the xAI API, not this id.",
+  },
+  {
     provider: "openai",
     model: OPENAI_MODELS.GPT_4O,
     label: "OpenAI GPT-4o",
     speed: "fast",
     envKey: "OPENAI_API_KEY",
-    note: "Wireline default. Vapi retries through a same-provider OpenAI fallback.",
+    note: "Continuity lane and Studio Realtime. Vapi retries through a same-provider OpenAI fallback.",
   },
   {
     provider: "google",
@@ -205,6 +239,7 @@ export interface ModelPricingRow {
  * GPT-5.6 cache writes are billed at 1.25x the uncached input rate.
  */
 export const MODEL_PRICING = {
+  [XAI_MODELS.GROK_4_6]: { input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0 },
   [XAI_MODELS.GROK_4_5]: { input: 2, output: 6, cacheRead: 0.3, cacheWrite: 0 },
   [XAI_MODELS.GROK_4_3]: {
     input: 1.25,
@@ -312,6 +347,11 @@ const MODEL_LONG_CONTEXT_PRICING: Partial<Record<keyof typeof MODEL_PRICING, Lon
     inclusive: false,
     rates: { input: 10, output: 45, cacheRead: 1, cacheWrite: 12.5 },
   },
+  [XAI_MODELS.GROK_4_6]: {
+    thresholdTokens: 200_000,
+    inclusive: true,
+    rates: { input: 4, output: 12, cacheRead: 1, cacheWrite: 0 },
+  },
   [XAI_MODELS.GROK_4_5]: {
     thresholdTokens: 200_000,
     inclusive: true,
@@ -347,12 +387,12 @@ export function pricingForModel(model: string, totalInputTokens = 0): ModelPrici
 }
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
- * Route structured work by complexity inside the OpenAI primary lane.
- * Gemini remains the automatic continuity fallback (see ai-client), not a
- * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
- * The tier ladder follows OpenAI's workload guidance: Luna for efficient
+ * Route structured work by complexity inside the OpenAI continuity lane.
+ * The xAI primary remaps non-Grok ids onto Grok 4.6 in `callXAI`. Gemini
+ * remains an automatic continuity fallback (see ai-client), not a complexity
+ * selector. The OpenAI ladder follows workload guidance: Luna for efficient
  * high-volume work, Terra for balanced work, and Sol for complex professional
- * work. Unclassified structured work remains on the managed Terra default.
+ * work.
  */
 export function selectModelForTask(complexity: TaskComplexity): string {
   if (complexity === "simple") return OPENAI_MODELS.GPT_5_6_LUNA;
@@ -363,6 +403,7 @@ export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
   if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";
   if (model === OPENAI_MODELS.GPT_5_6_SOL) return "GPT-5.6 Sol";
+  if (model === XAI_MODELS.GROK_4_6) return "Grok 4.6";
   if (model === XAI_MODELS.GROK_4_5) return "Grok 4.5";
   if (model === XAI_MODELS.GROK_4_3) return "Grok 4.3";
   if (model === OPENAI_MODELS.GPT_5) return "GPT-5";

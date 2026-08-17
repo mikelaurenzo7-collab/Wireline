@@ -53,12 +53,7 @@ export type AgentIdentityPersonaId =
   | "private_operator";
 
 export type VideoPresenterProviderId =
-  | "liveavatar"
-  | "heygen"
-  | "tavus"
-  | "d-id"
-  | "simli"
-  | "synthetic";
+  "liveavatar" | "heygen" | "tavus" | "d-id" | "simli" | "synthetic";
 
 export type AgentIdentityPersona = {
   id: AgentIdentityPersonaId;
@@ -150,16 +145,16 @@ export const VIDEO_PRESENTER_PROVIDERS: Record<
 > = {
   liveavatar: {
     label: "LiveAvatar",
-    surfaceLabel: "Live video",
-    supportsLive: true,
-    consentRequired: true,
+    surfaceLabel: "Identity badge",
+    supportsLive: false,
+    consentRequired: false,
     fallback: "agent_face",
   },
   heygen: {
     label: "HeyGen",
-    surfaceLabel: "Live video",
-    supportsLive: true,
-    consentRequired: true,
+    surfaceLabel: "Identity badge",
+    supportsLive: false,
+    consentRequired: false,
     fallback: "agent_face",
   },
   tavus: {

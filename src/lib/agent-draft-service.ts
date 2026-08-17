@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import * as schema from "../db/schema";
-import { pickRotatedVoiceId } from "../data/voice-roster";
+import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { AppError } from "./api-error";
 import {
   normalizeAgentCustomization,
@@ -177,6 +177,7 @@ export async function createAgentDraft(
       existingCount = Number(count || 0);
       await assertAgentCapacity(tx, principal, existingCount);
 
+      const voiceId = pickRotatedVoiceId(existingCount);
       await tx.insert(schema.agents).values({
         id,
         userId: principal.userId,
@@ -184,8 +185,8 @@ export async function createAgentDraft(
         role: profile.identity.role,
         channel: "voice",
         archetype: ROLE_ARCHETYPES[profile.identity.role],
-        voiceId: pickRotatedVoiceId(existingCount),
-        voiceProvider: "vapi",
+        voiceId,
+        voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
         // them explicitly in Wireline.

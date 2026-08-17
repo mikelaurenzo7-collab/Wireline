@@ -190,11 +190,7 @@ describe("a provider's auth failure is never dressed up as the tenant's", () => 
   });
 
   it("routes all three provider clients through it", () => {
-    for (const path of [
-      "src/lib/video-presenter/liveavatar-service.ts",
-      "src/lib/video-presenter/heygen-voice-service.ts",
-      "src/lib/voice/openai-realtime-service.ts",
-    ]) {
+    for (const path of ["src/lib/voice/openai-realtime-service.ts"]) {
       const source = read(path);
       expect(source).toContain("providerHttpError");
       // The old shape: reuse the provider's status for anything under 500.
@@ -322,24 +318,11 @@ describe("Studio only clears the essentials box when something was stored", () =
 describe("the Live Video SDK is not downloaded by people who never start a session", () => {
   const page = read("src/pages/LiveVideoStudioPage.tsx");
 
-  it("loads the presenter lazily", () => {
-    expect(page).toContain('lazy(() => import("../components/LiveVideoPresenter"))');
-    // Only the type may remain static.
-    expect(page).toContain(
-      'import type { LiveVideoPresenterHandle } from "../components/LiveVideoPresenter"',
-    );
-    expect(page).not.toContain("import LiveVideoPresenter, {");
-  });
-
-  it("warms the chunk alongside the mint so the boundary rarely shows", () => {
-    const start = page.slice(page.indexOf("async function startPreview"));
-    expect(start.slice(0, start.indexOf("setSessionBusy(true)"))).toContain(
-      "warmPresenterBundle()",
-    );
-  });
-
-  it("renders the presenter behind a Suspense boundary", () => {
-    expect(page).toContain("<Suspense fallback={<PresenterLoadingStage />}>");
+  it("does not load a LiveAvatar SDK after talking-head retirement", () => {
+    expect(page).not.toContain("@heygen/liveavatar-web-sdk");
+    expect(page).not.toContain('lazy(() => import("../components/LiveVideoPresenter"))');
+    expect(page).toContain("AgentFace");
+    expect(page).not.toContain("Draft clip script");
   });
 });
 

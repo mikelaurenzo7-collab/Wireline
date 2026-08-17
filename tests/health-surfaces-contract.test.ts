@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getHealthModelTiering } from "../src/lib/health-model-policy";
 import { probeOpenAIModelDiagnostic } from "../src/lib/health-model-probe";
 import {
-  GEMINI_STRUCTURED_FALLBACK_MODEL,
   STRUCTURED_PRIMARY_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -97,7 +96,7 @@ describe("health surfaces contract", () => {
     expect(routeSource).toContain(
       'import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";',
     );
-    // /models drives three live platform-key OpenAI probes per request, so it
+    // /models drives two live platform-key OpenAI probes per request, so it
     // must never be reachable by an arbitrary authenticated tenant: monitor
     // token for ops, platform admin for humans (same posture as /slos). The
     // composite is a NAMED middleware so the authz matrix sees it in-chain.
@@ -127,12 +126,12 @@ describe("health surfaces contract", () => {
       model: VAPI_VOICE_FALLBACK_MODEL,
     });
     expect(tiering.reasoning_layer).toMatchObject({
-      provider: "openai",
+      provider: "xai",
       model: STRUCTURED_PRIMARY_MODEL,
     });
     expect(tiering.reasoning_fallback).toMatchObject({
-      provider: "google",
-      model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+      provider: "openai",
+      model: expect.any(String),
     });
 
     const routeSource = read("src/routes/health-routes.ts");

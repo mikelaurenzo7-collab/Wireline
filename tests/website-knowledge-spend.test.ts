@@ -255,7 +255,7 @@ describe("website knowledge spend reservation", () => {
     expect(deps.settleKnown).toHaveBeenCalledWith(
       expect.objectContaining({
         minimumCostUsd: 0,
-        records: [expect.objectContaining({ provider: "xai", model: "grok-4.5" })],
+        records: [expect.objectContaining({ provider: "xai", model: "grok-4.6" })],
       }),
     );
     expect(deps.release).not.toHaveBeenCalled();

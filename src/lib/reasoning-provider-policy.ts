@@ -2,8 +2,9 @@
  * Governed structured-reasoning provider policy.
  *
  * Wireline runs one managed structured runtime with an ordered continuity
- * chain. OpenAI is the launch default and stays the default here. This module
- * owns two decisions that used to be scattered through `ai-client.ts`:
+ * chain. xAI Grok 4.6 is the launch default whenever `XAI_API_KEY` is
+ * configured. This module owns two decisions that used to be scattered through
+ * `ai-client.ts`:
  *
  * 1. **Which providers are eligible** for a given process, based on configured
  *    credentials plus explicit operator opt-outs.
@@ -17,19 +18,14 @@
  *
  * ## xAI
  *
- * xAI is a real, supported lane on `https://api.x.ai/v1/responses`, not a
- * decorative entry. Historically it required BOTH `XAI_API_KEY` and
- * `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`, so a configured key did
- * nothing on its own and the credential sat idle. That double gate is gone:
- * a configured key now earns xAI a place at the tail of the chain, where it is
- * reached only after OpenAI, Gemini, and the Gateway have each failed. Reaching
- * a working provider is strictly better than returning 503, so this is a
- * continuity improvement, not a default change — the managed default is still
- * OpenAI and xAI never displaces it unless an operator explicitly asks.
+ * xAI is the managed primary on `https://api.x.ai/v1/responses` using Grok 4.6.
+ * A configured key earns xAI the front of the chain. When the key is absent,
+ * eligibility skips xAI and OpenAI becomes first. Reaching a working provider
+ * is strictly better than returning 503.
  *
- * `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` is now tri-state and remains the
- * escape hatch: unset means "on when a key is configured", `false` disables the
- * lane outright, `true` is the historical explicit opt-in and still works.
+ * `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` remains the escape hatch: unset
+ * means "on when a key is configured", `false` disables the lane outright,
+ * `true` is the historical explicit opt-in and still works.
  */
 
 export type ReasoningProviderId = "openai" | "gemini" | "gateway" | "xai";
@@ -48,38 +44,38 @@ export type ReasoningProviderOption = {
  * reached only when the providers before it have failed for this request.
  */
 export const REASONING_PROVIDER_ORDER: readonly ReasoningProviderId[] = [
+  "xai",
   "openai",
   "gemini",
   "gateway",
-  "xai",
 ] as const;
 
-export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "openai";
+export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "xai";
 
 export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
+  {
+    id: "xai",
+    label: "xAI Grok",
+    envKeys: ["XAI_API_KEY"],
+    note: "Managed launch default for structured reasoning (Grok 4.6).",
+  },
   {
     id: "openai",
     label: "OpenAI",
     envKeys: ["OPENAI_API_KEY"],
-    note: "Managed launch default for structured reasoning.",
+    note: "First automatic continuity lane and Studio/ChatGPT Realtime owner.",
   },
   {
     id: "gemini",
     label: "Gemini",
     envKeys: ["GEMINI_API_KEY"],
-    note: "First automatic continuity fallback.",
+    note: "Second automatic continuity fallback.",
   },
   {
     id: "gateway",
     label: "AI Gateway",
     envKeys: ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
     note: "Governed multi-model continuity route.",
-  },
-  {
-    id: "xai",
-    label: "xAI Grok",
-    envKeys: ["XAI_API_KEY"],
-    note: "Active continuity lane whenever XAI_API_KEY is configured. Promotable to primary via WIRELINE_STRUCTURED_PRIMARY_PROVIDER.",
   },
 ] as const;
 
@@ -115,7 +111,7 @@ export function isXAIStructuredLaneEnabled(env: NodeJS.ProcessEnv = process.env)
 
 /**
  * The operator-selected primary lane. Invalid or unset values resolve to the
- * managed OpenAI default, so a typo can never silently move production traffic
+ * managed xAI default, so a typo can never silently move production traffic
  * onto a different vendor.
  */
 export function resolveReasoningPreference(

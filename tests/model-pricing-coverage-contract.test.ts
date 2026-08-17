@@ -79,6 +79,7 @@ describe("model pricing coverage contract", () => {
       cacheRead: 0.2,
       cacheWrite: 2.5,
     });
+    expect(pricingForModel(XAI_MODELS.GROK_4_6, 200_000).input).toBe(4);
     expect(pricingForModel(XAI_MODELS.GROK_4_5, 200_000).input).toBe(4);
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
   });

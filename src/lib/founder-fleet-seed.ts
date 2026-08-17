@@ -10,7 +10,7 @@ import { WIRELINE_PERSONAS } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
 import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities";
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
-import { pickRotatedVoiceId } from "../data/voice-roster";
+import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
 import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
@@ -500,6 +500,7 @@ async function upsertAgent(
       }
     : { founder_fleet_seed: true, team: template.team, seeded_at: new Date().toISOString() };
 
+  const voiceId = pickRotatedVoiceId(voiceIndex);
   const values = {
     userId,
     name: template.name,
@@ -507,8 +508,8 @@ async function upsertAgent(
     channel: template.channel,
     archetype: template.archetype,
     firstMessage: template.firstMessage,
-    voiceId: pickRotatedVoiceId(voiceIndex),
-    voiceProvider: "vapi",
+    voiceId,
+    voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
     enabledTools: toolsJson,
     personalityVibe: template.personalityVibe || "warm",
     emailAgentTone: template.emailAgentTone,

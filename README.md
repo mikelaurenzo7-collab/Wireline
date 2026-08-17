@@ -16,7 +16,7 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 - **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
-- **Live Video - live paid add-on:** optional consent-gated visual presence for eligible paid business workspaces. Availability remains provider-, checkout-, entitlement-, and emergency-kill-switch gated, with a voice fallback when video is unavailable.
+- **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
 Every paid agent includes a **production-number slot**. Wireline provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
 

@@ -307,12 +307,13 @@ record(
   false,
   xai?.ok ? "ready" : "degraded",
   xai?.ok
-    ? "xAI key accepted; optional Grok experiment APIs are reachable."
-    : "Optional xAI layer missing or rejected; launch defaults stay on OpenAI → Gemini → AI Gateway.",
-  "Keep xAI experiment-only. Fund only if WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK is intentionally enabled.",
+    ? "xAI key accepted; Grok 4.6 structured and Vapi Grok 4.3 PSTN defaults are reachable."
+    : "xAI key missing or rejected; launch degrades to OpenAI → Gemini → AI Gateway.",
+  "Fund Grok 4.6 as the structured default and Grok 4.3 as the Vapi PSTN default. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt out.",
   {
-    structured_primary_model: "gpt-5.6-terra",
-    xai_role: "optional_experiment",
+    structured_primary_model: "grok-4.6",
+    vapi_pstn_model: "grok-4.3",
+    xai_role: "managed_primary",
   },
 );
 
@@ -666,33 +667,17 @@ record(
     : "Provide the operator's valid current postal address before enabling lifecycle or marketing email.",
 );
 
-const liveVideoEmergencyDisabled = process.env.WIRELINE_LIVE_VIDEO_DISABLED === "true";
-const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
-const liveVideoPriceConfigured =
-  present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") || present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
-const liveVideoReady =
-  !liveVideoEmergencyDisabled && liveVideoProviderConfigured && liveVideoPriceConfigured;
+const liveVideoRetired = true;
 record(
   "live_video",
   false,
-  liveVideoReady ? "ready" : "degraded",
-  liveVideoReady
-    ? "Live Video provider and $19 add-on price are configured; runtime reserves up to 5 minutes per session against a 60-minute monthly cap."
-    : liveVideoEmergencyDisabled
-      ? "Live Video is intentionally disabled by the operator kill switch."
-      : "Live Video is launch-active in code, but the optional provider or add-on price is not fully configured.",
-  liveVideoReady
-    ? "Maintain provider credits and alerts; no automatic overage is allowed."
-    : liveVideoEmergencyDisabled
-      ? "Remove WIRELINE_LIVE_VIDEO_DISABLED only after the incident or operator hold is cleared."
-      : "Configure LIVEAVATAR_API_KEY and the canonical Live Video price before offering sessions.",
+  "ready",
+  "Live talking-head video is retired. Identity badges remain; phone, email, and text stay on the agent.",
+  "Do not offer LiveAvatar or HeyGen sessions. Keep leftover Stripe Live Video webhooks fail-closed.",
   {
-    operator_disabled: liveVideoEmergencyDisabled,
-    provider_configured: liveVideoProviderConfigured,
-    addon_price_configured: liveVideoPriceConfigured,
-    included_minutes_monthly: 60,
-    session_reservation_minutes: 5,
-    overage_policy: "none_pause_at_limit",
+    retired: liveVideoRetired,
+    companion_video: "not_offered",
+    overage_policy: "none_retired",
   },
 );
 

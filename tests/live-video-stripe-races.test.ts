@@ -330,7 +330,7 @@ describe("Live Video Checkout operation durability", () => {
     ip: "127.0.0.1",
   };
 
-  it("reuses one open Stripe session across repeated checkout requests", async () => {
+  it("refuses talking-head checkout after retirement", async () => {
     const { handler, checkoutCreate, checkoutRetrieve } = await loadLiveVideoCheckoutRoute();
 
     const first = responseRecorder();
@@ -338,45 +338,26 @@ describe("Live Video Checkout operation durability", () => {
     const second = responseRecorder();
     await handler(req, second);
 
+    expect(first.statusCode).toBe(503);
     expect(first.body).toMatchObject({
-      url: "https://checkout.stripe.test/cs_live_video",
-      operation_id: expect.any(String),
+      code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
     });
     expect(second.body).toMatchObject({
-      url: "https://checkout.stripe.test/cs_live_video",
-      reused: true,
-      operation_id: first.body.operation_id,
+      code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
     });
-    expect(checkoutCreate).toHaveBeenCalledTimes(1);
-    expect(checkoutRetrieve).toHaveBeenCalledTimes(1);
-    expect(checkoutCreate.mock.calls[0]?.[1]).toEqual({
-      idempotencyKey: `wireline-live-video-checkout-${first.body.operation_id}`,
-    });
-    expect(checkoutCreate.mock.calls[0]?.[0]).toMatchObject({
-      client_reference_id: req.user.id,
-      metadata: {
-        wireline_user_id: req.user.id,
-        wireline_checkout_operation_id: first.body.operation_id,
-        purpose: "live_video_addon",
-      },
-    });
+    expect(checkoutCreate).not.toHaveBeenCalled();
+    expect(checkoutRetrieve).not.toHaveBeenCalled();
   });
 
-  it("gives simultaneous requests the same durable Stripe idempotency key", async () => {
+  it("does not open Stripe sessions for simultaneous retired checkout requests", async () => {
     const { handler, checkoutCreate } = await loadLiveVideoCheckoutRoute();
     const first = responseRecorder();
     const second = responseRecorder();
 
     await Promise.all([handler(req, first), handler(req, second)]);
 
-    expect(first.body.operation_id).toBe(second.body.operation_id);
-    expect(first.body.url).toBe(second.body.url);
-    expect(checkoutCreate).toHaveBeenCalledTimes(2);
-    const idempotencyKeys = new Set(
-      checkoutCreate.mock.calls.map((call) => call[1]?.idempotencyKey),
-    );
-    expect(idempotencyKeys).toEqual(
-      new Set([`wireline-live-video-checkout-${first.body.operation_id}`]),
-    );
+    expect(first.body.code).toBe("LIVE_VIDEO_CATALOG_UNAVAILABLE");
+    expect(second.body.code).toBe("LIVE_VIDEO_CATALOG_UNAVAILABLE");
+    expect(checkoutCreate).not.toHaveBeenCalled();
   });
 });

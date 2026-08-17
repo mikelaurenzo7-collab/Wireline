@@ -1,8 +1,8 @@
-/* Provider-neutral structured runtime adapter. Direct OpenAI is the managed
- * primary, Gemini provides the first continuity fallback, the Vercel AI Gateway
- * is the governed multi-model route, and direct xAI closes the chain whenever
- * XAI_API_KEY is configured. Eligibility and ordering are owned by
- * `reasoning-provider-policy.ts`; this module owns transport only. */
+/* Provider-neutral structured runtime adapter. Direct xAI Grok 4.6 is the
+ * managed primary, OpenAI provides the first continuity fallback, Gemini is
+ * next, and the Vercel AI Gateway is the governed multi-model route.
+ * Eligibility and ordering are owned by `reasoning-provider-policy.ts`; this
+ * module owns transport only. */
 import { log } from "./server-logger";
 import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
@@ -630,6 +630,7 @@ function nextAvailableProvider(
 }
 
 function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): string {
+  if (from === "xAI" && to === "OpenAI") return "xAI request failed; trying OpenAI fallback";
   if (from === "OpenAI" && to === "Gemini") return "OpenAI request failed; trying Gemini fallback";
   if (from === "Gemini" && to === "AI Gateway")
     return "Gemini request failed; trying AI Gateway fallback";
@@ -641,7 +642,7 @@ function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): st
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure OpenAI, Gemini, xAI, or the AI Gateway.");
+    super("AI runtime is unavailable. Configure xAI, OpenAI, Gemini, or the AI Gateway.");
     this.name = "RuntimeUnavailableError";
   }
 }

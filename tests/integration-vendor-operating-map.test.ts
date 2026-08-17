@@ -71,8 +71,6 @@ describe("integration vendor operating map", () => {
         "twilio",
         "deepgram-flux",
         "openai-realtime",
-        "liveavatar",
-        "heygen",
         "stripe",
         "resend",
         "resend-feedback",
@@ -110,10 +108,12 @@ describe("integration vendor operating map", () => {
     expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
     expect(envValidator).toContain('name: "ELEVENLABS_API_KEY"');
     expect(envValidator).toContain("const managedRuntime");
-    expect(envValidator).toContain("Primary managed reasoning and OpenAI Realtime credential");
-    // xAI is a real continuity lane now, but OpenAI must stay the documented
-    // managed default in the same breath the xAI key is described.
-    expect(envValidator).toContain("OpenAI stays the managed default");
+    expect(envValidator).toContain(
+      "Continuity structured reasoning and OpenAI Realtime credential",
+    );
+    // xAI is the managed primary; OpenAI must stay documented as continuity
+    // in the same breath the xAI key is described.
+    expect(envValidator).toContain("OpenAI remains continuity and Realtime");
     expect(envValidator).toContain('name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER"');
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");

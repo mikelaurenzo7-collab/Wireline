@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { MessageSquareText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 import LiveVoiceSandbox from "./LiveVoiceSandbox";
-import WirelineLiveVoiceProfile from "./WirelineLiveVoiceProfile";
 import { authFetch } from "../lib/api";
 
 type SimulationAllowanceStatus = {
@@ -112,7 +111,6 @@ export default function RoleplaySandbox({
   const [allowanceRefreshTick, setAllowanceRefreshTick] = useState(0);
   return (
     <div className="space-y-4">
-      <WirelineLiveVoiceProfile agentId={agentId} />
       <LiveVoiceSandbox
         agentId={agentId}
         agentName={agentName}

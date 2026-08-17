@@ -89,6 +89,7 @@ import voiceObservabilityRouter from "../routes/voice-observability-routes";
 import insightsRouter from "../routes/insights-routes";
 import pipelineRouter from "../routes/pipeline-routes";
 import dailyBriefRouter from "../routes/daily-brief-routes";
+import workCompanionRouter from "../routes/work-companion-routes";
 import quotaRouter from "../routes/quota-routes";
 import goalsRouter from "../routes/goals-routes";
 import browserHandoffRouter from "../routes/browser-handoff-routes";
@@ -227,6 +228,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(supervisorRouter);
   app.use(insightsRouter);
   app.use(dailyBriefRouter);
+  app.use(workCompanionRouter);
   app.use(pipelineRouter);
   app.use("/api/quotas", quotaRouter);
   app.use("/api/goals", goalsRouter);

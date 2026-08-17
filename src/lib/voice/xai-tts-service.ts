@@ -4,7 +4,7 @@
  * `https://api.x.ai/v1/tts` is a real, supported synthesis endpoint and this is
  * the one place Wireline calls it. It backs two surfaces:
  *
- * - **Browser voice previews** for the Wireline Preview voice family.
+ * - **Browser voice previews** for the built-in Eve/Ara/Rex/Sal/Leo roster.
  * - **Creative renders** (launch reels, campaign voiceover) that want a second
  *   engine alongside ElevenLabs.
  *
@@ -18,12 +18,10 @@
  *
  * ## Boundary
  *
- * This engine is deliberately NOT reachable from live PSTN routing. Vapi
- * publishes no `xai` voice provider, so there is no supported way to name this
- * engine inside a Vapi assistant payload, and inventing one would fail at dial
- * time on a customer's real call. Phone voices stay on the managed Vapi catalog
- * or an approved ElevenLabs voice through Vapi — see `managed-voice-runtime.ts`.
- * Keep that boundary when extending this file.
+ * This direct TTS client is deliberately NOT reachable from live PSTN routing.
+ * Live phone voices use Vapi `voice.provider: "xai"` in
+ * `managed-voice-runtime.ts`. Calling this endpoint from a dial path would
+ * bypass Vapi orchestration. Keep that boundary when extending this file.
  */
 import { AppError } from "../api-error";
 import { log } from "../server-logger";

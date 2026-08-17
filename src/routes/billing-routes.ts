@@ -1114,7 +1114,8 @@ router.post(
       if (!isLiveVideoCatalogReady()) {
         return res.status(503).json({
           code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
-          error: "Live video checkout is paused while the curated Presence Catalog is prepared.",
+          error:
+            "Live talking-head video is retired. Identity badges stay. Phone, email, and text are unaffected.",
         });
       }
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID

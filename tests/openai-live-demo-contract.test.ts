@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("OpenAI/Vapi-only demo architecture", () => {
-  it("keeps OpenAI as the managed structured default", () => {
+  it("keeps xAI Grok 4.6 as the managed structured default", () => {
     const models = read("src/lib/ai-models.ts");
-    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
-    expect(models).not.toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).not.toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
   });
 
   it("routes the generic live-voice API to OpenAI Realtime", () => {
@@ -19,10 +19,15 @@ describe("OpenAI/Vapi-only demo architecture", () => {
     expect(routes).not.toContain("getGrokVoiceStatus");
   });
 
-  it("uses WebRTC in Studio and never the xAI client-secret protocol", () => {
+  it("defaults Studio to Vapi web and never the xAI client-secret protocol", () => {
     const entry = read("src/components/LiveVoiceSandbox.tsx");
+    const vapi = read("src/components/VapiLiveVoiceSandbox.tsx");
     const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    expect(entry).toContain("VapiLiveVoiceSandbox");
     expect(entry).toContain("OpenAILiveVoiceSandbox");
+    expect(vapi).toContain("/api/voice/live/web-session");
+    expect(vapi).not.toContain("xai-client-secret");
+    expect(vapi).not.toContain("api.x.ai");
     expect(sandbox).toContain("new RTCPeerConnection()");
     expect(sandbox).toContain("/api/voice/live/session");
     expect(sandbox).not.toContain("xai-client-secret");
