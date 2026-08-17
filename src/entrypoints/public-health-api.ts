@@ -6,7 +6,7 @@ import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
 import {
   buildPublicHealthPayload,
   probeOpenAIModel,
-  probeVapiManagedVoice,
+  probeXAIVoiceRuntime,
   type PublicHealthLevel,
   type PublicHealthPayload,
   type PublicModelProbe,
@@ -216,12 +216,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    // Vapi owns the managed call runtime and its same-provider model fallback.
-    // Runtime health therefore probes Vapi's authenticated control plane rather
-    // than incorrectly asking Wireline's direct OpenAI key to resolve a model
-    // that Vapi serves. A separate credentialed diagnostic can create, read,
-    // verify, and delete one inert assistant when those credentials are supplied.
-    const managedVoicePromise = probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY);
+    // Native Twilio + xAI owns the managed call runtime. Public health therefore
+    // probes xAI's authenticated model catalog rather than a retired orchestrator
+    // control plane. A GET of /v1/models does not create a call or inference.
+    const managedVoicePromise = probeXAIVoiceRuntime(process.env.XAI_API_KEY);
     const [voice, reasoning] = await Promise.all([
       managedVoicePromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
