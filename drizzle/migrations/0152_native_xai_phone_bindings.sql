@@ -9,7 +9,8 @@
 -- the tenant number in this table, then persists each non-idempotent provider
 -- result as it arrives. This prevents a partial Twilio/xAI/DB failure from
 -- losing the one-time webhook signing secret or registering the same number
--- twice without a durable recovery marker.
+-- twice without a durable recovery marker. A short-lived UUID claim token
+-- prevents concurrent provisioning attempts for the same line.
 
 CREATE TABLE IF NOT EXISTS public.wireline_xai_phone_bindings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -24,6 +25,8 @@ CREATE TABLE IF NOT EXISTS public.wireline_xai_phone_bindings (
   webhook_secret_last_four text,
   status text NOT NULL DEFAULT 'provisioning'
     CHECK (status IN ('provisioning', 'active', 'error', 'retired')),
+  provisioning_token uuid,
+  provisioning_claimed_at timestamptz,
   last_error text,
   activated_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
