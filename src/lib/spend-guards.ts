@@ -110,6 +110,17 @@ export async function getBudgetSnapshot(
   return entry;
 }
 
+/**
+ * Admission decisions that can create provider spend must read the persisted
+ * budget and month-to-date ledger on every attempt. The one-minute cache is a
+ * dashboard/notification optimization only; under serverless concurrency a
+ * cached allowance from another invocation can otherwise admit work after the
+ * hard cap has already been crossed.
+ */
+function getAuthoritativeBudgetSnapshot(userId: string): Promise<BudgetSnapshot> {
+  return getBudgetSnapshot(userId, true);
+}
+
 function bumpBudgetCache(userId: string, deltaUsd: number) {
   const cached = budgetCache.get(userId);
   if (!cached || cached.period !== currentPeriod()) return;
@@ -176,7 +187,7 @@ type AuthedRequest = Request & { user?: { id?: string } };
 
 /** True when a tenant has enabled hard_cap and month-to-date spend meets/exceeds limit. */
 export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
-  const snap = await getBudgetSnapshot(userId);
+  const snap = await getAuthoritativeBudgetSnapshot(userId);
   const status = resolveHardSpendCapStatus(snap);
   if (status === "unavailable") {
     throw new Error("Spend budget is missing or invalid.");
@@ -203,7 +214,7 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
   if (!userId) return next();
 
   try {
-    const snap = await getBudgetSnapshot(userId);
+    const snap = await getAuthoritativeBudgetSnapshot(userId);
     const status = resolveHardSpendCapStatus(snap);
     if (status === "unavailable") {
       log.error("enforceSpendCap found missing or invalid budget", { userId });
