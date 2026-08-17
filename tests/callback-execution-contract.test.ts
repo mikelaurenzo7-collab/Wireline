@@ -66,7 +66,7 @@ describe("caller-requested callbacks execute end-to-end", () => {
     expect(handler).toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
     // ...and intake metadata is stored verbatim, so it must be stripped there
     // or the account holder could assert it over HTTP.
-    expect(intake).toContain("k !== CALLBACK_REQUEST_MARKER");
+    expect(intake).toContain("keyName !== CALLBACK_REQUEST_MARKER");
     // The bulk lead import stores account-holder metadata verbatim too — the
     // same trust boundary, one route over. An imported cold list carrying the
     // marker would dial as consented callbacks after any writer of
