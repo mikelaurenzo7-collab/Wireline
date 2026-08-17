@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 11, 2026.
+**Updated:** August 17, 2026.
 
 This document records Wireline's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
@@ -9,11 +9,11 @@ This document records Wireline's intended production provider roles and the evid
 
 | Plane | Primary | Continuity / boundary |
 | --- | --- | --- |
-| Structured reasoning | OpenAI managed structured runtime | Gemini, then Vercel AI Gateway; optional xAI experiment only when explicitly enabled |
-| PSTN orchestration | Vapi | Provider/model fallbacks defined by the managed voice runtime |
+| Structured reasoning | xAI Grok 4.6 managed structured runtime | OpenAI, then Gemini, then Vercel AI Gateway |
+| PSTN orchestration | Vapi | xAI Grok 4.3 call model and xAI voices; OpenAI application-layer fallback |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | ElevenLabs / managed Vapi voices | Curated Vapi fallback per voice |
-| Live browser voice | OpenAI Realtime | Separate from production PSTN orchestration |
+| Live browser voice | Vapi web, same xAI Grok 4.3 + xAI voices as PSTN | OpenAI Realtime automatic backup; ChatGPT widget stays OpenAI |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |

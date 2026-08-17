@@ -40,11 +40,11 @@ describe("structured runtime policy", () => {
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
     expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(aiModels).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
+      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
     );
     expect(aiModels).toContain("export const XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("openai")');
-    expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("gpt-4o")');
+    expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("xai")');
+    expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("grok-4.3")');
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_MODEL");
     expect(adminSettings).not.toContain('"anthropic"');
@@ -77,10 +77,12 @@ describe("structured runtime policy", () => {
     expect(integrationLogos).not.toMatch(/^\s*anthropic:\s*\{/m);
     expect(integrationLogos).not.toContain("ALL_LOGOS.anthropic");
     expect(integrationLogos).not.toContain('aria-label="Anthropic"');
+    expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'xai'");
+    expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'grok-4.3'");
     expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'openai'");
     expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'gpt-4o'");
     expect(migrationCorpus).toContain("claude-haiku-4-5");
-    expect(migrationJournal).toContain("0083_reassert_openai_voice_defaults");
+    expect(migrationJournal).toContain("0151_xai_grok_46_runtime_defaults");
     expect(existsSync(resolve(root, "src/routes/admin-migrate"))).toBe(false);
     expect(existsSync(resolve(root, "src/routes/admin-operating-routes.ts"))).toBe(false);
     expect(existsSync(resolve(root, "src/routes/admin-purge-accounts-routes.ts"))).toBe(false);

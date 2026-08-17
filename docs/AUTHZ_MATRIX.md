@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 390
-**Protected:** 318
+**Routes scanned:** 393
+**Protected:** 321
 **Public (allowlisted):** 72
 **Violations:** 0
 
@@ -479,4 +479,7 @@
 | webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | permission | — | Protected |
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
+| work-companion-routes.ts | GET | `/api/work-companions` | inline | — | — | Protected |
+| work-companion-routes.ts | POST | `/api/work-companions/apply` | inline | — | — | Protected |
+| work-companion-routes.ts | POST | `/api/work-companions/runs` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |

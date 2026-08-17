@@ -1,12 +1,15 @@
-import { VAPI_CURATED_VOICES } from "../lib/voice-catalog";
+import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../lib/voice-catalog";
 
 /**
  * Managed voice rotation for every Wireline creation surface.
  *
  * Wireline owns the phone-runtime decision. New employees receive a dependable
- * Vapi voice without requiring a separate customer voice-provider account,
- * API key, clone, or presenter configuration.
+ * xAI PSTN voice (Eve/Ara/Rex/Sal/Leo through Vapi) without requiring a
+ * separate customer voice-provider account, API key, clone, or presenter
+ * configuration. Curated Vapi voices remain selectable and stay the fallback.
  */
+const MANAGED_XAI_VOICE_IDS = WIRELINE_LIVE_VOICES.map((voice) => voice.id);
+
 const MANAGED_VOICE_IDS = [
   "Savannah",
   "Elliot",
@@ -25,6 +28,13 @@ const MANAGED_VOICE_ROSTER = MANAGED_VOICE_IDS.map((voiceId) => {
 });
 
 export const DEFAULT_MANAGED_VOICE_ID = MANAGED_VOICE_ROSTER[0].id;
+export const DEFAULT_XAI_VOICE_ID = MANAGED_XAI_VOICE_IDS[0];
+
+export function isXaiPstnVoiceId(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return MANAGED_XAI_VOICE_IDS.some((id) => id === normalized);
+}
 
 /**
  * Runtime acceptance covers the ENTIRE curated Vapi catalog, not just the
@@ -32,7 +42,7 @@ export const DEFAULT_MANAGED_VOICE_ID = MANAGED_VOICE_ROSTER[0].id;
  * all curated voices and the PATCH stores the pick verbatim — when this check
  * only knew the 8 rotation voices, a user who picked Kai/Rohan/Sagar/Godfrey/
  * Naina previewed one voice and every live call silently spoke as Savannah.
- * Rotation (pickRotatedVoiceId) intentionally stays on the smaller pool so
+ * Rotation (pickRotatedVoiceId) intentionally stays on the xAI pool so
  * quick-deploy defaults keep their curated feel.
  */
 export function isManagedVapiVoiceId(value: unknown): value is string {
@@ -46,30 +56,29 @@ export function isManagedVapiVoiceId(value: unknown): value is string {
 
 /**
  * PSTN voice resolution shared by the inbound factory and the outbound client.
- * Studio voices that are not managed Vapi ids (presenter uuids, xAI live-voice
- * ids like "eve"/"ara") fall back to the agent's dedicated phone voice
- * (`agents.phone_voice_id`, defaulted at PATCH time) before the roster
- * default — previously phoneVoiceId was stored and surfaced in the UI but
- * never read at call time, so presenter/live-voice agents always spoke as the
- * default voice on PSTN regardless of their configured pick.
+ * Studio voices that are not managed Vapi or xAI ids (presenter uuids) fall
+ * back to the agent's dedicated phone voice (`agents.phone_voice_id`, defaulted
+ * at PATCH time) before the roster default.
  */
 export function resolvePstnVoiceCandidate(
   studioVoiceId: string | null | undefined,
   phoneVoiceId: string | null | undefined,
 ): string | null | undefined {
+  if (isXaiPstnVoiceId(studioVoiceId)) return studioVoiceId;
   if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;
+  if (isXaiPstnVoiceId(phoneVoiceId)) return phoneVoiceId;
   if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;
   return studioVoiceId;
 }
 
 /**
- * Deterministically distribute built-in voices across a tenant's employees.
- * The function name remains stable because web, mobile, MCP, and seed paths all
- * call it. Its output is now exclusively compatible with provider `vapi`.
+ * Deterministically distribute built-in xAI PSTN voices across a tenant's
+ * employees. The function name remains stable because web, mobile, MCP, and
+ * seed paths all call it. Its output is compatible with provider `xai`.
  */
 export function pickRotatedVoiceId(existingAgentCount: number): string {
   if (!Number.isFinite(existingAgentCount) || existingAgentCount < 0) {
-    return DEFAULT_MANAGED_VOICE_ID;
+    return DEFAULT_XAI_VOICE_ID;
   }
-  return MANAGED_VOICE_ROSTER[Math.floor(existingAgentCount) % MANAGED_VOICE_ROSTER.length].id;
+  return MANAGED_XAI_VOICE_IDS[Math.floor(existingAgentCount) % MANAGED_XAI_VOICE_IDS.length];
 }

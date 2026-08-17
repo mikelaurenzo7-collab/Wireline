@@ -12,24 +12,20 @@ describe("production voice runtime policy", () => {
     expect(policy).toContain("Every ElevenLabs voice has a curated Vapi fallback");
   });
 
-  it("labels legacy xAI preview voices as preview-only, not production runtime", () => {
+  it("labels built-in xAI voices as live PSTN through Vapi, not direct TTS", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     const preview = read("src/lib/voice/voice-preview-service.ts");
 
-    expect(catalog).toContain("Legacy curated preview voices for browser auditioning only");
-    expect(catalog).toContain("production PSTN voice engine");
-    expect(catalog).toContain("Wireline Preview");
+    expect(catalog).toContain("Built-in xAI voices for live PSTN");
+    expect(catalog).toContain("voice.provider: \"xai\"");
     expect(catalog).not.toContain("low-latency realtime speech (xAI Grok)");
     expect(preview).toContain("Browser audio samples");
     expect(preview).toContain("never participates in live call routing");
 
-    // The xAI TTS engine is a real render path, so the PSTN boundary has to be
-    // stated where the engine lives — not only where the preview calls it.
     const xaiTts = read("src/lib/voice/xai-tts-service.ts");
     expect(xaiTts).toContain("NOT reachable from live PSTN routing");
-    // Comment reflow must not be able to erase the reason for the boundary.
     expect(xaiTts.replace(/\s*\n\s*\*?\s*/g, " ")).toContain(
-      "Vapi publishes no `xai` voice provider",
+      "Live phone voices use Vapi `voice.provider: \"xai\"`",
     );
   });
 

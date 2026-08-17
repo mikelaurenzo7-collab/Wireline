@@ -36,6 +36,8 @@ const AUTH_MIDDLEWARE = [
   // Route-local composite gate on /api/jobs/sweep (src/routes/job-routes.ts):
   // timing-safe CRON_SECRET bearer OR authenticated owner/admin.
   "cronOrAdminAuth",
+  // Studio Vapi web proxy: HMAC live-test ticket, not a session cookie.
+  "requireStudioVapiWebTicket",
 ];
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [

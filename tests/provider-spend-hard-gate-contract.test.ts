@@ -40,6 +40,11 @@ describe("provider spend launch kill switch", () => {
     );
     expectMiddlewareBeforeHandler(
       liveVoice,
+      '"/api/voice/live/web-session"',
+      "async (req: AuthenticatedRequest, res: Response)",
+    );
+    expectMiddlewareBeforeHandler(
+      liveVoice,
       '"/api/voices/curated/preview"',
       "async (req: AuthenticatedRequest, res: Response)",
     );

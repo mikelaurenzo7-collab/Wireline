@@ -328,9 +328,15 @@ describe("the retention purge deletes event data, never live configuration", () 
         tag: "0149_retention_purge_fails_closed",
       }),
     );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 48,
+        tag: "0150_post_call_digest_job_idempotency",
+      }),
+    );
     expect(journal.entries.at(-1)).toMatchObject({
-      idx: 48,
-      tag: "0150_post_call_digest_job_idempotency",
+      idx: 49,
+      tag: "0151_xai_grok_46_runtime_defaults",
     });
   });
 });

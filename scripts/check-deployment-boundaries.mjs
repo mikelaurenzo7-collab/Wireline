@@ -37,9 +37,12 @@ if (isProduction) {
   requireValue("MCP_OAUTH_TOKEN_PEPPER", "MCP OAuth tokens cannot be hashed safely");
   requireValue(
     "OPENAI_API_KEY",
-    "the primary managed structured runtime and OpenAI Realtime sessions are missing",
+    "the continuity structured runtime and OpenAI Realtime sessions are missing",
   );
-  // XAI_API_KEY is optional experiment-only; never a production launch requirement.
+  // XAI_API_KEY is the managed Grok 4.6 structured primary when configured;
+  // Vapi PSTN uses Grok 4.3. OpenAI remains required in production for
+  // continuity and Realtime. Never treat xAI as a hard production launch
+  // requirement so a missing key degrades to OpenAI.
   requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
   requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");

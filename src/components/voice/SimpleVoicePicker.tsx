@@ -2,20 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, MessageCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
-import { normalizeApiVoices, VAPI_CURATED_VOICES, type VoiceOption } from "../../lib/voice-catalog";
+import { normalizeApiVoices, VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import { StatusNotice } from "../molecules";
 import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
 
-const RECOMMENDED_VOICE_IDS = [
-  "Savannah",
-  "Elliot",
-  "Emma",
-  "Clara",
-  "Nico",
-  "Sid",
-  "Layla",
-  "Neil",
-] as const;
+const RECOMMENDED_VOICE_IDS = ["eve", "ara", "rex", "sal", "leo"] as const;
 
 type SimpleVoicePickerProps = {
   agentId: string;
@@ -38,13 +29,18 @@ type VoiceLibraryResponse = {
 };
 
 export default function SimpleVoicePicker({ agentId, agentName, onTest }: SimpleVoicePickerProps) {
-  const includedVoices = useMemo(
-    () =>
-      RECOMMENDED_VOICE_IDS.map((id) => VAPI_CURATED_VOICES.find((voice) => voice.id === id))
-        .filter((voice): voice is VoiceOption => Boolean(voice))
-        .map((voice) => ({ ...voice, provider: "vapi" as const })),
-    [],
-  );
+  const includedVoices = useMemo(() => {
+    const xaiVoices = RECOMMENDED_VOICE_IDS.map((id) =>
+      WIRELINE_LIVE_VOICES.find((voice) => voice.id === id),
+    )
+      .filter((voice): voice is VoiceOption => Boolean(voice))
+      .map((voice) => ({ ...voice, provider: "xai" as const }));
+    const vapiVoices = ["Savannah", "Elliot"]
+      .map((id) => VAPI_CURATED_VOICES.find((voice) => voice.id === id))
+      .filter((voice): voice is VoiceOption => Boolean(voice))
+      .map((voice) => ({ ...voice, provider: "vapi" as const }));
+    return [...xaiVoices, ...vapiVoices];
+  }, []);
   const [studioVoices, setStudioVoices] = useState<VoiceOption[]>([]);
   const [privateVoices, setPrivateVoices] = useState<PrivateVoice[]>([]);
   const [studioConfigured, setStudioConfigured] = useState(false);
@@ -263,7 +259,8 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Browser tests the words. Place a real call to verify the selected audio.
+        Browser tests use this same voice and live-call intelligence. There is no separate test
+        brain.
       </p>
 
       {notice ? (

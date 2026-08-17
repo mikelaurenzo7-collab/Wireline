@@ -70,10 +70,9 @@ describe("public showcase truth guard", () => {
       expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
       expect(prompt).not.toContain("HIPAA-aware tone");
 
-      expect(model.provider).toBe("openai");
-      expect(model.fallbackModels).toEqual(["gpt-5.6-luna"]);
-      expect(model.fallbackModels?.every((candidate) => /^gpt-/i.test(candidate))).toBe(true);
-      expect(model.fallbackModels).not.toContain(model.model);
+      expect(model.provider).toBe("xai");
+      expect(model.model).toBe("grok-4.3");
+      expect(model.fallbackModels).toBeUndefined();
 
       if (kind === "demo") {
         expect(prompt).not.toMatch(/have someone follow up/i);
@@ -148,6 +147,19 @@ describe("public showcase truth guard", () => {
         fallbackModels: ["gemini-2.5-flash", "gpt-4o"],
       }),
     );
+    expect(modelFrom(guarded).fallbackModels).toBeUndefined();
+  });
+
+  it("strips fallbackModels from xAI showcase payloads", () => {
+    const guarded = sanitizeShowcaseAssistantPayload(
+      markedPayload({
+        provider: "xai",
+        model: "grok-4.3",
+        fallbackModels: ["grok-4.20-0309-non-reasoning", "gpt-4o"],
+      }),
+    );
+    expect(modelFrom(guarded).provider).toBe("xai");
+    expect(modelFrom(guarded).model).toBe("grok-4.3");
     expect(modelFrom(guarded).fallbackModels).toBeUndefined();
   });
 });

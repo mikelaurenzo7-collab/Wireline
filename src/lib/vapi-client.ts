@@ -52,16 +52,13 @@ import {
   VAPI_VOICEMAIL_DETECTION_PLAN,
 } from "./voice-agent-profile";
 import {
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
+  VAPI_VOICE_FALLBACK_MODEL,
   VAPI_VOICE_FALLBACK_PROVIDER,
   clampVoiceTemperature,
   isDefinitiveVapiVoiceModelRejection,
-  isGeminiModelId,
-  isOpenAIModelId,
   resolveCoherentVoiceModel,
 } from "./ai-models";
-import { phoneSuffixForLog } from "./twilio-webhook-privacy";
+import { loadWorkCompanionCallPrep } from "./work-companion-runtime";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
@@ -460,6 +457,7 @@ export async function placeOutboundCall(opts: {
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
 
+  const callPrep = await loadWorkCompanionCallPrep(userId, dialNumber);
   const systemPrompt = `
 ## IDENTITY & OUTBOUND MISSION
 You are ${agentConfig.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, " ")} specialist making an outbound call.
@@ -487,6 +485,7 @@ ${archetypeRules}
 ## ⚡ OUTBOUND CALL OBJECTIVE, EXECUTE THIS
 You are calling ${customerName || "a customer"}.
 Objective: ${context || "Check in and offer assistance."}
+${callPrep ? `\n${callPrep}\n` : ""}
 Execute this objective naturally, integrate it into the conversation, don't read it like a script.
 
 ${agentConfig.websiteUrl ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.websiteUrl}. For detailed specs, pricing pages, or information not in your knowledge base, direct the contact here or offer to send the link by email.` : ""}
@@ -723,24 +722,20 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
 
     if (
       !vapiResponse.ok &&
-      voiceSelection.provider === "google" &&
+      (voiceSelection.provider === "google" || voiceSelection.provider === "xai") &&
       isDefinitiveVapiVoiceModelRejection(vapiResponse.status, await vapiResponse.clone().text())
     ) {
-      const geminiErrorBody = await vapiResponse.text();
-      const retryModel =
-        voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||
-        VAPI_TENANT_DEFAULT_MODEL;
-      const retryProvider = isGeminiModelId(retryModel)
-        ? VAPI_VOICE_FALLBACK_PROVIDER
-        : VAPI_TENANT_DEFAULT_PROVIDER;
-      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback", {
+      const rejectedErrorBody = await vapiResponse.text();
+      const retryProvider = VAPI_VOICE_FALLBACK_PROVIDER;
+      const retryModel = VAPI_VOICE_FALLBACK_MODEL;
+      log.warn("Vapi rejected outbound model; retrying with OpenAI voice fallback", {
         userId,
         agentId,
         customerNumber,
         model: voiceSelection.model,
         retryProvider,
         retryModel,
-        error: geminiErrorBody.slice(0, 500),
+        error: rejectedErrorBody.slice(0, 500),
       });
 
       const fallbackPayload = {

@@ -271,7 +271,7 @@ describe("authenticated agent flow", () => {
     // template personality — the create route must actually store them.
     expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
     expect(routes).toContain("isManagedVapiVoiceId(requestedVoiceId)");
-    expect(routes).toContain('voiceProvider: "vapi"');
+    expect(routes).toContain('voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi"');
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");

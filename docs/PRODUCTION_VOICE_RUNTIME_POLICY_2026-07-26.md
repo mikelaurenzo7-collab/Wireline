@@ -6,14 +6,14 @@ Status: **Active launch policy**
 
 | Surface              | Production path                                                                                        | Policy                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Phone calls          | Twilio carrier → Vapi orchestration → Deepgram STT → OpenAI/Gemini call model → Vapi or ElevenLabs TTS | ElevenLabs uses `eleven_flash_v2_5` through Vapi. Every ElevenLabs voice has a curated Vapi fallback. |
-| Browser/mobile voice | OpenAI Realtime WebRTC                                                                                 | No ElevenLabs key or direct provider request reaches the browser.                                     |
+| Phone calls          | Twilio carrier → Vapi orchestration → Deepgram STT → xAI Grok 4.3 call model → xAI or ElevenLabs TTS | xAI voices use Vapi `voice.provider: "xai"`. ElevenLabs uses `eleven_flash_v2_5` through Vapi. Every ElevenLabs and xAI voice has a curated Vapi fallback. Grok 4.6 is structured-only. |
+| Browser/mobile voice | Vapi web using the same xAI Grok 4.3 + xAI voices as PSTN | OpenAI Realtime is automatic backup only. No separate test brain. |
 | Video presenter      | LiveAvatar/HeyGen catalog                                                                              | Presenter identity does not silently become the phone voice.                                          |
 | Marketing audio      | Approved generation tools                                                                              | Rendered assets are not a live-call runtime.                                                          |
 
 ## Available phone voices
 
-- Included Wireline Phone voices use Vapi's managed catalog.
+- Included Wireline Phone voices use Vapi's xAI roster (Eve, Ara, Rex, Sal, Leo) with a curated Vapi fallback.
 - Wireline Studio exposes only three curated ElevenLabs voices plus private clones owned by the authenticated founder account.
 - Private voice creation, review, approval, and deletion are platform-admin only.
 - A private voice cannot enter an agent configuration or call payload until Postgres records `approved` status.

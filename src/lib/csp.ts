@@ -31,8 +31,8 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
-    // Optional xAI hosts retained for experimental surfaces and curated
-    // server-proxied previews; customer demos and the managed runtime use OpenAI.
+    // Optional xAI hosts retained for curated server-proxied previews.
+    // Customer Studio tests use Vapi web (Daily); OpenAI Realtime is backup.
     "https://api.x.ai",
     "wss://api.x.ai",
     // OpenAI Realtime: Studio + ChatGPT private voice mint ephemeral secrets
@@ -40,6 +40,8 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
+    "https://*.daily.co",
+    "wss://*.daily.co",
     // Live video (LiveAvatar / LiveKit): browser SDK signals + media.
     "https://api.liveavatar.com",
     "https://*.livekit.cloud",
