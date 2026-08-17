@@ -164,7 +164,7 @@ describe("authenticated mobile cleanup", () => {
     expect(callbacks).not.toContain("description=");
     expect(billing).toContain('"voice agent" : "voice agents"');
     expect(billing).toContain("Current plan");
-    expect(billing).toContain("Live video presence");
+    expect(billing).toContain("Talking-head video");
     // TrialBanner was removed 2026-08-13 (unmounted since activation
     // replaced trials); the activation wizard carries the live language.
     expect(existsSync(resolve(process.cwd(), "src/components/layout/TrialBanner.tsx"))).toBe(false);

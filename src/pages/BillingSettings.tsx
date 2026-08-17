@@ -94,7 +94,7 @@ export default function BillingSettings() {
                   returnFlow === "runtime_balance"
                     ? "Your Runtime Balance will update automatically after Stripe confirms the funds."
                     : returnFlow === "live_video"
-                      ? "Live video will activate automatically after Stripe confirms the funds."
+                      ? "Talking-head checkout is retired. Identity badges stay on this workspace."
                       : "Your plan will activate automatically after Stripe confirms the funds.",
               });
             } else if (returnFlow === "runtime_balance" && verification.credit_granted) {
@@ -106,8 +106,8 @@ export default function BillingSettings() {
             } else if (returnFlow === "live_video" && verification.live_video_enabled) {
               setCheckoutReturnNotice({
                 tone: "success",
-                title: "Live video activated",
-                message: "Your workspace can now use the live video add-on.",
+                title: "Talking-head video is retired",
+                message: "Existing Live Video add-ons no longer mint sessions. Identity badges stay on this workspace.",
               });
             } else if (returnFlow === "plan" && verification.synced) {
               setCheckoutReturnNotice({

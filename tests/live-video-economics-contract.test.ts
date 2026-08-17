@@ -40,24 +40,21 @@ describe("live video economics contract", () => {
     expect(catalog).toContain('session_reservation_minutes: "5"');
   });
 
-  it("keeps public Live Video copy aligned with the runtime that actually ships", () => {
+  it("keeps public Live Video copy aligned with the retired runtime", () => {
     const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
-    const stage = read("src/components/marketing/LiveVideoStage.tsx");
+    const pricing = read("src/pages/Pricing.tsx");
+    const pitch = read("src/lib/video-presenter/copy.ts");
     const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
     const generator = read("scripts/generate-campaign-vo.mjs");
 
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
-    expect(spotlight).toContain("paid business agent");
-    expect(spotlight).toContain("max-w-[24ch]");
-    expect(spotlight).toContain("same Training, operating rules, and approved knowledge");
-    expect(spotlight).not.toMatch(/\bhistory\b/i);
-    expect(spotlight).not.toContain("same Training and tools");
-    expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
-    expect(spotlight).toContain("LiveVideoStage");
-    expect(stage).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
-    expect(stage).toContain("LIVE_VIDEO_MAX_SESSION_SECONDS");
-    expect(stage).not.toMatch(/\b(60|19)\s*(min|\/mo)\b/);
+    expect(spotlight).toContain("liveVideoAddonPitch");
+    expect(spotlight).not.toContain("LIVE_VIDEO_ADDON_PRICE_USD");
+    expect(spotlight).not.toContain("Add Live Video");
+    expect(pricing).not.toContain("Wireline Live Video add-on");
+    expect(pricing).not.toContain("optionally add Live Video");
+    expect(pitch).toContain("Live talking-head video is retired");
 
     const campaignSection = campaign.slice(
       campaign.indexOf("### Live Video proof"),
@@ -71,9 +68,6 @@ describe("live video economics contract", () => {
       expect(source).not.toMatch(/same logged outcome/i);
       expect(source).not.toMatch(/outcome it logs/i);
     }
-    // The internal campaign guardrail may name the prohibited claim while
-    // documenting that it is not supported. Customer-facing copy and generated
-    // narration must not make it.
     for (const source of [spotlight, generatorSection]) {
       expect(source).not.toMatch(/cross-channel history/i);
     }

@@ -116,7 +116,7 @@ export const FOUNDER_PRODUCTS = [
     key: "live_video",
     name: "Wireline Live Video",
     description:
-      "Live Video for a paid business agent: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
+      "Retired talking-head add-on. Identity badges remain. Existing subscriptions no longer mint live sessions.",
     defaultPriceKey: "live_video_monthly",
     metadata: {
       wireline_product: "live_video_addon",

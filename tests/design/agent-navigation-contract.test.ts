@@ -255,7 +255,7 @@ describe("agent navigation contract", () => {
     expect(settingsPage).toMatch(/Security/);
     expect(billingCard).toMatch(/Current plan/);
     expect(billingCard).toMatch(/Manage subscription/);
-    expect(billingCard).toMatch(/Live video presence/);
+    expect(billingCard).toMatch(/Talking-head video/);
     expect(billingPage).toMatch(/Runtime Balance/);
     expect(billingPage).toMatch(/showBalanceTopUp=\{false\}/);
     expect(teamPage).toMatch(/Members/);
