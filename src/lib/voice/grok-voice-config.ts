@@ -1,8 +1,19 @@
 export const GROK_VOICE_DEFAULT_MODEL =
-  process.env.XAI_GROK_VOICE_MODEL?.trim() || "grok-voice-think-fast-1.0";
+  process.env.XAI_GROK_VOICE_MODEL?.trim() || "grok-voice-think-fast-2.0";
 
+export const GROK_VOICE_REALTIME_URL = "wss://api.x.ai/v1/realtime";
+export const GROK_VOICE_CLIENT_SECRETS_URL =
+  "https://api.x.ai/v1/realtime/client_secrets";
 export const GROK_VOICE_EPHEMERAL_TOKEN_TTL_SECONDS = 300;
 export const GROK_VOICE_SAMPLE_RATE = 24_000;
+
+export function buildGrokVoiceRealtimeUrl(
+  model: string = GROK_VOICE_DEFAULT_MODEL,
+): string {
+  const url = new URL(GROK_VOICE_REALTIME_URL);
+  url.searchParams.set("model", model);
+  return url.toString();
+}
 
 export type WirelineVoiceProfile = "bright" | "warm" | "clear" | "balanced" | "direct";
 
@@ -25,7 +36,6 @@ export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
  * out of the customer experience. Profiles are resolved server-side
  * and paired with safe knowledge tools only.
  */
-
 const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
   bright: "eve",
   warm: "ara",
