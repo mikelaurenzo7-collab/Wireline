@@ -49,7 +49,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai",
     "OpenAI",
-    "Continuity structured runtime and ChatGPT/OpenAI Realtime backup. Native PSTN uses Twilio + xAI SIP.",
+    "Continuity structured runtime and ChatGPT OpenAI Realtime widget. Native PSTN uses Twilio + xAI SIP.",
     "ai",
     true,
     ["OPENAI_API_KEY"],
@@ -134,7 +134,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai-realtime",
     "OpenAI Realtime",
-    "ChatGPT widget and automatic browser backup. Studio tests and PSTN use native xAI Speech-to-Speech.",
+    "ChatGPT App private simulation only. Studio tests and PSTN use native xAI Speech-to-Speech.",
     "voice",
     false,
     ["OPENAI_API_KEY"],

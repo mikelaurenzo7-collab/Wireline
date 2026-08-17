@@ -12,7 +12,7 @@
  *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
  *   Grok 4.6 is not in that catalog. That path is not the launch runtime.
  * - **Studio browser tests** use the same native Speech-to-Speech brain as
- *   PSTN. OpenAI Realtime is ChatGPT-widget simulation and browser backup.
+ *   PSTN. OpenAI Realtime is ChatGPT-widget simulation only.
  * - **Imagine** image and video models exist at xAI. Wireline does not
  *   generate those files: they include a Grok watermark that cannot be
  *   turned off. That is not Grok Bot, not live PSTN, and not a priced

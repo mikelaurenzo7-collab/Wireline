@@ -22,6 +22,12 @@ describe("Studio live tests use the same native xAI Speech-to-Speech brain as PS
     expect(status).toContain('phoneRuntimeProvider: "xai_sip"');
     expect(status).toContain("maxDurationSeconds: STUDIO_BROWSER_TEST_MAX_SECONDS");
     expect(status).toContain("expires_after: { seconds: STUDIO_BROWSER_TEST_MAX_SECONDS }");
+
+    const policy = read("src/lib/voice/studio-live-test-policy.ts");
+    expect(policy).toContain('defaultProvider: "xai_realtime"');
+    expect(policy).toContain("openaiFallbackConfigured: false");
+    expect(policy).not.toContain("openai_realtime");
+    expect(policy).toContain("never a Studio default");
   });
 
   it("keeps the ChatGPT widget on OpenAI Realtime and the rollback Vapi sandbox off the default export", () => {

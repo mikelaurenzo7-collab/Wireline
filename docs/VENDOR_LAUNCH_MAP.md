@@ -13,7 +13,7 @@ This document records Wireline's intended production provider roles and the evid
 | PSTN orchestration | Native Twilio + xAI Direct SIP | `grok-voice-think-fast-2.0`; Vapi is rollback-only |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | Native xAI Eve/Ara/Rex/Sal/Leo | ElevenLabs remains Studio TTS / cloning, not the PSTN engine |
-| Live browser voice | Native xAI Speech-to-Speech, same model as PSTN | ChatGPT widget stays OpenAI Realtime |
+| Live browser voice | Native xAI Speech-to-Speech, same model as PSTN | ChatGPT widget stays OpenAI Realtime (OpenAI-hosted iframe; not a Studio backup) |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |

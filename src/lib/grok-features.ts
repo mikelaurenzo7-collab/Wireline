@@ -4,7 +4,7 @@
  * Wireline's managed reasoning default is Grok 4.6. Live PSTN uses Twilio
  * Elastic SIP plus xAI Direct SIP Speech-to-Speech. Browser Studio tests use
  * the same native Speech-to-Speech roster; OpenAI Realtime remains the ChatGPT
- * widget and Studio fallback. The experimental unversioned Grok realtime demo
+ * widget only. Studio does not fall back to OpenAI. The experimental unversioned Grok realtime demo
  * path remains retired.
  */
 export const GROK_REALTIME_VOICE = {

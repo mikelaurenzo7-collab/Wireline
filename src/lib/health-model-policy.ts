@@ -22,7 +22,7 @@ export function getHealthModelTiering() {
     voice_fallback: {
       provider: "openai" as const,
       model: OPENAI_REALTIME_DEFAULT_MODEL,
-      reason: "ChatGPT widget and browser backup. Native PSTN does not fail over to Vapi.",
+      reason: "ChatGPT App private simulation only. Studio and PSTN stay on xAI Speech-to-Speech.",
     },
     reasoning_layer: {
       provider: "xai" as const,

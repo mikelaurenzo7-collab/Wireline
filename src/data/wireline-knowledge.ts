@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through the managed Wireline voice bridge with low-latency transcription, speech, and an OpenAI-first conversation runtime. Provider routing and fallbacks are managed by Wireline and can change without changing the customer workflow.";
+  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use that same voice brain. OpenAI Realtime is only the ChatGPT App preview, not the phone agent."
 
 export const WIRELINE_PLANS = [
   {

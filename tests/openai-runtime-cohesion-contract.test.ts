@@ -60,6 +60,8 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
     expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
     expect(grokDoc).toContain("xAI rate limits are per team and per model");
+    expect(grokDoc).toContain("ChatGPT Apps iframes may only connect");
+    expect(grokDoc).toContain("Studio has no OpenAI fallback");
     expect(vendor).toContain("Structured reasoning | xAI Grok 4.6 managed structured runtime");
     expect(vendor).toContain("OpenAI, then Gemini, then Vercel AI Gateway");
   });

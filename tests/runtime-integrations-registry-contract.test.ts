@@ -12,7 +12,7 @@ describe("runtime integrations registry launch policy", () => {
   it("presents xAI as the required native voice/structured primary and OpenAI as required continuity", () => {
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Continuity structured runtime and ChatGPT/OpenAI Realtime backup. Native PSTN uses Twilio + xAI SIP.",
+      "Continuity structured runtime and ChatGPT OpenAI Realtime widget. Native PSTN uses Twilio + xAI SIP.",
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(

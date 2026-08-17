@@ -79,3 +79,17 @@ Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech a
 ### Why Studio matches the phone brain
 
 Users must test the brain they will ship. Native PSTN and Studio both use `grok-voice-think-fast-2.0`. ChatGPT MCP widget stays OpenAI because it is an OpenAI-hosted surface.
+
+## Why OpenAI Realtime still exists
+
+"Realtime" is a protocol name, not a second Wireline voice brain.
+
+| Surface | Brain | Why |
+| --- | --- | --- |
+| Production PSTN | `grok-voice-think-fast-2.0` over Twilio SIP | The agent you ship |
+| Studio / mobile live test | `grok-voice-think-fast-2.0` over `wss://api.x.ai/v1/realtime` | Same model, same tools, same Eve/Ara/Rex/Sal/Leo roster |
+| ChatGPT App private simulation | OpenAI Realtime (`gpt-realtime-2.1`) WebRTC | ChatGPT Apps iframes may only connect to `https://api.openai.com`. That preview cannot place calls. |
+
+xAI Speech-to-Speech speaks an OpenAI-compatible event protocol (`session.update`, `response.output_audio.delta`). The transport is `api.x.ai` and the model is Think Fast. Do not route Studio or PSTN through OpenAI Realtime to "match" ChatGPT. Do not treat Grok 4.6 as the live-call model; it is the text/chat brain.
+
+Studio has no OpenAI fallback. If `XAI_API_KEY` is missing, live tests fail closed.

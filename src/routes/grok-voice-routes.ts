@@ -31,10 +31,9 @@ import xaiPhoneRouter from "./xai-voice-routes";
 // phone calls use the same model family through xAI SIP; no outside orchestrator
 // participates in this path.
 const router = express.Router();
-// xAI Realtime intentionally follows the OpenAI-compatible event protocol.
-// Keep the compatibility alias explicit so cost-protection contracts can assert
-// the reservation occurs before any realtime provider mint without coupling to
-// a vendor-specific implementation name.
+// The function name is protocol, not provider. xAI Speech-to-Speech reuses
+// OpenAI-shaped realtime events (`session.update`, audio deltas) on api.x.ai
+// with grok-voice-think-fast-2.0. This mint is not OpenAI Realtime.
 const createOpenAIProtocolXAILiveVoiceSession = createXAILiveVoiceSession;
 const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
