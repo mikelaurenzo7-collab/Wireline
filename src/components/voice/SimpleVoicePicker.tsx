@@ -259,8 +259,8 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Browser tests use this same voice and live-call intelligence. There is no separate test
-        brain.
+        Browser tests the words. Place a real call to verify the selected audio. Live voice tests
+        use this same intelligence and voice.
       </p>
 
       {notice ? (

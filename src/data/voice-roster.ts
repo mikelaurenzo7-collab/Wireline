@@ -42,8 +42,7 @@ export function isXaiPstnVoiceId(value: unknown): value is string {
  * all curated voices and the PATCH stores the pick verbatim — when this check
  * only knew the 8 rotation voices, a user who picked Kai/Rohan/Sagar/Godfrey/
  * Naina previewed one voice and every live call silently spoke as Savannah.
- * Rotation (pickRotatedVoiceId) intentionally stays on the xAI pool so
- * quick-deploy defaults keep their curated feel.
+ * Rotation starts on xAI voices, then continues through this curated Vapi pool.
  */
 export function isManagedVapiVoiceId(value: unknown): value is string {
   return (
@@ -72,13 +71,15 @@ export function resolvePstnVoiceCandidate(
 }
 
 /**
- * Deterministically distribute built-in xAI PSTN voices across a tenant's
- * employees. The function name remains stable because web, mobile, MCP, and
- * seed paths all call it. Its output is compatible with provider `xai`.
+ * Deterministically distribute managed PSTN voices across a tenant's
+ * employees. New agents start on the xAI roster; larger fleets continue
+ * through curated Vapi voices. Output is compatible with provider `xai`
+ * or `vapi` via `isXaiPstnVoiceId`.
  */
 export function pickRotatedVoiceId(existingAgentCount: number): string {
+  const rotation = [...MANAGED_XAI_VOICE_IDS, ...MANAGED_VOICE_IDS];
   if (!Number.isFinite(existingAgentCount) || existingAgentCount < 0) {
     return DEFAULT_XAI_VOICE_ID;
   }
-  return MANAGED_XAI_VOICE_IDS[Math.floor(existingAgentCount) % MANAGED_XAI_VOICE_IDS.length];
+  return rotation[Math.floor(existingAgentCount) % rotation.length];
 }

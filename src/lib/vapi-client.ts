@@ -7,6 +7,7 @@
  */
 
 import { drizzle, fetchWithTimeout, log } from "./server-context";
+import { phoneSuffixForLog } from "./twilio-webhook-privacy";
 import * as schema from "../db/schema";
 import { eq, and, desc, ilike } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";

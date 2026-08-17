@@ -96,7 +96,7 @@ describe("health surfaces contract", () => {
     expect(routeSource).toContain(
       'import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";',
     );
-    // /models drives three live platform-key OpenAI probes per request, so it
+    // /models drives two live platform-key OpenAI probes per request, so it
     // must never be reachable by an arbitrary authenticated tenant: monitor
     // token for ops, platform admin for humans (same posture as /slos). The
     // composite is a NAMED middleware so the authz matrix sees it in-chain.

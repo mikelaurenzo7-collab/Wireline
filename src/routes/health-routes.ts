@@ -317,7 +317,7 @@ router.get(
     });
   },
 );
-// Every /models request drives three live platform-key OpenAI probes, so this
+// Every /models request drives two live platform-key OpenAI probes, so this
 // diagnostic must not be reachable by arbitrary tenants: an IP-keyed limiter
 // alone leaves a multi-IP loop free to burn unmetered platform spend. Ops
 // monitors authenticate with the monitor token; humans must be platform admins
@@ -336,14 +336,12 @@ router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, asy
     probeOpenAIModelDiagnostic(OPENAI_MODELS.GPT_4O),
     probeOpenAIModelDiagnostic(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
-  const premium = null;
-  const ok = voice.ok && reasoning.ok && (premium?.ok ?? true);
+  const ok = voice.ok && reasoning.ok;
   res.status(ok ? 200 : 503).json({
     ok,
     total_latency_ms: Date.now() - started,
     probes: {
       voice_runtime: voice,
-      ...(premium ? { voice_premium: premium } : {}),
       reasoning,
       reasoning_fallback: {
         ok: !!process.env.GEMINI_API_KEY,

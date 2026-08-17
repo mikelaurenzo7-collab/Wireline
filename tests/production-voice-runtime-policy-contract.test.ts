@@ -9,7 +9,7 @@ describe("production voice runtime policy", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     expect(policy).toContain("Rendered assets are not a live-call runtime");
     expect(policy).toContain("eleven_flash_v2_5");
-    expect(policy).toContain("Every ElevenLabs voice has a curated Vapi fallback");
+    expect(policy).toContain("Every ElevenLabs and xAI voice has a curated Vapi fallback");
   });
 
   it("labels built-in xAI voices as live PSTN through Vapi, not direct TTS", () => {
