@@ -146,7 +146,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.",
+      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
   },
   "/terms": {
     title: "Terms of Service",

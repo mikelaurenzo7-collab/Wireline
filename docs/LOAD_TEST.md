@@ -37,8 +37,8 @@ load tests should therefore include downstream provider monitoring and failure-m
 
 ## Sample k6 script
 The copy-pasteable sample still posts to the mounted rollback path `/api/vapi-webhook` so a
-typo of `/api/vapi/webhook` cannot silently load-test the 404 handler. Native SIP load tests
-must sign Standard Webhooks against `/api/webhooks/xai/voice`.
+historical extra path segment after `vapi` cannot silently load-test the 404 handler. Native SIP
+load tests must sign Standard Webhooks against `/api/webhooks/xai/voice`.
 
 ```javascript
 import http from 'k6/http';
