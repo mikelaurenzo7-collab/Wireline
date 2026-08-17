@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
@@ -35,10 +35,7 @@ async function restorePreviousRouting(input: {
 }): Promise<void> {
   try {
     if (input.previousAgentId) {
-      await provisionNativeXAIPhone({
-        userId: input.userId,
-        agentId: input.previousAgentId,
-      });
+      await provisionNativeXAIPhone({ userId: input.userId, agentId: input.previousAgentId });
     } else {
       await deactivateNativeXAIPhoneLine({
         userId: input.userId,
@@ -85,13 +82,15 @@ export async function assignNativePhoneLine(input: {
   }
 
   if (changesAgent && input.agentId === null) {
-    // Stop provider routing before the database says the line is unassigned.
     await deactivateNativeXAIPhoneLine({
       userId: input.userId,
       phoneNumber: current.phoneNumber,
     });
   }
 
+  const currentAgentPredicate = current.agentId
+    ? eq(schema.phoneNumbers.agentId, current.agentId)
+    : isNull(schema.phoneNumbers.agentId);
   let updated: typeof schema.phoneNumbers.$inferSelect;
   try {
     [updated] = await runCompanyIdentityMutation(
@@ -110,7 +109,7 @@ export async function assignNativePhoneLine(input: {
             and(
               eq(schema.phoneNumbers.id, input.lineId),
               eq(schema.phoneNumbers.userId, input.userId),
-              eq(schema.phoneNumbers.agentId, current.agentId),
+              currentAgentPredicate,
             ),
           )
           .returning(),
@@ -142,10 +141,7 @@ export async function assignNativePhoneLine(input: {
         await runCompanyIdentityMutation(input.userId, "phone_number_changed", (tx) =>
           tx
             .update(schema.phoneNumbers)
-            .set({
-              agentId: current.agentId,
-              campaignLabel: current.campaignLabel,
-            })
+            .set({ agentId: current.agentId, campaignLabel: current.campaignLabel })
             .where(
               and(
                 eq(schema.phoneNumbers.id, input.lineId),
