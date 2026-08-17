@@ -219,14 +219,14 @@ export async function tickDueCallbacks({
         await finish({
           callbackScheduledAt: null,
           summary: `Callback dropped: ${why} (max retries reached).`,
-          metadata: { ...metadata, callback_deferrals: 0 },
+          metadata: { callback_deferrals: 0 },
         });
         return "dropped";
       }
       await finish({
         callbackScheduledAt: new Date(Date.now() + DEFERRAL_STEP_MS),
         summary: `Callback deferred: ${why}.`,
-        metadata: { ...metadata, callback_deferrals: priorDeferrals + 1 },
+        metadata: { callback_deferrals: priorDeferrals + 1 },
       });
       return "deferred";
     };
@@ -363,7 +363,7 @@ export async function tickDueCallbacks({
             summary: consumerRequested
               ? "Requested callback placed automatically."
               : "Scheduled outbound follow-up placed automatically.",
-            metadata: { ...metadata, callback_deferrals: 0 },
+            metadata: { callback_deferrals: 0 },
           });
           return "placed";
         },

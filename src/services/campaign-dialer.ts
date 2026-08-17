@@ -4,7 +4,7 @@ import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import { enqueue } from "../lib/job-queue";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { evaluateOutboundDialGate, mergeLeadMetadata } from "../lib/outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import {
   CAMPAIGN_STATUS,
@@ -342,7 +342,7 @@ export class CampaignDialerService {
             .update(schema.outboundLeads)
             .set({
               status: priorStatus,
-              ...(gate.metadataPatch ? { metadata: toJsonbSafe(gate.metadataPatch) as any } : {}),
+              metadata: toJsonbSafe(mergeLeadMetadata(metadata, gate.metadataPatch)) as any,
             })
             .where(eq(schema.outboundLeads.id, lead.id));
           log.info("Dial deferred by temporal gate; lead stays processable", {
@@ -357,7 +357,7 @@ export class CampaignDialerService {
           .update(schema.outboundLeads)
           .set({
             status: gate.status,
-            ...(gate.metadataPatch ? { metadata: toJsonbSafe(gate.metadataPatch) as any } : {}),
+            metadata: toJsonbSafe(mergeLeadMetadata(metadata, gate.metadataPatch)) as any,
           })
           .where(eq(schema.outboundLeads.id, lead.id));
 

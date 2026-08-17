@@ -85,6 +85,14 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
       tcpa: gate.tcpaDecision,
     });
   }
+  if (gate.reason === "outside_permitted_calling_hours") {
+    return res.status(403).json({
+      code: "OUTSIDE_PERMITTED_CALLING_HOURS",
+      error: "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
+      reason: gate.reason,
+      calling_hours: gate.metadataPatch?.calling_hours,
+    });
+  }
   return res.status(409).json({
     code: "DUPLICATE_DIAL_SUPPRESSED",
     error:

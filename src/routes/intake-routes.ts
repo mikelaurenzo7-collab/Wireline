@@ -12,7 +12,7 @@ import {
 } from "../lib/api-validation";
 import { runInBackground } from "../lib/background-work";
 import { CALLBACK_REQUEST_MARKER } from "../lib/callback-engine";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { evaluateOutboundDialGate, mergeLeadMetadata } from "../lib/outbound-dial-gate";
 import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
 import { auditLogger, drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
@@ -403,7 +403,10 @@ async function processIntakeLead(
               .set({
                 callbackScheduledAt: new Date(Date.now() + 60 * 60 * 1000),
                 metadata: toJsonbSafe({
-                  ...((gate.metadataPatch || metadata || {}) as Record<string, unknown>),
+                  ...mergeLeadMetadata(
+                    (metadata || {}) as Record<string, unknown>,
+                    gate.metadataPatch,
+                  ),
                   auto_dial_status: "deferred_quiet_hours",
                 }) as any,
               })
@@ -417,7 +420,9 @@ async function processIntakeLead(
             .update(schema.outboundLeads)
             .set({
               status: gate.status,
-              metadata: toJsonbSafe(gate.metadataPatch || metadata || {}) as any,
+              metadata: toJsonbSafe(
+                mergeLeadMetadata((metadata || {}) as Record<string, unknown>, gate.metadataPatch),
+              ) as any,
             })
             .where(eq(schema.outboundLeads.id, insertedId!));
           log.warn("Auto-dial blocked by outbound gate", {

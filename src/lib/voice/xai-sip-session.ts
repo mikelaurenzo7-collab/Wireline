@@ -442,16 +442,22 @@ async function settleOutboundLead(input: {
     const nextState =
       input.endedReason === "transferred"
         ? "transferred"
+        : input.endedReason === "caller-dnc"
+          ? "caller_dnc"
+          : input.pipelineError
+            ? "runtime_error"
+            : "completed";
+    const nextStatus =
+      input.endedReason === "caller-dnc"
+        ? LEAD_STATUS.BLOCKED_DNC
         : input.pipelineError
-          ? "runtime_error"
-          : "completed";
+          ? LEAD_STATUS.ERROR
+          : LEAD_STATUS.COMPLETED;
 
     await tx
       .update(schema.outboundLeads)
       .set({
-        ...(currentlyActive
-          ? { status: input.pipelineError ? LEAD_STATUS.ERROR : LEAD_STATUS.COMPLETED }
-          : {}),
+        ...(currentlyActive ? { status: nextStatus } : {}),
         lastContactSummary: currentlyActive
           ? input.summary
           : lead.lastContactSummary || input.summary,
@@ -618,6 +624,7 @@ async function runRealtimeSession(
   let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
   let awaitingExactOpeningPlayback = false;
   let toolContinuationPending = false;
+  let callerDncHangupStarted = false;
   let eventChain = Promise.resolve();
   let maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
   let heartbeat: ReturnType<typeof setInterval> | null = null;
@@ -652,11 +659,40 @@ async function runRealtimeSession(
   const requestToolContinuationWhenReady = () => {
     if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
     if (awaitingExactOpeningPlayback || hangupAfterOpening) return;
-    if (!toolContinuationPending || endedReason === "transferred") {
+    if (
+      !toolContinuationPending ||
+      endedReason === "transferred" ||
+      endedReason === "caller-dnc"
+    ) {
       return;
     }
     toolContinuationPending = false;
     sendJson(ws, { type: "response.create" });
+  };
+
+  const endForCallerDnc = async (matchedPattern: string | undefined) => {
+    if (callerDncHangupStarted || endedReason === "transferred") return;
+    callerDncHangupStarted = true;
+    endedReason = "caller-dnc";
+    hangupAfterOpening = false;
+    awaitingExactOpeningPlayback = false;
+    toolContinuationPending = false;
+    await persistTranscriptDncSuppression({
+      userId: input.userId,
+      callId: providerCallId(input.callId),
+      rawCallerNumber: input.callerNumber || "",
+      matchedPattern,
+    });
+    try {
+      await hangupXAISipCall(input.callId);
+    } catch {
+      log.warn("Native caller-DNC hangup could not be confirmed", {
+        callId: providerCallId(input.callId),
+      });
+    }
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.close(1000, "Wireline caller DNC");
+    }
   };
 
   const executePendingTools = async () => {
@@ -779,6 +815,10 @@ async function runRealtimeSession(
             output: boundedToolOutput({ result: outcome.result.result }),
           },
         });
+        if (call.name === "add_to_dnc") {
+          await endForCallerDnc(undefined);
+          break;
+        }
       } catch (error) {
         toolCallsFailed += 1;
         log.warn("Native xAI transfer action failed", {
@@ -803,7 +843,7 @@ async function runRealtimeSession(
       }
     }
 
-    if (endedReason !== "transferred") {
+    if (endedReason !== "transferred" && endedReason !== "caller-dnc") {
       // xAI can finish generating before SIP playback drains. Release the
       // follow-up only after output_audio_buffer.stopped/cleared.
       toolContinuationPending = true;
@@ -837,6 +877,10 @@ async function runRealtimeSession(
       const itemId = String(event.item_id || "caller");
       const transcript = typeof event.transcript === "string" ? event.transcript : "";
       upsertOrderedCallerTranscript(transcriptLines, callerTranscriptIndexes, itemId, transcript);
+      const optOut = detectOptOut(transcript);
+      if (optOut.kind === "dnc") {
+        await endForCallerDnc(optOut.matched_pattern);
+      }
       return;
     }
     if (
@@ -989,7 +1033,8 @@ async function runRealtimeSession(
     });
   } catch (error) {
     if (!pipelineError) pipelineError = "connection";
-    endedReason = endedReason === "transferred" ? endedReason : "runtime-error";
+    endedReason =
+      endedReason === "transferred" || endedReason === "caller-dnc" ? endedReason : "runtime-error";
     log.error("Native xAI SIP session failed", {
       userId: input.userId,
       agentId: input.agentId,
@@ -998,7 +1043,9 @@ async function runRealtimeSession(
       errorClass: error instanceof Error ? error.name : typeof error,
     });
     try {
-      if (endedReason !== "transferred") await hangupXAISipCall(input.callId);
+      if (endedReason !== "transferred" && endedReason !== "caller-dnc") {
+        await hangupXAISipCall(input.callId);
+      }
     } catch {
       // The provider may already have ended the call.
     }

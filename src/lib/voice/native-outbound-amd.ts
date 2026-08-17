@@ -9,16 +9,17 @@ import {
  *
  * Synchronous detection (`AsyncAmd` stays false) so TwiML is not served — and
  * xAI is not bridged — until AnsweredBy is known. Marketing/sales calls use
- * `Enable` and hang up on a machine: Wireline has no 64.1200(b)(3) opt-out
- * line, so there is no compliant telemarketing voicemail. Service and
- * consumer-requested callbacks use `DetectMessageEnd` so identity + callback
- * can be left after the greeting/beep, without stating why we called (FDCPA).
- *
- * `unknown` and empty AnsweredBy fail-open to the live SIP agent. A false
- * machine hangup on a slow-to-speak human is worse than talking to a mailbox
- * that we already instructed not to pitch.
+ * `Enable` and hang up on a machine, fax, or unclassified answer: Wireline has
+ * no 64.1200(b)(3) opt-out line, so there is no compliant telemarketing
+ * voicemail, and bridging `unknown` would play an uninterruptible telemarketing
+ * opening into a mailbox. Service and consumer-requested callbacks use
+ * `DetectMessageEnd` so identity + callback can be left after the
+ * greeting/beep, without stating why we called (FDCPA). Those calls still
+ * fail-open `unknown`/empty to SIP because a false machine hangup on a
+ * slow-to-speak human is worse than talking to a mailbox that we already
+ * instructed not to pitch.
  */
-export const MARKETING_AMD_TIMEOUT_SECONDS = 5;
+export const MARKETING_AMD_TIMEOUT_SECONDS = 8;
 export const SERVICE_AMD_TIMEOUT_SECONDS = 30;
 
 export type NativeAmdBridgeAction = "bridge" | "drop" | "voicemail";
@@ -26,7 +27,9 @@ export type NativeAmdBridgeAction = "bridge" | "drop" | "voicemail";
 export function nativeCallPurposeFromMetadata(
   value: unknown,
 ): OutboundCallPurpose {
-  return isOutboundCallPurpose(value) ? value : "service_or_requested";
+  // Missing purpose fail-closed to marketing so AMD cannot leave a service
+  // identity voicemail — or bridge unknown — on a campaign that lost its class.
+  return isOutboundCallPurpose(value) ? value : "marketing_or_sales";
 }
 
 export function nativeOutboundAmdParams(callPurpose: OutboundCallPurpose): {
@@ -52,10 +55,12 @@ export function resolveNativeAmdBridgeAction(input: {
   callPurpose: OutboundCallPurpose;
 }): NativeAmdBridgeAction {
   const value = input.answeredBy.trim().toLowerCase();
-  if (!value || value === "human" || value === "unknown") return "bridge";
+  const telemarketing = isMarketingCallPurpose(input.callPurpose);
+  if (value === "human") return "bridge";
+  if (!value || value === "unknown") return telemarketing ? "drop" : "bridge";
   if (value === "fax") return "drop";
   if (value.startsWith("machine")) {
-    return isMarketingCallPurpose(input.callPurpose) ? "drop" : "voicemail";
+    return telemarketing ? "drop" : "voicemail";
   }
-  return "bridge";
+  return telemarketing ? "drop" : "bridge";
 }

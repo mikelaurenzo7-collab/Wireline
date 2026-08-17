@@ -81,8 +81,9 @@ describe("inbound concurrency wiring contract", () => {
     expect(session).toContain("line-suspended");
   });
 
-  it("only counts fresh presence so a lost end-webhook cannot wedge the line", () => {
+  it("only counts fresh inbound presence so a lost end-webhook cannot wedge the line", () => {
     expect(lib).toContain("PRESENCE_STALENESS_MS");
     expect(lib).toContain("gte(schema.signalPresence.startedAt, freshSince)");
+    expect(lib).toContain('not like ${"% · Outbound"}');
   });
 });

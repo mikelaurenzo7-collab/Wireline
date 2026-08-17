@@ -42,6 +42,9 @@ export async function inboundConcurrencyExceeded(userId: string): Promise<boolea
         and(
           eq(schema.signalPresence.userId, userId),
           gte(schema.signalPresence.startedAt, freshSince),
+          // Outbound campaign presence uses `${agent} · Outbound`. Counting it
+          // here would degrade inbound to take-message during dial bursts.
+          sql`coalesce(${schema.signalPresence.label}, '') not like ${"% · Outbound"}`,
         ),
       );
     return Number(row?.live ?? 0) >= inboundConcurrentCallCeiling();

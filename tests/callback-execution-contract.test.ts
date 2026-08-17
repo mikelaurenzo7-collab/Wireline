@@ -96,6 +96,8 @@ describe("caller-requested callbacks execute end-to-end", () => {
     // inlining the logic where only a substring could vouch for it.
     expect(engine).toContain("const nextMetadata = nextCallbackLeadMetadata({");
     expect(engine).toContain("terminal: patch.callbackScheduledAt === null,");
+    expect(engine).not.toContain("metadata: { ...metadata, callback_deferrals");
+    expect(engine).toContain("metadata: { callback_deferrals: 0 }");
   });
 
   /*

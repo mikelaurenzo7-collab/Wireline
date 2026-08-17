@@ -6,6 +6,7 @@ import {
   nativeOutboundAmdParams,
   resolveNativeAmdBridgeAction,
 } from "../src/lib/voice/native-outbound-amd";
+import { resolveRetryableLeadStatus } from "../src/lib/outbound-status";
 
 describe("formatCallbackNumberForSpeech", () => {
   it("groups NANP numbers into spoken digit chunks", () => {
@@ -27,7 +28,7 @@ describe("native outbound AMD", () => {
   it("uses Enable and a short timeout for marketing so the SIP agent never greets a mailbox", () => {
     expect(nativeOutboundAmdParams("marketing_or_sales")).toEqual({
       machineDetection: "Enable",
-      machineDetectionTimeout: 5,
+      machineDetectionTimeout: 8,
     });
   });
 
@@ -38,7 +39,7 @@ describe("native outbound AMD", () => {
     expect(nativeOutboundAmdParams("callback").machineDetection).toBe("DetectMessageEnd");
   });
 
-  it("drops marketing machines and fax, leaves service voicemail, and fail-opens unknown to SIP", () => {
+  it("drops marketing machines, fax, and unknown; leaves service voicemail; fail-opens service unknown", () => {
     expect(
       resolveNativeAmdBridgeAction({
         answeredBy: "machine_start",
@@ -62,11 +63,17 @@ describe("native outbound AMD", () => {
         answeredBy: "unknown",
         callPurpose: "marketing_or_sales",
       }),
-    ).toBe("bridge");
+    ).toBe("drop");
     expect(
       resolveNativeAmdBridgeAction({
         answeredBy: "",
         callPurpose: "marketing_or_sales",
+      }),
+    ).toBe("drop");
+    expect(
+      resolveNativeAmdBridgeAction({
+        answeredBy: "unknown",
+        callPurpose: "service_or_requested",
       }),
     ).toBe("bridge");
     expect(
@@ -77,8 +84,19 @@ describe("native outbound AMD", () => {
     ).toBe("bridge");
   });
 
-  it("treats missing stored purpose as service rather than inventing a marketing class", () => {
-    expect(nativeCallPurposeFromMetadata(undefined)).toBe("service_or_requested");
+  it("treats missing stored purpose as marketing so AMD cannot leave a service voicemail", () => {
+    expect(nativeCallPurposeFromMetadata(undefined)).toBe("marketing_or_sales");
     expect(nativeCallPurposeFromMetadata("marketing_or_sales")).toBe("marketing_or_sales");
+    expect(nativeCallPurposeFromMetadata("callback")).toBe("callback");
+  });
+});
+
+describe("campaign attempt budget", () => {
+  it("retries unreachable dials until the campaign max, then retires the lead", () => {
+    expect(resolveRetryableLeadStatus(1, 3)).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(2, 3)).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(3, 3)).toBe("Max-Attempts");
+    expect(resolveRetryableLeadStatus(0, 3)).toBe("Retrying");
+    expect(resolveRetryableLeadStatus(1, 1)).toBe("Max-Attempts");
   });
 });

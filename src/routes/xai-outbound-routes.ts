@@ -6,7 +6,11 @@ import { xaiPhoneBindings } from "../db/xai-voice-schema";
 import { formatCallbackNumberForSpeech } from "../lib/agent-runtime";
 import { AppError, asyncHandler } from "../lib/api-error";
 import { isMarketingCallPurpose } from "../lib/outbound-call-purpose";
-import { LEAD_STATUS } from "../lib/outbound-status";
+import {
+  DEFAULT_LEAD_MAX_ATTEMPTS,
+  LEAD_STATUS,
+  resolveRetryableLeadStatus,
+} from "../lib/outbound-status";
 import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import {
@@ -29,6 +33,7 @@ const ACTIVE_LEAD_STATUSES = [
   LEAD_STATUS.DIALING,
   LEAD_STATUS.CONNECTED,
 ] as const;
+const IN_FLIGHT_LEAD_STATUSES = [LEAD_STATUS.DIALING, LEAD_STATUS.CONNECTED] as const;
 const TERMINAL_CARRIER_FAILURES = new Set(["busy", "no-answer", "failed", "canceled"]);
 const CARRIER_STATUS_RANK: Record<string, number> = {
   unknown: 0,
@@ -102,6 +107,22 @@ function carrierRank(status: unknown): number {
 
 function answeredByFromRequest(req: Request): string {
   return String(req.body?.AnsweredBy || "").trim();
+}
+
+async function loadCampaignMaxAttempts(
+  tx: { select: typeof drizzle.select },
+  campaignId: string | null | undefined,
+): Promise<number> {
+  if (!campaignId) return DEFAULT_LEAD_MAX_ATTEMPTS;
+  const [camp] = await tx
+    .select({ maxAttempts: schema.outboundCampaigns.maxAttempts })
+    .from(schema.outboundCampaigns)
+    .where(eq(schema.outboundCampaigns.id, campaignId))
+    .limit(1);
+  const value = camp?.maxAttempts;
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : DEFAULT_LEAD_MAX_ATTEMPTS;
 }
 
 type BridgeDecision =
@@ -190,11 +211,16 @@ async function resolveBridgeContext(
     if (amdAction === "drop") {
       amdNativeVoice.state = "amd_no_message";
       amdNativeVoice.amd_completed_at = now.toISOString();
+      const fax = answeredBy.trim().toLowerCase() === "fax";
+      const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
+      const dropStatus = fax
+        ? LEAD_STATUS.FAILED
+        : resolveRetryableLeadStatus(lead.attempts, maxAttempts);
       const [dropped] = await tx
         .update(schema.outboundLeads)
         .set({
           callId: callSid,
-          status: LEAD_STATUS.FAILED,
+          status: dropStatus,
           lastCalledAt: now,
           lastContactSummary: telemarketing
             ? "Answering machine detected; no marketing voicemail was left (47 CFR 64.1200(b)(3))."
@@ -341,7 +367,7 @@ router.post(
         .where(eq(schema.outboundLeads.id, leadId))
         .limit(1);
       if (!lead || (lead.callId && lead.callId !== callSid)) return;
-      if (!(ACTIVE_LEAD_STATUSES as readonly string[]).includes(lead.status || "")) return;
+      if (!(IN_FLIGHT_LEAD_STATUSES as readonly string[]).includes(lead.status || "")) return;
 
       const now = new Date();
       const metadata = asRecord(lead.metadata);
@@ -384,7 +410,8 @@ router.post(
           nextNativeVoice.state = "customer_answered";
         }
       } else if (isMonotonic && TERMINAL_CARRIER_FAILURES.has(carrierStatus)) {
-        patch.status = LEAD_STATUS.FAILED;
+        const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
+        patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
         patch.lastContactSummary = `Carrier outcome: ${carrierStatus}.`;
         nextNativeVoice.state = "carrier_failed";
         nextNativeVoice.carrier_completed_at = now.toISOString();
@@ -407,7 +434,7 @@ router.post(
           and(
             eq(schema.outboundLeads.id, lead.id),
             eq(schema.outboundLeads.userId, lead.userId),
-            inArray(schema.outboundLeads.status, ACTIVE_LEAD_STATUSES),
+            inArray(schema.outboundLeads.status, IN_FLIGHT_LEAD_STATUSES),
           ),
         );
     });

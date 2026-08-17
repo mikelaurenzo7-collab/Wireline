@@ -665,6 +665,12 @@ const DNC_OPT_OUT_PATTERNS: OptOutPattern[] = [
     kind: "dnc",
   },
   { pattern: /\bno\s+more\s+(?:calls?|calling|contact)\b/i, kind: "dnc" },
+  // The telemarketing opening announces "say stop calling"; honor that exact
+  // phrase, but not the reversal "don't stop calling".
+  {
+    pattern: /(?<!\bnot\s)(?<!\bdon['’]?t\s)\bstop\s+calling\b/i,
+    kind: "dnc",
+  },
 ];
 
 const RECORDING_OPT_OUT_PATTERNS: OptOutPattern[] = [

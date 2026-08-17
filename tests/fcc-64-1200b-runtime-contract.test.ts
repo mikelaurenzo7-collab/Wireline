@@ -76,6 +76,8 @@ describe("64.1200(b) runtime wiring", () => {
     expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
     expect(session).toContain("persistTranscriptDncSuppression");
     expect(session).toMatch(/add_to_dnc tool immediately/);
+    expect(session).toContain('optOut.kind === "dnc"');
+    expect(session).toContain('endedReason = "caller-dnc"');
   });
 
   it("keeps a per-recipient record of the verbal SMS opt-in captured on a live call", () => {
@@ -125,10 +127,14 @@ describe("(b)(3) applies to answering machines", () => {
   it("passes the call's own marketing classification into the builder", () => {
     expect(placement).toContain("machineDetection");
     expect(amd).toContain('machineDetection: telemarketing ? "Enable" : "DetectMessageEnd"');
+    expect(amd).toContain('return telemarketing ? "drop" : "bridge"');
     const call = bridge.slice(bridge.indexOf("buildOutboundVoicemailMessage("));
     expect(call.slice(0, 300)).toContain("telemarketing,");
     expect(bridge).toContain("AnsweredBy");
     expect(bridge).toContain("emptyTwiml()");
+    expect(bridge).toContain("resolveRetryableLeadStatus");
+    expect(bridge).toContain("IN_FLIGHT_LEAD_STATUSES");
+    expect(read("src/lib/outbound-status.ts")).toContain("export function resolveRetryableLeadStatus");
   });
 
   it("tells the model the same rule, so it cannot speak one anyway", () => {

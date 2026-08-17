@@ -81,6 +81,7 @@ describe("agent runtime performance and action integrity", () => {
     for (const transcript of [
       "Don't call me again.",
       "Stop calling me.",
+      "Stop calling.",
       "Do not contact this number.",
       "Take me off your list.",
       "Remove me from the call list.",
@@ -105,6 +106,7 @@ describe("agent runtime performance and action integrity", () => {
   it("does not convert ordinary sales rejection into a legal DNC request", () => {
     expect(detectOptOut("I'm not interested right now.")).toEqual({ found: false });
     expect(detectOptOut("Maybe call me next quarter.")).toEqual({ found: false });
+    expect(detectOptOut("Don't stop calling.")).toEqual({ found: false });
   });
 
   it("persists transcript DNC before duplicate short-circuit and best-effort evidence", () => {
