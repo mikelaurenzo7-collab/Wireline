@@ -107,7 +107,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "xAI credential. Activates the Grok 4.6 structured primary and Vapi Grok 4.3 PSTN default; OpenAI remains continuity and Realtime",
+      "One xAI inference key for Grok 4.6 structured chat and browser preview TTS. Live PSTN Grok 4.3 uses VAPI_PRIVATE_KEY. OpenAI remains continuity and Realtime",
     validate: nonEmpty,
   },
   {

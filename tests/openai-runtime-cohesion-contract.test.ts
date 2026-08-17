@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
   it("keeps personal and business create paths on the xAI structured primary", () => {
@@ -11,9 +10,7 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const defaults = read("src/lib/agent-create-defaults.ts");
     const models = read("src/lib/ai-models.ts");
 
-    expect(models).toContain(
-      "STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
-    );
+    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
     expect(routes).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(routes).toContain("is_business_agent");
     expect(defaults).toContain("resolveCreateEnabledTools");
@@ -27,9 +24,7 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const managedRuntime = read("src/lib/managed-voice-runtime.ts");
     expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "xai"');
-    expect(models).toContain(
-      "VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3",
-    );
+    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3");
     expect(factory).toContain("isBusinessAgent");
     expect(factory).toContain("buildManagedVoiceRuntime");
     expect(managedRuntime).toContain('provider: "xai" as const');
@@ -57,16 +52,13 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const grokDoc = read("docs/GROK_LIVE_VOICE.md");
     const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
 
-    expect(architecture).toContain(
-      "Primary: direct xAI Responses API using Grok 4.6 by default",
-    );
+    expect(architecture).toContain("Primary: direct xAI Responses API using Grok 4.6 by default");
     expect(architecture).toContain(
       "Personal agents, business agents, and hybrid direction all share this same managed chain",
     );
-    expect(architecture).toContain(
-      "xAI Grok 4.3 is the managed Vapi language model",
-    );
+    expect(architecture).toContain("xAI Grok 4.3 is the managed Vapi language model");
     expect(grokDoc).toContain("it is not a Vapi live-call model id");
+    expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
     expect(vendor).toContain("Structured reasoning | xAI Grok 4.6 managed structured runtime");
     expect(vendor).toContain("OpenAI, then Gemini, then Vercel AI Gateway");
   });

@@ -22,11 +22,10 @@ function expectMiddlewareBeforeHandler(source: string, route: string, handlerMar
 }
 
 describe("provider spend launch kill switch", () => {
-  it("guards browser-minted voice and presenter sessions before provider work", () => {
+  it("guards browser-minted voice sessions before provider work", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
     const liveVoice = read("src/routes/grok-voice-routes.ts");
     const managedVoices = read("src/routes/voices-routes.ts");
-    const presenter = read("src/routes/video-presenter-routes-base.ts");
 
     expectMiddlewareBeforeHandler(
       openai,
@@ -46,11 +45,6 @@ describe("provider spend launch kill switch", () => {
     expectMiddlewareBeforeHandler(
       liveVoice,
       '"/api/voices/curated/preview"',
-      "async (req: AuthenticatedRequest, res: Response)",
-    );
-    expectMiddlewareBeforeHandler(
-      presenter,
-      '"/api/agents/:id/video-presenter/session"',
       "async (req: AuthenticatedRequest, res: Response)",
     );
     for (const route of [

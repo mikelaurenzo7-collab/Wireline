@@ -1,20 +1,27 @@
 /**
- * xAI Imagine video — documented, not offered.
+ * xAI Imagine — documented, not offered.
  *
- * Wireline does not generate video files and does not substitute a script.
- * Official REST (`POST /v1/videos/generations`) has no watermark field.
+ * Wireline does not generate Imagine photos or video files and does not
+ * substitute a script. Official image and video REST have no watermark field.
  * Generated files include a Grok watermark. xAI's FAQ says there is no setting
- * to remove it. The Acceptable Use Policy forbids stripping, altering, or
- * circumventing watermarks.
+ * to remove it from images or videos. The Acceptable Use Policy forbids
+ * stripping, altering, or circumventing watermarks.
  *
- * A later vendor may own real clips. Until then, the agent focuses on phone,
- * email, and text. This is not Grok Bot.
+ * Grok 4.6 can take an image as *input* for structured reasoning. That is not
+ * Imagine generation. Phone, email, and text stay on the agent.
  */
 import { AppError } from "./api-error";
-import { XAI_MODELS } from "./ai-models";
 
-export const XAI_IMAGINE_VIDEO_MODEL = XAI_MODELS.GROK_IMAGINE_VIDEO;
+/** Retired vendor video id. Not a priced runtime model. */
+export const XAI_IMAGINE_VIDEO_MODEL = "grok-imagine-video-1.5";
+/** Retired vendor image ids. Not priced and not generated. */
+export const XAI_IMAGINE_IMAGE_MODELS = [
+  "grok-imagine-image",
+  "grok-imagine-image-2.0",
+  "grok-imagine-image-quality",
+] as const;
 export const XAI_VIDEO_GENERATIONS_URL = "https://api.x.ai/v1/videos/generations";
+export const XAI_IMAGE_GENERATIONS_URL = "https://api.x.ai/v1/images/generations";
 export const XAI_IMAGINE_DURATION_MIN = 1;
 export const XAI_IMAGINE_DURATION_MAX = 15;
 export const XAI_IMAGINE_DURATION_DEFAULT = 8;
@@ -29,12 +36,17 @@ const ASPECT_SET = new Set<string>(XAI_IMAGINE_ASPECT_RATIOS);
 const RESOLUTION_SET = new Set<string>(XAI_IMAGINE_RESOLUTIONS);
 
 export const IMAGINE_VIDEO_GENERATION_OFFERED = false;
+export const IMAGINE_IMAGE_GENERATION_OFFERED = false;
 export const IMAGINE_WATERMARK_NOT_OFFERED_CODE = "IMAGINE_WATERMARK_NOT_OFFERED";
 export const IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE =
-  "Wireline does not generate video files. Those files include a Grok watermark that cannot be turned off. Phone, email, and text are unaffected.";
+  "Wireline does not generate Imagine photos or video files. Those files include a Grok watermark that cannot be turned off. Phone, email, and text are unaffected.";
 
 export function imagineVideoGenerationOffered(): boolean {
   return IMAGINE_VIDEO_GENERATION_OFFERED;
+}
+
+export function imagineImageGenerationOffered(): boolean {
+  return IMAGINE_IMAGE_GENERATION_OFFERED;
 }
 
 export function xaiImagineVideoConfigured(): boolean {

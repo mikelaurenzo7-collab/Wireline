@@ -16,7 +16,10 @@ describe("runtime integrations registry launch policy", () => {
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(
-      "Grok 4.6 structured primary and Vapi PSTN Grok 4.3 plus xAI voices, plus preview TTS.",
+      "Grok 4.6 structured primary and browser preview TTS. Live PSTN Grok 4.3 plus xAI voices run through Vapi.",
+    );
+    expect(source).toContain(
+      "One api.x.ai key covers chat and preview TTS. PSTN uses VAPI_PRIVATE_KEY.",
     );
     expect(source).toContain("OpenAI remains continuity and Realtime");
     expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");

@@ -32,15 +32,9 @@ describe("dual-voice PSTN routing contracts", () => {
     expect(managedRuntime).toContain('provider: "11labs" as const');
     expect(managedRuntime).toContain("input.approvedClone === true");
     const roster = read("src/data/voice-roster.ts");
-    const helper = roster.slice(
-      roster.indexOf("export function resolvePstnVoiceCandidate"),
-    );
-    expect(helper).toContain(
-      "if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;",
-    );
-    expect(helper).toContain(
-      "if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;",
-    );
+    const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
+    expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
+    expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
     // The outbound client applies the same candidate resolution.
     const client = read("src/lib/vapi-client.ts");
     expect(client).toContain("resolvePstnVoiceCandidate");
@@ -67,9 +61,7 @@ describe("ChatGPT private voice simulation routing", () => {
       accountRoutes.indexOf('if (name === "list_wireline_agents")'),
     );
     expect(simulationHandler).toContain("createOpenAIRealtimeClientSecret({");
-    expect(simulationHandler).toContain(
-      "instructions: draft.runtimeInstructions",
-    );
+    expect(simulationHandler).toContain("instructions: draft.runtimeInstructions");
     expect(simulationHandler).toContain("agentName: draft.view.name");
     expect(simulationHandler).toContain("tools: []");
     expect(simulationHandler).toContain('toolChoice: "none"');
@@ -82,16 +74,12 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(openaiService).toContain("agentName?: string | null");
     expect(openaiService).toContain("tools?: OpenAIRealtimeToolDefinition[]");
     expect(openaiService).toContain('toolChoice?: "auto" | "none"');
-    expect(openaiService).toContain(
-      'apiKeyPurpose?: "runtime" | "chatgpt_demo"',
-    );
+    expect(openaiService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
     expect(openaiService).toContain("OPENAI_API_KEY_CHATKIT");
     expect(openaiService).toContain(
       'purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT',
     );
-    expect(openaiService).toContain(
-      'endpoint: "https://api.openai.com/v1/realtime/calls"',
-    );
+    expect(openaiService).toContain('endpoint: "https://api.openai.com/v1/realtime/calls"');
     expect(openaiService).toContain("rate: 24000");
     expect(openaiService).toContain('mode: "ga"');
     expect(openaiService).not.toContain('mode: "beta"');
@@ -99,9 +87,7 @@ describe("ChatGPT private voice simulation routing", () => {
 
   it("fails a misconfigured default voice back to a supported GA voice", () => {
     const openaiConfig = read("src/lib/voice/openai-realtime-config.ts");
-    expect(openaiConfig).toContain(
-      "supportedVoices.includes(configuredDefault)",
-    );
+    expect(openaiConfig).toContain("supportedVoices.includes(configuredDefault)");
     expect(openaiConfig).toContain(': "marin";');
   });
 
@@ -111,6 +97,20 @@ describe("ChatGPT private voice simulation routing", () => {
     const chatkitIndex = envExample.indexOf("OPENAI_API_KEY_CHATKIT=");
     expect(openaiIndex).toBeGreaterThan(-1);
     expect(chatkitIndex).toBeGreaterThan(openaiIndex);
+  });
+
+  it("uses one XAI_API_KEY for chat and preview TTS; PSTN stays on Vapi", () => {
+    const envExample = read(".env.example");
+    expect(envExample).toContain("XAI_API_KEY=");
+    expect(envExample).toContain("XAI_API_KEY_CHATKIT=");
+    expect(envExample).not.toContain("XAI_API_KEY_VOICE=");
+    expect(envExample).toContain("Wireline does not require a second env");
+    expect(envExample).toContain("var for chat vs voice");
+    expect(envExample).toContain(
+      "Live PSTN Grok 4.3 + xAI Eve/Ara/Rex/Sal/Leo use VAPI_PRIVATE_KEY",
+    );
+    expect(envExample).toContain("never");
+    expect(envExample).toContain("send XAI_API_KEY in Vapi assistant payloads");
   });
 
   it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {
@@ -124,11 +124,7 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(widget).not.toContain("api.x.ai");
     expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(accountRoutes).toContain(
-      'connectDomains: ["https://api.openai.com"]',
-    );
-    expect(accountRoutes).not.toContain(
-      'connectDomains: ["https://api.x.ai", "wss://api.x.ai"]',
-    );
+    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(accountRoutes).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
   });
 });

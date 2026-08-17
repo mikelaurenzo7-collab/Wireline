@@ -27,6 +27,20 @@ Official Speech-to-Speech page: https://docs.x.ai/developers/model-capabilities/
 
 No customer-facing surface should connect with an xAI client-secret subprotocol. Customer copy must not say "Grok Bot" or pair "AI" with "agent".
 
+## Credentials: one xAI key, Vapi for PSTN
+
+xAI Console API keys are Bearer tokens on `https://api.x.ai`. One key can authenticate Responses, Chat Completions, TTS, Realtime, and Imagine. Console ACLs (`api-key:endpoint:chat`, `api-key:endpoint:voice`, or wildcards) can restrict a key; they do not require a second Wireline env var.
+
+| Work | Credential | Notes |
+| --- | --- | --- |
+| Structured chat / email / tools (`grok-4.6`) | `XAI_API_KEY` | Direct Responses API |
+| Browser preview TTS (`/v1/tts`) | `XAI_API_KEY` | Same key; grant the voice endpoint ACL |
+| Live PSTN + Studio Vapi web (`grok-4.3` + Eve/Ara/Rex/Sal/Leo) | `VAPI_PRIVATE_KEY` | Vapi-managed xAI, or a BYO key stored in the Vapi Integrations dashboard. Do not send `XAI_API_KEY` in assistant payloads. |
+| Isolated xAI experiments | `XAI_API_KEY_CHATKIT` | Optional. Not required to split chat from voice. |
+| Imagine photos and video | none | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key. |
+
+Do not add `XAI_API_KEY_VOICE`. Chat and preview TTS share `XAI_API_KEY`. Phone calls share `VAPI_PRIVATE_KEY`.
+
 ## Speech-to-Speech research (xAI native, not Wireline PSTN)
 
 Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech and linked pages (ephemeral tokens, SIP, custom voices, pricing, REST voice reference, Vapi xAI model docs).

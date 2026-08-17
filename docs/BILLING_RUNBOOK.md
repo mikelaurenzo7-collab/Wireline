@@ -11,8 +11,7 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 - **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` owns `POST /api/billing/checkout`. `src/routes/billing-portal-readiness-routes.ts` owns `POST /api/billing/portal`. `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface, `/api/stripe-webhook`, and Live Video add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
 - **Wallet ledger:** `src/lib/credit-wallet.ts` is the append-only USD ledger for top-ups, burns, refunds, disputes, and grants.
 - **Voice usage:** `src/lib/voice-usage.ts` consumes included voice capacity first and Runtime Balance only for explicit funded overflow.
-- **Live Video usage:** `src/lib/video-presenter/live-video-usage.ts` atomically reserves monthly Live Video capacity before a provider session token is minted.
-- **Live Video policy:** `src/lib/video-presenter/live-video-policy.ts` owns price, allowance, session reservation size, provider cost reserve, and minimum full-use margin.
+- **Live Video:** talking-head is retired. Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed.
 
 ## Commercial contract
 
@@ -118,22 +117,14 @@ For each completed voice call, `trackVoiceMinutes` must:
 7. never emit a Stripe meter event or create an automatic overage invoice; and
 8. use the provider call id as the stable idempotency key.
 
-### 9. Live Video checkout → entitlement → session lifecycle works
+### 9. Live Video remains retired
 
-Use a dedicated authorized test customer on an active paid base plan.
+Talking-head checkout and session mint stay closed. Identity badges remain. Imagine photos and video files are not generated.
 
-1. In a business agent, load `/api/video-presenter/avatars` and select a public presenter. Confirm the choice is persisted to that agent.
-2. Start `POST /api/billing/live-video-checkout`; verify Checkout is **$19/month**, carries the Live Video add-on metadata, and uses automatic tax like the rest of the subscription surface.
-3. Complete Checkout and deliver the webhook. Confirm server-owned `liveVideoAddonEnabled` becomes true only from reconciled Stripe state.
-4. Enable Live Video on the selected business agent. Confirm Free Builder / inactive base plans cannot enable or purchase usable Live Video.
-5. Start a presenter session. Before provider token minting, confirm the database atomically reserves **5 minutes** from the **60-minute** UTC-month allowance.
-6. Confirm the provider request uses LITE mode and `maxSessionDurationSeconds = 300`.
-7. Confirm the client receives `maxSessionSeconds`, establishes the stream, and can drive presenter lip-sync from the agent audio path.
-8. Click **End live video** and verify the SDK session is stopped immediately.
-9. Repeat until fewer than five reserved minutes remain; the next session must fail closed with `LIVE_VIDEO_MONTHLY_LIMIT_REACHED`.
-10. Confirm there is **no automatic Stripe overage** and no usage-meter event for Live Video.
-11. Cancel the Live Video subscription and confirm the webhook removes entitlement. Cancel the base plan and confirm Live Video can no longer be used and billing reconciliation does not leave an orphaned unusable add-on.
-12. Set `WIRELINE_LIVE_VIDEO_DISABLED=true` in a non-production verification environment and confirm the provider surface/checkout becomes unavailable without changing stored customer entitlements.
+1. Confirm `POST /api/billing/live-video-checkout` returns catalog-unavailable / closed.
+2. Confirm `POST /api/agents/:id/video-presenter/session` returns 410.
+3. Confirm leftover Stripe Live Video price IDs still reconcile webhooks without authorizing a provider session.
+4. Confirm identity studio at `/studio/live-video` shows a badge, not a talking-head stage.
 
 ## Verification commands
 
@@ -162,5 +153,4 @@ npm run verify:full
 - Stripe Dashboard deletes or test/live mismatches can make stored customer ids stale. The billing status/portal surfaces must expose a recoverable customer-missing state rather than pretending the portal exists.
 - Do not manually edit entitlement state unless Stripe is unavailable and the account owner has approved emergency intervention. Record and later reconcile any manual correction.
 - Refunds and disputes for Runtime Balance top-ups must reach the wallet ledger through the handled webhook events.
-- Live Video provider failure after reservation must release that reservation; failure after a provider session has been minted is not assumed free.
-- `WIRELINE_LIVE_VIDEO_DISABLED=true` is the operator emergency kill switch. It is not a substitute for canceling customer billing.
+- Leftover Live Video Stripe SKUs must still reconcile webhooks without minting a talking-head session. Checkout stays closed.

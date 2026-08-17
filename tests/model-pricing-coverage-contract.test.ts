@@ -30,6 +30,8 @@ describe("model pricing coverage contract", () => {
         `missing pricing for ${id}`,
       ).toBeDefined();
     }
+    expect(Object.values(XAI_MODELS)).not.toContain("grok-imagine-video-1.5");
+    expect(Object.values(XAI_MODELS).join(" ")).not.toContain("imagine");
   });
 
   it("pins current GPT-5.6 standard rates and cache-write premiums", () => {

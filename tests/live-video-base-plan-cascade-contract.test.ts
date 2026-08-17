@@ -32,24 +32,16 @@ describe("Live Video dependent billing lifecycle", () => {
     expect(helpers).toContain('metadata: { wireline_base_plan_cascade: "" }');
   });
 
-  it("preserves only a Stripe-current add-on after terminal base cancellation", () => {
-    expect(entitlements).toContain("TERMINAL_BASE_SUBSCRIPTION_STATUSES");
-    expect(entitlements).toContain("hasCurrentStripeLiveVideoAddon");
-    expect(entitlements).toContain("isCurrentLiveVideoAddon(subscription)");
+  it("preserves leftover Stripe add-on records without authorizing live video", () => {
+    expect(entitlements).toContain("addonOffered: false");
+    expect(entitlements).toContain("billingEntitled: false");
+    expect(entitlements).toContain("liveVideoCheckoutAvailable: false");
+    expect(entitlements).toContain("must not");
+    expect(entitlements).toContain("authorize a provider session");
     expect(authority).toContain('subscription.metadata?.purpose === "live_video_addon"');
     expect(authority).toContain("LIVE_VIDEO_ADDON_NON_ENTITLING_STATUSES");
-    expect(entitlements).toContain("terminalPaidPeriodGrace");
-    expect(entitlements).toContain("stripeCustomerId: schema.subscriptions.stripeCustomerId");
-    expect(entitlements).toContain(
-      "terminalBase && (await hasCurrentStripeLiveVideoAddon(row?.stripeCustomerId ?? null))",
-    );
-    expect(entitlements).toContain(
-      "const billingEntitled = addonOffered && workspaceFlag && existingAddonEntitled",
-    );
-    expect(entitlements).toContain(
-      "const checkoutAvailable = addonOffered && baseSubscriptionActive && priceConfigured",
-    );
-    expect(entitlements).toContain("failed closed");
+    expect(authority).toContain("isCurrentLiveVideoAddon(subscription)");
+    expect(helpers).toContain("reconcileLiveVideoAddonWithBasePlan");
   });
 
   it("runs Stripe reconciliation before persisting the new local base-plan mirror", () => {

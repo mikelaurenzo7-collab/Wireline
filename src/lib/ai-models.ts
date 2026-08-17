@@ -11,9 +11,10 @@
  *   `voice.provider: "xai"` with Eve/Ara/Rex/Sal/Leo.
  * - **Studio browser tests** use Vapi web with the same `grok-4.3` language
  *   model as PSTN. OpenAI Realtime is backup and ChatGPT-widget simulation.
- * - **Imagine video** exists at xAI as `grok-imagine-video-1.5`. Wireline
- *   does not generate those files: they include a Grok watermark that cannot
- *   be turned off. That is not Grok Bot and not live PSTN.
+ * - **Imagine** image and video models exist at xAI. Wireline does not
+ *   generate those files: they include a Grok watermark that cannot be
+ *   turned off. That is not Grok Bot, not live PSTN, and not a priced
+ *   runtime model in this catalog.
  *
  * OpenAI is the first automatic structured continuity lane, then Gemini, then
  * the Vercel AI Gateway. `reasoning-provider-policy.ts` owns eligibility and
@@ -24,8 +25,6 @@ export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
   // Vapi's documented live-call xAI language model (non-reasoning).
   GROK_4_3: "grok-4.3",
-  // Documented xAI video model. Wireline does not generate Imagine files.
-  GROK_IMAGINE_VIDEO: "grok-imagine-video-1.5",
 } as const;
 
 export const OPENAI_MODELS = {

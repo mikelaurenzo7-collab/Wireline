@@ -92,11 +92,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "xai",
     "xAI Grok",
-    "Grok 4.6 structured primary and Vapi PSTN Grok 4.3 plus xAI voices, plus preview TTS.",
+    "Grok 4.6 structured primary and browser preview TTS. Live PSTN Grok 4.3 plus xAI voices run through Vapi.",
     "ai",
     false,
     ["XAI_API_KEY"],
-    "Active whenever XAI_API_KEY is configured; OpenAI remains continuity and Realtime. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable.",
+    "One api.x.ai key covers chat and preview TTS. PSTN uses VAPI_PRIVATE_KEY. OpenAI remains continuity and Realtime. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable.",
   ),
   item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
     "VAPI_PRIVATE_KEY",
