@@ -28,23 +28,16 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const { limit, sinceIso } = req.body ?? {};
     try {
-      // Mirror IntegrationService's mail → calendar-account fallback so a
-      // mailbox enabled through a broader Google or Microsoft connection is
-      // not incorrectly reported as disconnected.
-      const [mailAccounts, calendarAccounts] = await Promise.all([
-        drizzle
-          .select({ id: schema.emailAccounts.id })
-          .from(schema.emailAccounts)
-          .where(eq(schema.emailAccounts.userId, req.user.id))
-          .limit(1),
-        drizzle
-          .select({ id: schema.calendarAccounts.id })
-          .from(schema.calendarAccounts)
-          .where(eq(schema.calendarAccounts.userId, req.user.id))
-          .limit(1),
-      ]);
+      // Manual sync must use the same canonical mailbox source as
+      // IntegrationService. A calendar-only OAuth row cannot provide the
+      // mailbox account identity required for tenant-safe persistence.
+      const mailAccounts = await drizzle
+        .select({ id: schema.emailAccounts.id })
+        .from(schema.emailAccounts)
+        .where(eq(schema.emailAccounts.userId, req.user.id))
+        .limit(1);
 
-      if (mailAccounts.length === 0 && calendarAccounts.length === 0) {
+      if (mailAccounts.length === 0) {
         return res.status(400).json({
           ok: false,
           code: "EMAIL_ACCOUNT_NOT_CONNECTED",
