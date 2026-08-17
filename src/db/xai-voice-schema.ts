@@ -13,7 +13,8 @@ import { agents, users } from "./schema-base";
  * External identifiers are nullable while `status = provisioning`. This lets
  * Wireline claim the number before any non-idempotent carrier/provider call and
  * persist each returned identifier immediately instead of risking loss of the
- * one-time xAI signing secret during a partial failure.
+ * one-time xAI signing secret during a partial failure. A short-lived claim
+ * token prevents two requests from provisioning the same tenant line at once.
  */
 export const xaiPhoneBindings = pgTable(
   "wireline_xai_phone_bindings",
@@ -37,6 +38,8 @@ export const xaiPhoneBindings = pgTable(
     })
       .notNull()
       .default("provisioning"),
+    provisioningToken: uuid("provisioning_token"),
+    provisioningClaimedAt: timestamp("provisioning_claimed_at", { withTimezone: true }),
     lastError: text("last_error"),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
