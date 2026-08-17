@@ -42,17 +42,17 @@ CREATE INDEX IF NOT EXISTS idx_xai_phone_bindings_agent
 CREATE UNIQUE INDEX IF NOT EXISTS uq_xai_phone_bindings_phone
   ON public.wireline_xai_phone_bindings (phone_number);
 
+-- PostgreSQL unique indexes already permit multiple NULL values. Keeping these
+-- indexes non-partial matches the Drizzle declaration exactly while preserving
+-- the intended uniqueness once each external identifier exists.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_xai_phone_bindings_twilio_phone
-  ON public.wireline_xai_phone_bindings (twilio_phone_number_sid)
-  WHERE twilio_phone_number_sid IS NOT NULL;
+  ON public.wireline_xai_phone_bindings (twilio_phone_number_sid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_xai_phone_bindings_xai_phone
-  ON public.wireline_xai_phone_bindings (xai_phone_number_id)
-  WHERE xai_phone_number_id IS NOT NULL;
+  ON public.wireline_xai_phone_bindings (xai_phone_number_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_xai_phone_bindings_xai_webhook
-  ON public.wireline_xai_phone_bindings (xai_webhook_id)
-  WHERE xai_webhook_id IS NOT NULL;
+  ON public.wireline_xai_phone_bindings (xai_webhook_id);
 
 ALTER TABLE public.wireline_xai_phone_bindings ENABLE ROW LEVEL SECURITY;
 
