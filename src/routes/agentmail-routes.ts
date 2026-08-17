@@ -19,13 +19,13 @@ import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { encryptSecret, decryptSecret, isVaultConfigured } from "../lib/secret-vault";
 import { authenticateUser } from "../middleware/auth";
-import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 
 const router = Router();
 
-const agentmailConnectRateLimiter = createIpRateLimiter({
+const agentmailConnectRateLimiter = createRateLimiter({
   bucket: "api:agentmail-connect",
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -41,8 +41,8 @@ const agentmailConnectRateLimiter = createIpRateLimiter({
  */
 router.post(
   "/api/integrations/agentmail/connect",
-  agentmailConnectRateLimiter,
   authenticateUser,
+  agentmailConnectRateLimiter,
   validateBody(agentmailConnectSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     if (!isVaultConfigured()) {
@@ -130,8 +130,8 @@ router.post(
 
 router.post(
   "/api/integrations/agentmail/disconnect",
-  agentmailConnectRateLimiter,
   authenticateUser,
+  agentmailConnectRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     try {
