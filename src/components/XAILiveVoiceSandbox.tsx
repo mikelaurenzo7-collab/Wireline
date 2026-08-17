@@ -3,6 +3,11 @@ import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 
 import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
+import {
+  XAI_BROWSER_PCM_RATE_HZ,
+  XAIStreamingPcmEncoder,
+  base64Pcm16LeToFloat32,
+} from "../lib/voice/browser-pcm";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type XAILiveSessionResponse = {
@@ -19,38 +24,9 @@ type Line = { id: string; role: "You" | "Agent"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 type PendingToolCall = { name: string; callId: string; arguments: unknown };
 
-const RATE = 24_000;
 const CAPTURE_BUFFER_SIZE = 4_096;
 const PLAYBACK_DRAIN_TIMEOUT_MS = 12_000;
-
-function float32ToBase64Pcm(input: Float32Array): string {
-  const pcm = new Int16Array(input.length);
-  for (let index = 0; index < input.length; index += 1) {
-    const value = Math.max(-1, Math.min(1, input[index] || 0));
-    pcm[index] = value < 0 ? value * 0x8000 : value * 0x7fff;
-  }
-  const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
-  }
-  return btoa(binary);
-}
-
-function base64PcmToFloat32(base64: string): Float32Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  const pcm = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
-  const output = new Float32Array(pcm.length);
-  for (let index = 0; index < pcm.length; index += 1) {
-    output[index] = pcm[index] / (pcm[index] < 0 ? 0x8000 : 0x7fff);
-  }
-  return output;
-}
+const CONNECTION_TIMEOUT_MS = 20_000;
 
 function voiceActivity(state: VoiceState) {
   if (state === "error")
@@ -90,6 +66,16 @@ function voiceActivity(state: VoiceState) {
   };
 }
 
+function parseArguments(value: unknown): unknown {
+  if (typeof value !== "string") return value && typeof value === "object" ? value : {};
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function XAILiveVoiceSandbox({
   agentId,
   agentName,
@@ -115,6 +101,7 @@ export default function XAILiveVoiceSandbox({
   const captureSource = useRef<MediaStreamAudioSourceNode | null>(null);
   const captureProcessor = useRef<ScriptProcessorNode | null>(null);
   const captureSink = useRef<GainNode | null>(null);
+  const captureEncoder = useRef<XAIStreamingPcmEncoder | null>(null);
   const playbackSource = useRef<AudioBufferSourceNode | null>(null);
   const playbackQueue = useRef<Float32Array[]>([]);
   const playbackActive = useRef(false);
@@ -122,38 +109,56 @@ export default function XAILiveVoiceSandbox({
   const pendingToolCalls = useRef<Map<string, PendingToolCall>>(new Map());
   const assistantLineId = useRef<string | null>(null);
   const userLineId = useRef<string | null>(null);
+  const watchdog = useRef<number | null>(null);
   const reportedStarted = useRef(false);
   const reportedCompleted = useRef(false);
   const generation = useRef(0);
 
-  const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
-    if (!text) return;
-    setLines((current) => {
-      const index = current.findIndex((line) => line.id === id);
-      if (index < 0) return [...current, { id, role, text }].slice(-16);
-      const next = [...current];
-      next[index] = { ...next[index], text: replace ? text : `${next[index].text}${text}` };
-      return next;
-    });
-  };
+  const upsertLine = useCallback(
+    (id: string, role: Line["role"], text: string, replace = false) => {
+      if (!text) return;
+      setLines((current) => {
+        const index = current.findIndex((line) => line.id === id);
+        if (index < 0) return [...current, { id, role, text }].slice(-16);
+        const next = [...current];
+        next[index] = { ...next[index], text: replace ? text : `${next[index].text}${text}` };
+        return next;
+      });
+    },
+    [],
+  );
 
-  const appendAssistant = (text: string) => {
-    if (!text) return;
-    const id =
-      assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    assistantLineId.current = id;
-    upsertLine(id, "Agent", text);
-  };
+  const appendAssistant = useCallback(
+    (text: string) => {
+      if (!text) return;
+      const id =
+        assistantLineId.current ||
+        `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      assistantLineId.current = id;
+      upsertLine(id, "Agent", text);
+    },
+    [upsertLine],
+  );
 
-  const updateUserTranscript = (text: string, itemId?: unknown) => {
-    if (!text) return;
-    const id =
-      typeof itemId === "string" && itemId
-        ? `user-${itemId}`
-        : userLineId.current || `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    userLineId.current = id;
-    upsertLine(id, "You", text, true);
-  };
+  const updateUserTranscript = useCallback(
+    (text: string, itemId?: unknown) => {
+      if (!text) return;
+      const id =
+        typeof itemId === "string" && itemId
+          ? `user-${itemId}`
+          : userLineId.current || `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      userLineId.current = id;
+      upsertLine(id, "You", text, true);
+    },
+    [upsertLine],
+  );
+
+  const clearWatchdog = useCallback(() => {
+    if (watchdog.current !== null) {
+      window.clearTimeout(watchdog.current);
+      watchdog.current = null;
+    }
+  }, []);
 
   const stopPlayback = useCallback(() => {
     try {
@@ -177,7 +182,7 @@ export default function XAILiveVoiceSandbox({
     }
 
     playbackActive.current = true;
-    const buffer = context.createBuffer(1, chunk.length, RATE);
+    const buffer = context.createBuffer(1, chunk.length, XAI_BROWSER_PCM_RATE_HZ);
     buffer.getChannelData(0).set(chunk);
     const source = context.createBufferSource();
     source.buffer = buffer;
@@ -193,7 +198,7 @@ export default function XAILiveVoiceSandbox({
   const playAudio = useCallback(
     (base64: string) => {
       if (!base64 || !audioContext.current) return;
-      playbackQueue.current.push(base64PcmToFloat32(base64));
+      playbackQueue.current.push(base64Pcm16LeToFloat32(base64));
       if (!playbackActive.current) playNextChunk();
       onAgentAudioDelta?.(base64);
     },
@@ -211,9 +216,12 @@ export default function XAILiveVoiceSandbox({
   }, []);
 
   const release = useCallback(() => {
+    clearWatchdog();
     sessionReady.current = false;
     pendingToolCalls.current.clear();
-    socket.current?.close();
+    captureEncoder.current?.reset();
+    captureEncoder.current = null;
+    socket.current?.close(1000, "Wireline live test ended");
     microphone.current?.getTracks().forEach((track) => track.stop());
     captureProcessor.current?.disconnect();
     captureSource.current?.disconnect();
@@ -229,7 +237,7 @@ export default function XAILiveVoiceSandbox({
     audioContext.current = null;
     assistantLineId.current = null;
     userLineId.current = null;
-  }, [stopPlayback]);
+  }, [clearWatchdog, stopPlayback]);
 
   const stop = useCallback(() => {
     generation.current += 1;
@@ -247,181 +255,190 @@ export default function XAILiveVoiceSandbox({
     [release],
   );
 
-  const runTool = async (name: string, args: unknown) => {
-    const response = await authFetch("/api/voice/live/tool", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentId, name, arguments: args }),
-    });
-    const body = await response.json().catch(() => null);
-    if (!response.ok)
-      throw new Error(
-        typeof body?.error === "string" ? body.error : "Approved knowledge is unavailable.",
-      );
-    return body?.result || {};
-  };
-
-  const flushPendingTools = async (currentGeneration: number) => {
-    const ws = socket.current;
-    const calls = [...pendingToolCalls.current.values()];
-    pendingToolCalls.current.clear();
-    if (!calls.length || !ws || ws.readyState !== WebSocket.OPEN) return;
-
-    setState("thinking");
-    const outputs = await Promise.all(
-      calls.map(async (call) => {
-        try {
-          const result = await runTool(call.name, call.arguments);
-          return { callId: call.callId, result };
-        } catch (reason) {
-          return {
-            callId: call.callId,
-            result: { error: reason instanceof Error ? reason.message : "Tool unavailable." },
-          };
-        }
-      }),
-    );
-    if (currentGeneration !== generation.current || ws.readyState !== WebSocket.OPEN) return;
-
-    for (const output of outputs) {
-      ws.send(
-        JSON.stringify({
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: output.callId,
-            output: JSON.stringify(output.result),
-          },
-        }),
-      );
-    }
-    await waitForPlaybackDrain();
-    if (currentGeneration === generation.current && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "response.create" }));
-    }
-  };
-
-  const startCapture = async (ws: WebSocket, currentGeneration: number) => {
-    const context = new AudioContext({ sampleRate: RATE });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: RATE,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
-    if (currentGeneration !== generation.current) {
-      stream.getTracks().forEach((track) => track.stop());
-      await context.close();
-      return;
-    }
-    if (context.state === "suspended") await context.resume();
-
-    const source = context.createMediaStreamSource(stream);
-    const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
-    const sink = context.createGain();
-    sink.gain.value = 0;
-    processor.onaudioprocess = (event) => {
-      if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
-      const samples = event.inputBuffer.getChannelData(0);
-      if (!samples.length) return;
-      ws.send(
-        JSON.stringify({
-          type: "input_audio_buffer.append",
-          audio: float32ToBase64Pcm(samples),
-        }),
-      );
-    };
-    source.connect(processor);
-    processor.connect(sink);
-    sink.connect(context.destination);
-
-    audioContext.current = context;
-    microphone.current = stream;
-    captureSource.current = source;
-    captureProcessor.current = processor;
-    captureSink.current = sink;
-  };
-
-  const handleEvent = async (event: Record<string, unknown>, currentGeneration: number) => {
-    if (currentGeneration !== generation.current) return;
-    const type = String(event.type || "");
-
-    if (
-      (type === "response.output_audio.delta" || type === "response.audio.delta") &&
-      typeof event.delta === "string"
-    ) {
-      playAudio(event.delta);
-      setState("speaking");
-    }
-    if (
-      (type === "response.output_audio_transcript.delta" || type === "response.output_text.delta") &&
-      typeof event.delta === "string"
-    ) {
-      appendAssistant(event.delta);
-      setState("speaking");
-    }
-    if (type === "conversation.item.input_audio_transcription.updated") {
-      updateUserTranscript(
-        typeof event.transcript === "string" ? event.transcript : "",
-        event.item_id,
-      );
-    }
-    if (type === "conversation.item.added") {
-      const item = event.item as
-        | { id?: unknown; role?: unknown; content?: Array<Record<string, unknown>> }
-        | undefined;
-      if (item?.role === "user" && Array.isArray(item.content)) {
-        const transcript = item.content.find(
-          (content) => content.type === "input_audio" && typeof content.transcript === "string",
-        )?.transcript;
-        if (typeof transcript === "string") updateUserTranscript(transcript, item.id);
+  const runTool = useCallback(
+    async (name: string, args: unknown) => {
+      const response = await authFetch("/api/voice/live/tool", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId, name, arguments: args }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          typeof body?.error === "string" ? body.error : "Approved knowledge is unavailable.",
+        );
       }
-    }
-    if (type === "input_audio_buffer.speech_started") {
-      stopPlayback();
-      setState("listening");
-    }
-    if (type === "response.function_call_arguments.done") {
-      const name = typeof event.name === "string" ? event.name : "";
-      const callId = typeof event.call_id === "string" ? event.call_id : "";
-      if (name && callId) {
-        let args: unknown = {};
-        if (typeof event.arguments === "string") {
+      return body?.result || {};
+    },
+    [agentId],
+  );
+
+  const flushPendingTools = useCallback(
+    async (currentGeneration: number) => {
+      const ws = socket.current;
+      const calls = [...pendingToolCalls.current.values()];
+      pendingToolCalls.current.clear();
+      if (!calls.length || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+      setState("thinking");
+      const outputs = await Promise.all(
+        calls.map(async (call) => {
           try {
-            args = JSON.parse(event.arguments);
-          } catch {
-            args = {};
+            return { callId: call.callId, result: await runTool(call.name, call.arguments) };
+          } catch (reason) {
+            return {
+              callId: call.callId,
+              result: { error: reason instanceof Error ? reason.message : "Tool unavailable." },
+            };
           }
-        }
-        pendingToolCalls.current.set(callId, { name, callId, arguments: args });
+        }),
+      );
+      if (currentGeneration !== generation.current || ws.readyState !== WebSocket.OPEN) return;
+
+      for (const output of outputs) {
+        ws.send(
+          JSON.stringify({
+            type: "conversation.item.create",
+            item: {
+              type: "function_call_output",
+              call_id: output.callId,
+              output: JSON.stringify(output.result),
+            },
+          }),
+        );
       }
-    }
-    if (type === "response.done") {
-      assistantLineId.current = null;
-      userLineId.current = null;
-      onAgentAudioEnd?.();
-      if (pendingToolCalls.current.size) {
-        await flushPendingTools(currentGeneration);
-      } else {
+      await waitForPlaybackDrain();
+      if (currentGeneration === generation.current && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "response.create" }));
+      }
+    },
+    [runTool, waitForPlaybackDrain],
+  );
+
+  const startCapture = useCallback(
+    async (ws: WebSocket, currentGeneration: number) => {
+      const context = new AudioContext();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      if (currentGeneration !== generation.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        await context.close();
+        return;
+      }
+      if (context.state === "suspended") await context.resume();
+
+      const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
+      const source = context.createMediaStreamSource(stream);
+      const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
+      const sink = context.createGain();
+      sink.gain.value = 0;
+      processor.onaudioprocess = (event) => {
+        if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
+        const samples = event.inputBuffer.getChannelData(0);
+        for (const audio of encoder.push(samples)) {
+          ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
+        }
+      };
+      source.connect(processor);
+      processor.connect(sink);
+      sink.connect(context.destination);
+
+      audioContext.current = context;
+      microphone.current = stream;
+      captureSource.current = source;
+      captureProcessor.current = processor;
+      captureSink.current = sink;
+      captureEncoder.current = encoder;
+    },
+    [],
+  );
+
+  const handleEvent = useCallback(
+    async (event: Record<string, unknown>, currentGeneration: number) => {
+      if (currentGeneration !== generation.current) return;
+      const type = String(event.type || "");
+
+      if (
+        (type === "response.output_audio.delta" || type === "response.audio.delta") &&
+        typeof event.delta === "string"
+      ) {
+        playAudio(event.delta);
+        setState("speaking");
+      }
+      if (
+        (type === "response.output_audio_transcript.delta" ||
+          type === "response.output_text.delta") &&
+        typeof event.delta === "string"
+      ) {
+        appendAssistant(event.delta);
+        setState("speaking");
+      }
+      if (
+        type === "conversation.item.input_audio_transcription.updated" ||
+        type === "conversation.item.input_audio_transcription.completed"
+      ) {
+        updateUserTranscript(
+          typeof event.transcript === "string" ? event.transcript : "",
+          event.item_id,
+        );
+      }
+      if (type === "input_audio_buffer.speech_started") {
+        stopPlayback();
         setState("listening");
       }
-      if (reportedStarted.current && !reportedCompleted.current) {
-        reportedCompleted.current = true;
-        onTestCompleted?.();
+      if (type === "response.function_call_arguments.done") {
+        const name = typeof event.name === "string" ? event.name.trim() : "";
+        const callId = typeof event.call_id === "string" ? event.call_id.trim() : "";
+        if (name && callId) {
+          pendingToolCalls.current.set(callId, {
+            name,
+            callId,
+            arguments: parseArguments(event.arguments),
+          });
+        }
       }
-    }
-    if (type === "error") {
-      const detail = event.error as { message?: unknown } | undefined;
-      fail(
-        typeof detail?.message === "string" ? detail.message : "Live voice encountered an error.",
-      );
-    }
-  };
+      if (type === "response.done") {
+        assistantLineId.current = null;
+        userLineId.current = null;
+        onAgentAudioEnd?.();
+        if (pendingToolCalls.current.size) {
+          await flushPendingTools(currentGeneration);
+        } else {
+          setState("listening");
+        }
+        if (reportedStarted.current && !reportedCompleted.current) {
+          reportedCompleted.current = true;
+          onTestCompleted?.();
+        }
+      }
+      if (type === "error") {
+        const detail = event.error as { message?: unknown } | undefined;
+        fail(
+          typeof detail?.message === "string"
+            ? detail.message
+            : "Live voice encountered an error.",
+        );
+      }
+    },
+    [
+      appendAssistant,
+      fail,
+      flushPendingTools,
+      onAgentAudioEnd,
+      onTestCompleted,
+      playAudio,
+      stopPlayback,
+      updateUserTranscript,
+    ],
+  );
 
-  const start = async () => {
+  const start = useCallback(async () => {
     if (["connecting", "listening", "speaking", "thinking"].includes(state)) return;
     stop();
     const currentGeneration = generation.current;
@@ -450,12 +467,17 @@ export default function XAILiveVoiceSandbox({
         `xai-client-secret.${session.clientSecret}`,
       ]);
       socket.current = ws;
+      clearWatchdog();
+      watchdog.current = window.setTimeout(() => {
+        if (currentGeneration === generation.current && !sessionReady.current) {
+          fail("The live voice connection took too long. Start the test again.");
+        }
+      }, CONNECTION_TIMEOUT_MS);
+
       void startCapture(ws, currentGeneration).catch((reason) => {
         if (currentGeneration === generation.current) {
           fail(
-            reason instanceof Error
-              ? reason.message
-              : "Microphone access is required for live voice.",
+            reason instanceof Error ? reason.message : "Microphone access is required for live voice.",
           );
         }
       });
@@ -473,6 +495,7 @@ export default function XAILiveVoiceSandbox({
           ws.send(JSON.stringify({ type: "session.update", session: session.session }));
         }
         if (type === "session.updated" && !sessionReady.current) {
+          clearWatchdog();
           sessionReady.current = true;
           reportedStarted.current = true;
           onTestStarted?.();
@@ -495,8 +518,9 @@ export default function XAILiveVoiceSandbox({
         void handleEvent(event, currentGeneration);
       };
       ws.onerror = () => {
-        if (currentGeneration === generation.current)
+        if (currentGeneration === generation.current) {
           fail("The live voice connection was interrupted. Start the test again to continue.");
+        }
       };
       ws.onclose = (event) => {
         if (currentGeneration !== generation.current) return;
@@ -504,17 +528,29 @@ export default function XAILiveVoiceSandbox({
           fail(
             event.reason || "The live voice connection ended. Start the test again to continue.",
           );
+          return;
         }
+        release();
+        setState("idle");
       };
     } catch (reason) {
-      if (currentGeneration === generation.current)
+      if (currentGeneration === generation.current) {
         fail(
-          reason instanceof Error
-            ? reason.message
-            : "Microphone access is required for live voice.",
+          reason instanceof Error ? reason.message : "Microphone access is required for live voice.",
         );
+      }
     }
-  };
+  }, [
+    agentId,
+    clearWatchdog,
+    fail,
+    handleEvent,
+    onTestStarted,
+    release,
+    startCapture,
+    state,
+    stop,
+  ]);
 
   useEffect(() => () => stop(), [stop]);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
