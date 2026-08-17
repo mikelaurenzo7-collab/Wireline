@@ -9,7 +9,6 @@ export const XAI_TWILIO_ORIGINATION_FRIENDLY_NAME = "xAI realtime primary";
 export const XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token";
 
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
-const SIMPLE_CIDR_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?$/;
 const TWILIO_SIP_URI_MAX_LENGTH = 255;
 const XAI_CALL_ID_PATTERN = /^[A-Za-z0-9._:-]{1,200}$/;
 
@@ -87,10 +86,34 @@ export function twilioVoiceFallbackUrl(): string {
   return `${getCanonicalAppUrl()}/api/twilio-webhook/voice-fallback`;
 }
 
+/** Strict IPv4/CIDR validation for xAI's SIP allowlist. */
+export function isValidXAISipAllowedAddress(value: string): boolean {
+  const candidate = value.trim();
+  const parts = candidate.split("/");
+  if (parts.length > 2 || !parts[0]) return false;
+
+  const octets = parts[0].split(".");
+  if (
+    octets.length !== 4 ||
+    octets.some(
+      (octet) =>
+        !/^\d{1,3}$/.test(octet) ||
+        Number(octet) < 0 ||
+        Number(octet) > 255,
+    )
+  ) {
+    return false;
+  }
+
+  if (parts.length === 1) return true;
+  const prefix = parts[1];
+  return Boolean(prefix && /^\d{1,2}$/.test(prefix) && Number(prefix) >= 0 && Number(prefix) <= 32);
+}
+
 /**
  * xAI Direct SIP must accept Twilio's published signaling ranges. The list is
  * operator-owned because carrier ranges can change independently of a deploy.
- * Set `XAI_SIP_ALLOWED_ADDRESSES` as comma/newline-separated CIDR blocks.
+ * Set `XAI_SIP_ALLOWED_ADDRESSES` as comma/newline-separated IPv4 CIDR blocks.
  */
 export function resolveXAISipAllowedAddresses(
   env: NodeJS.ProcessEnv = process.env,
@@ -105,7 +128,7 @@ export function resolveXAISipAllowedAddresses(
       "XAI_SIP_ALLOWED_ADDRESSES is required before registering a Twilio number with xAI.",
     );
   }
-  if (unique.some((entry) => !SIMPLE_CIDR_PATTERN.test(entry))) {
+  if (unique.some((entry) => !isValidXAISipAllowedAddress(entry))) {
     throw new Error("XAI_SIP_ALLOWED_ADDRESSES contains an invalid IPv4/CIDR entry.");
   }
   return unique;
