@@ -14,10 +14,10 @@ import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import { trackVoiceMinutes } from "../voice-usage";
 import type { ToolCallContext } from "../../routes/vapi/types";
-import { buildGrokVoiceRealtimeUrl } from "./grok-voice-config";
 import { buildXAIRealtimeAgentRuntime } from "./xai-agent-runtime";
 import {
   XAI_REALTIME_CALLS_URL,
+  buildXAISipRealtimeUrl,
   normalizeXAIPhoneNumber,
   resolveXAISipSessionMaxSeconds,
 } from "./xai-sip-config";
@@ -133,6 +133,21 @@ function deterministicSummary(transcript: string): string {
   return compact.length <= 600 ? compact : `${compact.slice(0, 597)}…`;
 }
 
+function buildInboundOpening(
+  input: XAISipIncomingCall,
+  runtime: Awaited<ReturnType<typeof buildXAIRealtimeAgentRuntime>>,
+): string {
+  const disclosure = complianceFirstMessagePrefix(
+    input.complianceMode,
+    input.businessName || runtime.agentName,
+    {
+      outboundAiCall: false,
+      recordingEnabled: false,
+    },
+  );
+  return `${disclosure}${runtime.greeting}`.trim();
+}
+
 function buildOutboundOpening(
   input: XAISipIncomingCall,
   runtime: Awaited<ReturnType<typeof buildXAIRealtimeAgentRuntime>>,
@@ -151,7 +166,7 @@ function buildOutboundOpening(
   const identity = input.businessName?.trim()
     ? `${runtime.agentName} with ${input.businessName.trim()}`
     : runtime.agentName;
-  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.`;
+  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.`.trim();
 }
 
 function buildOutboundInstructions(input: XAISipIncomingCall): string {
@@ -162,11 +177,11 @@ function buildOutboundInstructions(input: XAISipIncomingCall): string {
       ? "Continue the requested callback and establish the next useful step."
       : "Explain the reason for the call and establish the next useful step.");
   return [
-    "OUTBOUND CALL: The customer has already answered. Deliver the required opening immediately, then pause for their response.",
+    "OUTBOUND CALL: The required opening has already been delivered verbatim. Wait for the contact's response, then continue naturally.",
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,
     `Objective: ${objective}`,
-    "Do not read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
+    "Do not repeat the opening or read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
     purpose === "marketing_or_sales"
       ? "Any stop-calling or opt-out request is immediate: use add_to_dnc, confirm once, and end without another pitch."
       : "",
@@ -441,12 +456,14 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
     let toolCallsFailed = 0;
     let escalationAttempted = false;
     let escalationSucceeded = false;
+    let sipPlaybackActive = false;
+    let toolContinuationPending = false;
     let eventChain = Promise.resolve();
 
-    const ws = new WebSocket(
-      `${buildGrokVoiceRealtimeUrl(runtime.model)}&call_id=${encodeURIComponent(input.callId)}`,
-      { headers: { Authorization: `Bearer ${apiKey}` }, handshakeTimeout: WS_OPEN_TIMEOUT_MS },
-    );
+    const ws = new WebSocket(buildXAISipRealtimeUrl(input.callId), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      handshakeTimeout: WS_OPEN_TIMEOUT_MS,
+    });
 
     const maxDurationMs = resolveXAISipSessionMaxSeconds() * 1_000;
     const maxDurationTimer = setTimeout(() => {
@@ -467,6 +484,19 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       const text = assistantTurn.trim();
       if (text) transcriptLines.push({ role: "Agent", text });
       assistantTurn = "";
+    };
+
+    const requestToolContinuationWhenReady = () => {
+      if (
+        !toolContinuationPending ||
+        sipPlaybackActive ||
+        endedReason === "transferred" ||
+        ws.readyState !== WebSocket.OPEN
+      ) {
+        return;
+      }
+      toolContinuationPending = false;
+      sendJson(ws, { type: "response.create" });
     };
 
     const executePendingTools = async () => {
@@ -511,11 +541,27 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
           item: { type: "function_call_output", call_id: output.callId, output: output.output },
         });
       }
-      if (endedReason !== "transferred") sendJson(ws, { type: "response.create" });
+      if (endedReason !== "transferred") {
+        // SIP playback can continue after `response.done`. Starting the next
+        // response immediately makes the tool follow-up speak over the tail of
+        // the previous turn, so continuation is released by the provider's
+        // output_audio_buffer.stopped/cleared event instead.
+        toolContinuationPending = true;
+        requestToolContinuationWhenReady();
+      }
     };
 
     const handleEvent = async (event: Record<string, unknown>) => {
       const type = String(event.type || "");
+      if (type === "output_audio_buffer.started") {
+        sipPlaybackActive = true;
+        return;
+      }
+      if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
+        sipPlaybackActive = false;
+        requestToolContinuationWhenReady();
+        return;
+      }
       if (
         type === "conversation.item.input_audio_transcription.updated" ||
         type === "conversation.item.input_audio_transcription.completed"
@@ -556,15 +602,33 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       await new Promise<void>((resolve, reject) => {
         ws.on("open", () => {
           const outbound = callDirection(input) === "outbound";
-          const opening = outbound ? buildOutboundOpening(input, runtime) : runtime.greeting;
+          const opening = outbound
+            ? buildOutboundOpening(input, runtime)
+            : buildInboundOpening(input, runtime);
           const instructions = outbound
             ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
             : runtime.session.instructions;
           sendJson(ws, {
             type: "session.update",
-            session: { ...runtime.session, instructions: `${instructions}\n\nOPENING: ${opening}` },
+            session: { ...runtime.session, instructions },
           });
-          sendJson(ws, { type: "response.create" });
+          if (opening) {
+            // The first phone line may contain legally significant disclosure.
+            // Force it verbatim and make it non-interruptible; xAI drops caller
+            // audio until playback completes and the force_message itself owns
+            // the complete response lifecycle.
+            sendJson(ws, {
+              type: "conversation.item.create",
+              item: {
+                type: "force_message",
+                role: "assistant",
+                interruptible: false,
+                content: [{ type: "output_text", text: opening }],
+              },
+            });
+          } else {
+            sendJson(ws, { type: "response.create" });
+          }
         });
         ws.on("message", (data) => {
           const event = safeJsonParse(data.toString());
