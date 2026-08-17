@@ -63,8 +63,6 @@ function snapshotIndex(name: string, column: string, isUnique: boolean): Snapsho
  * after the recovered snapshot is committed.
  */
 function emitNativeXAISnapshot(): void {
-  if (!process.env.VERCEL) return;
-
   const previous = JSON.parse(
     readFileSync(resolve(MIGRATIONS_DIR, "meta/0049_snapshot.json"), "utf8"),
   ) as {
