@@ -53,7 +53,7 @@ describe("OpenAI/Vapi-only demo architecture", () => {
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
     const widget = read("src/lib/chatgpt-mcp-account.ts");
     expect(accountRoutes).toContain("createOpenAIRealtimeClientSecret");
-    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(read("src/lib/mcp-app-metadata.ts")).toContain('connectDomains: ["https://api.openai.com"]');
     expect(widget).toContain("new RTCPeerConnection()");
     expect(widget).not.toContain("xai-client-secret.");
   });

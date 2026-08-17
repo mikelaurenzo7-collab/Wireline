@@ -43,7 +43,7 @@ const MCP_CLIENTS = [
   {
     title: "Claude",
     description:
-      "Add Wireline as a remote connector to review or shape the same account-bound private drafts from Claude.",
+      "Add Wireline as a remote connector, or find it in the Connectors Directory after publication, to review or shape the same account-bound private drafts.",
     action: "Open Claude connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,

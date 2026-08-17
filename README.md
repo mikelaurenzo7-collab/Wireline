@@ -14,6 +14,7 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 - **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
 - **Wireline Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks.
 - **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
+- **Claude Connector - early access:** the same `/mcp` server submitted to the Claude Connectors Directory; custom connectors work while the listing is in review.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
@@ -78,6 +79,7 @@ Use `npm run verify` for focused implementation branches. Use `npm run verify:fu
 | Browser extension | `apps/browser-extension/` |
 | Native clients | `ios/`, `android/` |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
+| Claude Connector | Shared `/mcp` server, [docs/CLAUDE_CONNECTOR.md](./docs/CLAUDE_CONNECTOR.md), [docs/CLAUDE_CONNECTOR_SUBMISSION.md](./docs/CLAUDE_CONNECTOR_SUBMISSION.md) |
 | Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
 
 ## Repository hygiene

@@ -119,6 +119,14 @@
       "destination": "/api/mcp"
     },
     {
+      "source": "/.well-known/mcp/catalog.json",
+      "destination": "/api/mcp"
+    },
+    {
+      "source": "/server-card",
+      "destination": "/api/mcp"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/index.ts"
     },

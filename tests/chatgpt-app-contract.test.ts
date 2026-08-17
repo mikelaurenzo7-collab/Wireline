@@ -49,6 +49,7 @@ describe("Wireline ChatGPT App production contract", () => {
 
   it("requires OAuth for every production agent operation", () => {
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
+    expect(accountRouteSource).toContain('title: "Create a Wireline agent draft"');
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');

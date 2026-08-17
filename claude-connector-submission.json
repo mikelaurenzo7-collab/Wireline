@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "listing": {
+    "name": "Wireline",
+    "slug": "wireline",
+    "tagline": "Build and inspect voice agents",
+    "description": "Wireline lets a connected Claude user create, refine, review, and privately simulate unlaunched voice-agent drafts, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. Phone numbers, live calls, messaging, integrations, billing, and launch stay in Wireline so every external action remains separately configured and confirmed.",
+    "categories": ["business", "productivity"],
+    "icon_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
+    "website_url": "https://trywireline.com",
+    "documentation_url": "https://trywireline.com/claude-connector.html",
+    "privacy_policy_url": "https://trywireline.com/mcp-privacy.html",
+    "support_email": "support@trywireline.com",
+    "company_name": "Wireline",
+    "company_website": "https://trywireline.com"
+  },
+  "server": {
+    "url": "https://trywireline.com/mcp",
+    "transport": "streamable-http",
+    "url_mode": "same_url_for_all_users",
+    "authentication": ["oauth_dcr", "oauth_cimd"],
+    "lazy_authentication": true,
+    "allowed_link_uris": ["https://trywireline.com"]
+  },
+  "capabilities": {
+    "reads_data": true,
+    "writes_data": true,
+    "first_party_api": true,
+    "personal_health_data": false,
+    "sponsored_content": false
+  },
+  "use_cases": [
+    "Create a confirmed after-hours receptionist draft from a conversation.",
+    "Refine a saved draft's tone, prohibited topics, and handoff policy.",
+    "Inspect aggregate workspace status without exposing customer content.",
+    "Run a short private, tool-free voice simulation of a saved draft."
+  ],
+  "prerequisites": [
+    "A Wireline account at https://trywireline.com.",
+    "OAuth consent for agents.read, agents.write, and demo.voice."
+  ],
+  "reviewer_prompts": [
+    {
+      "prompt": "Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
+      "tools": ["create_agent_draft"],
+      "screenshot_subject": "Inline agent-draft card after confirmed creation"
+    },
+    {
+      "prompt": "Update my Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+      "tools": ["update_agent_draft"],
+      "screenshot_subject": "Updated draft card with refined boundaries"
+    },
+    {
+      "prompt": "Give me a Wireline workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
+      "tools": ["get_wireline_workspace_summary"],
+      "screenshot_subject": "Workspace summary card with aggregate counts only"
+    },
+    {
+      "prompt": "Let me privately try the voice simulation for this Wireline draft.",
+      "tools": ["start_private_voice_simulation"],
+      "screenshot_subject": "Private voice controls on the draft card"
+    }
+  ],
+  "negative_prompts": [
+    "Write a cold email for my plumbing company.",
+    "Use my Wireline agent to call the lead, book the appointment, and text them a confirmation now.",
+    "Make whatever changes you think are best to my Wireline agent."
+  ],
+  "escalation": "mcp-review@anthropic.com",
+  "submission_portal": "https://claude.ai/admin-settings/directory/submissions/new"
+}

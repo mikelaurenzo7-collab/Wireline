@@ -1,0 +1,81 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+import { claudeMcpAppDomain, MCP_SERVER_NAME } from "../src/lib/mcp-app-metadata";
+
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
+
+describe("Claude Connector Directory contract", () => {
+  const widget = read("src/lib/chatgpt-mcp-account.ts");
+  const account = read("src/routes/chatgpt-mcp-account-routes.ts");
+  const oauth = read("src/routes/chatgpt-mcp-routes.ts");
+  const stack = read("src/server/register-mcp-routes.ts");
+  const vercel = read("vercel.json");
+  const docs = read("docs/CLAUDE_CONNECTOR.md");
+  const packet = read("docs/CLAUDE_CONNECTOR_SUBMISSION.md");
+  const privacy = read("public/mcp-privacy.html");
+  const publicDocs = read("public/claude-connector.html");
+  const listing = JSON.parse(read("claude-connector-submission.json")) as {
+    listing: { name: string; tagline: string; slug: string; description: string };
+    server: { url: string; allowed_link_uris: string[]; authentication: string[] };
+  };
+
+  it("keeps a shared remote MCP server named wireline", () => {
+    expect(MCP_SERVER_NAME).toBe("wireline");
+    expect(account).toContain("serverInfo: { name: MCP_SERVER_NAME");
+    expect(account).toContain('title: "Create a Wireline agent draft"');
+    expect(account).toContain("prompts/list");
+    expect(account).toContain("create_after_hours_receptionist");
+  });
+
+  it("challenges protected tool calls with HTTP 401, not a 200 isError result", () => {
+    expect(account).toContain('oauthError: "invalid_token" | "insufficient_scope"');
+    expect(stack).toContain("res.status(oauthError === \"insufficient_scope\" ? 403 : 401)");
+    expect(stack).not.toContain("mcpToolErrorResult(message");
+    expect(stack).toContain('WWW-Authenticate');
+  });
+
+  it("publishes Claude Code CIMD, DCR, consent hostname, and RFC 9207 iss", () => {
+    expect(oauth).toContain("isTrustedCimdClientId");
+    expect(oauth).toContain("relyingPartyHost");
+    expect(oauth).toContain("local address");
+    expect(oauth).toContain('"/mcp/server-card"');
+    expect(oauth).toContain('"/.well-known/mcp/catalog.json"');
+    expect(vercel).toContain("/.well-known/mcp/catalog.json");
+    expect(vercel).toContain("/server-card");
+  });
+
+  it("serves a dual-host MCP App widget for Claude and ChatGPT", () => {
+    expect(widget).toContain('name="color-scheme" content="light dark"');
+    expect(widget).toContain('method: "ui/open-link"');
+    expect(widget).toContain("openExternal");
+    expect(widget).toContain("ui/initialize");
+    expect(widget).not.toContain("xai-client-secret.");
+    expect(read("src/lib/mcp-app-metadata.ts")).toContain("claudemcpcontent.com");
+    expect(claudeMcpAppDomain("https://trywireline.com/mcp")).toBe(
+      "9d4498d241a92d33aafe51697b0ba2b9.claudemcpcontent.com",
+    );
+  });
+
+  it("publishes directory listing copy within Anthropic length limits", () => {
+    expect(listing.listing.name.length).toBeGreaterThan(0);
+    expect(listing.listing.name.length).toBeLessThanOrEqual(100);
+    expect(listing.listing.tagline.length).toBeLessThanOrEqual(55);
+    expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
+    expect(listing.listing.slug).toBe("wireline");
+    expect(listing.server.url).toBe("https://trywireline.com/mcp");
+    expect(listing.server.allowed_link_uris).toEqual(["https://trywireline.com"]);
+    expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
+  });
+
+  it("publishes public docs and privacy pages required by the portal", () => {
+    expect(publicDocs).toContain("https://trywireline.com/mcp");
+    expect(privacy).toContain("Information returned to the connecting client");
+    expect(privacy).toContain("not included in the model-visible conversation");
+    expect(docs).toContain("401");
+    expect(packet).toContain("https://claude.ai/admin-settings/directory/submissions/new");
+    expect(packet).toContain("Team or Enterprise");
+  });
+});

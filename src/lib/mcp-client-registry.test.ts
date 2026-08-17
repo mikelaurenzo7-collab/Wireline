@@ -3,11 +3,15 @@ import { AppError } from "./api-error";
 import {
   clientDisplayName,
   isAnthropicRedirectUri,
+  isClaudeCodeClientMetadataUrl,
   isCursorRedirectUri,
   isDynamicClientId,
+  isLoopbackCallbackUri,
   mcpDraftSourceForClient,
   newDynamicClientId,
   oauthErrorCode,
+  redirectUriMatches,
+  relyingPartyHost,
   validateDynamicClientRegistration,
 } from "./mcp-client-registry";
 
@@ -100,7 +104,34 @@ describe("mcp dynamic client registration", () => {
     expect(clientDisplayName("https://claude.com/api/mcp/auth_callback")).toBe("Claude");
     expect(clientDisplayName("cursor://anysphere.cursor-mcp/oauth/callback")).toBe("Cursor");
     expect(clientDisplayName("https://chatgpt.com/connector/oauth/callback")).toBe("ChatGPT");
+    expect(
+      clientDisplayName(
+        "http://localhost:3118/callback",
+        "https://claude.ai/oauth/claude-code-client-metadata",
+      ),
+    ).toBe("Claude Code");
     expect(clientDisplayName("not-a-url")).toBe("your MCP client");
+  });
+
+  it("accepts Claude Code CIMD and port-agnostic loopback callbacks", () => {
+    expect(
+      isClaudeCodeClientMetadataUrl("https://claude.ai/oauth/claude-code-client-metadata"),
+    ).not.toBeNull();
+    expect(
+      isClaudeCodeClientMetadataUrl("https://claude.com/oauth/claude-code-client-metadata"),
+    ).not.toBeNull();
+    expect(isLoopbackCallbackUri("http://localhost/callback")).toBe(true);
+    expect(isLoopbackCallbackUri("http://127.0.0.1:3118/callback")).toBe(true);
+    expect(isLoopbackCallbackUri("https://localhost/callback")).toBe(false);
+    expect(redirectUriMatches("http://localhost/callback", "http://localhost:3118/callback")).toBe(
+      true,
+    );
+    expect(
+      relyingPartyHost(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        "http://localhost:1/callback",
+      ),
+    ).toBe("claude.ai");
   });
 
   it("maps draft source from client and redirect metadata", () => {
@@ -118,6 +149,12 @@ describe("mcp dynamic client registration", () => {
       ]),
     ).toBe("cursor_mcp");
     expect(mcpDraftSourceForClient("https://chatgpt.com/oauth/x/client.json")).toBe("chatgpt_mcp");
+    expect(
+      mcpDraftSourceForClient(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        "http://localhost:3118/callback",
+      ),
+    ).toBe("claude_mcp");
   });
 });
 

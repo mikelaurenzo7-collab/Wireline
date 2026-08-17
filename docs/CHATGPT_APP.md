@@ -42,6 +42,8 @@ ChatGPT conversation
 | `https://trywireline.com/mcp/oauth/authorize` | OAuth authorization and consent screen |
 | `https://trywireline.com/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
 | `https://trywireline.com/chatgpt-app-privacy.html` | App-specific public privacy notice |
+| `https://trywireline.com/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
+| `https://trywireline.com/claude-connector.html` | Claude Connector public documentation |
 
 ## Customization profile
 
@@ -90,7 +92,7 @@ There is no guest MCP transport or guest signing secret. Every production tool c
 
 ## ChatGPT registration
 
-Use Client Identifier Metadata Document registration. Do not configure Dynamic Client Registration or OIDC for V1. The exact production registration is recorded in `docs/CHATGPT_APP_DASHBOARD_CONFIG.md`.
+Use Client Identifier Metadata Document registration for ChatGPT. The shared `/mcp` server also exposes Dynamic Client Registration for Claude and Cursor; do not point the ChatGPT dashboard at DCR. The exact production ChatGPT registration is recorded in `docs/CHATGPT_APP_DASHBOARD_CONFIG.md`. Claude directory copy lives in `docs/CLAUDE_CONNECTOR.md`.
 
 ## Release verification
 
@@ -100,7 +102,7 @@ Run the public, unauthenticated protocol probe against the deployed environment:
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization, the full six-tool inventory, the account-bound widget resource, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
+The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization identity `wireline`, the full six-tool inventory, prompts, the account-bound widget resource, Claude host domain metadata, privacy pages, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
 
 ## Private rollout and App Directory readiness
 

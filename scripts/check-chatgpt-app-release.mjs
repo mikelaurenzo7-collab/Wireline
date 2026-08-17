@@ -88,6 +88,21 @@ assert(
   "Privacy notice must distinguish widget-only simulation credentials.",
 );
 
+const mcpPrivacy = await request("/mcp-privacy.html", { headers: { Accept: "text/html" } });
+assert(mcpPrivacy.response.status === 200, "MCP connector privacy notice must return HTTP 200.");
+assert(
+  typeof mcpPrivacy.body === "string" &&
+    mcpPrivacy.body.includes("Information returned to the connecting client"),
+  "MCP privacy notice must disclose information returned to connecting clients.",
+);
+
+const claudeDocs = await request("/claude-connector.html", { headers: { Accept: "text/html" } });
+assert(claudeDocs.response.status === 200, "Claude connector documentation must return HTTP 200.");
+assert(
+  typeof claudeDocs.body === "string" && claudeDocs.body.includes("https://trywireline.com/mcp"),
+  "Claude connector documentation must publish the MCP endpoint.",
+);
+
 const protectedResource = await request("/.well-known/oauth-protected-resource");
 assert(
   protectedResource.response.status === 200,
@@ -139,8 +154,8 @@ const initialized = await jsonRpc("initialize", {
   clientInfo: { name: "wireline-release-probe", version: "1.0.0" },
 });
 assert(
-  initialized.result.serverInfo?.name === "wireline-chatgpt",
-  "MCP server identity is not Wireline ChatGPT.",
+  initialized.result.serverInfo?.name === "wireline",
+  "MCP server identity is not Wireline.",
 );
 
 const tools = await jsonRpc("tools/list");
@@ -161,6 +176,7 @@ for (const tool of liveTools) {
     tool.outputSchema && typeof tool.outputSchema === "object",
     `${tool.name}: outputSchema is missing.`,
   );
+  assert(typeof tool.title === "string" && tool.title.trim().length > 0, `${tool.name}: title is missing.`);
   const expected = expectedAnnotations.get(tool.name);
   assert(expected, `Unexpected MCP tool exposed: ${tool.name}.`);
   for (const [key, value] of Object.entries(expected)) {
@@ -197,12 +213,36 @@ assert(
   "Widget CSP must explicitly allow the OpenAI Realtime HTTPS domain.",
 );
 assert(
+  content?._meta?.ui?.csp?.resourceDomains?.includes("https://assets.claude.ai"),
+  "Widget CSP must allow Claude host fonts.",
+);
+assert(
+  typeof content?._meta?.ui?.domain === "string" &&
+    content._meta.ui.domain.endsWith(".claudemcpcontent.com"),
+  "Widget must declare a Claude MCP App host domain.",
+);
+assert(
   !content?._meta?.ui?.csp?.connectDomains?.includes("wss://api.x.ai"),
   "Account widget CSP must not require Grok realtime — private voice is OpenAI Realtime.",
 );
 assert(
   !content?._meta?.ui?.csp?.connectDomains?.includes("https://api.x.ai"),
   "Account widget CSP must not require xAI hosts for private voice.",
+);
+
+const prompts = await jsonRpc("prompts/list");
+assert(
+  Array.isArray(prompts.result.prompts) && prompts.result.prompts.length >= 3,
+  "MCP prompts/list must advertise reviewer prompts.",
+);
+
+const serverCard = await request("/mcp/server-card");
+assert(serverCard.response.status === 200, "MCP server card must return HTTP 200.");
+assert(
+  serverCard.body &&
+    typeof serverCard.body === "object" &&
+    serverCard.body.remotes?.[0]?.url?.endsWith("/mcp"),
+  "MCP server card must advertise the streamable HTTP remote.",
 );
 
 console.log(`ChatGPT App release probe passed for ${origin}.`);

@@ -18,7 +18,8 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Wireline Command | `apps/browser-extension/` | **Early access** explicit-action browser handoff. |
 | iOS | `ios/` | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight. |
 | Android | `android/` | **Internal beta** until device acceptance, signing, privacy review, and Play release. |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface. |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor. |
+| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://trywireline.com/mcp` | **Early access** directory submission of the same remote MCP server. |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Retired live talking-head.** Identity badges only. |
 
 ## Product interface rules
@@ -44,6 +45,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md) | Agent-first positioning and roster-compatible launch framing. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Web, browser, native, ChatGPT, and presenter ownership and release boundaries. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App behavior, OAuth, tool boundaries, and release verification. |
+| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md) | Claude Connector Directory and MCP App behavior for the shared `/mcp` server. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Canonical billing model and Runtime Balance posture. |
 | [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | Checkout, entitlement, webhook, cancellation, and reconciliation proof. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | Whole-product feature and commercial-status matrix. |
@@ -81,6 +83,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [HARNESS_WINGMAN.md](./HARNESS_WINGMAN.md) | Operations and infrastructure harness doctrine. |
 | [CHATGPT_APP_DASHBOARD_CONFIG.md](./CHATGPT_APP_DASHBOARD_CONFIG.md) | OAuth/CIMD dashboard registration record. |
 | [CHATGPT_APP_SUBMISSION.md](./CHATGPT_APP_SUBMISSION.md) | Submission and reviewer contract. |
+| [CLAUDE_CONNECTOR_SUBMISSION.md](./CLAUDE_CONNECTOR_SUBMISSION.md) | Claude Connectors Directory portal packet and reviewer contract. |
 | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) | Incident classification, containment, communication, and recovery. |
 | [SLA.md](./SLA.md) | Service-level commitments. |
 | [LOAD_TEST.md](./LOAD_TEST.md) | Load-test methodology for voice webhook ingress. |

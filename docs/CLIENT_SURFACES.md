@@ -11,6 +11,7 @@ Wireline is one protected agent platform with multiple deliberate control surfac
 | iOS | `ios/` | Native calls, Siri, widgets, CallKit, push, and approved CarPlay communication flows | Prompt construction, entitlements, call control decisions, data ownership |
 | Android | `android/` | Native calls, notifications, widgets, Telecom, FCM, and approved Android Auto communication flows | Prompt construction, consent, plan enforcement, data ownership |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` | Account-bound private agent drafting, refinement, simulation, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions |
+| Claude Connector | Shared `/mcp` server, `docs/CLAUDE_CONNECTOR.md`, `docs/CLAUDE_CONNECTOR_SUBMISSION.md` | Same account-bound tools and MCP App widget inside Claude and Claude Code | Same server-owned OAuth, tenant, and launch boundary |
 | Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Identity badges. Live talking-head is retired. | Vendor credentials stay unused; leftover Stripe webhooks fail-closed; no video file generation |
 
 ## Immediate layout
@@ -81,8 +82,8 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). No guest tool transport exists. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
-| Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, and related OAuth/config docs. |
+| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). Claude directory submission uses `docs/CLAUDE_CONNECTOR.md`. No guest tool transport exists. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
+| Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `src/lib/mcp-*`, `api/mcp.ts`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, `docs/CLAUDE_CONNECTOR.md`, and related OAuth/config docs. |
 | Required checks before release | `node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com` for production-target release; local MCP discovery/tool/resource probe; OAuth PKCE reviewer flow; private simulation boundary test; contract review for every new tool. |
 | Non-goals | ChatGPT App cannot provision numbers, dial, launch agents, perform outbound communication, change billing, bypass approvals, or claim external actions happened unless Wireline actually performed them through server-owned workflows. |
 | Security/privacy constraints | Account-bound OAuth only; least-privilege MCP tools/resources; no provider keys or broad tenant data in ChatGPT; draft/simulate by default; respect tenant authorization and redact/minimize returned data. |
@@ -125,7 +126,7 @@ Do **not** extract business behavior into a client package. `packages/contracts`
 3. Agent creation may start in any client, but launch, phone provisioning, connected-action authorization, and external side effects remain deliberate server-backed workflows.
 4. iOS stays SwiftUI and Android stays Kotlin/Compose. Their OS-level calling, widgets, intents, and push behavior are reasons to preserve native stacks—not reasons to fork backend logic.
 5. Wireline Command is a user-initiated browser command surface. It must never become a hidden scraper, CRM mirror, or independent background agent.
-6. The ChatGPT App stays account-bound, draft/simulation-first, and unable to provision numbers, dial, or launch agents until a separate, reviewed product decision expands its action surface.
+6. The ChatGPT App and Claude Connector stay account-bound, draft/simulation-first, and unable to provision numbers, dial, or launch agents until a separate, reviewed product decision expands its action surface.
 7. Live talking-head video remains retired. Identity badges stay. Clip scripts are reviewable drafts. Do not call a Grok Bot API and do not generate Imagine files.
 
 ## Mobile API adapter discipline
@@ -141,6 +142,7 @@ Native clients authenticate with Bearer tokens and should use the complete `/api
 | iOS | XcodeGen generation, simulator build, physical-device PushKit/CallKit acceptance checks, privacy/account deletion review |
 | Android | Gradle compile, emulator smoke, physical-device Telecom/FCM acceptance checks, Play Data safety/account deletion review |
 | ChatGPT App | MCP discovery/tool/resource probe, OAuth PKCE reviewer flow, private simulation boundary test, no-side-effect tool review |
+| Claude Connector | Same `/mcp` probe plus custom-connector OAuth in Claude, MCP App widget screenshots, directory portal packet in `docs/CLAUDE_CONNECTOR_SUBMISSION.md` |
 | Live Video | Consent/voice-fallback smoke, provider readiness, Stripe entitlement, cost/metering, emergency-disable, copy/privacy review |
 
 Every release pipeline can develop at its own speed, but all surfaces consume the same canonical agent customization contract. That is the organizational line between a platform and a collection of unrelated apps.

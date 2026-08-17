@@ -13,6 +13,12 @@ import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
 } from "../lib/chatgpt-mcp-account";
+import {
+  MCP_SERVER_NAME,
+  MCP_SERVER_TITLE,
+  MCP_SERVER_VERSION,
+  mcpUiResourceMeta,
+} from "../lib/mcp-app-metadata";
 import { mcpDraftSourceForClient } from "../lib/mcp-client-registry";
 import {
   assertMcpDraftWriteRateLimit,
@@ -23,6 +29,7 @@ import {
 import {
   applyMcpTransportHeaders,
   isMcpNotificationMethod,
+  mcpOAuthChallenge,
   mcpToolErrorResult,
 } from "../lib/mcp-transport";
 import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
@@ -46,7 +53,10 @@ type McpPrincipal = AgentDraftPrincipal & {
 };
 
 class McpAuthorizationError extends Error {
-  constructor(readonly requiredScope: McpScope) {
+  constructor(
+    readonly requiredScope: McpScope,
+    readonly oauthError: "invalid_token" | "insufficient_scope" = "invalid_token",
+  ) {
     super("Connect a Wireline account to continue.");
   }
 }
@@ -122,7 +132,8 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
 }
 
 function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {
-  if (!principal || !principal.scopes.includes(scope)) throw new McpAuthorizationError(scope);
+  if (!principal) throw new McpAuthorizationError(scope, "invalid_token");
+  if (!principal.scopes.includes(scope)) throw new McpAuthorizationError(scope, "insufficient_scope");
   return principal;
 }
 
@@ -240,7 +251,12 @@ function toolDefinitions() {
     visibility?: string[],
   ) => ({
     ...widgetMeta,
-    ...(visibility ? { ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility } } : {}),
+    ...(visibility
+      ? {
+          ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility },
+          "openai/visibility": visibility.includes("model") ? "public" : "private",
+        }
+      : { ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility: ["app", "model"] } }),
     securitySchemes,
   });
   const customizationProperties = {
@@ -413,16 +429,29 @@ function toolDefinitions() {
 }
 
 function resourceMeta(req: Request) {
-  return {
-    ui: {
-      prefersBorder: true,
-      domain: issuer(req),
-      csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
-    },
-    "openai/widgetDescription":
-      "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
-  };
+  return mcpUiResourceMeta(`${issuer(req)}/mcp`);
 }
+
+const MCP_PROMPTS = [
+  {
+    name: "create_after_hours_receptionist",
+    title: "Create an after-hours receptionist",
+    description:
+      "Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.",
+  },
+  {
+    name: "refine_draft_boundaries",
+    title: "Refine draft boundaries",
+    description:
+      "Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+  },
+  {
+    name: "inspect_workspace_status",
+    title: "Inspect workspace status",
+    description:
+      "Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.",
+  },
+] as const;
 
 function inputFromArgs(args: Record<string, unknown>): AgentCustomizationInput {
   return {
@@ -462,15 +491,31 @@ router.post("/mcp", async (req, res) => {
         capabilities: {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
+          prompts: { listChanged: false },
         },
-        serverInfo: { name: "wireline-chatgpt", version: "2.2.0" },
+        serverInfo: { name: MCP_SERVER_NAME, title: MCP_SERVER_TITLE, version: MCP_SERVER_VERSION },
         instructions:
-          "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft, list agents, and inspect aggregate operational status in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
+          "Wireline requires a connected Wireline account. Use it from ChatGPT, Claude, or Cursor to create and refine a real private agent draft, list agents, and inspect aggregate operational status in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
     if (isMcpNotificationMethod(method)) return res.status(202).end();
     if (method === "tools/list") return jsonRpc(res, id, { tools: toolDefinitions() });
+    if (method === "prompts/list") return jsonRpc(res, id, { prompts: MCP_PROMPTS });
+    if (method === "prompts/get") {
+      const name = text(params.name, 128);
+      const prompt = MCP_PROMPTS.find((item) => item.name === name);
+      if (!prompt) return jsonRpcError(res, id, -32602, "Unknown prompt.");
+      return jsonRpc(res, id, {
+        description: prompt.description,
+        messages: [
+          {
+            role: "user",
+            content: { type: "text", text: prompt.description },
+          },
+        ],
+      });
+    }
     if (method === "resources/list")
       return jsonRpc(res, id, {
         resources: [
@@ -820,10 +865,17 @@ router.post("/mcp", async (req, res) => {
     return jsonRpcError(res, id, -32601, "Tool not found.");
   } catch (error) {
     if (error instanceof McpAuthorizationError) {
-      const challenge = `Bearer resource_metadata="${issuer(req)}/.well-known/oauth-protected-resource", error="insufficient_scope", scope="${error.requiredScope}"`;
+      const status = error.oauthError === "insufficient_scope" ? 403 : 401;
+      const challenge = mcpOAuthChallenge(
+        `${issuer(req)}/.well-known/oauth-protected-resource`,
+        error.requiredScope,
+        "Connect a Wireline account to continue.",
+        error.oauthError,
+      );
       res.setHeader("WWW-Authenticate", challenge);
-      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", 401, {
+      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", status, {
         required_scope: error.requiredScope,
+        oauth_error: error.oauthError,
         _meta: { "mcp/www_authenticate": [challenge] },
       });
     }
