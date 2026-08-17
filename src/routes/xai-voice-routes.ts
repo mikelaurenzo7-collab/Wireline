@@ -18,11 +18,11 @@ import { LEAD_STATUS } from "../lib/outbound-status";
 import { decryptSecret } from "../lib/secret-vault";
 import { drizzle, log } from "../lib/server-context";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
-import { verifyXAIOutboundToken } from "../lib/voice/xai-outbound-token";
 import {
   getNativeXAIPhoneStatus,
   provisionNativeXAIPhone,
-} from "../lib/voice/xai-sip-provisioning";
+} from "../lib/voice/xai-phone-activation-service";
+import { verifyXAIOutboundToken } from "../lib/voice/xai-outbound-token";
 import {
   XAI_OUTBOUND_SIP_TOKEN_HEADER,
   normalizeXAIPhoneNumber,
@@ -144,12 +144,6 @@ async function resolveAgentContext(binding: XAIPhoneBinding): Promise<AgentConte
   return agentContext;
 }
 
-/**
- * Resolve an outbound xAI SIP leg from the signed, PII-free token that Twilio
- * inserted as a custom SIP header. This transition is committed before the
- * webhook is acknowledged so Twilio's terminal callback cannot race ahead and
- * misclassify a real conversation as a failed bridge.
- */
 async function resolveOutboundSession(input: {
   token: string;
   callId: string;
@@ -252,9 +246,6 @@ router.post(
     const payload = parseWebhook(body);
     if (!payload) throw AppError.badRequest("The xAI webhook body is invalid JSON.");
 
-    // Unknown future event types are acknowledged without side effects. xAI
-    // retries non-2xx deliveries, so rejecting an event Wireline does not own
-    // would create a provider retry storm.
     if (payload.type !== "realtime.call.incoming") {
       res.status(202).json({ received: true, handled: false });
       return;
