@@ -149,7 +149,9 @@ export async function assignNativePhoneLine(input: {
               and(
                 eq(schema.phoneNumbers.id, input.lineId),
                 eq(schema.phoneNumbers.userId, input.userId),
-                eq(schema.phoneNumbers.agentId, updated.agentId),
+                updated.agentId
+                  ? eq(schema.phoneNumbers.agentId, updated.agentId)
+                  : isNull(schema.phoneNumbers.agentId),
               ),
             ),
         ).catch((rollbackError) => {

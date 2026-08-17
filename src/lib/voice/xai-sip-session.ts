@@ -270,7 +270,7 @@ function applyInboundAdmission(
         tools: [],
         tool_choice: "none",
       },
-    } as RealtimeRuntime;
+    };
   }
   const afterHours = input.admission?.reason === "after_hours";
   const followup = runtime.session.tools.filter((tool) => tool.name === "create_followup_task");
@@ -293,7 +293,7 @@ function applyInboundAdmission(
       tools: followup,
       tool_choice: followup.length ? "auto" : "none",
     },
-  } as RealtimeRuntime;
+  };
 }
 
 async function xaiCallControl(

@@ -39,24 +39,22 @@ function decodeSigningSecret(secret: string): Buffer | null {
 }
 
 function signatureCandidates(header: string): Buffer[] {
-  return header
-    .split(/[\s]+/)
-    .flatMap((entry) => entry.split(";"))
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      const comma = entry.indexOf(",");
-      const version = comma >= 0 ? entry.slice(0, comma) : "";
-      const encoded = comma >= 0 ? entry.slice(comma + 1) : "";
-      if (version !== "v1" || !encoded) return null;
-      try {
-        const value = Buffer.from(encoded, "base64");
-        return value.length ? value : null;
-      } catch {
-        return null;
-      }
-    })
-    .filter((value): value is Buffer => Boolean(value));
+  const candidates: Buffer[] = [];
+  for (const part of header.split(/[\s]+/).flatMap((entry) => entry.split(";"))) {
+    const entry = part.trim();
+    if (!entry) continue;
+    const comma = entry.indexOf(",");
+    const version = comma >= 0 ? entry.slice(0, comma) : "";
+    const encoded = comma >= 0 ? entry.slice(comma + 1) : "";
+    if (version !== "v1" || !encoded) continue;
+    try {
+      const value = Buffer.from(encoded, "base64");
+      if (value.length) candidates.push(value);
+    } catch {
+      // Ignore malformed Standard Webhooks signature fragments.
+    }
+  }
+  return candidates;
 }
 
 function equalDigest(expected: Buffer, candidate: Buffer): boolean {

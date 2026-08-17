@@ -208,11 +208,11 @@ export async function provisionNativeTenantNumber(input: {
         )
         .limit(1);
       if (reusable) {
-        const [claimed] = await runCompanyIdentityMutation(
+        const claimed = await runCompanyIdentityMutation(
           input.userId,
           "phone_number_changed",
-          (tx) =>
-            tx
+          async (tx) => {
+            const [row] = await tx
               .update(schema.phoneNumbers)
               .set({ agentId: input.agentId })
               .where(
@@ -222,7 +222,9 @@ export async function provisionNativeTenantNumber(input: {
                   isNull(schema.phoneNumbers.agentId),
                 ),
               )
-              .returning({ id: schema.phoneNumbers.id }),
+              .returning({ id: schema.phoneNumbers.id });
+            return row ?? null;
+          },
         );
         if (claimed) {
           return activateLine({

@@ -297,7 +297,7 @@ export async function buildXAIRealtimeAgentRuntime(input: {
     voice,
     reasoning: { effort: resolveGrokReasoningEffort() },
     tools,
-    tool_choice: "auto",
+    tool_choice: "auto" as "auto" | "none",
     turn_detection: {
       type: "server_vad",
       threshold: 0.72,
@@ -318,7 +318,7 @@ export async function buildXAIRealtimeAgentRuntime(input: {
           : {}),
       },
     },
-  } as const;
+  };
 
   return {
     userId: input.userId,
