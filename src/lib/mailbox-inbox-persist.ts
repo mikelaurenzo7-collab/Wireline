@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { mailboxScopedExternalId } from "./mailbox-identity";
 import { drizzle } from "./server-context";
@@ -6,6 +6,7 @@ import * as schema from "../db/schema";
 
 export type PersistableInboxMessage = {
   accountId: string;
+  provider: string;
   messageId: string;
   threadId?: string;
   from: string;
@@ -21,7 +22,7 @@ export type PersistMailboxInboxResult = {
 
 type PreparedInboxMessage = PersistableInboxMessage & {
   accountId: string;
-  rawThreadId: string;
+  provider: string;
   scopedThreadId: string;
   scopedMessageId: string;
 };
@@ -30,10 +31,11 @@ type PreparedInboxMessage = PersistableInboxMessage & {
  * Upsert provider inbox threads/messages for the current tenant transaction.
  * Callers must already be inside `tenantStore.run(userId)`.
  *
- * Provider ids are mailbox-scoped. The existing database indexes are
+ * Provider ids are mailbox/provider-scoped. The existing database indexes are
  * tenant-wide, so every persisted external id is first converted to a stable,
- * opaque account namespace. Ownership is then re-verified inside the same
- * transaction before any row is adopted or written.
+ * opaque namespace. The source account row is locked and its current provider
+ * re-verified in the same transaction before any row is written. Legacy rows
+ * with no account/provider provenance remain untouched rather than guessed.
  */
 export async function persistMailboxInboxMessages(
   userId: string,
@@ -41,15 +43,16 @@ export async function persistMailboxInboxMessages(
 ): Promise<PersistMailboxInboxResult> {
   const preparedMessages = messages.flatMap<PreparedInboxMessage>((message) => {
     const accountId = message.accountId.trim().toLowerCase();
+    const provider = message.provider.trim().toLowerCase();
     const rawThreadId = message.threadId || message.messageId;
     if (!rawThreadId || !message.messageId) return [];
     return [
       {
         ...message,
         accountId,
-        rawThreadId,
-        scopedThreadId: mailboxScopedExternalId(accountId, rawThreadId),
-        scopedMessageId: mailboxScopedExternalId(accountId, message.messageId),
+        provider,
+        scopedThreadId: mailboxScopedExternalId(accountId, provider, rawThreadId),
+        scopedMessageId: mailboxScopedExternalId(accountId, provider, message.messageId),
       },
     ];
   });
@@ -85,132 +88,47 @@ export async function persistMailboxInboxMessages(
     return { messagesSaved: 0, threadsUpserted: 0 };
   }
 
+  const requestedSourceByAccountId = new Map<string, string>();
+  for (const message of preparedMessages) {
+    const priorProvider = requestedSourceByAccountId.get(message.accountId);
+    if (priorProvider && priorProvider !== message.provider) {
+      throw new Error("Mailbox persistence received conflicting providers for one account.");
+    }
+    requestedSourceByAccountId.set(message.accountId, message.provider);
+  }
+  const requestedAccountIds = Array.from(requestedSourceByAccountId.keys());
+
   let threadsUpserted = 0;
   const messagesSaved = await drizzle.transaction(async (tx) => {
+    // Lock each source mailbox so a reconnect/provider switch or disconnect
+    // cannot race between validation and persistence. A stale in-flight fetch
+    // then either commits before the account mutation or observes the new
+    // provider/missing row and fails closed.
     const ownedAccounts = await tx
-      .select({ id: schema.emailAccounts.id })
+      .select({
+        id: schema.emailAccounts.id,
+        provider: schema.emailAccounts.provider,
+      })
       .from(schema.emailAccounts)
-      .where(eq(schema.emailAccounts.userId, userId));
-    const ownedAccountIds = new Set(ownedAccounts.map((account) => account.id.toLowerCase()));
-    const requestedAccountIds = new Set(preparedMessages.map((message) => message.accountId));
+      .where(
+        and(
+          eq(schema.emailAccounts.userId, userId),
+          inArray(schema.emailAccounts.id, requestedAccountIds),
+        ),
+      )
+      .for("update");
+    const ownedSourceByAccountId = new Map(
+      ownedAccounts.map((account) => [
+        account.id.toLowerCase(),
+        String(account.provider || "")
+          .trim()
+          .toLowerCase(),
+      ]),
+    );
 
-    for (const accountId of requestedAccountIds) {
-      if (!ownedAccountIds.has(accountId)) {
-        throw new Error("Mailbox persistence rejected an account outside the tenant.");
-      }
-    }
-
-    // Adopt a pre-account-identity row only when the tenant has exactly one
-    // connected mailbox and that exact raw provider thread appears again. This
-    // preserves single-mailbox history without guessing for zero/multi-mailbox
-    // tenants. Any existing scoped counterpart or message collision leaves the
-    // legacy row untouched for explicit reconciliation.
-    if (
-      ownedAccounts.length === 1 &&
-      requestedAccountIds.size === 1 &&
-      requestedAccountIds.has(ownedAccounts[0].id.toLowerCase())
-    ) {
-      const accountId = ownedAccounts[0].id.toLowerCase();
-      const rawThreadIds = Array.from(
-        new Set(preparedMessages.map((message) => message.rawThreadId)),
-      );
-      if (rawThreadIds.length > 0) {
-        const legacyThreads = await tx
-          .select({ id: schema.emailThreads.id, threadId: schema.emailThreads.threadId })
-          .from(schema.emailThreads)
-          .where(
-            and(
-              eq(schema.emailThreads.userId, userId),
-              isNull(schema.emailThreads.accountId),
-              inArray(schema.emailThreads.threadId, rawThreadIds),
-            ),
-          );
-        const scopedThreadIds = rawThreadIds.map((rawThreadId) =>
-          mailboxScopedExternalId(accountId, rawThreadId),
-        );
-        const existingScopedThreads = await tx
-          .select({ threadId: schema.emailThreads.threadId })
-          .from(schema.emailThreads)
-          .where(
-            and(
-              eq(schema.emailThreads.userId, userId),
-              inArray(schema.emailThreads.threadId, scopedThreadIds),
-            ),
-          );
-        const existingScopedThreadIds = new Set(
-          existingScopedThreads.flatMap((thread) => (thread.threadId ? [thread.threadId] : [])),
-        );
-
-        for (const legacyThread of legacyThreads) {
-          if (!legacyThread.threadId) continue;
-          const scopedThreadId = mailboxScopedExternalId(accountId, legacyThread.threadId);
-          if (existingScopedThreadIds.has(scopedThreadId)) continue;
-
-          const legacyMessages = await tx
-            .select({
-              id: schema.emailMessages.id,
-              googleMessageId: schema.emailMessages.googleMessageId,
-            })
-            .from(schema.emailMessages)
-            .where(
-              and(
-                eq(schema.emailMessages.userId, userId),
-                eq(schema.emailMessages.threadId, legacyThread.id),
-              ),
-            );
-          const messageRekeys = legacyMessages.flatMap((message) =>
-            message.googleMessageId
-              ? [
-                  {
-                    id: message.id,
-                    scopedMessageId: mailboxScopedExternalId(accountId, message.googleMessageId),
-                  },
-                ]
-              : [],
-          );
-          const scopedMessageIds = messageRekeys.map((message) => message.scopedMessageId);
-          if (scopedMessageIds.length > 0) {
-            const [messageConflict] = await tx
-              .select({ id: schema.emailMessages.id })
-              .from(schema.emailMessages)
-              .where(
-                and(
-                  eq(schema.emailMessages.userId, userId),
-                  inArray(schema.emailMessages.googleMessageId, scopedMessageIds),
-                ),
-              )
-              .limit(1);
-            if (messageConflict) continue;
-          }
-
-          const adopted = await tx
-            .update(schema.emailThreads)
-            .set({ accountId, threadId: scopedThreadId })
-            .where(
-              and(
-                eq(schema.emailThreads.id, legacyThread.id),
-                eq(schema.emailThreads.userId, userId),
-                isNull(schema.emailThreads.accountId),
-                eq(schema.emailThreads.threadId, legacyThread.threadId),
-              ),
-            )
-            .returning({ id: schema.emailThreads.id });
-          if (adopted.length !== 1) continue;
-
-          for (const message of messageRekeys) {
-            await tx
-              .update(schema.emailMessages)
-              .set({ googleMessageId: message.scopedMessageId })
-              .where(
-                and(
-                  eq(schema.emailMessages.id, message.id),
-                  eq(schema.emailMessages.userId, userId),
-                  eq(schema.emailMessages.threadId, legacyThread.id),
-                ),
-              );
-          }
-          existingScopedThreadIds.add(scopedThreadId);
-        }
+    for (const [accountId, provider] of requestedSourceByAccountId) {
+      if (ownedSourceByAccountId.get(accountId) !== provider) {
+        throw new Error("Mailbox persistence rejected a stale or unowned account source.");
       }
     }
 
