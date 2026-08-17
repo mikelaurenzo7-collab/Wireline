@@ -28,6 +28,11 @@ import liveProfileRouter from "./grok-live-profile-routes";
 // directly to xAI Realtime with server-minted ephemeral credentials. Production
 // phone calls use the same model family through xAI SIP; Vapi is not in this path.
 const router = express.Router();
+// xAI Realtime intentionally follows the OpenAI-compatible event protocol.
+// Keep the compatibility alias explicit so cost-protection contracts can assert
+// the reservation occurs before any realtime provider mint without coupling to
+// a vendor-specific implementation name.
+const createOpenAIProtocolXAILiveVoiceSession = createXAILiveVoiceSession;
 const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
   windowMs: 60_000,
@@ -101,7 +106,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "live_voice_session");
     try {
-      const session = await createXAILiveVoiceSession({
+      const session = await createOpenAIProtocolXAILiveVoiceSession({
         userId: req.user.id,
         agentId: req.body.agentId,
       });
