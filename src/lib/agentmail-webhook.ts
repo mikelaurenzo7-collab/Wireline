@@ -7,7 +7,7 @@ import { log } from "./server-context";
 
 const MAX_EVENT_TYPE_LENGTH = 96;
 const MAX_TEXT_LENGTH = 8_000;
-const MAX_HTML_INPUT_LENGTH = MAX_TEXT_LENGTH * 4;
+const MAX_HTML_INPUT_LENGTH = 1_000_000;
 
 export type AgentMailWebhookProcessResult = {
   eventType: string;
@@ -167,7 +167,7 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
       message.thread_id ?? message.threadId ?? eventData.thread_id ?? eventData.threadId,
       256,
     ),
-    from: firstAddress(message.from),
+    from: firstAddress(message.from_) ?? firstAddress(message.from),
     subject: boundedText(message.subject, 500) || "",
     snippet,
     receivedAt: parseDate(

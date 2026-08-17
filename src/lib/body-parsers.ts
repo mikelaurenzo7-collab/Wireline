@@ -13,6 +13,7 @@ type ExpressApp = ReturnType<typeof express>;
 
 const RAW_WEBHOOK_LIMIT = "1mb";
 const RESEND_WEBHOOK_LIMIT = "256kb";
+const AGENTMAIL_WEBHOOK_LIMIT = "1mb";
 const TWILIO_WEBHOOK_LIMIT = "256kb";
 
 /**
@@ -34,10 +35,12 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
     express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
   );
 
-  // AgentMail / Svix — same Standard Webhooks envelope as Resend, tenant secret.
+  // AgentMail / Svix — signed raw JSON. AgentMail documents a 1 MB payload
+  // ceiling and omits oversized body fields at that boundary, so accepting
+  // less here would reject otherwise-valid provider deliveries.
   app.use(
     "/api/webhooks/agentmail",
-    express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
+    express.raw({ type: "application/json", limit: AGENTMAIL_WEBHOOK_LIMIT }),
   );
 
   // Meta Lead Ads and data-deletion callbacks — raw bytes for HMAC validation.

@@ -92,7 +92,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     // personalized greeting headline and the first-agent path.
     { id: "overview-title", pattern: /wl-app-page-title/ },
     { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
-    { id: "full-roster", pattern: /agents\s*\.map/ },
+    { id: "agent-preview-cap", pattern: /OVERVIEW_AGENT_PREVIEW\s*=\s*6/ },
+    { id: "agent-overflow-link", pattern: /overflowCount[\s\S]*more in Studio/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
   canvas: [

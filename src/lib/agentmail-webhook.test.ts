@@ -27,6 +27,18 @@ describe("agentmail webhook payload", () => {
     expect(event.receivedAt.toISOString()).toBe("2026-08-17T03:00:00.000Z");
   });
 
+  it("accepts the documented from_ array used by current webhook payloads", () => {
+    const event = parseAgentMailWebhookEvent({
+      event_type: "message.received",
+      message: {
+        message_id: "msg_from_array",
+        from_: ["sender@example.com"],
+        subject: "Current envelope",
+      },
+    });
+    expect(event.from).toBe("sender@example.com");
+  });
+
   it("uses AgentMail preview and safely derives text for HTML-only inbound mail", () => {
     const preview = parseAgentMailWebhookEvent({
       event_type: "message.received",
@@ -48,6 +60,18 @@ describe("agentmail webhook payload", () => {
       },
     });
     expect(htmlOnly.snippet).toBe("Hello there & welcome");
+  });
+
+  it("finds visible HTML content after a large style preamble within the provider envelope", () => {
+    const event = parseAgentMailWebhookEvent({
+      event_type: "message.received",
+      message: {
+        message_id: "msg_large_html",
+        from_: ["sender@example.com"],
+        html: `<style>${"x".repeat(40_000)}</style><p>Visible customer request</p>`,
+      },
+    });
+    expect(event.snippet).toBe("Visible customer request");
   });
 
   it("reads and deduplicates every bounced recipient from the event-specific payload", () => {

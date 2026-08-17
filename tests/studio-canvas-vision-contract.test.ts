@@ -35,7 +35,10 @@ describe("Studio Canvas vision contract", () => {
     const sources = loadSurfaces();
 
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN) as Array<
-      [keyof typeof STUDIO_CANVAS_FORBIDDEN, (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN]]
+      [
+        keyof typeof STUDIO_CANVAS_FORBIDDEN,
+        (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN],
+      ]
     >) {
       const text = sources[surface];
       for (const rule of rules) {
@@ -74,11 +77,18 @@ describe("Studio Canvas vision contract", () => {
     expect(studioHome).not.toContain("StudioAgentBar");
   });
 
-  it("keeps the deploy-time Overview roster rule in lockstep with the TypeScript manifest", () => {
+  it("keeps deploy-time Overview behavior in lockstep with the TypeScript manifest", () => {
     const tsManifest = read("src/lib/studio-canvas-contract.ts");
     const deployManifest = read("scripts/lib/studio-canvas-contract.mjs");
-    const rosterPattern = String.raw`/agents\s*\.map/`;
-    expect(tsManifest).toContain(`{ id: "all-agents", pattern: ${rosterPattern} }`);
-    expect(deployManifest).toContain(`{ id: "full-roster", pattern: ${rosterPattern} }`);
+    const previewPattern = String.raw`/OVERVIEW_AGENT_PREVIEW\s*=\s*6/`;
+    const overflowPattern = String.raw`/overflowCount[\s\S]*more in Studio/`;
+    for (const manifest of [tsManifest, deployManifest]) {
+      expect(manifest).toContain(
+        `{ id: "agent-preview-cap", pattern: ${previewPattern} }`,
+      );
+      expect(manifest).toContain(
+        `{ id: "agent-overflow-link", pattern: ${overflowPattern} }`,
+      );
+    }
   });
 });

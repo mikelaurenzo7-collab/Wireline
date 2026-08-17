@@ -6,6 +6,7 @@ import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AgentMailConnectError,
   agentmailGrantedScopes,
+  deleteAgentMailWebhook,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
   resolveAgentMailInbox,
@@ -106,15 +107,36 @@ router.post(
         hasStoredSecret: Boolean(stored?.refreshToken),
       });
       if (ensured?.secret) {
-        await drizzle
-          .update(schema.emailAccounts)
-          .set({ refreshToken: encryptSecret(ensured.secret) })
-          .where(
-            and(
-              eq(schema.emailAccounts.id, emailAccountConnected.id),
-              eq(schema.emailAccounts.userId, userId),
-            ),
-          );
+        try {
+          const persisted = await drizzle
+            .update(schema.emailAccounts)
+            .set({ refreshToken: encryptSecret(ensured.secret) })
+            .where(
+              and(
+                eq(schema.emailAccounts.id, emailAccountConnected.id),
+                eq(schema.emailAccounts.userId, userId),
+              ),
+            )
+            .returning({ id: schema.emailAccounts.id });
+          if (persisted.length !== 1) {
+            throw new Error("AgentMail signing secret was not stored on the mailbox account");
+          }
+        } catch (secretPersistenceError) {
+          // A webhook without its signing secret can never be authenticated.
+          // Remove the just-created subscription so AgentMail does not keep
+          // retrying a callback Wireline must reject, then retain IMAP fallback.
+          try {
+            await deleteAgentMailWebhook(apiKey, ensured.webhookId);
+          } catch (cleanupError) {
+            log.warn("AgentMail orphan webhook cleanup failed", {
+              userId,
+              email: emailAddress,
+              webhookId: ensured.webhookId,
+              error: getErrorMessage(cleanupError),
+            });
+          }
+          throw secretPersistenceError;
+        }
       }
     } catch (err) {
       log.warn("AgentMail delivery subscription skipped", {
