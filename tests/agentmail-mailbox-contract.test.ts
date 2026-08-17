@@ -7,6 +7,7 @@ const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
 const mailboxCard = readFileSync("src/components/MailboxConnectionCard.tsx", "utf8");
 const envExample = readFileSync(".env.example", "utf8");
 const integrations = readFileSync("src/lib/integrations.ts", "utf8");
+const bodyParsers = readFileSync("src/lib/body-parsers.ts", "utf8");
 
 describe("agentmail mailbox contract", () => {
   it("never treats AgentMail as a shared platform env key", () => {
@@ -47,6 +48,26 @@ describe("agentmail mailbox contract", () => {
     expect(mailboxCard).toContain("/api/emails/accounts/");
     expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
     expect(registry).toContain("app.use(agentmailWebhookRouter)");
+  });
+
+  it("requires and persists the signing secret, deleting any unverifiable webhook", () => {
+    expect(agentmailRoutes).toContain("listAgentMailWebhooks");
+    expect(agentmailRoutes).toContain("AgentMail webhook did not expose its signing secret");
+    expect(agentmailRoutes).toContain(".returning({ id: schema.emailAccounts.id })");
+    expect(agentmailRoutes).toContain(
+      "await deleteAgentMailWebhook(input.apiKey, input.webhookId)",
+    );
+    expect(agentmailRoutes).toContain("AgentMail orphan webhook cleanup failed");
+  });
+
+  it("accepts AgentMail's documented one-megabyte webhook envelope", () => {
+    expect(bodyParsers).toContain('const AGENTMAIL_WEBHOOK_LIMIT = "1mb";');
+    expect(bodyParsers).toMatch(
+      /"\/api\/webhooks\/agentmail"[\s\S]*limit: AGENTMAIL_WEBHOOK_LIMIT/,
+    );
+    expect(bodyParsers).toMatch(
+      /"\/api\/webhooks\/resend"[\s\S]*limit: RESEND_WEBHOOK_LIMIT/,
+    );
   });
 
   it("cleans AgentMail delivery subscriptions on the Connections disconnect path", () => {

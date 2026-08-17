@@ -6,8 +6,10 @@ import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AgentMailConnectError,
   agentmailGrantedScopes,
+  deleteAgentMailWebhook,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
+  listAgentMailWebhooks,
   resolveAgentMailInbox,
   verifyAgentMailCredentials,
 } from "../lib/agentmail-mail";
@@ -30,6 +32,24 @@ const agentmailConnectRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 20,
 });
+
+async function removeUnverifiableAgentMailWebhook(input: {
+  apiKey: string;
+  webhookId: string;
+  userId: string;
+  emailAddress: string;
+}): Promise<void> {
+  try {
+    await deleteAgentMailWebhook(input.apiKey, input.webhookId);
+  } catch (cleanupError) {
+    log.warn("AgentMail orphan webhook cleanup failed", {
+      userId: input.userId,
+      email: input.emailAddress,
+      webhookId: input.webhookId,
+      error: getErrorMessage(cleanupError),
+    });
+  }
+}
 
 /**
  * POST /api/integrations/agentmail/connect
@@ -105,16 +125,47 @@ router.post(
         accountId: emailAccountConnected.id,
         hasStoredSecret: Boolean(stored?.refreshToken),
       });
-      if (ensured?.secret) {
-        await drizzle
-          .update(schema.emailAccounts)
-          .set({ refreshToken: encryptSecret(ensured.secret) })
-          .where(
-            and(
-              eq(schema.emailAccounts.id, emailAccountConnected.id),
-              eq(schema.emailAccounts.userId, userId),
-            ),
-          );
+      if (ensured) {
+        try {
+          // Creation returns the signing secret. Reuse intentionally returns null,
+          // so refresh it from AgentMail before declaring the subscription healthy.
+          // This also catches a malformed create response before an unverifiable
+          // callback can be left active.
+          let signingSecret = ensured.secret;
+          if (!signingSecret) {
+            const webhooks = await listAgentMailWebhooks(apiKey);
+            signingSecret =
+              webhooks.find((webhook) => webhook.webhookId === ensured.webhookId)?.secret ?? null;
+          }
+          if (!signingSecret) {
+            throw new Error("AgentMail webhook did not expose its signing secret");
+          }
+
+          const persisted = await drizzle
+            .update(schema.emailAccounts)
+            .set({ refreshToken: encryptSecret(signingSecret) })
+            .where(
+              and(
+                eq(schema.emailAccounts.id, emailAccountConnected.id),
+                eq(schema.emailAccounts.userId, userId),
+              ),
+            )
+            .returning({ id: schema.emailAccounts.id });
+          if (persisted.length !== 1) {
+            throw new Error("AgentMail signing secret was not stored on the mailbox account");
+          }
+        } catch (signingSecretError) {
+          // A webhook without its signing secret can never be authenticated.
+          // Remove the subscription so AgentMail does not keep retrying a callback
+          // Wireline must reject, then retain IMAP fallback.
+          await removeUnverifiableAgentMailWebhook({
+            apiKey,
+            webhookId: ensured.webhookId,
+            userId,
+            emailAddress,
+          });
+          throw signingSecretError;
+        }
       }
     } catch (err) {
       log.warn("AgentMail delivery subscription skipped", {
