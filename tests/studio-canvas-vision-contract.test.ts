@@ -73,4 +73,12 @@ describe("Studio Canvas vision contract", () => {
     expect(studioHome).toContain("StudioWorkspaceV2");
     expect(studioHome).not.toContain("StudioAgentBar");
   });
+
+  it("keeps the deploy-time Overview roster rule in lockstep with the TypeScript manifest", () => {
+    const tsManifest = read("src/lib/studio-canvas-contract.ts");
+    const deployManifest = read("scripts/lib/studio-canvas-contract.mjs");
+    const rosterPattern = String.raw`/agents\s*\.map/`;
+    expect(tsManifest).toContain(`{ id: "all-agents", pattern: ${rosterPattern} }`);
+    expect(deployManifest).toContain(`{ id: "full-roster", pattern: ${rosterPattern} }`);
+  });
 });

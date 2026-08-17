@@ -88,7 +88,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   overview: [
     { id: "overview-title", pattern: /wl-app-page-title/ },
     { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
-    { id: "all-agents", pattern: /previewAgents\.map/ },
+    { id: "all-agents", pattern: /agents\s*\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],
   canvas: [
