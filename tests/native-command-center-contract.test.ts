@@ -33,6 +33,9 @@ describe("native command center surfaces", () => {
     );
     expect(app).not.toMatch(/phone employees?/i);
     expect(setup).toContain("Use mobile for fast approvals and core call workflows.");
+    expect(setup).toContain("We could not load your agents. Your workspace is unchanged.");
+    expect(app).toContain("rosterUnavailable");
+    expect(app).toContain("Retry workspace");
     expect(`${app}\n${setup}`).not.toMatch(mojibake);
   });
 

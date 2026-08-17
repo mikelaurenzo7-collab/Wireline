@@ -105,7 +105,9 @@ fun AskWirelineScreen(
                     "Your current prepaid balance is $${"%.2f".format(balance)}. $planSummary"
                 }
                 cleanQuery.contains("agent") || cleanQuery.contains("roster") || cleanQuery.contains("bot") || cleanQuery.contains("bots") -> {
-                    if (state.agents.isEmpty()) {
+                    if (state.error != null && state.agents.isEmpty()) {
+                        "Agent roster is unavailable right now. Try again in a moment."
+                    } else if (state.agents.isEmpty()) {
                         "You don't have any agents on your roster currently."
                     } else {
                         val names = state.agents.joinToString("\n") { "• ${it.name} (${it.role ?: "Support"})" }

@@ -13,7 +13,9 @@ struct KnowledgeView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if agents.isEmpty && !isLoading {
+                if let error, agents.isEmpty, !isLoading {
+                    BrandEmptyState(title: "Couldn't load agents", message: error, systemImage: "wifi.exclamationmark")
+                } else if agents.isEmpty && !isLoading {
                     BrandEmptyState(title: "Start with an AI profit agent", message: "Create the agent first, then add the facts, rules, and sources that make it useful.", systemImage: "book.closed")
                 } else {
                     List {
@@ -42,7 +44,7 @@ struct KnowledgeView: View {
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
-            .refreshable { await loadSetup() }
+            .refreshable { await loadAgents() }
         }
     }
 
@@ -90,7 +92,9 @@ struct ActionsView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if agents.isEmpty && !isLoading {
+                if let error, agents.isEmpty, !isLoading {
+                    BrandEmptyState(title: "Couldn't load agents", message: error, systemImage: "wifi.exclamationmark")
+                } else if agents.isEmpty && !isLoading {
                     BrandEmptyState(title: "Start with an AI profit agent", message: "Create the agent first, then choose what it is allowed to do.", systemImage: "slider.horizontal.3")
                 } else {
                     List {
@@ -110,7 +114,7 @@ struct ActionsView: View {
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
-            .refreshable { await loadSetup() }
+            .refreshable { await loadAgents() }
         }
     }
 

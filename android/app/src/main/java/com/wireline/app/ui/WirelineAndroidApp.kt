@@ -115,12 +115,17 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                     contentColor = Color.White,
                     shape = RoundedCornerShape(Brand.RadiusMd),
                 ) { Icon(Icons.Default.Mic, contentDescription = "Ask Wireline") }
-                Screen.Assistants.route -> FloatingActionButton(
-                    onClick = { showCreateAgent = true },
-                    containerColor = Brand.Accent,
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(Brand.RadiusMd),
-                ) { Icon(Icons.Default.Add, contentDescription = "Create agent") }
+                Screen.Assistants.route -> {
+                    val rosterUnavailable = !state.isWorking && state.error != null && state.agents.isEmpty()
+                    if (!rosterUnavailable) {
+                        FloatingActionButton(
+                            onClick = { showCreateAgent = true },
+                            containerColor = Brand.Accent,
+                            contentColor = Color.White,
+                            shape = RoundedCornerShape(Brand.RadiusMd),
+                        ) { Icon(Icons.Default.Add, contentDescription = "Create agent") }
+                    }
+                }
                 else -> Unit
             }
         },
@@ -164,7 +169,16 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     ) { padding ->
         NavHost(navController = navController, startDestination = Screen.Studio.route, modifier = Modifier.padding(padding)) {
             composable(Screen.Studio.route) { StudioScreen(PaddingValues(0.dp), state, model, onNavigateToSettings = { navActions.navigateTo(Screen.Settings) }) }
-            composable(Screen.Assistants.route) { AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAgent = true }) }
+            composable(Screen.Assistants.route) {
+                AssistantsScreen(
+                    PaddingValues(0.dp),
+                    agents = state.agents,
+                    rosterUnavailable = !state.isWorking && state.error != null && state.agents.isEmpty(),
+                    rosterError = state.error,
+                    onRetry = { model.reload() },
+                    onCreate = { showCreateAgent = true },
+                )
+            }
             composable(Screen.Knowledge.route) { KnowledgeScreen(PaddingValues(0.dp)) }
             composable(Screen.Actions.route) { ActionsScreen(PaddingValues(0.dp)) }
             composable(Screen.Recaps.route) {
@@ -329,10 +343,27 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 }
 
 @Composable
-private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
+private fun AssistantsScreen(
+    padding: PaddingValues,
+    agents: List<Agent>,
+    rosterUnavailable: Boolean,
+    rosterError: String?,
+    onRetry: () -> Unit,
+    onCreate: () -> Unit,
+) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Voice agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
-        if (agents.isEmpty()) {
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Voice agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; if (!rosterUnavailable) TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
+        if (rosterUnavailable) {
+            item {
+              AssistantCard {
+                Text("Couldn't load agents", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                Spacer(Modifier.height(4.dp))
+                Text(rosterError ?: "Your agents and customer data are unchanged.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = onRetry, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Retry workspace") }
+              }
+            }
+        } else if (agents.isEmpty()) {
             item {
               AssistantCard {
                 Text("No voice agents yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)

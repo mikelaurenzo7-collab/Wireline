@@ -121,6 +121,10 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun loadCallDetail(id: String): CallDetail? = runCatching { api.callDetail(id) }.getOrNull()
 
+    fun reload() {
+        refresh()
+    }
+
     private fun refresh() = viewModelScope.launch { refreshNow() }
 
     private suspend fun refreshNow() {

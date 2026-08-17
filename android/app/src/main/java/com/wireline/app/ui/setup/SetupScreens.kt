@@ -91,6 +91,9 @@ fun KnowledgeScreen(padding: PaddingValues) {
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
+        } else if (error != null && agents.isEmpty()) {
+            Text("We could not load your agents. Your workspace is unchanged.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            error?.let { Text(it, modifier = Modifier.padding(horizontal = 20.dp), color = MaterialTheme.colorScheme.error) }
         } else if (agents.isEmpty()) {
             Text("Create an agent first, then add the facts, rules, and sources that make it useful.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
@@ -191,6 +194,9 @@ fun ActionsScreen(padding: PaddingValues) {
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
+        } else if (error != null && agents.isEmpty()) {
+            Text("We could not load your agents. Your workspace is unchanged.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            error?.let { Text(it, modifier = Modifier.padding(horizontal = 20.dp), color = MaterialTheme.colorScheme.error) }
         } else if (agents.isEmpty()) {
             Text("Create an agent first, then choose what it is allowed to do.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
