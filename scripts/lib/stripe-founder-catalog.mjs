@@ -116,7 +116,7 @@ export const FOUNDER_PRODUCTS = [
     key: "live_video",
     name: "Wireline Live Video",
     description:
-      "Retired talking-head add-on. Identity badges remain. Existing subscriptions no longer mint live sessions.",
+      "Retired talking-head add-on. Identity badges remain. Existing subscriptions no longer mint live sessions. Leftover SKU: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
     defaultPriceKey: "live_video_monthly",
     metadata: {
       wireline_product: "live_video_addon",

@@ -160,8 +160,11 @@ for (const [label, metadata] of [
     }
   }
 }
+if (!liveVideoProduct?.description?.toLowerCase().includes("retired")) {
+  errors.push("Live Video product description must state the talking-head add-on is retired.");
+}
 if (!liveVideoProduct?.description?.includes("up-to-5-minute sessions")) {
-  errors.push("Live Video product description must publish the five-minute session ceiling.");
+  errors.push("Live Video leftover SKU description must keep the five-minute session ceiling.");
 }
 if (liveVideoPrice?.unitAmount !== 1900 || liveVideoPrice?.recurring?.interval !== "month") {
   errors.push("Live Video must remain a $19 monthly licensed add-on.");
