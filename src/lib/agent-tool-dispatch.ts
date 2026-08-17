@@ -1,24 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * Shared dispatch for agent tool handlers — used by Vapi webhooks and
- * Director-approved integration jobs.
- */
+/** Shared dispatch for live agent tools and Director-approved integration jobs. */
 import { randomUUID } from "node:crypto";
 
-import { drizzle, log } from "./server-context";
 import { handleCalendarToolCall } from "../routes/vapi/tool-handlers-calendar";
 import { handleCoreToolCall } from "../routes/vapi/tool-handlers-core";
+import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
 import { handleEnrichmentToolCall } from "../routes/vapi/tool-handlers-enrichment";
 import { handleNotificationToolCall } from "../routes/vapi/tool-handlers-notifications";
-import { handleXToolCall } from "../routes/vapi/tool-handlers-x";
 import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
 import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
+import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
-import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
+import { handleXToolCall } from "../routes/vapi/tool-handlers-x";
 import { isAgentToolExecutionAuthorized } from "./agent-tool-authorization";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
+import { handleNativeVoiceToolCall } from "./agent-tool-native-voice";
 import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
-import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
+import { drizzle, log } from "./server-context";
 
 async function dispatchToFirstAvailableHandler(
   fn: string,
@@ -26,6 +24,9 @@ async function dispatchToFirstAvailableHandler(
   context: ToolCallContext,
 ): Promise<ToolCallResult> {
   const handlers = [
+    // Native outbound calls carry a signed exact lead id. Resolve mutating
+    // lead tools against that row before legacy phone-number fallback handlers.
+    handleNativeVoiceToolCall,
     handleCoreToolCall,
     handleCalendarToolCall,
     handleEnrichmentToolCall,
