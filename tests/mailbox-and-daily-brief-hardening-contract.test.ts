@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { agentMailSuppressionReason, parseAgentMailWebhookEvent } from "../src/lib/agentmail-webhook";
+
 const ownedMailbox = readFileSync("src/lib/owned-email-account.ts", "utf8");
+const mailboxPersistence = readFileSync("src/lib/mailbox-inbox-persist.ts", "utf8");
 const google = readFileSync("src/routes/oauth/google.ts", "utf8");
 const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
 const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
@@ -38,11 +41,98 @@ describe("mailbox ownership hardening", () => {
     }
   });
 
+  it("keys AgentMail connection mutations by the authenticated tenant", () => {
+    expect(agentmail).toContain("createRateLimiter");
+    expect(agentmail).not.toContain("createIpRateLimiter");
+    expect(agentmail).toMatch(
+      /"\/api\/integrations\/agentmail\/connect",\s*authenticateUser,\s*agentmailConnectRateLimiter,\s*validateBody/,
+    );
+    expect(agentmail).toMatch(
+      /"\/api\/integrations\/agentmail\/disconnect",\s*authenticateUser,\s*agentmailConnectRateLimiter/,
+    );
+  });
+
+  it("never regresses the latest thread preview when an older provider retry arrives", () => {
+    expect(mailboxPersistence).toContain("incomingThreadIsNotOlder");
+    expect(mailboxPersistence).toContain("excluded.last_message_at >=");
+    expect(mailboxPersistence).toContain(
+      "then excluded.subject else ${schema.emailThreads.subject} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.customer_email else ${schema.emailThreads.customerEmail} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.summary else ${schema.emailThreads.summary} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.last_message_at else ${schema.emailThreads.lastMessageAt} end",
+    );
+  });
+
   it("validates required OAuth provider response fields before persistence", () => {
     expect(google).toContain("Google token response omitted access_token.");
     expect(microsoft).toContain("Microsoft token response omitted access_token.");
     expect(microsoft).toContain("Microsoft profile request failed");
     expect(yahoo).toContain("no access_token in Yahoo response");
+  });
+});
+
+describe("AgentMail delivery payload hardening", () => {
+  it("reads and deduplicates all canonical bounce recipients", () => {
+    const event = parseAgentMailWebhookEvent({
+      event_type: "message.bounced",
+      bounce: {
+        message_id: "msg_bounce",
+        recipients: [
+          { address: "invalid@example.com", status: "bounced" },
+          { address: "second@example.com", status: "bounced" },
+          { address: "INVALID@example.com", status: "bounced" },
+        ],
+      },
+    });
+
+    expect(event.messageId).toBe("msg_bounce");
+    expect(event.suppressionRecipients).toEqual([
+      "invalid@example.com",
+      "second@example.com",
+    ]);
+    expect(agentMailSuppressionReason(event.eventType)).toBe("agentmail_bounced");
+  });
+
+  it("suppresses complaints but never treats rejected sends as recipient opt-outs", () => {
+    const complaint = parseAgentMailWebhookEvent({
+      event_type: "message.complained",
+      complaint: {
+        recipients: ["complainer@example.com"],
+      },
+    });
+    expect(complaint.suppressionRecipients).toEqual(["complainer@example.com"]);
+    expect(agentMailSuppressionReason(complaint.eventType)).toBe("agentmail_complained");
+
+    const rejected = parseAgentMailWebhookEvent({
+      event_type: "message.rejected",
+      reject: {
+        reason: "Invalid recipient address",
+      },
+    });
+    expect(rejected.suppressionRecipients).toEqual([]);
+    expect(rejected.rejectionReason).toBe("Invalid recipient address");
+    expect(agentMailSuppressionReason(rejected.eventType)).toBeNull();
+  });
+
+  it("derives safe text for HTML-only messages and requires AgentMail event_type", () => {
+    const htmlOnly = parseAgentMailWebhookEvent({
+      event_type: "message.received",
+      message: {
+        message_id: "msg_html",
+        from: "lead@example.com",
+        html: "<style>p { color: red; }</style><p>Hello <strong>there</strong> &amp; welcome</p>",
+      },
+    });
+    expect(htmlOnly.snippet).toBe("Hello there & welcome");
+    expect(() => parseAgentMailWebhookEvent({ type: "event", message: {} })).toThrow(
+      /event type is missing/,
+    );
   });
 });
 

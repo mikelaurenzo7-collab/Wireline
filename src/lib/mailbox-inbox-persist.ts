@@ -66,16 +66,22 @@ export async function persistMailboxInboxMessages(
   const messagesSaved = await drizzle.transaction(async (tx) => {
     const threadDbIdByExternalId = new Map<string, string>();
     if (threadRows.length > 0) {
+      // Provider retries and manual syncs can arrive out of order. Never let an
+      // older message overwrite the latest subject, sender, summary, or clock.
+      const incomingThreadIsNotOlder = sql<boolean>`
+        ${schema.emailThreads.lastMessageAt} is null
+        or excluded.last_message_at >= ${schema.emailThreads.lastMessageAt}
+      `;
       const threads = await tx
         .insert(schema.emailThreads)
         .values(threadRows)
         .onConflictDoUpdate({
           target: [schema.emailThreads.userId, schema.emailThreads.threadId],
           set: {
-            subject: sql`excluded.subject`,
-            customerEmail: sql`excluded.customer_email`,
-            summary: sql`excluded.summary`,
-            lastMessageAt: sql`excluded.last_message_at`,
+            subject: sql`case when ${incomingThreadIsNotOlder} then excluded.subject else ${schema.emailThreads.subject} end`,
+            customerEmail: sql`case when ${incomingThreadIsNotOlder} then excluded.customer_email else ${schema.emailThreads.customerEmail} end`,
+            summary: sql`case when ${incomingThreadIsNotOlder} then excluded.summary else ${schema.emailThreads.summary} end`,
+            lastMessageAt: sql`case when ${incomingThreadIsNotOlder} then excluded.last_message_at else ${schema.emailThreads.lastMessageAt} end`,
           },
           setWhere: sql`${schema.emailThreads.userId} = ${userId}`,
         })
