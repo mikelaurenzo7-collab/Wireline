@@ -44,7 +44,8 @@ describe("realtime spend reservation contract", () => {
     expect(reserve).toContain("if (units > limit)");
     expect(reserve).toContain("if (row)");
     expect(reserve).toContain("allowed: false");
-    expect(reserve).toContain("persisted: true");
+    expect(reserve).toContain("authoritativeDecision({");
+    expect(quota).toContain("persisted: true");
   });
 
   it("returns rejected quota only for definitive no-session outcomes", () => {
