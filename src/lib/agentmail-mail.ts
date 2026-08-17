@@ -275,7 +275,7 @@ export async function fetchAgentMailInbox(
     }
   } catch (err) {
     log.warn("AgentMail inbox fetch failed", { email, error: getErrorMessage(err) });
-    return [];
+    throw err;
   } finally {
     await client.logout().catch(() => undefined);
   }
