@@ -12,12 +12,11 @@ export type VoiceOption = {
 };
 
 /**
- * Legacy curated preview voices for browser auditioning only.
+ * Built-in xAI voices for live PSTN through Vapi `voice.provider: "xai"`.
+ * Browser previews still render through direct xAI TTS (`xai-tts-service.ts`),
+ * which is not the live-call engine.
  *
- * These are not the production PSTN voice engine. Browser/mobile live
- * conversations use OpenAI Realtime voice profiles. Phone calls use the
- * managed Vapi catalog or an approved ElevenLabs voice through Vapi with a
- * curated Vapi fallback.
+ * Browser/mobile live conversations use OpenAI Realtime voice profiles.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
   { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },
@@ -277,11 +276,11 @@ export function vapiVoiceVersion(voiceId: string | null | undefined): 2 | undefi
 
 export function defaultPresenterPhoneVoicePayload(): {
   phoneVoiceId: string;
-  phoneVoiceProvider: "vapi";
+  phoneVoiceProvider: "xai";
 } {
   return {
-    phoneVoiceId: DEFAULT_PRESENTER_PHONE_VOICE.id,
-    phoneVoiceProvider: "vapi",
+    phoneVoiceId: WIRELINE_LIVE_VOICES[0].id,
+    phoneVoiceProvider: "xai",
   };
 }
 
@@ -350,7 +349,7 @@ export function resolveVoiceLabel(voiceId: string | null | undefined): string {
 
 /** User-facing provider family · no third-party vendor names. */
 export function providerLabel(provider: string | null | undefined): string {
-  if (provider === "xai") return "Wireline Preview";
+  if (provider === "xai") return "Wireline Phone";
   if (provider === "vapi") return "Wireline Phone";
   if (provider === "11labs") return "Wireline Studio";
   if (provider === "presenter") return "Presenter voice";
@@ -358,7 +357,7 @@ export function providerLabel(provider: string | null | undefined): string {
 }
 
 export function voiceFamilyLabel(provider: VoiceProvider): string {
-  if (provider === "xai") return "Wireline Preview";
+  if (provider === "xai") return "Wireline Phone";
   if (provider === "vapi") return "Wireline Phone";
   if (provider === "11labs") return "Wireline Studio";
   if (provider === "presenter") return "Presenter voice";
@@ -368,10 +367,10 @@ export function voiceFamilyLabel(provider: VoiceProvider): string {
 /** Short routing hint for create-flow voice picks. */
 export function voiceRoutingHint(provider: VoiceProvider): string | null {
   if (provider === "xai") {
-    return "Legacy audio preview only. Live browser/mobile conversations use OpenAI voice profiles; PSTN phone calls use Wireline Phone.";
+    return "Live phone voice with an automatic Wireline Phone fallback.";
   }
   if (provider === "vapi") {
-    return "Optimized for live phone calls on your Vapi line.";
+    return "Optimized for live phone calls on your included line.";
   }
   if (provider === "11labs") {
     return "Low-latency studio speech with an automatic phone fallback.";

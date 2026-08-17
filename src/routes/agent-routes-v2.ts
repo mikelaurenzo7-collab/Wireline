@@ -13,7 +13,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
-import { isManagedVapiVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { isManagedVapiVoiceId, isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   isAgentToolName,
@@ -358,6 +358,11 @@ router.post(
         throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
       }
 
+      const voiceId = isXaiPstnVoiceId(requestedVoiceId)
+        ? requestedVoiceId
+        : isManagedVapiVoiceId(requestedVoiceId)
+          ? requestedVoiceId
+          : pickRotatedVoiceId(existing);
       await tx.insert(schema.agents).values({
         id,
         userId: req.user.id,
@@ -365,10 +370,8 @@ router.post(
         role,
         channel,
         archetype: resolveAgentRoleArchetype(role),
-        voiceId: isManagedVapiVoiceId(requestedVoiceId)
-          ? requestedVoiceId
-          : pickRotatedVoiceId(existing),
-        voiceProvider: "vapi",
+        voiceId,
+        voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
         enabledTools,
         firstMessage,
         isBusinessAgent,
@@ -673,12 +676,15 @@ router.patch(
       .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
     const providerRaw =
-      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "vapi" : null);
+      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "xai" : null);
     const allowedProviders = new Set(["xai", "vapi", "11labs", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
+    if (provider === "xai" && voiceId && !isXaiPstnVoiceId(voiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
+    }
     if (provider === "vapi" && voiceId && !isManagedVapiVoiceId(voiceId)) {
       throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
     }
@@ -703,9 +709,15 @@ router.patch(
     }
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
     const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
-    const phoneProviders = new Set(["vapi"]);
+    const phoneProviders = new Set(["vapi", "xai"]);
     if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
+    }
+    if (phoneVoiceProviderRaw === "xai" && phoneVoiceId && !isXaiPstnVoiceId(phoneVoiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
+    }
+    if (phoneVoiceProviderRaw === "vapi" && phoneVoiceId && !isManagedVapiVoiceId(phoneVoiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
     }
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(body, "phoneVoiceId");

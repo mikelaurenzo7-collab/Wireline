@@ -99,7 +99,7 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
     return;
   }
 
-  // Unknown Vapi providers must not inherit a cross-provider fallback list.
+  // Vapi's XaiModel DTO rejects fallbackModels. Continuity is application retry.
   delete model.fallbackModels;
 }
 

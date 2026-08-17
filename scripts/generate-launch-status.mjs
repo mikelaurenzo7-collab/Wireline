@@ -836,10 +836,10 @@ const record = {
   production: vercel,
   live_checks: { readiness, canonical_runtime: canonicalRuntime, stripe, database, twilio },
   runtime_policy: {
-    managed_structured_chain: ["OpenAI", "Gemini", "Vercel AI Gateway"],
+    managed_structured_chain: ["xAI", "OpenAI", "Gemini", "Vercel AI Gateway"],
     openai:
-      "primary managed structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT/guest demos",
-    xai: "optional experiment only; structured fallback requires WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
+      "continuity structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT/guest demos",
+    xai: "managed primary; Grok 4.6 structured and Vapi Grok 4.3 PSTN default whenever XAI_API_KEY is configured",
   },
   surface_posture: {
     web: "public self-serve candidate",

@@ -3,12 +3,14 @@
 /**
  * Non-billable live contract audit for Wireline's transient Vapi assistant.
  *
- * Creates one inert assistant using the exact managed primary + fallback model
- * policy, reads the saved configuration back, and always deletes it. It never
+ * Creates one inert assistant using the exact managed xAI Grok 4.3 policy,
+ * reads the saved configuration back, and always deletes it. It never
  * places a call, creates a chat, or generates model output.
+ *
+ * Vapi's XaiModel DTO rejects `fallbackModels`. Continuity is Wireline's
+ * application retry to OpenAI after a definitive model/provider rejection.
  */
 import {
-  VAPI_DEFAULT_FALLBACK_MODELS,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "../src/lib/ai-models";
@@ -35,16 +37,7 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
   });
 }
 
-function sameStringArray(actual: unknown, expected: readonly string[]): boolean {
-  return (
-    Array.isArray(actual) &&
-    actual.length === expected.length &&
-    actual.every((value, index) => value === expected[index])
-  );
-}
-
 try {
-  const expectedFallbackModels = [...VAPI_DEFAULT_FALLBACK_MODELS];
   const response = await request("/assistant", {
     method: "POST",
     body: JSON.stringify({
@@ -53,7 +46,6 @@ try {
       model: {
         provider: VAPI_TENANT_DEFAULT_PROVIDER,
         model: VAPI_TENANT_DEFAULT_MODEL,
-        fallbackModels: expectedFallbackModels,
         systemPrompt: "Never place or answer a call. This assistant validates configuration only.",
         tools: [
           {
@@ -113,13 +105,14 @@ try {
         const exact =
           model?.provider === VAPI_TENANT_DEFAULT_PROVIDER &&
           model?.model === VAPI_TENANT_DEFAULT_MODEL &&
-          sameStringArray(model?.fallbackModels, expectedFallbackModels);
+          (model?.fallbackModels == null ||
+            (Array.isArray(model.fallbackModels) && model.fallbackModels.length === 0));
         if (!exact) {
-          console.error("Vapi changed or omitted the managed primary/fallback model policy.");
+          console.error("Vapi changed or omitted the managed xAI Grok 4.3 model policy.");
           process.exitCode = 1;
         } else {
           console.log(
-            `Vapi certified ${VAPI_TENANT_DEFAULT_PROVIDER}/${VAPI_TENANT_DEFAULT_MODEL} with fallback ${expectedFallbackModels.join(", ")}.`,
+            `Vapi certified ${VAPI_TENANT_DEFAULT_PROVIDER}/${VAPI_TENANT_DEFAULT_MODEL} without XaiModel fallbackModels.`,
           );
         }
       }

@@ -73,7 +73,7 @@ describe("managed phone voice runtime policy", () => {
     expect(factory).toMatch(/schema\.clonedVoices\.status, "approved"/);
     expect(outboundClient).toMatch(/buildManagedVoiceRuntime/);
     expect(outboundClient).toMatch(/schema\.clonedVoices\.status, "approved"/);
-    expect(draftService).toMatch(/voiceProvider: "vapi"/);
+    expect(draftService).toMatch(/voiceProvider: isXaiPstnVoiceId\(voiceId\) \? "xai" : "vapi"/);
   });
 
   it("does not replace an approved ElevenLabs selection with the presenter fallback", () => {

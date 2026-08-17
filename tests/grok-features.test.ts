@@ -7,6 +7,7 @@ import {
 
 describe("grok-features", () => {
   it("detects Grok model ids", () => {
+    expect(isGrokModelId("grok-4.6")).toBe(true);
     expect(isGrokModelId("x-ai/grok-4.5")).toBe(true);
     expect(isGrokModelId("Grok-2")).toBe(true);
     expect(isGrokModelId("google/gemini-1.5-flash")).toBe(false);

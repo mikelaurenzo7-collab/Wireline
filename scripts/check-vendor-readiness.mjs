@@ -307,12 +307,13 @@ record(
   false,
   xai?.ok ? "ready" : "degraded",
   xai?.ok
-    ? "xAI key accepted; optional Grok experiment APIs are reachable."
-    : "Optional xAI layer missing or rejected; launch defaults stay on OpenAI → Gemini → AI Gateway.",
-  "Keep xAI experiment-only. Fund only if WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK is intentionally enabled.",
+    ? "xAI key accepted; Grok 4.6 structured and Vapi Grok 4.3 PSTN defaults are reachable."
+    : "xAI key missing or rejected; launch degrades to OpenAI → Gemini → AI Gateway.",
+  "Fund Grok 4.6 as the structured default and Grok 4.3 as the Vapi PSTN default. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt out.",
   {
-    structured_primary_model: "gpt-5.6-terra",
-    xai_role: "optional_experiment",
+    structured_primary_model: "grok-4.6",
+    vapi_pstn_model: "grok-4.3",
+    xai_role: "managed_primary",
   },
 );
 

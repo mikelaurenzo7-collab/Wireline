@@ -1,5 +1,5 @@
 import {
-  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  OPENAI_STRUCTURED_PRIMARY_MODEL,
   STRUCTURED_PRIMARY_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -24,18 +24,17 @@ export function getHealthModelTiering() {
     voice_fallback: {
       provider: VAPI_VOICE_FALLBACK_PROVIDER,
       model: VAPI_VOICE_FALLBACK_MODEL,
-      reason: "Managed same-provider voice fallback.",
+      reason: "Application-layer OpenAI retry after a rejected xAI Vapi model.",
     },
     reasoning_layer: {
-      provider: "openai" as const,
+      provider: "xai" as const,
       model: STRUCTURED_PRIMARY_MODEL,
-      reason:
-        "Managed OpenAI Responses primary for training, QA, insights, and post-call work.",
+      reason: "Managed xAI Grok 4.6 primary for training, QA, insights, and post-call work.",
     },
     reasoning_fallback: {
-      provider: "google" as const,
-      model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-      reason: "First automatic fallback; the AI Gateway follows.",
+      provider: "openai" as const,
+      model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+      reason: "First automatic continuity lane; Gemini and the AI Gateway follow.",
     },
   };
 }

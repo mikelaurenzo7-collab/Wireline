@@ -65,7 +65,7 @@ const required = [
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   [
     "OPENAI_API_KEY",
-    "Primary managed runtime and OpenAI Realtime sessions",
+    "Continuity structured runtime and OpenAI Realtime sessions",
     process.env.OPENAI_API_KEY,
   ],
   [
@@ -124,7 +124,7 @@ const recommended = [
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
   [
     "XAI_API_KEY",
-    "Optional xAI credential — activates the Grok structured continuity lane and Wireline Preview voice rendering; OpenAI stays primary",
+    "Managed xAI credential — Grok 4.6 structured primary and Vapi Grok 4.3 PSTN default; OpenAI remains continuity and Realtime",
   ],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],

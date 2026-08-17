@@ -169,8 +169,8 @@ describe("code review hardening contracts", () => {
   it("tracks post-create roleplay starts only from a connected live voice test", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
-    // LiveVoiceSandbox is a thin re-export; the OpenAI Realtime implementation owns the callback.
     const liveVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    const vapiLiveVoice = read("src/components/VapiLiveVoiceSandbox.tsx");
 
     expect(wizard).not.toContain("onFocusCapture");
     expect(wizard).toContain("onTestStarted={() =>");
@@ -178,6 +178,9 @@ describe("code review hardening contracts", () => {
     expect(liveVoice).toContain("onTestStarted?: () => void");
     expect(liveVoice).toContain("reportedStarted.current = true");
     expect(liveVoice).toContain("onTestStarted?.()");
+    expect(vapiLiveVoice).toContain("onTestStarted?: () => void");
+    expect(vapiLiveVoice).toContain("reportedStarted.current = true");
+    expect(vapiLiveVoice).toContain("onTestStarted?.()");
   });
 
   it("defensively handles unavailable browser storage in activation nudges", () => {

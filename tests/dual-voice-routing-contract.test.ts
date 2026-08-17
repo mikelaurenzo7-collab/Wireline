@@ -27,6 +27,7 @@ describe("dual-voice PSTN routing contracts", () => {
     expect(factory).not.toContain('voiceProvider === "presenter"');
     expect(managedRuntime).toContain("isManagedVapiVoiceId");
     expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(managedRuntime).toContain('provider: "xai" as const');
     expect(managedRuntime).toContain('provider: "vapi" as const');
     expect(managedRuntime).toContain('provider: "11labs" as const');
     expect(managedRuntime).toContain("input.approvedClone === true");
