@@ -129,6 +129,64 @@ async function repairTwilioRouting(
   else await collection.create(payload);
 }
 
+/**
+ * Detach a line from the native SIP trunk before it becomes unassigned. xAI's
+ * public Direct SIP API documents registration but no deletion endpoint, so the
+ * durable registration is retained as `retired` and can be reactivated without
+ * inventing an unsupported provider operation or losing its one-time secret.
+ */
+export async function deactivateNativeXAIPhoneLine(input: {
+  userId: string;
+  phoneNumber: string;
+}): Promise<void> {
+  const phoneNumber = normalizeXAIPhoneNumber(input.phoneNumber);
+  if (!phoneNumber) throw AppError.badRequest("A valid phone line is required.");
+
+  const [binding] = await drizzle
+    .select()
+    .from(xaiPhoneBindings)
+    .where(
+      and(
+        eq(xaiPhoneBindings.userId, input.userId),
+        eq(xaiPhoneBindings.phoneNumber, phoneNumber),
+      ),
+    )
+    .limit(1);
+  if (!binding || binding.status === "retired") return;
+
+  if (binding.twilioSipTrunkSid && binding.twilioPhoneNumberSid) {
+    const client = getTwilioClient() as any;
+    if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+    const trunk = client.trunking.v1.trunks(binding.twilioSipTrunkSid);
+    const attached = await trunk.phoneNumbers.list({ limit: 1_000 });
+    const association = attached.find(
+      (row: { sid?: unknown; phoneNumberSid?: unknown }) =>
+        row.sid === binding.twilioPhoneNumberSid ||
+        row.phoneNumberSid === binding.twilioPhoneNumberSid,
+    );
+    const associationSid = String(association?.sid || binding.twilioPhoneNumberSid).trim();
+    if (association && associationSid) {
+      await trunk.phoneNumbers(associationSid).remove();
+    }
+  }
+
+  await drizzle
+    .update(xaiPhoneBindings)
+    .set({
+      status: "retired",
+      provisioningToken: null,
+      provisioningClaimedAt: null,
+      lastError: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(xaiPhoneBindings.id, binding.id),
+        eq(xaiPhoneBindings.userId, input.userId),
+      ),
+    );
+}
+
 export async function provisionNativeXAIPhone(input: {
   userId: string;
   agentId: string;
