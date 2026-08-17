@@ -61,20 +61,22 @@ function runLiveVapiSchemaAuditIfRequested() {
   run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"]);
 }
 
-function runDeepLaunchAuditIfRequested() {
+function runComprehensiveReleaseAudit() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (!commitMessage.includes("[launch-deep-audit]")) return;
+  const explicitlyRequested = commitMessage.includes("[launch-deep-audit]");
+  if (!isCanonicalProduction && !explicitlyRequested) return;
 
   console.log(
-    `Running one-shot full TypeScript, ESLint, production-dependency security, and Vitest launch audit for ${environment || "local"}.`,
+    `Running mandatory comprehensive TypeScript, ESLint, production-dependency security, and Vitest release audit for ${environment || "local"}.`,
   );
   run("npm", ["run", "lint"]);
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
   run("npm", ["run", "lint:eslint"]);
-  // Exact-head preview certification is the release authority while hosted
-  // GitHub runners remain externally unavailable: TypeScript, zero-warning
-  // ESLint, advisory gating, and the complete non-E2E suite all execute here.
+  // Exact-head preview certification remains available through the commit
+  // marker, but canonical production never relies on the smaller focused gate:
+  // every production artifact must pass the complete non-E2E estate before any
+  // migration or live-provider release assertion can run.
   run("npm", ["run", "security:audit"]);
   // Vercel sets NODE_ENV=production and VERCEL=1 for its build process. Vitest
   // only supplies NODE_ENV=test when the variable is absent, so inheriting the
@@ -137,7 +139,7 @@ function verifyStripePortalIfRequested() {
   // Preserve the historical environment-variable name for deployed compatibility,
   // but keep artifact construction read-only with respect to Stripe. Drift must be
   // repaired explicitly through the operator command and then re-verified here.
-  console.log("Verifying the canonical Stripe customer portal after build certification.");
+  console.log("Verifying the canonical Stripe customer portal before live migration.");
   run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
 }
 
@@ -267,9 +269,10 @@ run("npx", [
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
 validateProductionEnvironment();
-runDeepLaunchAuditIfRequested();
+runComprehensiveReleaseAudit();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
+verifyStripePortalIfRequested();
 
 if (shouldMigrate) {
   if (!databaseUrl) {
@@ -308,4 +311,3 @@ run("npx", [
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
 syncShowcaseIfRequested();
-verifyStripePortalIfRequested();
