@@ -6,7 +6,7 @@
  * text stay on the agent.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 
 import AgentFace from "../components/AgentFace";
@@ -108,12 +108,6 @@ export default function LiveVideoStudioPage() {
             ) : null}
           </div>
         ) : null}
-        <Link
-          to="/outbound"
-          className="text-sm font-medium text-primary underline underline-offset-4"
-        >
-          Call prep on campaigns
-        </Link>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

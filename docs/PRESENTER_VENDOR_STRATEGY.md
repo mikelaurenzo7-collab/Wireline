@@ -3,7 +3,7 @@
 **Status:** Historical for LiveAvatar/HeyGen talking-head. **Active** for identity badges.  
 **Updated:** August 17, 2026.
 
-Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered: xAI watermarks Imagine files and forbids stripping the watermark. The Wireline agent keeps Grok Bot-class draft skills plus PSTN voice; there is no second companion to chat with and no Grok Bot API.
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered: xAI watermarks Imagine files and forbids stripping the watermark. PSTN voice stays on the agent. There is no work-companion API and no Grok Bot companion runtime.
 
 The remainder of this document is the prior LiveAvatar/HeyGen pairing research and must not be read as current launch contract.
   

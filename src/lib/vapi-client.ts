@@ -59,7 +59,6 @@ import {
   isDefinitiveVapiVoiceModelRejection,
   resolveCoherentVoiceModel,
 } from "./ai-models";
-import { loadWorkCompanionCallPrep } from "./work-companion-runtime";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
@@ -458,7 +457,6 @@ export async function placeOutboundCall(opts: {
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
 
-  const callPrep = await loadWorkCompanionCallPrep(userId, dialNumber);
   const systemPrompt = `
 ## IDENTITY & OUTBOUND MISSION
 You are ${agentConfig.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, " ")} specialist making an outbound call.
@@ -486,7 +484,6 @@ ${archetypeRules}
 ## ⚡ OUTBOUND CALL OBJECTIVE, EXECUTE THIS
 You are calling ${customerName || "a customer"}.
 Objective: ${context || "Check in and offer assistance."}
-${callPrep ? `\n${callPrep}\n` : ""}
 Execute this objective naturally, integrate it into the conversation, don't read it like a script.
 
 ${agentConfig.websiteUrl ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.websiteUrl}. For detailed specs, pricing pages, or information not in your knowledge base, direct the contact here or offer to send the link by email.` : ""}

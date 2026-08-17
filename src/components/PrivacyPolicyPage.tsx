@@ -283,8 +283,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
               </li>
               <li>
-                <strong>xAI</strong>: Structured reasoning and live-call voices drafted by work
-                companions
+                <strong>xAI</strong>: Structured reasoning and live-call voices
               </li>
               <li>
                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics
