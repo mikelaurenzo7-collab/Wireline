@@ -1,23 +1,27 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- inbound lead payloads are vendor-defined JSON envelopes. */
 import express, { Request, Response } from "express";
-import type { AuthenticatedRequest } from "../types/auth";
-import { log, auditLogger, drizzle, tenantStore } from "../lib/server-context";
-import { validateBody, createIntakeKeySchema, updateIntakeKeySchema } from "../lib/api-validation";
+import { and, desc, eq, sql } from "drizzle-orm";
+
 import * as schema from "../db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
-import { dispatchWebhook } from "../lib/webhook-helpers";
-import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
+import {
+  createIntakeKeySchema,
+  updateIntakeKeySchema,
+  validateBody,
+} from "../lib/api-validation";
 import { runInBackground } from "../lib/background-work";
-import { placeOutboundCall } from "../lib/vapi-client";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { CALLBACK_REQUEST_MARKER } from "../lib/callback-engine";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
+import { auditLogger, drizzle, log, tenantStore } from "../lib/server-context";
+import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
+import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
+import { dispatchWebhook } from "../lib/webhook-helpers";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
-
 const INTAKE_KEY_PREFIX = "wlk_";
 
 async function sha256Hex(value: string): Promise<string> {
@@ -33,9 +37,11 @@ async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string;
     .replace(/[^A-Za-z0-9]/g, "")
     .slice(0, 36);
   const plaintext = `${INTAKE_KEY_PREFIX}${raw}`;
-  const prefix = plaintext.slice(0, 12);
-  const hash = await sha256Hex(plaintext);
-  return { plaintext, prefix, hash };
+  return {
+    plaintext,
+    prefix: plaintext.slice(0, 12),
+    hash: await sha256Hex(plaintext),
+  };
 }
 
 interface IntakeKey {
@@ -49,8 +55,9 @@ interface IntakeKey {
 }
 
 async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey | null> {
-  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX))
+  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) {
     return null;
+  }
   const hash = await sha256Hex(provided.trim());
   const [data] = await drizzle
     .select({
@@ -70,9 +77,6 @@ async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey
   return data as any;
 }
 
-// Per-key distributed rate limit. Public endpoint, so a single noisy
-// caller can't drain the Account Holder's Vapi spend or hammer Supabase.
-// Rolling window: ≤ 60 requests per 60s per intake key.
 const INTAKE_RATE_WINDOW_MS = 60_000;
 const INTAKE_RATE_MAX = 60;
 const INTAKE_PREAUTH_RATE_MAX = 120;
@@ -116,9 +120,9 @@ async function checkIntakeRate(keyId: string, cost = 1): Promise<IntakeRateCheck
       code: "INTAKE_RATE_LIMIT",
       error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${retryAfter}s.`,
     };
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    log.error("Intake rate limiter failed", { keyId, error: getErrorMessage(err) });
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    log.error("Intake rate limiter failed", { keyId, error: getErrorMessage(error) });
     return {
       ok: false,
       status: 503,
@@ -129,12 +133,6 @@ async function checkIntakeRate(keyId: string, cost = 1): Promise<IntakeRateCheck
   }
 }
 
-/**
- * Cap unauthenticated requests before hashing/looking up the supplied intake
- * key. Without this gate, invalid-key traffic can hammer the database without
- * ever reaching the existing per-key limiter. Fail closed just like valid-key
- * traffic when the distributed limiter is unavailable.
- */
 async function checkIntakePreAuthRate(req: Request): Promise<IntakeRateCheck> {
   const limiter = distributedLimiterStatus();
   if (!limiter.ok) {
@@ -163,8 +161,8 @@ async function checkIntakePreAuthRate(req: Request): Promise<IntakeRateCheck> {
       code: "INTAKE_RATE_LIMIT",
       error: `Too many intake requests from this client. Retry in ${retryAfter}s.`,
     };
-  } catch (err) {
-    log.error("Intake pre-auth rate limiter failed", { error: getErrorMessage(err) });
+  } catch (error) {
+    log.error("Intake pre-auth rate limiter failed", { error: getErrorMessage(error) });
     return {
       ok: false,
       status: 503,
@@ -198,25 +196,74 @@ type IntakeLeadResult = {
   code?: string;
 };
 
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+async function writeAutoDialFailure(input: {
+  leadId: bigint;
+  userId: string;
+  status: string;
+  error: string;
+  providerStatus?: number;
+  doNotRetry?: boolean;
+}) {
+  await drizzle.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(input.leadId)}`}))`,
+    );
+    const [lead] = await tx
+      .select({ metadata: schema.outboundLeads.metadata })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.id, input.leadId),
+          eq(schema.outboundLeads.userId, input.userId),
+        ),
+      )
+      .limit(1);
+    const metadata = record(lead?.metadata);
+    const nativeVoice = record(metadata.native_voice);
+    await tx
+      .update(schema.outboundLeads)
+      .set({
+        status: input.status,
+        metadata: toJsonbSafe({
+          ...metadata,
+          native_voice: {
+            ...nativeVoice,
+            ...(input.doNotRetry ? { do_not_retry: true } : {}),
+          },
+          auto_dial_error: input.error,
+          auto_dial_status: input.providerStatus ?? "internal_error",
+          auto_dial_do_not_retry: input.doNotRetry === true,
+        }) as any,
+      })
+      .where(
+        and(
+          eq(schema.outboundLeads.id, input.leadId),
+          eq(schema.outboundLeads.userId, input.userId),
+        ),
+      );
+  });
+}
+
 async function processIntakeLead(
   key: IntakeKey,
   input: IntakeLeadInput,
   idemHeaderOverride?: string | null,
 ): Promise<IntakeLeadResult> {
-  const customer_number = (input.customer_number || input.phone || input.phone_number || "")
+  const customerNumber = (input.customer_number || input.phone || input.phone_number || "")
     .toString()
     .trim();
-  if (!customer_number) {
+  if (!customerNumber) {
     return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
   }
 
-  // Lenient E.164 validation: strip common separators then check for 7–20 digits
-  // with an optional leading +. Intentionally not enforcing strict E.164 length
-  // to accommodate pre-normalised numbers from account holders; rejects non-phone strings
-  // (SQL injection attempts, etc.).
-  const PHONE_RE = /^\+?[0-9]{7,20}$/;
-  const phoneClean = customer_number.replace(/[\s\-().]/g, "");
-  if (!PHONE_RE.test(phoneClean)) {
+  const phoneClean = customerNumber.replace(/[\s\-().]/g, "");
+  if (!/^\+?[0-9]{7,20}$/.test(phoneClean)) {
     return {
       ok: false,
       error: "customer_number must be a valid phone number (7 to 20 digits, optional leading +).",
@@ -224,28 +271,25 @@ async function processIntakeLead(
     };
   }
 
-  const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
+  const customerName = (input.customer_name || input.name || "").toString().slice(0, 200);
   const context = (input.context || input.message || "").toString().slice(0, 4000);
   let metadata: Record<string, unknown> | null = null;
   if (input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)) {
     const entries = Object.entries(input.metadata as Record<string, unknown>)
-      // Intake metadata is stored verbatim, so anything the gate reads as
-      // evidence is assertable by whoever holds the key. `has_express_written_consent`
-      // is deliberately such a channel — the account holder attests they
-      // collected it, and the dial stays marketing-classed with DNC and the
-      // opt-out announcement intact. CALLBACK_REQUEST_MARKER is not: it claims
-      // a consumer asked to be called back, which waives consent AND drops the
-      // opt-out announcement. Only a live call can produce that.
-      .filter(([k]) => k !== CALLBACK_REQUEST_MARKER)
+      .filter(([keyName]) => keyName !== CALLBACK_REQUEST_MARKER)
       .slice(0, 50);
-    metadata = Object.fromEntries(entries.map(([k, v]) => [String(k).slice(0, 100), v]));
+    metadata = Object.fromEntries(
+      entries.map(([keyName, value]) => [String(keyName).slice(0, 100), value]),
+    );
   }
-  const agent_id = input.agent_id || key.default_agent_id || null;
-  const idemKey =
+  const agentId = input.agent_id || key.default_agent_id || null;
+  const idempotencyKey =
     idemHeaderOverride !== undefined ? idemHeaderOverride : input.idempotency_key || null;
-  const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
+  const idempotencyKeyTrimmed = idempotencyKey
+    ? String(idempotencyKey).trim().slice(0, 255)
+    : null;
 
-  if (idemKeyTrimmed) {
+  if (idempotencyKeyTrimmed) {
     const [existing] = await drizzle
       .select({
         id: schema.outboundLeads.id,
@@ -256,11 +300,10 @@ async function processIntakeLead(
       .where(
         and(
           eq(schema.outboundLeads.userId, key.user_id),
-          eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed),
+          eq(schema.outboundLeads.idempotencyKey, idempotencyKeyTrimmed),
         ),
       )
       .limit(1);
-
     if (existing) {
       return {
         ok: true,
@@ -280,21 +323,24 @@ async function processIntakeLead(
       .insert(schema.outboundLeads)
       .values({
         userId: key.user_id,
-        agentId: agent_id,
-        customerName: customer_name || null,
-        customerNumber: customer_number,
-        phoneNumber: customer_number,
+        agentId,
+        customerName: customerName || null,
+        customerNumber,
+        phoneNumber: customerNumber,
         context: context || null,
         status: "Pending",
         source: "inbound",
         metadata: metadata as any,
         receivedAt: now,
-        idempotencyKey: idemKeyTrimmed,
+        idempotencyKey: idempotencyKeyTrimmed,
       })
       .returning({ id: schema.outboundLeads.id });
     insertedId = inserted.id;
   } catch (error: any) {
-    if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
+    if (
+      idempotencyKeyTrimmed &&
+      (error.code === "23505" || /duplicate key/i.test(error.message || ""))
+    ) {
       const [replay] = await drizzle
         .select({
           id: schema.outboundLeads.id,
@@ -305,11 +351,10 @@ async function processIntakeLead(
         .where(
           and(
             eq(schema.outboundLeads.userId, key.user_id),
-            eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed),
+            eq(schema.outboundLeads.idempotencyKey, idempotencyKeyTrimmed),
           ),
         )
         .limit(1);
-
       if (replay) {
         return {
           ok: true,
@@ -321,8 +366,6 @@ async function processIntakeLead(
         };
       }
     }
-    // Keep the raw driver/constraint text in server logs only — never echo it
-    // to the public intake caller.
     log.error("intake lead insert failed", { error: error?.message || String(error) });
     return { ok: false, error: "Could not store the lead. Try again.", code: "INSERT_FAILED" };
   }
@@ -330,37 +373,31 @@ async function processIntakeLead(
   runInBackground("lead.received webhook dispatch", () =>
     dispatchWebhook(key.user_id, "lead.received", {
       lead_id: insertedId ? Number(insertedId) : undefined,
-      customer_name: customer_name || null,
-      customer_number,
+      customer_name: customerName || null,
+      customer_number: customerNumber,
       context: context || null,
       metadata,
-      agent_id,
+      agent_id: agentId,
       intake_key: { id: key.id, name: key.name },
-      auto_dial: !!key.auto_dial && !!agent_id,
+      auto_dial: !!key.auto_dial && !!agentId,
       at: now.toISOString(),
     }),
   );
 
-  let auto_dial_initiated = false;
-  if (key.auto_dial && agent_id && insertedId) {
-    auto_dial_initiated = true;
+  let autoDialInitiated = false;
+  if (key.auto_dial && agentId && insertedId) {
+    autoDialInitiated = true;
     runInBackground("intake auto-dial", async () => {
       try {
         const gate = await evaluateOutboundDialGate({
           userId: key.user_id,
-          phone: customer_number,
+          phone: customerNumber,
           leadId: insertedId!,
           metadata: (metadata || {}) as Record<string, unknown>,
         });
 
         if (!gate.allowed) {
           if (gate.reason === "outside_permitted_calling_hours") {
-            // Peak intake time IS quiet hours (evening form fills). Writing
-            // the gate's "AutoDialFailed" here would retire the lead to a
-            // status no engine processes — the consumer who asked for a call
-            // never gets one. Hand it to the callback engine instead: it
-            // rolls the schedule forward hourly (bounded) until the lead's
-            // local window opens and re-runs this same gate at dial time.
             await drizzle
               .update(schema.outboundLeads)
               .set({
@@ -391,52 +428,37 @@ async function processIntakeLead(
           return;
         }
 
-        // Wallet solvency + daily voice quota + spend cap. Every other outbound
-        // path (campaign, cadence, callback, manual, mobile) runs this; intake
-        // auto-dial previously skipped it, so an active-but-depleted tenant with
-        // auto-dial intake keys could keep dialing inbound leads and accrue
-        // uncontrolled completion-grace debt. placeOutboundCall only checks that
-        // the subscription is active, not that the tenant can afford the call.
         try {
           await assertOutboundVoiceAllowed({
             userId: key.user_id,
             source: "automation",
             units: 0,
           });
-        } catch (spendErr) {
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({
-              status: "AutoDialFailed",
-              metadata: toJsonbSafe({
-                ...(metadata || {}),
-                auto_dial_error:
-                  spendErr instanceof Error ? spendErr.message : "voice spend controls blocked",
-                auto_dial_status: "voice_spend_blocked",
-              }) as any,
-            })
-            .where(eq(schema.outboundLeads.id, insertedId!));
+        } catch (spendError) {
+          await writeAutoDialFailure({
+            leadId: insertedId!,
+            userId: key.user_id,
+            status: "AutoDialFailed",
+            error:
+              spendError instanceof Error ? spendError.message : "voice spend controls blocked",
+          });
           log.warn("Auto-dial blocked by voice spend controls", {
             leadId: String(insertedId),
-            error: spendErr instanceof Error ? spendErr.message : String(spendErr),
+            error: spendError instanceof Error ? spendError.message : String(spendError),
           });
           return;
         }
 
-        // The shared gate classifies intake auto-dials as marketing unless the
-        // lead metadata proves otherwise (isMarketingCall defaults true), so
-        // the spoken disclosure carries the same classification: an extra
-        // opt-out announcement on a requested call is harmless; the reverse on
-        // a marketing call is a 64.1200(b)(3) violation.
         const result = await placeOutboundCall({
           userId: key.user_id,
-          agentId: agent_id,
-          customerName: customer_name || null,
-          customerNumber: customer_number,
+          agentId,
+          customerName: customerName || null,
+          customerNumber,
           context: context || `Inbound lead via ${key.name}`,
           callPurpose: "marketing_or_sales",
+          leadId: insertedId,
         });
-        if (result.ok) {
+        if (result.ok && result.callId) {
           await drizzle
             .update(schema.outboundLeads)
             .set({
@@ -445,38 +467,37 @@ async function processIntakeLead(
               lastCalledAt: new Date(),
             })
             .where(eq(schema.outboundLeads.id, insertedId!));
-        } else {
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({
-              status: "AutoDialFailed",
-              metadata: toJsonbSafe({
-                ...(metadata || {}),
-                auto_dial_error: result.error,
-                auto_dial_status: result.status,
-              }) as any,
-            })
-            .where(eq(schema.outboundLeads.id, insertedId!));
-          log.warn("Auto-dial failed for lead", {
-            leadId: String(insertedId),
-            status: result.status,
-            error: result.error,
-          });
+          return;
         }
-      } catch (err: any) {
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({
-            status: "AutoDialFailed",
-            metadata: toJsonbSafe({
-              ...(metadata || {}),
-              auto_dial_error: getErrorMessage(err),
-            }) as any,
-          })
-          .where(eq(schema.outboundLeads.id, insertedId!));
+
+        const doNotRetry =
+          result.doNotRetry === true ||
+          result.providerOutcomeAmbiguous === true ||
+          (result.ok && !result.callId);
+        await writeAutoDialFailure({
+          leadId: insertedId!,
+          userId: key.user_id,
+          status: doNotRetry ? "Error" : "AutoDialFailed",
+          error: result.error || "Native voice placement did not return a call id.",
+          providerStatus: result.status,
+          doNotRetry,
+        });
+        log.warn("Auto-dial failed for lead", {
+          leadId: String(insertedId),
+          status: result.status,
+          doNotRetry,
+          error: result.error,
+        });
+      } catch (error: any) {
+        await writeAutoDialFailure({
+          leadId: insertedId!,
+          userId: key.user_id,
+          status: "AutoDialFailed",
+          error: getErrorMessage(error),
+        }).catch(() => {});
         log.warn("Auto-dial threw for lead", {
           leadId: String(insertedId),
-          error: getErrorMessage(err),
+          error: getErrorMessage(error),
         });
       }
     });
@@ -486,11 +507,10 @@ async function processIntakeLead(
     ok: true,
     lead_id: insertedId ? Number(insertedId) : undefined,
     idempotent_replay: false,
-    auto_dial_initiated,
+    auto_dial_initiated: autoDialInitiated,
   };
 }
 
-// POST /lead — public, authenticated by X-Wireline-Key header
 router.post("/lead", async (req: Request, res: Response) => {
   try {
     const preAuthRate = await checkIntakePreAuthRate(req);
@@ -516,10 +536,10 @@ router.post("/lead", async (req: Request, res: Response) => {
       });
     }
 
-    const idemHeader =
+    const idempotencyHeader =
       (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
     const result = await tenantStore.run(key.user_id, () =>
-      processIntakeLead(key, req.body || {}, idemHeader),
+      processIntakeLead(key, req.body || {}, idempotencyHeader),
     );
 
     if (result.ok) {
@@ -530,9 +550,6 @@ router.post("/lead", async (req: Request, res: Response) => {
               .update(schema.intakeKeys)
               .set({
                 lastUsedAt: new Date(),
-                // Atomic increment: concurrent leads all read the same stale
-                // snapshot, so `read + 1` under-counts exactly when a public
-                // key is being hammered — the moment the meter matters most.
                 useCount: sql`COALESCE(${schema.intakeKeys.useCount}, 0) + 1`,
               })
               .where(eq(schema.intakeKeys.id, key.id)),
@@ -541,19 +558,16 @@ router.post("/lead", async (req: Request, res: Response) => {
       }
       return res.json(result);
     }
-    // Validation failures are client errors (400), not 5xx — a 500 makes
-    // integrators' retry logic hammer permanently-invalid payloads.
     const clientErrorCodes = ["MISSING_NUMBER", "INVALID_NUMBER"];
     const status = clientErrorCodes.includes(result.code ?? "") ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
-  } catch (e: any) {
-    if (e instanceof AppError) throw e;
-    log.error("Intake lead failed", { error: e?.message || String(e) });
+  } catch (error: any) {
+    if (error instanceof AppError) throw error;
+    log.error("Intake lead failed", { error: error?.message || String(error) });
     throw AppError.fromHttpStatus(500, "Intake failed");
   }
 });
 
-// POST /leads — bulk intake, up to BULK_MAX leads per request
 const INTAKE_BULK_MAX = 100;
 
 router.post("/leads", async (req: Request, res: Response) => {
@@ -573,9 +587,10 @@ router.post("/leads", async (req: Request, res: Response) => {
 
     const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
     if (!leads || leads.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
+      return res.status(400).json({
+        error: "leads must be a non-empty array.",
+        code: "EMPTY_BATCH",
+      });
     }
     if (leads.length > INTAKE_BULK_MAX) {
       return res.status(400).json({
@@ -585,18 +600,18 @@ router.post("/leads", async (req: Request, res: Response) => {
       });
     }
 
-    const r = await checkIntakeRate(key.id, leads.length);
-    if (isIntakeRateFailure(r)) {
-      if (r.status === 429) {
-        res.set("Retry-After", String(r.retry_after_s));
+    const rate = await checkIntakeRate(key.id, leads.length);
+    if (isIntakeRateFailure(rate)) {
+      if (rate.status === 429) {
+        res.set("Retry-After", String(rate.retry_after_s));
         return res.status(429).json({
-          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
-          code: r.code,
-          retry_after_s: r.retry_after_s,
+          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${rate.retry_after_s}s.`,
+          code: rate.code,
+          retry_after_s: rate.retry_after_s,
           accepted_so_far: 0,
         });
       }
-      return res.status(r.status).json({ error: r.error, code: r.code });
+      return res.status(rate.status).json({ error: rate.error, code: rate.code });
     }
 
     const results = await Promise.all(
@@ -604,17 +619,17 @@ router.post("/leads", async (req: Request, res: Response) => {
         tenantStore
           .run(key.user_id, () => processIntakeLead(key, lead))
           .catch(
-            (err: unknown) =>
+            (error: unknown) =>
               ({
                 ok: false,
-                error: getErrorMessage(err),
+                error: getErrorMessage(error),
                 code: "PROCESS_FAILED",
               }) as IntakeLeadResult,
           ),
       ),
     );
 
-    const successes = results.filter((r) => r.ok).length;
+    const successes = results.filter((result) => result.ok).length;
     if (successes > 0) {
       runInBackground("intake key bulk use-count", () =>
         tenantStore.run(key.user_id, () =>
@@ -636,14 +651,13 @@ router.post("/leads", async (req: Request, res: Response) => {
       failure_count: leads.length - successes,
       results,
     });
-  } catch (e: any) {
-    if (e instanceof AppError) throw e;
-    log.error("Bulk intake failed", { error: e?.message || String(e) });
+  } catch (error: any) {
+    if (error instanceof AppError) throw error;
+    log.error("Bulk intake failed", { error: error?.message || String(error) });
     throw AppError.fromHttpStatus(500, "Bulk intake failed");
   }
 });
 
-// GET /keys — list intake keys for the authenticated user
 router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = await drizzle
@@ -662,13 +676,12 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
       .where(eq(schema.intakeKeys.userId, req.user.id))
       .orderBy(desc(schema.intakeKeys.createdAt));
     res.json({ keys: data || [] });
-  } catch (e: any) {
-    log.error("Failed to load keys", { error: getErrorMessage(e) });
+  } catch (error: any) {
+    log.error("Failed to load keys", { error: getErrorMessage(error) });
     throw AppError.fromHttpStatus(500, "Failed to load keys");
   }
 });
 
-// POST /keys — create a new intake key
 router.post(
   "/keys",
   authenticateUser,
@@ -676,8 +689,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const name = (req.body?.name || "").toString().trim();
-      const default_agent_id = req.body?.default_agent_id || null;
-      const auto_dial = !!req.body?.auto_dial;
+      const defaultAgentId = req.body?.default_agent_id || null;
+      const autoDial = !!req.body?.auto_dial;
 
       const { plaintext, prefix, hash } = await generateIntakeKey();
       const [data] = await drizzle
@@ -687,8 +700,8 @@ router.post(
           name: name.slice(0, 80),
           keyPrefix: prefix,
           keyHash: hash,
-          defaultAgentId: default_agent_id,
-          autoDial: auto_dial,
+          defaultAgentId,
+          autoDial,
           active: true,
         })
         .returning({
@@ -711,14 +724,13 @@ router.post(
         })
         .catch(() => {});
       res.json({ key: data, plaintext });
-    } catch (e: any) {
-      log.error("Failed to create key", { error: getErrorMessage(e) });
+    } catch (error: any) {
+      log.error("Failed to create key", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to create key");
     }
   },
 );
 
-// PATCH /keys/:id — update an intake key
 router.patch(
   "/keys/:id",
   authenticateUser,
@@ -728,11 +740,13 @@ router.patch(
       const patch: any = {};
       if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
       if (req.body?.active !== undefined) patch.active = !!req.body.active;
-      if (req.body?.default_agent_id !== undefined)
+      if (req.body?.default_agent_id !== undefined) {
         patch.defaultAgentId = req.body.default_agent_id || null;
+      }
       if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
-      if (Object.keys(patch).length === 0)
+      if (Object.keys(patch).length === 0) {
         throw AppError.fromHttpStatus(400, "Provide at least one field to update.");
+      }
 
       const [data] = await drizzle
         .update(schema.intakeKeys)
@@ -753,7 +767,6 @@ router.patch(
         });
 
       if (!data) throw AppError.fromHttpStatus(404, "Intake key not found.");
-
       void auditLogger
         .logIntakeKey("updated", {
           userId: req.user.id,
@@ -764,15 +777,14 @@ router.patch(
         })
         .catch(() => {});
       res.json({ key: data });
-    } catch (e: any) {
-      if (e instanceof AppError) throw e;
-      log.error("Failed to update key", { error: getErrorMessage(e) });
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      log.error("Failed to update key", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update key");
     }
   },
 );
 
-// DELETE /keys/:id — delete an intake key
 router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     await drizzle
@@ -789,8 +801,8 @@ router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, r
       })
       .catch(() => {});
     res.json({ success: true });
-  } catch (e: any) {
-    log.error("Failed to delete key", { error: getErrorMessage(e) });
+  } catch (error: any) {
+    log.error("Failed to delete key", { error: getErrorMessage(error) });
     throw AppError.fromHttpStatus(500, "Failed to delete key");
   }
 });
