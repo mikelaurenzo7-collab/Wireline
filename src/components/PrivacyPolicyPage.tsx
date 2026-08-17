@@ -5,7 +5,7 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-const LAST_UPDATED = "August 1, 2026";
+const LAST_UPDATED = "August 17, 2026";
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
@@ -76,7 +76,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026."
+        description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
         path="/privacy"
       />
 
@@ -246,16 +246,19 @@ export default function PrivacyPolicyPage() {
                 <strong>Supabase</strong>: Managed Postgres storage and backup
               </li>
               <li>
-                <strong>Vapi, Twilio, and Deepgram</strong>: Calls, phone numbers, SMS, and
-                transcription
+                <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
+              </li>
+              <li>
+                <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone
+                conversation over Direct SIP Speech-to-Speech
+              </li>
+              <li>
+                <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the
+                production phone runtime
               </li>
               <li>
                 <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model
                 creation, quality proofs, and voice-model deletion
-              </li>
-              <li>
-                <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone
-                conversation models (Grok 4.3 plus xAI voices through Vapi)
               </li>
               <li>
                 <strong>OpenAI</strong>: Continuity inference and realtime voice sessions
@@ -281,9 +284,6 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
-              </li>
-              <li>
-                <strong>xAI</strong>: Structured reasoning and live-call voices
               </li>
               <li>
                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics

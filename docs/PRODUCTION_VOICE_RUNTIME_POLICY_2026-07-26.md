@@ -33,7 +33,7 @@ Status: **Active launch policy**
 ## Call and legal guardrails
 
 - AI and cloned voices are artificial voices. Calling consent, DNC, calling-hours, recording, identification, and disclosure rules still apply.
-- Outbound native SIP speaks identity, a grouped callback number, and — for marketing — the voice-activated opt-out. Twilio AMD drops marketing answering machines without a message; service voicemail is identity and callback only.
+- Outbound native SIP speaks identity, a grouped callback number, and — for marketing — the voice-activated opt-out. Twilio AMD drops marketing answering machines, fax, and unclassified answers without a message; service voicemail is identity and callback only. Busy and no-answer campaign dials retry until the attempt budget. A spoken stop-calling request hangs up the native SIP session immediately.
 - After-hours inbound PSTN degrades to take-a-message instead of running the full agent.
 - Do not clone minors, political candidates or officials, celebrities, public figures, or other high-risk voices.
 - Do not use synthetic voices for impersonation, deception, fraud, harassment, voter influence, unauthorized transactions, or harm.

@@ -61,11 +61,11 @@ describe("launch truth contract", () => {
     expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
     expect(changelog).not.toContain("committed baselines");
 
-    expect(security).toContain("Last updated · August 11, 2026");
-    expect(security).toContain("Twilio and Vapi for telephony and orchestration");
-    expect(security).toContain("Deepgram for transcription");
-    expect(security).toContain("OpenAI for managed call models and realtime voice");
-    expect(security).toContain("ElevenLabs for managed text-to-speech");
+    expect(security).toContain("Last updated · August 17, 2026");
+    expect(security).toContain("Twilio for PSTN and xAI Direct SIP Speech-to-Speech");
+    expect(security).toContain("Vapi is optional rollback and public-showcase PSTN only");
+    expect(security).toContain("OpenAI remains continuity inference");
+    expect(security).toContain("ElevenLabs is managed text-to-speech");
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });
