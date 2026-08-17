@@ -443,9 +443,10 @@ export class QuotaTracker {
     const { periodKey, resetAt } = quotaWindow(dimension);
 
     try {
-      // An absent row would otherwise insert an impossible reservation. Refuse
-      // it authoritatively without a write before entering the UPSERT path.
-      if (units > limit) {
+      // An absent row would otherwise insert an impossible reservation, including
+      // a 0-unit probe against a 0 cap (`0 > 0` is false). Refuse authoritatively
+      // without a write before entering the UPSERT path.
+      if (limit <= 0 || units > limit) {
         const current = await this.getUsageForPeriod(userId, dimension, periodKey);
         return authoritativeDecision({
           allowed: false,
