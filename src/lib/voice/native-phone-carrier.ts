@@ -130,7 +130,11 @@ export async function purchaseNativeNumber(input: {
   const client = getTwilioClient();
   if (!client) throw AppError.serviceUnavailable("Twilio number purchasing is not configured.");
 
-  const preferred = normalizeXAIPhoneNumber(input.preferredPhoneNumber);
+  const preferredRaw = String(input.preferredPhoneNumber || "").trim();
+  const preferred = normalizeXAIPhoneNumber(preferredRaw);
+  if (preferredRaw && (!preferred || !/^\+1\d{10}$/.test(preferred))) {
+    throw AppError.badRequest("phone_number must be a US E.164 number");
+  }
   let phoneNumber = preferred;
   if (!phoneNumber) {
     const candidates = await listNativeAvailableLocalNumbers(input.areaCode, 5);

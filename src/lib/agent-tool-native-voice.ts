@@ -214,5 +214,39 @@ export async function handleNativeVoiceToolCall(
     });
   }
 
+  if (fn === "search_leads") {
+    return context.drizzle.transaction(async (tx: typeof context.drizzle) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(exact.leadId)}`}))`,
+      );
+      const [lead] = await tx
+        .select({
+          name: schema.outboundLeads.customerName,
+          status: schema.outboundLeads.status,
+          customerNumber: schema.outboundLeads.customerNumber,
+          context: schema.outboundLeads.context,
+        })
+        .from(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.id, exact.leadId),
+            eq(schema.outboundLeads.userId, context.agent.user_id),
+            eq(schema.outboundLeads.agentId, context.agent.id),
+          ),
+        )
+        .limit(1);
+      if (!lead) {
+        return {
+          toolCallId: context.toolCallId,
+          result: "The exact lead for this native call could not be found.",
+        };
+      }
+      return {
+        toolCallId: context.toolCallId,
+        result: `Current call record: ${lead.name} (${lead.status}) | Phone: ${lead.customerNumber || "N/A"}`,
+      };
+    });
+  }
+
   return null;
 }

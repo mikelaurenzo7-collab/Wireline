@@ -27,8 +27,18 @@ async function releaseTwilioNumberByE164(
   phoneNumber: string,
   client: NonNullable<ReturnType<typeof getTwilioClient>>,
 ): Promise<void> {
+  const sid = await discoverTwilioNumberIdByE164(phoneNumber);
+  if (sid) await client.incomingPhoneNumbers(sid).remove();
+}
+
+export async function discoverTwilioNumberIdByE164(
+  phoneNumber: string,
+): Promise<string | null> {
+  const client = getTwilioClient();
+  if (!client) return null;
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
-  if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
+  const sid = String(rows[0]?.sid || "").trim();
+  return isTwilioPhoneNumberSid(sid) ? sid : null;
 }
 
 async function hasCurrentCanonicalOwner(phoneNumber: string): Promise<boolean> {
@@ -66,7 +76,8 @@ export async function retryPendingOrphanCarrierResources(
   const rows = rowsFromResult(result);
   const summary: OrphanCarrierRetrySummary = { attempted: rows.length, resolved: 0, failed: 0 };
 
-  for (const row of rows) {
+  for (const raw of rows) {
+    const row = { ...raw, vapiNumberId: raw.vapi_number_id };
     // A number can be reassigned after the former tenant is purged. Never
     // rediscover or release a carrier object that now backs a canonical row.
     if (await hasCurrentCanonicalOwner(row.phone_number)) {
@@ -86,13 +97,20 @@ export async function retryPendingOrphanCarrierResources(
     }
 
     const client = getTwilioClient();
-    let carrierId = row.vapi_number_id;
+    let carrierId = row.vapiNumberId;
     const errors: string[] = [];
 
-    // A Vapi import can time out after provider acceptance and before the caller
-    // receives the new UUID. Rediscover that partial resource by E.164 so the
-    // janitor removes both the Vapi object and underlying Twilio rental.
-    if (!carrierId) {
+    if (row.vapiNumberId === "twilio:e164") {
+      try {
+        const discovered = await discoverTwilioNumberIdByE164(row.phone_number);
+        if (discovered) carrierId = discovered;
+      } catch (error) {
+        errors.push(`Twilio E.164 discovery: ${getErrorMessage(error)}`);
+      }
+    } else if (!carrierId) {
+      // A Vapi import can time out after provider acceptance and before the caller
+      // receives the new UUID. Rediscover that partial resource by E.164 so the
+      // janitor removes both the Vapi object and underlying Twilio rental.
       try {
         const numbers = await listVapiNumbers();
         carrierId = numbers.find((number) => number.number === row.phone_number)?.id ?? null;

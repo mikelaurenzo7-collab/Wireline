@@ -429,9 +429,9 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2. Release provisioned numbers at the carrier (Vapi/Twilio). A carrier
-  //    failure does not block GDPR erasure by itself, but the platform must
-  //    durably retain the ownership/provider identifiers before hard-delete.
+  // 2. Release provisioned numbers at the carrier (Twilio + native xAI). A
+  //    carrier failure does not block GDPR erasure by itself, but the platform
+  //    must durably retain the ownership/provider identifiers before hard-delete.
   const numbers = await db
     .select({
       phoneNumber: schema.phoneNumbers.phoneNumber,
@@ -441,9 +441,9 @@ async function releaseExternalResourcesOutsideTenantContext(
     .where(eq(schema.phoneNumbers.userId, userId));
 
   if (numbers.length) {
-    const { releaseTenantNumber } = await import("./phone-provisioning");
+    const { releaseNativeTenantNumber } = await import("./voice/native-phone-release");
     for (const { phoneNumber, vapiNumberId } of numbers) {
-      const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
+      const res = await releaseNativeTenantNumber(userId, phoneNumber).catch((err) => ({
         ok: false as const,
         error: getErrorMessage(err),
       }));

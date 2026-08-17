@@ -81,7 +81,10 @@ export async function assignNativePhoneLine(input: {
     assertNativeActivationConfigured();
   }
 
-  if (changesAgent && input.agentId === null) {
+  if (changesAgent) {
+    // Detach SIP origination before mutating the assigned agent so inbound
+    // PSTN uses the configured Twilio failover instead of the previous
+    // agent's live session during the assignment window.
     await deactivateNativeXAIPhoneLine({
       userId: input.userId,
       phoneNumber: current.phoneNumber,
@@ -116,7 +119,7 @@ export async function assignNativePhoneLine(input: {
     );
     if (!updated) throw AppError.conflict("The phone assignment changed in another request.");
   } catch (error) {
-    if (changesAgent && input.agentId === null) {
+    if (changesAgent) {
       await restorePreviousRouting({
         userId: input.userId,
         previousAgentId: current.agentId,

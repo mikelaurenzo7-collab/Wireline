@@ -27,6 +27,7 @@ import {
   XAI_OUTBOUND_SIP_TOKEN_HEADER,
   normalizeXAIPhoneNumber,
 } from "../lib/voice/xai-sip-config";
+import { resolveNativeInboundAdmission } from "../lib/voice/native-inbound-admission";
 import { runXAISipCallSession, type XAISipIncomingCall } from "../lib/voice/xai-sip-session";
 import { verifyXAIWebhook } from "../lib/voice/xai-webhook-auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -272,7 +273,7 @@ router.post(
       log.warn("xAI incoming call rejected: no active native phone binding", {
         calledSuffix: phoneSuffixForLog(calledNumber),
       });
-      throw AppError.forbidden("This phone line is not active for native voice.");
+      throw AppError.unauthorized("Invalid xAI webhook signature.");
     }
 
     let signingSecret: string;
@@ -295,10 +296,14 @@ router.post(
       },
       signingSecret,
     });
-    if (!verification.ok || verification.webhookId !== binding.xaiWebhookId) {
+    // Standard Webhooks `webhook-id` is a per-delivery idempotency id. It is
+    // not the registration `webhook_id` stored on the phone binding. HMAC
+    // verification against the one-time signing secret is the authenticity
+    // check; comparing those two ids rejects every legitimate incoming call.
+    if (!verification.ok) {
       log.warn("xAI incoming call signature rejected", {
         bindingId: binding.id,
-        reason: verification.ok ? "webhook_id_mismatch" : verification.reason,
+        reason: verification.reason,
         calledSuffix: phoneSuffixForLog(calledNumber),
       });
       throw AppError.unauthorized("Invalid xAI webhook signature.");
@@ -322,7 +327,17 @@ router.post(
           direction: "inbound" as const,
           businessName: agentContext.businessName,
           complianceMode: agentContext.complianceMode,
+          admission: await resolveNativeInboundAdmission(binding.userId),
         };
+
+    if (sessionInput.direction !== "outbound" && sessionInput.admission?.mode !== "full") {
+      log.warn("Native inbound admitted in bounded mode", {
+        bindingId: binding.id,
+        mode: sessionInput.admission?.mode,
+        reason: sessionInput.admission?.reason,
+        calledSuffix: phoneSuffixForLog(calledNumber),
+      });
+    }
 
     runInBackground("xai-sip-call-session", () => runXAISipCallSession(sessionInput));
     res.status(202).json({ received: true, handled: true });

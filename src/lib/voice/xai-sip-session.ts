@@ -14,6 +14,10 @@ import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import { trackVoiceMinutes } from "../voice-usage";
+import {
+  type NativeInboundAdmission,
+  type NativeInboundAdmissionMode,
+} from "./native-inbound-admission";
 import { buildXAIRealtimeAgentRuntime } from "./xai-agent-runtime";
 import {
   XAI_REALTIME_CALLS_URL,
@@ -50,6 +54,7 @@ export type XAISipIncomingCall = {
   callPurpose?: OutboundCallPurpose;
   businessName?: string | null;
   complianceMode?: string | null;
+  admission?: NativeInboundAdmission;
 };
 
 type PendingToolCall = {
@@ -165,7 +170,9 @@ function buildInboundOpening(input: XAISipIncomingCall, runtime: RealtimeRuntime
     input.complianceMode,
     input.businessName || runtime.agentName,
     {
-      outboundAiCall: false,
+      // Native PSTN is always an AI assistant. Inbound sales and support
+      // callers still receive identity before the saved greeting.
+      outboundAiCall: true,
       recordingEnabled: false,
     },
   );
@@ -210,6 +217,44 @@ function buildOutboundInstructions(input: XAISipIncomingCall): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function inboundAdmissionMode(input: XAISipIncomingCall): NativeInboundAdmissionMode {
+  if (callDirection(input) === "outbound") return "full";
+  return input.admission?.mode || "full";
+}
+
+function applyInboundAdmission(
+  runtime: RealtimeRuntime,
+  mode: NativeInboundAdmissionMode,
+): RealtimeRuntime {
+  if (mode === "full") return runtime;
+  if (mode === "suspended") {
+    return {
+      ...runtime,
+      greeting: "The automated service for this line is suspended.",
+      session: {
+        ...runtime.session,
+        instructions:
+          "Explain that automated service on this line is suspended and end the call. Do not use tools or answer business questions.",
+        tools: [],
+        tool_choice: "none",
+      },
+    } as RealtimeRuntime;
+  }
+  const followup = runtime.session.tools.filter((tool) => tool.name === "create_followup_task");
+  return {
+    ...runtime,
+    greeting: `Hi, you've reached ${runtime.agentName}. I can take a message for the team.`,
+    session: {
+      ...runtime.session,
+      instructions: followup.length
+        ? "You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer another contact channel. Do not answer business questions, quote prices, book appointments, or transfer."
+        : "You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. Do not collect sensitive details, answer business questions, quote prices, book appointments, or promise follow-up.",
+      tools: followup,
+      tool_choice: followup.length ? "auto" : "none",
+    },
+  } as RealtimeRuntime;
 }
 
 async function xaiCallControl(
@@ -520,6 +565,7 @@ async function runRealtimeSession(
   let escalationAttempted = false;
   let escalationSucceeded = false;
   let sipPlaybackActive = false;
+  let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
   let toolContinuationPending = false;
   let eventChain = Promise.resolve();
   let maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
@@ -538,12 +584,19 @@ async function runRealtimeSession(
   };
 
   const requestToolContinuationWhenReady = () => {
-    if (
-      !toolContinuationPending ||
-      sipPlaybackActive ||
-      endedReason === "transferred" ||
-      ws.readyState !== WebSocket.OPEN
-    ) {
+    if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
+    if (hangupAfterOpening) {
+      hangupAfterOpening = false;
+      endedReason = "line-suspended";
+      void hangupXAISipCall(input.callId).catch(() => {
+        log.warn("Native suspended-line hangup could not be confirmed", {
+          callId: providerCallId(input.callId),
+        });
+      });
+      ws.close(1000, "Wireline line suspended");
+      return;
+    }
+    if (!toolContinuationPending || endedReason === "transferred") {
       return;
     }
     toolContinuationPending = false;
@@ -558,6 +611,22 @@ async function runRealtimeSession(
     // Execute in provider order. Parallel side effects can otherwise race (for
     // example a stop-calling request and a follow-up send from the same turn).
     for (const call of calls) {
+      const admissionMode = inboundAdmissionMode(input);
+      const allowedTakeMessage = admissionMode !== "take_message" || call.name === "create_followup_task";
+      if (admissionMode === "suspended" || !allowedTakeMessage) {
+        toolCallsFailed += 1;
+        sendJson(ws, {
+          type: "conversation.item.create",
+          item: {
+            type: "function_call_output",
+            call_id: call.callId,
+            output: boundedToolOutput({
+              error: "This action is not available on this call. Continue without it.",
+            }),
+          },
+        });
+        continue;
+      }
       toolCallsTotal += 1;
       if (call.name === "escalate_to_human") escalationAttempted = true;
 
@@ -767,8 +836,10 @@ async function runRealtimeSession(
           session: { ...runtime.session, instructions },
         });
         if (opening) {
-          // A legally significant opening must be exact and uninterrupted.
-          // force_message owns its response lifecycle; no response.create here.
+          // A legally significant opening must be exact, uninterrupted, and
+          // present in the stored transcript. force_message owns playback;
+          // no response.create here.
+          transcriptLines.push({ role: "Agent", text: opening });
           sendJson(ws, {
             type: "conversation.item.create",
             item: {
@@ -782,7 +853,13 @@ async function runRealtimeSession(
           sendJson(ws, { type: "response.create" });
         }
 
-        const maxDurationMs = resolveXAISipSessionMaxSeconds() * 1_000;
+        const admissionMode = inboundAdmissionMode(input);
+        const maxDurationMs =
+          admissionMode === "suspended"
+            ? 20_000
+            : admissionMode === "take_message"
+              ? 300_000
+              : resolveXAISipSessionMaxSeconds() * 1_000;
         maxDurationTimer = setTimeout(() => {
           endedReason = "wireline-max-duration";
           void hangupXAISipCall(input.callId).catch(() => {
@@ -899,11 +976,14 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
     };
 
     try {
-      const runtime = await buildXAIRealtimeAgentRuntime({
-        userId: input.userId,
-        agentId: input.agentId,
-        surface: "phone",
-      });
+      const runtime = applyInboundAdmission(
+        await buildXAIRealtimeAgentRuntime({
+          userId: input.userId,
+          agentId: input.agentId,
+          surface: "phone",
+        }),
+        inboundAdmissionMode(input),
+      );
       agentName = runtime.agentName;
       await updatePresence(input, agentName);
       if (callDirection(input) === "inbound") {

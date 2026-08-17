@@ -23,6 +23,7 @@ import {
 } from "../lib/voice/xai-live-agent-service";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./grok-live-profile-routes";
+import xaiOutboundRouter from "./xai-outbound-routes";
 import xaiPhoneRouter from "./xai-voice-routes";
 
 // Stable route family for Wireline live voice. Browser sessions connect
@@ -70,6 +71,7 @@ const toolSchema = z.object({
 // router so route order remains stable while the previous phone path stays
 // quarantined for rollback certification only.
 router.use(xaiPhoneRouter);
+router.use(xaiOutboundRouter);
 router.use(liveProfileRouter);
 
 router.get(

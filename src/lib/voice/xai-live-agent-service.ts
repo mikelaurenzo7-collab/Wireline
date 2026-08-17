@@ -1,6 +1,7 @@
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "./studio-live-test-policy";
 import {
   GROK_VOICE_CLIENT_SECRETS_URL,
   GROK_VOICE_DEFAULT_MODEL,
@@ -101,6 +102,7 @@ export async function createXAILiveVoiceSession(input: { userId: string; agentId
       model: runtime.model,
       voice: runtime.voice,
       greeting: runtime.greeting,
+      maxDurationSeconds: STUDIO_BROWSER_TEST_MAX_SECONDS,
       session: runtime.session,
       wireline: {
         provider: "xai_realtime",

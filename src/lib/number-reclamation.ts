@@ -20,13 +20,13 @@
  *   {@link NUMBER_RECLAMATION_MAX_PER_RUN} releases so a query bug can never
  *   mass-release the fleet in one pass.
  *
- * releaseTenantNumber (phone-provisioning.ts) already fails safe: a carrier
- * error preserves the local ownership row for the next run.
+ * releaseNativeTenantNumber already fails safe: a carrier error preserves the
+ * local ownership row and retires the xAI binding only after Twilio confirms.
  */
 import { and, asc, eq, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { releaseTenantNumber } from "./phone-provisioning";
+import { releaseNativeTenantNumber } from "./voice/native-phone-release";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { phoneSuffixForLog } from "./twilio-webhook-privacy";
@@ -120,7 +120,7 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
       continue;
     }
     try {
-      const result = await releaseTenantNumber(candidate.userId, candidate.phoneNumber);
+      const result = await releaseNativeTenantNumber(candidate.userId, candidate.phoneNumber);
       if (result.ok) {
         summary.released++;
         log.info("number reclamation released canceled workspace line", {

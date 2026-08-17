@@ -8,6 +8,7 @@ import {
   XAIStreamingPcmEncoder,
   base64Pcm16LeToFloat32,
 } from "../lib/voice/browser-pcm";
+import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "../lib/voice/studio-live-test-policy";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type XAILiveSessionResponse = {
@@ -16,6 +17,7 @@ type XAILiveSessionResponse = {
   model: string;
   voice: string;
   greeting?: string;
+  maxDurationSeconds?: number;
   session: Record<string, unknown>;
   error?: string;
 };
@@ -110,6 +112,7 @@ export default function XAILiveVoiceSandbox({
   const assistantLineId = useRef<string | null>(null);
   const userLineId = useRef<string | null>(null);
   const watchdog = useRef<number | null>(null);
+  const maxDurationTimer = useRef<number | null>(null);
   const reportedStarted = useRef(false);
   const reportedCompleted = useRef(false);
   const generation = useRef(0);
@@ -157,6 +160,10 @@ export default function XAILiveVoiceSandbox({
     if (watchdog.current !== null) {
       window.clearTimeout(watchdog.current);
       watchdog.current = null;
+    }
+    if (maxDurationTimer.current !== null) {
+      window.clearTimeout(maxDurationTimer.current);
+      maxDurationTimer.current = null;
     }
   }, []);
 
@@ -500,6 +507,19 @@ export default function XAILiveVoiceSandbox({
           reportedStarted.current = true;
           onTestStarted?.();
           setState("listening");
+          const maxDurationMs =
+            Math.max(
+              30,
+              Math.min(
+                STUDIO_BROWSER_TEST_MAX_SECONDS,
+                Number(session.maxDurationSeconds) || STUDIO_BROWSER_TEST_MAX_SECONDS,
+              ),
+            ) * 1_000;
+          maxDurationTimer.current = window.setTimeout(() => {
+            if (currentGeneration === generation.current) {
+              fail("This live test reached its time limit. Start a new test to continue.");
+            }
+          }, maxDurationMs);
           const greeting = session.greeting?.trim();
           if (greeting) {
             ws.send(

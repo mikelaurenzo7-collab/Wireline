@@ -400,7 +400,6 @@ export class CampaignDialerService {
           drizzle
             .update(schema.outboundLeads)
             .set({
-              status: LEAD_STATUS.DIALING,
               attempts: (lead.attempts || 0) + 1,
               lastCalledAt: new Date(),
               callId: result.callId,

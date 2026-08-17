@@ -107,7 +107,12 @@ export function isValidXAISipAllowedAddress(value: string): boolean {
 
   if (parts.length === 1) return true;
   const prefix = parts[1];
-  return Boolean(prefix && /^\d{1,2}$/.test(prefix) && Number(prefix) >= 0 && Number(prefix) <= 32);
+  if (!prefix || !/^\d{1,2}$/.test(prefix)) return false;
+  const length = Number(prefix);
+  // `/0` (and other internet-wide prefixes) would authorize Direct SIP from
+  // any source. Twilio publishes regional signaling CIDRs; operators must
+  // list those ranges, not a default-open allowlist.
+  return length >= 8 && length <= 32;
 }
 
 /**

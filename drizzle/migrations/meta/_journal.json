@@ -358,6 +358,13 @@
       "when": 1786964000000,
       "tag": "0152_native_xai_phone_bindings",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1786995000000,
+      "tag": "0153_preserve_xai_registration_ledger",
+      "breakpoints": true
     }
   ]
 }

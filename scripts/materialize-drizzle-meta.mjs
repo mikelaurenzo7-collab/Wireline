@@ -6,9 +6,13 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = resolve(ROOT, "drizzle/migrations/meta/0049_snapshot.json");
 const TARGET = resolve(ROOT, "drizzle/migrations/meta/0050_snapshot.json");
+const TARGET_0051_PATH = resolve(ROOT, "drizzle/migrations/meta/0051_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
+const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
+const TARGET_0051_SHA256 = "ca35f3a7f91759ff9600900fef8d8633b58c34bebcaf17707d080d756d121068";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
+const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
 function hash(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -157,27 +161,45 @@ export function buildNativeXAISnapshot(previous) {
   };
 }
 
+export function buildPreservedRegistrationSnapshot(nativeSnapshot) {
+  if (!nativeSnapshot || nativeSnapshot.id !== TARGET_ID || nativeSnapshot.version !== "7") {
+    throw new Error("0050 snapshot identity changed; refusing to synthesize 0051.");
+  }
+  const snapshot = structuredClone(nativeSnapshot);
+  snapshot.id = TARGET_0051_ID;
+  snapshot.prevId = nativeSnapshot.id;
+  snapshot.tables[TABLE_NAME].foreignKeys = {};
+  return snapshot;
+}
+
+function writeSnapshot(path, serialized, expectedHash) {
+  const actualHash = hash(serialized);
+  if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
+    throw new Error(`Generated snapshot hash mismatch for ${path}: expected ${expectedHash}, got ${actualHash}.`);
+  }
+  if (existsSync(path) && hash(readFileSync(path, "utf8")) === actualHash) {
+    return { changed: false, path, sha256: actualHash };
+  }
+  const temporary = `${path}.tmp-${process.pid}`;
+  writeFileSync(temporary, serialized, { encoding: "utf8", mode: 0o600 });
+  renameSync(temporary, path);
+  return { changed: true, path, sha256: actualHash };
+}
+
 export function materializeDrizzleMeta() {
   const previous = JSON.parse(readFileSync(SOURCE, "utf8"));
-  const serialized = `${JSON.stringify(buildNativeXAISnapshot(previous), null, 2)}\n`;
-  const actualHash = hash(serialized);
-  if (actualHash !== TARGET_SHA256) {
-    throw new Error(
-      `Generated 0050 snapshot hash mismatch: expected ${TARGET_SHA256}, got ${actualHash}.`,
-    );
-  }
-
-  if (existsSync(TARGET) && hash(readFileSync(TARGET, "utf8")) === TARGET_SHA256) {
-    return { changed: false, path: TARGET, sha256: TARGET_SHA256 };
-  }
-
-  const temporary = `${TARGET}.tmp-${process.pid}`;
-  writeFileSync(temporary, serialized, { encoding: "utf8", mode: 0o600 });
-  renameSync(temporary, TARGET);
-  return { changed: true, path: TARGET, sha256: TARGET_SHA256 };
+  const nativeSnapshot = buildNativeXAISnapshot(previous);
+  const nativeSerialized = `${JSON.stringify(nativeSnapshot, null, 2)}\n`;
+  const preservedSerialized = `${JSON.stringify(buildPreservedRegistrationSnapshot(nativeSnapshot), null, 2)}\n`;
+  const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
+  const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
+  return { native, preserved };
 }
 
 const result = materializeDrizzleMeta();
-if (result.changed) {
-  console.log(`Materialized Drizzle snapshot 0050 (${result.sha256.slice(0, 12)}…).`);
+if (result.native.changed) {
+  console.log(`Materialized Drizzle snapshot 0050 (${result.native.sha256.slice(0, 12)}…).`);
+}
+if (result.preserved.changed) {
+  console.log(`Materialized Drizzle snapshot 0051 (${result.preserved.sha256.slice(0, 12)}…).`);
 }
