@@ -378,7 +378,7 @@ export default function MailboxConnectionCard() {
                         autoComplete="email"
                         value={agentmailEmail}
                         onChange={(event) => setAgentmailEmail(event.target.value)}
-                        placeholder="sales@agentmail.to"
+                        placeholder="trywireline@agentmail.to"
                         aria-label="AgentMail inbox address"
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
@@ -393,8 +393,8 @@ export default function MailboxConnectionCard() {
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Paste an org API key from the AgentMail console. Free inboxes are
-                        @agentmail.to. A custom domain needs AgentMail Developer.
+                        Paste the inbox address and an org API key from the AgentMail console. Free
+                        inboxes are @agentmail.to. A custom domain needs AgentMail Developer.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button type="submit" size="sm" disabled={isBusy}>

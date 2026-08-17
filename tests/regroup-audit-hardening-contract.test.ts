@@ -109,10 +109,14 @@ describe("comms hardening", () => {
   it("email sync keys are per-tenant, not global", () => {
     // Sender/provider-chosen ids repeat across tenants' mailboxes: a global
     // unique let one tenant's row break another tenant's entire sync.
+    const persist = read("src/lib/mailbox-inbox-persist.ts");
     const sync = read("src/routes/email-sync-routes.ts");
-    expect(sync).toContain("[schema.emailThreads.userId, schema.emailThreads.threadId]");
-    expect(sync).toContain("[schema.emailMessages.userId, schema.emailMessages.googleMessageId]");
-    expect(sync).toContain("setWhere");
+    expect(sync).toContain("persistMailboxInboxMessages");
+    expect(persist).toContain("[schema.emailThreads.userId, schema.emailThreads.threadId]");
+    expect(persist).toContain(
+      "[schema.emailMessages.userId, schema.emailMessages.googleMessageId]",
+    );
+    expect(persist).toContain("setWhere");
     const schemaBase = read("src/db/schema-base.ts");
     expect(schemaBase).toContain("uq_email_threads_user_thread");
     expect(schemaBase).toContain("uq_email_messages_user_google_message");

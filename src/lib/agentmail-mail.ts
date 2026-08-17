@@ -1,6 +1,7 @@
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
 
+import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -11,8 +12,17 @@ export const AGENTMAIL_SMTP_HOST = "smtp.agentmail.to";
 export const AGENTMAIL_SMTP_PORT = 465;
 export const AGENTMAIL_FREE_DOMAIN = "agentmail.to";
 
-const AGENTMAIL_MAIL_SCOPE = "imap smtp api-key";
+const AGENTMAIL_MAIL_SCOPE = "imap smtp api-key webhook";
 const WIRELINE_INBOX_CLIENT_ID = "wireline-mailbox";
+export const AGENTMAIL_WEBHOOK_CLIENT_ID = "wireline-mailbox-webhook";
+export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
+  "message.received",
+  "message.sent",
+  "message.delivered",
+  "message.bounced",
+  "message.complained",
+  "message.rejected",
+] as const;
 
 export class AgentMailConnectError extends Error {
   constructor(message: string) {
@@ -199,9 +209,9 @@ export async function resolveAgentMailInbox(
   }
   const username = agentmailLocalPart(wanted);
   if (!username) {
-    throw new AgentMailConnectError("Use a simple inbox name such as sales@agentmail.to.");
+    throw new AgentMailConnectError("Use a simple inbox name such as trywireline@agentmail.to.");
   }
-  return createAgentMailInbox(apiKey, username, "Wireline Sales");
+  return createAgentMailInbox(apiKey, username);
 }
 
 export async function verifyAgentMailCredentials(email: string, apiKey: string): Promise<void> {
@@ -310,4 +320,147 @@ export async function sendAgentMail(
 
 export function agentmailGrantedScopes(): string {
   return AGENTMAIL_MAIL_SCOPE;
+}
+
+export type AgentMailWebhook = {
+  webhookId: string;
+  url: string;
+  clientId: string | null;
+  inboxIds: string[];
+  eventTypes: string[];
+  secret: string | null;
+};
+
+function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
+  const row = asRecord(raw);
+  if (!row) return null;
+  const webhookId = String(row.webhook_id ?? row.webhookId ?? "").trim();
+  const url = String(row.url ?? "").trim();
+  if (!webhookId || !url) return null;
+  const inboxIds = Array.isArray(row.inbox_ids)
+    ? row.inbox_ids.map((id) => String(id).trim()).filter(Boolean)
+    : Array.isArray(row.inboxIds)
+      ? row.inboxIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+  const eventTypes = Array.isArray(row.event_types)
+    ? row.event_types.map((id) => String(id).trim()).filter(Boolean)
+    : Array.isArray(row.eventTypes)
+      ? row.eventTypes.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+  const clientId = String(row.client_id ?? row.clientId ?? "").trim() || null;
+  const secret = String(row.secret ?? "").trim() || null;
+  return { webhookId, url, clientId, inboxIds, eventTypes, secret };
+}
+
+export async function listAgentMailWebhooks(apiKey: string): Promise<AgentMailWebhook[]> {
+  const webhooks: AgentMailWebhook[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < 10; page += 1) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (pageToken) query.set("page_token", pageToken);
+    const { status, body } = await agentMailJson(apiKey, `/webhooks?${query.toString()}`);
+    if (status === 401 || status === 403) {
+      throw new AgentMailConnectError(
+        "That AgentMail API key was rejected. Create a key in the AgentMail console and paste it here.",
+      );
+    }
+    if (status < 200 || status >= 300) {
+      throw new AgentMailConnectError("Could not list AgentMail webhooks with that API key.");
+    }
+    const payload = asRecord(body);
+    const rows = Array.isArray(payload?.webhooks) ? payload.webhooks : [];
+    for (const row of rows) {
+      const webhook = normalizeAgentMailWebhook(row);
+      if (webhook) webhooks.push(webhook);
+    }
+    const next = String(payload?.next_page_token ?? payload?.nextPageToken ?? "").trim();
+    if (!next) break;
+    pageToken = next;
+  }
+  return webhooks;
+}
+
+export async function deleteAgentMailWebhook(apiKey: string, webhookId: string): Promise<void> {
+  const { status } = await agentMailJson(apiKey, `/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: "DELETE",
+  });
+  if (status === 404) return;
+  if (status < 200 || status >= 300) {
+    throw new AgentMailConnectError("Could not remove the previous AgentMail webhook.");
+  }
+}
+
+export function publicAgentMailWebhookUrl(accountId: string): string | null {
+  const resolved = resolveCanonicalAppUrl();
+  if ("error" in resolved) return null;
+  if (/localhost|127\.0\.0\.1/i.test(resolved.url)) return null;
+  return `${resolved.url}/api/webhooks/agentmail/${accountId}`;
+}
+
+export async function ensureAgentMailWebhook(input: {
+  apiKey: string;
+  inboxId: string;
+  accountId: string;
+  hasStoredSecret: boolean;
+}): Promise<{ webhookId: string; secret: string | null } | null> {
+  const url = publicAgentMailWebhookUrl(input.accountId);
+  if (!url) {
+    log.warn("Skipping AgentMail webhook registration; APP_URL is not a public origin", {
+      accountId: input.accountId,
+    });
+    return null;
+  }
+
+  const existing = (await listAgentMailWebhooks(input.apiKey)).find(
+    (webhook) => webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID || webhook.url === url,
+  );
+
+  const canReuse =
+    existing &&
+    existing.url === url &&
+    input.hasStoredSecret &&
+    existing.inboxIds.includes(input.inboxId) &&
+    AGENTMAIL_WEBHOOK_EVENT_TYPES.every((eventType) => existing.eventTypes.includes(eventType));
+  if (canReuse && existing) {
+    return { webhookId: existing.webhookId, secret: null };
+  }
+
+  if (existing) {
+    await deleteAgentMailWebhook(input.apiKey, existing.webhookId);
+  }
+
+  const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
+    method: "POST",
+    body: JSON.stringify({
+      url,
+      event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
+      inbox_ids: [input.inboxId],
+      client_id: AGENTMAIL_WEBHOOK_CLIENT_ID,
+    }),
+  });
+  if (status === 401 || status === 403) {
+    throw new AgentMailConnectError(
+      "That AgentMail API key cannot create webhooks. Create a key with webhook permission in the AgentMail console.",
+    );
+  }
+  if (status < 200 || status >= 300) {
+    throw new AgentMailConnectError(
+      "Could not register the AgentMail inbound webhook for this inbox.",
+    );
+  }
+  const created =
+    normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
+  if (!created?.webhookId) {
+    throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
+  }
+  return { webhookId: created.webhookId, secret: created.secret };
+}
+
+export async function deleteWirelineAgentMailWebhooks(apiKey: string): Promise<void> {
+  const webhooks = await listAgentMailWebhooks(apiKey);
+  for (const webhook of webhooks) {
+    if (webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID) {
+      await deleteAgentMailWebhook(apiKey, webhook.webhookId);
+    }
+  }
 }

@@ -16,11 +16,15 @@ export interface OwnedEmailAccountInput {
   oauthGrantedScopes: string | null;
 }
 
-export async function upsertOwnedEmailAccount(input: OwnedEmailAccountInput): Promise<boolean> {
+export async function upsertOwnedEmailAccount(
+  input: OwnedEmailAccountInput,
+): Promise<{ id: string } | null> {
   const emailAddress = input.emailAddress.trim().toLowerCase();
   const refreshTokenUpdate = input.refreshToken
     ? input.refreshToken
-    : sql<string | null>`case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end`;
+    : sql<
+        string | null
+      >`case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end`;
 
   const [row] = await drizzle
     .insert(emailAccounts)
@@ -38,5 +42,5 @@ export async function upsertOwnedEmailAccount(input: OwnedEmailAccountInput): Pr
     })
     .returning({ id: emailAccounts.id });
 
-  return Boolean(row);
+  return row ?? null;
 }

@@ -284,9 +284,9 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     detail: "Tenant-owned AgentMail org key stored encrypted on the mailbox row.",
     capabilities: ["Mailbox connection", "Follow-up"],
     agentScope:
-      "Fetch and send mail through AgentMail IMAP/SMTP after the Account Holder pastes an org API key.",
+      "Fetch and send mail through AgentMail IMAP/SMTP after the Account Holder pastes an org API key. Inbound delivery is subscribed automatically on connect.",
     guardrail:
-      "Never store a shared AgentMail org key in platform env. Each tenant pastes their own key in Connections.",
+      "Never store a shared AgentMail org key or webhook secret in platform env. Each tenant pastes their own key in Connections.",
     readiness: "live",
     nextStep:
       "Keep custom-domain DNS on the tenant AgentMail org; do not route founder mail through a platform key.",

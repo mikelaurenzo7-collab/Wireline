@@ -49,7 +49,7 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "call.escalated": "Call flagged as angry or requiring human escalation",
   "lead.received": "New lead pushed via your inbound intake API key",
   "lead.hot": "Lead score crossed 70. High intent detected",
-  "email.received": "Inbound email synced from a connected Gmail or Outlook account",
+  "email.received": "Inbound email synced from a connected mailbox",
   "appointment.booked": "New appointment booked by an agent or via API",
   "slack.message_sent":
     "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",

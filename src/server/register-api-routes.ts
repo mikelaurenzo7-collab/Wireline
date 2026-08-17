@@ -57,6 +57,7 @@ import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
 import icloudMailRouter from "../routes/icloud-mail-routes";
 import agentmailRouter from "../routes/agentmail-routes";
+import agentmailWebhookRouter from "../routes/agentmail-webhook-routes";
 import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
 import shareableArtifactRouter from "../routes/shareable-artifact-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
@@ -190,6 +191,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(shareableArtifactRouter);
   // Signed provider callbacks own their exact paths before the tenant webhook router.
   app.use(resendWebhookRouter);
+  app.use(agentmailWebhookRouter);
   app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
   app.use(escalationRouter);

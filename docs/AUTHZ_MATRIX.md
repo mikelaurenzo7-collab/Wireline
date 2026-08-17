@@ -4,15 +4,16 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 389
+**Routes scanned:** 390
 **Protected:** 318
-**Public (allowlisted):** 71
+**Public (allowlisted):** 72
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
 
 | Path | Reason |
 |------|--------|
+| `POST /api/webhooks/agentmail/:accountId` | AgentMail/Svix timestamped HMAC-SHA256 signature + replay window |
 | `POST /api/auth/oauth/exchange` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/google/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/google/url` | Signup/login/refresh (public by definition) |
@@ -125,6 +126,7 @@
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/connect` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/disconnect` | inline | — | — | Protected |
+| agentmail-webhook-routes.ts | POST | `/api/webhooks/agentmail/:accountId` | — | — | yes | Public (allowlisted) |
 | ai-status-routes.ts | GET | `/api/ai/status` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/events` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/export` | inline | — | — | Protected |

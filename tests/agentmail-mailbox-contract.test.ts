@@ -14,7 +14,10 @@ describe("agentmail mailbox contract", () => {
     expect(agentmailRoutes).not.toMatch(/process\.env\.AGENTMAIL_API_KEY/);
     expect(integrations).not.toMatch(/process\.env\.AGENTMAIL_API_KEY/);
     expect(envExample).not.toMatch(/^AGENTMAIL_API_KEY=/m);
+    expect(envExample).not.toMatch(/^AGENTMAIL_WEBHOOK_SECRET=/m);
     expect(envExample).toContain("do not set a shared AGENTMAIL_API_KEY");
+    expect(agentmailLib).not.toMatch(/process\.env\.AGENTMAIL_WEBHOOK_SECRET/);
+    expect(agentmailRoutes).not.toMatch(/process\.env\.AGENTMAIL_WEBHOOK_SECRET/);
   });
 
   it("stores the tenant key through the mailbox ownership guard", () => {
@@ -23,6 +26,15 @@ describe("agentmail mailbox contract", () => {
     expect(agentmailRoutes).toContain('provider: "agentmail"');
     expect(agentmailRoutes).toContain("encryptSecret(apiKey)");
     expect(agentmailRoutes).not.toContain("target: schema.emailAccounts.emailAddress");
+  });
+
+  it("registers inbound delivery on connect without asking the Account Holder to set up webhooks", () => {
+    expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
+    expect(agentmailRoutes).toContain("deleteWirelineAgentMailWebhooks");
+    expect(mailboxCard.toLowerCase()).not.toContain("webhook");
+    expect(mailboxCard).toContain("trywireline@agentmail.to");
+    expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
+    expect(registry).toContain("app.use(agentmailWebhookRouter)");
   });
 
   it("is mounted in the explicit API registry", () => {
