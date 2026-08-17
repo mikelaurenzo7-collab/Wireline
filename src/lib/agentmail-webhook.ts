@@ -37,18 +37,36 @@ function parseDate(value: unknown): Date {
   return new Date();
 }
 
-function firstAddress(value: unknown): string | null {
-  if (typeof value === "string") return boundedText(value, 320);
-  if (Array.isArray(value)) {
-    for (const candidate of value) {
-      const address = firstAddress(candidate);
-      if (address) return address;
+function allAddresses(value: unknown): string[] {
+  const candidates: string[] = [];
+  const visit = (candidate: unknown): void => {
+    if (typeof candidate === "string") {
+      const address = boundedText(candidate, 320);
+      if (address) candidates.push(address);
+      return;
     }
-    return null;
-  }
-  const record = asRecord(value);
-  if (!record) return null;
-  return boundedText(record.address ?? record.email ?? record.email_address, 320);
+    if (Array.isArray(candidate)) {
+      for (const item of candidate) visit(item);
+      return;
+    }
+    const record = asRecord(candidate);
+    if (!record) return;
+    const address = boundedText(record.address ?? record.email ?? record.email_address, 320);
+    if (address) candidates.push(address);
+  };
+  visit(value);
+
+  const seen = new Set<string>();
+  return candidates.filter((address) => {
+    const key = address.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function firstAddress(value: unknown): string | null {
+  return allAddresses(value)[0] ?? null;
 }
 
 function plainTextFromHtml(value: unknown): string | null {
@@ -89,15 +107,13 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
   subject: string;
   snippet: string;
   receivedAt: Date;
+  suppressionRecipients: string[];
   bounceRecipient: string | null;
   rejectionReason: string | null;
 } {
   const payload = asRecord(raw);
   if (!payload) throw new Error("AgentMail webhook body is not valid JSON");
-  const eventType = boundedText(
-    payload.event_type ?? payload.eventType ?? payload.type,
-    MAX_EVENT_TYPE_LENGTH,
-  );
+  const eventType = boundedText(payload.event_type ?? payload.eventType, MAX_EVENT_TYPE_LENGTH);
   if (!eventType) throw new Error("event type is missing");
 
   const message = asRecord(payload.message) ?? {};
@@ -127,6 +143,19 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
     boundedText(message.subject, 500) ||
     "";
 
+  const eventRecipients =
+    eventType === "message.bounced"
+      ? allAddresses(bounce.recipients)
+      : eventType === "message.complained"
+        ? allAddresses(complaint.recipients)
+        : [];
+  const suppressionRecipients =
+    eventRecipients.length > 0
+      ? eventRecipients
+      : agentMailSuppressionReason(eventType)
+        ? allAddresses(message.to ?? payload.to)
+        : [];
+
   return {
     eventType,
     eventId: boundedText(payload.event_id ?? payload.eventId, 256),
@@ -148,11 +177,8 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
         eventData.timestamp ??
         payload.created_at,
     ),
-    bounceRecipient:
-      firstAddress(bounce.recipients) ??
-      firstAddress(complaint.recipients) ??
-      firstAddress(message.to) ??
-      firstAddress(payload.to),
+    suppressionRecipients,
+    bounceRecipient: suppressionRecipients[0] ?? null,
     rejectionReason: boundedText(reject.reason, 1_000),
   };
 }
@@ -206,13 +232,19 @@ export async function processVerifiedAgentMailWebhook(
 
   const suppressionReason = agentMailSuppressionReason(event.eventType);
   if (suppressionReason) {
-    if (!event.bounceRecipient || !event.bounceRecipient.includes("@")) {
+    const recipients = event.suppressionRecipients.filter((recipient) => recipient.includes("@"));
+    if (recipients.length === 0) {
       throw new Error(`${event.eventType} has no valid recipient`);
     }
-    await recordTenantEmailSuppression(userId, event.bounceRecipient, suppressionReason);
-    log.warn("[agentmail-webhook] tenant recipient suppressed", {
+    await Promise.all(
+      recipients.map((recipient) =>
+        recordTenantEmailSuppression(userId, recipient, suppressionReason),
+      ),
+    );
+    log.warn("[agentmail-webhook] tenant recipients suppressed", {
       eventType: event.eventType,
       reason: suppressionReason,
+      count: recipients.length,
     });
     return {
       eventType: event.eventType,
