@@ -10,7 +10,8 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  * Private voice in this ChatGPT-hosted widget uses OpenAI Realtime WebRTC
  * because the iframe may only connect to `https://api.openai.com`. That is not
  * the Studio or PSTN brain. Tenant tests and phone calls use xAI
- * Speech-to-Speech (`grok-voice-think-fast-2.0`) via `xai-client-secret.`.
+ * Speech-to-Speech (`grok-voice-think-fast-2.0`) with a server-minted ephemeral
+ * client secret.
  */
 export function buildAccountBoundWidgetHtml(): string {
   return `<!doctype html>
