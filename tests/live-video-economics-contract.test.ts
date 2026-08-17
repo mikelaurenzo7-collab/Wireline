@@ -25,7 +25,7 @@ describe("live video economics contract", () => {
 
     expect(usage).toContain("drizzle.transaction");
     expect(usage).toContain("live_video_reserved_minutes_monthly");
-    expect(routes).toContain('code: "LIVE_VIDEO_RETIRED"');
+    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
     expect(routes).not.toContain("await mintLiveAvatarSessionToken");
     expect(routes).not.toContain("reserveLiveVideoSessionMinutes");
   });

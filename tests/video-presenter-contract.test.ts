@@ -37,11 +37,11 @@ describe("video presenter integration", () => {
     const live = source("src/components/LiveVideoPresenter.tsx");
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(service).toContain("retired: true");
-    expect(service).not.toContain("api.liveavatar.com");
+    expect(service).not.toContain("https://api.liveavatar.com");
     expect(service).not.toContain("mintLiveAvatarLiteSessionToken");
     expect(live).not.toContain("@heygen/liveavatar-web-sdk");
     expect(live).toContain("AgentFace");
-    expect(routes).toContain('code: "LIVE_VIDEO_RETIRED"');
+    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 

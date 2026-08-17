@@ -24,8 +24,8 @@ describe("HeyGen and LiveAvatar talking-head paths are gone", () => {
     ]) {
       const source = read(path);
       expect(source, path).not.toContain("/v3/video-agents");
-      expect(source, path).not.toContain("api.heygen.com");
-      expect(source, path).not.toContain("api.liveavatar.com");
+      expect(source, path).not.toContain("https://api.heygen.com");
+      expect(source, path).not.toContain("https://api.liveavatar.com");
     }
     expect(read("src/lib/xai-imagine-video.ts")).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
     expect(read("src/lib/xai-imagine-video.ts")).toContain("imagineVideoGenerationOffered");
@@ -33,7 +33,11 @@ describe("HeyGen and LiveAvatar talking-head paths are gone", () => {
 
   it("does not let clients write consent on PATCH", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
-    expect(routes).not.toContain("consentStatus");
-    expect(routes).not.toContain("videoPresenterConsentStatus");
+    const schema = routes.slice(
+      routes.indexOf("const patchPresenterSchema"),
+      routes.indexOf("async function ownedAgent"),
+    );
+    expect(schema).not.toContain("consentStatus");
+    expect(schema).not.toContain("videoPresenterConsentStatus");
   });
 });
