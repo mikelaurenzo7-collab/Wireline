@@ -74,6 +74,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md) | Current launch sequence and operating playbook. |
 | [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md) | Creative doctrine, asset inventory, and channel placement. |
 | [WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md](./WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md) | Current launch campaign pack, claims, scripts, UTMs, and activation QA. |
+| [CAMPAIGN_STUDIO.md](./CAMPAIGN_STUDIO.md) | Post-proof commercial, OOH, sonic-brand, and reviewed ElevenLabs asset-delivery system. |
 | [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md) | Founder catalog lock and live billing proof checklist. |
 | [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | Dry-run-first demo reset, reseed, and screenshot QA. |
 | [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | DNC, Redis, Sentry, and scale-readiness environment checklist. |

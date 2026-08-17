@@ -99,7 +99,8 @@
     "lint:strict:candidates": "node scripts/strict-coverage.mjs",
     "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts",
     "db:drift": "node scripts/check-migration-drift.mjs",
-    "design:viewport:check": "node scripts/check-marketing-viewport-fit.mjs"
+    "design:viewport:check": "node scripts/check-marketing-viewport-fit.mjs",
+    "campaign:package": "node scripts/build-campaign-delivery-manifest.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
