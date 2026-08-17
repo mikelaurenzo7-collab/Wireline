@@ -472,9 +472,7 @@ export class IntegrationService {
         }
 
         const account =
-          mailAccounts.find(
-            (candidate: { provider?: string }) => candidate.provider === "agentmail",
-          ) ?? mailAccounts[0];
+          mailAccounts.find((candidate) => candidate.provider === "agentmail") ?? mailAccounts[0];
         if (account.provider === "google") {
           return await this.sendGoogleEmail(account, sendParams);
         }
