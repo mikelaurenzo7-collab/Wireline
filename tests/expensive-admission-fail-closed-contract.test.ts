@@ -28,6 +28,29 @@ describe("expensive admission boundaries", () => {
     expect(block).not.toContain("rate limiter error, fail-open");
   });
 
+  it("fails remaining paid-provider admission buckets closed on limiter outage", () => {
+    const files = {
+      "src/routes/qa-routes-v2.ts": 'bucket: "api:qa"',
+      "src/routes/insights-routes.ts": 'bucket: "api:insights-ai"',
+      "src/routes/daily-brief-routes.ts": 'bucket: "api:daily-brief-send-now"',
+      "src/routes/openai-realtime-routes.ts": 'bucket: "api:openai-realtime"',
+      "src/routes/grok-voice-routes.ts": 'bucket: "api:live-voice-session"',
+      "src/routes/video-presenter-routes-base.ts": 'bucket: "api:video-presenter-session"',
+    } as const;
+
+    for (const [path, bucket] of Object.entries(files)) {
+      const contents = readFileSync(resolve(process.cwd(), path), "utf8");
+      const start = contents.indexOf(bucket);
+      expect(start, path).toBeGreaterThan(-1);
+      const block = contents.slice(Math.max(0, start - 80), start + 180);
+      expect(block, path).toContain("failClosedOnError: true");
+    }
+
+    const preview = readFileSync(resolve(process.cwd(), "src/routes/grok-voice-routes.ts"), "utf8");
+    const previewStart = preview.indexOf('bucket: "api:voice-preview"');
+    expect(preview.slice(previewStart, previewStart + 160)).toContain("failClosedOnError: true");
+  });
+
   it("lets IP-keyed public routes opt into fail-closed admission without breaking signed webhooks", () => {
     const start = source.indexOf("interface IpRateLimiterOpts");
     const block = source.slice(start);
