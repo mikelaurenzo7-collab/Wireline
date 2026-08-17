@@ -50,11 +50,12 @@ describe("agentmail mailbox contract", () => {
     expect(registry).toContain("app.use(agentmailWebhookRouter)");
   });
 
-  it("removes a new webhook if its signing secret cannot be persisted", () => {
-    expect(agentmailRoutes).toContain("deleteAgentMailWebhook");
+  it("requires and persists the signing secret, deleting any unverifiable webhook", () => {
+    expect(agentmailRoutes).toContain("listAgentMailWebhooks");
+    expect(agentmailRoutes).toContain("AgentMail webhook did not expose its signing secret");
     expect(agentmailRoutes).toContain(".returning({ id: schema.emailAccounts.id })");
     expect(agentmailRoutes).toContain(
-      "await deleteAgentMailWebhook(apiKey, ensured.webhookId)",
+      "await deleteAgentMailWebhook(input.apiKey, input.webhookId)",
     );
     expect(agentmailRoutes).toContain("AgentMail orphan webhook cleanup failed");
   });
