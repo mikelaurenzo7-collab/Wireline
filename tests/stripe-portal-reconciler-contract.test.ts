@@ -207,4 +207,19 @@ describe("Stripe customer portal reconciliation", () => {
     expect(webhookSecretSync).not.toContain("decrypt=true");
     expect(webhookSecretSync).not.toContain("console.log(secret");
   });
+
+  it("runs the complete production audit and Stripe verification before live migration", () => {
+    const build = read("scripts/vercel-build.mjs");
+    const auditCall = 'runComprehensiveReleaseAudit();';
+    const portalCall = 'verifyStripePortalIfRequested();';
+    const migrationBranch = "if (shouldMigrate) {";
+
+    expect(build).toContain("function runComprehensiveReleaseAudit()");
+    expect(build).toContain('commitMessage.includes("[launch-deep-audit]")');
+    expect(build).toContain("if (!isCanonicalProduction && !explicitlyRequested) return;");
+    expect(build).toContain('run("npm", ["run", "test:run"]');
+    expect(build.indexOf(auditCall)).toBeGreaterThanOrEqual(0);
+    expect(build.indexOf(portalCall)).toBeGreaterThan(build.indexOf(auditCall));
+    expect(build.indexOf(migrationBranch)).toBeGreaterThan(build.indexOf(portalCall));
+  });
 });
