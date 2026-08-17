@@ -15,8 +15,12 @@ import { agents, users } from "./schema-base";
  * persist each returned identifier immediately instead of risking loss of the
  * one-time xAI signing secret during a partial failure. A short-lived claim
  * token prevents two requests from provisioning the same tenant line at once.
+ *
+ * RLS is schema-owned here. The migration installs Wireline's existing tenant
+ * policy separately because it references the database-owned
+ * `wireline_current_user_id()` helper and server role.
  */
-export const xaiPhoneBindings = pgTable(
+export const xaiPhoneBindings = pgTable.withRLS(
   "wireline_xai_phone_bindings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
