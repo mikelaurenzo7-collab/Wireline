@@ -11,12 +11,12 @@ import {
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { drizzle } from "../lib/server-context";
+import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
 import { listNativeAvailableLocalNumbers } from "../lib/voice/native-phone-carrier";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
-import { enforceLiveWorkActivation } from "../middleware/launch-hard-gate";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -196,8 +196,8 @@ router.patch(
     res.json({
       success: true,
       number: result.line,
-      native_voice_status: result.nativeVoice?.binding?.status ??
-        (result.line.agentId ? "pending" : "retired"),
+      native_voice_status:
+        result.nativeVoice?.binding?.status ?? (result.line.agentId ? "pending" : "retired"),
     });
   }),
 );
