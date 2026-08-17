@@ -10,6 +10,7 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   // cannot silently inherit the CSRF exemption. Authenticity is established by
   // each provider's own signature verifier.
   "/api/webhooks/resend",
+  "/api/webhooks/xai/voice",
   "/api/webhooks/agentmail",
   "/api/webhooks/meta/",
   "/api/twilio-webhook",
