@@ -39,14 +39,11 @@ describe("provider spend launch kill switch", () => {
     );
     expectMiddlewareBeforeHandler(
       liveVoice,
-      '"/api/voice/live/web-session"',
-      "async (req: AuthenticatedRequest, res: Response)",
-    );
-    expectMiddlewareBeforeHandler(
-      liveVoice,
       '"/api/voices/curated/preview"',
       "async (req: AuthenticatedRequest, res: Response)",
     );
+    expect(liveVoice).not.toContain('"/api/voice/live/web-session"');
+    expect(liveVoice).not.toContain("Vapi");
     for (const route of [
       '"/api/voices/:id/preview"',
       '"/api/voices/clone"',
