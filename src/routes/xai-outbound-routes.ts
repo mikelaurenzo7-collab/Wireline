@@ -3,16 +3,23 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { xaiPhoneBindings } from "../db/xai-voice-schema";
+import { formatCallbackNumberForSpeech } from "../lib/agent-runtime";
 import { AppError, asyncHandler } from "../lib/api-error";
+import { isMarketingCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
+import {
+  nativeCallPurposeFromMetadata,
+  resolveNativeAmdBridgeAction,
+} from "../lib/voice/native-outbound-amd";
 import { verifyXAIOutboundToken } from "../lib/voice/xai-outbound-token";
 import {
   buildXAIOutboundSipUri,
   normalizeXAIPhoneNumber,
   resolveXAISipSessionMaxSeconds,
 } from "../lib/voice/xai-sip-config";
+import { buildOutboundVoicemailMessage } from "../lib/voice-agent-profile";
 
 const router = Router();
 const ACTIVE_LEAD_STATUSES = [
@@ -56,6 +63,16 @@ function emptyTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 }
 
+function voicemailTwiml(message: string): string {
+  const spoken = message.trim();
+  if (!spoken) return emptyTwiml();
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?><Response><Say>' +
+    escapeXml(spoken) +
+    "</Say><Hangup/></Response>"
+  );
+}
+
 function bridgeTwiml(input: { callerId: string; sipUri: string }): string {
   const timeLimit = resolveXAISipSessionMaxSeconds();
   return (
@@ -83,7 +100,20 @@ function carrierRank(status: unknown): number {
   return CARRIER_STATUS_RANK[String(status || "unknown").trim().toLowerCase()] ?? 0;
 }
 
-async function resolveBridgeContext(token: string, callSid: string) {
+function answeredByFromRequest(req: Request): string {
+  return String(req.body?.AnsweredBy || "").trim();
+}
+
+type BridgeDecision =
+  | { kind: "bridge"; callerId: string; sipUri: string }
+  | { kind: "drop"; answeredBy: string }
+  | { kind: "voicemail"; answeredBy: string; message: string };
+
+async function resolveBridgeContext(
+  token: string,
+  callSid: string,
+  answeredBy: string,
+): Promise<BridgeDecision> {
   const verification = verifyXAIOutboundToken(token);
   if (!verification.ok) throw AppError.unauthorized("Invalid outbound bridge token.");
   const leadId = BigInt(verification.claims.leadId);
@@ -105,37 +135,6 @@ async function resolveBridgeContext(token: string, callSid: string) {
       throw AppError.forbidden("Outbound bridge call identity does not match.");
     }
 
-    const now = new Date();
-    const metadata = asRecord(lead.metadata);
-    const nativeVoice = asRecord(metadata.native_voice);
-    const [claimed] = await tx
-      .update(schema.outboundLeads)
-      .set({
-        callId: callSid,
-        status: LEAD_STATUS.CONNECTED,
-        lastCalledAt: now,
-        metadata: {
-          ...metadata,
-          native_voice: {
-            ...nativeVoice,
-            provider: "twilio_xai_sip",
-            twilio_call_sid: callSid,
-            state: "bridging",
-            bridge_served_at: now.toISOString(),
-            updated_at: now.toISOString(),
-          },
-        },
-      })
-      .where(
-        and(
-          eq(schema.outboundLeads.id, lead.id),
-          eq(schema.outboundLeads.userId, lead.userId),
-          inArray(schema.outboundLeads.status, ACTIVE_LEAD_STATUSES),
-        ),
-      )
-      .returning({ id: schema.outboundLeads.id });
-    if (!claimed) throw AppError.conflict("Outbound bridge could not claim this lead.");
-
     const [binding] = await tx
       .select()
       .from(xaiPhoneBindings)
@@ -151,7 +150,120 @@ async function resolveBridgeContext(token: string, callSid: string) {
     if (!binding?.xaiPhoneNumberId || !callerId) {
       throw AppError.serviceUnavailable("The native voice line is not active.");
     }
-    return { lead, binding, callerId };
+
+    const [agent] = await tx
+      .select({ name: schema.agents.name })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, lead.agentId), eq(schema.agents.userId, lead.userId)))
+      .limit(1);
+    const [settings] = await tx
+      .select({ businessName: schema.settings.businessName })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, lead.userId))
+      .limit(1);
+
+    const now = new Date();
+    const metadata = asRecord(lead.metadata);
+    const nativeVoice = asRecord(metadata.native_voice);
+    const callPurpose = nativeCallPurposeFromMetadata(nativeVoice.call_purpose);
+    const telemarketing = isMarketingCallPurpose(callPurpose);
+    const amdAction = resolveNativeAmdBridgeAction({ answeredBy, callPurpose });
+    const agentName = agent?.name?.trim() || "Wireline";
+    const businessName = settings?.businessName?.trim() || null;
+    const voicemailMessage = buildOutboundVoicemailMessage(
+      agentName,
+      businessName,
+      formatCallbackNumberForSpeech(callerId),
+      telemarketing,
+    );
+
+    const amdNativeVoice: Record<string, unknown> = {
+      ...nativeVoice,
+      provider: "twilio_xai_sip",
+      twilio_call_sid: callSid,
+      call_purpose: callPurpose,
+      answered_by: answeredBy || "unknown",
+      amd_action: amdAction,
+      updated_at: now.toISOString(),
+    };
+
+    if (amdAction === "drop") {
+      amdNativeVoice.state = "amd_no_message";
+      amdNativeVoice.amd_completed_at = now.toISOString();
+      const [dropped] = await tx
+        .update(schema.outboundLeads)
+        .set({
+          callId: callSid,
+          status: LEAD_STATUS.FAILED,
+          lastCalledAt: now,
+          lastContactSummary: telemarketing
+            ? "Answering machine detected; no marketing voicemail was left (47 CFR 64.1200(b)(3))."
+            : "Fax or machine detected; the native voice bridge was not started.",
+          metadata: { ...metadata, native_voice: amdNativeVoice },
+        })
+        .where(
+          and(
+            eq(schema.outboundLeads.id, lead.id),
+            eq(schema.outboundLeads.userId, lead.userId),
+            inArray(schema.outboundLeads.status, ACTIVE_LEAD_STATUSES),
+          ),
+        )
+        .returning({ id: schema.outboundLeads.id });
+      if (!dropped) throw AppError.conflict("Outbound bridge could not claim this lead.");
+      return { kind: "drop", answeredBy };
+    }
+
+    if (amdAction === "voicemail") {
+      amdNativeVoice.state = "voicemail_left";
+      amdNativeVoice.amd_completed_at = now.toISOString();
+      const [left] = await tx
+        .update(schema.outboundLeads)
+        .set({
+          callId: callSid,
+          status: voicemailMessage ? LEAD_STATUS.VOICEMAIL_LEFT : LEAD_STATUS.FAILED,
+          lastCalledAt: now,
+          lastContactSummary: voicemailMessage
+            ? "Left a deterministic identity and callback voicemail. No call context was disclosed."
+            : "Answering machine detected; no voicemail was left.",
+          metadata: { ...metadata, native_voice: amdNativeVoice },
+        })
+        .where(
+          and(
+            eq(schema.outboundLeads.id, lead.id),
+            eq(schema.outboundLeads.userId, lead.userId),
+            inArray(schema.outboundLeads.status, ACTIVE_LEAD_STATUSES),
+          ),
+        )
+        .returning({ id: schema.outboundLeads.id });
+      if (!left) throw AppError.conflict("Outbound bridge could not claim this lead.");
+      return { kind: "voicemail", answeredBy, message: voicemailMessage };
+    }
+
+    amdNativeVoice.state = "bridging";
+    amdNativeVoice.bridge_served_at = now.toISOString();
+    const [claimed] = await tx
+      .update(schema.outboundLeads)
+      .set({
+        callId: callSid,
+        status: LEAD_STATUS.CONNECTED,
+        lastCalledAt: now,
+        metadata: { ...metadata, native_voice: amdNativeVoice },
+      })
+      .where(
+        and(
+          eq(schema.outboundLeads.id, lead.id),
+          eq(schema.outboundLeads.userId, lead.userId),
+          inArray(schema.outboundLeads.status, ACTIVE_LEAD_STATUSES),
+        ),
+      )
+      .returning({ id: schema.outboundLeads.id });
+    if (!claimed) throw AppError.conflict("Outbound bridge could not claim this lead.");
+
+    return {
+      kind: "bridge",
+      callerId,
+      sipUri: buildXAIOutboundSipUri(callerId, token),
+    };
   });
 }
 
@@ -166,15 +278,32 @@ router.post(
     }
     const token = tokenFromRequest(req);
     const callSid = callSidFromRequest(req);
+    const answeredBy = answeredByFromRequest(req);
     if (!token || !callSid) {
       res.status(400).send(emptyTwiml());
       return;
     }
 
     try {
-      const { callerId } = await resolveBridgeContext(token, callSid);
-      const sipUri = buildXAIOutboundSipUri(callerId, token);
-      res.status(200).send(bridgeTwiml({ callerId, sipUri }));
+      const decision = await resolveBridgeContext(token, callSid, answeredBy);
+      if (decision.kind === "drop") {
+        log.info("Native outbound AMD dropped without a message", {
+          callSidSuffix: callSid.slice(-8),
+          answeredBy: decision.answeredBy || "unknown",
+        });
+        res.status(200).send(emptyTwiml());
+        return;
+      }
+      if (decision.kind === "voicemail") {
+        log.info("Native outbound AMD leaving identity voicemail", {
+          callSidSuffix: callSid.slice(-8),
+          answeredBy: decision.answeredBy || "unknown",
+          messageChars: decision.message.length,
+        });
+        res.status(200).send(voicemailTwiml(decision.message));
+        return;
+      }
+      res.status(200).send(bridgeTwiml({ callerId: decision.callerId, sipUri: decision.sipUri }));
     } catch (error) {
       log.warn("Native outbound bridge refused", {
         callSidSuffix: callSid.slice(-8),
@@ -245,8 +374,15 @@ router.post(
         isMonotonic &&
         (carrierStatus === "in-progress" || carrierStatus === "answered")
       ) {
-        patch.status = LEAD_STATUS.CONNECTED;
-        nextNativeVoice.state = nativeVoice.xai_call_id ? "connected" : "customer_answered";
+        // Customer answer is not yet a live conversation: synchronous AMD may
+        // still be classifying the called party. CONNECTED is reserved for the
+        // SIP bridge (human/unknown) or later xAI attachment.
+        if (lead.status !== LEAD_STATUS.CONNECTED) patch.status = LEAD_STATUS.DIALING;
+        const answeredBy = String(req.body?.AnsweredBy || "").trim();
+        if (answeredBy) nextNativeVoice.answered_by = answeredBy;
+        if (!nativeVoice.xai_call_id && nativeVoice.state !== "bridging") {
+          nextNativeVoice.state = "customer_answered";
+        }
       } else if (isMonotonic && TERMINAL_CARRIER_FAILURES.has(carrierStatus)) {
         patch.status = LEAD_STATUS.FAILED;
         patch.lastContactSummary = `Carrier outcome: ${carrierStatus}.`;

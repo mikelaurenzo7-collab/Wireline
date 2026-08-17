@@ -71,6 +71,8 @@ describe("inbound concurrency wiring contract", () => {
     expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD = 5");
     expect(admission).toContain("inboundConcurrencyExceeded");
     expect(admission).toContain("voice_minutes_daily");
+    expect(admission).toContain("after_hours");
+    expect(admission).toContain("isWithinBusinessHours");
     expect(routes).toContain("resolveNativeInboundAdmission");
     expect(routes).toContain("tenantStore.run(binding.userId");
     expect(admission).toContain("Native inbound subscription check failed, continuing remaining gates");

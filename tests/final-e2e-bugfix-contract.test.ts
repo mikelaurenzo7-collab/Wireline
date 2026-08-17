@@ -32,7 +32,9 @@ describe("final e2e bugfix contracts", () => {
     expect(dialAt).toBeGreaterThan(-1);
     expect(guardAt).toBeLessThan(dialAt);
     // A blocked tenant marks the lead rather than dialing.
-    expect(intake).toContain("voice_spend_blocked");
+    expect(intake).toContain("writeAutoDialFailure");
+    expect(intake).toContain("voice spend controls blocked");
+    expect(intake).toContain("AutoDialFailed");
   });
 
   it("public plans route uses an IP limiter, not the auth-only per-user limiter", () => {

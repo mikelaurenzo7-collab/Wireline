@@ -14,7 +14,7 @@ describe("public browser demo cost protection", () => {
   const server = read("server.ts");
 
   it("keeps platform authorization and assistant construction on the server", () => {
-    expect(routes).toContain('router.post("/api/public/demo-xai-session"');
+    expect(routes).toContain('"/api/public/demo-xai-session"');
     expect(routes).toContain("createPublicXAILiveDemoSession");
     expect(routes).toContain("publicXAIDemoConfigured");
     expect(routes).not.toContain('fetch("https://api.vapi.ai/call/web"');
@@ -27,12 +27,9 @@ describe("public browser demo cost protection", () => {
 
   it("keeps the compatibility route metadata-only", () => {
     const compatibilityStart = routes.indexOf('router.get("/api/public/assistant/:agentName"');
-    const compatibilityEnd = routes.indexOf(
-      'router.post("/api/public/demo-session"',
-      compatibilityStart,
-    );
+    const compatibilityEnd = routes.indexOf("Cheap availability preflight", compatibilityStart);
     const compatibilityBlock = routes.slice(compatibilityStart, compatibilityEnd);
-    expect(compatibilityBlock).toContain('mode: "protected_browser_preview"');
+    expect(compatibilityBlock).toContain('mode: "protected_native_browser_preview"');
     expect(compatibilityBlock).toContain('sessionEndpoint: "/api/public/demo-session"');
     expect(compatibilityBlock).not.toContain("buildPublicBrowserAssistant(agent)");
     expect(compatibilityBlock).not.toContain("systemPrompt");
@@ -43,11 +40,8 @@ describe("public browser demo cost protection", () => {
   it("checks the real protected-demo runtime before asking for microphone access", () => {
     const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
     const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
-    const sessionRouteStart = routes.indexOf('router.post("/api/public/demo-session"');
-    const sessionRouteEnd = routes.indexOf(
-      'router.post("/api/public/demo-xai-session"',
-      sessionRouteStart,
-    );
+    const sessionRouteStart = routes.indexOf('"/api/public/demo-session"');
+    const sessionRouteEnd = routes.indexOf('"/api/public/demo-xai-session"', sessionRouteStart);
     const sessionRoute = routes.slice(sessionRouteStart, sessionRouteEnd);
     const providerReadiness = sessionRoute.indexOf(
       "!publicDemoTicketingReady() || !publicXAIDemoConfigured()",

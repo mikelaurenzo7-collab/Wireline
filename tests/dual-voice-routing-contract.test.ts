@@ -35,9 +35,14 @@ describe("dual-voice PSTN routing contracts", () => {
     const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
     expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
     expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
-    // The outbound client applies the same candidate resolution.
+    // Native PSTN uses the xAI Speech-to-Speech roster, not Vapi candidate resolution.
+    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    const grokConfig = read("src/lib/voice/grok-voice-config.ts");
     const client = read("src/lib/vapi-client.ts");
-    expect(client).toContain("resolvePstnVoiceCandidate");
+    expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
+    expect(grokConfig).toContain("WIRELINE_LIVE_VOICE_PROFILES");
+    expect(client).toContain("placeNativeOutboundCall");
+    expect(client).not.toContain("resolvePstnVoiceCandidate");
   });
 
   it("routes Studio phone picks through the managed voice PATCH", () => {

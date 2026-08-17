@@ -3,9 +3,10 @@ import { and, desc, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { xaiPhoneBindings } from "../../db/xai-voice-schema";
 import { isDncBlocked } from "../compliance";
-import type { OutboundCallPurpose } from "../outbound-call-purpose";
+import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { drizzle, log } from "../server-context";
 import { getTwilioClient } from "../twilio-service";
+import { nativeOutboundAmdParams } from "./native-outbound-amd";
 import { issueXAIOutboundToken, xaiOutboundTokenReady } from "./xai-outbound-token";
 import {
   claimNativeOutboundPlacement,
@@ -121,6 +122,8 @@ export async function placeOutboundCall(
   ]);
 
   if (settings?.subscriptionStatus !== "active") {
+    // Missing, pending_activation, past_due, and canceled all fail closed.
+    // Never coerce an absent status to "active".
     return { ok: false, status: 403, error: "Upgrade your billing plan to place outbound calls." };
   }
   if (!agent) return { ok: false, status: 404, error: "Agent not found." };
@@ -145,6 +148,8 @@ export async function placeOutboundCall(
   if (!claim.ok) return claim;
   const { lead, created, placementId } = claim;
   const { token } = issueXAIOutboundToken({ leadId: lead.id });
+  const telemarketing = isMarketingCallPurpose(input.callPurpose);
+  const amd = nativeOutboundAmdParams(input.callPurpose);
 
   try {
     const call = await twilio.calls.create({
@@ -156,6 +161,8 @@ export async function placeOutboundCall(
       statusCallbackMethod: "POST",
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       timeout: 30,
+      machineDetection: amd.machineDetection,
+      machineDetectionTimeout: amd.machineDetectionTimeout,
     });
     const callSid = String(call.sid || "").trim();
     if (!/^CA[a-f0-9]{32}$/i.test(callSid)) {
@@ -201,6 +208,8 @@ export async function placeOutboundCall(
       leadId: String(lead.id),
       callSidSuffix: callSid.slice(-8),
       customerSuffix: customerNumber.slice(-4),
+      telemarketing,
+      machineDetection: amd.machineDetection,
     });
     return { ok: true, status: 200, callId: callSid, leadId: String(lead.id) };
   } catch (error) {

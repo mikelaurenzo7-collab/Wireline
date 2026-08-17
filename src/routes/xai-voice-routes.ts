@@ -328,7 +328,7 @@ router.post(
           businessName: agentContext.businessName,
           complianceMode: agentContext.complianceMode,
           admission: await tenantStore.run(binding.userId, () =>
-            resolveNativeInboundAdmission(binding.userId),
+            resolveNativeInboundAdmission(binding.userId, binding.agentId),
           ),
         };
 

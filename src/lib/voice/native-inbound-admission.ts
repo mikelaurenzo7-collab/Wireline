@@ -8,9 +8,13 @@
  * paying tenant. Callers are never hung up on for billing except a suspended
  * subscription, which speaks one truthful line and ends.
  */
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import {
+  isWithinBusinessHours,
+  type AgentRuntimeProfile,
+} from "../agent-runtime";
 import { inboundConcurrencyExceeded } from "../inbound-concurrency";
 import { drizzle, log, quotaTracker } from "../server-context";
 import { getErrorMessage } from "../server-utils";
@@ -22,11 +26,13 @@ export type NativeInboundAdmissionMode = "full" | "suspended" | "take_message";
 
 export type NativeInboundAdmission = {
   mode: NativeInboundAdmissionMode;
-  reason?: "subscription" | "completion_grace" | "concurrency" | "daily_minutes";
+  reason?: "subscription" | "completion_grace" | "concurrency" | "daily_minutes" | "after_hours";
+  greeting?: string;
 };
 
 export async function resolveNativeInboundAdmission(
   userId: string,
+  agentId?: string,
 ): Promise<NativeInboundAdmission> {
   try {
     const [settings] = await drizzle
@@ -42,6 +48,39 @@ export async function resolveNativeInboundAdmission(
       userId,
       error: getErrorMessage(error),
     });
+  }
+
+  if (agentId) {
+    try {
+      const [agent] = await drizzle
+        .select({
+          businessHours: schema.agents.businessHours,
+          timezone: schema.agents.timezone,
+          outOfHoursMessage: schema.agents.outOfHoursMessage,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.userId, userId), eq(schema.agents.id, agentId)))
+        .limit(1);
+      if (
+        agent &&
+        !isWithinBusinessHours({
+          business_hours: agent.businessHours as AgentRuntimeProfile["business_hours"],
+          timezone: agent.timezone,
+        })
+      ) {
+        return {
+          mode: "take_message",
+          reason: "after_hours",
+          greeting: agent.outOfHoursMessage?.trim() || undefined,
+        };
+      }
+    } catch (error) {
+      log.warn("Native inbound after-hours lookup failed, admitting remaining gates", {
+        userId,
+        agentId,
+        error: getErrorMessage(error),
+      });
+    }
   }
 
   try {

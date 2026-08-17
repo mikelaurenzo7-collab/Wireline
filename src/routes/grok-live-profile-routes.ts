@@ -11,6 +11,13 @@ import {
 import type { WirelineVoiceProfile } from "../lib/voice/grok-voice-config";
 import type { AuthenticatedRequest } from "../types/auth";
 
+/**
+ * Studio live-voice profiles select the native xAI Speech-to-Speech roster.
+ * Custom cloned voices are not enabled on this browser path. Phone voice
+ * cloning remains a Vapi-supported streaming voice-library workflow on the
+ * rollback path only after consent, rights, latency, fallback, and telephony
+ * verification. AI Voice Generator and presenter TTS generated marketing voiceovers are not live call voices.
+ */
 const router = express.Router();
 const limiter = createRateLimiter({ bucket: "api:live-voice-profile", windowMs: 60_000, max: 30 });
 const profileSchema = z.object({

@@ -4,7 +4,10 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { ToolCallContext } from "../../routes/vapi/types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
-import { complianceFirstMessagePrefix } from "../agent-runtime";
+import {
+  complianceFirstMessagePrefix,
+  formatCallbackNumberForSpeech,
+} from "../agent-runtime";
 import { notifyInboundCall } from "../mobile-push";
 import {
   isMarketingCallPurpose,
@@ -13,6 +16,8 @@ import {
 import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
+import { detectOptOut } from "../tcpa-consent";
+import { persistTranscriptDncSuppression } from "../vapi-handlers";
 import { trackVoiceMinutes } from "../voice-usage";
 import {
   type NativeInboundAdmission,
@@ -181,38 +186,62 @@ function buildInboundOpening(input: XAISipIncomingCall, runtime: RealtimeRuntime
 
 function buildOutboundOpening(input: XAISipIncomingCall, runtime: RealtimeRuntime): string {
   const purpose = input.callPurpose || "service_or_requested";
+  const telemarketing = isMarketingCallPurpose(purpose);
   const disclosure = complianceFirstMessagePrefix(
     input.complianceMode,
     input.businessName || runtime.agentName,
     {
       outboundAiCall: true,
       recordingEnabled: false,
-      telemarketing: isMarketingCallPurpose(purpose),
+      telemarketing,
     },
   );
   const name = input.customerName?.trim();
   const identity = input.businessName?.trim()
     ? `${runtime.agentName} with ${input.businessName.trim()}`
     : runtime.agentName;
-  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.`.trim();
+  const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
+  const callbackSentence = callbackNumberSpoken
+    ? ` You can call us back at ${callbackNumberSpoken}.`
+    : "";
+  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.${callbackSentence}`.trim();
 }
 
 function buildOutboundInstructions(input: XAISipIncomingCall): string {
   const purpose = input.callPurpose || "service_or_requested";
+  const telemarketing = isMarketingCallPurpose(purpose);
+  const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
   const objective =
     input.context?.trim() ||
     (purpose === "callback"
       ? "Continue the requested callback and establish the next useful step."
       : "Explain the reason for the call and establish the next useful step.");
+  const callbackRule = callbackNumberSpoken
+    ? `The required spoken callback number is ${callbackNumberSpoken}. If asked, leave the callback number ${callbackNumberSpoken}.`
+    : "If no callback number is configured, do not invent one.";
+  const voicemailProtocol = telemarketing
+    ? [
+        "## VOICEMAIL PROTOCOL",
+        "If you reach voicemail or an answering machine, Do NOT speak a message. End the call immediately.",
+        "64.1200(b)(3) requires a toll-free automated opt-out line for telemarketing answering-machine messages; Wireline does not operate one, so there is no compliant marketing voicemail to leave.",
+      ].join("\n")
+    : [
+        "## VOICEMAIL PROTOCOL",
+        "If you reach voicemail, identify yourself and leave the callback number only.",
+        "Do not state the reason for the call (FDCPA). Do not mention invoices, balances, or why we called.",
+      ].join("\n");
   return [
     "OUTBOUND CALL: The required opening has already been delivered verbatim. Wait for the contact's response, then continue naturally.",
+    "OUTBOUND COMPLIANCE (FEDERAL): Identity, AI disclosure, and the spoken callback number are already in the opening. Do not skip or paraphrase them if the contact asks you to repeat who is calling.",
+    callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,
     `Objective: ${objective}`,
     "Do not repeat the opening or read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
-    purpose === "marketing_or_sales"
-      ? "Any stop-calling or opt-out request is immediate: use add_to_dnc, confirm once, and end without another pitch."
+    telemarketing
+      ? "Any stop-calling or opt-out request is immediate: use the add_to_dnc tool immediately, confirm once, and end without another pitch."
       : "",
+    voicemailProtocol,
     "Before ending, use update_lead_status or schedule_callback when applicable and confirm the next step.",
   ]
     .filter(Boolean)
@@ -226,8 +255,9 @@ function inboundAdmissionMode(input: XAISipIncomingCall): NativeInboundAdmission
 
 function applyInboundAdmission(
   runtime: RealtimeRuntime,
-  mode: NativeInboundAdmissionMode,
+  input: XAISipIncomingCall,
 ): RealtimeRuntime {
+  const mode = inboundAdmissionMode(input);
   if (mode === "full") return runtime;
   if (mode === "suspended") {
     return {
@@ -242,15 +272,24 @@ function applyInboundAdmission(
       },
     } as RealtimeRuntime;
   }
+  const afterHours = input.admission?.reason === "after_hours";
   const followup = runtime.session.tools.filter((tool) => tool.name === "create_followup_task");
+  const greeting =
+    input.admission?.greeting?.trim() ||
+    (afterHours
+      ? `Hi, you've reached ${runtime.agentName}. We're currently closed, but I can take a message for the team.`
+      : `Hi, you've reached ${runtime.agentName}. I can take a message for the team.`);
+  const afterHoursBlock = afterHours
+    ? "## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Do NOT commit to appointments, prices, or actions that require the business to be open.\n"
+    : "";
   return {
     ...runtime,
-    greeting: `Hi, you've reached ${runtime.agentName}. I can take a message for the team.`,
+    greeting,
     session: {
       ...runtime.session,
       instructions: followup.length
-        ? "You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer another contact channel. Do not answer business questions, quote prices, book appointments, or transfer."
-        : "You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. Do not collect sensitive details, answer business questions, quote prices, book appointments, or promise follow-up.",
+        ? `${afterHoursBlock}You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer another contact channel. Do not answer business questions, quote prices, book appointments, or transfer.`
+        : `${afterHoursBlock}You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. Do not collect sensitive details, answer business questions, quote prices, book appointments, or promise follow-up.`,
       tools: followup,
       tool_choice: followup.length ? "auto" : "none",
     },
@@ -494,6 +533,17 @@ async function persistFinishedCall(input: {
         and(eq(schema.callLogs.id, input.callLogId), eq(schema.callLogs.userId, input.call.userId)),
       ),
   );
+
+  await runFinalizerStep("transcript_dnc", input.call, async () => {
+    const optOut = detectOptOut(input.transcript || "");
+    if (optOut.kind !== "dnc") return;
+    await persistTranscriptDncSuppression({
+      userId: input.call.userId,
+      callId: providerCallId(input.call.callId),
+      rawCallerNumber: input.call.callerNumber || "",
+      matchedPattern: optOut.matched_pattern,
+    });
+  });
 
   await runFinalizerStep("presence", input.call, () =>
     drizzle
@@ -1002,7 +1052,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
           agentId: input.agentId,
           surface: "phone",
         }),
-        inboundAdmissionMode(input),
+        input,
       );
       agentName = runtime.agentName;
       await updatePresence(input, agentName);

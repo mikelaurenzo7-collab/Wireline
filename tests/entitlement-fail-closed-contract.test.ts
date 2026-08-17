@@ -17,7 +17,7 @@ describe("entitlement fail-closed defaults", () => {
 
   it("treats missing subscription status as pending_activation on live paths", () => {
     for (const path of [
-      "src/lib/vapi-client.ts",
+      "src/lib/voice/outbound-call-service.ts",
       "src/routes/vapi-v2.ts",
       "src/lib/phone-line-entitlements.ts",
       "src/lib/agent-entitlements.ts",

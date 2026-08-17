@@ -71,6 +71,8 @@ Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech a
 - https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech/sip
 - Destination: `sip:+E164@sip.voice.x.ai;transport=tls`
 - Twilio Elastic SIP Trunk origination is documented. Wireline production PSTN is **Twilio → xAI Direct SIP**. `XAI_SIP_ALLOWED_ADDRESSES` must list Twilio signaling CIDRs (prefix length 8–32). Do not allow `0.0.0.0/0`.
+- Outbound: Twilio rings the customer first with synchronous Answering Machine Detection, then signed `<Sip>` bridge TwiML to the tenant's registered xAI number. Marketing/sales machines and fax hang up with no message (`64.1200(b)(3)` — Wireline has no opt-out line). Service and consumer-requested callbacks leave a deterministic identity + spoken callback number after `DetectMessageEnd`. Human and `unknown` fail-open to the live SIP agent.
+- After-hours inbound degrades to take-a-message (custom `outOfHoursMessage` when set) instead of pretending the business is open.
 
 ### Why Studio matches the phone brain
 

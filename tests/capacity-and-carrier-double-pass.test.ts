@@ -162,7 +162,7 @@ describe("carrier teardown integration", () => {
 
   it("hands a failed provider release to the durable orphan ledger before purge", () => {
     const source = read("src/lib/account-deletion.ts");
-    const releaseCall = source.indexOf("releaseTenantNumber(userId, phoneNumber)");
+    const releaseCall = source.indexOf("releaseNativeTenantNumber(userId, phoneNumber)");
     const failureBranch = source.indexOf("if (res.ok)", releaseCall);
     const orphanInsert = source.indexOf(
       "INSERT INTO public.wireline_orphan_carrier_resources",

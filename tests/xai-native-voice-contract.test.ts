@@ -193,7 +193,11 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(session).toContain("finishExactOpeningIfNeeded");
     expect(session).toContain("input_audio_buffer.speech_started");
     expect(session).toContain("Do not start a model turn or hang up until playback completes.");
+    expect(session).toContain("formatCallbackNumberForSpeech");
+    expect(session).toContain("## VOICEMAIL PROTOCOL");
+    expect(session).toContain("persistTranscriptDncSuppression");
     expect(route).toContain("tenantStore.run(binding.userId");
+    expect(route).toContain("resolveNativeInboundAdmission(binding.userId, binding.agentId)");
     expect(session).not.toContain("verification.webhookId !== binding.xaiWebhookId");
     expect(route).not.toContain("verification.webhookId !== binding.xaiWebhookId");
   });
@@ -211,8 +215,13 @@ describe("native Twilio + xAI voice contracts", () => {
     const dispatcher = read("src/lib/agent-tool-dispatch.ts");
     const nativeTools = read("src/lib/agent-tool-native-voice.ts");
 
-    expect(dispatcher.indexOf("handleNativeVoiceToolCall")).toBeLessThan(
-      dispatcher.indexOf("handleCoreToolCall"),
+    const handlersBlock = dispatcher.slice(
+      dispatcher.indexOf("const handlers = ["),
+      dispatcher.indexOf("for (const handler of handlers)"),
+    );
+    expect(handlersBlock.indexOf("handleNativeVoiceToolCall")).toBeGreaterThan(-1);
+    expect(handlersBlock.indexOf("handleNativeVoiceToolCall")).toBeLessThan(
+      handlersBlock.indexOf("handleCoreToolCall"),
     );
     expect(nativeTools).toContain('call.provider !== "xai"');
     expect(nativeTools).toContain("eq(schema.outboundLeads.id, exact.leadId)");
