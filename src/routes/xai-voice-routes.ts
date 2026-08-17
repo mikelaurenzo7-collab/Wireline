@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import * as schema from "../db/schema";
 import { xaiPhoneBindings } from "../db/xai-voice-schema";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
@@ -150,6 +151,32 @@ router.post(
       throw AppError.unauthorized("Invalid xAI webhook signature.");
     }
 
+    // Resolve the exact disclosure posture only after signature verification.
+    // Inbound calls previously had no business/compliance context, so the first
+    // spoken line could omit a required AI or recording disclosure even though
+    // outbound calls carried the same fields explicitly.
+    const [agentContext] = await drizzle
+      .select({
+        businessName: schema.settings.businessName,
+        complianceMode: schema.agents.complianceMode,
+      })
+      .from(schema.agents)
+      .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+      .where(
+        and(
+          eq(schema.agents.id, binding.agentId),
+          eq(schema.agents.userId, binding.userId),
+        ),
+      )
+      .limit(1);
+    if (!agentContext) {
+      log.error("xAI incoming call rejected: native binding points to a missing agent", {
+        bindingId: binding.id,
+        calledSuffix: phoneSuffixForLog(calledNumber),
+      });
+      throw AppError.serviceUnavailable("This phone line is not ready for native voice.");
+    }
+
     runInBackground("xai-sip-call-session", () =>
       runXAISipCallSession({
         callId,
@@ -157,6 +184,8 @@ router.post(
         agentId: binding.agentId,
         callerNumber,
         calledNumber,
+        businessName: agentContext.businessName,
+        complianceMode: agentContext.complianceMode,
       }),
     );
     res.status(202).json({ received: true, handled: true });
