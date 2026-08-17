@@ -1,4 +1,6 @@
 import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,12 +9,15 @@ import {
   isAmbiguousXAIRegistrationStatus,
   parseXAIPhoneRegistrationPayload,
 } from "../src/lib/voice/xai-sip-provisioning";
+import { buildXAISipRealtimeUrl } from "../src/lib/voice/xai-sip-config";
 import {
   compactXAITranscript,
   upsertOrderedCallerTranscript,
   type XAITranscriptLine,
 } from "../src/lib/voice/xai-sip-session";
 import { verifyXAIWebhook } from "../src/lib/voice/xai-webhook-auth";
+
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 function signingSecret(raw: Buffer): string {
   return `whsec_${raw.toString("base64")}`;
@@ -57,6 +62,18 @@ describe("native Twilio + xAI voice contracts", () => {
       },
     });
     expect(body).not.toHaveProperty("webhook_url");
+  });
+
+  it("joins SIP realtime by call id without a model query parameter", () => {
+    expect(buildXAISipRealtimeUrl("call_123")).toBe(
+      "wss://api.x.ai/v1/realtime?call_id=call_123",
+    );
+    expect(buildXAISipRealtimeUrl("  call-prod:01  ")).toBe(
+      "wss://api.x.ai/v1/realtime?call_id=call-prod%3A01",
+    );
+    expect(() => buildXAISipRealtimeUrl("call id with spaces")).toThrow(
+      "A valid xAI SIP call id is required.",
+    );
   });
 
   it("requires every one-time registration identifier before activation", () => {
@@ -110,6 +127,21 @@ describe("native Twilio + xAI voice contracts", () => {
         "Agent: Certainly. Which Tuesday works?\n" +
         "Caller: Next Tuesday at two.",
     );
+  });
+
+  it("delivers phone openings verbatim and waits for SIP playback before tool continuation", () => {
+    const session = read("src/lib/voice/xai-sip-session.ts");
+    const route = read("src/routes/xai-voice-routes.ts");
+
+    expect(session).toContain("buildXAISipRealtimeUrl(input.callId)");
+    expect(session).not.toContain("buildGrokVoiceRealtimeUrl(runtime.model)");
+    expect(session).toContain('type: "force_message"');
+    expect(session).toContain("interruptible: false");
+    expect(session).toContain('type === "output_audio_buffer.stopped"');
+    expect(session).toContain("toolContinuationPending = true");
+    expect(session).toContain("requestToolContinuationWhenReady()");
+    expect(route).toContain("businessName: agentContext.businessName");
+    expect(route).toContain("complianceMode: agentContext.complianceMode");
   });
 
   it("verifies a valid Standard Webhooks signature over the exact raw body", () => {
