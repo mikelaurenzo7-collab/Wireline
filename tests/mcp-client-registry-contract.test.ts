@@ -46,5 +46,8 @@ describe("mcp client registry contract", () => {
     expect(redirectUriMatches("http://127.0.0.1/callback", "http://127.0.0.1:8787/callback")).toBe(
       true,
     );
+    expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:4444/callback"),
+    ).toBe(false);
   });
 });

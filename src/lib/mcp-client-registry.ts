@@ -126,6 +126,15 @@ function loopbackIdentity(value: string): string | null {
 
 export function redirectUriMatches(registered: string, requested: string): boolean {
   if (registered === requested) return true;
+  // Claude Code CIMD advertises loopback without a port and the client picks
+  // an ephemeral one. A registered URI that already includes a port (Cursor's
+  // http://localhost:8787/callback) is exact-match only — otherwise DCR of
+  // Cursor's callback would authorize any localhost port.
+  try {
+    if (new URL(registered).port) return false;
+  } catch {
+    return false;
+  }
   const registeredLoopback = loopbackIdentity(registered);
   const requestedLoopback = loopbackIdentity(requested);
   return Boolean(registeredLoopback && requestedLoopback && registeredLoopback === requestedLoopback);

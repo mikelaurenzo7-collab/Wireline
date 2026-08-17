@@ -54,6 +54,10 @@ describe("Claude Connector Directory contract", () => {
     expect(widget).toContain("ui/initialize");
     expect(widget).not.toContain("xai-client-secret.");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain("claudemcpcontent.com");
+    expect(read("src/lib/mcp-app-metadata.ts")).toContain(
+      'redirect_domains: ["https://trywireline.com"]',
+    );
+    expect(read("src/lib/mcp-app-metadata.ts")).not.toContain('"openai/widgetDomain": domain');
     expect(claudeMcpAppDomain("https://trywireline.com/mcp")).toBe(
       "9d4498d241a92d33aafe51697b0ba2b9.claudemcpcontent.com",
     );

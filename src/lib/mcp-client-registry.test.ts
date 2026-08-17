@@ -127,6 +127,12 @@ describe("mcp dynamic client registration", () => {
       true,
     );
     expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:4444/callback"),
+    ).toBe(false);
+    expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:8787/callback"),
+    ).toBe(true);
+    expect(
       relyingPartyHost(
         "https://claude.ai/oauth/claude-code-client-metadata",
         "http://localhost:1/callback",

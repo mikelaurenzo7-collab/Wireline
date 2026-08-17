@@ -2,14 +2,16 @@ import { createHmac } from "node:crypto";
 import type { Request } from "express";
 import { sql } from "drizzle-orm";
 import { AppError } from "./api-error";
+import { resolveCanonicalAppUrl } from "./app-url";
 import { rateLimit } from "./rate-limit";
 import { drizzle } from "./server-context";
 
-export function mcpIssuer(req?: Request): string {
+export function mcpIssuer(_req?: Request): string {
   const configured = process.env.APP_URL?.trim().replace(/\/+$/, "");
   if (configured) return configured;
-  const host = req?.get("host");
-  return host ? `https://${host}` : "https://trywireline.com";
+  const canonical = resolveCanonicalAppUrl();
+  if ("url" in canonical) return canonical.url;
+  return "https://trywireline.com";
 }
 
 export function mcpResourceUrl(req?: Request): string {

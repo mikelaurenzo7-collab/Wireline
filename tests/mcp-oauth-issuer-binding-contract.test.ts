@@ -21,6 +21,8 @@ describe("MCP OAuth issuer binding", () => {
     expect(middleware).toContain("isCursorRedirectUri");
     expect(middleware).toContain("isLoopbackCallbackUri");
     expect(middleware).toContain('destination.searchParams.set("iss", mcpIssuer(req))');
+    expect(read("src/lib/mcp-oauth-security.ts")).toContain("resolveCanonicalAppUrl");
+    expect(read("src/lib/mcp-oauth-security.ts")).not.toContain("req?.get(\"host\")");
   });
 
   it("mounts before the OAuth router", () => {

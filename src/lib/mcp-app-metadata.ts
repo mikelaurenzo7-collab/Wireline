@@ -28,14 +28,14 @@ export function mcpUiResourceMeta(resourceUrl: string) {
         resourceDomains: ["https://assets.claude.ai"],
       },
     },
-    "openai/widgetDomain": domain,
-    "openai/widgetCSP": {
-      connect_domains: ["https://api.openai.com"],
-      resource_domains: ["https://assets.claude.ai"],
-    },
     "openai/widgetPrefersBorder": false,
     "openai/widgetDescription":
       "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
+    "openai/widgetCSP": {
+      connect_domains: ["https://api.openai.com"],
+      resource_domains: [],
+      redirect_domains: ["https://trywireline.com"],
+    },
   };
 }
 
