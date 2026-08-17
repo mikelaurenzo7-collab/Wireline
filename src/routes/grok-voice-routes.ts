@@ -23,6 +23,7 @@ import {
 } from "../lib/voice/xai-live-agent-service";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./grok-live-profile-routes";
+import xaiPhoneRouter from "./xai-voice-routes";
 
 // Stable route family for Wireline live voice. Browser sessions now connect
 // directly to xAI Realtime with server-minted ephemeral credentials. Production
@@ -64,6 +65,9 @@ const toolSchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
 });
 
+// Native SIP webhook/provisioning routes share the same top-level voice router
+// so route order remains stable while the legacy Vapi router is quarantined.
+router.use(xaiPhoneRouter);
 router.use(liveProfileRouter);
 
 router.get(
