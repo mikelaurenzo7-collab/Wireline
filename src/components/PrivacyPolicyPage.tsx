@@ -283,7 +283,8 @@ export default function PrivacyPolicyPage() {
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
               </li>
               <li>
-                <strong>HeyGen and LiveAvatar</strong>: Optional presenter video and voice features
+                <strong>xAI</strong>: Structured reasoning and live-call voices drafted by work
+                companions
               </li>
               <li>
                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics

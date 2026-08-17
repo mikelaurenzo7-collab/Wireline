@@ -23,7 +23,7 @@ Official Speech-to-Speech page: https://docs.x.ai/developers/model-capabilities/
 - Phone-call demonstrations and production PSTN: Vapi orchestration with xAI Grok 4.3 as the managed call language model (`model.provider: "xai"`), Twilio as carrier/messaging authority. Vapi's published xAI language models are `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`. Grok 4.6 is the xAI Responses API text model for structured work; it is not a Vapi live-call model id.
 - Vapi `XaiModel` payloads must not include `fallbackModels`. A live PATCH with `fallbackModels: ["grok-4.20-0309-non-reasoning"]` returns `400 model.property fallbackModels should not exist`. Cross-provider continuity is Wireline's application retry to OpenAI `gpt-4o` after a definitive model/provider rejection.
 - Custom phone voices: Vapi-supported streaming voice-library workflow only after consent, rights, latency, fallback, and telephony verification. Live Video presenter PCM still uses the OpenAI Realtime sandbox. AI Voice Generator, presenter TTS, and other audio-file tools are marketing/demo asset generators, not live PSTN runtime engines.
-- Work companions: reviewable prep jobs (research, scouting, creative, call briefs) that never send or dial. See `GROK_BOT_COMPANION_RUNTIME.md`.
+- Work companions: reviewable agent skills (research, scouting, creative, call briefs, clip scripts) that never send, dial, or generate Imagine files. See `GROK_BOT_COMPANION_RUNTIME.md`.
 
 No customer-facing surface should connect with an xAI client-secret subprotocol. Customer copy must not say "Grok Bot" or pair "AI" with "agent".
 

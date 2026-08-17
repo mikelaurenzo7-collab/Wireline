@@ -14,6 +14,12 @@ import {
   runWorkCompanion,
   type WorkCompanionBrief,
 } from "../lib/work-companion-runtime";
+import {
+  IMAGINE_WATERMARK_NOT_OFFERED_CODE,
+  IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE,
+  assertImagineVideoGenerationOffered,
+  imagineVideoGenerationOffered,
+} from "../lib/xai-imagine-video";
 
 const router = Router();
 
@@ -33,7 +39,20 @@ router.get(
         id: kind,
         label: kind.replace(/_/g, " "),
       })),
-      never: ["send_email", "dial", "enroll_campaign", "change_ads"],
+      never: [
+        "send_email",
+        "dial",
+        "enroll_campaign",
+        "change_ads",
+        "publish_video",
+        "generate_imagine_file",
+      ],
+      video: {
+        offered: imagineVideoGenerationOffered(),
+        generation: "not_offered",
+        code: IMAGINE_WATERMARK_NOT_OFFERED_CODE,
+        reason: IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE,
+      },
     });
   },
 );
@@ -54,6 +73,23 @@ router.post(
     }
     const brief = await runWorkCompanion({ kind, subject, context });
     res.json({ brief });
+  }),
+);
+
+router.post(
+  "/api/work-companions/video",
+  authenticateUser,
+  enforceLaunchHardGate,
+  asyncHandler(async (_req: AuthenticatedRequest, _res: Response) => {
+    assertImagineVideoGenerationOffered();
+  }),
+);
+
+router.get(
+  "/api/work-companions/video/:requestId",
+  authenticateUser,
+  asyncHandler(async (_req: AuthenticatedRequest, _res: Response) => {
+    assertImagineVideoGenerationOffered();
   }),
 );
 

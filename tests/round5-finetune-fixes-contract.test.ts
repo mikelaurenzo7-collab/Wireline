@@ -34,17 +34,15 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(recommendedPlanFromIntent(intent)).toBe("starter");
   });
 
-  it("re-checks live-video billing on session mint and retires sample behind auth", () => {
+  it("retires live-video session mint and keeps sample behind auth", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
     const sessionIdx = routes.indexOf("/api/agents/:id/video-presenter/session");
     const sampleIdx = routes.indexOf("/api/agents/:id/video-presenter/sample");
     expect(sessionIdx).toBeGreaterThan(-1);
     expect(sampleIdx).toBeGreaterThan(-1);
-    expect(routes.slice(sessionIdx, sampleIdx)).toContain("resolveLiveVideoEntitlement");
-    expect(routes.slice(sessionIdx, sampleIdx)).toContain("billingEntitled");
+    expect(routes.slice(sessionIdx, sampleIdx)).toContain("throwLiveVideoRetired");
     const retiredSample = routes.slice(sampleIdx);
     expect(retiredSample).toContain("authenticateUser");
-    expect(retiredSample).toContain("sessionLimiter");
     expect(retiredSample).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
     expect(retiredSample).toContain("res.status(410).json");
     expect(retiredSample).not.toContain("mintLiveAvatarLiteSessionToken");
@@ -82,11 +80,10 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(mcp).not.toContain("Instrument Serif");
   });
 
-  it("patches LiveAvatar SDK speak audio to base64 after install", () => {
+  it("does not patch a LiveAvatar SDK after talking-head retirement", () => {
     const pkg = read("package.json");
-    const patch = read("scripts/patch-liveavatar-sdk.mjs");
-    expect(pkg).toContain("scripts/patch-liveavatar-sdk.mjs");
-    expect(patch).toContain("btoa(audioChunk)");
+    expect(pkg).not.toContain("scripts/patch-liveavatar-sdk.mjs");
+    expect(pkg).not.toContain("@heygen/liveavatar-web-sdk");
   });
 
   it("keeps privacy consent off Fast Start so Create stays tappable on mobile", () => {

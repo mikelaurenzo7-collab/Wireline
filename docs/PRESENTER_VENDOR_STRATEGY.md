@@ -1,6 +1,12 @@
 # Presenter & Presence Catalog Strategy
 
-**Status:** Active (August 2026)  
+**Status:** Historical for LiveAvatar/HeyGen talking-head. **Active** for identity badges.  
+**Updated:** August 17, 2026.
+
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Work companions draft clip scripts. Imagine file generation is not offered: xAI watermarks those files and forbids stripping the watermark. Wireline agents keep Grok Bot-class draft skills plus PSTN voice; they do not call a Grok Bot API.
+
+The remainder of this document is the prior LiveAvatar/HeyGen pairing research and must not be read as current launch contract.
+  
 **Audience:** Product, design, engineering  
 **Related:** [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md), `src/lib/video-presenter/`, `src/lib/agent-identity.ts`
 

@@ -30,8 +30,6 @@ const BETA_IDS = new Set([
   "x",
   "x-ads",
   "yahoo",
-  "liveavatar",
-  "heygen",
 ]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {

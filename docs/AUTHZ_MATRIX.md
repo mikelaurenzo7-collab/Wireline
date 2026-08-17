@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 395
-**Protected:** 323
+**Routes scanned:** 397
+**Protected:** 325
 **Public (allowlisted):** 72
 **Violations:** 0
 
@@ -484,4 +484,6 @@
 | work-companion-routes.ts | GET | `/api/work-companions` | inline | — | — | Protected |
 | work-companion-routes.ts | POST | `/api/work-companions/apply` | inline | — | — | Protected |
 | work-companion-routes.ts | POST | `/api/work-companions/runs` | inline | — | — | Protected |
+| work-companion-routes.ts | POST | `/api/work-companions/video` | inline | — | — | Protected |
+| work-companion-routes.ts | GET | `/api/work-companions/video/:requestId` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |

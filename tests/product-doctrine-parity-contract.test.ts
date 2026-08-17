@@ -28,26 +28,29 @@ describe("product doctrine parity", () => {
     );
   });
 
-  it("keeps Live Video launch-active and fail-closed across code and current docs", () => {
+  it("keeps Live Video retired and companions on draft skills across code and current docs", () => {
     const root = read("README.md");
     const docsIndex = read("docs/README.md");
     const showcase = read("docs/PRODUCT_SHOWCASE_MATRIX.md");
     const clientSurfaces = read("docs/CLIENT_SURFACES.md");
     const entitlements = read("src/lib/video-presenter/live-video-entitlements.ts");
+    const companions = read("docs/GROK_BOT_COMPANION_RUNTIME.md");
 
-    expect(root).toContain("**Live Video - live paid add-on:**");
-    expect(docsIndex).toContain("**Live paid add-on**");
-    expect(showcase).toContain("| Live Video        | **Live paid add-on**");
-    expect(clientSurfaces).toContain("Launch status | **Live paid add-on**");
-    expect(entitlements).toContain("Live Video is a launch-active paid add-on");
-    expect(entitlements).toContain('process.env.WIRELINE_LIVE_VIDEO_DISABLED !== "true"');
+    expect(root).toContain("**Identity and clips - retired live talking-head:**");
+    expect(docsIndex).toContain("**Retired live talking-head.**");
+    expect(showcase).toContain("| Live Video        | **Retired**");
+    expect(clientSurfaces).toContain("Launch status | **Retired**");
+    expect(entitlements).toContain("Live talking-head video is no longer offered");
+    expect(entitlements).toContain("addonOffered: false");
+    expect(companions).toContain("There is no Grok Bot HTTP API");
+    expect(companions).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
 
     for (const [path, source] of [
       ["README.md", root],
       ["docs/PRODUCT_SHOWCASE_MATRIX.md", showcase],
       ["docs/CLIENT_SURFACES.md", clientSurfaces],
     ] as const) {
-      expect(source, path).not.toContain("**Planned/Beta add-on**");
+      expect(source, path).not.toContain("**Live paid add-on**");
       expect(source, path).not.toContain("**Video presenters - planned/beta add-on:**");
     }
   });

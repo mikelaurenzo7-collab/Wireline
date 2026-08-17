@@ -151,11 +151,7 @@ const recommended = [
   ["STRIPE_BUSINESS_PRICE_ID", "Wireline Business monthly price"],
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Wireline Business annual price"],
   ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
-  ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Live Video recurring add-on"],
-  [
-    "LIVEAVATAR_API_KEY",
-    "Required to offer the launch-active HeyGen LiveAvatar product; Live Video fails closed without it",
-  ],
+  ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Retired Live Video SKU for leftover webhook matching"],
 
   ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
   ["CRON_SECRET", "Bearer token for cron job authentication"],
@@ -192,12 +188,6 @@ const optional = [
     "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     "Reserved only if Enterprise metered checkout is re-enabled",
   ],
-  [
-    "LIVEAVATAR_DEFAULT_AVATAR_ID",
-    "Default LiveAvatar catalog UUID assigned to new business agents",
-  ],
-  ["LIVEAVATAR_SANDBOX", "Force sandbox sessions (true/false; auto in non-production)"],
-  ["HEYGEN_API_KEY", "Optional HeyGen Studio key for presenter voice previews"],
 ];
 
 const formatHints = new Map([

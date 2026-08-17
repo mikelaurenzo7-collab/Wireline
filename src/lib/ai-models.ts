@@ -10,6 +10,9 @@
  *   Grok 4.6 is not in that catalog. Live *voice* is a separate Vapi field:
  *   `voice.provider: "xai"` with Eve/Ara/Rex/Sal/Leo.
  * - **Studio / guest live voice** stays on OpenAI Realtime.
+ * - **Imagine video** exists at xAI as `grok-imagine-video-1.5`. Wireline
+ *   does not generate those files: they include a Grok watermark that cannot
+ *   be turned off. That is not Grok Bot and not live PSTN.
  *
  * OpenAI is the first automatic structured continuity lane, then Gemini, then
  * the Vercel AI Gateway. `reasoning-provider-policy.ts` owns eligibility and
@@ -20,6 +23,8 @@ export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
   // Vapi's documented live-call xAI language model (non-reasoning).
   GROK_4_3: "grok-4.3",
+  // Documented xAI video model. Wireline does not generate Imagine files.
+  GROK_IMAGINE_VIDEO: "grok-imagine-video-1.5",
 } as const;
 
 export const OPENAI_MODELS = {

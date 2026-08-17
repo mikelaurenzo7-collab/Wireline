@@ -667,33 +667,17 @@ record(
     : "Provide the operator's valid current postal address before enabling lifecycle or marketing email.",
 );
 
-const liveVideoEmergencyDisabled = process.env.WIRELINE_LIVE_VIDEO_DISABLED === "true";
-const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
-const liveVideoPriceConfigured =
-  present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") || present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
-const liveVideoReady =
-  !liveVideoEmergencyDisabled && liveVideoProviderConfigured && liveVideoPriceConfigured;
+const liveVideoRetired = true;
 record(
   "live_video",
   false,
-  liveVideoReady ? "ready" : "degraded",
-  liveVideoReady
-    ? "Live Video provider and $19 add-on price are configured; runtime reserves up to 5 minutes per session against a 60-minute monthly cap."
-    : liveVideoEmergencyDisabled
-      ? "Live Video is intentionally disabled by the operator kill switch."
-      : "Live Video is launch-active in code, but the optional provider or add-on price is not fully configured.",
-  liveVideoReady
-    ? "Maintain provider credits and alerts; no automatic overage is allowed."
-    : liveVideoEmergencyDisabled
-      ? "Remove WIRELINE_LIVE_VIDEO_DISABLED only after the incident or operator hold is cleared."
-      : "Configure LIVEAVATAR_API_KEY and the canonical Live Video price before offering sessions.",
+  "ready",
+  "Live talking-head video is retired. Identity badges remain; work companions draft clip scripts.",
+  "Do not offer LiveAvatar or HeyGen sessions. Keep leftover Stripe Live Video webhooks fail-closed.",
   {
-    operator_disabled: liveVideoEmergencyDisabled,
-    provider_configured: liveVideoProviderConfigured,
-    addon_price_configured: liveVideoPriceConfigured,
-    included_minutes_monthly: 60,
-    session_reservation_minutes: 5,
-    overage_policy: "none_pause_at_limit",
+    retired: liveVideoRetired,
+    companion_video: "script_draft",
+    overage_policy: "none_retired",
   },
 );
 

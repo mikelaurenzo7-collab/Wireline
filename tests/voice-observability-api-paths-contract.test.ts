@@ -15,10 +15,11 @@ describe("voice observability production paths", () => {
     expect(routes).not.toContain('router.get("/health/voice-status"');
   });
 
-  it("allows LiveAvatar and LiveKit connect-src for browser live video", () => {
+  it("does not allow LiveAvatar or LiveKit connect-src after talking-head retirement", () => {
     const csp = read("src/lib/csp.ts");
-    expect(csp).toContain("https://api.liveavatar.com");
-    expect(csp).toContain("https://*.livekit.cloud");
-    expect(csp).toContain("wss://*.livekit.cloud");
+    expect(csp).not.toContain("https://api.liveavatar.com");
+    expect(csp).not.toContain("https://*.livekit.cloud");
+    expect(csp).not.toContain("wss://*.livekit.cloud");
+    expect(csp).toContain("https://api.x.ai");
   });
 });

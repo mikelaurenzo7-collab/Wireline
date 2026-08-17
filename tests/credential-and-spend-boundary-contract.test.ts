@@ -190,11 +190,7 @@ describe("a provider's auth failure is never dressed up as the tenant's", () => 
   });
 
   it("routes all three provider clients through it", () => {
-    for (const path of [
-      "src/lib/video-presenter/liveavatar-service.ts",
-      "src/lib/video-presenter/heygen-voice-service.ts",
-      "src/lib/voice/openai-realtime-service.ts",
-    ]) {
+    for (const path of ["src/lib/voice/openai-realtime-service.ts"]) {
       const source = read(path);
       expect(source).toContain("providerHttpError");
       // The old shape: reuse the provider's status for anything under 500.

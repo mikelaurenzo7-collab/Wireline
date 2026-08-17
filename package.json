@@ -76,7 +76,6 @@
     "marketing:kit": "node scripts/run-marketing-kit.mjs",
     "marketing:kit:raw": "node scripts/marketing-kit.mjs",
     "prepare": "husky",
-    "postinstall": "node scripts/patch-liveavatar-sdk.mjs",
     "dogfood:reset": "node scripts/dogfood-reset.mjs",
     "dogfood:prod": "node scripts/prod-dogfood.mjs",
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",
@@ -110,7 +109,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@heygen/liveavatar-web-sdk": "0.0.18",
     "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-alert-dialog": "^1.1.17",
     "@radix-ui/react-dialog": "^1.1.15",

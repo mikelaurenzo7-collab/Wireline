@@ -1,20 +1,12 @@
 /**
  * Client-safe live-video provider membership.
  *
- * This module is imported by browser bundles (Studio pages) and by server
- * routes. It must stay pure: no server-context, provider-service, database,
- * or node: imports. Server-only availability checks live in
- * `live-video-addon.ts`, which re-exports these helpers for route callers.
+ * Live talking-head providers are retired. Historical agent rows may still
+ * store liveavatar/heygen; they must not mint a session.
  */
 import type { VideoPresenterProviderId } from "../agent-identity";
 
-const LIVE_VIDEO_PROVIDERS = new Set<VideoPresenterProviderId>([
-  "liveavatar",
-  "heygen",
-  "tavus",
-  "d-id",
-  "simli",
-]);
+const LIVE_VIDEO_PROVIDERS = new Set<VideoPresenterProviderId>([]);
 
 export function isLiveVideoProvider(
   provider: string | null | undefined,
@@ -22,10 +14,9 @@ export function isLiveVideoProvider(
   return LIVE_VIDEO_PROVIDERS.has(provider as VideoPresenterProviderId);
 }
 
-export function agentLiveVideoOptedIn(agent: {
+export function agentLiveVideoOptedIn(_agent: {
   videoPresenterProvider?: string | null;
   video_presenter_provider?: string | null;
 }): boolean {
-  const provider = agent.videoPresenterProvider ?? agent.video_presenter_provider ?? null;
-  return isLiveVideoProvider(provider);
+  return false;
 }

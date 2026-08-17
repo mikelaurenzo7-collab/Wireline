@@ -58,6 +58,9 @@ export default function CampaignsPanel() {
   const [prepSubject, setPrepSubject] = useState("");
   const [prepBusy, setPrepBusy] = useState(false);
   const [prepObjective, setPrepObjective] = useState<string | null>(null);
+  const [clipSubject, setClipSubject] = useState("");
+  const [clipBusy, setClipBusy] = useState(false);
+  const [clipScript, setClipScript] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,17 +99,44 @@ export default function CampaignsPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kind: "call_brief", subject: prepSubject.trim() }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Could not draft call prep.");
-      }
-      const body = (await res.json()) as { brief?: { call_objective?: string } };
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        brief?: { call_objective?: string };
+      };
+      if (!res.ok) throw new Error(body.error || "Could not draft call prep.");
       setPrepObjective(body.brief?.call_objective || "Call prep is ready for review.");
       toast.success("Call prep drafted. Review before the next dial.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not draft call prep.");
     } finally {
       setPrepBusy(false);
+    }
+  }
+
+  async function runClipScript() {
+    if (!clipSubject.trim()) return;
+    setClipBusy(true);
+    try {
+      const res = await authFetch("/api/work-companions/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "video_clip", subject: clipSubject.trim() }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        brief?: { video?: { prompt?: string }; call_objective?: string };
+      };
+      if (!res.ok) throw new Error(body.error || "Could not draft a clip script.");
+      setClipScript(
+        body.brief?.video?.prompt ||
+          body.brief?.call_objective ||
+          "Clip script is ready for review.",
+      );
+      toast.success("Clip script drafted. It is not rendered or published.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not draft a clip script.");
+    } finally {
+      setClipBusy(false);
     }
   }
 
@@ -277,6 +307,29 @@ export default function CampaignsPanel() {
           Draft call prep
         </ShadButton>
         {prepObjective ? <p className="text-sm text-foreground">{prepObjective}</p> : null}
+      </div>
+
+      <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
+        <h3 className="text-sm font-medium">Clip script</h3>
+        <p className="text-xs text-muted-foreground">
+          Draft a recap or kiosk script. Wireline does not render a video file.
+        </p>
+        <Input
+          aria-label="Clip script subject"
+          placeholder="Recap, kiosk loop, or campaign clip"
+          value={clipSubject}
+          onChange={(e) => setClipSubject(e.target.value)}
+        />
+        <ShadButton
+          type="button"
+          size="sm"
+          disabled={clipBusy || !clipSubject.trim()}
+          onClick={() => void runClipScript()}
+        >
+          {clipBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
+          Draft clip script
+        </ShadButton>
+        {clipScript ? <p className="text-sm text-foreground">{clipScript}</p> : null}
       </div>
 
       {showCreate && (

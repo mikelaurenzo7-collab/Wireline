@@ -42,10 +42,6 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "wss://api.vapi.ai",
     "https://*.daily.co",
     "wss://*.daily.co",
-    // Live video (LiveAvatar / LiveKit): browser SDK signals + media.
-    "https://api.liveavatar.com",
-    "https://*.livekit.cloud",
-    "wss://*.livekit.cloud",
     "https://accounts.google.com",
     "https://oauth2.googleapis.com",
     "https://www.googleapis.com",

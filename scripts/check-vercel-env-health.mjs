@@ -45,9 +45,6 @@ const recommended = [
 const voice = [
   "VAPI_PRIVATE_KEY",
   "VAPI_WEBHOOK_SECRET",
-  "LIVEAVATAR_API_KEY",
-  "HEYGEN_API_KEY",
-  "LIVEAVATAR_DEFAULT_AVATAR_ID",
 ];
 
 const retired = ["VITE_VAPI_PUBLIC_KEY"];

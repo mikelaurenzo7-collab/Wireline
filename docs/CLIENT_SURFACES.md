@@ -11,7 +11,7 @@ Wireline is one protected agent platform with multiple deliberate control surfac
 | iOS | `ios/` | Native calls, Siri, widgets, CallKit, push, and approved CarPlay communication flows | Prompt construction, entitlements, call control decisions, data ownership |
 | Android | `android/` | Native calls, notifications, widgets, Telecom, FCM, and approved Android Auto communication flows | Prompt construction, consent, plan enforcement, data ownership |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` | Account-bound private agent drafting, refinement, simulation, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions |
-| Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Optional consent-gated visual presence for eligible paid business agents | Vendor credentials, consent enforcement, fallback behavior, launch gating, billing, entitlement, metering |
+| Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Identity badges and work-companion clip scripts. Live talking-head is retired. | Vendor credentials stay unused; leftover Stripe webhooks fail-closed; no Imagine file generation |
 
 ## Immediate layout
 
@@ -37,7 +37,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Live**. This is the canonical production runtime for the public Build -> Train -> Launch -> Improve loop, implemented through Create, Training, Wire, and Studio, plus billing, voice, integrations, mobile adapters, ChatGPT MCP, and Live Video APIs. |
+| Launch status | **Live**. This is the canonical production runtime for the public Build -> Train -> Launch -> Improve loop, implemented through Create, Training, Wire, and Studio, plus billing, voice, integrations, mobile adapters, ChatGPT MCP, and identity/clip APIs. |
 | Owning files/directories | `src/`, `server.ts`, `api/`, `shared/`, `drizzle/`, `scripts/`, `tests/`, `docs/` contracts that describe runtime behavior. |
 | Required checks before release | `npm run verify`; `npm run verify:full` before merge/release or any auth, billing, CSP, route, data-access, provider, or shared-contract change; `npm run verify:contracts`; targeted smoke for touched provider flows; read-only `npm run db:health` when schema assumptions change. |
 | Non-goals | Do not fork client-specific business logic into web-only code; do not make inactive endpoints public contract; do not move native/browser release signing into the root runtime. |
@@ -92,7 +92,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Live paid add-on** for eligible paid business workspaces. Customer availability remains fail-closed behind provider configuration, exact checkout availability, subscription entitlement, consent, metering, fallback, and the `WIRELINE_LIVE_VIDEO_DISABLED` emergency operator switch. |
+| Launch status | **Retired** live talking-head. Identity badges remain. Work companions draft clip scripts. Imagine file generation is not offered because those files include a Grok watermark that cannot be turned off. Leftover Stripe Live Video SKUs stay for webhook reconciliation only. |
 | Owning files/directories | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx`, presenter catalog/consent UI, provider environment configuration, billing/entitlement policy, and product copy that references Live Video. |
 | Required checks before release | Web/API verification; provider-env readiness check; consent-state and voice-fallback smoke; presenter catalog review; Stripe add-on and entitlement readback; live-session cost/metering review; customer-copy review to ensure vendor names are hidden; accessibility, degraded-network, and emergency-disable smoke. |
 | Non-goals | Not a separate video product, not a vendor-branded feature, not a replacement for voice reliability, and not generally available without provider, checkout, entitlement, pricing, consent, and support gates. |
@@ -126,7 +126,7 @@ Do **not** extract business behavior into a client package. `packages/contracts`
 4. iOS stays SwiftUI and Android stays Kotlin/Compose. Their OS-level calling, widgets, intents, and push behavior are reasons to preserve native stacks—not reasons to fork backend logic.
 5. Wireline Command is a user-initiated browser command surface. It must never become a hidden scraper, CRM mirror, or independent background agent.
 6. The ChatGPT App stays account-bound, draft/simulation-first, and unable to provision numbers, dial, or launch agents until a separate, reviewed product decision expands its action surface.
-7. Live Video remains a consent-gated paid add-on with server-owned vendor credentials, billing and entitlement authority, customer-safe copy, metering, an emergency disable switch, and voice fallback behavior.
+7. Live talking-head video remains retired. Identity badges stay. Clip scripts are reviewable drafts. Do not call a Grok Bot API and do not generate Imagine files.
 
 ## Mobile API adapter discipline
 
