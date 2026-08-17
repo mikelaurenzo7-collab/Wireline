@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const ownedMailbox = readFileSync("src/lib/owned-email-account.ts", "utf8");
+const mailboxPersistence = readFileSync("src/lib/mailbox-inbox-persist.ts", "utf8");
 const google = readFileSync("src/routes/oauth/google.ts", "utf8");
 const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
 const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
@@ -36,6 +37,23 @@ describe("mailbox ownership hardening", () => {
       expect(route).toContain("EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE");
       expect(route).not.toContain("target: schema.emailAccounts.emailAddress");
     }
+  });
+
+  it("never regresses the latest thread preview when an older provider retry arrives", () => {
+    expect(mailboxPersistence).toContain("incomingThreadIsNotOlder");
+    expect(mailboxPersistence).toContain("excluded.last_message_at >=");
+    expect(mailboxPersistence).toContain(
+      "then excluded.subject else ${schema.emailThreads.subject} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.customer_email else ${schema.emailThreads.customerEmail} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.summary else ${schema.emailThreads.summary} end",
+    );
+    expect(mailboxPersistence).toContain(
+      "then excluded.last_message_at else ${schema.emailThreads.lastMessageAt} end",
+    );
   });
 
   it("validates required OAuth provider response fields before persistence", () => {
