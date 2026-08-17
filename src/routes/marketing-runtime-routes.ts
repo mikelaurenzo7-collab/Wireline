@@ -1,7 +1,6 @@
 import { Router, type Request, type Response as ExpressResponse } from "express";
 
-import { AppError } from "../lib/api-error";
-import { VAPI_SHOWCASE_MODEL, VAPI_SHOWCASE_PROVIDER } from "../lib/ai-models";
+import { AppError, asyncHandler } from "../lib/api-error";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -10,7 +9,6 @@ import {
 import {
   PUBLIC_BROWSER_DEMO_MAX_SECONDS,
   PUBLIC_BROWSER_DEMO_REQUESTS_PER_MINUTE,
-  buildPublicBrowserDemoArtifactPlan,
 } from "../lib/public-browser-demo";
 import {
   admitPublicDemoTicketMint,
@@ -25,9 +23,10 @@ import {
   verifyPublicDemoTicket,
 } from "../lib/public-demo-ticket";
 import { rateLimit } from "../lib/rate-limit";
-import { log } from "../lib/server-context";
-import { getErrorMessage } from "../lib/server-utils";
-import { resolveVapiSpeechPipeline } from "../lib/voice-agent-profile";
+import {
+  createPublicXAILiveDemoSession,
+  publicXAIDemoConfigured,
+} from "../lib/voice/xai-public-demo-session";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
@@ -38,8 +37,6 @@ const assistantRateLimit = createIpRateLimiter({
 });
 
 const ALL_PUBLIC_AGENTS = [...WIRELINE_DEMO_AGENTS, ...WIRELINE_CONTACT_AGENTS] as const;
-const DEMO_WRAP_UP_SECONDS = Math.max(10, PUBLIC_BROWSER_DEMO_MAX_SECONDS - 9);
-const DEMO_END_SECONDS = Math.max(DEMO_WRAP_UP_SECONDS + 1, PUBLIC_BROWSER_DEMO_MAX_SECONDS - 2);
 
 /** Static marketing counters — no live tenant aggregates or owner-role scans. */
 const PUBLIC_MARKETING_STATS = {
@@ -62,10 +59,6 @@ function requestHost(req: Request): string {
   return (req.headers["x-forwarded-host"]?.toString().split(",")[0] || req.get("host") || "")
     .trim()
     .toLowerCase();
-}
-
-function privateVapiKey(): string {
-  return String(process.env.VAPI_PRIVATE_KEY || "").trim();
 }
 
 function requireSameOrigin(req: Request): string {
@@ -94,6 +87,11 @@ function requireSameOrigin(req: Request): string {
   return host;
 }
 
+function bearerToken(req: Request): string {
+  const authorization = String(req.get("authorization") || "");
+  return authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+}
+
 function publicAgent(name: string): ContactAgent | null {
   return (
     ALL_PUBLIC_AGENTS.find((item) => item.name.toLowerCase() === name.trim().toLowerCase()) ?? null
@@ -113,69 +111,6 @@ function respondWithAdmissionDenial(
         : "The live demo limit is reached for now. Try the public demo line instead.",
     code: denial.reason,
   });
-}
-
-function buildPublicBrowserAssistant(agent: ContactAgent) {
-  const speech = resolveVapiSpeechPipeline(agent.transcriberMode || "flux-eot");
-  const systemPrompt = [
-    `You are ${agent.name}, demonstrating a Wireline voice agent in a protected browser call.`,
-    agent.scope,
-    "The visitor may give you a customer situation, personal task, or business request. Show how you would answer, qualify, follow up, or book the next step.",
-    "Keep every turn under 18 words. Ask no more than one question at a time.",
-    "This is a short role-play. Do not collect sensitive data, phone numbers, payment details, health details, legal details, or email addresses.",
-    "Do not create real records, appointments, messages, payments, transfers, or external commitments.",
-    "When time is nearly up, summarize the value in one sentence and invite the visitor to build their own agent free.",
-  ].join("\n\n");
-
-  return {
-    name: `Wireline Protected Web Demo, ${agent.name}`,
-    firstMessage:
-      "Hi, I’m a live Wireline voice agent. Give me a customer situation or task, and I’ll show you how I’d handle it.",
-    model: {
-      provider: VAPI_SHOWCASE_PROVIDER,
-      model: VAPI_SHOWCASE_MODEL,
-      systemPrompt,
-      temperature: 0.3,
-    },
-    voice: {
-      provider: "vapi",
-      voiceId: agent.vapiVoiceId || "Elliot",
-      version: 2,
-    },
-    transcriber: speech.transcriber,
-    startSpeakingPlan: speech.startSpeakingPlan,
-    maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
-    artifactPlan: buildPublicBrowserDemoArtifactPlan(),
-    hooks: [
-      {
-        on: "call.timeElapsed",
-        options: { seconds: DEMO_WRAP_UP_SECONDS },
-        do: [
-          {
-            type: "message.add",
-            message: {
-              role: "system",
-              content:
-                "The protected demo is nearly complete. Finish the current answer, summarize the value in one sentence, and invite the visitor to start free.",
-            },
-          },
-        ],
-      },
-      {
-        on: "call.timeElapsed",
-        options: { seconds: DEMO_END_SECONDS },
-        do: [
-          {
-            type: "say",
-            exact: "That’s the demo. Build your own Wireline voice agent free when you’re ready.",
-          },
-          { type: "tool", tool: { type: "endCall" } },
-        ],
-      },
-    ],
-    serverMessages: [],
-    clientMessages: ["hang", "speech-update", "conversation-update", "status-update"],
-  };
 }
 
 router.get("/api/public/stats", async (req, res) => {
@@ -198,10 +133,7 @@ router.get("/api/public/stats", async (req, res) => {
   });
 });
 
-/**
- * Compatibility metadata only. The private prompt, speech pipeline, provider
- * payload, and credentials are constructed exclusively after ticket admission.
- */
+/** Public metadata only; the prompt and ephemeral credential remain server-owned. */
 router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) => {
   const name = String(req.params.agentName || "").trim();
   const agent = publicAgent(name);
@@ -210,100 +142,87 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
   res.json({
     name: agent.name,
     role: agent.role,
-    mode: "protected_browser_preview",
+    mode: "protected_native_browser_preview",
     maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
     sessionEndpoint: "/api/public/demo-session",
   });
 });
 
-router.post("/api/public/demo-session", async (req, res) => {
-  const host = requireSameOrigin(req);
-  // This endpoint is the availability preflight the client performs before it
-  // asks for microphone access. Do not mint a ticket when the provider runtime
-  // itself is absent; otherwise a misconfigured deployment still prompts the
-  // visitor and only fails after permission has been granted.
-  if (!publicDemoTicketingReady() || !privateVapiKey()) {
-    throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
-  }
+/**
+ * Cheap availability preflight. A one-use context-bound ticket is minted before
+ * the microphone prompt; no xAI credential or provider spend occurs yet.
+ */
+router.post(
+  "/api/public/demo-session",
+  asyncHandler(async (req, res) => {
+    const host = requireSameOrigin(req);
+    if (!publicDemoTicketingReady() || !publicXAIDemoConfigured()) {
+      throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
+    }
 
-  const agentName = String(req.body?.agentName || "Liam")
-    .trim()
-    .slice(0, 80);
-  const agent = publicAgent(agentName);
-  if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
+    const agentName = String(req.body?.agentName || "Liam")
+      .trim()
+      .slice(0, 80);
+    const agent = publicAgent(agentName);
+    if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
 
-  const ip = requestIp(req);
-  const fingerprint = publicDemoIpFingerprint(ip);
-  const admission = await admitPublicDemoTicketMint(fingerprint);
-  if (!admission.admitted) {
-    respondWithAdmissionDenial(res, admission);
-    return;
-  }
+    const ip = requestIp(req);
+    const fingerprint = publicDemoIpFingerprint(ip);
+    const admission = await admitPublicDemoTicketMint(fingerprint);
+    if (!admission.admitted) {
+      respondWithAdmissionDenial(res, admission);
+      return;
+    }
 
-  const { token, claims } = issuePublicDemoTicket({ ip, host, agentName: agent.name });
-  res.setHeader("Cache-Control", "no-store");
-  res.json({
-    token,
-    proxyUrl: "/api/public/demo-vapi",
-    expiresAt: new Date(claims.exp * 1000).toISOString(),
-    maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
-  });
-});
-
-router.post("/api/public/demo-vapi/call/web", async (req, res) => {
-  const host = requireSameOrigin(req);
-  const authorization = String(req.get("authorization") || "");
-  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
-  if (!token) throw AppError.fromHttpStatus(401, "A protected demo ticket is required.");
-
-  const ip = requestIp(req);
-  const verification = verifyPublicDemoTicket({ token, ip, host });
-  if (!verification.ok) {
-    throw AppError.fromHttpStatus(401, "The protected demo ticket is invalid or expired.");
-  }
-
-  const ticketAdmission = await consumePublicDemoTicket(verification.claims.jti);
-  if (!ticketAdmission.admitted) {
-    respondWithAdmissionDenial(res, ticketAdmission);
-    return;
-  }
-
-  const budgetAdmission = await admitPublicWebDemoSession(verification.claims.ip);
-  if (!budgetAdmission.admitted) {
-    respondWithAdmissionDenial(res, budgetAdmission);
-    return;
-  }
-
-  const agent = publicAgent(verification.claims.agent);
-  if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
-
-  const privateKey = privateVapiKey();
-  if (!privateKey) {
-    throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
-  }
-
-  let upstream: globalThis.Response;
-  try {
-    upstream = await fetch("https://api.vapi.ai/call/web", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${privateKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ assistant: buildPublicBrowserAssistant(agent) }),
-      signal: AbortSignal.timeout(15_000),
+    const { token, claims } = issuePublicDemoTicket({ ip, host, agentName: agent.name });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      token,
+      providerSessionEndpoint: "/api/public/demo-xai-session",
+      expiresAt: new Date(claims.exp * 1_000).toISOString(),
+      maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
     });
-  } catch (error: unknown) {
-    log.error("protected public demo proxy failed", { error: getErrorMessage(error) });
-    throw AppError.fromHttpStatus(502, "The live voice provider is temporarily unavailable.");
-  }
+  }),
+);
 
-  const responseBody = await upstream.text();
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Wireline-Demo-Max-Seconds", String(PUBLIC_BROWSER_DEMO_MAX_SECONDS));
-  res.status(upstream.status);
-  res.setHeader("Content-Type", upstream.headers.get("content-type") || "application/json");
-  res.send(responseBody);
-});
+/**
+ * Provider session mint. The browser calls this only after microphone access is
+ * granted. The ticket is consumed exactly once and the distributed spend
+ * ceilings are charged before an ephemeral xAI client secret is created.
+ */
+router.post(
+  "/api/public/demo-xai-session",
+  asyncHandler(async (req, res) => {
+    const host = requireSameOrigin(req);
+    const token = bearerToken(req);
+    if (!token) throw AppError.fromHttpStatus(401, "A protected demo ticket is required.");
+
+    const ip = requestIp(req);
+    const verification = verifyPublicDemoTicket({ token, ip, host });
+    if (!verification.ok) {
+      throw AppError.fromHttpStatus(401, "The protected demo ticket is invalid or expired.");
+    }
+
+    const ticketAdmission = await consumePublicDemoTicket(verification.claims.jti);
+    if (!ticketAdmission.admitted) {
+      respondWithAdmissionDenial(res, ticketAdmission);
+      return;
+    }
+
+    const budgetAdmission = await admitPublicWebDemoSession(verification.claims.ip);
+    if (!budgetAdmission.admitted) {
+      respondWithAdmissionDenial(res, budgetAdmission);
+      return;
+    }
+
+    const agent = publicAgent(verification.claims.agent);
+    if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
+
+    const session = await createPublicXAILiveDemoSession(agent);
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Wireline-Demo-Max-Seconds", String(PUBLIC_BROWSER_DEMO_MAX_SECONDS));
+    res.json(session);
+  }),
+);
 
 export default router;
