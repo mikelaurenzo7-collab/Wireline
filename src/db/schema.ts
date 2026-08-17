@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0151_xai_grok_46_runtime_defaults.sql`.
+ * Latest committed migration: `drizzle/migrations/0152_native_xai_phone_bindings.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,
@@ -13,6 +13,7 @@
 export * from "./schema-base";
 export * from "./voice-usage-schema";
 export * from "./resend-webhook-schema";
+export * from "./xai-voice-schema";
 
 import {
   bigint,
