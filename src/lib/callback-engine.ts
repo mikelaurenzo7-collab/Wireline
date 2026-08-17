@@ -22,12 +22,12 @@
  * next morning with no consent check and no opt-out announcement, while the
  * identical lead submitted at 10:00 was hard-blocked.
  */
-import { and, asc, eq, isNotNull, lte } from "drizzle-orm";
+import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
-import { placeOutboundCall } from "./vapi-client";
+import { placeOutboundCall } from "./voice/outbound-call-service";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
@@ -136,6 +136,12 @@ export function parseCallbackDatetime(input: unknown, now: Date = new Date()): D
   return new Date(Math.min(Math.max(parsed.getTime(), floor), ceiling));
 }
 
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 export async function tickDueCallbacks({
   limit = 25,
 }: {
@@ -168,31 +174,45 @@ export async function tickDueCallbacks({
   let skipped = 0;
 
   for (const lead of due) {
-    const metadata = (lead.metadata as Record<string, unknown> | null) || {};
+    const metadata = record(lead.metadata);
     const finish = async (patch: {
       callbackScheduledAt: Date | null;
       summary: string;
       metadata?: Record<string, unknown>;
     }) => {
-      // Terminal outcomes consume the consumer's request marker — enforced
-      // here so no individual call site can forget it.
-      const nextMetadata = nextCallbackLeadMetadata({
-        terminal: patch.callbackScheduledAt === null,
-        patchMetadata: patch.metadata,
-        leadMetadata: metadata,
+      // Native placement, Twilio status, xAI attachment, and callback outcomes
+      // all mutate the same JSON document. Serialize on the shared lead lock and
+      // merge from the latest row so this worker cannot erase voice correlation
+      // fields with the stale metadata snapshot selected at tick start.
+      await drizzle.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(lead.id)}`}))`,
+        );
+        const [current] = await tx
+          .select({ metadata: schema.outboundLeads.metadata })
+          .from(schema.outboundLeads)
+          .where(eq(schema.outboundLeads.id, lead.id))
+          .limit(1);
+        const latestMetadata = record(current?.metadata);
+        const mergedPatch = patch.metadata
+          ? { ...latestMetadata, ...patch.metadata }
+          : undefined;
+        const nextMetadata = nextCallbackLeadMetadata({
+          terminal: patch.callbackScheduledAt === null,
+          patchMetadata: mergedPatch,
+          leadMetadata: latestMetadata,
+        });
+        await tx
+          .update(schema.outboundLeads)
+          .set({
+            callbackScheduledAt: patch.callbackScheduledAt,
+            lastContactSummary: patch.summary,
+            ...(nextMetadata ? { metadata: nextMetadata } : {}),
+          })
+          .where(eq(schema.outboundLeads.id, lead.id));
       });
-      await drizzle
-        .update(schema.outboundLeads)
-        .set({
-          callbackScheduledAt: patch.callbackScheduledAt,
-          lastContactSummary: patch.summary,
-          ...(nextMetadata ? { metadata: nextMetadata } : {}),
-        })
-        .where(eq(schema.outboundLeads.id, lead.id));
     };
 
-    // Shared deferral: roll the callback forward an hour, capping total
-    // deferrals so an unreachable/insolvent lead can't bounce forever.
     const deferOrDrop = async (why: string): Promise<"deferred" | "dropped"> => {
       const priorDeferrals = Number(metadata.callback_deferrals) || 0;
       if (priorDeferrals >= MAX_DEFERRALS) {
@@ -212,13 +232,6 @@ export async function tickDueCallbacks({
     };
 
     try {
-      // Atomic claim: clear this lead's schedule BEFORE any slow work so a
-      // concurrent or retried tick (the sweep kills a tick at 30s but a JS
-      // promise keeps running) can't re-select the same row and dial the
-      // caller twice. If nothing comes back, another tick already claimed it.
-      // Fenced on the exact timestamp this tick read: a bare isNotNull match
-      // would let a stale tick claim (and erase) a FUTURE callback the
-      // consumer booked during a concurrent call, dialing them immediately.
       const claimed = await drizzle
         .update(schema.outboundLeads)
         .set({ callbackScheduledAt: null })
@@ -231,10 +244,6 @@ export async function tickDueCallbacks({
         .returning({ id: schema.outboundLeads.id });
       if (!claimed.length) continue;
 
-      // `callback_tick` is system-owned. Fence this concrete lead's tenant
-      // before the federal DNC provider lookup and retain the lock through the
-      // dial plus local evidence writes, so terminal purge can neither race an
-      // export of stale PII nor be followed by a stale write-back.
       const fencedCallback = await runTenantProviderWorkWithDeletionFence({
         userId: lead.userId,
         perform: async (): Promise<"placed" | "deferred" | "skipped"> => {
@@ -264,10 +273,6 @@ export async function tickDueCallbacks({
             return "skipped";
           }
 
-          // Read the consumer's request off the lead. Absent it, this is an
-          // ordinary outbound dial and gets the full marketing treatment:
-          // federal DNC, express written consent, the duplicate window, and
-          // the spoken opt-out announcement.
           const consumerRequested = isConsumerRequestedCallback(metadata);
           const gate = await evaluateOutboundDialGate({
             userId: lead.userId,
@@ -283,9 +288,6 @@ export async function tickDueCallbacks({
               gate.reason === "outside_permitted_calling_hours" ||
               gate.reason === "self_recent_call_scheduled"
             ) {
-              // Both reasons expire on their own: quiet hours reopen, and the
-              // 24h duplicate window elapses. The deletion fence changes no
-              // DNC/TCPA disposition; it only prevents post-erasure work.
               return (await deferOrDrop(
                 gate.reason === "self_recent_call_scheduled"
                   ? "called within the last 24 hours"
@@ -309,8 +311,6 @@ export async function tickDueCallbacks({
               units: 0,
             });
           } catch (err) {
-            // Spend/quota gates are tenant-state, not lead-state — defer
-            // (bounded), so a callback can fire once the tenant is solvent.
             return (await deferOrDrop(
               `voice controls: ${err instanceof Error ? err.message : "blocked"}`,
             )) === "deferred"
@@ -319,9 +319,6 @@ export async function tickDueCallbacks({
           }
 
           const requestedFor = lead.callbackScheduledAt?.toISOString() || "the requested time";
-          // The opening line must match what actually happened. Telling the
-          // model to acknowledge a promise the contact never made is a
-          // scripted lie on a recorded line.
           const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
           const res = await placeOutboundCall({
             userId: lead.userId,
@@ -332,6 +329,7 @@ export async function tickDueCallbacks({
               ? `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`
               : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call. Introduce yourself and state why you are calling.`,
             callPurpose,
+            leadId: lead.id,
           });
 
           if (!res.ok) {
@@ -342,9 +340,6 @@ export async function tickDueCallbacks({
             return "skipped";
           }
 
-          // Stamp the dial so the shared gate's 24h duplicate window sees it
-          // and record consent-ledger evidence while the deletion fence is
-          // still held.
           await drizzle
             .update(schema.outboundLeads)
             .set({ lastCalledAt: new Date(), callId: res.callId })
