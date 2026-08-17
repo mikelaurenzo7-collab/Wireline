@@ -40,7 +40,7 @@ export function isAmbiguousTwilioPhoneMutationError(error: unknown): boolean {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
-function purchaseFields(userId: string, friendlyName: string) {
+function purchaseFields(friendlyName: string) {
   const appUrl = getCanonicalAppUrl();
   const voiceFallbackUrl = twilioVoiceFallbackUrl();
   return {
@@ -50,7 +50,7 @@ function purchaseFields(userId: string, friendlyName: string) {
     voiceMethod: "POST" as const,
     voiceFallbackUrl,
     voiceFallbackMethod: "POST" as const,
-    friendlyName: `${friendlyName} · ${userId.slice(0, 8)}`.slice(0, 64),
+    friendlyName,
   };
 }
 
@@ -146,11 +146,14 @@ export async function purchaseNativeNumber(input: {
   }
 
   const operationId = randomUUID();
-  const friendlyName = `Wireline native ${operationId.slice(0, 12)} · ${input.userId.slice(0, 8)}`;
+  const friendlyName = `Wireline native ${operationId.slice(0, 12)} · ${input.userId.slice(0, 8)}`.slice(
+    0,
+    64,
+  );
   try {
     const created = await client.incomingPhoneNumbers.create({
       phoneNumber,
-      ...purchaseFields(input.userId, friendlyName),
+      ...purchaseFields(friendlyName),
     });
     const sid = String(created.sid || "").trim();
     const e164 = normalizeXAIPhoneNumber(created.phoneNumber) || phoneNumber;
