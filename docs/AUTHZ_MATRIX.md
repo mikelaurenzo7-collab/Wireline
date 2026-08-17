@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 385
-**Protected:** 316
-**Public (allowlisted):** 69
+**Routes scanned:** 389
+**Protected:** 318
+**Public (allowlisted):** 71
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -46,6 +46,8 @@
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
+| `POST /api/public/demo-session` | Aggregated, no-PII marketing counters; rate-limited |
+| `POST /api/public/demo-vapi/call/web` | Aggregated, no-PII marketing counters; rate-limited |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
@@ -121,6 +123,8 @@
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
+| agentmail-routes.ts | POST | `/api/integrations/agentmail/connect` | inline | — | — | Protected |
+| agentmail-routes.ts | POST | `/api/integrations/agentmail/disconnect` | inline | — | — | Protected |
 | ai-status-routes.ts | GET | `/api/ai/status` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/events` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/export` | inline | — | — | Protected |
@@ -294,6 +298,8 @@
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
+| marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
+| marketing-runtime-routes.ts | POST | `/api/public/demo-vapi/call/web` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |

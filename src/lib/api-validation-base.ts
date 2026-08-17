@@ -478,6 +478,12 @@ export const icloudMailConnectSchema = z.object({
   app_password: z.string().min(4).max(128),
 });
 
+/** AgentMail — tenant org API key. Never a platform env var. */
+export const agentmailConnectSchema = z.object({
+  email_address: z.string().email().max(320),
+  api_key: z.string().min(8).max(256),
+});
+
 export const pdfUploadSchema = z.object({
   pdfBase64: z
     .string()

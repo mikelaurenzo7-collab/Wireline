@@ -6,7 +6,7 @@ import { Badge, Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
-type MailboxProvider = "google" | "microsoft" | "yahoo" | "icloud";
+type MailboxProvider = "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
 type MailboxAccount = {
   id: string;
   emailAddress: string;
@@ -32,6 +32,12 @@ const PROVIDERS: Array<{
     detail: "App-specific password",
     logo: "icloud",
   },
+  {
+    id: "agentmail",
+    label: "AgentMail",
+    detail: "API-key inbox",
+    logo: "agentmail",
+  },
   // Yahoo OAuth stores tokens today, but inbox fetch/send is not wired
   // (XOAUTH2 IMAP). Keep it out of the connect UI until both paths ship —
   // catalog readiness remains "planned".
@@ -46,6 +52,9 @@ export default function MailboxConnectionCard() {
   const [showIcloudForm, setShowIcloudForm] = useState(false);
   const [icloudEmail, setIcloudEmail] = useState("");
   const [icloudPassword, setIcloudPassword] = useState("");
+  const [showAgentmailForm, setShowAgentmailForm] = useState(false);
+  const [agentmailEmail, setAgentmailEmail] = useState("");
+  const [agentmailApiKey, setAgentmailApiKey] = useState("");
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
@@ -109,6 +118,11 @@ export default function MailboxConnectionCard() {
       setError(null);
       return;
     }
+    if (provider === "agentmail") {
+      setShowAgentmailForm(true);
+      setError(null);
+      return;
+    }
     setBusy(provider);
     setError(null);
     try {
@@ -155,6 +169,28 @@ export default function MailboxConnectionCard() {
       await loadAccounts();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not connect iCloud Mail.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function connectAgentmail(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy("agentmail");
+    setError(null);
+    try {
+      const response = await authFetch("/api/integrations/agentmail/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email_address: agentmailEmail, api_key: agentmailApiKey }),
+      });
+      const body = (await safeJson(response)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Could not connect AgentMail.");
+      setAgentmailApiKey("");
+      setShowAgentmailForm(false);
+      await loadAccounts();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not connect AgentMail.");
     } finally {
       setBusy(null);
     }
@@ -209,13 +245,19 @@ export default function MailboxConnectionCard() {
             tone="destructive"
             title="Inbox connection status unavailable"
             action={
-              <Button type="button" size="sm" variant="secondary" onClick={() => void loadAccounts()}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void loadAccounts()}
+              >
                 <RefreshCw className="size-3.5" aria-hidden="true" />
                 Retry
               </Button>
             }
           >
-            {error || "Wireline couldn't verify your connected mailboxes. No connection state was changed."}
+            {error ||
+              "Wireline couldn't verify your connected mailboxes. No connection state was changed."}
           </StatusNotice>
         </div>
       ) : (
@@ -240,8 +282,12 @@ export default function MailboxConnectionCard() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">{provider.label}</span>
-                        {providerAccounts.length ? <Badge variant="outline">Connected</Badge> : null}
+                        <span className="text-sm font-semibold text-foreground">
+                          {provider.label}
+                        </span>
+                        {providerAccounts.length ? (
+                          <Badge variant="outline">Connected</Badge>
+                        ) : null}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {provider.detail}
@@ -276,7 +322,10 @@ export default function MailboxConnectionCard() {
                     </ul>
                   ) : null}
                   {provider.id === "icloud" && showIcloudForm ? (
-                    <form className="mt-4 grid gap-2" onSubmit={(event) => void connectIcloud(event)}>
+                    <form
+                      className="mt-4 grid gap-2"
+                      onSubmit={(event) => void connectIcloud(event)}
+                    >
                       <input
                         type="email"
                         required
@@ -298,7 +347,8 @@ export default function MailboxConnectionCard() {
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Generate one in Apple ID under Sign-In and Security → App-Specific Passwords.
+                        Generate one in Apple ID under Sign-In and Security → App-Specific
+                        Passwords.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button type="submit" size="sm" disabled={isBusy}>
@@ -317,6 +367,52 @@ export default function MailboxConnectionCard() {
                         </Button>
                       </div>
                     </form>
+                  ) : provider.id === "agentmail" && showAgentmailForm ? (
+                    <form
+                      className="mt-4 grid gap-2"
+                      onSubmit={(event) => void connectAgentmail(event)}
+                    >
+                      <input
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={agentmailEmail}
+                        onChange={(event) => setAgentmailEmail(event.target.value)}
+                        placeholder="sales@agentmail.to"
+                        aria-label="AgentMail inbox address"
+                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                      />
+                      <input
+                        type="password"
+                        required
+                        autoComplete="off"
+                        value={agentmailApiKey}
+                        onChange={(event) => setAgentmailApiKey(event.target.value)}
+                        placeholder="AgentMail API key"
+                        aria-label="AgentMail API key"
+                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                      />
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        Paste an org API key from the AgentMail console. Free inboxes are
+                        @agentmail.to. A custom domain needs AgentMail Developer.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button type="submit" size="sm" disabled={isBusy}>
+                          {isBusy ? (
+                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                          ) : null}
+                          Connect
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setShowAgentmailForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
                   ) : (
                     <Button
                       type="button"
@@ -325,7 +421,9 @@ export default function MailboxConnectionCard() {
                       disabled={isBusy}
                       onClick={() => void connect(provider.id)}
                     >
-                      {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                      {isBusy ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : null}
                       {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
                     </Button>
                   )}

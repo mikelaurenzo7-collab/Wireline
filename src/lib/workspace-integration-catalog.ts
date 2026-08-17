@@ -275,6 +275,23 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
       "Add deliverability diagnostics and mailbox-health copy before adding another consumer mail provider.",
     connection: "workspace",
   },
+  {
+    id: "agentmail",
+    label: "AgentMail",
+    family: "Email",
+    purpose:
+      "Dedicated API inbox for agent send and receive without a human Gmail or Outlook grant.",
+    detail: "Tenant-owned AgentMail org key stored encrypted on the mailbox row.",
+    capabilities: ["Mailbox connection", "Follow-up"],
+    agentScope:
+      "Fetch and send mail through AgentMail IMAP/SMTP after the Account Holder pastes an org API key.",
+    guardrail:
+      "Never store a shared AgentMail org key in platform env. Each tenant pastes their own key in Connections.",
+    readiness: "live",
+    nextStep:
+      "Keep custom-domain DNS on the tenant AgentMail org; do not route founder mail through a platform key.",
+    connection: "workspace",
+  },
 ];
 
 export function workspaceCatalogCoversIntegration(integration: ToolIntegration): boolean {
