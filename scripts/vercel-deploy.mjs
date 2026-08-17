@@ -5,7 +5,8 @@
  * Keep the project build command short while preserving one ordered release
  * pipeline: sanitize retired client configuration, prove the sanitizer contract,
  * run the application gate, build the public health function, and smoke the
- * resulting handler.
+ * resulting handler. The inner gate always runs the comprehensive estate for
+ * canonical production and honors [launch-deep-audit] on an exact preview head.
  */
 import "./sanitize-retired-client-env.mjs";
 import { spawnSync } from "node:child_process";
