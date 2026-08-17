@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomUUID } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { xaiPhoneBindings, type XAIPhoneBinding } from "../../db/xai-voice-schema";
@@ -23,9 +24,9 @@ import {
 
 const PROVISIONING_CLAIM_TTL_MS = 10 * 60 * 1000;
 const XAI_REGISTRATION_TIMEOUT_MS = 20_000;
-const MAX_PROVIDER_ERROR_CHARS = 1_000;
 
-const XAI_OUTCOME_AMBIGUOUS = "XAI_PHONE_REGISTRATION_OUTCOME_AMBIGUOUS";
+export const XAI_OUTCOME_AMBIGUOUS = "XAI_PHONE_REGISTRATION_OUTCOME_AMBIGUOUS";
+export const XAI_ACTIVATION_FAILED = "NATIVE_PHONE_ACTIVATION_FAILED";
 
 type XAIPhoneRegistrationPayload = {
   phone_number?: {
@@ -39,6 +40,12 @@ type XAIPhoneRegistrationPayload = {
   phone_number_id?: unknown;
   webhook_id?: unknown;
   dispatch_signing_secret?: unknown;
+};
+
+type XAIPhoneRegistrationResult = {
+  xaiPhoneNumberId: string;
+  xaiWebhookId: string;
+  dispatchSigningSecret: string;
 };
 
 type ProvisioningClaim = {
@@ -65,16 +72,33 @@ export type NativeXAIPhoneStatus = {
   } | null;
 };
 
-function safeProviderError(text: string): string {
-  const compact = text.replace(/\s+/g, " ").trim();
-  return compact.slice(0, MAX_PROVIDER_ERROR_CHARS);
-}
-
 function stringField(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function parseXAIRegistration(payload: XAIPhoneRegistrationPayload) {
+/** Exact xAI BYO-trunk registration contract. */
+export function buildXAIPhoneRegistrationBody(input: {
+  phoneNumber: string;
+  webhookUrl: string;
+  allowedAddresses: string[];
+}) {
+  return {
+    origin: "byo_trunk" as const,
+    name: `Wireline · ${input.phoneNumber}`,
+    phone_number: input.phoneNumber,
+    webhook: {
+      name: `Wireline voice · ${input.phoneNumber}`,
+      url: input.webhookUrl,
+    },
+    sip_auth: {
+      allowed_addresses: [...input.allowedAddresses],
+    },
+  };
+}
+
+export function parseXAIPhoneRegistrationPayload(
+  payload: XAIPhoneRegistrationPayload,
+): XAIPhoneRegistrationResult {
   const xaiPhoneNumberId =
     stringField(payload.phone_number?.phone_number_id) || stringField(payload.phone_number_id);
   const xaiWebhookId =
@@ -86,9 +110,16 @@ function parseXAIRegistration(payload: XAIPhoneRegistrationPayload) {
     stringField(payload.dispatch_signing_secret);
 
   if (!xaiPhoneNumberId || !xaiWebhookId || !dispatchSigningSecret) {
-    throw new Error("xAI phone registration response omitted required identifiers or signing secret.");
+    throw new Error(XAI_OUTCOME_AMBIGUOUS);
   }
   return { xaiPhoneNumberId, xaiWebhookId, dispatchSigningSecret };
+}
+
+export function isAmbiguousXAIRegistrationStatus(status: number): boolean {
+  // These statuses and all provider/server failures may have occurred after the
+  // number was created but before the response reached Wireline. Retrying a
+  // non-idempotent registration could create a second webhook/secret pair.
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
 function completeBinding(binding: XAIPhoneBinding): boolean {
@@ -100,6 +131,14 @@ function completeBinding(binding: XAIPhoneBinding): boolean {
       binding.xaiWebhookId &&
       binding.webhookSecretEncrypted,
   );
+}
+
+function publicActivationError(code: string | null): string | null {
+  if (!code) return null;
+  if (code === XAI_OUTCOME_AMBIGUOUS) {
+    return "Activation state requires operator reconciliation before this line can be retried.";
+  }
+  return "Activation did not complete. The platform configuration must be repaired before retrying.";
 }
 
 function publicBinding(binding: XAIPhoneBinding): NonNullable<NativeXAIPhoneStatus["binding"]> {
@@ -115,8 +154,18 @@ function publicBinding(binding: XAIPhoneBinding): NonNullable<NativeXAIPhoneStat
     webhookSecretLastFour: binding.webhookSecretLastFour,
     activatedAt: binding.activatedAt,
     updatedAt: binding.updatedAt,
-    lastError: binding.lastError,
+    lastError: publicActivationError(binding.lastError),
   };
+}
+
+function nativePhoneConfigurationReady(): boolean {
+  if (!process.env.XAI_API_KEY?.trim() || !getTwilioClient() || !isVaultConfigured()) return false;
+  try {
+    resolveXAISipAllowedAddresses();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function claimProvisioning(input: {
@@ -142,6 +191,11 @@ async function claimProvisioning(input: {
 
     if (existing && completeBinding(existing)) {
       return { binding: existing, token: null, reused: true };
+    }
+    if (existing?.lastError === XAI_OUTCOME_AMBIGUOUS) {
+      throw AppError.serviceUnavailable(
+        "Phone activation cannot be retried until the provider registration is reconciled.",
+      );
     }
 
     const now = new Date();
@@ -207,9 +261,7 @@ async function updateClaim(
       ),
     )
     .returning();
-  if (!updated) {
-    throw AppError.conflict("The phone activation lease expired or was replaced.");
-  }
+  if (!updated) throw AppError.conflict("The phone activation lease expired or was replaced.");
   return updated;
 }
 
@@ -217,22 +269,20 @@ async function failClaim(input: {
   userId: string;
   bindingId: string;
   token: string;
-  error: unknown;
-  code?: string;
-}) {
-  const message = input.code || getErrorMessage(input.error);
+  code: string;
+}): Promise<void> {
   try {
     await updateClaim(input.userId, input.bindingId, input.token, {
       status: "error",
       provisioningToken: null,
       provisioningClaimedAt: null,
-      lastError: message.slice(0, 2_000),
+      lastError: input.code,
     });
   } catch (persistError) {
-    log.error("Native xAI phone activation failure could not be persisted", {
+    log.error("Native phone activation failure state could not be persisted", {
       bindingId: input.bindingId,
+      code: input.code,
       error: getErrorMessage(persistError),
-      activationError: message.slice(0, 500),
     });
   }
 }
@@ -250,11 +300,11 @@ async function resolveTwilioPhoneSid(phoneNumber: string, candidate?: string | n
   if (matches.length !== 1) {
     throw AppError.conflict(
       matches.length > 1
-        ? "Multiple Twilio records match this phone line. Resolve the carrier inventory before activation."
-        : "This agent line is not owned by the configured Twilio account.",
+        ? "Multiple carrier records match this phone line. Resolve the inventory before activation."
+        : "This agent line is not owned by the configured carrier account.",
     );
   }
-  return matches[0].sid;
+  return String(matches[0].sid);
 }
 
 async function ensureTwilioTrunk(): Promise<string> {
@@ -284,7 +334,7 @@ async function ensureTwilioTrunk(): Promise<string> {
 
   const trunkSid = String(trunk?.sid || "").trim();
   if (!/^TK[a-f0-9]{32}$/i.test(trunkSid)) {
-    throw new Error("Twilio did not return a valid Elastic SIP trunk SID.");
+    throw new Error("Carrier did not return a valid Elastic SIP trunk identifier.");
   }
 
   await client.trunking.v1.trunks(trunkSid).update({
@@ -326,9 +376,9 @@ async function attachPhoneToTrunk(trunkSid: string, phoneNumberSid: string): Pro
   await client.trunking.v1.trunks(trunkSid).phoneNumbers.create({ phoneNumberSid });
 }
 
-async function registerPhoneWithXAI(phoneNumber: string) {
+async function registerPhoneWithXAI(phoneNumber: string): Promise<XAIPhoneRegistrationResult> {
   const apiKey = String(process.env.XAI_API_KEY || "").trim();
-  if (!apiKey) throw AppError.serviceUnavailable("xAI voice is not configured.");
+  if (!apiKey) throw AppError.serviceUnavailable("Realtime voice is not configured.");
 
   let response: Response;
   try {
@@ -340,12 +390,13 @@ async function registerPhoneWithXAI(phoneNumber: string) {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          phone_number: phoneNumber,
-          origin: "byo_trunk",
-          webhook_url: xaiVoiceWebhookUrl(),
-          sip_auth: { allowed_addresses: resolveXAISipAllowedAddresses() },
-        }),
+        body: JSON.stringify(
+          buildXAIPhoneRegistrationBody({
+            phoneNumber,
+            webhookUrl: xaiVoiceWebhookUrl(),
+            allowedAddresses: resolveXAISipAllowedAddresses(),
+          }),
+        ),
       },
       XAI_REGISTRATION_TIMEOUT_MS,
     );
@@ -357,11 +408,16 @@ async function registerPhoneWithXAI(phoneNumber: string) {
 
   const responseText = await response.text();
   if (!response.ok) {
-    const detail = safeProviderError(responseText);
-    if (response.status >= 500) throw new Error(XAI_OUTCOME_AMBIGUOUS);
+    if (isAmbiguousXAIRegistrationStatus(response.status)) {
+      throw new Error(XAI_OUTCOME_AMBIGUOUS);
+    }
+    // Response bodies may contain provider diagnostics, identifiers, or request
+    // fragments. Status is sufficient for console correlation; never return or
+    // log the body on this tenant-facing path.
+    log.warn("Realtime voice phone registration rejected", { status: response.status });
     throw AppError.fromHttpStatus(
       response.status,
-      detail ? `xAI rejected phone registration: ${detail}` : "xAI rejected phone registration.",
+      "Phone activation was rejected by the realtime voice provider.",
     );
   }
 
@@ -371,11 +427,7 @@ async function registerPhoneWithXAI(phoneNumber: string) {
   } catch {
     throw new Error(XAI_OUTCOME_AMBIGUOUS);
   }
-  try {
-    return parseXAIRegistration(payload);
-  } catch {
-    throw new Error(XAI_OUTCOME_AMBIGUOUS);
-  }
+  return parseXAIPhoneRegistrationPayload(payload);
 }
 
 export async function getNativeXAIPhoneStatus(
@@ -388,10 +440,11 @@ export async function getNativeXAIPhoneStatus(
     .select()
     .from(xaiPhoneBindings)
     .where(and(...conditions))
+    .orderBy(desc(xaiPhoneBindings.updatedAt))
     .limit(1);
 
   return {
-    configured: Boolean(process.env.XAI_API_KEY && getTwilioClient() && isVaultConfigured()),
+    configured: nativePhoneConfigurationReady(),
     binding: binding ? publicBinding(binding) : null,
   };
 }
@@ -404,7 +457,7 @@ export async function provisionNativeXAIPhone(input: {
     throw AppError.serviceUnavailable("Encrypted provider-secret storage is not configured.");
   }
   if (!String(process.env.XAI_API_KEY || "").trim()) {
-    throw AppError.serviceUnavailable("xAI voice is not configured.");
+    throw AppError.serviceUnavailable("Realtime voice is not configured.");
   }
   if (!getTwilioClient()) throw AppError.serviceUnavailable("Twilio voice is not configured.");
   resolveXAISipAllowedAddresses();
@@ -429,12 +482,11 @@ export async function provisionNativeXAIPhone(input: {
     agentId: input.agentId,
     phoneNumber,
   });
-  if (claim.reused) {
-    return { configured: true, binding: publicBinding(claim.binding) };
-  }
+  if (claim.reused) return { configured: true, binding: publicBinding(claim.binding) };
   if (!claim.token) throw AppError.internal("Phone activation lease is missing.");
 
   let binding = claim.binding;
+  let unpersistedProviderRegistration = false;
   try {
     const phoneNumberSid = await resolveTwilioPhoneSid(phoneNumber, line.vapiNumberId);
     binding = await updateClaim(input.userId, binding.id, claim.token, {
@@ -449,6 +501,7 @@ export async function provisionNativeXAIPhone(input: {
 
     if (!binding.xaiPhoneNumberId || !binding.xaiWebhookId || !binding.webhookSecretEncrypted) {
       const registration = await registerPhoneWithXAI(phoneNumber);
+      unpersistedProviderRegistration = true;
       const encryptedSecret = encryptSecret(registration.dispatchSigningSecret);
       binding = await updateClaim(input.userId, binding.id, claim.token, {
         xaiPhoneNumberId: registration.xaiPhoneNumberId,
@@ -456,6 +509,7 @@ export async function provisionNativeXAIPhone(input: {
         webhookSecretEncrypted: encryptedSecret,
         webhookSecretLastFour: lastFour(registration.dispatchSigningSecret),
       });
+      unpersistedProviderRegistration = false;
     }
 
     binding = await updateClaim(input.userId, binding.id, claim.token, {
@@ -475,17 +529,19 @@ export async function provisionNativeXAIPhone(input: {
     });
     return { configured: true, binding: publicBinding(binding) };
   } catch (error) {
-    const ambiguous = getErrorMessage(error) === XAI_OUTCOME_AMBIGUOUS;
+    const ambiguous =
+      unpersistedProviderRegistration || getErrorMessage(error) === XAI_OUTCOME_AMBIGUOUS;
+    const code = ambiguous ? XAI_OUTCOME_AMBIGUOUS : XAI_ACTIVATION_FAILED;
     await failClaim({
       userId: input.userId,
       bindingId: binding.id,
       token: claim.token,
-      error,
-      code: ambiguous ? XAI_OUTCOME_AMBIGUOUS : undefined,
+      code,
     });
+
     if (error instanceof AppError) throw error;
     if (ambiguous) {
-      log.error("xAI phone registration outcome is ambiguous; automatic retry is blocked", {
+      log.error("Phone registration outcome is ambiguous; automatic retry is blocked", {
         userId: input.userId,
         agentId: input.agentId,
         bindingId: binding.id,
