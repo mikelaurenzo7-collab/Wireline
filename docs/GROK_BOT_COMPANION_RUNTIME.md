@@ -38,6 +38,56 @@ What Wireline builds instead: the **same job types** Grok Bot is good at (resear
 | Agent skills (work companions) | Wireline `runStructured` | Grok 4.6 reviewable drafts |
 | Operator computer-use | Grok Bot app | Cursor Ultra / SuperGrok Heavy / Cursor Teams Premium |
 
+## Cursor, Grok Bot, and a helping hand
+
+Wireline agents stay Grok-capable through tenant skills. Grok Bot stays an operator app. Cursor already hosts Wireline as an MCP client. Do not merge those three.
+
+### Can an enterprise Cursor account still use Grok Bot?
+
+Yes as a **founder or operator seat**, not as a Wireline runtime.
+
+- Eligible plans named in the [Grok Bot FAQ](https://docs.x.ai/grok-bot/faq): SuperGrok Heavy, Cursor Ultra, Cursor Teams Premium. Enterprise access is rolling out; contact the Cursor account team.
+- Grok Bot signs in with a **Cursor account**. Privacy and training opt-out follow Cursor settings. Current Privacy Mode is compatible. **Legacy Privacy Mode is not** — Grok Bot needs cloud storage.
+- There is still **no create-bot / message-bot / subagent API**. Wireline cannot spawn Grok Bot from Express, Vapi, or a work-companion run.
+- All Bots on that Cursor user share **one cloud computer**. Do not route tenant jobs onto it.
+
+### When a helping hand is actually useful
+
+Use Grok Bot only for work Wireline cannot do because there is no tenant-safe API:
+
+- Click through LinkedIn, ads consoles, or other sites without connectors
+- Record a browser workflow, then paste a reviewed brief into Wireline
+- Founder-only expense, calendar, or ops chores that must not touch customer data
+
+A Wireline agent does **not** call Grok Bot mid-call or mid-job. The human reviews, then applies the artifact in Wireline (`POST /api/work-companions/apply`) or launches on Wireline-owned paths.
+
+### Wireline inside Cursor (already shipped, keep)
+
+This is the beneficial Cursor integration. It is the inverse of Grok Bot:
+
+```text
+Cursor / ChatGPT / Claude
+  -> https://trywireline.com/mcp  (OAuth)
+  -> draft / inspect / privately simulate a Wireline agent
+  -> launch, dial, CRM, billing stay in Wireline
+```
+
+Same tool contract as `docs/CHATGPT_APP.md`. Non-goals stay: no dial, launch, CRM mutations, or raw customer data. Connecting that MCP server into a **Grok Bot** is founder-scoped operator work only. If that Bot then acts across tenants, it becomes a shared-computer leak.
+
+### Make Wireline agents “work in Cursor like Grok”? Not beneficial
+
+Grok Bot in Cursor is a persistent teammate with a shared computer, connectors, and computer-use. Wireline cannot become that product. Cloning it would compete with Cursor on the wrong axis and weaken tenant isolation.
+
+| | Pros | Cons |
+| --- | --- | --- |
+| **Keep Wireline agents Grok-capable (current)** | Same job types as Grok Bot, plus PSTN. Tenant-scoped spend, audit, and review. No shared computer. | No live computer-use on sites without APIs. |
+| **Founder Grok Bot as optional helping hand** | Covers LinkedIn / ads UI / CAPTCHA-gated sites. Uses an existing Cursor Ultra or Teams Premium seat. | No API. Manual handoff. Enterprise access may need the Cursor account team. Legacy Privacy Mode blocks it. |
+| **Call Grok Bot as a Wireline subagent / special runtime** | None that survive the security model. | No HTTP API. Shared computer would mix tenant work with founder logins. Cannot isolate per Bot. |
+| **Ship a Cursor plugin that impersonates Grok Bot** | Familiar IDE surface. | Cursor already uses `/mcp`. A teammate/computer-use clone is Cursor’s product, not Wireline’s. Extra plugin package violates the shared-MCP contract. |
+| **Connect Wireline MCP into Grok Bot** | Operator can draft agents from the Bot they already live in. | Easy to over-scope. One computer, many tenants. Do not do this for customer work. |
+
+**Decision:** do not build a Grok Bot subagent, special runtime, or Cursor-teammate clone. Keep work-companion skills on Grok 4.6. Keep Cursor on the existing `/mcp` server. Use Grok Bot only as an operator helping hand when a site has no API.
+
 ## Jobs
 
 `src/lib/work-companion-runtime.ts` owns the kinds. They are skills of the Wireline agent, not a cloned Bot team:

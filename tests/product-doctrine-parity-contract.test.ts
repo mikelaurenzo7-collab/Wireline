@@ -44,6 +44,9 @@ describe("product doctrine parity", () => {
     expect(entitlements).toContain("addonOffered: false");
     expect(companions).toContain("There is no Grok Bot HTTP API");
     expect(companions).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
+    expect(companions).toContain(
+      "do not build a Grok Bot subagent, special runtime, or Cursor-teammate clone",
+    );
 
     for (const [path, source] of [
       ["README.md", root],

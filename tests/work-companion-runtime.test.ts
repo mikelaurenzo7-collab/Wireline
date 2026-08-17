@@ -70,6 +70,10 @@ describe("work companion runtime", () => {
     expect(outbound).toContain("callPrep");
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("There is no Grok Bot HTTP API");
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
+    expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain(
+      "do not build a Grok Bot subagent, special runtime, or Cursor-teammate clone",
+    );
+    expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("https://trywireline.com/mcp");
   });
 
   it("drafts video clip scripts without generating a watermarked file", () => {
