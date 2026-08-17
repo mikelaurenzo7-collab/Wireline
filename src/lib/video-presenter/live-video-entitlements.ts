@@ -2,9 +2,9 @@
  * Workspace entitlement for the retired Live Video add-on.
  *
  * Live talking-head video is no longer offered. Identity badges remain the
- * in-app visual. Work companions draft clip scripts. Imagine file generation
- * is not offered. Stripe webhooks may still record a leftover subscription;
- * they must not authorize a provider session.
+ * in-app visual. Video files and clip-script substitutes are not offered.
+ * Stripe webhooks may still record a leftover subscription; they must not
+ * authorize a provider session.
  */
 import { eq } from "drizzle-orm";
 
@@ -18,9 +18,9 @@ import {
 import { getLiveAvatarStatus } from "./liveavatar-service";
 
 const LIVE_VIDEO_RETIRED_REASON =
-  "Live talking-head video is retired. Identity badges stay on every agent. Work companions draft clip scripts for recaps and kiosks.";
+  "Live talking-head video is retired. Identity badges stay on every agent. Phone, email, and text are unaffected.";
 
-/** Always false. Live Video is retired; work companions own clips. */
+/** Always false. Live Video is retired. */
 export function isLiveVideoCatalogReady(): boolean {
   return false;
 }

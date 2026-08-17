@@ -2,7 +2,8 @@
  * LiveVideoPresenter — identity badge only.
  *
  * LiveAvatar / HeyGen WebRTC lip-sync is retired. This surface renders the
- * deterministic Wireline identity badge. Clips are drafted by work companions.
+ * deterministic Wireline identity badge. Video files and clip scripts are not
+ * offered.
  */
 import AgentFace from "./AgentFace";
 

@@ -19,11 +19,11 @@ This document records Wireline's intended production provider roles and the evid
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |
 | Rate limiting / shared cache | Upstash Redis | Production must not rely on per-instance memory limits |
 | Transactional email | Resend | Commercial mail additionally requires a valid postal address |
-| Live Video | Retired | Identity badges stay. Work companions draft clip scripts. LiveAvatar/HeyGen are not minted. Imagine files are not generated. |
+| Live Video | Retired | Identity badges stay. LiveAvatar/HeyGen are not minted. Video files are not generated. |
 
 ## Live Video — retired talking-head
 
-Live talking-head sessions are retired. Identity badges remain the in-app visual. Work companions draft clip scripts. Imagine file generation is not offered (Grok watermark cannot be turned off; AUP forbids stripping it).
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered (Grok watermark cannot be turned off; AUP forbids stripping it). A later vendor may own real clips. Until then the agent focuses on phone, email, and text.
 
 Leftover Stripe Live Video price IDs may still exist so webhooks do not brick billing. App checkout and session mint stay closed.
 

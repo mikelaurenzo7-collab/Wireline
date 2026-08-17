@@ -1,15 +1,14 @@
 /**
  * xAI Imagine video — documented, not offered.
  *
- * Wireline agents draft clip scripts. They do not call the Imagine Videos API.
+ * Wireline does not generate video files and does not substitute a script.
  * Official REST (`POST /v1/videos/generations`) has no watermark field.
  * Generated files include a Grok watermark. xAI's FAQ says there is no setting
  * to remove it. The Acceptable Use Policy forbids stripping, altering, or
- * circumventing watermarks. Wireline will not generate those files, and will
- * not strip a watermark.
+ * circumventing watermarks.
  *
- * This is not Grok Bot. Grok Bot is a Cursor-authenticated teammate app with
- * a shared account-scoped computer and no public create-bot HTTP API.
+ * A later vendor may own real clips. Until then, the agent focuses on phone,
+ * email, and text. This is not Grok Bot.
  */
 import { AppError } from "./api-error";
 import { XAI_MODELS } from "./ai-models";
@@ -32,7 +31,7 @@ const RESOLUTION_SET = new Set<string>(XAI_IMAGINE_RESOLUTIONS);
 export const IMAGINE_VIDEO_GENERATION_OFFERED = false;
 export const IMAGINE_WATERMARK_NOT_OFFERED_CODE = "IMAGINE_WATERMARK_NOT_OFFERED";
 export const IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE =
-  "Wireline does not generate Imagine video files. Those files include a Grok watermark that cannot be turned off. Draft a clip script instead. Phone and identity badges are unaffected.";
+  "Wireline does not generate video files. Those files include a Grok watermark that cannot be turned off. Phone, email, and text are unaffected.";
 
 export function imagineVideoGenerationOffered(): boolean {
   return IMAGINE_VIDEO_GENERATION_OFFERED;

@@ -4,12 +4,6 @@ import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { runStructured } from "./ai-structured";
 import { drizzle } from "./server-context";
-import {
-  clampImagineDuration,
-  normalizeImagineAspectRatio,
-  normalizeImaginePrompt,
-  type XaiImagineAspectRatio,
-} from "./xai-imagine-video";
 
 export const WORK_COMPANION_KINDS = [
   "outbound_research",
@@ -18,17 +12,9 @@ export const WORK_COMPANION_KINDS = [
   "creative",
   "account_health",
   "call_brief",
-  "video_clip",
 ] as const;
 
 export type WorkCompanionKind = (typeof WORK_COMPANION_KINDS)[number];
-
-export type WorkCompanionVideoDraft = {
-  prompt: string;
-  duration: number;
-  aspect_ratio: XaiImagineAspectRatio;
-  generation: "not_offered";
-};
 
 export type WorkCompanionBrief = {
   kind: WorkCompanionKind;
@@ -38,7 +24,6 @@ export type WorkCompanionBrief = {
   pending_approval: string[];
   unresolved: string[];
   call_objective: string;
-  video: WorkCompanionVideoDraft | null;
 };
 
 const KIND_SET = new Set<string>(WORK_COMPANION_KINDS);
@@ -50,8 +35,6 @@ const KIND_INSTRUCTIONS: Record<WorkCompanionKind, string> = {
   creative: "Draft creative options. Do not publish.",
   account_health: "Summarize account risk and next useful conversation.",
   call_brief: "Produce a compact live-call brief for the next outbound dial.",
-  video_clip:
-    "Draft a short recap, kiosk, or campaign clip script. Do not generate a video file. Do not publish. Do not claim a live conversation.",
 };
 
 export function isWorkCompanionKind(value: unknown): value is WorkCompanionKind {
@@ -94,19 +77,7 @@ export function normalizeWorkCompanionBrief(
   const callObjective =
     typeof raw?.call_objective === "string" && raw.call_objective.trim()
       ? raw.call_objective.trim()
-      : kind === "video_clip"
-        ? `Draft a reviewable clip about ${subject}.`
-        : `Prepare the next conversation about ${subject}.`;
-  const rawVideo =
-    raw?.video && typeof raw.video === "object" && !Array.isArray(raw.video)
-      ? (raw.video as Partial<WorkCompanionVideoDraft>)
-      : null;
-  const promptFromVideo = normalizeImaginePrompt(rawVideo?.prompt);
-  const promptFromFacts =
-    kind === "video_clip" && !promptFromVideo
-      ? normalizeImaginePrompt(normalizeLines(raw?.facts)[0])
-      : "";
-  const videoPrompt = promptFromVideo || promptFromFacts;
+      : `Prepare the next conversation about ${subject}.`;
   return {
     kind,
     subject,
@@ -115,15 +86,6 @@ export function normalizeWorkCompanionBrief(
     pending_approval: normalizeLines(raw?.pending_approval),
     unresolved: normalizeLines(raw?.unresolved),
     call_objective: callObjective.slice(0, 400),
-    video:
-      kind === "video_clip" || videoPrompt
-        ? {
-            prompt: videoPrompt,
-            duration: clampImagineDuration(rawVideo?.duration),
-            aspect_ratio: normalizeImagineAspectRatio(rawVideo?.aspect_ratio),
-            generation: "not_offered",
-          }
-        : null,
   };
 }
 
@@ -136,8 +98,8 @@ export async function runWorkCompanion(input: {
   if (!subject) throw AppError.fromHttpStatus(400, "Subject is required.");
   const result = await runStructured<Partial<WorkCompanionBrief>>({
     system: [
-      "You are a Wireline work companion. Draft only.",
-      "Never send email, never dial, never enroll a campaign, never change ads, never publish a clip, never generate a video file.",
+      "You are drafting for this Wireline agent. Draft only. There is no separate companion to chat with.",
+      "Never send email, never dial, never enroll a campaign, never change ads, never generate a video file.",
       "Separate facts from inferences. Mark anything that needs a human as pending_approval.",
       "If a fact is missing, put a question in unresolved instead of inventing it.",
       KIND_INSTRUCTIONS[input.kind],
@@ -157,15 +119,6 @@ export async function runWorkCompanion(input: {
           pending_approval: { type: "array", items: { type: "string" } },
           unresolved: { type: "array", items: { type: "string" } },
           call_objective: { type: "string" },
-          video: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              prompt: { type: "string" },
-              duration: { type: "number" },
-              aspect_ratio: { type: "string" },
-            },
-          },
         },
         required: ["facts", "inferences", "pending_approval", "unresolved", "call_objective"],
       },
@@ -230,16 +183,6 @@ export async function applyWorkCompanionBrief(input: {
       pending_approval: input.brief.pending_approval,
       updated_at: new Date().toISOString(),
     };
-    if (input.brief.video) {
-      metadata.work_companion_video = {
-        kind: input.brief.kind,
-        prompt: input.brief.video.prompt,
-        duration: input.brief.video.duration,
-        aspect_ratio: input.brief.video.aspect_ratio,
-        generation: "not_offered",
-        updated_at: new Date().toISOString(),
-      };
-    }
     if (existing) {
       await drizzle
         .update(schema.leadDossiers)

@@ -36,14 +36,14 @@ describe("product doctrine parity", () => {
     const entitlements = read("src/lib/video-presenter/live-video-entitlements.ts");
     const companions = read("docs/GROK_BOT_COMPANION_RUNTIME.md");
 
-    expect(root).toContain("**Identity and clips - retired live talking-head:**");
+    expect(root).toContain("**Identity - retired live talking-head:**");
     expect(docsIndex).toContain("**Retired live talking-head.**");
     expect(showcase).toContain("| Live Video        | **Retired**");
     expect(clientSurfaces).toContain("Launch status | **Retired**");
     expect(entitlements).toContain("Live talking-head video is no longer offered");
     expect(entitlements).toContain("addonOffered: false");
     expect(companions).toContain("There is no Grok Bot HTTP API");
-    expect(companions).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
+    expect(companions).toContain("There is no second companion to chat with");
     expect(companions).toContain(
       "do not build a Grok Bot subagent, special runtime, or Cursor-teammate clone",
     );

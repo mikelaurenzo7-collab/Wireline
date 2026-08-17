@@ -20,7 +20,7 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 - Paid tiers include voice minutes, number capacity, and recurring Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
 - Runtime Balance is prepaid overflow. Wireline does not silently create a postpaid voice overage invoice.
 - Extra-agent add-ons include additional capacity and minutes as defined by the catalog.
-- **Live Video talking-head is retired.** Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed. Work companions draft clip scripts; Imagine files are not generated.
+- **Live Video talking-head is retired.** Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed. Video files and clip-script substitutes are not generated.
 - Ops lock: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
 
 ## Required environment

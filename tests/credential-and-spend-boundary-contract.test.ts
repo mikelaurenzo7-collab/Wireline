@@ -322,7 +322,7 @@ describe("the Live Video SDK is not downloaded by people who never start a sessi
     expect(page).not.toContain("@heygen/liveavatar-web-sdk");
     expect(page).not.toContain('lazy(() => import("../components/LiveVideoPresenter"))');
     expect(page).toContain("AgentFace");
-    expect(page).toContain("Draft clip script");
+    expect(page).not.toContain("Draft clip script");
   });
 });
 

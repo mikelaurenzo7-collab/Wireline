@@ -19,7 +19,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | iOS | `ios/` | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight. |
 | Android | `android/` | **Internal beta** until device acceptance, signing, privacy review, and Play release. |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface. |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Retired live talking-head.** Identity badges plus work-companion clip scripts. |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Retired live talking-head.** Identity badges only. |
 
 ## Product interface rules
 
@@ -53,7 +53,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md) | Number, calling, SMS, and email identity boundaries. |
 | [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary. |
 | [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | Vapi Grok 4.3 PSTN/Studio default, Speech-to-Speech research, OpenAI backup. |
-| [GROK_BOT_COMPANION_RUNTIME.md](./GROK_BOT_COMPANION_RUNTIME.md) | Wireline agents run Grok Bot-class jobs as reviewable skills, plus PSTN voice. No Grok Bot API. Grok Bot stays operator-only; Cursor uses the existing `/mcp` server. Imagine files are not generated. |
+| [GROK_BOT_COMPANION_RUNTIME.md](./GROK_BOT_COMPANION_RUNTIME.md) | The Wireline agent owns Grok Bot-class prep skills plus PSTN. No companion chat. No Grok Bot API. Video files are not generated. |
 | [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md) | Vendor and surface status: live, beta, planned, or retire. |
 | [ACCESSIBILITY.md](./ACCESSIBILITY.md) | Product accessibility commitment. |
 | [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md) | Responsive, spacing, and component-containment rules. |

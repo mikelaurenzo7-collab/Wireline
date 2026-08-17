@@ -12,7 +12,7 @@ import {
   Play,
   PlugZap,
   Sparkles,
-  Video,
+  Badge,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -381,13 +381,13 @@ function AgentSection({
           + New {language.singular}
         </Link>
         {kind === "business" ? (
-          // Identity and clips: identity badge plus work-companion Imagine drafts.
+          // Identity: badge only. Live talking-head and clip substitutes are retired.
           <Link
             to="/studio/live-video"
             className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
-            <Video size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Identity and clips</span>
+            <Badge size={14} className="shrink-0 text-primary" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">Identity</span>
             <ArrowRight
               className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden="true"

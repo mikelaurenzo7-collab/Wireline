@@ -189,7 +189,7 @@ router.get(
  * resolved attempt order (provider names only — never credentials, endpoints,
  * or model ids), which makes WIRELINE_STRUCTURED_PRIMARY_PROVIDER and the xAI
  * lane observable instead of trusting env spelunking. Live talking-head
- * engines are retired; work companions draft clip scripts.
+ * engines are retired; identity badges remain.
  */
 const integrationsPayload = () => ({
   integrations: getIntegrationsStatus(),

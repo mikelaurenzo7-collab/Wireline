@@ -27,9 +27,9 @@ describe("work companion runtime", () => {
       "creative",
       "account_health",
       "call_brief",
-      "video_clip",
     ]);
     expect(isWorkCompanionKind("call_brief")).toBe(true);
+    expect(isWorkCompanionKind("video_clip")).toBe(false);
     expect(isWorkCompanionKind("dial")).toBe(false);
   });
 
@@ -65,34 +65,30 @@ describe("work companion runtime", () => {
     expect(routes).toContain("assertImagineVideoGenerationOffered");
     expect(runtime).toContain("Never send email, never dial");
     expect(runtime).toContain("never generate a video file");
+    expect(runtime).toContain("There is no separate companion to chat with");
     expect(runtime).not.toContain("startImagineVideo");
+    expect(runtime).not.toContain("video_clip");
     expect(outbound).toContain("loadWorkCompanionCallPrep");
     expect(outbound).toContain("callPrep");
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("There is no Grok Bot HTTP API");
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
+    expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain(
+      "There is no second companion to chat with",
+    );
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain(
       "do not build a Grok Bot subagent, special runtime, or Cursor-teammate clone",
     );
     expect(read("docs/GROK_BOT_COMPANION_RUNTIME.md")).toContain("https://trywireline.com/mcp");
   });
 
-  it("drafts video clip scripts without generating a watermarked file", () => {
-    const brief = normalizeWorkCompanionBrief("video_clip", "Acme recap", {
-      facts: ["Acme asked for a 20-second lobby loop"],
-      inferences: ["A short kiosk clip is enough"],
-      pending_approval: ["Do not publish until a human reviews the script"],
-      unresolved: ["Which offer should appear on screen?"],
-      call_objective: "Draft a lobby clip script for Acme.",
-      video: {
-        prompt: "A calm lobby recap of Acme's Tuesday callback, no live conversation.",
-        duration: 8,
-        aspect_ratio: "16:9",
-        generation: "not_offered",
-      },
-    });
-    expect(brief.video?.prompt).toContain("lobby recap");
-    expect(brief.video?.generation).toBe("not_offered");
-    expect(brief.kind).toBe("video_clip");
+  it("does not offer a video_clip kind or a companion chat", () => {
+    expect(isWorkCompanionKind("video_clip")).toBe(false);
+    expect(read("src/routes/work-companion-routes.ts")).toContain("chat: false");
+    expect(read("src/pages/LiveVideoStudioPage.tsx")).not.toContain("/api/work-companions/video");
+    expect(read("src/pages/LiveVideoStudioPage.tsx")).not.toContain("Draft clip script");
+    expect(read("src/pages/LiveVideoStudioPage.tsx")).not.toContain("video_clip");
+    expect(read("src/components/outbound/CampaignsPanel.tsx")).not.toContain("video_clip");
+    expect(read("src/components/outbound/CampaignsPanel.tsx")).toContain("Draft call prep");
   });
 });
 
@@ -124,7 +120,7 @@ describe("xAI Imagine video is not offered", () => {
     }
     expect(read("src/lib/xai-imagine-video.ts")).toContain(XAI_VIDEO_GENERATIONS_URL_SNIPPET);
     expect(read("src/pages/LiveVideoStudioPage.tsx")).not.toContain("/api/work-companions/video");
-    expect(read("src/pages/LiveVideoStudioPage.tsx")).toContain("Draft clip script");
+    expect(read("src/pages/LiveVideoStudioPage.tsx")).not.toContain("Draft clip script");
   });
 });
 

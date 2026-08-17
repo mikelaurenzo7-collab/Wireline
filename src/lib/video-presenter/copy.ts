@@ -10,20 +10,20 @@ export function videoPresenterStatusMessage(
     return "Personal agents use a private in-app identity badge.";
   }
   if (presenter.chosenAvatarId) {
-    return "This agent keeps its identity badge. Work companions draft clip scripts; live talking-head video is retired.";
+    return "This agent keeps its identity badge. Live talking-head video is retired.";
   }
-  return "Identity badges stay on every agent. Work companions draft recap and kiosk scripts.";
+  return "Identity badges stay on every agent. Live talking-head video is retired.";
 }
 
 export function videoPresenterPreviewHint(
   _presenter: AgentVideoPresenterConfig,
   _platformConfigured: boolean,
 ): string {
-  return "Live talking-head preview is retired. Draft a clip script with a work companion instead.";
+  return "Live talking-head preview is retired. Phone, email, and text stay on this agent.";
 }
 
 export function liveVideoAddonPitch(): string {
-  return "Live talking-head video is retired. Identity badges stay on every agent. Work companions draft clip scripts.";
+  return "Live talking-head video is retired. Identity badges stay on every agent. Phone, email, and text are unaffected.";
 }
 
 export function liveVideoMeteringNote(): string {

@@ -19,7 +19,7 @@ import { isOwnerEmail } from "../lib/auth-service";
 const router = express.Router();
 
 const LIVE_VIDEO_RETIRED_MESSAGE =
-  "Live talking-head video is retired. Identity badges stay on every agent. Work companions draft clip scripts for recaps and kiosks.";
+  "Live talking-head video is retired. Identity badges stay on every agent. Phone, email, and text are unaffected.";
 
 const presenterLimiter = createRateLimiter({
   bucket: "api:video-presenter",

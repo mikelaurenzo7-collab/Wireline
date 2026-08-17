@@ -1115,7 +1115,7 @@ router.post(
         return res.status(503).json({
           code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
           error:
-            "Live talking-head video is retired. Identity badges stay. Work companions draft clip scripts.",
+            "Live talking-head video is retired. Identity badges stay. Phone, email, and text are unaffected.",
         });
       }
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID

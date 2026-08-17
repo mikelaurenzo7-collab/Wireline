@@ -45,10 +45,11 @@ describe("video presenter integration", () => {
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
-  it("gives identity and clips discovery from Overview without selling live talking-head", () => {
+  it("gives identity discovery from Overview without selling live talking-head", () => {
     const overview = source("src/pages/OverviewPage.tsx");
     expect(overview).toContain('to="/studio/live-video"');
-    expect(overview).toContain("Identity and clips");
+    expect(overview).toContain(">Identity</span>");
+    expect(overview).not.toContain("Identity and clips");
     expect(overview).not.toContain(">Live Video</span>");
   });
 
@@ -65,11 +66,11 @@ describe("video presenter integration", () => {
     );
   });
 
-  it("mounts identity and clip-script studio without a live session mint", () => {
+  it("mounts identity studio without a live session mint or clip-script bait", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
-    expect(page).toContain("Identity and clips");
-    expect(page).toContain("Draft clip script");
-    expect(page).toContain('kind: "video_clip"');
+    expect(page).toContain("Identity");
+    expect(page).not.toContain("Draft clip script");
+    expect(page).not.toContain('kind: "video_clip"');
     expect(page).not.toContain("/video-presenter/session");
     expect(page).not.toContain("@heygen/liveavatar-web-sdk");
     const routes = source("src/routes/AppRoutes.tsx");

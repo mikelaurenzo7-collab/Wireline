@@ -215,7 +215,7 @@ describe("retired talking-head routes do not mint sessions", () => {
     expect(presenter).toContain("AgentFace");
     expect(presenter).not.toContain("@heygen/liveavatar-web-sdk");
     expect(presenter).not.toContain("abandonedAfterDeadline");
-    expect(page).toContain("Draft clip script");
+    expect(page).not.toContain("Draft clip script");
     expect(page).not.toContain("/video-presenter/session");
     expect(service).toContain("retired: true");
     expect(service).not.toContain("PUBLIC_AVATAR_CACHE_TTL_MS");

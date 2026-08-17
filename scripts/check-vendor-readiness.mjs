@@ -672,11 +672,11 @@ record(
   "live_video",
   false,
   "ready",
-  "Live talking-head video is retired. Identity badges remain; work companions draft clip scripts.",
+  "Live talking-head video is retired. Identity badges remain; phone, email, and text stay on the agent.",
   "Do not offer LiveAvatar or HeyGen sessions. Keep leftover Stripe Live Video webhooks fail-closed.",
   {
     retired: liveVideoRetired,
-    companion_video: "script_draft",
+    companion_video: "not_offered",
     overage_policy: "none_retired",
   },
 );

@@ -11,7 +11,7 @@ Wireline is one protected agent platform with multiple deliberate control surfac
 | iOS | `ios/` | Native calls, Siri, widgets, CallKit, push, and approved CarPlay communication flows | Prompt construction, entitlements, call control decisions, data ownership |
 | Android | `android/` | Native calls, notifications, widgets, Telecom, FCM, and approved Android Auto communication flows | Prompt construction, consent, plan enforcement, data ownership |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` | Account-bound private agent drafting, refinement, simulation, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions |
-| Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Identity badges and work-companion clip scripts. Live talking-head is retired. | Vendor credentials stay unused; leftover Stripe webhooks fail-closed; no Imagine file generation |
+| Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Identity badges. Live talking-head is retired. | Vendor credentials stay unused; leftover Stripe webhooks fail-closed; no video file generation |
 
 ## Immediate layout
 
@@ -92,7 +92,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Retired** live talking-head. Identity badges remain. Work companions draft clip scripts. Imagine file generation is not offered because those files include a Grok watermark that cannot be turned off. Leftover Stripe Live Video SKUs stay for webhook reconciliation only. |
+| Launch status | **Retired** live talking-head. Identity badges remain. Video files and clip-script substitutes are not offered. Leftover Stripe Live Video SKUs stay for webhook reconciliation only. |
 | Owning files/directories | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx`, presenter catalog/consent UI, provider environment configuration, billing/entitlement policy, and product copy that references Live Video. |
 | Required checks before release | Web/API verification; provider-env readiness check; consent-state and voice-fallback smoke; presenter catalog review; Stripe add-on and entitlement readback; live-session cost/metering review; customer-copy review to ensure vendor names are hidden; accessibility, degraded-network, and emergency-disable smoke. |
 | Non-goals | Not a separate video product, not a vendor-branded feature, not a replacement for voice reliability, and not generally available without provider, checkout, entitlement, pricing, consent, and support gates. |

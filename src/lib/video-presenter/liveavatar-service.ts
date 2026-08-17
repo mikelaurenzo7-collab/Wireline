@@ -2,8 +2,8 @@
  * Live talking-head video is retired.
  *
  * Wireline no longer mints LiveAvatar / HeyGen sessions. The in-app identity
- * badge remains the live visual. Work companions draft clip scripts.
- * Imagine file generation is not offered.
+ * badge remains the live visual. Video files and clip-script substitutes are
+ * not offered.
  *
  * This module keeps a fail-closed status helper and the synthetic defaults
  * used when creating business agents. It must not call api.liveavatar.com or

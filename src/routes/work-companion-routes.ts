@@ -14,12 +14,7 @@ import {
   runWorkCompanion,
   type WorkCompanionBrief,
 } from "../lib/work-companion-runtime";
-import {
-  IMAGINE_WATERMARK_NOT_OFFERED_CODE,
-  IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE,
-  assertImagineVideoGenerationOffered,
-  imagineVideoGenerationOffered,
-} from "../lib/xai-imagine-video";
+import { assertImagineVideoGenerationOffered } from "../lib/xai-imagine-video";
 
 const router = Router();
 
@@ -39,20 +34,8 @@ router.get(
         id: kind,
         label: kind.replace(/_/g, " "),
       })),
-      never: [
-        "send_email",
-        "dial",
-        "enroll_campaign",
-        "change_ads",
-        "publish_video",
-        "generate_imagine_file",
-      ],
-      video: {
-        offered: imagineVideoGenerationOffered(),
-        generation: "not_offered",
-        code: IMAGINE_WATERMARK_NOT_OFFERED_CODE,
-        reason: IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE,
-      },
+      never: ["send_email", "dial", "enroll_campaign", "change_ads", "generate_video"],
+      chat: false,
     });
   },
 );
@@ -69,7 +52,7 @@ router.post(
     const subject = typeof req.body?.subject === "string" ? req.body.subject : "";
     const context = typeof req.body?.context === "string" ? req.body.context : undefined;
     if (!isWorkCompanionKind(kind)) {
-      throw AppError.fromHttpStatus(400, "Choose a work companion kind.");
+      throw AppError.fromHttpStatus(400, "Choose a prep kind.");
     }
     const brief = await runWorkCompanion({ kind, subject, context });
     res.json({ brief });
@@ -100,7 +83,7 @@ router.post(
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const kind = req.body?.brief?.kind;
     if (!isWorkCompanionKind(kind)) {
-      throw AppError.fromHttpStatus(400, "Choose a work companion kind.");
+      throw AppError.fromHttpStatus(400, "Choose a prep kind.");
     }
     const brief = req.body?.brief as WorkCompanionBrief;
     const result = await applyWorkCompanionBrief({
