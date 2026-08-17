@@ -13,6 +13,11 @@ describe("E2E cleanliness contracts", () => {
 
     expect(registry).toContain('app.use("/api", openapiRouter)');
     expect(openapi).toContain('router.get("/openapi.json"');
+    expect(openapi).toContain("createIpRateLimiter");
+    expect(openapi).toContain('bucket: "api:openapi"');
+    expect(openapi).toContain("req.protocol");
+    expect(openapi).not.toContain("x-forwarded-for");
+    expect(openapi).not.toContain("x-forwarded-host");
     expect(developers).toContain("/api/openapi.json");
   });
 

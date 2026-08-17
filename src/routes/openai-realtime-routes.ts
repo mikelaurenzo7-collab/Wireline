@@ -22,6 +22,7 @@ const openaiRealtimeLimiter = createRateLimiter({
   bucket: "api:openai-realtime",
   windowMs: 60_000,
   max: 20,
+  failClosedOnError: true,
 });
 
 const openaiRealtimeSessionSchema = z.object({

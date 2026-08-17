@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PRERENDERED_MARKETING_ROUTES, resolveRouteMeta } from "../src/lib/marketing-route-meta";
+import { PRERENDERED_ROUTE_SHELLS, resolveRouteMeta } from "../src/lib/marketing-route-meta";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -34,7 +34,7 @@ describe("every submitted URL carries its own meta", () => {
 
   it("prerenders every sitemap URL so non-rendering crawlers see it", () => {
     const notPrerendered = sitemapPaths.filter(
-      (p) => p !== "/" && !PRERENDERED_MARKETING_ROUTES.includes(p),
+      (p) => p !== "/" && !PRERENDERED_ROUTE_SHELLS.includes(p),
     );
     expect(notPrerendered).toEqual([]);
   });
@@ -55,7 +55,7 @@ describe("every submitted URL carries its own meta", () => {
     );
     expect(packSlugs.length).toBeGreaterThanOrEqual(4);
 
-    const metaTrustSlugs = PRERENDERED_MARKETING_ROUTES.filter((r) => r.startsWith("/trust/")).map(
+    const metaTrustSlugs = PRERENDERED_ROUTE_SHELLS.filter((r) => r.startsWith("/trust/")).map(
       (r) => r.slice("/trust/".length),
     );
 

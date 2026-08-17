@@ -12,6 +12,7 @@ describe("daily-brief send-now rate limiting", () => {
     expect(source).toContain('import { createRateLimiter } from "../middleware/api-rate-limits"');
     expect(source).toContain('bucket: "api:daily-brief-send-now"');
     expect(source).toContain("max: 10");
+    expect(source).toContain("failClosedOnError: true");
 
     const routeMatch = source.match(/router\.post\(\s*"\/api\/daily-brief\/send-now"[\s\S]*?\);/);
     expect(routeMatch).not.toBeNull();

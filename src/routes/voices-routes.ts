@@ -59,9 +59,9 @@ const cloneIpRateLimit = createIpRateLimiter({
 const voicePreviewRateLimit = createRateLimiter({
   // Distinct from grok-voice-routes' "api:voice-preview". rateLimit() keys on
   // the bucket name, so sharing it made two endpoints increment one counter
-  // that was then compared against two different ceilings (12 fail-closed here,
-  // 20 fail-open there) — legacy xAI previews spent this endpoint's ElevenLabs
-  // budget and vice versa.
+  // that was then compared against two different ceilings. Both preview paths
+  // now fail closed; they still keep separate buckets so one surface cannot
+  // spend the other's vendor budget.
   bucket: "api:voice-preview-managed",
   windowMs: 60_000,
   max: 12,

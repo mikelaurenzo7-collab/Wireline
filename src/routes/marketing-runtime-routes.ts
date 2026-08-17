@@ -48,14 +48,24 @@ const PUBLIC_MARKETING_STATS = {
   tenants: 95,
 } as const;
 
+/**
+ * Express trusts exactly one production proxy hop in server.ts. `req.ip` is
+ * therefore the canonical client identity. Reading the left-most raw
+ * X-Forwarded-For value here would let a caller supply a fresh rate-limit key
+ * on every request and bypass both ticket and provider-spend ceilings.
+ */
 function requestIp(req: Request): string {
-  return (req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.ip || "unknown").trim();
+  return String(req.ip || "unknown").trim();
 }
 
 function requestHost(req: Request): string {
   return (req.headers["x-forwarded-host"]?.toString().split(",")[0] || req.get("host") || "")
     .trim()
     .toLowerCase();
+}
+
+function privateVapiKey(): string {
+  return String(process.env.VAPI_PRIVATE_KEY || "").trim();
 }
 
 function requireSameOrigin(req: Request): string {
@@ -208,7 +218,11 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
 
 router.post("/api/public/demo-session", async (req, res) => {
   const host = requireSameOrigin(req);
-  if (!publicDemoTicketingReady()) {
+  // This endpoint is the availability preflight the client performs before it
+  // asks for microphone access. Do not mint a ticket when the provider runtime
+  // itself is absent; otherwise a misconfigured deployment still prompts the
+  // visitor and only fails after permission has been granted.
+  if (!publicDemoTicketingReady() || !privateVapiKey()) {
     throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
   }
 
@@ -263,7 +277,7 @@ router.post("/api/public/demo-vapi/call/web", async (req, res) => {
   const agent = publicAgent(verification.claims.agent);
   if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
 
-  const privateKey = String(process.env.VAPI_PRIVATE_KEY || "").trim();
+  const privateKey = privateVapiKey();
   if (!privateKey) {
     throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
   }

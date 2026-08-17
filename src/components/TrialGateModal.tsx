@@ -38,28 +38,30 @@ type CheckoutTier = {
 
 /**
  * Public self-serve plans only. Prefer live `/api/billing/plans` so annual CTAs
- * honor `annual_configured` instead of client catalog wishful thinking.
+ * honor `annual_configured` and the exact-SHA release gate. The local catalog
+ * is display-only and stays disabled until the live contract is verified.
  */
 function selfServeTiers(
   preferredInterval: "month" | "year",
   livePlans: ClientPlan[] | null,
 ): CheckoutTier[] {
-  const source =
-    livePlans && livePlans.length > 0
-      ? livePlans.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false)
-      : STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
-          (plan) => ({
-            id: plan.id,
-            name: plan.name,
-            price_usd_monthly: plan.price_usd_monthly,
-            price_usd_annual: plan.price_usd_annual,
-            features: plan.features,
-            configured: true,
-            // Without live config, never claim annual is buyable.
-            annual_configured: false,
-            public: true as const,
-          }),
-        );
+  const hasLiveCatalog = livePlans !== null;
+  const source = hasLiveCatalog
+    ? livePlans.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false)
+    : STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
+        (plan) => ({
+          id: plan.id,
+          name: plan.name,
+          price_usd_monthly: plan.price_usd_monthly,
+          price_usd_annual: plan.price_usd_annual,
+          features: plan.features,
+          // A local price id is not release authorization. Fail closed until
+          // the server confirms this exact deployment may open checkout.
+          configured: false,
+          annual_configured: false,
+          public: true as const,
+        }),
+      );
 
   return source.map((plan) => {
     const wantAnnual = preferredInterval === "year" && plan.price_usd_annual > 0;
@@ -77,7 +79,9 @@ function selfServeTiers(
       interval: useAnnual ? ("year" as const) : ("month" as const),
       disabled: !monthlyReady,
       disabledReason: !monthlyReady
-        ? "This plan is not available for checkout yet."
+        ? hasLiveCatalog
+          ? "Self-serve checkout is not available for this deployment yet."
+          : "Checking checkout availability."
         : wantAnnual && !annualReady
           ? "Annual billing is not configured for this plan yet. Monthly is shown."
           : undefined,
@@ -151,6 +155,7 @@ export default function TrialGateModal() {
       checkoutAbortRef.current?.abort();
       checkoutAbortRef.current = null;
       setPending(null);
+      setLivePlans(null);
       setDetail(customEvent.detail);
       setError(null);
       setResend("idle");
@@ -170,13 +175,16 @@ export default function TrialGateModal() {
     (async () => {
       try {
         const response = await authFetch("/api/billing/plans", { signal: controller.signal });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error("Checkout availability could not be verified.");
         const data = (await safeJson<BillingPlansResponse>(
           response,
         )) as BillingPlansResponse | null;
-        if (!cancelled && data?.plans?.length) setLivePlans(data.plans);
+        if (!cancelled) setLivePlans(data?.plans ?? []);
       } catch {
-        /* keep catalog fallback; annual stays disabled without live config */
+        if (!cancelled && !controller.signal.aborted) {
+          setLivePlans([]);
+          setError("Checkout availability could not be verified. Refresh and try again.");
+        }
       }
     })();
     return () => {
@@ -192,6 +200,11 @@ export default function TrialGateModal() {
   const preferredInterval =
     getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
   const checkoutTiers = selfServeTiers(preferredInterval, livePlans);
+  const catalogPending = livePlans === null;
+  const checkoutUnavailable =
+    !catalogPending &&
+    checkoutTiers.length > 0 &&
+    checkoutTiers.every((tier) => tier.disabled === true);
   const eyebrow =
     detail.code === "ACTIVATION_REQUIRED"
       ? "Activate live work"
@@ -202,8 +215,9 @@ export default function TrialGateModal() {
   const showPlanCheckout =
     detail.code !== "EMAIL_UNVERIFIED" && detail.code !== "SUBSCRIPTION_REQUIRED";
   const annualFallbackNote =
+    !catalogPending &&
     preferredInterval === "year" &&
-    checkoutTiers.some((tier) => tier.interval === "month" && tier.price > 0);
+    checkoutTiers.some((tier) => !tier.disabled && tier.interval === "month" && tier.price > 0);
 
   async function checkout(planId: string, interval: "month" | "year") {
     checkoutAbortRef.current?.abort();
@@ -466,6 +480,19 @@ export default function TrialGateModal() {
               )}
               {showPlanCheckout && (
                 <>
+                  {catalogPending && (
+                    <p className="mb-3 inline-flex items-center gap-2 text-xs leading-relaxed text-foreground/65">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Checking checkout availability
+                    </p>
+                  )}
+                  {checkoutUnavailable && (
+                    <p className="mb-3 flex items-start gap-2 text-xs leading-relaxed text-foreground/65">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                      Self-serve checkout is temporarily unavailable while launch certification
+                      completes. Your saved work is unaffected.
+                    </p>
+                  )}
                   {annualFallbackNote && (
                     <p className="mb-3 text-xs leading-relaxed text-foreground/65">
                       Annual billing is not configured for checkout yet. Monthly prices are shown.

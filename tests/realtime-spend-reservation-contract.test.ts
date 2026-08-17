@@ -21,6 +21,33 @@ describe("realtime spend reservation contract", () => {
     );
   });
 
+  it("reserves quota atomically without charging denied provider attempts", () => {
+    const quota = read("src/lib/tenant-quotas.ts");
+    const reserve = quota.slice(
+      quota.indexOf("async tryReserve("),
+      quota.indexOf("async releaseUsage(", quota.indexOf("async tryReserve(")),
+    );
+    const actual = quota.slice(
+      quota.indexOf("async checkAndIncrement("),
+      quota.indexOf("async tryReserve("),
+    );
+
+    expect(quota).toContain('"voice_minutes_daily",\n  "simulation_minutes_daily"');
+    expect(actual).toContain("CONDITIONAL_RESERVATION_DIMENSIONS.has(dimension)");
+    expect(actual).toContain("return this.tryReserve(userId, dimension, delta)");
+    expect(actual).toContain("Actual accounting is unconditional");
+    expect(reserve).toContain("this.getProfile(userId, true)");
+    expect(reserve).toContain("setWhere:");
+    expect(reserve).toContain(
+      "${schema.quotaUsage.used} + ${BigInt(units)} <= ${BigInt(limit)}",
+    );
+    expect(reserve).toContain("if (limit <= 0 || units > limit)");
+    expect(reserve).toContain("if (row)");
+    expect(reserve).toContain("allowed: false");
+    expect(reserve).toContain("authoritativeDecision({");
+    expect(quota).toContain("persisted: true");
+  });
+
   it("returns rejected quota only for definitive no-session outcomes", () => {
     const helper = read("src/lib/realtime-spend-reservation.ts");
     const quota = read("src/lib/tenant-quotas.ts");
@@ -36,6 +63,23 @@ describe("realtime spend reservation contract", () => {
     expect(quota).toContain("greatest(${schema.quotaUsage.used}");
     expect(limiter).toContain("wirelineSimulationQuotaReservation");
     expect(limiter).toContain("periodKey: decision.period_key");
+  });
+
+  it("fails every pre-provider voice reservation closed when accounting is not durable", () => {
+    const limiter = read("src/middleware/api-rate-limits.ts");
+    const outbound = read("src/lib/voice-spend-control.ts");
+    const chatgpt = read("src/routes/chatgpt-mcp-account-routes.ts");
+
+    expect(limiter).toContain('checkAndIncrement(userId, "simulation_minutes_daily", 5)');
+    expect(limiter).toContain("if (!decision.persisted)");
+    expect(outbound).toContain("quotaTracker.tryReserve(");
+    expect(outbound).toContain('"voice_minutes_daily"');
+    expect(outbound).toContain("if (!quotaDecision.persisted)");
+    expect(outbound).toContain('code: "QUOTA_VOICE_UNAVAILABLE"');
+    expect(chatgpt).toContain(
+      'quotaTracker.checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)',
+    );
+    expect(chatgpt).toContain("if (!quota.persisted)");
   });
 
   it("validates request bodies before consuming a five-minute quota reservation", () => {

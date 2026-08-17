@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   HOME_TITLE,
   HOME_DESCRIPTION,
-  PRERENDERED_MARKETING_ROUTES,
+  PRERENDERED_ROUTE_SHELLS,
   injectMarketingMeta,
   resolveRouteMeta,
 } from "../src/lib/marketing-route-meta";
@@ -14,7 +14,7 @@ import { WEDGES } from "../src/data/vertical-wedges";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const indexHtml = read("index.html");
 
-describe("marketing route meta prerendering", () => {
+describe("route meta prerendering", () => {
   it("keeps the homepage-default constants in sync with the static HTML shell", () => {
     // If these drift, injection silently no-ops — this guard (and the build
     // script's own check) makes it loud instead.
@@ -23,11 +23,17 @@ describe("marketing route meta prerendering", () => {
     expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3); // desc, og:desc, twitter:desc
     expect(indexHtml).toContain('<link rel="canonical" href="https://trywireline.com/" />');
     expect(indexHtml).toContain('<meta property="og:url" content="https://trywireline.com/" />');
+    expect(indexHtml).toContain(
+      '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
+    );
+    expect(indexHtml).toContain(
+      '<meta name="googlebot" content="index, follow, max-image-preview:large" />',
+    );
   });
 
-  it("prerenders every /for/* wedge plus the inline commercial pages", () => {
+  it("prerenders every /for/* wedge, inline commercial page, and guarded account shell", () => {
     for (const slug of Object.keys(WEDGES)) {
-      expect(PRERENDERED_MARKETING_ROUTES).toContain(`/for/${slug}`);
+      expect(PRERENDERED_ROUTE_SHELLS).toContain(`/for/${slug}`);
     }
     for (const route of [
       "/pricing",
@@ -35,16 +41,23 @@ describe("marketing route meta prerendering", () => {
       "/compare",
       "/solutions/sales",
       "/solutions/support",
+      "/signin",
+      "/signup",
+      "/reset-password",
+      "/accept-invite",
+      "/onboarding",
+      "/auth/oauth-complete",
+      "/404",
     ]) {
-      expect(PRERENDERED_MARKETING_ROUTES).toContain(route);
+      expect(PRERENDERED_ROUTE_SHELLS).toContain(route);
     }
     // Every listed route must resolve — the build script exits non-zero otherwise.
-    for (const route of PRERENDERED_MARKETING_ROUTES) {
+    for (const route of PRERENDERED_ROUTE_SHELLS) {
       expect(resolveRouteMeta(route), route).not.toBeNull();
     }
   });
 
-  it("serves the homepage and app routes unchanged (null meta)", () => {
+  it("serves the homepage and unregistered app routes unchanged (null meta)", () => {
     expect(resolveRouteMeta("/")).toBeNull();
     expect(resolveRouteMeta("")).toBeNull();
     expect(resolveRouteMeta("/overview")).toBeNull();
@@ -59,6 +72,7 @@ describe("marketing route meta prerendering", () => {
       expect(meta!.title).toBe(wedge.metaTitle); // metaTitle already carries "Wireline"
       expect(meta!.description).toBe(wedge.metaDescription);
       expect(meta!.canonical).toBe(`https://trywireline.com/for/${slug}`);
+      expect(meta!.noIndex).not.toBe(true);
     }
   });
 
@@ -86,8 +100,8 @@ describe("marketing route meta prerendering", () => {
       expect(solutions).toContain(`"${meta.title.replace(" | Wireline", "")}"`);
       expect(solutions).toContain(meta.description);
     }
-    // The wider sitemap set: every prerendered route's title and description
-    // must appear verbatim in the page component that owns its PageMeta call.
+    // The wider sitemap set: every prerendered marketing route's title and
+    // description must appear verbatim in the component that owns PageMeta.
     const routeSources: Record<string, string> = {
       "/about": "src/pages/About.tsx",
       "/showcase": "src/pages/Showcase.tsx",
@@ -105,19 +119,15 @@ describe("marketing route meta prerendering", () => {
     for (const [route, path] of Object.entries(routeSources)) {
       const meta = resolveRouteMeta(route)!;
       const source = read(path);
-      // Titles may carry the PageMeta brand suffix client-side; assert the
-      // pre-suffix half the page actually declares.
       expect(source, `${route} title`).toContain(meta.title.replace(" | Wireline", ""));
       expect(source, `${route} description`).toContain(meta.description);
+      expect(meta.noIndex, route).not.toBe(true);
     }
   });
 
-  // The four vertical trust packs were the only prerendered routes with no
-  // gate, and they had already drifted: the build served
-  // "Trust Pack: Healthcare sensitive workflows" to crawlers while hydration
-  // replaced it with "Trust · Healthcare-sensitive workflows" and a shorter
-  // description. They carry no verbatim strings to pin because the page now
-  // reads the registry back, so pin that wiring instead.
+  // The four vertical trust packs were the only prerendered marketing routes
+  // with no gate, and they had already drifted. They carry no verbatim strings
+  // to pin because the page now reads the registry back, so pin that wiring.
   it("keeps the trust packs' hydrated head sourced from the prerendered registry", () => {
     const page = read("src/components/TrustPackPage.tsx");
 
@@ -138,6 +148,51 @@ describe("marketing route meta prerendering", () => {
     expect(resolveRouteMeta("/for/medical/")).toEqual(resolveRouteMeta("/for/medical"));
     expect(resolveRouteMeta("/pricing?utm_source=x")).toEqual(resolveRouteMeta("/pricing"));
     expect(resolveRouteMeta("/features#top")).toEqual(resolveRouteMeta("/features"));
+    expect(resolveRouteMeta("/signin?next=%2Foverview")).toEqual(resolveRouteMeta("/signin"));
+  });
+
+  it("emits noindex before hydration for account, transition, and not-found routes", () => {
+    const guardedRoutes = [
+      "/signin",
+      "/signup",
+      "/get-started",
+      "/auth",
+      "/login",
+      "/reset",
+      "/reset-password",
+      "/accept-invite",
+      "/onboarding",
+      "/auth/oauth-complete",
+      "/oauth-complete",
+      "/404",
+      "/not-found",
+    ] as const;
+
+    for (const route of guardedRoutes) {
+      const meta = resolveRouteMeta(route);
+      expect(meta, route).not.toBeNull();
+      expect(meta!.noIndex, route).toBe(true);
+      const out = injectMarketingMeta(indexHtml, meta!);
+      expect(out, `${route} robots`).toContain(
+        '<meta name="robots" content="noindex, nofollow" />',
+      );
+      expect(out, `${route} googlebot`).toContain(
+        '<meta name="googlebot" content="noindex, nofollow" />',
+      );
+      expect(out, `${route} canonical`).toContain(
+        `<link rel="canonical" href="${meta!.canonical}" />`,
+      );
+      expect(out, `${route} index leakage`).not.toContain(
+        '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
+      );
+    }
+
+    expect(resolveRouteMeta("/get-started")!.canonical).toBe("https://trywireline.com/signup");
+    expect(resolveRouteMeta("/auth")!.canonical).toBe("https://trywireline.com/signin");
+    expect(resolveRouteMeta("/oauth-complete")!.canonical).toBe(
+      "https://trywireline.com/auth/oauth-complete",
+    );
+    expect(resolveRouteMeta("/not-found")!.canonical).toBe("https://trywireline.com/404");
   });
 
   it("rewrites the static head for a marketing route without touching unrelated markup", () => {
@@ -150,6 +205,9 @@ describe("marketing route meta prerendering", () => {
     expect(out).toContain(`content="${meta.description}"`);
     expect(out).toContain(`<link rel="canonical" href="${meta.canonical}" />`);
     expect(out).toContain(`<meta property="og:url" content="${meta.canonical}" />`);
+    expect(out).toContain(
+      '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
+    );
 
     // Homepage defaults are gone…
     expect(out).not.toContain(`<title>${HOME_TITLE}</title>`);
@@ -158,7 +216,6 @@ describe("marketing route meta prerendering", () => {
     expect(out).toContain('<meta name="twitter:card" content="summary_large_image" />');
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(out).toContain('"@type": "WebSite"');
-    // The shared OG image is intentionally left as the site default.
     expect(out).toContain(
       '<meta property="og:image" content="https://trywireline.com/og-image.png" />',
     );
@@ -167,15 +224,15 @@ describe("marketing route meta prerendering", () => {
   it("is wired into the build pipeline that both local and Vercel builds run", () => {
     const pkg = read("package.json");
     const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
-    // Prerender must run after vite build (needs dist/index.html) and before
-    // anything consumes dist.
     expect(buildScript).toContain(
       "vite build && node --import tsx scripts/prerender-marketing-meta.mts",
     );
 
     const script = read("scripts/prerender-marketing-meta.mts");
-    expect(script).toContain("PRERENDERED_MARKETING_ROUTES");
+    expect(script).toContain("PRERENDERED_ROUTE_SHELLS");
     expect(script).toContain('path.join(dist, ...route.split("/").filter(Boolean))');
-    expect(script).toContain("process.exit(1)"); // drift fails the build loudly
+    expect(script).toContain("meta.noIndex");
+    expect(script).toContain('content="noindex, nofollow"');
+    expect(script).toContain("process.exit(1)");
   });
 });

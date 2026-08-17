@@ -82,6 +82,7 @@ const sessionLimiter = createRateLimiter({
   bucket: "api:video-presenter-session",
   windowMs: 60_000,
   max: 12,
+  failClosedOnError: true,
 });
 
 const patchPresenterSchema = z.object({

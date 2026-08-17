@@ -150,6 +150,9 @@ describe("the daily AI-token dimension bounds spend instead of only counting it"
       source.indexOf("export function withAudit"),
     );
     expect(check).toContain("quotaTracker.getUsage");
+    expect(check).toContain("quotaTracker.getProfile(userId, true)");
+    expect(check).toContain("used >= limit");
+    expect(check).not.toContain("limit > 0 && used >= limit");
     expect(check).not.toContain("checkAndIncrement");
   });
 

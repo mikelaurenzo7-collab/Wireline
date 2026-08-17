@@ -7,6 +7,7 @@ import {
   STRIPE_PUBLIC_BRAND,
   STRIPE_PUBLIC_SUPPORT_EMAIL,
   STRIPE_PUBLIC_SUPPORT_URL,
+  effectiveStripeCardStatementDescriptor,
   hasWirelineDescriptor,
 } from "./lib/stripe-account-identity.mjs";
 import {
@@ -254,11 +255,7 @@ async function stripeStatus() {
   )
     .trim()
     .toUpperCase();
-  const cardStatementDescriptor = String(
-    accountResult.body?.settings?.card_payments?.statement_descriptor_prefix || "",
-  )
-    .trim()
-    .toUpperCase();
+  const cardStatementDescriptor = effectiveStripeCardStatementDescriptor(accountResult.body);
   const origin = (value) => {
     if (typeof value !== "string" || !value.trim()) return null;
     try {
@@ -286,8 +283,8 @@ async function stripeStatus() {
   ).toUpperCase();
   const brandReady =
     publicName === STRIPE_PUBLIC_BRAND &&
-    statementDescriptor === "WIRELINE" &&
-    cardStatementDescriptor === "WIRELINE" &&
+    hasWirelineDescriptor(statementDescriptor) &&
+    hasWirelineDescriptor(cardStatementDescriptor.value) &&
     websiteOrigin === "https://trywireline.com" &&
     supportOrigin === "https://trywireline.com" &&
     supportUrl === STRIPE_PUBLIC_SUPPORT_URL &&
@@ -517,7 +514,9 @@ async function stripeStatus() {
     brand: {
       public_name: publicName || null,
       statement_descriptor_ready: hasWirelineDescriptor(statementDescriptor),
-      card_statement_descriptor_ready: hasWirelineDescriptor(cardStatementDescriptor),
+      card_statement_descriptor_ready: hasWirelineDescriptor(cardStatementDescriptor.value),
+      card_statement_descriptor_effective: cardStatementDescriptor.value || null,
+      card_statement_descriptor_source: cardStatementDescriptor.source,
       website_origin: websiteOrigin,
       support_origin: supportOrigin,
       support_email: supportEmail || null,

@@ -95,6 +95,7 @@ const insightsAiRateLimit = createRateLimiter({
   bucket: "api:insights-ai",
   windowMs: 60 * 60 * 1000,
   max: 20,
+  failClosedOnError: true,
 });
 
 router.get(

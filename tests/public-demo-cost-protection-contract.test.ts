@@ -11,6 +11,7 @@ describe("public browser demo cost protection", () => {
   const hook = read("src/hooks/useProtectedPublicDemo.ts");
   const widget = read("src/components/marketing/BrowserCallWidget.tsx");
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
+  const server = read("server.ts");
 
   it("keeps platform authorization and assistant construction on the server", () => {
     expect(routes).toContain('fetch("https://api.vapi.ai/call/web"');
@@ -38,11 +39,62 @@ describe("public browser demo cost protection", () => {
     expect(compatibilityBlock).not.toContain("transcriber");
   });
 
-  it("checks protected-demo availability before asking for microphone access", () => {
+  it("checks the real protected-demo runtime before asking for microphone access", () => {
     const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
     const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
+    const sessionRouteStart = routes.indexOf('router.post("/api/public/demo-session"');
+    const sessionRouteEnd = routes.indexOf(
+      'router.post("/api/public/demo-vapi/call/web"',
+      sessionRouteStart,
+    );
+    const sessionRoute = routes.slice(sessionRouteStart, sessionRouteEnd);
+    const providerReadiness = sessionRoute.indexOf(
+      "!publicDemoTicketingReady() || !privateVapiKey()",
+    );
+    const ticketIssue = sessionRoute.indexOf("issuePublicDemoTicket({");
+
     expect(sessionRequest).toBeGreaterThan(-1);
     expect(permissionRequest).toBeGreaterThan(sessionRequest);
+    expect(providerReadiness).toBeGreaterThan(-1);
+    expect(ticketIssue).toBeGreaterThan(providerReadiness);
+  });
+
+  it("fences canceled and stalled starts before they can reclaim provider ownership", () => {
+    expect(hook).toContain("PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000");
+    expect(hook).toContain("PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000");
+    expect(hook).toContain("const attemptRef = useRef(0)");
+    expect(hook).toContain("const sessionAbortRef = useRef<AbortController | null>(null)");
+    expect(hook).toContain("signal: controller.signal");
+    expect(hook).toContain("if (attempt !== attemptRef.current) return");
+    expect(hook).toContain("attemptRef.current += 1");
+    expect(hook).toContain("The live connection took too long");
+    expect(hook).toContain("vapiRef.current?.stop()");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "voice bridge error:",
+    );
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
+      "call start failed:",
+    );
+  });
+
+  it("keeps cancellation reachable while a private session is connecting", () => {
+    expect(widget).toContain('? "Cancel"');
+    expect(widget).toContain("disabled={demo.completed}");
+    expect(widget).toContain("demo.callActive || demo.connecting");
+    expect(widget).toContain("Cancel at any time before the private voice session begins.");
+    expect(widget).not.toContain("disabled={demo.connecting || demo.completed}");
+  });
+
+  it("uses Express's trusted proxy identity instead of caller-controlled forwarding input", () => {
+    const requestIpStart = routes.indexOf("function requestIp(req: Request)");
+    const requestIpEnd = routes.indexOf("function requestHost", requestIpStart);
+    const requestIpBlock = routes.slice(requestIpStart, requestIpEnd);
+
+    expect(server).toContain('if (IS_PROD) app.set("trust proxy", 1);');
+    expect(requestIpBlock).toContain('return String(req.ip || "unknown").trim();');
+    expect(requestIpBlock).not.toContain("x-forwarded-for");
+    expect(routes).toContain("admitPublicDemoTicketMint(fingerprint)");
+    expect(routes).toContain("admitPublicWebDemoSession(verification.claims.ip)");
   });
 
   it("caps duration, disables retained artifacts, and exposes no real tools", () => {

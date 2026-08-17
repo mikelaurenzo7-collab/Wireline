@@ -322,11 +322,14 @@ export async function getAiTokenQuotaExceeded(
 ): Promise<{ limit: number; used: number } | null> {
   try {
     const [{ profile }, used] = await Promise.all([
-      quotaTracker.getProfile(userId),
+      quotaTracker.getProfile(userId, true),
       quotaTracker.getUsage(userId, "claude_tokens_daily"),
     ]);
     const limit = profile.claude_tokens_daily;
-    return limit > 0 && used >= limit ? { limit, used } : null;
+    // A 0 override is an operator hard-stop, not "no ceiling". Admission also
+    // bypasses the 30s override cache so a newly lowered cap cannot remain
+    // stale in one warm serverless invocation.
+    return used >= limit ? { limit, used } : null;
   } catch (error) {
     log.error("AI token quota check failed, allowing request", {
       user_id: userId,

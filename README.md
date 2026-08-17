@@ -2,12 +2,12 @@
 
 Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-The customer-facing loop is **Create -> Train -> Run**. Operationally, Wire sits between Training and Run:
+The public operating loop is **Build -> Train -> Launch -> Improve**. Product architecture expresses that loop through Create, Training, Wire, and Studio:
 
-1. **Create** a focused voice agent quickly.
+1. **Create / Build** a focused voice agent quickly.
 2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
-3. **Wire** it to an included number, integrations, routing, approvals, and billing controls.
-4. **Run** it in Studio for calls, texts, follow-up, approvals, handoffs, and review.
+3. **Wire / Launch** it to an included number slot, integrations, routing, approvals, and billing controls.
+4. **Studio / Improve** operates calls, texts, follow-up, approvals, handoffs, review, and iteration from real outcomes.
 
 ## Product surface
 
@@ -16,9 +16,9 @@ The customer-facing loop is **Create -> Train -> Run**. Operationally, Wire sits
 - **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
-- **Video presenters - planned/beta add-on:** optional consent-gated visual layer for business agents with Wireline-owned copy and fallback behavior.
+- **Live Video - live paid add-on:** optional consent-gated visual presence for eligible paid business workspaces. Availability remains provider-, checkout-, entitlement-, and emergency-kill-switch gated, with a voice fallback when video is unavailable.
 
-Every included agent has an **included number** so the role can call out, receive callbacks, and become a reachable operating asset.
+Every paid agent includes a **production-number slot**. Wireline provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
 
 ## Technology and ownership
 
@@ -68,6 +68,7 @@ Use `npm run verify` for focused implementation branches. Use `npm run verify:fu
 | Contribution workflow | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | Repository health | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md) |
 | Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| Public positioning and creative proof | [docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md) |
 | Documentation map | [docs/README.md](./docs/README.md) |
 | Audit evidence | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md) |
 | Client/release boundaries | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md) |

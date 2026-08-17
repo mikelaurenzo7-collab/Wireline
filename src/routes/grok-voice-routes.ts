@@ -30,6 +30,7 @@ const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
   windowMs: 60_000,
   max: 12,
+  failClosedOnError: true,
 });
 const toolLimiter = createRateLimiter({
   bucket: "api:live-voice-tool",
@@ -45,6 +46,7 @@ const previewLimiter = createRateLimiter({
   bucket: "api:voice-preview",
   windowMs: 60_000,
   max: 20,
+  failClosedOnError: true,
 });
 const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),

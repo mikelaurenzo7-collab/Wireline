@@ -49,6 +49,9 @@ const PLAN_ACCENTS: Record<string, string> = {
   enterprise: BRAND.colors.primary,
 };
 
+const CHECKOUT_RELEASE_MESSAGE =
+  "New purchases are temporarily unavailable. Please try again soon.";
+
 type StripeBillingCardProps = {
   /**
    * Some account surfaces do not load the customer's actual balance. Keep the
@@ -72,6 +75,7 @@ export default function StripeBillingCard({
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [selfServeBillingReleased, setSelfServeBillingReleased] = useState(false);
   const [signupPlanInterest, setSignupPlanInterest] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -94,6 +98,7 @@ export default function StripeBillingCard({
   const refresh = async () => {
     setLoading(true);
     setError(null);
+    setSelfServeBillingReleased(false);
     try {
       const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status"),
@@ -110,7 +115,11 @@ export default function StripeBillingCard({
       if (!statusRes || !plansRes) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
       }
+      const livePlans = plansRes.plans || [];
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
+      setSelfServeBillingReleased(
+        livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true),
+      );
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
@@ -122,7 +131,7 @@ export default function StripeBillingCard({
           statusRes.signup_intent?.plan_id ||
           (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
       );
-      setPlans(plansRes.plans || []);
+      setPlans(livePlans);
       setLiveVideoAddon(entitlementRes);
     } catch (e: any) {
       setError(e?.message || "Load failed");
@@ -155,6 +164,14 @@ export default function StripeBillingCard({
       (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
     if (hasActive) return openPortal();
 
+    const selectedPlan = plans.find((plan) => plan.id === planId);
+    const selectedIntervalReady =
+      interval === "year" ? selectedPlan?.annual_configured === true : selectedPlan?.configured === true;
+    if (!selfServeBillingReleased || !selectedIntervalReady) {
+      setError(CHECKOUT_RELEASE_MESSAGE);
+      return;
+    }
+
     setBusy(planId);
     setError(null);
     try {
@@ -172,11 +189,10 @@ export default function StripeBillingCard({
 
       if (typeof window !== "undefined") {
         try {
-          const selected = plans.find((plan) => plan.id === planId);
           const checkoutValue =
             interval === "year"
-              ? (selected?.price_usd_annual ?? 0)
-              : (selected?.price_usd_monthly ?? 0);
+              ? (selectedPlan?.price_usd_annual ?? 0)
+              : (selectedPlan?.price_usd_monthly ?? 0);
           if (typeof (window as any).fbq === "function") {
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
@@ -206,6 +222,10 @@ export default function StripeBillingCard({
   };
 
   const startCreditCheckout = async (amountUsd: number) => {
+    if (!selfServeBillingReleased) {
+      setError(CHECKOUT_RELEASE_MESSAGE);
+      return;
+    }
     const hasPaidSubscription =
       !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
     if (!hasPaidSubscription) {
@@ -248,6 +268,10 @@ export default function StripeBillingCard({
   };
 
   const startLiveVideoCheckout = async () => {
+    if (!selfServeBillingReleased) {
+      setError(CHECKOUT_RELEASE_MESSAGE);
+      return;
+    }
     setLiveVideoBusy(true);
     setError(null);
     try {
@@ -324,10 +348,24 @@ export default function StripeBillingCard({
     (sub.status === "active" || sub.status === "trialing");
   const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess;
   const canAddBalance =
-    !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
+    selfServeBillingReleased &&
+    !!sub?.has_subscription &&
+    (sub.status === "active" || sub.status === "trialing");
 
   return (
     <div className="space-y-8">
+      {!selfServeBillingReleased ? (
+        <div
+          role="status"
+          className="rounded-md border border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] p-4 flex items-start gap-3"
+        >
+          <AlertTriangle className="mt-0.5 w-4 h-4 text-[var(--wireline-color-status-warning)] shrink-0" />
+          <p className="text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-foreground/75">
+            {CHECKOUT_RELEASE_MESSAGE} Existing subscriptions and Stripe billing management remain
+            available.
+          </p>
+        </div>
+      ) : null}
       {sub?.has_subscription ? (
         <ActiveSubCard
           sub={sub}
@@ -362,7 +400,7 @@ export default function StripeBillingCard({
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
-          ) : liveVideoAddon.liveVideoCheckoutAvailable ? (
+          ) : liveVideoAddon.liveVideoCheckoutAvailable && selfServeBillingReleased ? (
             <ShadButton
               type="button"
               disableAnimations
@@ -377,7 +415,10 @@ export default function StripeBillingCard({
           ) : (
             <div className="space-y-2">
               <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
-                {liveVideoAddon.reason || "Restore an active paid plan before using live video."}
+                {!selfServeBillingReleased
+                  ? CHECKOUT_RELEASE_MESSAGE
+                  : liveVideoAddon.reason ||
+                    "Restore an active paid plan before using live video."}
               </p>
               {sub?.has_subscription ? (
                 <button
@@ -417,6 +458,7 @@ export default function StripeBillingCard({
           signupPlanInterest={signupPlanInterest}
           busy={busy}
           billingInterval={billingInterval}
+          checkoutReleased={selfServeBillingReleased}
           onBillingIntervalChange={setBillingInterval}
           onSelectPlan={startCheckout}
         />
@@ -497,6 +539,7 @@ function PlanPicker({
   signupPlanInterest,
   busy,
   billingInterval,
+  checkoutReleased,
   onBillingIntervalChange,
   onSelectPlan,
 }: {
@@ -504,6 +547,7 @@ function PlanPicker({
   signupPlanInterest: string | null;
   busy: string | null;
   billingInterval: "month" | "year";
+  checkoutReleased: boolean;
   onBillingIntervalChange: (interval: "month" | "year") => void;
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
@@ -639,13 +683,17 @@ function PlanPicker({
                     <>
                       Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
                     </>
-                  ) : (
+                  ) : checkoutReleased ? (
                     "Contact sales"
+                  ) : (
+                    "Checkout paused"
                   )}
                 </ShadButton>
                 {!canSubscribe && (
                   <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
-                    Stripe catalog still being consolidated for this tier
+                    {checkoutReleased
+                      ? "Online checkout is not yet available for this plan"
+                      : "Online checkout is temporarily unavailable"}
                   </p>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />

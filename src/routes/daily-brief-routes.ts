@@ -29,6 +29,7 @@ const sendNowRateLimit = createRateLimiter({
   bucket: "api:daily-brief-send-now",
   windowMs: 60 * 60 * 1000,
   max: 10,
+  failClosedOnError: true,
 });
 
 // Settings: GET / PUT for the daily-brief schedule.

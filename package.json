@@ -47,6 +47,8 @@
     "stripe:verify-vercel-parity": "node scripts/verify-stripe-vercel-parity.mjs",
     "vercel:redeploy-production": "node scripts/redeploy-vercel-production.mjs",
     "stripe:catalog:check": "node scripts/check-stripe-catalog-contract.mjs",
+    "stripe:portal:verify": "node --import tsx scripts/reconcile-stripe-customer-portal.mts",
+    "stripe:portal:reconcile": "node --import tsx scripts/reconcile-stripe-customer-portal.mts --apply",
     "stripe:webhook:check": "node scripts/align-stripe-webhook-events.mjs",
     "stripe:webhook:align": "node scripts/align-stripe-webhook-events.mjs --apply",
     "stripe:webhook-secret:sync": "node scripts/sync-stripe-webhook-secret-to-vercel.mjs",

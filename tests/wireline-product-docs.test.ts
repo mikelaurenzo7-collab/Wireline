@@ -25,10 +25,14 @@ describe("Wireline product documentation contract", () => {
     const readme = read("README.md");
     expect(readme).toContain("Wireline Command");
     expect(readme).toContain("Wireline Letterpress design system");
-    expect(readme).toContain("Create -> Train -> Run");
+    expect(readme).toContain("Build -> Train -> Launch -> Improve");
+    expect(readme).toContain("Create / Build");
+    expect(readme).toContain("Wire / Launch");
+    expect(readme).toContain("Studio / Improve");
     expect(readme).toContain("voice agents");
     expect(readme).toContain("personal and business conversations");
-    expect(readme).toContain("included number");
+    expect(readme).toContain("production-number slot");
+    expect(readme).toContain("provisions the number only when the role needs one");
     expectNoTerms(readme, retiredProductTerms);
   });
 

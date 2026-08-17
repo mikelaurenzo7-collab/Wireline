@@ -105,6 +105,17 @@ export const ALL_DIMENSIONS: QuotaDimension[] = [
   "simulation_minutes_daily",
 ];
 
+/**
+ * These dimensions are admitted before provider work and later released on a
+ * definitive no-work outcome. They must never increment when the reservation
+ * is denied. Actual completed voice usage is written separately through the
+ * idempotent voice-usage event ledger.
+ */
+const CONDITIONAL_RESERVATION_DIMENSIONS = new Set<QuotaDimension>([
+  "voice_minutes_daily",
+  "simulation_minutes_daily",
+]);
+
 // ─────────────────────────────────────────────────────────────────
 // Effective-limit resolution (pure)
 // ─────────────────────────────────────────────────────────────────
@@ -161,6 +172,31 @@ export function minutePeriodKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 16);
 }
 
+function nextDailyResetIso(now: Date = new Date()): string {
+  const t = new Date(now);
+  t.setUTCHours(24, 0, 0, 0);
+  return t.toISOString();
+}
+
+function nextMinuteResetIso(now: Date = new Date()): string {
+  const t = new Date(now);
+  t.setUTCSeconds(60, 0);
+  return t.toISOString();
+}
+
+function quotaWindow(dimension: QuotaDimension, now: Date = new Date()) {
+  return dimension === "intake_rpm"
+    ? { periodKey: minutePeriodKey(now), resetAt: nextMinuteResetIso(now) }
+    : { periodKey: dailyPeriodKey(now), resetAt: nextDailyResetIso(now) };
+}
+
+function quotaUnits(delta: number): number {
+  if (!Number.isSafeInteger(delta) || delta < 0) {
+    throw new RangeError("Quota delta must be a non-negative safe integer.");
+  }
+  return delta;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Decision shape
 // ─────────────────────────────────────────────────────────────────
@@ -176,12 +212,11 @@ export interface QuotaDecision {
   /** When the current window resets (ISO string). */
   reset_at: string;
   /**
-   * False when the increment could not be durably recorded and the decision
-   * came from the read-only fallback. During a write-degraded incident the
-   * fallback keeps allowing until *recorded* usage reaches the limit, so
-   * spend-sensitive callers (vendor-metered session mints) must refuse on
-   * `!persisted` — otherwise unmetered spend continues exactly while
-   * accounting is blind. Availability-oriented dimensions may accept it.
+   * True when Postgres authoritatively accepted or refused the operation. An
+   * accepted reservation has a durable increment; an authoritative refusal
+   * intentionally writes nothing. False means the write path failed and the
+   * decision came from a read-only fallback. Spend-sensitive callers must
+   * refuse on `!persisted` so accounting outages cannot create unmetered work.
    */
   persisted: boolean;
 }
@@ -204,9 +239,29 @@ export function buildDecision(opts: {
     remaining: Math.max(0, opts.limit - opts.used),
     period_key: opts.period_key,
     reset_at: opts.reset_at,
-    // buildDecision is only reached from read-only paths (the fallback after
-    // a failed increment, and plain usage reads) — nothing was written.
+    // buildDecision is reached only after the atomic write path failed. The
+    // read can guide availability-oriented callers but is not a reservation.
     persisted: false,
+  };
+}
+
+function authoritativeDecision(opts: {
+  allowed: boolean;
+  dimension: QuotaDimension;
+  limit: number;
+  used: number;
+  periodKey: string;
+  resetAt: string;
+}): QuotaDecision {
+  return {
+    allowed: opts.allowed,
+    dimension: opts.dimension,
+    limit: opts.limit,
+    used: opts.used,
+    remaining: Math.max(0, opts.limit - opts.used),
+    period_key: opts.periodKey,
+    reset_at: opts.resetAt,
+    persisted: true,
   };
 }
 
@@ -221,18 +276,6 @@ interface OverrideCacheEntry {
 
 const OVERRIDE_CACHE_TTL_MS = 30_000;
 
-function nextDailyResetIso(now: Date = new Date()): string {
-  const t = new Date(now);
-  t.setUTCHours(24, 0, 0, 0);
-  return t.toISOString();
-}
-
-function nextMinuteResetIso(now: Date = new Date()): string {
-  const t = new Date(now);
-  t.setUTCSeconds(60, 0);
-  return t.toISOString();
-}
-
 export interface QuotaTrackerDeps {
   drizzle: VercelPgDatabase<typeof schema>;
   /** Resolves the plan tier for a user. */
@@ -243,9 +286,9 @@ export class QuotaTracker {
   private readonly overrideCache = new Map<string, OverrideCacheEntry>();
   constructor(private readonly deps: QuotaTrackerDeps) {}
 
-  async getOverrides(userId: string): Promise<QuotaOverrideRow[]> {
+  async getOverrides(userId: string, bypassCache = false): Promise<QuotaOverrideRow[]> {
     const cached = this.overrideCache.get(userId);
-    if (cached && Date.now() - cached.cached_at < OVERRIDE_CACHE_TTL_MS) {
+    if (!bypassCache && cached && Date.now() - cached.cached_at < OVERRIDE_CACHE_TTL_MS) {
       return cached.rows;
     }
     const data = await this.deps.drizzle
@@ -273,17 +316,22 @@ export class QuotaTracker {
     this.overrideCache.delete(userId);
   }
 
-  async getProfile(userId: string): Promise<{ plan: PlanTier; profile: QuotaProfile }> {
+  async getProfile(
+    userId: string,
+    bypassOverrideCache = false,
+  ): Promise<{ plan: PlanTier; profile: QuotaProfile }> {
     const [plan, overrides] = await Promise.all([
       this.deps.getPlanForUser(userId),
-      this.getOverrides(userId),
+      this.getOverrides(userId, bypassOverrideCache),
     ]);
     return { plan, profile: resolveProfile(plan, overrides) };
   }
 
-  /** Read current usage without incrementing. */
-  async getUsage(userId: string, dimension: QuotaDimension): Promise<number> {
-    const periodKey = dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
+  private async getUsageForPeriod(
+    userId: string,
+    dimension: QuotaDimension,
+    periodKey: string,
+  ): Promise<number> {
     const [data] = await this.deps.drizzle
       .select({ used: schema.quotaUsage.used })
       .from(schema.quotaUsage)
@@ -298,26 +346,36 @@ export class QuotaTracker {
     return Number(data?.used ?? 0);
   }
 
+  /** Read current usage without incrementing. */
+  async getUsage(userId: string, dimension: QuotaDimension): Promise<number> {
+    const { periodKey } = quotaWindow(dimension);
+    return this.getUsageForPeriod(userId, dimension, periodKey);
+  }
+
   /**
-   * Check + reserve `delta` units against the dimension via an atomic
-   * ON CONFLICT upsert, with a non-atomic select fallback when the upsert
-   * errors. NOTE: despite the historical claim, this is NOT fail-open — the
-   * fallback re-queries the same database (getUsage rethrows when it's truly
-   * down) and getProfile runs outside any try at all, so callers see an
-   * exception when the counter store is unavailable. Callers that want
-   * fail-open must catch and decide themselves (api-rate-limits.ts does).
+   * Record actual usage. Token accounting uses this after provider work and
+   * must keep the real total even when it crosses the configured ceiling.
+   *
+   * Compatibility: voice/simulation callers historically used this method for
+   * pre-provider admission. Those dimensions delegate to `tryReserve`, whose
+   * conditional UPSERT refuses without incrementing when the cap is exhausted.
    */
   async checkAndIncrement(
     userId: string,
     dimension: QuotaDimension,
     delta = 1,
   ): Promise<QuotaDecision> {
-    const { profile } = await this.getProfile(userId);
-    const limit = profile[dimension];
-    const periodKey = dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
-    const resetAt = dimension === "intake_rpm" ? nextMinuteResetIso() : nextDailyResetIso();
+    if (CONDITIONAL_RESERVATION_DIMENSIONS.has(dimension)) {
+      return this.tryReserve(userId, dimension, delta);
+    }
 
-    // Atomic increment using ON CONFLICT ... UPDATE
+    const units = quotaUnits(delta);
+    const { profile } = await this.getProfile(userId);
+    const limit = Math.max(0, Math.floor(profile[dimension]));
+    const { periodKey, resetAt } = quotaWindow(dimension);
+
+    // Actual accounting is unconditional: once a provider has performed work,
+    // the ledger must record it even when the call crosses a quota boundary.
     try {
       const [row] = (await this.deps.drizzle
         .insert(schema.quotaUsage)
@@ -325,7 +383,7 @@ export class QuotaTracker {
           userId,
           dimension,
           periodKey,
-          used: BigInt(delta),
+          used: BigInt(units),
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
@@ -335,34 +393,125 @@ export class QuotaTracker {
             schema.quotaUsage.periodKey,
           ],
           set: {
-            used: sql`${schema.quotaUsage.used} + ${BigInt(delta)}`,
+            used: sql`${schema.quotaUsage.used} + ${BigInt(units)}`,
             updatedAt: new Date(),
           },
         })
         .returning()) as any[];
 
       const used = Number(row.used);
-      const allowed = used <= limit;
-
-      return {
-        allowed,
+      return authoritativeDecision({
+        allowed: used <= limit,
         dimension,
         limit,
         used,
-        remaining: Math.max(0, limit - used),
-        period_key: periodKey,
-        reset_at: resetAt,
-        persisted: true,
-      };
+        periodKey,
+        resetAt,
+      });
     } catch (error: any) {
       log.error("quota checkAndIncrement failed", { error: error.message, userId, dimension });
-      // Non-atomic fallback: select → if would-exceed, refuse without writing.
-      const current = await this.getUsage(userId, dimension);
+      const current = await this.getUsageForPeriod(userId, dimension, periodKey);
       return buildDecision({
         dimension,
         limit,
         used: current,
-        delta,
+        delta: units,
+        period_key: periodKey,
+        reset_at: resetAt,
+      });
+    }
+  }
+
+  /**
+   * Atomically reserve pre-provider quota without charging denied requests.
+   *
+   * PostgreSQL evaluates the conflict-update predicate while holding the row
+   * lock. Concurrent reservations therefore serialize on the same tenant,
+   * dimension, and period. A request that would exceed the limit returns no
+   * row and leaves `used` unchanged. Fresh overrides are read for every
+   * reservation so a recently lowered operator cap cannot remain stale in one
+   * warm serverless invocation.
+   */
+  async tryReserve(
+    userId: string,
+    dimension: QuotaDimension,
+    delta = 1,
+  ): Promise<QuotaDecision> {
+    const units = quotaUnits(delta);
+    const { profile } = await this.getProfile(userId, true);
+    const limit = Math.max(0, Math.floor(profile[dimension]));
+    const { periodKey, resetAt } = quotaWindow(dimension);
+
+    try {
+      // An absent row would otherwise insert an impossible reservation, including
+      // a 0-unit probe against a 0 cap (`0 > 0` is false). Refuse authoritatively
+      // without a write before entering the UPSERT path.
+      if (limit <= 0 || units > limit) {
+        const current = await this.getUsageForPeriod(userId, dimension, periodKey);
+        return authoritativeDecision({
+          allowed: false,
+          dimension,
+          limit,
+          used: current,
+          periodKey,
+          resetAt,
+        });
+      }
+
+      const [row] = (await this.deps.drizzle
+        .insert(schema.quotaUsage)
+        .values({
+          userId,
+          dimension,
+          periodKey,
+          used: BigInt(units),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [
+            schema.quotaUsage.userId,
+            schema.quotaUsage.dimension,
+            schema.quotaUsage.periodKey,
+          ],
+          set: {
+            used: sql`${schema.quotaUsage.used} + ${BigInt(units)}`,
+            updatedAt: new Date(),
+          },
+          setWhere: sql`${schema.quotaUsage.used} + ${BigInt(units)} <= ${BigInt(limit)}`,
+        })
+        .returning()) as any[];
+
+      if (row) {
+        return authoritativeDecision({
+          allowed: true,
+          dimension,
+          limit,
+          used: Number(row.used),
+          periodKey,
+          resetAt,
+        });
+      }
+
+      // The conditional conflict update refused the reservation. Re-read for
+      // accurate headers, but never retry blindly: a concurrent release can
+      // make this a conservative false-negative, which is safer than overspend.
+      const current = await this.getUsageForPeriod(userId, dimension, periodKey);
+      return authoritativeDecision({
+        allowed: false,
+        dimension,
+        limit,
+        used: current,
+        periodKey,
+        resetAt,
+      });
+    } catch (error: any) {
+      log.error("quota tryReserve failed", { error: error.message, userId, dimension });
+      const current = await this.getUsageForPeriod(userId, dimension, periodKey);
+      return buildDecision({
+        dimension,
+        limit,
+        used: current,
+        delta: units,
         period_key: periodKey,
         reset_at: resetAt,
       });

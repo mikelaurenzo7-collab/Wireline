@@ -49,6 +49,16 @@ describe("spend guard integrity", () => {
     expect(resolveHardSpendCapStatus({ budget, mtdCost: 11 })).toBe("exceeded");
   });
 
+  it("bypasses per-instance cache for every provider-spend admission decision", () => {
+    const guard = read("src/lib/spend-guards.ts");
+    const authoritativeCalls = guard.match(/getAuthoritativeBudgetSnapshot\(userId\)/g) || [];
+
+    expect(guard).toContain("function getAuthoritativeBudgetSnapshot(userId: string)");
+    expect(guard).toContain("return getBudgetSnapshot(userId, true)");
+    expect(guard).toContain("under serverless concurrency");
+    expect(authoritativeCalls).toHaveLength(2);
+  });
+
   it("fails provider work closed and repairs legacy rows instead of fabricating UI state", () => {
     const guard = read("src/lib/spend-guards.ts");
     const route = read("src/routes/spend-control-routes.ts");

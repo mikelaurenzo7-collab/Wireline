@@ -261,21 +261,45 @@ export const jobsRateLimit = createRateLimiter({
 
 const JOBS_SWEEP_WINDOW_MS = 15 * 60 * 1000;
 const JOBS_SWEEP_MAX = 20;
+const JOBS_SWEEP_CRON_KEY = "cron:wireline-job-sweep";
 
 /**
  * Rate limiter for POST /api/jobs/sweep only.
- * Manual sweeps key by user id; Vercel cron keys by caller IP (no req.user).
- * Must run after cronOrAdminAuth so `_sweepMode` is set for cron callers.
+ * Manual sweeps key by user id; every Vercel cron invocation shares one global
+ * key so source-IP rotation or a leaked cron credential cannot mint fresh
+ * admission buckets. Must run after cronOrAdminAuth so `_sweepMode` is set.
+ * The sweep can enqueue and execute provider-backed work, so limiter outages
+ * fail closed rather than turning an infrastructure incident into unbounded
+ * queue fan-out.
  */
 export const jobsSweepRateLimit: RateLimitMiddleware = async (req, res, next) => {
-  const opts = { bucket: "api:jobs:sweep", windowMs: JOBS_SWEEP_WINDOW_MS, max: JOBS_SWEEP_MAX };
+  const opts = {
+    bucket: "api:jobs:sweep",
+    windowMs: JOBS_SWEEP_WINDOW_MS,
+    max: JOBS_SWEEP_MAX,
+    failClosedOnError: true,
+  };
   const userId = (req as Request & { user?: { id?: string } }).user?.id;
   const sweepMode = (req as Request & { _sweepMode?: string })._sweepMode;
-  const key = userId ?? (sweepMode === "cron" ? `cron:${req.ip || "anon"}` : null);
+  const key = userId ?? (sweepMode === "cron" ? JOBS_SWEEP_CRON_KEY : null);
   if (!key) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
+
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    log.error("job sweep limiter unavailable, failing closed", {
+      bucket: opts.bucket,
+      code: status.code,
+    });
+    res.status(503).json({
+      error: "Job sweep rate limiting temporarily unavailable.",
+      code: status.code,
+    });
+    return;
+  }
+
   try {
     const result = await rateLimit(key, opts);
     if (!result.allowed) {
@@ -293,11 +317,14 @@ export const jobsSweepRateLimit: RateLimitMiddleware = async (req, res, next) =>
     res.set("X-RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
     next();
   } catch (err) {
-    log.error("rate limiter error, fail-open", {
+    log.error("job sweep rate limiter error, failing closed", {
       bucket: opts.bucket,
       error: getErrorMessage(err),
     });
-    next();
+    res.status(503).json({
+      error: "Job sweep rate limiting temporarily unavailable.",
+      code: "RATE_LIMITER_ERROR",
+    });
   }
 };
 
@@ -470,21 +497,43 @@ interface IpRateLimiterOpts {
   max: number;
   /** JSON body returned on 429. Defaults to generic message. */
   message?: Record<string, string>;
+  /**
+   * Fail closed when distributed admission is unavailable. Leave false for
+   * signed provider webhooks and other delivery paths where dropping the
+   * request is more damaging than temporarily losing rate limiting.
+   */
+  failClosedOnError?: boolean;
 }
 
 /**
  * Creates an IP-keyed rate limit middleware for unauthenticated routes.
- * Replaces express-rate-limit with the unified distributed limiter.
+ * Replaces express-rate-limit with the unified distributed limiter. Callers
+ * must opt into fail-closed behavior for privacy-, cost-, or abuse-sensitive
+ * public routes; webhook delivery remains fail-open by default.
  */
 export function createIpRateLimiter(opts: IpRateLimiterOpts): RateLimitMiddleware {
   const errorBody = opts.message ?? { error: "Too many requests. Please try again later." };
   return async (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown";
+
+    if (opts.failClosedOnError) {
+      const status = distributedLimiterStatus();
+      if (!status.ok) {
+        log.error("ip rate limiter unavailable, failing closed", {
+          bucket: opts.bucket,
+          code: status.code,
+        });
+        res.status(503).json({ error: status.reason, code: status.code });
+        return;
+      }
+    }
+
     try {
       const result = await rateLimit(ip, {
         bucket: opts.bucket,
         windowMs: opts.windowMs,
         max: opts.max,
+        failClosedOnError: opts.failClosedOnError,
       });
 
       // Standard rate-limit headers
@@ -500,7 +549,19 @@ export function createIpRateLimiter(opts: IpRateLimiterOpts): RateLimitMiddlewar
       }
       next();
     } catch (err) {
-      // Fail-OPEN on error — better to serve traffic than block webhooks.
+      if (opts.failClosedOnError) {
+        log.error("ip rate limiter error, failing closed", {
+          bucket: opts.bucket,
+          error: getErrorMessage(err),
+        });
+        res.status(503).json({
+          error: "Rate limiting temporarily unavailable. Retry shortly.",
+          code: "RATE_LIMITER_ERROR",
+        });
+        return;
+      }
+      // Preserve delivery availability for signed provider webhooks and other
+      // explicitly fail-open callers.
       log.error("ip rate limiter error, fail-open", {
         bucket: opts.bucket,
         error: getErrorMessage(err),

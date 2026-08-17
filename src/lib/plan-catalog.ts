@@ -1,3 +1,5 @@
+import { selfServeBillingEnabled } from "./billing-release";
+
 /** Stripe-backed launch plan catalog. Public plan ids remain canonical. */
 
 /**
@@ -465,29 +467,45 @@ export function planLookupKey(plan: StripePlan, interval: "month" | "year"): str
   return interval === "year" ? plan.lookupKeyAnnual || null : plan.lookupKeyMonthly || null;
 }
 
-/** Public API catalog for Free Builder and all self-serve founder plans. */
+/**
+ * Public API catalog for Free Builder and all self-serve founder plans.
+ *
+ * `configured` is deliberately customer-facing availability, not merely the
+ * presence of a Stripe price id. This keeps every client surface fail-closed
+ * until release authorization matches the exact deployed Git SHA.
+ */
 export function plansForClient() {
-  return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    price_usd_monthly: plan.price_usd_monthly,
-    price_usd_annual: plan.price_usd_annual,
-    max_agents: plan.max_agents,
-    voice_minutes_monthly: plan.voice_minutes_monthly,
-    runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
-    ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
-    overage_per_min_usd: plan.overage_per_min_usd,
-    included_phone_numbers: plan.included_phone_numbers,
-    extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
-    extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
-    extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
-    extra_agent_configured: !!configuredExtraAgentPriceId(plan),
-    features: plan.features,
-    configured: plan.id === "personal" || !!configuredPriceId(plan, "month"),
-    annual_configured: plan.id === "personal" || !!configuredPriceId(plan, "year"),
-    contact_sales: false,
-    is_free: plan.id === "personal",
-    public: true,
-    pricing_model: "guaranteed_voice_plus_flexible_runtime" as const,
-  }));
+  const checkoutReleased = selfServeBillingEnabled();
+
+  return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => {
+    const isFree = plan.id === "personal";
+    const monthlyConfigured = !!configuredPriceId(plan, "month");
+    const annualConfigured = !!configuredPriceId(plan, "year");
+    const paidCheckoutAvailable = checkoutReleased && monthlyConfigured;
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      price_usd_monthly: plan.price_usd_monthly,
+      price_usd_annual: plan.price_usd_annual,
+      max_agents: plan.max_agents,
+      voice_minutes_monthly: plan.voice_minutes_monthly,
+      runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
+      ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
+      overage_per_min_usd: plan.overage_per_min_usd,
+      included_phone_numbers: plan.included_phone_numbers,
+      extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
+      extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
+      extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
+      extra_agent_configured:
+        !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
+      features: plan.features,
+      configured: isFree || paidCheckoutAvailable,
+      annual_configured: isFree || (checkoutReleased && monthlyConfigured && annualConfigured),
+      contact_sales: !isFree && !paidCheckoutAvailable,
+      is_free: isFree,
+      public: true,
+      pricing_model: "guaranteed_voice_plus_flexible_runtime" as const,
+    };
+  });
 }

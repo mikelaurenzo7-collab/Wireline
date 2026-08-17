@@ -12,6 +12,7 @@ describe("insights AI rate limiting", () => {
     expect(source).toContain('import { createRateLimiter } from "../middleware/api-rate-limits"');
     expect(source).toContain('bucket: "api:insights-ai"');
     expect(source).toContain("max: 20");
+    expect(source).toContain("failClosedOnError: true");
     expect(source).toContain("insightsAiRateLimit");
 
     for (const path of [

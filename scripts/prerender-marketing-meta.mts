@@ -1,24 +1,24 @@
 /**
- * Prerender per-route head metadata for the marketing SPA.
+ * Prerender per-route head metadata for the public SPA.
  *
  * Runs immediately after `vite build` (wired into the package `build` script,
  * which both local builds and `scripts/vercel-build.mjs` execute). For each
- * route in PRERENDERED_MARKETING_ROUTES it writes `dist/<route>/index.html`
- * — a copy of the built shell with that route's title/description/canonical/
- * OG/Twitter tags injected — so non-JS link crawlers unfurl the right card.
+ * route in PRERENDERED_ROUTE_SHELLS it writes `dist/<route>/index.html` — a copy
+ * of the built shell with that route's title, description, canonical, robots,
+ * OG, and Twitter tags injected.
  *
  * Vercel serves filesystem matches before applying the SPA rewrite, so these
- * files take precedence for their routes; anywhere they are absent the
- * rewrite still serves the generic shell (fail-open to the status quo).
+ * files take precedence for their routes. Commercial pages get crawler-ready
+ * share metadata; account and transition routes get `noindex` before JS runs.
  *
  * Fails the build loudly if the shell's homepage defaults drift so injection
- * would silently no-op — the contract test pins the same invariant.
+ * would silently no-op.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   HOME_TITLE,
-  PRERENDERED_MARKETING_ROUTES,
+  PRERENDERED_ROUTE_SHELLS,
   escapeHtml,
   injectMarketingMeta,
   resolveRouteMeta,
@@ -44,25 +44,27 @@ if (!shell.includes(`<title>${HOME_TITLE}</title>`)) {
 }
 
 let written = 0;
-for (const route of PRERENDERED_MARKETING_ROUTES) {
+for (const route of PRERENDERED_ROUTE_SHELLS) {
   const meta = resolveRouteMeta(route);
   if (!meta) {
     console.error(`prerender-marketing-meta: no meta resolved for ${route} — route map drifted.`);
     process.exit(1);
   }
   const html = injectMarketingMeta(shell, meta);
-  // A whole-file inequality check only catches a *total* no-op. If the shell's
-  // canonical or og:url tag drifted while the title still matched, the page
-  // would ship with another route's canonical — the exact duplicate-content
-  // problem this prerender exists to fix — and the build would stay green.
-  // Assert every substitution the route depends on actually landed.
-  // Compare against the same escaping injectMarketingMeta applies, so a title
-  // containing `&` or a quote cannot fail this guard spuriously.
+  // A whole-file inequality check only catches a total no-op. Assert every
+  // substitution the route depends on actually landed, including the static
+  // crawler exclusion for account and transition routes.
   const required: Array<[string, string]> = [
     ["title", `<title>${escapeHtml(meta.title)}</title>`],
     ["canonical", `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`],
     ["og:url", `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`],
   ];
+  if (meta.noIndex) {
+    required.push(
+      ["robots", '<meta name="robots" content="noindex, nofollow" />'],
+      ["googlebot", '<meta name="googlebot" content="noindex, nofollow" />'],
+    );
+  }
   const missing = required.filter(([, expected]) => !html.includes(expected));
   if (html === shell || missing.length) {
     console.error(

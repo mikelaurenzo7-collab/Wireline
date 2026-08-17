@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+const workspacePageIntroTags = (source: string) =>
+  source.match(/<WorkspacePageIntro\b[\s\S]*?\/>/g) ?? [];
 
 const AUTHENTICATED_PAGE_INTROS = [
   "src/pages/ClientAppsPage.tsx",
@@ -16,10 +18,14 @@ const AUTHENTICATED_PAGE_INTROS = [
 describe("authenticated minimal copy contract", () => {
   it("keeps Connections page chrome on a single WorkspacePageIntro plus the integration map", () => {
     const connectionsPage = read("src/pages/ConnectionsPage.tsx");
+    const introTags = workspacePageIntroTags(connectionsPage);
     const map = read("src/components/integrations/IntegrationOperatingMap.tsx");
+
     expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
-    expect(connectionsPage).toMatch(/WorkspacePageIntro[\s\S]*title="Connections"/);
-    expect(connectionsPage).not.toMatch(/WorkspacePageIntro[\s\S]*description=/);
+    expect(introTags).toHaveLength(1);
+    expect(introTags[0]).toContain('title="Connections"');
+    expect(introTags[0]).not.toMatch(/\bdescription=/);
+    expect(introTags[0]).not.toMatch(/\beyebrow=/);
     expect(map).toMatch(/Integration map/);
   });
 
@@ -29,10 +35,16 @@ describe("authenticated minimal copy contract", () => {
     expect(intro).not.toContain("eyebrow?:");
 
     for (const path of [...AUTHENTICATED_PAGE_INTROS, "src/pages/ConnectionsPage.tsx"]) {
-      const source = read(path);
-      expect(source).toContain("WorkspacePageIntro");
-      expect(source).not.toMatch(/WorkspacePageIntro[\s\S]*description=/);
-      expect(source).not.toMatch(/WorkspacePageIntro[\s\S]*eyebrow=/);
+      const tags = workspacePageIntroTags(read(path));
+      expect(tags.length, `${path} should render a WorkspacePageIntro`).toBeGreaterThan(0);
+      for (const tag of tags) {
+        expect(tag, `${path} WorkspacePageIntro should stay title-first`).not.toMatch(
+          /\bdescription=/,
+        );
+        expect(tag, `${path} WorkspacePageIntro should not restore an eyebrow`).not.toMatch(
+          /\beyebrow=/,
+        );
+      }
     }
   });
 

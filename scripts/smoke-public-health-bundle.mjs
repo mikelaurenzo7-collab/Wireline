@@ -10,3 +10,9 @@ if (typeof handler !== "function") {
 }
 
 console.log("public health bundle imports with a callable handler");
+
+// The public-health smoke runs after the complete client build in the canonical
+// Vercel pipeline. Keep the release-time performance check here so every preview
+// and production artifact is measured exactly as deployed, not from source-size
+// estimates or a separate best-effort workflow.
+await import("./check-client-bundle-budgets.mjs");

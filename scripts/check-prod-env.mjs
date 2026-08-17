@@ -137,7 +137,7 @@ const recommended = [
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
   [
     "WIRELINE_RECONCILE_STRIPE_PORTAL",
-    "Production release control for idempotent managed Customer Portal reconciliation",
+    "Production fail-closed, read-only managed Customer Portal verification gate",
   ],
 
   // Canonical Founder Early Access catalog. These keys mirror

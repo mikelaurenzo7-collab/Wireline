@@ -64,6 +64,17 @@ describe("AI cost-protection contract", () => {
       expect(block, path).not.toContain("enforceSpendCap");
     }
 
+    const qaRoutes = read("src/routes/qa-routes-v2.ts");
+    for (const path of ["/score-batch", "/score/:callId"]) {
+      const start = qaRoutes.indexOf(`"${path}"`);
+      const block = qaRoutes.slice(start, qaRoutes.indexOf("async (req", start));
+      expect(block, path).toContain("enforceSpendCap");
+      expect(block, path).toContain('withAudit("qa")');
+      expect(block.indexOf("authenticateUser"), path).toBeLessThan(block.indexOf("enforceSpendCap"));
+      expect(block.indexOf("enforceSpendCap"), path).toBeLessThan(block.indexOf('withAudit("qa")'));
+    }
+    expect(qaRoutes).toContain("failClosedOnError: true");
+
     const website = read("src/routes/website-knowledge-routes.ts");
     const websiteRoute = website.slice(
       website.indexOf('"/api/agent-config/:id/website"'),

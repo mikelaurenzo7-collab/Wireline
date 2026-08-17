@@ -13,10 +13,9 @@ type MarketingSectionLink = {
 interface MarketingPageFrameProps {
   children: ReactNode;
   /**
-   * Long-form document pages (legal, changelog, blog) opt out of the section
-   * ceiling: a terms-of-service panel that scrolls inside a panel is worse than
-   * one honest column. The frame itself still never scrolls — only the flow
-   * inside it does.
+   * Long-form document pages (legal, changelog, blog) opt out of panel-style
+   * section composition and keep one honest reading column. Public routes still
+   * use the browser document as their sole scroll owner.
    */
   longform?: boolean;
   /** Opt-in mobile bottom conversion bar. Public pages already carry in-flow CTAs. */
@@ -30,10 +29,11 @@ interface MarketingPageFrameProps {
 /**
  * Shared shell for public marketing pages.
  *
- * The window is the frame and the frame never scrolls: fixed header, pinned
- * chrome bar, and a single bounded scroll region between them. See
- * `src/styles/viewport-first-marketing.css` for the three mechanisms — frame,
- * section ceiling, and proximity snap — that this component supplies the DOM for.
+ * Public routes use normal document scrolling. The fixed header, relative
+ * footer chrome, route-mode root, and section primitives are reconciled by
+ * `marketing-document-flow.css`, which intentionally loads after the older
+ * viewport-first base layer. Workspace routes retain their fixed-viewport,
+ * bounded-scroll ownership independently.
  */
 export default function MarketingPageFrame({
   children,
@@ -61,9 +61,9 @@ export default function MarketingPageFrame({
         )}
       >
         {sectionLinks && sectionLinks.length > 0 ? (
-          // `top-0` inside the flow, not `top-16` against the document: the
-          // scroll container starts below the fixed header, so an offset meant
-          // for page scroll left a 64px gap the strip floated under.
+          // `top-0` is relative to the flow's padded document position, so the
+          // strip stays immediately below the fixed public header without a
+          // second hard-coded header offset.
           <div className="sticky top-0 z-20 border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_94%,transparent)] px-5 py-2 backdrop-blur-xl lg:px-8">
             <nav
               aria-label="On this page"
@@ -93,10 +93,9 @@ export default function MarketingPageFrame({
         ) : null}
         {/* Children are not wrapped in a section: pages compose their own
             `.marketing-section` panels, because only the page knows where one
-            screen ends and the next begins. Wrapping the whole page in one
-            centred, height-capped box clipped every multi-section route.
-            The stack itself must fill the flow so a `--screen` panel can
-            centre in the visible field instead of sitting under the header. */}
+            story unit ends and the next begins. The document-mode stylesheet
+            lets those sections size naturally while preserving the shared
+            frame, typography, and alignment primitives. */}
         <div className={cn("marketing-frame-stack", longform && "marketing-longform")}>
           {children}
         </div>
