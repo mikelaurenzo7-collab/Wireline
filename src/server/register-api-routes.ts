@@ -38,6 +38,8 @@ import companyIdentitySettingsGuardRouter from "../routes/company-identity-setti
 import settingsPhoneGuardRouter from "../routes/settings-phone-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
+import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
+import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";
 import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
 import carrierRouter from "../routes/carrier-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
@@ -100,10 +102,6 @@ import gatewayCatalogRouter from "../routes/gateway-catalog-routes";
 
 /** Canonical API route order. Express resolves routes in registration order. */
 export function registerApiRoutes(app: Express): void {
-  // Standalone/server deployments must use the same distributed, zero-inference
-  // public status implementation as the dedicated Vercel function. Register the
-  // exact path before the broader legacy health router so its historical
-  // process-local implementation is unreachable.
   app.all("/api/health/public", (req, res, next) => {
     void publicHealthHandler(req, res).catch(next);
   });
@@ -114,14 +112,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(voicesRouter);
   app.use(videoPresenterRouter);
 
-  // Atomic browser-bound exchange owns this exact path before the broader OAuth
-  // middleware and legacy callback router. Provider start/callback requests still
-  // flow through the browser-binding middleware, which also moves bridge values
-  // from query parameters into URL fragments.
   app.use(authOAuthExchangeAtomicRouter);
   app.use(authOAuthBrowserBindingRouter);
   app.use(authOAuthRouter);
-  // Revocation-aware session routes shadow their legacy equivalents.
   app.use(authSessionHardeningRouter);
   app.use(authRouter);
 
@@ -132,25 +125,23 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
-  // Public showcase assistants can be returned dynamically by the webhook.
-  // Sanitize and validate that payload before the Vapi router writes it.
   app.use("/api/vapi-webhook", showcasePromptTruthGuard);
   app.use(vapiRouter);
   app.use(accountRouter);
   app.use(userPreferenceGuardRouter);
-  // Phone normalization/validation is pure and must precede the identity
-  // guard, whose branding commit would otherwise land before a malformed
-  // phone value 400s the request (silent half-write).
   app.use(settingsPhoneGuardRouter);
   app.use(companyIdentitySettingsGuardRouter);
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
+  // Native Twilio+xAI owns all self-serve number reads/writes and release before
+  // the historical carrier routers. Legacy paths remain mounted only for
+  // rollback inventory that carries an old provider id.
+  app.use(nativePhoneRoutingRouter);
+  app.use(nativePhoneReleaseRouter);
   app.use(phoneNumberReleaseRouter);
   app.use(carrierRouter);
   app.use(companyIdentityRouter);
-  // Shared-workspace tables/functions are installed, but collaboration remains
-  // terminally gated until the actor-id/tenant-id data plane is certified.
   app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
@@ -160,10 +151,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
 
-  // Default-closed release guard owns the exact paid endpoint before either
-  // checkout implementation can create a Stripe session.
   app.post("/api/billing/checkout", enforceSelfServeBillingRelease);
-  // Durable idempotent Checkout owner precedes the prior canonical implementation.
   app.use(launchBillingCheckoutAtomicRouter);
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
@@ -180,8 +168,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(overviewOperatingMetricsRouter);
   app.use(navCountsTruthRouter);
   app.use(dashboardRouter);
-  // Operator semantics shadow only `status=active` task reads and human-handoff
-  // completion; all executable task behavior continues through fleetRouter.
   app.use(operatorTaskRouter);
   app.use(fleetRouter);
   app.use(calendarRouter);
@@ -190,7 +176,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentmailRouter);
   app.use(emailUnsubscribeRouter);
   app.use(shareableArtifactRouter);
-  // Signed provider callbacks own their exact paths before the tenant webhook router.
   app.use(resendWebhookRouter);
   app.use(agentmailWebhookRouter);
   app.use(metaWebhookRouter);
@@ -199,26 +184,18 @@ export function registerApiRoutes(app: Express): void {
   app.use(smsOutcomeRouter);
   app.use(smsRouter);
 
-  // Target-specific test delivery owns /:id/test before the broad webhook router.
   app.use("/api/webhooks", webhookTestRouter);
   app.use("/api/webhooks", webhookRouter);
 
   app.use("/api/intake", intakeRouter);
   app.use(supportRouter);
-  // The launch-certified website import supersedes the retired durable crawl
-  // route. Mount the authenticated 410 tombstone first so stale clients receive
-  // a permanent migration response instead of the historical 503.
   app.use(legacyKnowledgeCrawlRouter);
   app.use("/api/jobs", jobRouter);
-  // Native voice owns the two mobile money/control endpoints before the broad
-  // mobile adapter. All unrelated bootstrap, device, wallet, and history routes
-  // continue through mobileRouter unchanged.
   app.use(nativeMobileVoiceRouter);
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
   app.use(activationRouter);
 
-  // Durable per-number reservations own manual dial before the broad outbound router.
   app.use(outboundDialAtomicRouter);
   app.use(outboundRouter);
 
