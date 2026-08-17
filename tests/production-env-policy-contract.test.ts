@@ -9,6 +9,10 @@ const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mj
 const deploymentBoundaryPath = resolve(process.cwd(), "scripts/check-deployment-boundaries.mjs");
 const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
+const testEstateRunner = readFileSync(
+  resolve(process.cwd(), "scripts/run-test-estate.mjs"),
+  "utf8",
+);
 const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
 const startup = readFileSync(resolve(process.cwd(), "src/lib/startup.ts"), "utf8");
 const packageJson = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8"));
@@ -137,5 +141,21 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).toContain("releaseSha !== deploymentSha");
     expect(deploymentBoundary).toContain("will remain runtime-closed");
     expect(deploymentBoundary).toContain("is authorized for exact production SHA");
+  });
+
+  it("runs the complete test estate under a clean non-production identity", () => {
+    expect(packageJson.scripts["test:run"]).toBe("node scripts/run-test-estate.mjs");
+    expect(testEstateRunner).toContain(
+      'String(source.VERCEL_ENV || "").trim() === "production"',
+    );
+    expect(testEstateRunner).toContain('env.VERCEL_ENV = "development"');
+    expect(testEstateRunner).toContain('env.NODE_ENV = "test"');
+    expect(testEstateRunner).toContain('env.VERCEL = "0"');
+    expect(testEstateRunner).toContain('"POSTGRES_"');
+    expect(testEstateRunner).toContain('"STRIPE_"');
+    expect(testEstateRunner).toContain('"VAPI_"');
+    expect(testEstateRunner).toContain('"OPENAI_"');
+    expect(testEstateRunner).toContain('resolve(process.cwd(), "node_modules/vitest/vitest.mjs")');
+    expect(vercelBuild).toContain('run("npm", ["run", "test:run"]');
   });
 });
