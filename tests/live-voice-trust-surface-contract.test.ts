@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("live voice trust surface", () => {
   it("renders lifecycle state through the canonical activity molecule", () => {
-    const voice = source("src/components/VapiLiveVoiceSandbox.tsx");
+    const voice = source("src/components/XAILiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
     for (const surface of [voice, openai]) {
@@ -21,7 +21,7 @@ describe("live voice trust surface", () => {
   });
 
   it("preserves voice transcript provenance using conversation messages", () => {
-    const voice = source("src/components/VapiLiveVoiceSandbox.tsx");
+    const voice = source("src/components/XAILiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
     for (const surface of [voice, openai]) {
@@ -33,7 +33,7 @@ describe("live voice trust surface", () => {
   });
 
   it("keeps the safe live-test boundary and recovery behavior visible", () => {
-    const voice = source("src/components/VapiLiveVoiceSandbox.tsx");
+    const voice = source("src/components/XAILiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
     for (const surface of [voice, openai]) {
@@ -45,15 +45,16 @@ describe("live voice trust surface", () => {
     }
   });
 
-  it("retains OpenAI Realtime as the backup transport with approved tool contracts", () => {
-    const voice = source("src/components/OpenAILiveVoiceSandbox.tsx");
-    const vapi = source("src/components/VapiLiveVoiceSandbox.tsx");
+  it("uses native xAI as the Studio transport with approved tool contracts", () => {
+    const voice = source("src/components/XAILiveVoiceSandbox.tsx");
+    const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
-    expect(vapi).toContain('authFetch("/api/voice/live/web-session"');
     expect(voice).toContain('authFetch("/api/voice/live/session"');
     expect(voice).toContain('authFetch("/api/voice/live/tool"');
     expect(voice).toContain("response.output_audio_transcript.delta");
     expect(voice).toContain("conversation.item.input_audio_transcription.completed");
     expect(voice).toContain("response.function_call_arguments.done");
+    expect(openai).toContain('authFetch("/api/voice/live/session"');
+    expect(openai).toContain('authFetch("/api/voice/live/tool"');
   });
 });

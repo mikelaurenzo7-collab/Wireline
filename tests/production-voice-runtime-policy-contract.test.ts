@@ -9,15 +9,15 @@ describe("production voice runtime policy", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     expect(policy).toContain("Rendered assets are not a live-call runtime");
     expect(policy).toContain("eleven_flash_v2_5");
-    expect(policy).toContain("Every ElevenLabs and xAI voice has a curated Vapi fallback");
+    expect(policy).toContain("Twilio carrier → xAI Direct SIP Speech-to-Speech");
   });
 
-  it("labels built-in xAI voices as live PSTN through Vapi, not direct TTS", () => {
+  it("labels built-in xAI voices as live PSTN through native Speech-to-Speech, not direct TTS", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     const preview = read("src/lib/voice/voice-preview-service.ts");
 
-    expect(catalog).toContain("Built-in xAI voices for live PSTN");
-    expect(catalog).toContain("voice.provider: \"xai\"");
+    expect(catalog).toContain("Built-in xAI voices for live PSTN through native Speech-to-Speech");
+    expect(catalog).toContain("grok-voice-think-fast-2.0");
     expect(catalog).not.toContain("low-latency realtime speech (xAI Grok)");
     expect(preview).toContain("Browser audio samples");
     expect(preview).toContain("never participates in live call routing");
@@ -25,7 +25,7 @@ describe("production voice runtime policy", () => {
     const xaiTts = read("src/lib/voice/xai-tts-service.ts");
     expect(xaiTts).toContain("NOT reachable from live PSTN routing");
     expect(xaiTts.replace(/\s*\n\s*\*?\s*/g, " ")).toContain(
-      "Live phone voices use Vapi `voice.provider: \"xai\"`",
+      "Live phone voices use native xAI Speech-to-Speech",
     );
   });
 

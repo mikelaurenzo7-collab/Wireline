@@ -4,13 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getHealthModelTiering } from "../src/lib/health-model-policy";
 import { probeOpenAIModelDiagnostic } from "../src/lib/health-model-probe";
-import {
-  STRUCTURED_PRIMARY_MODEL,
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
-  VAPI_VOICE_FALLBACK_MODEL,
-  VAPI_VOICE_FALLBACK_PROVIDER,
-} from "../src/lib/ai-models";
+import { STRUCTURED_PRIMARY_MODEL } from "../src/lib/ai-models";
+import { GROK_VOICE_DEFAULT_MODEL } from "../src/lib/voice/grok-voice-config";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../src/lib/voice/openai-realtime-config";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
@@ -118,12 +114,12 @@ describe("health surfaces contract", () => {
   it("derives authenticated model/provider health from canonical runtime policy", () => {
     const tiering = getHealthModelTiering();
     expect(tiering.voice_runtime).toMatchObject({
-      provider: VAPI_TENANT_DEFAULT_PROVIDER,
-      model: VAPI_TENANT_DEFAULT_MODEL,
+      provider: "xai",
+      model: GROK_VOICE_DEFAULT_MODEL,
     });
     expect(tiering.voice_fallback).toMatchObject({
-      provider: VAPI_VOICE_FALLBACK_PROVIDER,
-      model: VAPI_VOICE_FALLBACK_MODEL,
+      provider: "openai",
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
     });
     expect(tiering.reasoning_layer).toMatchObject({
       provider: "xai",

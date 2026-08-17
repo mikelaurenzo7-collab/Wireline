@@ -52,7 +52,7 @@ describe("final e2e bugfix contracts", () => {
     expect(deletion).toContain("export async function releaseExternalResourcesForPurge");
     expect(deletion).toContain("stripe.subscriptions.cancel");
     expect(deletion).toContain("stripe.subscriptions.list");
-    expect(deletion).toContain("releaseTenantNumber");
+    expect(deletion).toContain("releaseNativeTenantNumber");
     // Already-canceled subscriptions are treated as success; other Stripe
     // errors throw so the job retries instead of orphaning a live subscription.
     expect(deletion).toContain("isStripeAlreadyGone");

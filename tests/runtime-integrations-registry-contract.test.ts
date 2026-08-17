@@ -9,28 +9,29 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents xAI as the optional-credential primary and OpenAI as required continuity", () => {
+  it("presents xAI as the required native voice/structured primary and OpenAI as required continuity", () => {
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Continuity structured runtime, Vapi PSTN fallback, and optional Realtime voice.",
+      "Continuity structured runtime and ChatGPT/OpenAI Realtime backup. Native PSTN uses Twilio + xAI SIP.",
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(
-      "Grok 4.6 structured primary and browser preview TTS. Live PSTN Grok 4.3 plus xAI voices run through Vapi.",
+      "Grok 4.6 structured primary, native Twilio SIP Speech-to-Speech, and browser realtime.",
     );
     expect(source).toContain(
-      "One api.x.ai key covers chat and preview TTS. PSTN uses VAPI_PRIVATE_KEY.",
+      "One api.x.ai key covers chat, preview TTS, and native SIP.",
     );
     expect(source).toContain("OpenAI remains continuity and Realtime");
     expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);
-    expect(compactSource).toMatch(/item\(\s*"xai".{0,500}?, false,/);
+    expect(compactSource).toMatch(/item\(\s*"xai".{0,500}?, true,/);
   });
 
   it("marks the monetized communications control plane as required", () => {
-    for (const integration of ["vapi", "twilio", "stripe", "resend", "upstash"]) {
+    for (const integration of ["xai", "twilio", "stripe", "resend", "upstash"]) {
       expect(compactSource).toMatch(new RegExp(`item\\(\\s*"${integration}".{0,700}?, true,`));
     }
+    expect(compactSource).toMatch(/item\(\s*"vapi".{0,700}?, false,/);
   });
 
   it("reports signed Resend feedback separately from the required send transport", () => {

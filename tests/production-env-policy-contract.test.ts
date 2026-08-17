@@ -66,7 +66,10 @@ describe("production environment launch policy", () => {
     expect(recommendedStart).toBeGreaterThanOrEqual(0);
     expect(optionalStart).toBeGreaterThan(recommendedStart);
     expect(recommendedBlock).not.toContain('"LIVEAVATAR_API_KEY"');
-    expect(recommendedBlock).toContain('"XAI_API_KEY"');
+    expect(recommendedBlock).not.toContain('"XAI_API_KEY"');
+    expect(prodCheck.slice(prodCheck.indexOf("const required = ["), recommendedStart)).toContain(
+      '"XAI_API_KEY"',
+    );
     expect(optionalBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(optionalBlock).not.toContain('"LIVEAVATAR_DEFAULT_AVATAR_ID"');
   });

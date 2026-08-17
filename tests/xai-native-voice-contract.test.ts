@@ -70,10 +70,16 @@ describe("native Twilio + xAI voice contracts", () => {
   });
 
   it("validates every SIP allowlist entry as real IPv4/CIDR", () => {
-    for (const value of ["54.172.60.0/23", "54.244.51.1", "0.0.0.0/0", "255.255.255.255/32"]) {
+    for (const value of ["54.172.60.0/23", "54.244.51.1", "255.255.255.255/32"]) {
       expect(isValidXAISipAllowedAddress(value), value).toBe(true);
     }
-    for (const value of ["999.1.1.1/24", "54.172.60.0/33", "54.172.60/23", "host.example.com"]) {
+    for (const value of [
+      "0.0.0.0/0",
+      "999.1.1.1/24",
+      "54.172.60.0/33",
+      "54.172.60/23",
+      "host.example.com",
+    ]) {
       expect(isValidXAISipAllowedAddress(value), value).toBe(false);
     }
     expect(
@@ -82,6 +88,11 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(() =>
       resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.999/23" }),
     ).toThrow("invalid IPv4/CIDR");
+
+    const envValidator = read("src/lib/env-validator.ts");
+    const sipAllowlist = envValidator.slice(envValidator.indexOf("XAI_SIP_ALLOWED_ADDRESSES"));
+    expect(sipAllowlist.slice(0, 900)).toContain("isValidXAISipAllowedAddress");
+    expect(sipAllowlist.slice(0, 900)).toContain("requiredInProd: true");
   });
 
   it("pins production voice to a versioned Think Fast release", () => {
@@ -175,6 +186,25 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(session).toContain("requestToolContinuationWhenReady()");
     expect(route).toContain("businessName: agentContext.businessName");
     expect(route).toContain("complianceMode: agentContext.complianceMode");
+    expect(route).toContain("resolveNativeInboundAdmission");
+    expect(session).toContain("transcriptLines.push({ role: \"Agent\", text: opening })");
+    expect(session).toContain("applyInboundAdmission");
+    expect(session).toContain("awaitingExactOpeningPlayback = true");
+    expect(session).toContain("finishExactOpeningIfNeeded");
+    expect(session).toContain("input_audio_buffer.speech_started");
+    expect(session).toContain("Do not start a model turn or hang up until playback completes.");
+    expect(route).toContain("tenantStore.run(binding.userId");
+    expect(session).not.toContain("verification.webhookId !== binding.xaiWebhookId");
+    expect(route).not.toContain("verification.webhookId !== binding.xaiWebhookId");
+  });
+
+  it("mounts the Twilio outbound bridge beside native SIP webhooks", () => {
+    const grokRoutes = read("src/routes/grok-voice-routes.ts");
+    expect(grokRoutes).toContain("xaiOutboundRouter");
+    expect(grokRoutes).toContain("router.use(xaiPhoneRouter)");
+    expect(grokRoutes.indexOf("router.use(xaiPhoneRouter)")).toBeLessThan(
+      grokRoutes.indexOf("router.use(xaiOutboundRouter)"),
+    );
   });
 
   it("scopes native mutating tools to the signed exact lead", () => {

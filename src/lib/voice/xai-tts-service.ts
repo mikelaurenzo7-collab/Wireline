@@ -19,9 +19,9 @@
  * ## Boundary
  *
  * This direct TTS client is deliberately NOT reachable from live PSTN routing.
- * Live phone voices use Vapi `voice.provider: "xai"` in
- * `managed-voice-runtime.ts`. Calling this endpoint from a dial path would
- * bypass Vapi orchestration. Keep that boundary when extending this file.
+ * Live phone voices use native xAI Speech-to-Speech (`grok-voice-think-fast-2.0`)
+ * in `xai-sip-session.ts`. Calling this endpoint from a dial path would bypass
+ * the SIP session. Keep that boundary when extending this file.
  */
 import { AppError } from "../api-error";
 import { log } from "../server-logger";

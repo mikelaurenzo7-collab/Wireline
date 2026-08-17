@@ -99,18 +99,19 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(chatkitIndex).toBeGreaterThan(openaiIndex);
   });
 
-  it("uses one XAI_API_KEY for chat and preview TTS; PSTN stays on Vapi", () => {
+  it("uses one XAI_API_KEY for chat, preview TTS, Studio, and native PSTN", () => {
     const envExample = read(".env.example");
     expect(envExample).toContain("XAI_API_KEY=");
     expect(envExample).toContain("XAI_API_KEY_CHATKIT=");
+    expect(envExample).toContain("XAI_SIP_ALLOWED_ADDRESSES=");
     expect(envExample).not.toContain("XAI_API_KEY_VOICE=");
     expect(envExample).toContain("Wireline does not require a second env");
     expect(envExample).toContain("var for chat vs voice");
-    expect(envExample).toContain(
+    expect(envExample).toContain("Do not add XAI_API_KEY_VOICE");
+    expect(envExample).toContain("Native Twilio SIP Speech-to-Speech");
+    expect(envExample).not.toContain(
       "Live PSTN Grok 4.3 + xAI Eve/Ara/Rex/Sal/Leo use VAPI_PRIVATE_KEY",
     );
-    expect(envExample).toContain("never");
-    expect(envExample).toContain("send XAI_API_KEY in Vapi assistant payloads");
   });
 
   it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {

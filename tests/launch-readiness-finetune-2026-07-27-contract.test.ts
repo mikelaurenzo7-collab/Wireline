@@ -107,7 +107,9 @@ describe("launch readiness fine-tune 2026-07-27", () => {
 
   it("reports managed Vapi readiness instead of the dead tenant vapi_private_key column", () => {
     const settings = read("src/routes/settings-routes.ts");
-    expect(settings).toContain("safe.has_vapi_key = Boolean(process.env.VAPI_PRIVATE_KEY?.trim())");
+    expect(settings).toContain(
+      "process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim()",
+    );
     expect(settings).toContain("platformVoiceReady && tenantHasNumber");
     expect(settings).not.toContain("has_voice: !!settingsRow?.vapiPrivateKey");
   });

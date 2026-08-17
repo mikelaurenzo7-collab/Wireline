@@ -31,7 +31,7 @@ interface CarrierPanelProps {
   onUpdateSettings: (s: CarrierSettings) => void;
   onSaveSettings: () => void;
   onSyncNumbers: () => void;
-  onAddNumber: (number: string, vapiId: string) => void;
+  onAddNumber: (number: string) => void;
   onDeleteNumber: (id: string | number) => void;
   onUpdateNumberAgent: (id: string | number, agent_id: string) => void;
 }

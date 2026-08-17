@@ -344,12 +344,12 @@ export default function AdminSettings() {
     }
   };
 
-  const addPhoneNumber = async (phone_number: string, vapi_number_id: string) => {
+  const addPhoneNumber = async (phone_number: string) => {
     try {
-      await authFetch("/api/phone-numbers", {
+      await authFetch("/api/phone-numbers/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number, vapi_number_id }),
+        body: JSON.stringify({ phone_number }),
       });
       fetchData();
       toastSuccess("Number added", phone_number);
