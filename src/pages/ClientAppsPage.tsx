@@ -160,30 +160,30 @@ export default function ClientAppsPage() {
 
         <section
           id="chatgpt-mcp"
-          className="wl-paper wl-paper-elevated mt-6 scroll-mt-24 p-6"
+          className="mt-6 scroll-mt-24 border-t border-border/70 pt-5"
           aria-labelledby="chatgpt-mcp-heading"
         >
           <p className="wl-overline text-primary">Account-bound MCP</p>
           <h2
             id="chatgpt-mcp-heading"
-            className="mt-2 font-[var(--wireline-font-family-display)] text-[22px] font-normal tracking-[-0.02em]"
+            className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
             {/* The instructions below happen inside those apps, so the honest
                 claim is the inverse of the old headline. */}
             Use Wireline without leaving ChatGPT, Claude, or Cursor
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> as a remote MCP
             connector, then sign in with your Wireline account. Draft and privately simulate here.
             Numbers, dialing, training, billing, and launch stay in Studio.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Button asChild variant="editorial" size="sm">
+          <div className="mt-3 flex flex-wrap gap-3">
+            <Button asChild variant="outline" size="sm">
               <a href="https://chatgpt.com/" target="_blank" rel="noreferrer">
                 Open ChatGPT <ArrowUpRight size={14} />
               </a>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="ghost" size="sm">
               <Link to="/developers">Public developer notes</Link>
             </Button>
           </div>

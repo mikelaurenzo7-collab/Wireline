@@ -6,7 +6,7 @@ import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AgentMailConnectError,
   agentmailGrantedScopes,
-  deleteWirelineAgentMailWebhooks,
+  deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
   resolveAgentMailInbox,
   verifyAgentMailCredentials,
@@ -137,6 +137,7 @@ router.post(
     try {
       const accounts = await drizzle
         .select({
+          id: schema.emailAccounts.id,
           accessToken: schema.emailAccounts.accessToken,
         })
         .from(schema.emailAccounts)
@@ -149,7 +150,10 @@ router.post(
       for (const account of accounts) {
         if (!account.accessToken) continue;
         try {
-          await deleteWirelineAgentMailWebhooks(decryptSecret(account.accessToken));
+          await deleteAgentMailWebhooksForAccount({
+            apiKey: decryptSecret(account.accessToken),
+            accountId: account.id,
+          });
         } catch (err) {
           log.warn("AgentMail delivery subscription cleanup skipped", {
             userId,

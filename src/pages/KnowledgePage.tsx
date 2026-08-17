@@ -96,55 +96,48 @@ export default function KnowledgePage() {
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <WorkspacePageIntro title="Knowledge" />
-            </div>
-            {/* One control row: section tabs, the Studio test action, and the
-                agent picker share a baseline instead of stacking into three
-                right-aligned rows under the title. */}
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-              <WorkspaceTabStrip
-                ariaLabel="Knowledge sections"
-                tabs={knowledgeTabs}
-                activeId={activeTab}
-                onSelect={(id) => setActiveTab(id as KnowledgeTabId)}
-                density="compact"
-                align="start"
-                wrap
-                className="mb-0 border-b-0 pb-0"
-              />
-              <Button asChild variant="secondary" size="sm" className="justify-center">
-                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-                  <MessageCircle size={15} aria-hidden="true" />
-                  Test in Studio
-                </Link>
-              </Button>
-              {populated && activeTab === "knowledge" ? (
-                <NativeSelect
-                  value={agentId}
-                  onChange={(event) =>
-                    setParams(
-                      (current) => {
-                        const updated = new URLSearchParams(current);
-                        updated.set("agent", event.target.value);
-                        updated.set("tab", activeTab);
-                        return updated;
-                      },
-                      { replace: true },
-                    )
-                  }
-                  aria-label="Choose voice agent"
-                  className="min-w-[180px] sm:w-auto"
-                >
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              ) : null}
-            </div>
+          <WorkspacePageIntro title="Knowledge" titleHidden />
+          <div className="flex flex-wrap items-center gap-2">
+            <WorkspaceTabStrip
+              ariaLabel="Knowledge sections"
+              tabs={knowledgeTabs}
+              activeId={activeTab}
+              onSelect={(id) => setActiveTab(id as KnowledgeTabId)}
+              density="compact"
+              align="start"
+              wrap
+              className="mb-0 border-b-0 pb-0"
+            />
+            <Button asChild variant="secondary" size="sm" className="justify-center">
+              <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
+                <MessageCircle size={15} aria-hidden="true" />
+                Test in Studio
+              </Link>
+            </Button>
+            {populated && activeTab === "knowledge" ? (
+              <NativeSelect
+                value={agentId}
+                onChange={(event) =>
+                  setParams(
+                    (current) => {
+                      const updated = new URLSearchParams(current);
+                      updated.set("agent", event.target.value);
+                      updated.set("tab", activeTab);
+                      return updated;
+                    },
+                    { replace: true },
+                  )
+                }
+                aria-label="Choose voice agent"
+                className="min-w-[180px] sm:w-auto"
+              >
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            ) : null}
           </div>
 
           {activeTab === "knowledge" ? (

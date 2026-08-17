@@ -49,16 +49,9 @@ export default function OutboundHub({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (
           <div className="flex min-h-0 flex-col">
-            <div className="border-b border-border px-4 py-4 sm:px-6">
-              <div className="max-w-2xl">
-                <h2 className="text-base font-semibold text-foreground">
-                  Outbound dispatch
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Place one-off calls or accept form leads. Consent checks run before every dial.
-                </p>
-              </div>
-            </div>
+            <p className="border-b border-border px-4 py-3 text-sm text-muted-foreground sm:px-6">
+              Place one-off calls or accept form leads. Consent checks run before every dial.
+            </p>
             <div className="px-4 py-4 sm:px-6">
               <IntakeKeysManager />
             </div>

@@ -30,11 +30,22 @@ describe("agentmail mailbox contract", () => {
 
   it("registers inbound delivery on connect without asking the Account Holder to set up webhooks", () => {
     expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
-    expect(agentmailRoutes).toContain("deleteWirelineAgentMailWebhooks");
+    expect(agentmailRoutes).toContain("deleteAgentMailWebhooksForAccount");
     expect(mailboxCard.toLowerCase()).not.toContain("webhook");
     expect(mailboxCard).toContain("trywireline@agentmail.to");
+    expect(mailboxCard).toContain("/api/emails/accounts/");
     expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
     expect(registry).toContain("app.use(agentmailWebhookRouter)");
+  });
+
+  it("cleans AgentMail delivery subscriptions on the Connections disconnect path", () => {
+    const revocation = readFileSync("src/lib/oauth-provider-revocation.ts", "utf8");
+    const emailRoutes = readFileSync("src/routes/email-routes.ts", "utf8");
+    expect(revocation).toContain("deleteAgentMailWebhooksForAccount");
+    expect(revocation).toContain("deleteWirelineAgentMailWebhooks");
+    expect(revocation).toContain('case "agentmail"');
+    expect(emailRoutes).toContain("revokeMailboxAccountTokens");
+    expect(emailRoutes).toContain("account.id");
   });
 
   it("is mounted in the explicit API registry", () => {

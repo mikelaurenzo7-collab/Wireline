@@ -41,8 +41,11 @@ import {
   AGENTMAIL_IMAP_HOST,
   AGENTMAIL_SMTP_HOST,
   AgentMailConnectError,
+  agentMailWebhookClientId,
   agentmailLocalPart,
   createAgentMailInbox,
+  deleteAgentMailWebhooksForAccount,
+  deleteWirelineAgentMailWebhooks,
   ensureAgentMailWebhook,
   fetchAgentMailInbox,
   inboxMatchesAddress,
@@ -182,9 +185,112 @@ describe("agentmail-mail", () => {
     ).resolves.toEqual({ webhookId: "wh_1", secret: "whsec_test" });
     expect(JSON.parse(mockFetchWithTimeout.mock.calls[1][1].body)).toMatchObject({
       inbox_ids: ["trywireline@agentmail.to"],
-      client_id: "wireline-mailbox-webhook",
+      client_id: `wireline-mailbox-webhook:${accountId}`,
     });
     vi.unstubAllEnvs();
+  });
+
+  it("does not steal another mailbox's delivery subscription when connecting a second inbox", async () => {
+    vi.stubEnv("APP_URL", "https://trywireline.com");
+    const firstAccountId = "11111111-1111-4111-8111-111111111111";
+    const secondAccountId = "22222222-2222-4222-8222-222222222222";
+    const firstUrl = `https://trywireline.com/api/webhooks/agentmail/${firstAccountId}`;
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "wh_first",
+              url: firstUrl,
+              client_id: agentMailWebhookClientId(firstAccountId),
+              inbox_ids: ["sales@agentmail.to"],
+              event_types: [
+                "message.received",
+                "message.sent",
+                "message.delivered",
+                "message.bounced",
+                "message.complained",
+                "message.rejected",
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(201, {
+          webhook_id: "wh_second",
+          url: `https://trywireline.com/api/webhooks/agentmail/${secondAccountId}`,
+          secret: "whsec_second",
+        }),
+      );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "support@agentmail.to",
+        accountId: secondAccountId,
+        hasStoredSecret: false,
+      }),
+    ).resolves.toEqual({ webhookId: "wh_second", secret: "whsec_second" });
+    const methods = mockFetchWithTimeout.mock.calls.map((call) => call[1]?.method);
+    expect(methods).not.toContain("DELETE");
+    expect(JSON.parse(mockFetchWithTimeout.mock.calls[1][1].body)).toMatchObject({
+      inbox_ids: ["support@agentmail.to"],
+      client_id: agentMailWebhookClientId(secondAccountId),
+    });
+    vi.unstubAllEnvs();
+  });
+
+  it("removes only this mailbox's delivery subscription on disconnect", async () => {
+    vi.stubEnv("APP_URL", "https://trywireline.com");
+    const keepAccountId = "11111111-1111-4111-8111-111111111111";
+    const dropAccountId = "22222222-2222-4222-8222-222222222222";
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "wh_keep",
+              url: `https://trywireline.com/api/webhooks/agentmail/${keepAccountId}`,
+              client_id: agentMailWebhookClientId(keepAccountId),
+            },
+            {
+              webhook_id: "wh_drop",
+              url: `https://trywireline.com/api/webhooks/agentmail/${dropAccountId}`,
+              client_id: agentMailWebhookClientId(dropAccountId),
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(204, {}));
+    await deleteAgentMailWebhooksForAccount({ apiKey: "am_test", accountId: dropAccountId });
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_drop");
+    expect(mockFetchWithTimeout.mock.calls[1][1].method).toBe("DELETE");
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+    vi.unstubAllEnvs();
+  });
+
+  it("drops legacy org-wide Wireline webhooks during full API-key cleanup", async () => {
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "wh_legacy",
+              url: "https://trywireline.com/api/webhooks/agentmail/11111111-1111-4111-8111-111111111111",
+              client_id: "wireline-mailbox-webhook",
+            },
+            {
+              webhook_id: "wh_other",
+              url: "https://example.com/hooks",
+              client_id: "other-app",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(204, {}));
+    await deleteWirelineAgentMailWebhooks("am_test");
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_legacy");
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
   });
 
   it("verifies credentials via IMAP INBOX lock", async () => {

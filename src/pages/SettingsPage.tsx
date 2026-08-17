@@ -311,7 +311,7 @@ export default function SettingsPage() {
                 <ShieldCheck size={15} />
               </span>
               <span className="wl-data-row__main">
-                <span className="wl-data-row__title">Compliance</span>
+                <span className="wl-data-row__title">Consent and DNC</span>
                 <span className="wl-data-row__detail">
                   DNC, consent ledger, scrub status, and audit export
                 </span>

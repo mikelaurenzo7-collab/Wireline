@@ -397,7 +397,7 @@ export default function CompanyIdentityPack() {
         <h2 id="company-identity-title" className="text-xl font-semibold text-foreground">
           Identity
         </h2>
-        {summary ? (
+        {summary && summary.label !== "Review requested" ? (
           <span
             className={cn(
               "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold",

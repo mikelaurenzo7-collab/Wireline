@@ -56,6 +56,8 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(
       /No new conversations today/,
     );
+    expect(overview).toContain("{!hasLiveLine || !hasConversationHistory ? (");
+    expect(overview).toContain('className="wl-app-page-title sr-only"');
   });
 
   it("keeps empty-state actions in prerequisite order", () => {

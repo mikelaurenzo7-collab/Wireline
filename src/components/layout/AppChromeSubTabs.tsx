@@ -51,7 +51,7 @@ export default function AppChromeSubTabs({
         density={density}
         className="mb-0 justify-start md:mb-0 lg:justify-start"
       />
-      {secondary && secondary.tabs.length > 0 && (
+      {secondary && secondary.tabs.length > 1 && (
         <>
           <span
             aria-hidden="true"

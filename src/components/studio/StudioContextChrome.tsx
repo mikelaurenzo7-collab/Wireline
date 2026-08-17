@@ -32,18 +32,13 @@ export default function StudioContextChrome() {
     >
       <div className="flex min-h-[56px] items-center justify-between gap-3 px-3 sm:px-5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span
-            className={`shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary ${
-              activeAgent ? "hidden sm:inline-flex" : "inline-flex"
-            }`}
-          >
-            {language.navLabel}
-          </span>
+          {activeAgent ? null : (
+            <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
+              {language.navLabel}
+            </span>
+          )}
           {activeAgent ? (
             <>
-              <span aria-hidden="true" className="hidden text-muted-foreground/40 sm:inline">
-                /
-              </span>
               <span className="hidden shrink-0 sm:inline-flex">
                 <AgentPresenceSlot
                   name={activeAgent.name}

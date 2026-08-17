@@ -432,11 +432,10 @@ export default function AdminSettings() {
         <h1 className="sr-only">Admin workspace</h1>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
           <div>
-            <p className="wl-eyebrow wl-eyebrow--muted">Workspace settings</p>
             {/* A heading element, not a <p>: the workspace title-tier rule
                 reaches h1–h6, so the page title joins the cased system like
                 every other workspace surface instead of sitting sentence case. */}
-            <h2 className="mt-1 font-[var(--wireline-font-family-display)] text-xl font-semibold text-foreground">
+            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold text-foreground">
               Admin
             </h2>
           </div>

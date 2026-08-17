@@ -68,6 +68,11 @@
   margin: 0.9rem 0 0;
 }
 
+.wl-overview-greeting:has(h1.sr-only)::after {
+  content: none;
+  display: none;
+}
+
 .wl-overview [aria-label="Customer readiness checklist"] ol a {
   min-height: 3.25rem;
   align-items: center;
@@ -94,11 +99,6 @@
   }
 }
 
-.wl-overview section[aria-label="Personal voice agents"] .grid > :nth-child(n + 7):not(:last-child),
-.wl-overview section[aria-label="Business voice agents"] .grid > :nth-child(n + 7):not(:last-child) {
-  display: none;
-}
-
 .wl-overview section[aria-label="Personal voice agents"] .grid > a:not(:last-child),
 .wl-overview section[aria-label="Business voice agents"] .grid > a:not(:last-child) {
   border-color: var(--wireline-color-border-default) !important;
@@ -111,10 +111,6 @@
 
 .wl-overview section[aria-label="Customer outcomes"] article {
   padding: 0.75rem 0.9rem;
-}
-
-.wl-overview section[aria-label="Customer outcomes"] article:nth-of-type(n + 4) {
-  display: none;
 }
 
 .wl-overview section[aria-label="Customer outcomes"] article > p {

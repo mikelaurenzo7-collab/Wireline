@@ -96,8 +96,7 @@ export function AccountsPanel() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-6">
       <header className="max-w-2xl">
-        <p className="text-eyebrow text-primary">Account profile</p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">
           Keep personal and business work separate
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">

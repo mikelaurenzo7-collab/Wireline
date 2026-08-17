@@ -274,7 +274,7 @@ export default function MailboxConnectionCard() {
               return (
                 <article
                   key={provider.id}
-                  className="rounded-xl border border-border bg-card px-4 py-4"
+                  className="flex h-full flex-col rounded-xl border border-border bg-card px-4 py-4"
                 >
                   <div className="flex items-start gap-3">
                     <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
@@ -323,7 +323,7 @@ export default function MailboxConnectionCard() {
                   ) : null}
                   {provider.id === "icloud" && showIcloudForm ? (
                     <form
-                      className="mt-4 grid gap-2"
+                      className="mt-auto grid gap-2 pt-4"
                       onSubmit={(event) => void connectIcloud(event)}
                     >
                       <input
@@ -369,7 +369,7 @@ export default function MailboxConnectionCard() {
                     </form>
                   ) : provider.id === "agentmail" && showAgentmailForm ? (
                     <form
-                      className="mt-4 grid gap-2"
+                      className="mt-auto grid gap-2 pt-4"
                       onSubmit={(event) => void connectAgentmail(event)}
                     >
                       <input
@@ -414,18 +414,20 @@ export default function MailboxConnectionCard() {
                       </div>
                     </form>
                   ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="mt-4 w-full"
-                      disabled={isBusy}
-                      onClick={() => void connect(provider.id)}
-                    >
-                      {isBusy ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
-                    </Button>
+                    <div className="mt-auto pt-4">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full"
+                        disabled={isBusy}
+                        onClick={() => void connect(provider.id)}
+                      >
+                        {isBusy ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : null}
+                        {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
+                      </Button>
+                    </div>
                   )}
                 </article>
               );

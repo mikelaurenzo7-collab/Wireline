@@ -32,8 +32,10 @@ describe("authenticated seeded-state visual QA contract", () => {
   it("collapses redundant seeded-state density without weakening empty states", () => {
     const css = read("src/styles/authenticated-visual-qa.css");
     expect(css).toContain(".wl-workspace-shell .wl-rail-link kbd");
-    expect(css).toContain("article:nth-of-type(n + 4)");
+    expect(css).toContain(":has(h1.sr-only)::after");
     expect(css).toContain(":has(> section:first-child .wl-empty-state)");
+    expect(css).not.toContain("article:nth-of-type(n + 4)");
+    expect(css).not.toContain(":nth-child(n + 7):not(:last-child)");
   });
 
   it("keeps the Overview header a short left-aligned line, with no salutation", () => {
@@ -67,6 +69,11 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain('file.replace(/\\.png$/, "-end.png")');
     expect(visualQa).toContain("issues.some");
     expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
+  });
+
+  it("hides a singleton Insights secondary strip that would reprint the category", () => {
+    const chrome = read("src/components/layout/AppChromeSubTabs.tsx");
+    expect(chrome).toContain("secondary.tabs.length > 1");
   });
 
   it("keeps Insights category tabs inside a real horizontal scroller on phones", () => {

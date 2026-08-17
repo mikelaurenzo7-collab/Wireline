@@ -24,6 +24,10 @@ export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
   "message.rejected",
 ] as const;
 
+export function agentMailWebhookClientId(accountId: string): string {
+  return `${AGENTMAIL_WEBHOOK_CLIENT_ID}:${accountId}`;
+}
+
 export class AgentMailConnectError extends Error {
   constructor(message: string) {
     super(message);
@@ -331,6 +335,18 @@ export type AgentMailWebhook = {
   secret: string | null;
 };
 
+function webhookOwnedByAccount(
+  webhook: AgentMailWebhook,
+  accountId: string,
+  url: string | null,
+): boolean {
+  if (url && webhook.url === url) return true;
+  if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
+  // Legacy org-wide client id. Claim that row only when it still
+  // points at this mailbox URL so a second inbox does not steal it.
+  return webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID && Boolean(url) && webhook.url === url;
+}
+
 function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
   const row = asRecord(raw);
   if (!row) return null;
@@ -411,8 +427,8 @@ export async function ensureAgentMailWebhook(input: {
     return null;
   }
 
-  const existing = (await listAgentMailWebhooks(input.apiKey)).find(
-    (webhook) => webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID || webhook.url === url,
+  const existing = (await listAgentMailWebhooks(input.apiKey)).find((webhook) =>
+    webhookOwnedByAccount(webhook, input.accountId, url),
   );
 
   const canReuse =
@@ -435,7 +451,7 @@ export async function ensureAgentMailWebhook(input: {
       url,
       event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
       inbox_ids: [input.inboxId],
-      client_id: AGENTMAIL_WEBHOOK_CLIENT_ID,
+      client_id: agentMailWebhookClientId(input.accountId),
     }),
   });
   if (status === 401 || status === 403) {
@@ -456,10 +472,28 @@ export async function ensureAgentMailWebhook(input: {
   return { webhookId: created.webhookId, secret: created.secret };
 }
 
+export async function deleteAgentMailWebhooksForAccount(input: {
+  apiKey: string;
+  accountId: string;
+}): Promise<void> {
+  const url = publicAgentMailWebhookUrl(input.accountId);
+  const webhooks = await listAgentMailWebhooks(input.apiKey);
+  for (const webhook of webhooks) {
+    if (webhookOwnedByAccount(webhook, input.accountId, url)) {
+      await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
+    }
+  }
+}
+
 export async function deleteWirelineAgentMailWebhooks(apiKey: string): Promise<void> {
   const webhooks = await listAgentMailWebhooks(apiKey);
   for (const webhook of webhooks) {
-    if (webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID) {
+    const clientId = webhook.clientId || "";
+    if (
+      clientId === AGENTMAIL_WEBHOOK_CLIENT_ID ||
+      clientId.startsWith(`${AGENTMAIL_WEBHOOK_CLIENT_ID}:`) ||
+      /\/api\/webhooks\/agentmail\//.test(webhook.url)
+    ) {
       await deleteAgentMailWebhook(apiKey, webhook.webhookId);
     }
   }
