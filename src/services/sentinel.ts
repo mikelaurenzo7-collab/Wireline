@@ -1,15 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
-import { drizzle, log } from "../lib/server-context";
-import * as schema from "../db/schema";
 import { and, eq, inArray } from "drizzle-orm";
+
+import * as schema from "../db/schema";
 import { dncPhoneCandidates, isDncBlocked, normalizeDncPhone } from "../lib/compliance";
-import { fetchWithTimeout } from "../lib/server-context";
+import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
 import { isAllowedVapiControlUrl } from "../lib/vapi-monitor-url";
+import { hangupXAISipCall } from "../lib/voice/xai-sip-session";
 
 export interface SentinelResult {
   allowed: boolean;
   reason?: string;
   state?: string;
+}
+
+function nativeXAICallId(value: string): string | null {
+  if (!value.startsWith("xai:")) return null;
+  const callId = value.slice(4).trim();
+  return callId && callId.length <= 200 && /^[A-Za-z0-9._:-]+$/.test(callId) ? callId : null;
 }
 
 export class SentinelService {
@@ -25,25 +32,18 @@ export class SentinelService {
     const normalized = normalizeDncPhone(phoneNumber);
     if (!normalized) return { allowed: false, reason: "Invalid phone number" };
 
-    // 1. Check DNC
     if (await isDncBlocked(userId, normalized)) {
       return { allowed: false, reason: "DNC_BLOCKED" };
     }
 
-    // 2. Identify State and Timezone
     const areaCode = normalized.slice(0, 3);
     const info = this.getStateInfo(areaCode);
-    if (!info) {
-      // Fallback to TCPA baseline if area code unknown
-      return this.checkBaselineTCPA();
-    }
+    if (!info) return this.checkBaselineTCPA();
 
-    // 3. Check Local Time and Day
     const localTime = this.getLocalTime(now, info.timezone);
-    const dayOfWeek = localTime.getDay(); // 0 = Sunday
+    const dayOfWeek = localTime.getDay();
     const hour = localTime.getHours();
 
-    // 4. State-Specific Restrictions
     if (info.noSunday && dayOfWeek === 0) {
       return { allowed: false, reason: `SUNDAY_PROHIBITED_IN_${info.state}`, state: info.state };
     }
@@ -53,8 +53,7 @@ export class SentinelService {
     }
 
     const start = info.startHour || 8;
-    const end = info.endHour || 21; // 9 PM
-
+    const end = info.endHour || 21;
     if (hour < start || hour >= end) {
       return { allowed: false, reason: `OUTSIDE_HOURS_IN_${info.state}`, state: info.state };
     }
@@ -63,25 +62,13 @@ export class SentinelService {
   }
 
   /**
-   * Terminate active calls if a number is added to DNC mid-call.
-   *
-   * Vapi's current live-call control API exposes a per-call monitor.controlUrl.
-   * We resolve and validate that URL, then issue the documented end-call command.
-   * The result is returned to callers so a compliance tool never claims that a
-   * live call was terminated before the provider confirms it.
+   * Terminate active calls if a number is added to DNC mid-call. Presence ids
+   * are provider-qualified, so the compliance path can use native xAI hangup
+   * without attempting a Vapi lookup. Legacy Vapi control remains available
+   * only for rollback calls that do not carry the `xai:` prefix.
    */
   async terminateActiveCallsForNumber(
     phoneNumber: string,
-    /**
-     * The tenant whose DNC list just changed. REQUIRED — a Do Not Call list is
-     * per-tenant (`isDncBlocked(userId, phone)`), so the termination it triggers
-     * must be too. Matching on customer_number alone reached across tenants:
-     * when one workspace suppressed a number, every OTHER workspace holding a
-     * live call with that same person had their call killed mid-sentence, on
-     * the strength of a request those callers never made to them. Consumer
-     * numbers are shared across businesses constantly — a plumber and a dentist
-     * calling the same household is the ordinary case, not the edge case.
-     */
     userId: string,
   ): Promise<{ attempted: number; terminated: number; failed: number }> {
     const candidates = dncPhoneCandidates(phoneNumber);
@@ -111,9 +98,29 @@ export class SentinelService {
 
   private async killCall(callId: string, reason: string): Promise<boolean> {
     log.info(`Terminating call ${callId} due to ${reason}`);
+
+    const xaiCallId = nativeXAICallId(callId);
+    if (xaiCallId) {
+      try {
+        await hangupXAISipCall(xaiCallId);
+        await drizzle
+          .update(schema.signalPresence)
+          .set({ status: "terminated" })
+          .where(eq(schema.signalPresence.id, callId));
+        return true;
+      } catch (error) {
+        log.error("Native xAI DNC hangup could not be confirmed", {
+          callId,
+          reason,
+          errorClass: error instanceof Error ? error.name : typeof error,
+        });
+        return false;
+      }
+    }
+
     const apiKey = process.env.VAPI_PRIVATE_KEY?.trim();
     if (!apiKey) {
-      log.error("Cannot terminate Vapi call: VAPI_PRIVATE_KEY is not configured", {
+      log.error("Cannot terminate rollback Vapi call: VAPI_PRIVATE_KEY is not configured", {
         callId,
         reason,
       });
@@ -124,9 +131,7 @@ export class SentinelService {
       const callResponse = await fetchWithTimeout(
         `https://api.vapi.ai/call/${encodeURIComponent(callId)}`,
         {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
+          headers: { Authorization: `Bearer ${apiKey}` },
           redirect: "error",
         },
         5000,
@@ -147,9 +152,6 @@ export class SentinelService {
         return false;
       }
 
-      // Do not forward the Vapi API credential to the provider-issued control
-      // URL. The control URL itself is the capability; only send the documented
-      // live-call command after the host allowlist check above.
       const response = await fetchWithTimeout(
         controlUrl,
         {
@@ -174,14 +176,13 @@ export class SentinelService {
         .set({ status: "terminated" })
         .where(eq(schema.signalPresence.id, callId));
       return true;
-    } catch (err: any) {
-      log.error(`Failed to terminate call ${callId}`, { error: err.message });
+    } catch (error: any) {
+      log.error(`Failed to terminate rollback call ${callId}`, { error: error.message });
       return false;
     }
   }
 
   private getStateInfo(areaCode: string) {
-    // Simplified mapping for the Sentinel prototype
     const map: Record<
       string,
       {
@@ -244,37 +245,34 @@ export class SentinelService {
     return map[areaCode];
   }
 
-  private getLocalTime(date: Date, tz: string): Date {
-    return new Date(date.toLocaleString("en-US", { timeZone: tz }));
+  private getLocalTime(date: Date, timezone: string): Date {
+    return new Date(date.toLocaleString("en-US", { timeZone: timezone }));
   }
 
   private isHoliday(date: Date, state: string): boolean {
-    const d = `${date.getMonth() + 1}/${date.getDate()}`;
+    const day = `${date.getMonth() + 1}/${date.getDate()}`;
     const federalHolidays = [
-      "1/1", // New Year
-      "1/19", // MLK
-      "2/16", // Presidents
-      "5/25", // Memorial
-      "6/19", // Juneteenth
-      "7/4", // Independence
-      "9/7", // Labor
-      "10/12", // Columbus
-      "11/11", // Veterans
-      "11/26", // Thanksgiving
-      "12/25", // Christmas
+      "1/1",
+      "1/19",
+      "2/16",
+      "5/25",
+      "6/19",
+      "7/4",
+      "9/7",
+      "10/12",
+      "11/11",
+      "11/26",
+      "12/25",
     ];
 
-    if (federalHolidays.includes(d)) return true;
-
-    // State-specific
-    if (state === "LA" && d === "2/17") return true; // Mardi Gras 2026 (approx)
-
+    if (federalHolidays.includes(day)) return true;
+    if (state === "LA" && day === "2/17") return true;
     return false;
   }
 
   private checkBaselineTCPA(): SentinelResult {
     const now = new Date();
-    const hour = now.getUTCHours() - 5; // Rough Est Central fallback
+    const hour = now.getUTCHours() - 5;
     if (hour < 8 || hour >= 21) {
       return { allowed: false, reason: "OUTSIDE_TCPA_HOURS_EST_FALLBACK" };
     }
