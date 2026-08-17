@@ -2,25 +2,25 @@ import { randomUUID } from "node:crypto";
 import { Router, type Response } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
+
+import { outboundDialReservations } from "../db/security-schema";
+import { authenticateUser } from "../middleware/auth";
+import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
-import { drizzle, log } from "../lib/server-context";
-import { getErrorMessage } from "../lib/server-utils";
-import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { normalizeOutboundNumber } from "../lib/dialer-compliance";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
 } from "../lib/outbound-call-purpose";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
-import { placeOutboundCall } from "../lib/vapi-client";
-import { normalizeOutboundNumber } from "../lib/dialer-compliance";
-import { SentryEvents } from "../lib/sentry-events";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
-import { authenticateUser } from "../middleware/auth";
-import { validate } from "../middleware/input-validation";
-import { outboundDialReservations } from "../db/security-schema";
-import * as schema from "../db/schema";
+import { SentryEvents } from "../lib/sentry-events";
+import { drizzle, log } from "../lib/server-context";
+import { getErrorMessage } from "../lib/server-utils";
+import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -95,11 +95,12 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
 }
 
 function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutboundCall>>): boolean {
-  if (result.ok && !result.callId) return true;
   return (
-    !result.ok &&
-    result.status === 502 &&
-    String(result.error || "").startsWith("Voice carrier unavailable after retries:")
+    (result.ok && !result.callId) ||
+    (!result.ok &&
+      (result.providerOutcomeAmbiguous === true ||
+        result.doNotRetry === true ||
+        String(result.error || "").startsWith("Voice carrier unavailable after retries:")))
   );
 }
 
@@ -142,6 +143,7 @@ router.post(
 
     const operationKey = randomUUID();
     let providerCallId: string | null = null;
+    let nativeLeadId: string | null = null;
     try {
       await drizzle
         .update(outboundDialReservations)
@@ -197,7 +199,18 @@ router.post(
         customerNumber: phoneE164,
         context,
         callPurpose,
+        leadMetadata: {
+          ...outboundConsentMetadata({
+            callPurpose,
+            hasExpressWrittenConsent,
+            source: "web",
+            consentSource,
+            consentLeadId,
+          }),
+          wireline_dial_operation_id: operationKey,
+        },
       });
+      nativeLeadId = result.leadId || null;
       if (!result.ok || !result.callId) {
         if (isAmbiguousProviderResult(result)) {
           await markReservation(operationKey, {
@@ -210,6 +223,7 @@ router.post(
             error:
               "The carrier response was interrupted. Wireline is holding this number to prevent a duplicate call; check Phone before trying again.",
             operationId: operationKey,
+            leadId: nativeLeadId,
           });
         }
         await markReservation(operationKey, {
@@ -219,38 +233,15 @@ router.post(
         return res.status(result.status || 500).json({
           code: "ERROR",
           error: result.error || "Voice carrier rejected the call.",
+          leadId: nativeLeadId,
         });
       }
 
       providerCallId = result.callId;
-      await markReservation(operationKey, { status: "dialing", callId: providerCallId });
-
-      await drizzle.transaction(async (tx) => {
-        await tx.insert(schema.outboundLeads).values({
-          userId: req.user.id,
-          agentId,
-          customerName,
-          customerNumber: phoneE164,
-          context,
-          callId: providerCallId,
-          status: "Dialing",
-          attempts: 1,
-          lastCalledAt: new Date(),
-          metadata: {
-            ...outboundConsentMetadata({
-              callPurpose,
-              hasExpressWrittenConsent,
-              source: "web",
-              consentSource,
-              consentLeadId,
-            }),
-            wireline_dial_operation_id: operationKey,
-          },
-        });
-        await tx
-          .update(outboundDialReservations)
-          .set({ status: "completed", callId: providerCallId, updatedAt: new Date() })
-          .where(eq(outboundDialReservations.operationKey, operationKey));
+      await markReservation(operationKey, {
+        status: "completed",
+        callId: providerCallId,
+        failureCode: null,
       });
 
       SentryEvents.outboundDialStarted({ lead_count: 1, agent_id: agentId });
@@ -274,27 +265,30 @@ router.post(
       return res.json({
         success: true,
         callId: providerCallId,
+        leadId: nativeLeadId,
         operationId: operationKey,
       });
     } catch (error) {
-      if (providerCallId) {
+      if (providerCallId || nativeLeadId) {
         await markReservation(operationKey, {
           status: "dialing",
           callId: providerCallId,
           failureCode: "post_provider_persistence_failed",
         }).catch(() => {});
-        log.error("Carrier accepted outbound call but local persistence failed", {
+        log.error("Carrier/native placement accepted but reservation reconciliation failed", {
           operationKey,
           callId: providerCallId,
+          leadId: nativeLeadId,
           error: getErrorMessage(error),
         });
         return res.status(202).json({
           success: true,
           code: "DIAL_ACCEPTED_RECONCILING",
           callId: providerCallId,
+          leadId: nativeLeadId,
           operationId: operationKey,
           warning:
-            "The carrier accepted the call, but Wireline is reconciling local tracking. Do not retry this number.",
+            "The call is being reconciled. Wireline is holding this number; do not retry it.",
         });
       }
 
