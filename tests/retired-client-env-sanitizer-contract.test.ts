@@ -19,15 +19,22 @@ describe("retired client environment sanitizer", () => {
     const config = JSON.parse(read("vercel.json")) as { buildCommand?: string };
     const deployment = read("scripts/vercel-deploy.mjs");
     const envExample = read(".env.example");
-    const sanitizerContract =
-      'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"]);';
+    const cleanRoomRunner = '"scripts/run-test-estate.mjs"';
+    const sanitizerContract = '"tests/retired-client-env-sanitizer-contract.test.ts"';
     const applicationGate = 'run(process.execPath, ["scripts/vercel-build.mjs"]);';
 
     expect(config.buildCommand).toBe("node scripts/vercel-deploy.mjs");
     expect(deployment).toContain('import "./sanitize-retired-client-env.mjs";');
+    expect(deployment).toContain(cleanRoomRunner);
     expect(deployment).toContain(sanitizerContract);
+    expect(deployment).not.toContain(
+      'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"])',
+    );
     expect(deployment).toContain(applicationGate);
-    expect(deployment.indexOf(sanitizerContract)).toBeGreaterThanOrEqual(0);
+    expect(deployment.indexOf(cleanRoomRunner)).toBeGreaterThanOrEqual(0);
+    expect(deployment.indexOf(sanitizerContract)).toBeGreaterThan(
+      deployment.indexOf(cleanRoomRunner),
+    );
     expect(deployment.indexOf(applicationGate)).toBeGreaterThan(
       deployment.indexOf(sanitizerContract),
     );

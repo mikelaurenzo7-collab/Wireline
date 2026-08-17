@@ -29,9 +29,13 @@ function run(command, args) {
 }
 
 // Prove the production compatibility bridge before migrations or any provider
-// gate can run. A broken sanitizer must fail before the release path can mutate
-// database or external-provider state.
-run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"]);
+// gate can run. The sanitizer is loaded in this parent process first; the
+// contract itself then runs in the same credential-free clean room as every
+// other build-time test process.
+run(process.execPath, [
+  "scripts/run-test-estate.mjs",
+  "tests/retired-client-env-sanitizer-contract.test.ts",
+]);
 run(process.execPath, ["scripts/vercel-build.mjs"]);
 run("npx", [
   "esbuild",
