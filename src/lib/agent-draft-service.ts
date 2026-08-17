@@ -205,7 +205,20 @@ export async function createAgentDraft(
       event: "agent_draft_created",
       userId: principal.userId,
       agentId: id,
-      surface: source === "chatgpt_mcp" ? "chatgpt_app" : "api",
+      surface:
+        source === "chatgpt_mcp"
+          ? "chatgpt_app"
+          : source === "claude_mcp"
+            ? "claude_app"
+            : source === "cursor_mcp"
+              ? "cursor_app"
+              : source === "ios"
+                ? "ios"
+                : source === "android"
+                  ? "android"
+                  : source === "web"
+                    ? "web_workspace"
+                    : "api",
       metadata: { source, role: profile.identity.role },
     });
     return toView(id, profile);

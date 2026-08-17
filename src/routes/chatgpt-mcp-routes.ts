@@ -209,6 +209,10 @@ async function validateAuthorizationRequest(
   return { clientId, redirectUri, state, codeChallenge, scopes, resource };
 }
 
+function mcpAccountConnectPath(authorizeUrl: string): string {
+  return `/signup?redirect=${encodeURIComponent(authorizeUrl)}`;
+}
+
 function oauthConsentPage(request: AuthorizationRequest, user: { email: string }): string {
   const hidden = Object.entries({
     response_type: "code",
@@ -236,7 +240,7 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
     request.redirectUri.startsWith("http://127.0.0.1")
       ? `<p class="muted">This callback returns to a local address (<code>${callback}</code>). Only continue if you started this connection from Claude Code or another app on this computer.</p>`
       : `<p class="muted">After you allow, you will return to <code>${callback}</code>.</p>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Connect Wireline</title><link rel="stylesheet" href="/static-legal.css" /></head><body class="oauth-consent"><main class="card"><div class="eyebrow">Wireline account connection</div><h1>Connect Wireline to ${client}</h1><p>Signed in as <strong>${escapeHtml(user.email)}</strong>. ${client} (<strong>${partyHost}</strong>) will be able to:</p><ul>${scopeList}</ul>${loopbackWarning}<p class="muted">Wireline will not place calls, send messages, connect phone numbers, or launch an agent without a separate explicit confirmation.</p><form method="post" action="/mcp/oauth/authorize">${hidden}<button type="submit">Allow ${client} to use Wireline</button></form></main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Connect Wireline</title><link rel="stylesheet" href="/static-legal.css" /></head><body class="oauth-consent"><main class="card"><div class="eyebrow">Wireline account connection</div><h1>Connect Wireline to ${client}</h1><p>Signed in as <strong>${escapeHtml(user.email)}</strong>. ${client} (<strong>${partyHost}</strong>) will be able to:</p><ul>${scopeList}</ul>${loopbackWarning}<p class="muted">New users create a Wireline account before this screen. Connecting does not place calls, send messages, connect phone numbers, or launch an agent. Draft changes, private rehearsals, and Training writes each need a separate confirmation. Training facts and rules land in Wireline only after you enable connected-app Training writes in Apps.</p><form method="post" action="/mcp/oauth/authorize">${hidden}<button type="submit">Allow ${client} to use Wireline</button></form></main></body></html>`;
 }
 
 async function ensureMcpSchema(): Promise<void> {
@@ -492,7 +496,7 @@ router.get("/mcp/oauth/authorize", async (req, res, next) => {
     const request = await validateAuthorizationRequest(req.query as Record<string, unknown>, req);
     const principal = await sessionPrincipal(req);
     if (!principal)
-      return res.redirect(`/signin?redirect=${encodeURIComponent(req.originalUrl || req.url)}`);
+      return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
     res.setHeader("Cache-Control", "no-store");
     return res.type("html").send(oauthConsentPage(request, { email: principal.email }));
   } catch (error) {
@@ -508,7 +512,7 @@ router.post(
       const request = await validateAuthorizationRequest(req.body as Record<string, unknown>, req);
       const principal = await sessionPrincipal(req);
       if (!principal)
-        return res.redirect(`/signin?redirect=${encodeURIComponent(req.originalUrl || req.url)}`);
+        return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
       await ensureMcpSchema();
       const code = publicId();
       await drizzle.execute(

@@ -24,7 +24,7 @@ export function buildAccountBoundWidgetHtml(): string {
 <style>${buildWirelineMcpWidgetCss()}</style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Create a Wireline account, then describe the first voice agent you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create your first voice-agent draft.</div><p class="note">The first draft is saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch stay in Wireline.</p></div></div>
 <script>
 (() => {
   const state = {
@@ -235,7 +235,7 @@ export function buildAccountBoundWidgetHtml(): string {
     id: "wireline-ui-init",
     method: "ui/initialize",
     params: {
-      appInfo: { name: "wireline", version: "2.3.0" },
+      appInfo: { name: "wireline", version: "2.4.0" },
       appCapabilities: {
         availableDisplayModes: ["inline"],
         openLinks: true,

@@ -34,6 +34,7 @@ import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
 import accountExportGuardRouter from "../routes/account-export-guard-routes";
 import userPreferenceGuardRouter from "../routes/user-preference-guard-routes";
+import mcpCoachingSettingsRouter from "../routes/mcp-coaching-settings-routes";
 import companyIdentitySettingsGuardRouter from "../routes/company-identity-settings-guard-routes";
 import settingsPhoneGuardRouter from "../routes/settings-phone-guard-routes";
 import settingsRouter from "../routes/settings-routes";
@@ -137,6 +138,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(vapiRouter);
   app.use(accountRouter);
   app.use(userPreferenceGuardRouter);
+  app.use(mcpCoachingSettingsRouter);
   // Phone normalization/validation is pure and must precede the identity
   // guard, whose branding commit would otherwise land before a malformed
   // phone value 400s the request (silent half-write).

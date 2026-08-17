@@ -29,8 +29,9 @@ import {
 } from "../lib/signup-intent";
 import {
   persistAuthRedirect,
-  persistWorkspaceMode,
+          persistWorkspaceMode,
   readRedirectFromSearch,
+  isMcpOAuthRedirect,
   readStoredWorkspaceMode,
   resolvePostAuthDestination,
   workspaceFromIntent,
@@ -665,6 +666,7 @@ export default function AuthPortal() {
     : isSignUp
       ? `Build your first ${customerAgentLanguage(workspaceMode).singular}.`
       : "Welcome back to Wireline.";
+  const mcpConnect = isMcpOAuthRedirect(location.search);
 
   return (
     <>
@@ -680,6 +682,13 @@ export default function AuthPortal() {
               buttons, and a cased divider, so it joins the title tier
               (presentation-only transform — the copy string never changes). */}
           <h1 className="text-xl font-semibold tracking-[-.02em] uppercase">{pageTitle}</h1>
+          {mcpConnect ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Create a Wireline account if you are new, then build your first voice agent in Cursor,
+              ChatGPT, or Claude. Sign in if you already have an account. This does not place a live
+              call.
+            </p>
+          ) : null}
           {isReset ? <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p> : null}
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">

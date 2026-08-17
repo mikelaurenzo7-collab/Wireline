@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTH_REDIRECT_KEY,
+  isMcpOAuthRedirect,
   readRedirectFromSearch,
   resolvePostAuthDestination,
 } from "./auth-redirect";
@@ -35,6 +36,12 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=%2F%5Cevil.example")).toBeNull();
     expect(readRedirectFromSearch("?redirect=%2Fapp%00%2Fbusiness")).toBeNull();
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
+  });
+
+  it("recognizes MCP OAuth return paths so signup can complete the connector", () => {
+    expect(isMcpOAuthRedirect("?redirect=%2Fmcp%2Foauth%2Fauthorize%3Fclient_id%3Dx")).toBe(true);
+    expect(isMcpOAuthRedirect("?redirect=%2Foverview")).toBe(false);
+    expect(isMcpOAuthRedirect("?redirect=https://evil.example/mcp/oauth/authorize")).toBe(false);
   });
 
   it("defaults to /overview (Home) for returning users; fresh signups are sent to Studio create once then default to overview", () => {

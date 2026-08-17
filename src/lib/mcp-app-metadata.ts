@@ -5,7 +5,7 @@ import { mcpIssuer, mcpResourceUrl } from "./mcp-oauth-security";
 
 export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "Wireline";
-export const MCP_SERVER_VERSION = "2.3.0";
+export const MCP_SERVER_VERSION = "2.4.0";
 
 export const MCP_DOCUMENTATION_URL = "https://trywireline.com/claude-connector.html";
 export const MCP_PRIVACY_URL = "https://trywireline.com/mcp-privacy.html";
@@ -30,7 +30,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     },
     "openai/widgetPrefersBorder": false,
     "openai/widgetDescription":
-      "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
+      "Shows the first Wireline voice-agent draft created from this chat, a private voice simulation, and a secure path to continue in Wireline.",
     "openai/widgetCSP": {
       connect_domains: ["https://api.openai.com"],
       resource_domains: [],
@@ -48,7 +48,7 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
     title: MCP_SERVER_TITLE,
     version: MCP_SERVER_VERSION,
     description:
-      "Create and refine a private, unlaunched Wireline voice-agent draft, run a short private simulation, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, and launch stay in Wireline.",
+      "Create a Wireline account, build your first voice agent from Cursor, ChatGPT, or Claude, privately rehearse it, and continue in Wireline. Live calls, numbers, and launch stay in Wireline.",
     websiteUrl: issuer,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
     icons: [{ src: MCP_ICON_URL, mimeType: "image/svg+xml" }],

@@ -89,6 +89,7 @@ describe("product event taxonomy", () => {
       "android",
       "chatgpt_app",
       "claude_app",
+      "cursor_app",
       "api",
     ]);
   });
@@ -106,6 +107,7 @@ describe("product event taxonomy", () => {
     expect(isProductEventAudience("solo_business")).toBe(true);
     expect(isProductEventAudience("solo business")).toBe(false);
     expect(isProductEventSurface("chatgpt_app")).toBe(true);
+    expect(isProductEventSurface("cursor_app")).toBe(true);
     expect(isProductEventSurface("chatgpt")).toBe(false);
   });
 
