@@ -28,6 +28,7 @@ type TokenBundle = {
   refreshToken: string | null;
   instanceUrl: string | null;
   metadata: unknown;
+  accountId?: string | null;
 };
 
 function safeDecrypt(value: string | null | undefined): string | null {
@@ -225,11 +226,24 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
       }
       case "apollo":
       case "icloud":
-      case "agentmail":
         // Apollo has no public token-revoke endpoint; iCloud uses an
-        // app-specific password and AgentMail uses a tenant API key with
-        // nothing to revoke remotely.
+        // app-specific password with nothing to revoke remotely.
         return false;
+      case "agentmail": {
+        // The API key itself cannot be revoked, but connect registers a
+        // tenant webhook. Disconnect and GDPR purge must drop that
+        // subscription or AgentMail keeps retrying a dead mailbox URL.
+        if (!access) return false;
+        const { deleteAgentMailWebhooksForAccount, deleteWirelineAgentMailWebhooks } = await import(
+          "./agentmail-mail"
+        );
+        if (conn.accountId) {
+          await deleteAgentMailWebhooksForAccount({ apiKey: access, accountId: conn.accountId });
+        } else {
+          await deleteWirelineAgentMailWebhooks(access);
+        }
+        return true;
+      }
       default:
         return false;
     }
@@ -299,6 +313,7 @@ export async function revokeAllOAuthGrantsForUser(userId: string): Promise<OAuth
 
   const emails = await drizzle
     .select({
+      id: schema.emailAccounts.id,
       provider: schema.emailAccounts.provider,
       accessToken: schema.emailAccounts.accessToken,
       refreshToken: schema.emailAccounts.refreshToken,
@@ -329,6 +344,7 @@ export async function revokeAllOAuthGrantsForUser(userId: string): Promise<OAuth
       refreshToken: row.refreshToken,
       instanceUrl: null,
       metadata: null,
+      accountId: row.id,
     })),
     ...calendars.map((row) => ({
       provider: row.provider,
@@ -364,6 +380,7 @@ export async function revokeAllOAuthGrantsForUser(userId: string): Promise<OAuth
 
 /** Revoke a single mailbox/calendar-style account row before local delete. */
 export async function revokeMailboxAccountTokens(account: {
+  id?: string | null;
   provider: string | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -379,5 +396,6 @@ export async function revokeMailboxAccountTokens(account: {
     refreshToken: account.refreshToken,
     instanceUrl: null,
     metadata: null,
+    accountId: account.id,
   });
 }
