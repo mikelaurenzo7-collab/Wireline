@@ -55,7 +55,7 @@ const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
   collections: "direct",
 };
 
-const SUPPORTED_LANGUAGE_HINTS = new Set([
+const LANGUAGE_HINTS = [
   "en",
   "ar-EG",
   "ar-SA",
@@ -76,7 +76,11 @@ const SUPPORTED_LANGUAGE_HINTS = new Set([
   "es-ES",
   "tr",
   "vi",
-]);
+] as const;
+
+const SUPPORTED_LANGUAGE_HINTS = new Map(
+  LANGUAGE_HINTS.map((language) => [language.toLowerCase(), language] as const),
+);
 
 export type GrokRealtimeFunction = {
   type: "function";
@@ -135,8 +139,8 @@ export function resolveWirelineGrokVoice(role?: string | null, requestedProfile?
 }
 
 export function normalizeGrokLanguageHint(value: unknown): string | undefined {
-  const candidate = typeof value === "string" ? value.trim() : "";
-  return SUPPORTED_LANGUAGE_HINTS.has(candidate) ? candidate : undefined;
+  const candidate = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return SUPPORTED_LANGUAGE_HINTS.get(candidate);
 }
 
 export function resolveGrokReasoningEffort(): "high" | "none" {
