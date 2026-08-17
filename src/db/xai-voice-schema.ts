@@ -1,37 +1,32 @@
 import { index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { agents, users } from "./schema-base";
-
 /**
- * Durable binding between a Wireline/Twilio number and xAI Direct SIP.
+ * Durable platform binding between a Wireline/Twilio number and xAI Direct SIP.
  *
  * Legacy Vapi identifiers remain on their historical tables during the
  * certification window so rollback evidence is preserved. New native call
  * routing never overloads those fields: xAI registration ids, Twilio trunk
  * ownership, and the encrypted Standard Webhooks signing secret live here.
  *
+ * xAI returns the webhook signing secret only once and currently documents no
+ * phone-registration deletion endpoint. The ownership columns therefore do not
+ * carry cascading foreign keys: deleting an agent or tenant must not destroy
+ * the only credential capable of verifying or safely reassigning a still-live
+ * provider registration. Retired rows form a platform cleanup/reuse ledger;
+ * active tenant access remains enforced by RLS and application ownership checks.
+ *
  * External identifiers are nullable while `status = provisioning`. This lets
  * Wireline claim the number before any non-idempotent carrier/provider call and
  * persist each returned identifier immediately instead of risking loss of the
  * one-time xAI signing secret during a partial failure. A short-lived claim
- * token prevents two requests from provisioning the same tenant line at once.
- *
- * RLS is schema-owned here. This repository's pinned Drizzle release uses the
- * pre-v1 `.enableRLS()` API; the current documentation's `pgTable.withRLS()`
- * form is not present at runtime. The migration installs Wireline's existing
- * tenant policy separately because it references the database-owned
- * `wireline_current_user_id()` helper and server role.
+ * token prevents two requests from provisioning the same line at once.
  */
 export const xaiPhoneBindings = pgTable(
   "wireline_xai_phone_bindings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    agentId: text("agent_id")
-      .notNull()
-      .references(() => agents.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    agentId: text("agent_id").notNull(),
     phoneNumber: text("phone_number").notNull(),
     twilioPhoneNumberSid: text("twilio_phone_number_sid"),
     twilioSipTrunkSid: text("twilio_sip_trunk_sid"),
