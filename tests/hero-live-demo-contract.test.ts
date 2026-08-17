@@ -62,13 +62,15 @@ describe("homepage hero live demo + funnel instrumentation", () => {
 
     const route = read("src/routes/marketing-runtime-routes.ts");
     expect(route).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
-    expect(route).toContain("artifactPlan: buildPublicBrowserDemoArtifactPlan()");
-    expect(route).toContain('router.post("/api/public/demo-session"');
-    expect(route).toContain('router.post("/api/public/demo-vapi/call/web"');
+    expect(route).toContain('"/api/public/demo-session"');
+    expect(route).toContain('"/api/public/demo-xai-session"');
+    expect(route).toContain("createPublicXAILiveDemoSession");
+    expect(route).not.toContain('"/api/public/demo-vapi/call/web"');
 
     const hook = read("src/hooks/useProtectedPublicDemo.ts");
-    expect(hook).toContain("(durationSeconds + 3) * 1000");
-    expect(hook).toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
+    expect(hook).toContain("(duration + 1) * 1_000");
+    expect(hook).toContain("xai-client-secret.");
+    expect(hook).not.toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
   });
 
   it("emits live-demo, audience, and primary-action funnel events", () => {
