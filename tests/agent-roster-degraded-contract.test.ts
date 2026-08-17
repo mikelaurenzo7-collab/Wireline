@@ -90,6 +90,13 @@ describe("agent roster: empty versus unreachable", () => {
     expect(knowledge).toContain(
       "degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />",
     );
+
+    const identity = read("src/pages/LiveVideoStudioPage.tsx");
+    expect(identity).toContain("degraded && !businessAgents.length");
+    expect(identity).toContain("<WorkspaceRecovery onRetry={refresh} />");
+
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
+    expect(studioHome).toContain("!loading && !degraded && params.get(\"create\") === \"1\"");
   });
 
   it("still offers the create path when the roster is genuinely empty", () => {

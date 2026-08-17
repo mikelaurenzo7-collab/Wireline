@@ -5,8 +5,8 @@
  * Video files and clip-script substitutes are not offered. Phone, email, and
  * text stay on the agent.
  */
-import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 
 import AgentFace from "../components/AgentFace";
@@ -26,10 +26,13 @@ type PresenterPayload = {
 };
 
 export default function LiveVideoStudioPage() {
-  const { agents, loading: agentsLoading, error: agentsError, reload } = useAgents();
+  const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
   const [searchParams] = useSearchParams();
   const requestedAgentId = searchParams.get("agent");
-  const businessAgents = agents.filter((agent) => agent.is_business_agent);
+  const businessAgents = useMemo(
+    () => agents.filter((agent) => agent.is_business_agent),
+    [agents],
+  );
   const [agentId, setAgentId] = useState("");
   const [payload, setPayload] = useState<PresenterPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -40,32 +43,42 @@ export default function LiveVideoStudioPage() {
       setAgentId(requestedAgentId);
       return;
     }
-    setAgentId((current) => current || businessAgents[0].id);
+    setAgentId((current) =>
+      current && businessAgents.some((agent) => agent.id === current)
+        ? current
+        : businessAgents[0].id,
+    );
   }, [businessAgents, requestedAgentId]);
 
   const loadPresenter = useCallback(async (id: string) => {
-    const res = await authFetch(`/api/agents/${id}/video-presenter`);
+    const res = await authFetch(`/api/agents/${encodeURIComponent(id)}/video-presenter`);
     const body = (await res.json().catch(() => ({}))) as PresenterPayload & { error?: string };
     if (!res.ok) throw new Error(body.error || "Could not load identity.");
-    setPayload(body);
+    return body;
   }, []);
 
   useEffect(() => {
     if (!agentId) return;
+    let cancelled = false;
     setLoadError(null);
-    void loadPresenter(agentId).catch((error: unknown) => {
-      setLoadError(error instanceof Error ? error.message : "Could not load identity.");
-    });
+    setPayload(null);
+    void loadPresenter(agentId)
+      .then((body) => {
+        if (!cancelled) setPayload(body);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setLoadError(error instanceof Error ? error.message : "Could not load identity.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [agentId, loadPresenter]);
 
-  if (agentsError) {
+  if (!agentsLoading && degraded && !businessAgents.length) {
     return (
       <WorkspaceShell>
-        <WorkspaceRecovery
-          title="Couldn't load agents"
-          description={agentsError}
-          onRetry={() => void reload()}
-        />
+        <WorkspaceRecovery onRetry={refresh} />
       </WorkspaceShell>
     );
   }
@@ -79,8 +92,7 @@ export default function LiveVideoStudioPage() {
           <StatusNotice>
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading agents
           </StatusNotice>
-        ) : null}
-        {businessAgents.length ? (
+        ) : businessAgents.length ? (
           <label className="block space-y-2">
             <span className="text-sm text-muted-foreground">Business agent</span>
             <select
@@ -97,7 +109,15 @@ export default function LiveVideoStudioPage() {
             </select>
           </label>
         ) : (
-          <StatusNotice>Create a business agent first, then come back for identity.</StatusNotice>
+          <StatusNotice>
+            Create a business agent first, then come back for identity.{" "}
+            <Link
+              to="/studio?create=1&posture=business"
+              className="font-medium text-primary underline underline-offset-4"
+            >
+              Create business agent
+            </Link>
+          </StatusNotice>
         )}
         {payload ? (
           <div className="flex flex-col items-start gap-4 rounded-md border border-border bg-card p-4">

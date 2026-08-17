@@ -216,7 +216,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/overview": "Overview",
   "/studio": "Agent Studio",
   "/studio/handoff": "Browser handoff",
-  "/studio/live-video": "Live video",
+  "/studio/live-video": "Identity",
   "/templates": "Templates",
   "/knowledge": "Knowledge",
   "/connections": "Connections",

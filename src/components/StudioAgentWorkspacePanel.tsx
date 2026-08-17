@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, PlugZap, Save, Video } from "lucide-react";
+import { Badge, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
@@ -370,8 +370,8 @@ export default function StudioAgentWorkspacePanel({
                 to={`/studio/live-video?agent=${encodeURIComponent(agentId)}`}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >
-                <Video className="size-3.5" aria-hidden="true" />
-                Live video
+                <Badge className="size-3.5" aria-hidden="true" />
+                Identity
               </Link>
             ) : null}
           </div>

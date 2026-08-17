@@ -20,7 +20,7 @@ import { authFetch } from "../lib/api";
 
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
-  const { loading } = useAgents();
+  const { loading, degraded } = useAgents();
   const { accountType } = useAccount();
   const { toast } = useToast();
   const requestedPosture = params.get("posture");
@@ -36,8 +36,11 @@ export default function AgentStudioHome() {
   const [signedBrief, setSignedBrief] = useState("");
 
   useEffect(() => {
-    if (!loading && params.get("create") === "1") setShowCreate(true);
-  }, [loading, params]);
+    // Opening Fast Start while the roster is unreachable invites a billed
+    // duplicate of an agent that already exists. StudioWorkspaceV2 already
+    // shows WorkspaceRecovery; this keeps create=1 from overlaying it.
+    if (!loading && !degraded && params.get("create") === "1") setShowCreate(true);
+  }, [loading, degraded, params]);
 
   useEffect(() => {
     if (!browserContext) return;
