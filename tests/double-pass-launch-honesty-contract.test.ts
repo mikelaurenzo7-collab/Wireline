@@ -112,11 +112,6 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain(
       'throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.")',
     );
-    // Must not ack an unknown prior claim state as duplicate success. The
-    // pattern is asserted against a synthetic regression first: an
-    // over-escaped guard here (e.g. `prior\\.status`) can never match real
-    // TypeScript, which would make the `not.toMatch` below vacuously true and
-    // leave this money-critical branch unguarded while CI stays green.
     const acksUnknownPriorAsDuplicate =
       /priorStatus: prior\?\.status \?\? "unknown",\s*\}\);\s*return res\.json\(\{ received: true, duplicate: true \}\)/;
     const regressedSource = [
@@ -153,7 +148,6 @@ describe("double-pass launch honesty", () => {
     const source = read("src/routes/auth-routes.ts");
     expect(source).toContain("Promise.allSettled");
     expect(source).toContain("sendPasswordResetEmail");
-    // Email send must sit inside equalizedDuration for forgot-password.
     const forgot = source.slice(source.indexOf('"/api/auth/forgot-password"'));
     const eqStart = forgot.indexOf("equalizedDuration(");
     const eqChunk = forgot.slice(eqStart, eqStart + 1200);
@@ -236,17 +230,6 @@ describe("double-pass launch honesty", () => {
   });
 
   it("never dispatches concurrent queries through one pg transaction client", () => {
-    // One pg client cannot run queries concurrently inside a transaction, so a
-    // Promise.all over transaction-bound builders is always wrong.
-    //
-    // This used to scan a hardcoded file list for text lexically between
-    // `drizzle.transaction(` and its closing paren. That shape cannot see the
-    // most common form of the bug: a helper that receives `tx` as a parameter
-    // and fans out inside it, in a file that may not call drizzle.transaction
-    // at all. Three such sites (company-identity-routes loadIdentityState,
-    // company-identity-mutation reconcile, phone-provisioning release) were
-    // live while this test passed. Sweep every source file instead and judge
-    // by what the Promise.all actually awaits.
     const files = listSourceTsFiles().filter((file) => !file.endsWith(".test.ts"));
     expect(files.length).toBeGreaterThan(50);
 
@@ -256,8 +239,6 @@ describe("double-pass launch honesty", () => {
       for (const match of source.matchAll(/Promise\.all\(/g)) {
         const open = (match.index ?? 0) + "Promise.all".length;
         const body = source.slice(open, matchingCallEnd(source, open) + 1);
-        // Transaction-bound builders read `tx.select(...)`, possibly wrapped
-        // across lines. Root-pool `drizzle.…` fan-out is legitimate.
         if (/\btx\s*\r?\n?\s*\.(select|insert|update|delete|execute)\b/.test(body)) {
           const line = source.slice(0, match.index ?? 0).split("\n").length;
           offenders.push(`${path}:${line}`);
@@ -300,7 +281,7 @@ describe("double-pass launch honesty", () => {
       ["src/routes/fleet-routes.ts", 2],
       ["src/routes/insights-routes.ts", 1],
       ["src/lib/vapi-assistant-factory-v2.ts", 1],
-      ["src/lib/vapi-client.ts", 1],
+      ["src/lib/voice/xai-agent-runtime.ts", 1],
       ["src/routes/settings-routes.ts", 1],
       ["src/routes/dashboard-routes.ts", 2],
       ["src/lib/voice/openai-live-agent-service.ts", 1],
