@@ -45,6 +45,7 @@ const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 const Developers = lazy(() => import("./pages/Developers"));
 const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
 const PublicNotFound = lazy(() => import("./pages/PublicNotFound"));
+const CommercialSpot = lazy(() => import("./pages/CommercialSpot"));
 
 function RouteLoading() {
   return (
@@ -96,6 +97,7 @@ function AppRouter() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/billing" element={<Navigate to="/settings/billing" replace />} />
         <Route path="/showcase" element={<Showcase />} />
+        <Route path="/commercial" element={<CommercialSpot />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/solutions" element={<Navigate to="/solutions/support" replace />} />
         <Route path="/use-cases" element={<Navigate to="/solutions/support" replace />} />
