@@ -109,6 +109,10 @@ stripe-env.json
 scripts/.stripe-env.generated.json
 stripe-catalog-proposal.json
 
+# Migration 0152 snapshot. `scripts/materialize-drizzle-meta.mjs` recreates the
+# exact SHA-pinned JSON from committed 0049 metadata before tests or Drizzle Kit.
+/drizzle/migrations/meta/0050_snapshot.json
+
 # Generated launch-status snapshot (`npm run launch:status`). It records a
 # point-in-time go/no-go probe of live production, so a committed copy is stale
 # the moment it lands and reads as current truth.
