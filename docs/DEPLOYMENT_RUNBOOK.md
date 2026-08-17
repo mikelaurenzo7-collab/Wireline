@@ -41,22 +41,22 @@ Preview builds must:
 - build assets, client, server, and ChatGPT MCP bundles;
 - pass the no-database server import smoke.
 
-The `[launch-deep-audit]` commit marker runs all TypeScript configurations, ESLint, and the complete non-E2E Vitest estate on that exact preview head.
+The `[launch-deep-audit]` commit marker runs all supported TypeScript configurations, zero-warning ESLint, the production-dependency security gate, and the complete non-E2E Vitest estate on that exact preview head.
 
 ## Production rules
 
-The production build must:
+The canonical production build must, in order:
 
-- pass the same deployment-boundary, repository, documentation, focused contract, operational-core, and token-generation gates;
-- apply committed Drizzle migrations through `npm run db:migrate` unless the deployment is an explicitly identified non-live duplicate;
-- build the production client/server and ChatGPT MCP bundles;
-- pass server import smoke;
-- read and verify the catalog-fingerprinted Stripe Customer Portal when
-  `WIRELINE_RECONCILE_STRIPE_PORTAL=true`; canonical production fails closed when the switch is
-  absent or the live configuration cannot be verified;
-- never mutate Stripe Customer Portal configuration as a side effect of application artifact construction;
-- report whether self-serve billing is authorized for the exact `VERCEL_GIT_COMMIT_SHA` or will remain runtime-closed;
-- finish READY with no alias error and own `trywireline.com`.
+1. pass deployment-boundary, repository, documentation, focused contract, operational-core, and token-generation gates;
+2. pass the comprehensive TypeScript, zero-warning ESLint, production-dependency security, and complete non-E2E Vitest audit on every production artifact, without relying on a commit marker;
+3. read and verify the catalog-fingerprinted Stripe Customer Portal when `WIRELINE_RECONCILE_STRIPE_PORTAL=true`;
+4. apply the exact committed Drizzle migration journal only after the code and live Stripe read-only gates pass;
+5. verify the resulting production schema effects;
+6. build the production client/server and ChatGPT MCP bundles and pass server import smoke;
+7. report whether self-serve billing is authorized for the exact `VERCEL_GIT_COMMIT_SHA` or will remain runtime-closed;
+8. finish READY with no alias error and own `trywireline.com`.
+
+Canonical production fails closed when the portal verification switch is absent or the live configuration cannot be verified. Artifact construction must not mutate Stripe Customer Portal state.
 
 After promotion, verify:
 
@@ -76,6 +76,7 @@ When Actions are unavailable, require:
 - CodeRabbit success and no unresolved review threads;
 - the appropriate local or Vercel deep audit;
 - targeted live/read-only probes for the changed surface;
+- the mandatory comprehensive canonical-production audit before migrations;
 - production verification after merge.
 
 Do not ignore a named GitHub job that actually ran and found an application defect.
@@ -96,7 +97,7 @@ New credential-like variables are blocked in preview by default until `scripts/c
 
 See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 
-Preview builds must log that migrations were skipped. Production builds run the committed journal before the application build. For a high-risk schema change, apply and probe the committed migration through the authenticated Supabase migration path only after the exact preview head is green.
+Preview builds must log that migrations were skipped. Production builds run the committed journal only after the comprehensive code audit and live read-only provider gates pass. For a high-risk schema change, apply and probe the committed migration through the authenticated Supabase migration path only after the exact preview head is green.
 
 ## Self-serve billing release control
 
@@ -112,7 +113,7 @@ Checkout remains closed unless all three controls align. The release SHA is prod
 historical name is retained for environment compatibility, but canonical Production builds use it
 as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter
 Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice
-history, and legal/return URLs after the application build passes. Preview and Development must
+history, and legal/return URLs before any production migration runs. Preview and Development must
 leave it false/unset.
 
 Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure,
