@@ -5,9 +5,11 @@ export const XAI_REALTIME_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
 export const XAI_SIP_HOST = "sip.voice.x.ai";
 export const XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP";
 export const XAI_TWILIO_ORIGINATION_FRIENDLY_NAME = "xAI realtime primary";
+export const XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token";
 
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 const SIMPLE_CIDR_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?$/;
+const TWILIO_SIP_URI_MAX_LENGTH = 255;
 
 export function normalizeXAIPhoneNumber(value: unknown): string | null {
   const phone = String(value || "")
@@ -33,19 +35,33 @@ export function xaiSipUriForPhone(phoneNumber: string): string {
   return `sip:${normalized}@${XAI_SIP_HOST};transport=tls`;
 }
 
+/**
+ * Twilio turns `X-` query parameters on a `<Sip>` URI into SIP headers. The
+ * token is base64url, contains no PII, and is length-bounded before this helper.
+ */
+export function buildXAIOutboundSipUri(phoneNumber: string, token: string): string {
+  const candidate = `${xaiSipUriForPhone(phoneNumber)}?${XAI_OUTBOUND_SIP_TOKEN_HEADER}=${encodeURIComponent(
+    token,
+  )}`;
+  if (candidate.length > TWILIO_SIP_URI_MAX_LENGTH) {
+    throw new Error("Native outbound SIP URI exceeds Twilio's length limit.");
+  }
+  return candidate;
+}
+
 export function xaiVoiceWebhookUrl(): string {
   return `${getCanonicalAppUrl()}/api/webhooks/xai/voice`;
 }
 
-export function twilioXAIOutboundBridgeUrl(input: {
-  agentId: string;
-  phoneNumber: string;
-  customerNumber?: string | null;
-}): string {
+export function twilioXAIOutboundBridgeUrl(token: string): string {
   const url = new URL("/api/twilio-webhook/xai-outbound-bridge", `${getCanonicalAppUrl()}/`);
-  url.searchParams.set("agentId", input.agentId);
-  url.searchParams.set("phoneNumber", input.phoneNumber);
-  if (input.customerNumber) url.searchParams.set("customerNumber", input.customerNumber);
+  url.searchParams.set("token", token);
+  return url.toString();
+}
+
+export function twilioXAIOutboundStatusUrl(token: string): string {
+  const url = new URL("/api/twilio-webhook/xai-outbound-status", `${getCanonicalAppUrl()}/`);
+  url.searchParams.set("token", token);
   return url.toString();
 }
 
