@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 import { agentMailSuppressionReason, parseAgentMailWebhookEvent } from "../src/lib/agentmail-webhook";
 
 const ownedMailbox = readFileSync("src/lib/owned-email-account.ts", "utf8");
+const mailboxIdentity = readFileSync("src/lib/mailbox-identity.ts", "utf8");
 const mailboxPersistence = readFileSync("src/lib/mailbox-inbox-persist.ts", "utf8");
+const integrations = readFileSync("src/lib/integrations.ts", "utf8");
+const agentmailWebhook = readFileSync("src/lib/agentmail-webhook.ts", "utf8");
+const agentmailWebhookRoutes = readFileSync("src/routes/agentmail-webhook-routes.ts", "utf8");
 const google = readFileSync("src/routes/oauth/google.ts", "utf8");
 const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
 const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
@@ -49,6 +53,53 @@ describe("mailbox ownership hardening", () => {
     );
     expect(agentmail).toMatch(
       /"\/api\/integrations\/agentmail\/disconnect",\s*authenticateUser,\s*agentmailConnectRateLimiter/,
+    );
+  });
+
+  it("namespaces provider ids to the verified mailbox account and provider", () => {
+    expect(mailboxIdentity).toContain('MAILBOX_SCOPED_ID_PREFIX = "mailbox:v1:"');
+    expect(mailboxIdentity).toContain('createHash("sha256")');
+    expect(mailboxIdentity).toContain('update(normalizedAccountId, "utf8")');
+    expect(mailboxIdentity).toContain('update(normalizedProvider, "utf8")');
+    expect(mailboxIdentity).toContain('update(externalId, "utf8")');
+
+    expect(mailboxPersistence).toContain("accountId: string");
+    expect(mailboxPersistence).toContain("provider: string");
+    expect(mailboxPersistence).toContain(
+      "mailboxScopedExternalId(accountId, provider, rawThreadId)",
+    );
+    expect(mailboxPersistence).toContain(
+      "mailboxScopedExternalId(accountId, provider, message.messageId)",
+    );
+    expect(mailboxPersistence).toContain("accountId: message.accountId");
+    expect(mailboxPersistence).toContain("requestedSourceByAccountId");
+    expect(mailboxPersistence).toContain("ownedSourceByAccountId");
+    expect(mailboxPersistence).toContain('.for("update")');
+    expect(mailboxPersistence).toContain(
+      "Mailbox persistence rejected a stale or unowned account source.",
+    );
+    expect(mailboxPersistence).toContain(
+      "${schema.emailThreads.accountId} = excluded.account_id",
+    );
+  });
+
+  it("preserves legacy rows with no provable account/provider provenance", () => {
+    expect(mailboxPersistence).toContain("Legacy rows");
+    expect(mailboxPersistence).not.toContain("isNull(schema.emailThreads.accountId)");
+    expect(mailboxPersistence).not.toContain("legacyThreads");
+    expect(mailboxPersistence).not.toContain("legacyMessages");
+  });
+
+  it("carries the canonical email-account id through every inbox provider", () => {
+    expect(integrations).toContain("accountId: string;");
+    expect(integrations).toContain('const mailAccounts = await this.getAccounts("mail");');
+    const fetchSection = integrations.match(/async fetchInboxMessages[\s\S]*?async sendEmail/)?.[0];
+    expect(fetchSection).toBeTruthy();
+    expect(fetchSection).not.toContain('getAccounts("calendar")');
+    expect(integrations.match(/accountId: String\(account\.id\)/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(agentmailWebhook).toContain('provider: "agentmail"');
+    expect(agentmailWebhookRoutes).toContain(
+      "processVerifiedAgentMailWebhook(account.userId, account.id, req.body as Buffer)",
     );
   });
 

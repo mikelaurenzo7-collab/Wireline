@@ -13,6 +13,7 @@ import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from
 const MAX_CALENDAR_PAGES = 20;
 
 export type InboxMessagePreview = {
+  accountId: string;
   messageId: string;
   threadId?: string;
   from: string;
@@ -240,8 +241,10 @@ export class IntegrationService {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
     const failures: InboxFetchFailure[] = [];
     try {
-      const accounts = await this.getAccounts("mail");
-      const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
+      // Only canonical email-account rows may source inbox persistence. Google
+      // and Microsoft callbacks upsert both calendar and mailbox rows; falling
+      // back to calendar rows lost the mailbox identity needed for safe dedupe.
+      const mailAccounts = await this.getAccounts("mail");
       if (mailAccounts.length === 0) return { messages: [], failures };
 
       // Fan out across every connected mail account the tenant has.
@@ -281,17 +284,7 @@ export class IntegrationService {
   private async fetchFromAccount(
     account: any,
     opts: { limit: number; sinceIso?: string },
-  ): Promise<
-    {
-      messageId: string;
-      threadId?: string;
-      from: string;
-      subject: string;
-      snippet: string;
-      receivedAt: Date;
-      provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
-    }[]
-  > {
+  ): Promise<InboxMessagePreview[]> {
     if (account.provider === "google") {
       return this.fetchGoogleInbox(account, opts);
     }
@@ -318,13 +311,15 @@ export class IntegrationService {
   private async fetchIcloudInbox(account: any, opts: { limit: number; sinceIso?: string }) {
     const email = account.emailAddress as string;
     const appPassword = decryptSecret(account.accessToken);
-    return fetchIcloudInbox(email, appPassword, opts);
+    const messages = await fetchIcloudInbox(email, appPassword, opts);
+    return messages.map((message) => ({ ...message, accountId: String(account.id) }));
   }
 
   private async fetchAgentMailInbox(account: any, opts: { limit: number; sinceIso?: string }) {
     const email = account.emailAddress as string;
     const apiKey = decryptSecret(account.accessToken);
-    return fetchAgentMailInbox(email, apiKey, opts);
+    const messages = await fetchAgentMailInbox(email, apiKey, opts);
+    return messages.map((message) => ({ ...message, accountId: String(account.id) }));
   }
 
   private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
@@ -366,6 +361,7 @@ export class IntegrationService {
           ? new Date(Number(d.data.internalDate))
           : new Date();
         return {
+          accountId: String(account.id),
           messageId: d.data.id ?? "",
           threadId: d.data.threadId ?? undefined,
           from: get("From"),
@@ -400,6 +396,7 @@ export class IntegrationService {
     }
     const data = (await r.json()) as any;
     return (data.value || []).map((m: any) => ({
+      accountId: String(account.id),
       messageId: m.id as string,
       threadId: m.conversationId,
       from: m.from?.emailAddress?.address || "",

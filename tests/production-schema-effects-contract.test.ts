@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 const buildSource = readFileSync("scripts/vercel-build.mjs", "utf8");
 const verifierSource = readFileSync("scripts/check-production-schema-effects.mjs", "utf8");
 const wrapperSource = readFileSync("scripts/run-production-schema-effects.mjs", "utf8");
+const schemaSource = readFileSync("src/db/schema-base.ts", "utf8");
+const mailboxPersistence = readFileSync("src/lib/mailbox-inbox-persist.ts", "utf8");
 const migrationSource = readFileSync(
   "drizzle/migrations/0142_resend_delivery_feedback.sql",
   "utf8",
@@ -80,6 +82,20 @@ describe("production schema effects", () => {
       expect(verifierSource).toContain(orphanCheck);
     }
     expect(verifierSource).not.toContain("wireline_jobs t LEFT JOIN public.wireline_users");
+  });
+
+  it("keeps provider-backed inbox history owned by the mailbox lifecycle", () => {
+    const emailThreadSchema = schemaSource.match(
+      /export const emailThreads[\s\S]*?export const emailMessages/,
+    )?.[0];
+
+    expect(emailThreadSchema).toBeTruthy();
+    expect(emailThreadSchema).toContain('accountId: uuid("account_id").references');
+    expect(emailThreadSchema).toContain('onDelete: "cascade"');
+    expect(mailboxPersistence).toContain("accountId: message.accountId");
+    expect(mailboxPersistence).toContain(
+      "${schema.emailThreads.accountId} = excluded.account_id",
+    );
   });
 
   it("certifies the live retention routine body, not merely its function name", () => {

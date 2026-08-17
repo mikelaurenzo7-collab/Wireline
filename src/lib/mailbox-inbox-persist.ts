@@ -1,9 +1,12 @@
-import { sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
+import { mailboxScopedExternalId } from "./mailbox-identity";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 
 export type PersistableInboxMessage = {
+  accountId: string;
+  provider: string;
   messageId: string;
   threadId?: string;
   from: string;
@@ -17,26 +20,54 @@ export type PersistMailboxInboxResult = {
   threadsUpserted: number;
 };
 
+type PreparedInboxMessage = PersistableInboxMessage & {
+  accountId: string;
+  provider: string;
+  scopedThreadId: string;
+  scopedMessageId: string;
+};
+
 /**
  * Upsert provider inbox threads/messages for the current tenant transaction.
  * Callers must already be inside `tenantStore.run(userId)`.
+ *
+ * Provider ids are mailbox/provider-scoped. The existing database indexes are
+ * tenant-wide, so every persisted external id is first converted to a stable,
+ * opaque namespace. The source account row is locked and its current provider
+ * re-verified in the same transaction before any row is written. Legacy rows
+ * with no account/provider provenance remain untouched rather than guessed.
  */
 export async function persistMailboxInboxMessages(
   userId: string,
   messages: PersistableInboxMessage[],
 ): Promise<PersistMailboxInboxResult> {
-  const latestThreadMessage = new Map<string, PersistableInboxMessage>();
-  for (const message of messages) {
-    const externalThreadId = message.threadId || message.messageId;
-    if (!externalThreadId) continue;
-    const prior = latestThreadMessage.get(externalThreadId);
+  const preparedMessages = messages.flatMap<PreparedInboxMessage>((message) => {
+    const accountId = message.accountId.trim().toLowerCase();
+    const provider = message.provider.trim().toLowerCase();
+    const rawThreadId = message.threadId || message.messageId;
+    if (!rawThreadId || !message.messageId) return [];
+    return [
+      {
+        ...message,
+        accountId,
+        provider,
+        scopedThreadId: mailboxScopedExternalId(accountId, provider, rawThreadId),
+        scopedMessageId: mailboxScopedExternalId(accountId, provider, message.messageId),
+      },
+    ];
+  });
+
+  const latestThreadMessage = new Map<string, PreparedInboxMessage>();
+  for (const message of preparedMessages) {
+    const prior = latestThreadMessage.get(message.scopedThreadId);
     if (!prior || message.receivedAt.getTime() > prior.receivedAt.getTime()) {
-      latestThreadMessage.set(externalThreadId, message);
+      latestThreadMessage.set(message.scopedThreadId, message);
     }
   }
 
   const threadRows = Array.from(latestThreadMessage.entries()).map(([threadId, message]) => ({
     userId,
+    accountId: message.accountId,
     threadId,
     subject: message.subject,
     customerEmail: message.from,
@@ -44,26 +75,63 @@ export async function persistMailboxInboxMessages(
     lastMessageAt: message.receivedAt,
   }));
 
-  const messageRows = messages.flatMap((message) => {
-    const externalThreadId = message.threadId || message.messageId;
-    if (!externalThreadId || !message.messageId) return [];
-    return [
-      {
-        externalThreadId,
-        userId,
-        googleMessageId: message.messageId,
-        role: "user" as const,
-        content: message.snippet || "No preview was supplied by the connected mailbox.",
-        createdAt: message.receivedAt,
-      },
-    ];
-  });
+  const messageRows = preparedMessages.map((message) => ({
+    externalThreadId: message.scopedThreadId,
+    userId,
+    googleMessageId: message.scopedMessageId,
+    role: "user" as const,
+    content: message.snippet || "No preview was supplied by the connected mailbox.",
+    createdAt: message.receivedAt,
+  }));
 
   if (threadRows.length === 0 && messageRows.length === 0) {
     return { messagesSaved: 0, threadsUpserted: 0 };
   }
 
+  const requestedSourceByAccountId = new Map<string, string>();
+  for (const message of preparedMessages) {
+    const priorProvider = requestedSourceByAccountId.get(message.accountId);
+    if (priorProvider && priorProvider !== message.provider) {
+      throw new Error("Mailbox persistence received conflicting providers for one account.");
+    }
+    requestedSourceByAccountId.set(message.accountId, message.provider);
+  }
+  const requestedAccountIds = Array.from(requestedSourceByAccountId.keys());
+
+  let threadsUpserted = 0;
   const messagesSaved = await drizzle.transaction(async (tx) => {
+    // Lock each source mailbox so a reconnect/provider switch or disconnect
+    // cannot race between validation and persistence. A stale in-flight fetch
+    // then either commits before the account mutation or observes the new
+    // provider/missing row and fails closed.
+    const ownedAccounts = await tx
+      .select({
+        id: schema.emailAccounts.id,
+        provider: schema.emailAccounts.provider,
+      })
+      .from(schema.emailAccounts)
+      .where(
+        and(
+          eq(schema.emailAccounts.userId, userId),
+          inArray(schema.emailAccounts.id, requestedAccountIds),
+        ),
+      )
+      .for("update");
+    const ownedSourceByAccountId = new Map(
+      ownedAccounts.map((account) => [
+        account.id.toLowerCase(),
+        String(account.provider || "")
+          .trim()
+          .toLowerCase(),
+      ]),
+    );
+
+    for (const [accountId, provider] of requestedSourceByAccountId) {
+      if (ownedSourceByAccountId.get(accountId) !== provider) {
+        throw new Error("Mailbox persistence rejected a stale or unowned account source.");
+      }
+    }
+
     const threadDbIdByExternalId = new Map<string, string>();
     if (threadRows.length > 0) {
       // Provider retries and manual syncs can arrive out of order. Never let an
@@ -83,10 +151,17 @@ export async function persistMailboxInboxMessages(
             summary: sql`case when ${incomingThreadIsNotOlder} then excluded.summary else ${schema.emailThreads.summary} end`,
             lastMessageAt: sql`case when ${incomingThreadIsNotOlder} then excluded.last_message_at else ${schema.emailThreads.lastMessageAt} end`,
           },
-          setWhere: sql`${schema.emailThreads.userId} = ${userId}`,
+          setWhere: sql`
+            ${schema.emailThreads.userId} = ${userId}
+            and ${schema.emailThreads.accountId} = excluded.account_id
+          `,
         })
         .returning({ id: schema.emailThreads.id, threadId: schema.emailThreads.threadId });
 
+      if (threads.length !== threadRows.length) {
+        throw new Error("Mailbox thread identity conflict blocked persistence.");
+      }
+      threadsUpserted = threads.length;
       for (const thread of threads) {
         if (thread.threadId) threadDbIdByExternalId.set(thread.threadId, thread.id);
       }
@@ -119,5 +194,5 @@ export async function persistMailboxInboxMessages(
     return saved.length;
   });
 
-  return { messagesSaved, threadsUpserted: threadRows.length };
+  return { messagesSaved, threadsUpserted };
 }

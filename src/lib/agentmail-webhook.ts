@@ -185,6 +185,7 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
 
 export async function processVerifiedAgentMailWebhook(
   userId: string,
+  accountId: string,
   rawBody: Buffer,
 ): Promise<AgentMailWebhookProcessResult> {
   let parsedJson: unknown;
@@ -201,6 +202,8 @@ export async function processVerifiedAgentMailWebhook(
     }
     const persisted = await persistMailboxInboxMessages(userId, [
       {
+        accountId,
+        provider: "agentmail",
         messageId: event.messageId,
         threadId: event.threadId || event.messageId,
         from: event.from,

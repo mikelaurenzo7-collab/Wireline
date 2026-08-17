@@ -100,7 +100,7 @@ router.post("/api/webhooks/agentmail/:accountId", agentmailWebhookRateLimiter, a
 
   try {
     const result = await tenantStore.run(account.userId, () =>
-      processVerifiedAgentMailWebhook(account.userId, req.body as Buffer),
+      processVerifiedAgentMailWebhook(account.userId, account.id, req.body as Buffer),
     );
     return res.status(200).json({
       received: true,
