@@ -5,7 +5,7 @@ const password = process.env.WIRELINE_E2E_PASSWORD;
 
 const GOLD_ROUTES = [
   { path: "/overview", eyebrow: /Overview|Good/i, marker: ".wl-overview-greeting" },
-  { path: "/phone?tab=logs", eyebrow: /Call ops/i, marker: ".wl-operate-surface" },
+  { path: "/phone?tab=logs", eyebrow: /Place outbound call/i, marker: ".wl-operate-surface" },
   {
     path: "/studio?create=1",
     eyebrow: /Create|Agent|Studio/i,

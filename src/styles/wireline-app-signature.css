@@ -266,6 +266,11 @@
   );
 }
 
+.wl-overview-greeting:has(h1.sr-only)::after {
+  content: none;
+  display: none;
+}
+
 @media (min-width: 640px) {
   [data-wireline-route="/studio"] main > div > header.wl-centered-header {
     flex-direction: row;

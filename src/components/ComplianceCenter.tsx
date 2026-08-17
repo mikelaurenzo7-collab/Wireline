@@ -79,8 +79,7 @@ export default function ComplianceCenter() {
       <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="wl-eyebrow wl-eyebrow--muted">Compliance Center</p>
-            <h2 className="mt-1 text-base font-semibold text-foreground">
+            <h2 className="text-base font-semibold text-foreground">
               Prove what happened on every call
             </h2>
             <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">

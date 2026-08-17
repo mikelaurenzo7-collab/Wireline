@@ -10,7 +10,6 @@ import { formatPhone } from "../lib/safe-number";
 import AgentFace from "./AgentFace";
 import CallOpsAnalytics from "./CallOpsAnalytics";
 import LiveFloorPresence from "./LiveFloorPresence";
-import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import OutboundDialDialog from "./OutboundDialDialog";
@@ -343,8 +342,8 @@ export default function CallLogsClaude() {
 
   return (
     <div className={cn(WL_APP_CLASSES.operateSurface, "flex h-full min-h-0 flex-col")}>
-      <div className="border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3 flex items-center justify-between gap-3">
-        <WiredEyebrow>Call ops</WiredEyebrow>
+      <div className="flex items-center justify-end gap-3 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3">
+        <h2 className="sr-only">Call ops</h2>
         <Button
           type="button"
           variant="secondary"

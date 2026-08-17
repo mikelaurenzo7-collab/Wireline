@@ -30,7 +30,6 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="app-form-eyebrow text-primary">Appearance</p>
             <h3 className="font-display text-lg text-foreground leading-tight">Brand Identity</h3>
           </div>
         </div>

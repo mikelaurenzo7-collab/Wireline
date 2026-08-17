@@ -27,10 +27,11 @@ describe("authenticated responsive polish contract", () => {
     expect(chrome).toContain("sm:max-w-[18rem] sm:flex-none");
     // The breadcrumb group grows so the title has room to expand.
     expect(chrome).toContain('className="flex min-w-0 flex-1 items-center gap-2.5"');
-    // The redundant kicker + separator collapse on phones only when an agent is
-    // active, so the name owns the width; they stay for the no-agent state.
-    expect(chrome).toContain('activeAgent ? "hidden sm:inline-flex" : "inline-flex"');
-    expect(chrome).toContain('className="hidden text-muted-foreground/40 sm:inline"');
+    // The redundant kicker and separator stay for the no-agent state only, so
+    // the selected agent name owns the row on every width.
+    expect(chrome).toContain("{activeAgent ? null : (");
+    expect(chrome).not.toContain('activeAgent ? "hidden sm:inline-flex" : "inline-flex"');
+    expect(chrome).not.toContain('className="hidden text-muted-foreground/40 sm:inline"');
   });
 
   it("keeps workspace controls token-correct in both appearances", () => {

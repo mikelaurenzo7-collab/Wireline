@@ -116,7 +116,6 @@ export default function InsightsView() {
   return (
     <ClientRouteViewport>
       <ClientToolbar
-        left={<span className="app-toolbar-stat">{OPS_CHANNEL_TOOLBAR.insights.stat(days)}</span>}
         actions={
           <>
             {dayPicker}

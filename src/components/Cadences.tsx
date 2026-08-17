@@ -283,7 +283,6 @@ export default function Cadences() {
       ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="wl-label text-brand mb-1">Outbound · Sequences</p>
           <h3 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
             Multi-touch cadences
           </h3>

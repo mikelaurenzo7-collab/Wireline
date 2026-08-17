@@ -301,7 +301,7 @@ function CompactAgentRow({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
         <span className="block truncate text-xs text-muted-foreground">
-          {agent.is_business_agent ? "Business" : "Personal"} · {formatAgentRoleLabel(agent.role)}
+          {formatAgentRoleLabel(agent.role)}
         </span>
       </span>
       <span
@@ -332,6 +332,8 @@ type RecentConversation = {
   agent_name?: string | null;
 };
 
+const OVERVIEW_AGENT_PREVIEW = 6;
+
 function AgentSection({
   kind,
   agents,
@@ -344,6 +346,8 @@ function AgentSection({
   const language = customerAgentLanguage(kind);
   const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
+  const previewAgents = agents.slice(0, OVERVIEW_AGENT_PREVIEW);
+  const overflowCount = agents.length - previewAgents.length;
 
   return (
     <section className="min-w-0" aria-label={heading}>
@@ -354,9 +358,17 @@ function AgentSection({
         </span>
       </div>
       <div className="grid min-w-0 gap-2">
-        {agents.map((agent) => (
+        {previewAgents.map((agent) => (
           <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
         ))}
+        {overflowCount > 0 ? (
+          <Link
+            to="/studio"
+            className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            {overflowCount} more in Studio
+          </Link>
+        ) : null}
         <Link
           to={`/studio?create=1&posture=${kind}`}
           className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
@@ -373,7 +385,7 @@ function AgentSection({
             className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
             <Video size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Live Video · put an agent on screen</span>
+            <span className="min-w-0 flex-1 truncate">Live Video</span>
             <ArrowRight
               className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden="true"
@@ -586,7 +598,7 @@ export default function OverviewPage() {
         {hasAgents ? (
           <section className="relative wl-overview-greeting text-left">
             <div className="flex flex-col items-start gap-5">
-              <h1 className="wl-app-page-title text-balance">Overview</h1>
+              <h1 className="wl-app-page-title sr-only">Overview</h1>
               <div className="flex flex-wrap items-center justify-start gap-2">
                 <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                   <Link to={primaryStudioHref}>
@@ -629,17 +641,19 @@ export default function OverviewPage() {
           <>
             <ActivationChecklist className="mb-2" />
 
-            <DemandReadinessCard
-              hasLiveLine={hasLiveLine}
-              hasConversationHistory={hasConversationHistory}
-              conversationsToday={conversationsToday}
-              activeWork={activeWork}
-              connectionsCount={connectionsCount}
-              connectionsDetail={connectionsDetail}
-              setupHref={primaryStudioHref}
-              testHref={primaryTestHref}
-              subjectLabel={language.navShort.toLowerCase()}
-            />
+            {!hasLiveLine || !hasConversationHistory ? (
+              <DemandReadinessCard
+                hasLiveLine={hasLiveLine}
+                hasConversationHistory={hasConversationHistory}
+                conversationsToday={conversationsToday}
+                activeWork={activeWork}
+                connectionsCount={connectionsCount}
+                connectionsDetail={connectionsDetail}
+                setupHref={primaryStudioHref}
+                testHref={primaryTestHref}
+                subjectLabel={language.navShort.toLowerCase()}
+              />
+            ) : null}
 
             <section
               className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
@@ -710,7 +724,7 @@ export default function OverviewPage() {
             >
               {/* A busy line fills five rows before lunch, and the page has
                   spare room below — give the ledger a real working window. */}
-              <OutcomeLedger limit={12} showViewAll followUpsHref="/approvals" />
+              <OutcomeLedger limit={4} showViewAll followUpsHref="/approvals" />
             </section>
 
             <section
@@ -723,7 +737,7 @@ export default function OverviewPage() {
                     Agents
                   </p>
                   <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
-                    Manage →
+                    Manage
                   </Link>
                 </div>
                 {loading ? (
