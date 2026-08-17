@@ -346,8 +346,7 @@ function AgentSection({
   const language = customerAgentLanguage(kind);
   const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
-  const previewAgents = agents.slice(0, OVERVIEW_AGENT_PREVIEW);
-  const overflowCount = agents.length - previewAgents.length;
+  const overflowCount = Math.max(0, agents.length - OVERVIEW_AGENT_PREVIEW);
 
   return (
     <section className="min-w-0" aria-label={heading}>
@@ -358,9 +357,11 @@ function AgentSection({
         </span>
       </div>
       <div className="grid min-w-0 gap-2">
-        {previewAgents.map((agent) => (
-          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
-        ))}
+        {agents
+          .map((agent) => (
+            <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
+          ))
+          .slice(0, OVERVIEW_AGENT_PREVIEW)}
         {overflowCount > 0 ? (
           <Link
             to="/studio"
