@@ -4,8 +4,9 @@ import { dialRateLimiter } from "../middleware/api-rate-limits";
 import { enforceTrialOutboundCap } from "./trial-gate";
 import { enforce24hSpendCap, enforceSpendCap } from "./spend-guards";
 import { quotaRejectionHeaders } from "./tenant-quotas";
-import { quotaTracker } from "./server-context";
+import { log, quotaTracker } from "./server-context";
 import { assertVoiceWalletSolvent } from "./voice-wallet-guard";
+import { getErrorMessage } from "./server-utils";
 
 export class OutboundVoiceControlError extends Error {
   status: number;
@@ -102,6 +103,14 @@ async function assertMiddlewarePasses(
   }
 }
 
+function quotaUnavailableError(input: AssertOutboundVoiceAllowedInput) {
+  return new OutboundVoiceControlError(503, {
+    error: "Wireline could not verify the daily voice allowance. New calls are paused briefly.",
+    code: "QUOTA_VOICE_UNAVAILABLE",
+    source: input.source,
+  });
+}
+
 export async function assertOutboundVoiceAllowed(
   input: AssertOutboundVoiceAllowedInput,
 ): Promise<void> {
@@ -120,11 +129,30 @@ export async function assertOutboundVoiceAllowed(
   await assertMiddlewarePasses(enforceSpendCap, input);
   await assertMiddlewarePasses(dialRateLimiter, input);
 
-  const quotaDecision = await quotaTracker.checkAndIncrement(
-    input.userId,
-    "voice_minutes_daily",
-    Math.max(0, input.units ?? 0),
-  );
+  let quotaDecision;
+  try {
+    quotaDecision = await quotaTracker.tryReserve(
+      input.userId,
+      "voice_minutes_daily",
+      Math.max(0, input.units ?? 0),
+    );
+  } catch (error) {
+    log.error("Outbound voice quota reservation failed closed", {
+      userId: input.userId,
+      source: input.source,
+      error: getErrorMessage(error),
+    });
+    throw quotaUnavailableError(input);
+  }
+
+  if (!quotaDecision.persisted) {
+    log.error("Outbound voice quota reservation was not durable", {
+      userId: input.userId,
+      source: input.source,
+    });
+    throw quotaUnavailableError(input);
+  }
+
   if (!quotaDecision.allowed) {
     throw new OutboundVoiceControlError(
       429,
