@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = resolve(ROOT, "drizzle/migrations/meta/0049_snapshot.json");
 const TARGET = resolve(ROOT, "drizzle/migrations/meta/0050_snapshot.json");
-const TARGET_SHA256 = "ad6a1ca11fbe28f177f9e5e723945344cbd64c1b2cb22bb4f9e3ea6ed759399f";
+const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 
@@ -151,7 +151,7 @@ export function buildNativeXAISnapshot(previous) {
         uniqueConstraints: {},
         policies: {},
         checkConstraints: {},
-        isRLSEnabled: false,
+        isRLSEnabled: true,
       },
     },
   };
