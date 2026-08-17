@@ -25,9 +25,10 @@ import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./grok-live-profile-routes";
 import xaiPhoneRouter from "./xai-voice-routes";
 
-// Stable route family for Wireline live voice. Browser sessions now connect
+// Stable route family for Wireline live voice. Browser sessions connect
 // directly to xAI Realtime with server-minted ephemeral credentials. Production
-// phone calls use the same model family through xAI SIP; Vapi is not in this path.
+// phone calls use the same model family through xAI SIP; no outside orchestrator
+// participates in this path.
 const router = express.Router();
 // xAI Realtime intentionally follows the OpenAI-compatible event protocol.
 // Keep the compatibility alias explicit so cost-protection contracts can assert
@@ -65,8 +66,9 @@ const toolSchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
 });
 
-// Native SIP webhook/provisioning routes share the same top-level voice router
-// so route order remains stable while the legacy Vapi router is quarantined.
+// Native SIP webhook and provisioning routes share the same top-level voice
+// router so route order remains stable while the previous phone path stays
+// quarantined for rollback certification only.
 router.use(xaiPhoneRouter);
 router.use(liveProfileRouter);
 
