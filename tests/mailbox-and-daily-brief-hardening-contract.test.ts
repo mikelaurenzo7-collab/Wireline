@@ -6,13 +6,14 @@ const google = readFileSync("src/routes/oauth/google.ts", "utf8");
 const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
 const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
 const icloud = readFileSync("src/routes/icloud-mail-routes.ts", "utf8");
+const agentmail = readFileSync("src/routes/agentmail-routes.ts", "utf8");
 const dailyBrief = readFileSync("src/routes/daily-brief-routes.ts", "utf8");
 const androidAsk = readFileSync(
   "android/app/src/main/java/com/wireline/app/ui/ask/AskWirelineScreen.kt",
   "utf8",
 );
 
-const mailboxRoutes = [google, microsoft, yahoo, icloud];
+const mailboxRoutes = [google, microsoft, yahoo, icloud, agentmail];
 
 describe("mailbox ownership hardening", () => {
   it("uses an atomic conflict predicate and never updates mailbox ownership", () => {
@@ -25,7 +26,7 @@ describe("mailbox ownership hardening", () => {
 
   it("preserves a refresh token only for a reconnect to the same provider", () => {
     expect(ownedMailbox).toContain(
-      'case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end',
+      "case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end",
     );
   });
 

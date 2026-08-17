@@ -75,7 +75,7 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
   const access = safeDecrypt(conn.accessToken);
   const refresh = safeDecrypt(conn.refreshToken);
   const token = refresh || access;
-  if (!token && conn.provider !== "icloud") return false;
+  if (!token && conn.provider !== "icloud" && conn.provider !== "agentmail") return false;
 
   try {
     switch (conn.provider) {
@@ -225,8 +225,10 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
       }
       case "apollo":
       case "icloud":
+      case "agentmail":
         // Apollo has no public token-revoke endpoint; iCloud uses an
-        // app-specific password with nothing to revoke remotely.
+        // app-specific password and AgentMail uses a tenant API key with
+        // nothing to revoke remotely.
         return false;
       default:
         return false;
@@ -276,9 +278,7 @@ export async function revokeCrmProviderTokens(
  * Revoke every OAuth grant owned by the user (CRM + mailbox + calendar)
  * before GDPR purge deletes the encrypted tokens. Never throws.
  */
-export async function revokeAllOAuthGrantsForUser(
-  userId: string,
-): Promise<OAuthRevocationSummary> {
+export async function revokeAllOAuthGrantsForUser(userId: string): Promise<OAuthRevocationSummary> {
   const summary: OAuthRevocationSummary = {
     attempted: 0,
     revoked: 0,

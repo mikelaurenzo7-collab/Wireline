@@ -212,6 +212,17 @@ const ALL_LOGOS: Record<string, LogoDef> = {
       </svg>
     ),
   },
+  agentmail: {
+    name: "AgentMail",
+    svg: (
+      <svg viewBox="0 0 24 24" aria-label="AgentMail" width="100%" height="100%">
+        <path
+          fill="currentColor"
+          d="M3 6.75A2.75 2.75 0 0 1 5.75 4h12.5A2.75 2.75 0 0 1 21 6.75v10.5A2.75 2.75 0 0 1 18.25 20H5.75A2.75 2.75 0 0 1 3 17.25V6.75Zm2.2.5 6.3 4.2c.3.2.7.2 1 0l6.3-4.2a.75.75 0 0 0-.8-1.27L12 10.05 6 6.48a.75.75 0 1 0-.8 1.27Z"
+        />
+      </svg>
+    ),
+  },
   stripe: {
     name: "Stripe",
     svg: (

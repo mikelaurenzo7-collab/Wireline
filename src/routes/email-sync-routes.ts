@@ -21,7 +21,7 @@ type InboxMessage = {
   subject: string;
   snippet: string;
   receivedAt: Date;
-  provider: "google" | "microsoft" | "yahoo" | "icloud";
+  provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
 };
 
 /**

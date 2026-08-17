@@ -7,6 +7,7 @@ import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
+import { fetchAgentMailInbox, sendAgentMail } from "./agentmail-mail";
 import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from "./calendar-time";
 
 const MAX_CALENDAR_PAGES = 20;
@@ -18,7 +19,7 @@ export type InboxMessagePreview = {
   subject: string;
   snippet: string;
   receivedAt: Date;
-  provider: "google" | "microsoft" | "yahoo" | "icloud";
+  provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
 };
 
 /** A connected mailbox whose fetch failed: dead token, revoked grant, outage. */
@@ -288,7 +289,7 @@ export class IntegrationService {
       subject: string;
       snippet: string;
       receivedAt: Date;
-      provider: "google" | "microsoft" | "yahoo" | "icloud";
+      provider: "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
     }[]
   > {
     if (account.provider === "google") {
@@ -308,6 +309,9 @@ export class IntegrationService {
     if (account.provider === "icloud") {
       return this.fetchIcloudInbox(account, opts);
     }
+    if (account.provider === "agentmail") {
+      return this.fetchAgentMailInbox(account, opts);
+    }
     return [];
   }
 
@@ -315,6 +319,12 @@ export class IntegrationService {
     const email = account.emailAddress as string;
     const appPassword = decryptSecret(account.accessToken);
     return fetchIcloudInbox(email, appPassword, opts);
+  }
+
+  private async fetchAgentMailInbox(account: any, opts: { limit: number; sinceIso?: string }) {
+    const email = account.emailAddress as string;
+    const apiKey = decryptSecret(account.accessToken);
+    return fetchAgentMailInbox(email, apiKey, opts);
   }
 
   private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
@@ -473,6 +483,12 @@ export class IntegrationService {
           const email = account.emailAddress as string;
           const appPassword = decryptSecret(account.accessToken);
           return sendIcloudMail(email, appPassword, sendParams);
+        }
+        if (account.provider === "agentmail") {
+          if (!account.accessToken || !account.emailAddress) return false;
+          const email = account.emailAddress as string;
+          const apiKey = decryptSecret(account.accessToken);
+          return sendAgentMail(email, apiKey, sendParams);
         }
       }
 
