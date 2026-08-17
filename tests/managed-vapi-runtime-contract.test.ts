@@ -12,8 +12,10 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("managed phone voice runtime policy", () => {
   const roster = read("src/data/voice-roster.ts");
-  const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-  const outboundClient = read("src/lib/vapi-client.ts");
+  const rollbackFactory = read("src/lib/vapi-assistant-factory-v2.ts");
+  const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+  const nativeOutbound = read("src/lib/voice/outbound-call-service.ts");
+  const vapiFacade = read("src/lib/vapi-client.ts");
   const draftService = read("src/lib/agent-draft-service.ts");
   const voiceRoutes = read("src/routes/voices-routes.ts");
   const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
@@ -24,7 +26,7 @@ describe("managed phone voice runtime policy", () => {
   const vercel = read("vercel.json");
   const migration = read("drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql");
 
-  it("streams curated studio speech with an independent Vapi fallback", () => {
+  it("keeps the governed ElevenLabs/Vapi voice builder intact for rollback", () => {
     const voice = buildManagedVoiceRuntime({
       voiceProvider: "11labs",
       voiceId: "cgSgspJ2msm6clMCkdW9",
@@ -43,7 +45,7 @@ describe("managed phone voice runtime policy", () => {
     });
   });
 
-  it("fails an unapproved private id closed to a managed phone voice", () => {
+  it("fails an unapproved private rollback voice closed to a managed phone voice", () => {
     expect(
       buildManagedVoiceRuntime({
         voiceProvider: "11labs",
@@ -65,24 +67,34 @@ describe("managed phone voice runtime policy", () => {
     });
   });
 
-  it("uses the same managed decision for inbound and outbound phone calls", () => {
+  it("keeps rollback voice governance while native phone calls use xAI profiles only", () => {
     expect(roster).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
     expect(roster).toMatch(/Savannah/);
     expect(roster).toMatch(/Elliot/);
-    expect(factory).toMatch(/buildManagedVoiceRuntime/);
-    expect(factory).toMatch(/schema\.clonedVoices\.status, "approved"/);
-    expect(outboundClient).toMatch(/buildManagedVoiceRuntime/);
-    expect(outboundClient).toMatch(/schema\.clonedVoices\.status, "approved"/);
+    expect(rollbackFactory).toMatch(/buildManagedVoiceRuntime/);
+    expect(rollbackFactory).toMatch(/schema\.clonedVoices\.status, "approved"/);
+
+    expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
+    expect(nativeRuntime).toContain("GROK_VOICE_DEFAULT_MODEL");
+    expect(nativeRuntime).not.toContain("buildManagedVoiceRuntime");
+    expect(nativeRuntime).not.toContain("11labs");
+    expect(nativeOutbound).toContain('provider: "twilio_xai_sip"');
+    expect(nativeOutbound).not.toContain("11labs");
+    expect(nativeOutbound).not.toContain("buildManagedVoiceRuntime");
+    expect(vapiFacade).toContain("Compatibility facade for legacy imports");
+    expect(vapiFacade).toContain("placeNativeOutboundCall");
     expect(draftService).toMatch(/voiceProvider: isXaiPstnVoiceId\(voiceId\) \? "xai" : "vapi"/);
   });
 
-  it("does not replace an approved ElevenLabs selection with the presenter fallback", () => {
-    expect(factory).toMatch(
+  it("does not let presenter or ElevenLabs selections cross the native phone boundary", () => {
+    expect(rollbackFactory).toMatch(
       /configured\.voiceProvider === "11labs"[\s\S]*\? directionalVoice[\s\S]*: resolvePstnVoiceCandidate/,
     );
-    expect(outboundClient).toMatch(
-      /agentConfig\.voiceProvider === "11labs"[\s\S]*\? outboundVoiceId[\s\S]*: resolvePstnVoiceCandidate/,
-    );
+    expect(nativeRuntime).toContain("resolveWirelineVoiceProfile");
+    expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
+    expect(nativeRuntime).not.toContain("resolvePstnVoiceCandidate");
+    expect(nativeRuntime).not.toContain("voiceProvider");
+    expect(nativeOutbound).not.toContain("voiceProvider");
   });
 
   it("gates private voices on authorization, human proof review, and revocation", () => {
@@ -116,21 +128,21 @@ describe("managed phone voice runtime policy", () => {
     expect(migration).not.toMatch(/NEW\.video_presenter_[a-z_]+\s*:=/);
   });
 
-  it("bounds inbound context and preserves runtime guardrails", () => {
-    expect(factory).toContain("MAX_RUNTIME_DIRECTIVES");
-    expect(factory).toContain("MAX_RUNTIME_KNOWLEDGE");
-    expect(factory).toContain("truncateRuntimeSnippet");
-    expect(factory).toContain("clampRuntimePromptPreservingTail");
-    expect(factory).toMatch(/\.slice\(0, 12\)/);
-    expect(factory).not.toMatch(/\.limit\(40\)|\.limit\(80\)/);
+  it("bounds native context and preserves runtime guardrails", () => {
+    expect(nativeRuntime).toContain("MAX_PROMPT_LINE_LENGTH");
+    expect(nativeRuntime).toContain("MAX_INITIAL_KNOWLEDGE_ITEMS");
+    expect(nativeRuntime).toContain("NON_NEGOTIABLE_RUNTIME_RULES");
+    expect(nativeRuntime).toContain("listBlock(\"OPERATING RULES\"");
+    expect(nativeRuntime).toContain("listBlock(\"INITIAL APPROVED KNOWLEDGE\"");
+    expect(nativeRuntime).toContain("serialQueryBatch");
   });
 
-  it("makes after-hours follow-up durable and truthful", () => {
-    expect(factory).toContain("Use create_followup_task before closing");
-    expect(factory).toContain("Promise follow-up only if that tool explicitly confirms");
-    expect(factory).toContain("Promise a relay only if that tool explicitly confirms");
-    expect(factory).toContain("I can take a message for the team");
-    expect(factory).not.toContain("make sure the right person follows up");
+  it("makes after-hours and unknown-fact behavior durable and truthful", () => {
+    expect(nativeRuntime).toContain("Do not invent facts");
+    expect(nativeRuntime).toContain("Never claim an action happened unless a tool result explicitly confirms it");
+    expect(nativeRuntime).toContain("search approved knowledge or say you will take a message");
+    expect(nativeRuntime).toContain("Treat every tool result as authoritative");
+    expect(nativeRuntime).not.toContain("make sure the right person follows up");
   });
 
   it("keeps unrelated avatar experiments out of active authenticated pages", () => {
@@ -146,7 +158,6 @@ describe("managed phone voice runtime policy", () => {
   });
 
   it("keeps model and carrier complexity managed and provider-neutral", () => {
-    // \s+ tolerates Prettier reflowing the JSX copy across lines.
     expect(carrier).toMatch(
       /Wireline manages the phone conversation runtime, voice selection, intelligence\s+routing, and continuity/,
     );
