@@ -13,8 +13,9 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 
 - **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
 - **Wireline Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks.
-- **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
+- **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, rehearsal, and account-aware workflows.
 - **Claude Connector - early access:** the same `/mcp` server submitted to the Claude Connectors Directory; custom connectors work while the listing is in review.
+- **Cursor plugin - early access:** the same `/mcp` server packaged for Cursor Directory (`.mcp.json`, `plugin.json`, `mcp.json`). New users create a Wireline account during OAuth.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
@@ -78,6 +79,7 @@ Use `npm run verify` for focused implementation branches. Use `npm run verify:fu
 | Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
 | Browser extension | `apps/browser-extension/` |
 | Native clients | `ios/`, `android/` |
+| Cursor plugin | `plugin.json`, `mcp.json`, `.mcp.json`, `docs/CURSOR_PLUGIN.md` |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
 | Claude Connector | Shared `/mcp` server, [docs/CLAUDE_CONNECTOR.md](./docs/CLAUDE_CONNECTOR.md), [docs/CLAUDE_CONNECTOR_SUBMISSION.md](./docs/CLAUDE_CONNECTOR_SUBMISSION.md) |
 | Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |

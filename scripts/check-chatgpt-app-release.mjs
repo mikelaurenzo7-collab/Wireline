@@ -29,6 +29,22 @@ const expectedAnnotations = new Map([
     "get_wireline_workspace_summary",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
+  [
+    "get_wireline_agent_status",
+    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+  ],
+  [
+    "run_private_agent_turn",
+    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+  ],
+  [
+    "get_agent_coaching_brief",
+    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+  ],
+  [
+    "train_wireline_agent",
+    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+  ],
 ]);
 
 function assert(condition, message) {
@@ -101,6 +117,17 @@ assert(claudeDocs.response.status === 200, "Claude connector documentation must 
 assert(
   typeof claudeDocs.body === "string" && claudeDocs.body.includes("https://trywireline.com/mcp"),
   "Claude connector documentation must publish the MCP endpoint.",
+);
+
+const cursorDocs = await request("/cursor-plugin.html", { headers: { Accept: "text/html" } });
+assert(cursorDocs.response.status === 200, "Cursor plugin documentation must return HTTP 200.");
+assert(
+  typeof cursorDocs.body === "string" && cursorDocs.body.includes("https://trywireline.com/mcp"),
+  "Cursor plugin documentation must publish the MCP endpoint.",
+);
+assert(
+  typeof cursorDocs.body === "string" && cursorDocs.body.includes("not a repo voice SDK"),
+  "Cursor plugin documentation must refuse repo-SDK positioning.",
 );
 
 const protectedResource = await request("/.well-known/oauth-protected-resource");

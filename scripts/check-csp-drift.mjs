@@ -24,6 +24,7 @@ const staticHtmlSources = [
   "public/chatgpt-app-privacy.html",
   "public/mcp-privacy.html",
   "public/claude-connector.html",
+  "public/cursor-plugin.html",
   "public/legal/data-deletion.html",
 ];
 

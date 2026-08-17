@@ -3,8 +3,8 @@
   "listing": {
     "name": "Wireline",
     "slug": "wireline",
-    "tagline": "Build and inspect voice agents",
-    "description": "Wireline lets a connected Claude user create, refine, review, and privately simulate unlaunched voice-agent drafts, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. Phone numbers, live calls, messaging, integrations, billing, and launch stay in Wireline so every external action remains separately configured and confirmed.",
+    "tagline": "Build your first voice agent",
+    "description": "Wireline lets a new Claude user create a Wireline account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in Wireline.",
     "categories": ["business", "productivity"],
     "icon_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     "website_url": "https://trywireline.com",
@@ -30,7 +30,7 @@
     "sponsored_content": false
   },
   "use_cases": [
-    "Create a confirmed after-hours receptionist draft from a conversation.",
+    "Create a Wireline account and a confirmed first voice-agent draft from a conversation.",
     "Refine a saved draft's tone, prohibited topics, and handoff policy.",
     "Inspect aggregate workspace status without exposing customer content.",
     "Run a short private, tool-free voice simulation of a saved draft."

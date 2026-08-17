@@ -11,7 +11,7 @@
   <main>
     <div class="eyebrow">Wireline</div>
     <h1>Claude Connector</h1>
-    <p>Wireline is a remote MCP server for Claude, Claude Code, ChatGPT, and Cursor. Connect your Wireline account, describe the voice agent you need, create a private unlaunched draft, run a short private simulation, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in Wireline.</p>
+    <p>Wireline is a remote MCP server for Claude, Claude Code, ChatGPT, and Cursor. New users create a Wireline account during OAuth, then build their first voice agent in Claude. Privately rehearse it, optionally save Training after enabling that permission in Apps, and continue in Wireline for numbers and launch. This is not a repo voice SDK.</p>
 
     <section class="card">
       <strong>MCP endpoint:</strong> <code>https://trywireline.com/mcp</code><br />
@@ -21,23 +21,26 @@
 
     <h2>What you can do from Claude</h2>
     <ul>
-      <li>Create a confirmed private agent draft in your Wireline workspace.</li>
+      <li>Create a Wireline account during Connect if you are new.</li>
+      <li>Build your first confirmed private agent draft in that workspace.</li>
       <li>Read or update that draft after another explicit confirmation.</li>
-      <li>List agents and drafts you already own.</li>
+      <li>List agents and inspect one agent’s next step without seeing phone numbers or customer records.</li>
       <li>Inspect aggregate workspace status without customer identities or message bodies.</li>
+      <li>Read owner-authored Training and, after the Apps toggle, save a confirmed fact or rule.</li>
       <li>Start a short, tool-free private voice simulation of a saved draft.</li>
+      <li>Trigger a private text rehearsal of an owned agent. This is not a live call.</li>
     </ul>
 
     <h2>What stays in Wireline</h2>
     <ul>
       <li>Phone-number purchase or attachment.</li>
-      <li>Inbound or outbound calling and messaging.</li>
+      <li>Live inbound or outbound calling and messaging.</li>
       <li>Integrations, billing, and agent launch.</li>
       <li>Call recordings, transcripts, and customer records.</li>
     </ul>
 
     <h2>Add as a custom connector</h2>
-    <p>In Claude, open <a href="https://claude.ai/settings/connectors">Settings → Connectors</a>, add a custom connector, and enter <code>https://trywireline.com/mcp</code>. Sign in with your Wireline account when Claude prompts for connection. Directory listing, when published, appears at Claude’s Connectors Directory under the slug <code>wireline</code>.</p>
+    <p>In Claude, open <a href="https://claude.ai/settings/connectors">Settings → Connectors</a>, add a custom connector, and enter <code>https://trywireline.com/mcp</code>. Create a Wireline account if you do not have one, then allow the connection. Directory listing, when published, appears at Claude’s Connectors Directory under the slug <code>wireline</code>.</p>
 
     <h2>Claude Code</h2>
     <p>Claude Code connects with Anthropic’s published client metadata and a loopback callback. Wireline accepts <code>http://localhost/callback</code> and <code>http://127.0.0.1/callback</code> with the port ignored, as required for native clients.</p>

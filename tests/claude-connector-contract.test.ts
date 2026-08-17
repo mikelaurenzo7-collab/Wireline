@@ -28,6 +28,7 @@ describe("Claude Connector Directory contract", () => {
     expect(account).toContain('title: "Create a Wireline agent draft"');
     expect(account).toContain("prompts/list");
     expect(account).toContain("create_after_hours_receptionist");
+    expect(account).toContain("create_first_voice_agent");
   });
 
   it("challenges protected tool calls with HTTP 401, not a 200 isError result", () => {

@@ -27,11 +27,11 @@ Use the identifiers from the already-approved Developer Mode app when creating t
 
 ## One-sentence value proposition
 
-**Connect Wireline, describe the voice agent you need in ChatGPT, create and privately simulate a real unlaunched draft, then inspect aggregate workspace status across calls, texts, and email.**
+**Create a Wireline account from ChatGPT if you are new, build your first voice agent in that conversation, privately rehearse it, then continue in Wireline for numbers and launch.**
 
 ## What the app does inside ChatGPT
 
-Wireline requires a connected account. A user can use normal language to create or refine one voice agent - for example a sales and support phone agent - for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
+Wireline requires a connected account. A new user creates that account during OAuth, then uses normal language to build their first voice agent - for example a sales and support phone agent - for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
 
 ## Why ChatGPT is essential
 
@@ -47,8 +47,12 @@ The app turns a conversational business need into a structured, customizable age
 | `start_private_voice_simulation` | OAuth, `demo.voice` | Creates a short-lived credential for a tool-free private voice simulation of a saved draft. | Starts a private simulation session only. |
 | `list_wireline_agents` | OAuth, `agents.read` | Shows the connected user's existing agents. | None. |
 | `get_wireline_workspace_summary` | OAuth, `agents.read` | Returns aggregate agent, assigned-number, recent activity, unread, connection, activation, and subscription status. | None. |
+| `get_wireline_agent_status` | OAuth, `agents.read` | Returns one agent's next step and Wireline links. | None. |
+| `run_private_agent_turn` | OAuth, `demo.voice` | Confirmed private text rehearsal. | None. Not a live call. |
+| `get_agent_coaching_brief` | OAuth, `agents.read` | Returns owner-authored Training facts and rules. | None. |
+| `train_wireline_agent` | OAuth, `agents.write` | Saves a confirmed fact or rule into Training after the Apps toggle. | Writes owner-authored Training in the user's workspace. |
 
-The simulation tool is intentionally declared `readOnlyHint: false` because it creates a short-lived session credential, even though it does not change the saved agent draft. All six tools declare `readOnlyHint`, `openWorldHint`, `destructiveHint`, `securitySchemes`, and `outputSchema` explicitly.
+The simulation tool is intentionally declared `readOnlyHint: false` because it creates a short-lived session credential, even though it does not change the saved agent draft. All ten tools declare `readOnlyHint`, `openWorldHint`, `destructiveHint`, `securitySchemes`, and `outputSchema` explicitly.
 
 ## Deliberate V1 limits
 
@@ -156,7 +160,7 @@ Capture these artifacts in the actual ChatGPT review environment before submissi
 - `node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com`
 - Hosted icon returns `200` as `image/svg+xml` and the dashboard uses the matching square PNG.
 - Production `/mcp` responds to `initialize`, `tools/list`, `resources/list`, and `resources/read`.
-- The production tool list contains exactly the six documented tools, each with an `outputSchema`, OAuth security scheme, and three explicit boolean annotations.
+- The production tool list contains exactly the ten documented tools, each with an `outputSchema`, OAuth security scheme, and three explicit boolean annotations.
 - OAuth discovery endpoints return `200` with `Cache-Control: no-store`.
 - OAuth authorization with the approved ChatGPT CIMD client completes using PKCE S256.
 - Every production tool requires a connected Wireline account.

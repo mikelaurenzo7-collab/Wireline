@@ -10,9 +10,9 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 | --- | --- | --- | --- |
 | **Web/API** | **Canonical** | Create → Train → Wire → Run, billing, dial, SMS, launch | Everything that matters |
 | **Browser Command** | **Yes — keep thin** | Capture *this tab* into Studio without copy/paste | Page/selection/`tel:` context on explicit gesture |
-| **ChatGPT MCP** | **Yes — early access** | Draft/simulate where the user already chats | Natural-language draft + private voice sim inside ChatGPT |
+| **ChatGPT MCP** | **Yes — early access** | First-agent signup where the user already chats | Natural-language first draft + private voice sim inside ChatGPT |
 | **Claude via MCP** | **Yes — same server** | Same connector, Claude OAuth DCR | No separate Claude plugin package |
-| **Cursor via MCP** | **Yes — server only** | Same `/mcp` + Cursor redirect allowlist | **No Cursor plugin in this repo** |
+| **Cursor via MCP** | **Yes — plugin + server** | Same `/mcp` plus Cursor Directory package | Cursor Directory install from `.mcp.json` |
 | **iOS / Android** | **Keep building, don't market as live** | OS call UI, push, widgets, Siri | CallKit/Telecom/FCM/widgets — not a Studio clone |
 | **Video presenter** | **Gated add-on** | Optional face for business agents | Not a separate app |
 
@@ -57,23 +57,23 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
            ┌───────────────────────┼───────────────────────┐
            ▼                       ▼                       ▼
      ChatGPT (CIMD)          Claude (DCR)            Cursor (DCR)
-     Early access UI         Connectors UI           Server allowlist only
-     No separate plugin      No Claude plugin pkg    No Cursor plugin pkg
+     Early access UI         Connectors UI           Directory plugin
+     No separate plugin      No Claude plugin pkg    `.mcp.json` + OAuth
 ```
 
 | Client | In-repo package? | Server support? | Product UI? |
 | --- | --- | --- | --- |
 | ChatGPT | No (uses MCP) | Yes — primary | Yes — `/developers`, `/settings/apps` |
 | Claude | No | Yes — Anthropic redirect DCR | Yes — connectors link |
-| Cursor | **No** | Yes — Cursor redirect allowlist in `mcp-client-registry.ts` | Yes — `/settings/apps` + `/developers`; `draftSource: cursor_mcp` |
+| Cursor | **Yes** — `.mcp.json`, `plugin.json`, `mcp.json` | Yes — Cursor redirect allowlist in `mcp-client-registry.ts` | Yes — `/settings/apps` + `/developers`; `draftSource: cursor_mcp` |
 
-**Live MCP tools (account-bound):** draft create/get/update, list agents, workspace summary, private voice simulation.
+**Live MCP tools (account-bound):** first-agent draft create/get/update, list agents, workspace summary, agent status, private voice/text rehearsal, coaching brief, Training writes after the Apps toggle.
 
-**Hard non-goals (enforced):** no number provision, dial, SMS, launch, billing mutations.
+**Hard non-goals (enforced):** no number provision, dial, SMS, launch, billing mutations, repo-embedded voice SDK.
 
 Guest demo tools (`CHATGPT_MCP_GUEST_DEMO`) are **removed** from the OAuth/MCP router — account-bound `POST /mcp` is the only tool transport. Do not reintroduce guest tools.
 
-There is **no** Claude Desktop extension, **no** Cursor `.cursor-plugin`, and **no** `plugins/` tree in this monorepo. Those would be separate products; the correct Wireline shape is one remote MCP server.
+There is **no** Claude Desktop extension, **no** Cursor `.cursor-plugin`, and **no** `plugins/` tree in this monorepo. Those would be separate products; the correct Wireline shape is one remote MCP server that acquires users and creates their first agent.
 
 ---
 

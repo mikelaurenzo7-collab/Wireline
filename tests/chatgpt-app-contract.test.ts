@@ -128,6 +128,10 @@ describe("Wireline ChatGPT App production contract", () => {
       "start_private_voice_simulation",
       "list_wireline_agents",
       "get_wireline_workspace_summary",
+      "get_wireline_agent_status",
+      "run_private_agent_turn",
+      "get_agent_coaching_brief",
+      "train_wireline_agent",
     ]);
     for (const tool of Object.values(submission.tools)) {
       expect(typeof tool.annotations.readOnlyHint).toBe("boolean");
@@ -162,6 +166,8 @@ describe("Wireline ChatGPT App production contract", () => {
       expect(accountRouteSource).not.toContain(`name: "${name}"`);
     }
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
-    expect(accountRouteSource).toContain("unlaunched Wireline agent draft");
+    expect(accountRouteSource).toContain("unlaunched Wireline voice agent");
+    expect(accountRouteSource).toContain('name: "train_wireline_agent"');
+    expect(accountRouteSource).toContain("readMcpCoachingWritesEnabled");
   });
 });

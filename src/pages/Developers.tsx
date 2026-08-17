@@ -17,12 +17,17 @@ const MCP_BOUNDARIES = [
     description: "Create or refine a private agent configuration draft in natural language.",
   },
   {
-    path: "list_wireline_agents / get_wireline_workspace_summary",
-    description: "Read account-scoped agents and a minimized workspace summary.",
+    path: "train_wireline_agent / get_agent_coaching_brief",
+    description:
+      "Coach an agent: read owner-authored Training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
   },
   {
-    path: "start_private_voice_simulation",
-    description: "Run a private voice simulation, not a live customer call.",
+    path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
+    description: "Read account-scoped agents, next steps, and a minimized workspace summary.",
+  },
+  {
+    path: "start_private_voice_simulation / run_private_agent_turn",
+    description: "Private rehearsal, not a live customer call.",
   },
   {
     path: "/api/openapi.json",
@@ -35,7 +40,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create and refine a private voice agent draft, then run a private voice simulation before continuing in Wireline.",
+      "Coach a Wireline voice agent: draft, privately rehearse, and persist Training that lands in the workspace.",
     action: "Open ChatGPT apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
@@ -43,7 +48,7 @@ const MCP_CLIENTS = [
   {
     title: "Claude",
     description:
-      "Add Wireline as a remote connector, or find it in the Connectors Directory after publication, to review or shape the same account-bound private drafts.",
+      "Add Wireline as a remote connector, or find it in the Connectors Directory after publication, to coach the same account-bound agents.",
     action: "Open Claude connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
@@ -51,9 +56,9 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Register Wireline as a remote MCP server in Cursor. Same OAuth + draft/simulate tools. No separate Cursor plugin package.",
-    action: "Cursor MCP docs",
-    href: "https://docs.cursor.com/context/mcp",
+      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. Same OAuth coach/manager tools. New users create a Wireline account first.",
+    action: "Cursor plugin docs",
+    href: "https://trywireline.com/cursor-plugin.html",
     icon: Terminal,
   },
 ] as const;
@@ -84,7 +89,7 @@ export default function Developers() {
     <MarketingPageFrame>
       <PageMeta
         title="Developer Portal | Wireline"
-        description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys."
+        description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Create an account, build your first voice agent in the chat you already use, then continue in Studio. No public API keys."
         path="/developers"
       />
 
@@ -160,10 +165,10 @@ export default function Developers() {
                 panel each, one of them headed by its own display line and a
                 48px icon. They are two facts, and they read as two lines. */}
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Private-by-default boundary: this connector cannot place calls, send messages,
-              provision numbers, or launch a live voice agent. MCP clients use OAuth PKCE against
-              your Wireline account; the OpenAPI map documents the same session-authenticated
-              product routes the web app uses. There is no separate public API-key product today.
+              Connected apps help new users create a Wireline account and build their first voice
+              agent. This connector cannot place calls, send messages, provision numbers, or launch
+              a live voice agent. Training writes land only after you enable them in Apps and
+              confirm each change. There is no public API-key product and no repo voice SDK.
             </p>
           </div>
 

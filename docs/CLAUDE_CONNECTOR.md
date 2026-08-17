@@ -2,17 +2,17 @@
 
 ## Product contract
 
-**Connect Wireline from Claude, describe the agent you need, create a real private draft, and inspect privacy-minimized workspace status.**
+**Meet the user in Claude, create a real Wireline account if they are new, then help them build their first voice agent.**
 
-Claude, Claude Code, ChatGPT, and Cursor share one remote MCP server at `https://trywireline.com/mcp`. There is no separate Claude plugin package. Provider credentials, prompts, tenant enforcement, billing, and launch stay server-owned.
+Claude, Claude Code, ChatGPT, and Cursor share one remote MCP server at `https://trywireline.com/mcp`. There is no separate Claude plugin package and no repo-embedded voice SDK. Cursor Directory packaging lives at the repository root (`.mcp.json`, `plugin.json`, `mcp.json`). Provider credentials, prompts, tenant enforcement, billing, and launch stay server-owned.
 
 ```text
 Claude conversation
--> Wireline OAuth account connection
--> confirmed agent draft creation
--> private voice simulation
--> aggregate workspace visibility
--> full Training / testing / launch in Wireline
+-> Wireline OAuth (signup or sign in)
+-> confirmed first agent draft
+-> private voice or text rehearsal
+-> optional Training that lands in Wireline
+-> numbers, live calls, and launch in Wireline
 ```
 
 ## Public endpoints
@@ -47,9 +47,9 @@ The consent screen shows the connecting app name and the relying-party hostname.
 
 ## Tool contract
 
-Same six tools as the ChatGPT App. Every tool has `title`, `readOnlyHint`, `destructiveHint`, and `openWorldHint`. Create and update require explicit confirmation. Private voice is tool-free. Workspace summary is aggregate only.
+Same ten tools as the ChatGPT App and Cursor plugin. Every tool has `title`, `readOnlyHint`, `destructiveHint`, and `openWorldHint`. Create, update, private text rehearsal, and Training writes require explicit confirmation. Training writes also require the Apps toggle. Private voice is tool-free. Workspace summary is aggregate only. Agent status never returns phone numbers.
 
-Prompts: `create_after_hours_receptionist`, `refine_draft_boundaries`, `inspect_workspace_status`.
+Prompts: `create_first_voice_agent`, `create_after_hours_receptionist`, `refine_draft_boundaries`, `inspect_workspace_status`, `rehearse_agent_reply`, `coach_agent_training`.
 
 ## MCP App widget
 
@@ -66,9 +66,9 @@ The agent-draft widget is dual-host:
 - **Custom connector:** any Claude user can add `https://trywireline.com/mcp` from Settings → Connectors while the listing is in review.
 - **Plugin / MCPB:** not the submission type for this server. Skills are not a standalone directory type.
 
-## Cursor leftover
+## Cursor Directory
 
-Cursor already registers against the same `/mcp` server. Marketplace listing, a Cursor-specific plugin package, and Cursor screenshot capture are out of scope for this Claude-first pass.
+Cursor installs the same `/mcp` server. The Cursor Directory package and submission packet live in `docs/CURSOR_PLUGIN.md` and `docs/CURSOR_PLUGIN_SUBMISSION.md`.
 
 ## Verification
 
@@ -76,4 +76,4 @@ Cursor already registers against the same `/mcp` server. Marketplace listing, a 
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-The shared probe checks discovery, CIMD/PKCE, initialize identity `wireline`, the six-tool inventory, widget MIME/CSP, Claude host domain, prompts, privacy pages, and the server card. It does not substitute for a real OAuth reviewer flow in Claude.
+The shared probe checks discovery, CIMD/PKCE, initialize identity `wireline`, the tool inventory, widget MIME/CSP, Claude host domain, prompts, privacy pages, Cursor plugin docs, and the server card. It does not substitute for a real OAuth reviewer flow in Claude.
