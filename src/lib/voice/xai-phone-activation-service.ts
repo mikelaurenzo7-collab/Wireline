@@ -9,7 +9,10 @@ import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
 import {
   XAI_TWILIO_ORIGINATION_FRIENDLY_NAME,
+  XAI_TWILIO_TRUNK_FRIENDLY_NAME,
   normalizeXAIPhoneNumber,
+  twilioVoiceFallbackUrl,
+  xaiSecureTrunkingEnabled,
   xaiSharedTwilioOriginationUri,
 } from "./xai-sip-config";
 import {
@@ -57,7 +60,7 @@ async function reconcileAgentBinding(input: {
   );
   if (!binding || !complete || binding.agentId === input.agentId) return;
 
-  await drizzle
+  const [rebound] = await drizzle
     .update(xaiPhoneBindings)
     .set({ agentId: input.agentId, updatedAt: new Date() })
     .where(
@@ -66,7 +69,12 @@ async function reconcileAgentBinding(input: {
         eq(xaiPhoneBindings.userId, input.userId),
         eq(xaiPhoneBindings.agentId, binding.agentId),
       ),
-    );
+    )
+    .returning({ id: xaiPhoneBindings.id });
+  if (!rebound) {
+    throw AppError.conflict("The phone line assignment changed while native voice was activating.");
+  }
+
   log.info("Rebound complete native phone registration to current agent", {
     userId: input.userId,
     agentId: input.agentId,
@@ -75,12 +83,33 @@ async function reconcileAgentBinding(input: {
   });
 }
 
-async function repairTwilioOrigination(trunkSid: string | null | undefined): Promise<void> {
-  if (!trunkSid) return;
+async function repairTwilioRouting(
+  binding: NonNullable<NativeXAIPhoneStatus["binding"]> | null | undefined,
+): Promise<void> {
+  if (!binding?.twilioSipTrunkSid || !binding.twilioPhoneNumberSid) return;
   const client = getTwilioClient() as any;
   if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
 
-  const collection = client.trunking.v1.trunks(trunkSid).originationUrls;
+  const trunk = client.trunking.v1.trunks(binding.twilioSipTrunkSid);
+  await trunk.update({
+    friendlyName: XAI_TWILIO_TRUNK_FRIENDLY_NAME,
+    transferMode: "enable-all",
+    secure: xaiSecureTrunkingEnabled(),
+    disasterRecoveryMethod: "POST",
+    disasterRecoveryUrl: twilioVoiceFallbackUrl(),
+  });
+
+  const attached = await trunk.phoneNumbers.list({ limit: 1_000 });
+  const hasPhone = attached.some(
+    (row: { sid?: unknown; phoneNumberSid?: unknown }) =>
+      row.sid === binding.twilioPhoneNumberSid ||
+      row.phoneNumberSid === binding.twilioPhoneNumberSid,
+  );
+  if (!hasPhone) {
+    await trunk.phoneNumbers.create({ phoneNumberSid: binding.twilioPhoneNumberSid });
+  }
+
+  const collection = trunk.originationUrls;
   const originations = await collection.list({ limit: 100 });
   const sipUrl = xaiSharedTwilioOriginationUri();
   const existing = originations.find(
@@ -107,9 +136,9 @@ export async function provisionNativeXAIPhone(input: {
   await reconcileAgentBinding(input);
   const result = await provisionNativeXAIPhoneLowLevel(input);
   try {
-    await repairTwilioOrigination(result.binding?.twilioSipTrunkSid);
+    await repairTwilioRouting(result.binding);
   } catch (error) {
-    log.error("Native phone activation could not reconcile Twilio origination", {
+    log.error("Native phone activation could not reconcile Twilio routing", {
       userId: input.userId,
       agentId: input.agentId,
       bindingId: result.binding?.id,
