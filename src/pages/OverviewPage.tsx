@@ -357,11 +357,9 @@ function AgentSection({
         </span>
       </div>
       <div className="grid min-w-0 gap-2">
-        {agents
-          .map((agent) => (
-            <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
-          ))
-          .slice(0, OVERVIEW_AGENT_PREVIEW)}
+        {agents.map((agent) => (
+          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
+        )).slice(0, OVERVIEW_AGENT_PREVIEW)}
         {overflowCount > 0 ? (
           <Link
             to="/studio"
