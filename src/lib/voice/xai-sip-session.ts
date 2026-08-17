@@ -566,6 +566,7 @@ async function runRealtimeSession(
   let escalationSucceeded = false;
   let sipPlaybackActive = false;
   let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
+  let awaitingExactOpeningPlayback = false;
   let toolContinuationPending = false;
   let eventChain = Promise.resolve();
   let maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
@@ -583,19 +584,24 @@ async function runRealtimeSession(
     assistantTurn = "";
   };
 
+  const finishExactOpeningIfNeeded = () => {
+    if (!awaitingExactOpeningPlayback) return false;
+    awaitingExactOpeningPlayback = false;
+    if (!hangupAfterOpening || ws.readyState !== WebSocket.OPEN) return true;
+    hangupAfterOpening = false;
+    endedReason = "line-suspended";
+    void hangupXAISipCall(input.callId).catch(() => {
+      log.warn("Native suspended-line hangup could not be confirmed", {
+        callId: providerCallId(input.callId),
+      });
+    });
+    ws.close(1000, "Wireline line suspended");
+    return true;
+  };
+
   const requestToolContinuationWhenReady = () => {
     if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
-    if (hangupAfterOpening) {
-      hangupAfterOpening = false;
-      endedReason = "line-suspended";
-      void hangupXAISipCall(input.callId).catch(() => {
-        log.warn("Native suspended-line hangup could not be confirmed", {
-          callId: providerCallId(input.callId),
-        });
-      });
-      ws.close(1000, "Wireline line suspended");
-      return;
-    }
+    if (awaitingExactOpeningPlayback || hangupAfterOpening) return;
     if (!toolContinuationPending || endedReason === "transferred") {
       return;
     }
@@ -763,7 +769,15 @@ async function runRealtimeSession(
     }
     if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
       sipPlaybackActive = false;
+      if (finishExactOpeningIfNeeded()) return;
       requestToolContinuationWhenReady();
+      return;
+    }
+    if (
+      type === "input_audio_buffer.speech_started" ||
+      type === "input_audio_buffer.committed"
+    ) {
+      if (!hangupAfterOpening) awaitingExactOpeningPlayback = false;
       return;
     }
     if (
@@ -797,6 +811,11 @@ async function runRealtimeSession(
       if (String(response.status || "").toLowerCase() === "failed") {
         pipelineError = "xai_response";
         throw new Error("XAI_REALTIME_RESPONSE_FAILED");
+      }
+      if (awaitingExactOpeningPlayback || hangupAfterOpening) {
+        // force_message may emit response.done before SIP audio drains.
+        // Do not start a model turn or hang up until playback completes.
+        return;
       }
       await executePendingTools();
       return;
@@ -838,7 +857,8 @@ async function runRealtimeSession(
         if (opening) {
           // A legally significant opening must be exact, uninterrupted, and
           // present in the stored transcript. force_message owns playback;
-          // no response.create here.
+          // no response.create here, and no model turn until audio drains.
+          awaitingExactOpeningPlayback = true;
           transcriptLines.push({ role: "Agent", text: opening });
           sendJson(ws, {
             type: "conversation.item.create",

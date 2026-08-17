@@ -28,13 +28,20 @@ export type NativeInboundAdmission = {
 export async function resolveNativeInboundAdmission(
   userId: string,
 ): Promise<NativeInboundAdmission> {
-  const [settings] = await drizzle
-    .select({ subscriptionStatus: schema.settings.subscriptionStatus })
-    .from(schema.settings)
-    .where(eq(schema.settings.userId, userId))
-    .limit(1);
-  if (settings?.subscriptionStatus !== "active") {
-    return { mode: "suspended", reason: "subscription" };
+  try {
+    const [settings] = await drizzle
+      .select({ subscriptionStatus: schema.settings.subscriptionStatus })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1);
+    if (settings?.subscriptionStatus !== "active") {
+      return { mode: "suspended", reason: "subscription" };
+    }
+  } catch (error) {
+    log.error("Native inbound subscription check failed, continuing remaining gates", {
+      userId,
+      error: getErrorMessage(error),
+    });
   }
 
   try {

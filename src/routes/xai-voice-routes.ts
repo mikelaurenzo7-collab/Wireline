@@ -16,7 +16,7 @@ import {
 } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { decryptSecret } from "../lib/secret-vault";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import {
   getNativeXAIPhoneStatus,
@@ -327,7 +327,9 @@ router.post(
           direction: "inbound" as const,
           businessName: agentContext.businessName,
           complianceMode: agentContext.complianceMode,
-          admission: await resolveNativeInboundAdmission(binding.userId),
+          admission: await tenantStore.run(binding.userId, () =>
+            resolveNativeInboundAdmission(binding.userId),
+          ),
         };
 
     if (sessionInput.direction !== "outbound" && sessionInput.admission?.mode !== "full") {
