@@ -28,6 +28,17 @@ describe("agentmail mailbox contract", () => {
     expect(agentmailRoutes).not.toContain("target: schema.emailAccounts.emailAddress");
   });
 
+  it("keys connection mutations by the authenticated tenant, not a shared IP bucket", () => {
+    expect(agentmailRoutes).toContain("createRateLimiter");
+    expect(agentmailRoutes).not.toContain("createIpRateLimiter");
+    expect(agentmailRoutes).toMatch(
+      /"\/api\/integrations\/agentmail\/connect",\s*authenticateUser,\s*agentmailConnectRateLimiter,\s*validateBody/,
+    );
+    expect(agentmailRoutes).toMatch(
+      /"\/api\/integrations\/agentmail\/disconnect",\s*authenticateUser,\s*agentmailConnectRateLimiter/,
+    );
+  });
+
   it("registers inbound delivery on connect without asking the Account Holder to set up webhooks", () => {
     expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
     expect(agentmailRoutes).toContain("deleteAgentMailWebhooksForAccount");
