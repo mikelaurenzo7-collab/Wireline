@@ -1,9 +1,15 @@
 import WebSocket from "ws";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
+import { complianceFirstMessagePrefix } from "../agent-runtime";
 import { notifyInboundCall } from "../mobile-push";
+import {
+  isMarketingCallPurpose,
+  type OutboundCallPurpose,
+} from "../outbound-call-purpose";
+import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import { trackVoiceMinutes } from "../voice-usage";
@@ -20,6 +26,13 @@ const WS_OPEN_TIMEOUT_MS = 15_000;
 const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 const MAX_TRANSCRIPT_CHARS = 120_000;
 const MAX_TOOL_OUTPUT_CHARS = 8_000;
+const ACTIVE_OUTBOUND_STATUSES = [
+  LEAD_STATUS.PENDING,
+  LEAD_STATUS.QUEUED,
+  LEAD_STATUS.RETRYING,
+  LEAD_STATUS.DIALING,
+  LEAD_STATUS.CONNECTED,
+] as const;
 
 export type XAISipIncomingCall = {
   callId: string;
@@ -27,6 +40,13 @@ export type XAISipIncomingCall = {
   agentId: string;
   callerNumber: string | null;
   calledNumber: string;
+  direction?: "inbound" | "outbound";
+  leadId?: bigint;
+  customerName?: string | null;
+  context?: string | null;
+  callPurpose?: OutboundCallPurpose;
+  businessName?: string | null;
+  complianceMode?: string | null;
 };
 
 type PendingToolCall = {
@@ -40,8 +60,18 @@ export type XAITranscriptLine = {
   text: string;
 };
 
+function callDirection(input: XAISipIncomingCall): "inbound" | "outbound" {
+  return input.direction === "outbound" ? "outbound" : "inbound";
+}
+
 function providerCallId(callId: string): string {
   return `xai:${callId}`;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function sendJson(ws: WebSocket, value: unknown): void {
@@ -69,11 +99,6 @@ function safeToolArguments(value: unknown): unknown {
   }
 }
 
-/**
- * xAI transcription `updated` events are cumulative and can correct earlier
- * words. Insert the caller turn at its first event and mutate that same slot on
- * every update/completion so later agent turns retain their real chronology.
- */
 export function upsertOrderedCallerTranscript(
   lines: XAITranscriptLine[],
   indexes: Map<string, number>,
@@ -108,6 +133,49 @@ function deterministicSummary(transcript: string): string {
   return compact.length <= 600 ? compact : `${compact.slice(0, 597)}…`;
 }
 
+function buildOutboundOpening(
+  input: XAISipIncomingCall,
+  runtime: Awaited<ReturnType<typeof buildXAIRealtimeAgentRuntime>>,
+): string {
+  const purpose = input.callPurpose || "service_or_requested";
+  const disclosure = complianceFirstMessagePrefix(
+    input.complianceMode,
+    input.businessName || runtime.agentName,
+    {
+      outboundAiCall: true,
+      recordingEnabled: false,
+      telemarketing: isMarketingCallPurpose(purpose),
+    },
+  );
+  const name = input.customerName?.trim();
+  const identity = input.businessName?.trim()
+    ? `${runtime.agentName} with ${input.businessName.trim()}`
+    : runtime.agentName;
+  return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.`;
+}
+
+function buildOutboundInstructions(input: XAISipIncomingCall): string {
+  const purpose = input.callPurpose || "service_or_requested";
+  const objective =
+    input.context?.trim() ||
+    (purpose === "callback"
+      ? "Continue the requested callback and establish the next useful step."
+      : "Explain the reason for the call and establish the next useful step.");
+  return [
+    "OUTBOUND CALL: The customer has already answered. Deliver the required opening immediately, then pause for their response.",
+    input.customerName ? `Contact: ${input.customerName}.` : "",
+    `Call purpose: ${purpose}.`,
+    `Objective: ${objective}`,
+    "Do not read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
+    purpose === "marketing_or_sales"
+      ? "Any stop-calling or opt-out request is immediate: use add_to_dnc, confirm once, and end without another pitch."
+      : "",
+    "Before ending, use update_lead_status or schedule_callback when applicable and confirm the next step.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 async function xaiCallControl(
   callId: string,
   action: "refer" | "hangup",
@@ -127,9 +195,7 @@ async function xaiCallControl(
     },
     PROVIDER_REQUEST_TIMEOUT_MS,
   );
-  if (!response.ok) {
-    throw new Error(`xAI ${action} returned HTTP ${response.status}.`);
-  }
+  if (!response.ok) throw new Error(`xAI ${action} returned HTTP ${response.status}.`);
 }
 
 export async function referXAISipCall(callId: string, destination: string): Promise<void> {
@@ -153,7 +219,7 @@ async function claimCall(input: XAISipIncomingCall) {
       userId: input.userId,
       vapiCallId: id,
       agentId: input.agentId,
-      direction: "inbound",
+      direction: callDirection(input),
       customerNumber: input.callerNumber,
       summary: "Native xAI voice call in progress.",
       endedReason: null,
@@ -165,6 +231,7 @@ async function claimCall(input: XAISipIncomingCall) {
 }
 
 async function updatePresence(input: XAISipIncomingCall, agentName: string) {
+  const direction = callDirection(input);
   await drizzle
     .insert(schema.signalPresence)
     .values({
@@ -173,7 +240,7 @@ async function updatePresence(input: XAISipIncomingCall, agentName: string) {
       agentId: input.agentId,
       customerNumber: input.callerNumber,
       status: "connected",
-      label: `${agentName} · Live`,
+      label: `${agentName} · ${direction === "outbound" ? "Outbound" : "Live"}`,
       type: "voice",
       startedAt: new Date(),
     })
@@ -184,7 +251,7 @@ async function updatePresence(input: XAISipIncomingCall, agentName: string) {
         agentId: input.agentId,
         customerNumber: input.callerNumber,
         status: "connected",
-        label: `${agentName} · Live`,
+        label: `${agentName} · ${direction === "outbound" ? "Outbound" : "Live"}`,
         type: "voice",
         startedAt: new Date(),
       },
@@ -196,26 +263,70 @@ function toolContext(input: {
   agentName: string;
   toolCallId: string;
 }): ToolCallContext {
+  const direction = callDirection(input.call);
   const call = {
     id: providerCallId(input.call.callId),
-    type: "inboundPhoneCall",
+    type: direction === "outbound" ? "outboundPhoneCall" : "inboundPhoneCall",
     provider: "xai",
     customer: { number: input.call.callerNumber },
     phoneNumber: { number: input.call.calledNumber },
+    ...(input.call.leadId ? { leadId: String(input.call.leadId) } : {}),
   };
   return {
     toolCallId: input.toolCallId,
     payload: { call },
     message: { type: "tool-calls", call },
-    agent: {
-      id: input.call.agentId,
-      user_id: input.call.userId,
-    },
+    agent: { id: input.call.agentId, user_id: input.call.userId },
     webhookAgentId: input.call.agentId,
     agentVoiceName: input.agentName,
     drizzle,
     log,
   };
+}
+
+async function settleOutboundLead(input: {
+  call: XAISipIncomingCall;
+  summary: string;
+  endedReason: string;
+  pipelineError: string | null;
+}) {
+  if (callDirection(input.call) !== "outbound" || !input.call.leadId) return;
+  const [lead] = await drizzle
+    .select({ metadata: schema.outboundLeads.metadata })
+    .from(schema.outboundLeads)
+    .where(
+      and(
+        eq(schema.outboundLeads.id, input.call.leadId),
+        eq(schema.outboundLeads.userId, input.call.userId),
+      ),
+    )
+    .limit(1);
+  const metadata = asRecord(lead?.metadata);
+  const nativeVoice = asRecord(metadata.native_voice);
+  await drizzle
+    .update(schema.outboundLeads)
+    .set({
+      status: input.pipelineError ? LEAD_STATUS.ERROR : LEAD_STATUS.COMPLETED,
+      lastContactSummary: input.summary,
+      lastCalledAt: new Date(),
+      metadata: {
+        ...metadata,
+        native_voice: {
+          ...nativeVoice,
+          xai_call_id: providerCallId(input.call.callId),
+          state: input.pipelineError ? "runtime_error" : "completed",
+          ended_reason: input.endedReason,
+          updated_at: new Date().toISOString(),
+        },
+      },
+    })
+    .where(
+      and(
+        eq(schema.outboundLeads.id, input.call.leadId),
+        eq(schema.outboundLeads.userId, input.call.userId),
+        inArray(schema.outboundLeads.status, ACTIVE_OUTBOUND_STATUSES),
+      ),
+    );
 }
 
 async function persistFinishedCall(input: {
@@ -233,6 +344,7 @@ async function persistFinishedCall(input: {
 }) {
   const durationSeconds = Math.max(0, Math.round((Date.now() - input.startedAt) / 1_000));
   const summary = deterministicSummary(input.transcript);
+  const direction = callDirection(input.call);
 
   await drizzle
     .update(schema.callLogs)
@@ -248,10 +360,7 @@ async function persistFinishedCall(input: {
       escalationSucceeded: input.escalationSucceeded,
     })
     .where(
-      and(
-        eq(schema.callLogs.id, input.callLogId),
-        eq(schema.callLogs.userId, input.call.userId),
-      ),
+      and(eq(schema.callLogs.id, input.callLogId), eq(schema.callLogs.userId, input.call.userId)),
     );
 
   await drizzle
@@ -262,6 +371,13 @@ async function persistFinishedCall(input: {
         eq(schema.signalPresence.userId, input.call.userId),
       ),
     );
+
+  await settleOutboundLead({
+    call: input.call,
+    summary,
+    endedReason: input.endedReason,
+    pipelineError: input.pipelineError,
+  });
 
   await trackVoiceMinutes({
     userId: input.call.userId,
@@ -276,24 +392,16 @@ async function persistFinishedCall(input: {
     dialedNumber: input.call.calledNumber,
     customerNumber: input.call.callerNumber,
     agentName: input.agentName,
-    direction: "inbound",
+    direction,
     durationSeconds,
     summary,
     transcript: input.transcript,
     endedReason: input.endedReason,
-    vapiCallType: "xai_sip_inbound",
+    vapiCallType: direction === "outbound" ? "xai_sip_outbound" : "xai_sip_inbound",
     vapiCallId: providerCallId(input.call.callId),
   });
 }
 
-/**
- * Join an xAI Direct SIP call and own its complete realtime lifecycle.
- *
- * This function is intentionally a long-running promise. The webhook route
- * hands it to Vercel `waitUntil`; standalone deployments await it on their
- * normal Node process. `vercel.json` grants the API function 600 seconds and
- * this worker self-terminates at 540 seconds by default so cleanup can finish.
- */
 export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<void> {
   return tenantStore.run(input.userId, async () => {
     const callLogId = await claimCall(input);
@@ -310,12 +418,14 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       surface: "phone",
     });
     await updatePresence(input, runtime.agentName);
-    void notifyInboundCall(input.userId, {
-      callId: providerCallId(input.callId),
-      fromNumber: input.callerNumber || "unknown",
-      agentName: runtime.agentName,
-      agentId: input.agentId,
-    });
+    if (callDirection(input) === "inbound") {
+      void notifyInboundCall(input.userId, {
+        callId: providerCallId(input.callId),
+        fromNumber: input.callerNumber || "unknown",
+        agentName: runtime.agentName,
+        agentId: input.agentId,
+      });
+    }
 
     const apiKey = String(process.env.XAI_API_KEY || "").trim();
     if (!apiKey) throw new Error("XAI_API_KEY is missing during SIP session startup.");
@@ -371,11 +481,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
             const result = await dispatchAgentToolCall(
               call.name,
               call.arguments,
-              toolContext({
-                call: input,
-                agentName: runtime.agentName,
-                toolCallId: call.callId,
-              }),
+              toolContext({ call: input, agentName: runtime.agentName, toolCallId: call.callId }),
             );
             if (result.destination?.number) {
               await referXAISipCall(input.callId, result.destination.number);
@@ -402,11 +508,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       for (const output of outputs) {
         sendJson(ws, {
           type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: output.callId,
-            output: output.output,
-          },
+          item: { type: "function_call_output", call_id: output.callId, output: output.output },
         });
       }
       if (endedReason !== "transferred") sendJson(ws, { type: "response.create" });
@@ -420,12 +522,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       ) {
         const itemId = String(event.item_id || "caller");
         const transcript = typeof event.transcript === "string" ? event.transcript : "";
-        upsertOrderedCallerTranscript(
-          transcriptLines,
-          callerTranscriptIndexes,
-          itemId,
-          transcript,
-        );
+        upsertOrderedCallerTranscript(transcriptLines, callerTranscriptIndexes, itemId, transcript);
         return;
       }
       if (
@@ -440,11 +537,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
         const name = typeof event.name === "string" ? event.name.trim() : "";
         const callId = typeof event.call_id === "string" ? event.call_id.trim() : "";
         if (name && callId) {
-          pendingTools.set(callId, {
-            callId,
-            name,
-            arguments: safeToolArguments(event.arguments),
-          });
+          pendingTools.set(callId, { callId, name, arguments: safeToolArguments(event.arguments) });
         }
         return;
       }
@@ -462,11 +555,15 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
     try {
       await new Promise<void>((resolve, reject) => {
         ws.on("open", () => {
-          const session = {
-            ...runtime.session,
-            instructions: `${runtime.session.instructions}\n\nOPENING: Begin the call by saying: ${runtime.greeting}`,
-          };
-          sendJson(ws, { type: "session.update", session });
+          const outbound = callDirection(input) === "outbound";
+          const opening = outbound ? buildOutboundOpening(input, runtime) : runtime.greeting;
+          const instructions = outbound
+            ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
+            : runtime.session.instructions;
+          sendJson(ws, {
+            type: "session.update",
+            session: { ...runtime.session, instructions: `${instructions}\n\nOPENING: ${opening}` },
+          });
           sendJson(ws, { type: "response.create" });
         });
         ws.on("message", (data) => {
