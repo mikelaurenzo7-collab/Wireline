@@ -22,7 +22,8 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("lastCalledAt: new Date()");
     }
 
-    expect(gate).toContain("assertFederalDncForMarketing()");
+    expect(gate).toContain("assertFederalDncForMarketing");
+    expect(gate).toContain("isPlatformOwnerUserId(opts.userId)");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("is_marketing_call: isMarketingCall");
@@ -42,7 +43,8 @@ describe("outbound compliance contract", () => {
     }
 
     expect(gate).toContain("if (isMarketingCall)");
-    expect(gate).toContain("assertFederalDncForMarketing()");
+    expect(gate).toContain("assertFederalDncForMarketing");
+    expect(gate).toContain("isPlatformOwnerUserId");
     expect(gate).toContain('reason: "federal_dnc_unconfigured"');
   });
 

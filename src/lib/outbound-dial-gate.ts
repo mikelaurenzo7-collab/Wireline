@@ -3,6 +3,7 @@ import * as schema from "../db/schema";
 import { eq, and, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
 import { isDncBlocked } from "./compliance";
+import { isPlatformOwnerUserId } from "./platform-owner-user";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
 import { LEAD_STATUS } from "./outbound-status";
@@ -97,7 +98,9 @@ export async function evaluateOutboundDialGate(opts: {
   }
 
   if (isMarketingCall) {
-    const federalGate = assertFederalDncForMarketing();
+    const federalGate = assertFederalDncForMarketing({
+      isPlatformOwner: await isPlatformOwnerUserId(opts.userId),
+    });
     if (!federalGate.allowed) {
       return {
         allowed: false,

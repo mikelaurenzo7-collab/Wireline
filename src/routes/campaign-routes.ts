@@ -15,6 +15,7 @@ import { claudeRateLimiter, campaignWriteRateLimit } from "../middleware/api-rat
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { isOwnerEmail } from "../lib/auth-service";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import { enqueue } from "../lib/job-queue";
 
@@ -392,7 +393,9 @@ router.post(
         throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
       }
 
-      const federalGate = assertFederalDncForMarketing();
+      const federalGate = assertFederalDncForMarketing({
+        isPlatformOwner: isOwnerEmail(req.user.email),
+      });
       if (!federalGate.allowed) {
         return res.status(503).json({
           code: federalGate.code,

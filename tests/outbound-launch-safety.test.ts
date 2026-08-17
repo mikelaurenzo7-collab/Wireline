@@ -31,7 +31,8 @@ describe("outbound launch safety", () => {
 
   it("requires federal DNC at launch for all campaigns", () => {
     const launch = read("src/routes/campaign-routes.ts");
-    expect(launch).toContain("assertFederalDncForMarketing()");
+    expect(launch).toContain("assertFederalDncForMarketing");
+    expect(launch).toContain("isOwnerEmail(req.user.email)");
     expect(launch).not.toContain("requiresFederalDnc");
     expect(launch).not.toContain("parsePlaybookFromGoal");
   });

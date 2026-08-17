@@ -105,6 +105,13 @@ describe("federal-dnc-service", () => {
     const gate = assertFederalDncForMarketing();
     expect(gate.allowed).toBe(false);
     expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(assertFederalDncForMarketing({ isPlatformOwner: false }).allowed).toBe(false);
+  });
+
+  it("allows platform-owner marketing when the federal vendor is still unconfigured", () => {
+    process.env.NODE_ENV = "production";
+    process.env.VERCEL = "1";
+    expect(assertFederalDncForMarketing({ isPlatformOwner: true }).allowed).toBe(true);
   });
 
   it("allows marketing outbound in dev when explicitly opted in", () => {

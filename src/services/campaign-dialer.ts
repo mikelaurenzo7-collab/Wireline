@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and, sql, lt, inArray } from "drizzle-orm";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { isPlatformOwnerUserId } from "../lib/platform-owner-user";
 import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
@@ -205,7 +206,9 @@ export class CampaignDialerService {
    * Processes leads for a specific campaign.
    */
   private async processCampaignLeads(campaign: any) {
-    const federalGate = assertFederalDncForMarketing();
+    const federalGate = assertFederalDncForMarketing({
+      isPlatformOwner: await isPlatformOwnerUserId(campaign.userId),
+    });
     if (!federalGate.allowed) {
       log.warn("Campaign dialing paused, federal DNC vendor not configured", {
         campaignId: campaign.id,

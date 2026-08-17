@@ -6,7 +6,8 @@
  *
  * Federal DNC is intentionally deferred from the GO / score gate until the
  * founder completes business registration with DNCScrub. Marketing outbound
- * still fails closed at runtime via `assertFederalDncForMarketing()`.
+ * still fails closed at runtime via `assertFederalDncForMarketing()`, except
+ * the platform owner account may dogfood marketing while the vendor is unset.
  */
 import { selfServeBillingReleaseBlockers } from "./billing-release";
 import { getIntegrationsStatus } from "./integrations-registry";

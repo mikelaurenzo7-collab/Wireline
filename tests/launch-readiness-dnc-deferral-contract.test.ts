@@ -36,6 +36,12 @@ describe("launch readiness DNC deferral", () => {
     const gate = read("src/lib/outbound-dial-gate.ts");
     expect(federal).toContain("assertFederalDncForMarketing");
     expect(federal).toContain("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(federal).toContain("opts.isPlatformOwner === true");
     expect(gate).toContain("assertFederalDncForMarketing");
+    expect(gate).toContain("isPlatformOwnerUserId(opts.userId)");
+    const dialer = read("src/services/campaign-dialer.ts");
+    expect(dialer).toContain("isPlatformOwnerUserId(campaign.userId)");
+    const ownerUser = read("src/lib/platform-owner-user.ts");
+    expect(ownerUser).toContain("isOwnerEmail(row?.email)");
   });
 });

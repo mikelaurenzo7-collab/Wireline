@@ -133,11 +133,27 @@ export type FederalDncMarketingGate = {
   message?: string;
 };
 
+export type FederalDncMarketingGateOpts = {
+  /**
+   * Platform owner (`OWNER_EMAIL`) may dogfood marketing/campaign outbound
+   * while the Federal DNC vendor credential is still unconfigured. Tenant DNC
+   * lists, TCPA consent, and quiet hours still apply. Other tenants stay
+   * fail-closed.
+   */
+  isPlatformOwner?: boolean;
+};
+
 /** Marketing and campaign dials require a configured federal DNC vendor in production. */
-export function assertFederalDncForMarketing(): FederalDncMarketingGate {
+export function assertFederalDncForMarketing(
+  opts: FederalDncMarketingGateOpts = {},
+): FederalDncMarketingGate {
   if (isFederalDncVendorConfigured()) return { allowed: true };
   const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
   if (!isProd && process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED === "true") {
+    return { allowed: true };
+  }
+  if (opts.isPlatformOwner === true) {
+    log.warn("federal DNC vendor unconfigured; platform-owner marketing allowed");
     return { allowed: true };
   }
   return {
