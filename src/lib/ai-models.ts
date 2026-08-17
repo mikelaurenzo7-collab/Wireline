@@ -5,12 +5,14 @@
  *
  * - **Structured reasoning** uses the xAI Responses API model `grok-4.6`
  *   (text/image in, text out). That is not a voice model.
- * - **Live PSTN** uses Vapi. Vapi's published xAI *language* models are
+ * - **Live PSTN** uses Twilio Elastic SIP plus xAI Direct SIP Speech-to-Speech
+ *   (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo). Chat and voice share
+ *   one `XAI_API_KEY`; they are different models, not different credentials.
+ * - **Vapi rollback** still uses Vapi's published xAI *language* models
  *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
- *   Grok 4.6 is not in that catalog. Live *voice* is a separate Vapi field:
- *   `voice.provider: "xai"` with Eve/Ara/Rex/Sal/Leo.
- * - **Studio browser tests** use Vapi web with the same `grok-4.3` language
- *   model as PSTN. OpenAI Realtime is backup and ChatGPT-widget simulation.
+ *   Grok 4.6 is not in that catalog. That path is not the launch runtime.
+ * - **Studio browser tests** use the same native Speech-to-Speech brain as
+ *   PSTN. OpenAI Realtime is ChatGPT-widget simulation and browser backup.
  * - **Imagine** image and video models exist at xAI. Wireline does not
  *   generate those files: they include a Grok watermark that cannot be
  *   turned off. That is not Grok Bot, not live PSTN, and not a priced

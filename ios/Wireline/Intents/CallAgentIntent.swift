@@ -3,8 +3,8 @@ import AppIntents
 /// "Hey Siri, tell Wireline to call the doctor, I'll be five minutes late."
 ///
 /// Resolves an agent by name and hands a free-text instruction to the backend,
-/// which builds the agent's system prompt and dials via Vapi. No prompt logic
-/// runs on the device.
+/// which builds the agent's system prompt and dials via native Twilio + xAI
+/// Direct SIP. No prompt logic runs on the device.
 struct CallAgentIntent: AppIntent {
     static var title: LocalizedStringResource = "Have an agent place a call"
     static var description = IntentDescription(

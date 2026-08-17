@@ -30,6 +30,8 @@ Tenant Studio tests connect with a server-minted xAI ephemeral token (`xai-clien
 
 xAI Console API keys are Bearer tokens on `https://api.x.ai`. One key can authenticate Responses, Chat Completions, TTS, Realtime, and Imagine. Console ACLs (`api-key:endpoint:chat`, `api-key:endpoint:voice`, or wildcards) can restrict a key; they do not require a second Wireline env var.
 
+Grok 4.6 (chat) and `grok-voice-think-fast-2.0` (Speech-to-Speech) are different models. That does not mean they need different API keys. xAI rate limits are per team and per model (text RPS/TPM; Voice concurrent sessions). Two Wireline keys do not isolate those budgets, do not give chat and voice separate GPUs, and do not reduce latency. Latency is per model and endpoint, not per API key. A second production env var only adds rotation, Vercel drift, and split-brain outages (voice down while chat is up).
+
 | Work | Credential | Notes |
 | --- | --- | --- |
 | Structured chat / email / tools (`grok-4.6`) | `XAI_API_KEY` | Direct Responses API |

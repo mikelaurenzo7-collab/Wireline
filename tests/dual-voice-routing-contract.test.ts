@@ -112,6 +112,8 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(envExample).not.toContain("XAI_API_KEY_VOICE=");
     expect(envExample).toContain("Wireline does not require a second env");
     expect(envExample).toContain("var for chat vs voice");
+    expect(envExample).toContain("Latency is per model and endpoint, not");
+    expect(envExample).toContain("Rate limits are per xAI team and model");
     expect(envExample).toContain("Do not add XAI_API_KEY_VOICE");
     expect(envExample).toContain("Native Twilio SIP Speech-to-Speech");
     expect(envExample).not.toContain(

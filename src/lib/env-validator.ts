@@ -108,7 +108,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "One xAI inference key for Grok 4.6 structured chat, browser realtime, and native Twilio SIP Speech-to-Speech. OpenAI remains continuity and Realtime",
+      "One xAI inference key for Grok 4.6 structured chat, browser realtime, and native Twilio SIP Speech-to-Speech. Chat and voice share this key; splitting keys does not reduce latency. OpenAI remains continuity and Realtime",
     validate: nonEmpty,
     requiredInProd: true,
   },
