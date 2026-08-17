@@ -50,7 +50,7 @@ describe("agentmail webhook payload", () => {
     expect(htmlOnly.snippet).toBe("Hello there & welcome");
   });
 
-  it("reads bounced recipients from the event-specific bounce payload", () => {
+  it("reads and deduplicates every bounced recipient from the event-specific payload", () => {
     const event = parseAgentMailWebhookEvent({
       event_type: "message.bounced",
       event_id: "evt_bounce",
@@ -58,7 +58,11 @@ describe("agentmail webhook payload", () => {
         message_id: "msg_bounce",
         thread_id: "thd_bounce",
         timestamp: "2026-08-17T03:05:00Z",
-        recipients: [{ address: "invalid@example.com", status: "bounced" }],
+        recipients: [
+          { address: "invalid@example.com", status: "bounced" },
+          { address: "second@example.com", status: "bounced" },
+          { address: "INVALID@example.com", status: "bounced" },
+        ],
       },
     });
     expect(event).toMatchObject({
@@ -66,6 +70,7 @@ describe("agentmail webhook payload", () => {
       messageId: "msg_bounce",
       threadId: "thd_bounce",
       bounceRecipient: "invalid@example.com",
+      suppressionRecipients: ["invalid@example.com", "second@example.com"],
     });
     expect(agentMailSuppressionReason(event.eventType)).toBe("agentmail_bounced");
   });
@@ -78,6 +83,7 @@ describe("agentmail webhook payload", () => {
         recipients: ["complainer@example.com"],
       },
     });
+    expect(complaint.suppressionRecipients).toEqual(["complainer@example.com"]);
     expect(complaint.bounceRecipient).toBe("complainer@example.com");
     expect(agentMailSuppressionReason(complaint.eventType)).toBe("agentmail_complained");
 
@@ -88,12 +94,16 @@ describe("agentmail webhook payload", () => {
         reason: "Invalid recipient address",
       },
     });
+    expect(rejected.suppressionRecipients).toEqual([]);
     expect(rejected.bounceRecipient).toBeNull();
     expect(rejected.rejectionReason).toBe("Invalid recipient address");
     expect(agentMailSuppressionReason(rejected.eventType)).toBeNull();
   });
 
-  it("rejects a payload with no event type", () => {
+  it("requires the provider event_type instead of accepting the generic envelope type", () => {
+    expect(() => parseAgentMailWebhookEvent({ type: "event", message: {} })).toThrow(
+      /event type is missing/,
+    );
     expect(() => parseAgentMailWebhookEvent({ message: {} })).toThrow(/event type is missing/);
   });
 });
