@@ -22,7 +22,7 @@ import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { normalizeXAIPhoneNumber } from "../lib/voice/xai-sip-config";
-import { referXAISipCall } from "../lib/voice/xai-sip-session";
+import { referXAISipCall, notifyXAISipCallTransferred } from "../lib/voice/xai-sip-session";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -379,6 +379,7 @@ router.post(
 
     try {
       await referXAISipCall(callId, normalizedDestination);
+      notifyXAISipCallTransferred(callId);
       await drizzle
         .update(schema.signalPresence)
         .set({ status: "transferred" })

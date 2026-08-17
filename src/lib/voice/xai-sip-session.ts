@@ -331,6 +331,13 @@ export function hangupXAISipCall(callId: string): Promise<void> {
   return xaiCallControl(callId, "hangup");
 }
 
+const liveSipSessions = new Map<string, { notifyTransferred: () => void }>();
+
+/** Close the local realtime session after an external REFER without hanging up PSTN. */
+export function notifyXAISipCallTransferred(callId: string): void {
+  liveSipSessions.get(callId)?.notifyTransferred();
+}
+
 async function claimCall(input: XAISipIncomingCall) {
   const id = providerCallId(input.callId);
   const [created] = await drizzle
@@ -571,15 +578,13 @@ async function persistFinishedCall(input: {
     }),
   );
 
-  if (durationSeconds > 0) {
-    await runFinalizerStep("voice_usage", input.call, () =>
-      trackVoiceMinutes({
-        userId: input.call.userId,
-        durationSeconds,
-        vapiCallId: providerCallId(input.call.callId),
-      }),
-    );
-  }
+  await runFinalizerStep("voice_usage", input.call, () =>
+    trackVoiceMinutes({
+      userId: input.call.userId,
+      durationSeconds,
+      vapiCallId: providerCallId(input.call.callId),
+    }),
+  );
 
   if (durationSeconds > 0 || input.transcript) {
     await runFinalizerStep("post_call_digest", input.call, () =>
@@ -634,6 +639,18 @@ async function runRealtimeSession(
     headers: { Authorization: `Bearer ${apiKey}` },
     handshakeTimeout: WS_OPEN_TIMEOUT_MS,
   });
+
+  const notifyTransferred = () => {
+    if (endedReason === "caller-dnc") return;
+    endedReason = "transferred";
+    hangupAfterOpening = false;
+    awaitingExactOpeningPlayback = false;
+    toolContinuationPending = false;
+    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      ws.close(1000, "Wireline transferred");
+    }
+  };
+  liveSipSessions.set(input.callId, { notifyTransferred });
 
   const flushAssistantTurn = () => {
     const text = assistantTurn.trim();
@@ -745,14 +762,34 @@ async function runRealtimeSession(
           toolCallId: call.callId,
         });
         void operation.then(
-          () =>
+          async (result) => {
             log.info("Native xAI tool completed after caller-facing timeout", {
               userId: input.userId,
               agentId: input.agentId,
               callId: providerCallId(input.callId),
               tool: call.name,
               toolCallId: call.callId,
-            }),
+            });
+            try {
+              if (result.destination?.number && endedReason !== "caller-dnc") {
+                await referXAISipCall(input.callId, result.destination.number);
+                if (call.name === "escalate_to_human") escalationSucceeded = true;
+                notifyTransferred();
+              }
+              if (call.name === "add_to_dnc" && endedReason !== "transferred") {
+                await endForCallerDnc(undefined);
+              }
+            } catch (error) {
+              log.warn("Native xAI late tool side-effect failed", {
+                userId: input.userId,
+                agentId: input.agentId,
+                callId: providerCallId(input.callId),
+                tool: call.name,
+                toolCallId: call.callId,
+                errorClass: error instanceof Error ? error.name : typeof error,
+              });
+            }
+          },
           (error) =>
             log.warn("Native xAI tool failed after caller-facing timeout", {
               userId: input.userId,
@@ -988,6 +1025,22 @@ async function runRealtimeSession(
 
         heartbeat = setInterval(() => {
           if (ws.readyState !== WebSocket.OPEN) return;
+          void drizzle
+            .select({ status: schema.signalPresence.status })
+            .from(schema.signalPresence)
+            .where(
+              and(
+                eq(schema.signalPresence.id, providerCallId(input.callId)),
+                eq(schema.signalPresence.userId, input.userId),
+              ),
+            )
+            .limit(1)
+            .then(([row]) => {
+              if (row?.status === "transferred" || row?.status === "transferring") {
+                notifyTransferred();
+              }
+            })
+            .catch(() => {});
           missedPongs += 1;
           if (missedPongs > MAX_MISSED_PONGS) {
             pipelineError = "heartbeat";
@@ -1050,6 +1103,7 @@ async function runRealtimeSession(
       // The provider may already have ended the call.
     }
   } finally {
+    liveSipSessions.delete(input.callId);
     if (maxDurationTimer) clearTimeout(maxDurationTimer);
     if (heartbeat) clearInterval(heartbeat);
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {

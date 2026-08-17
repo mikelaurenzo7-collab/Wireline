@@ -200,6 +200,10 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(route).toContain("resolveNativeInboundAdmission(binding.userId, binding.agentId)");
     expect(session).not.toContain("verification.webhookId !== binding.xaiWebhookId");
     expect(route).not.toContain("verification.webhookId !== binding.xaiWebhookId");
+    expect(session).toContain("export function notifyXAISipCallTransferred");
+    expect(session).toContain("liveSipSessions.set(input.callId");
+    expect(session).toContain('await runFinalizerStep("voice_usage"');
+    expect(session).toContain("Native xAI late tool side-effect failed");
   });
 
   it("mounts the Twilio outbound bridge beside native SIP webhooks", () => {
@@ -209,6 +213,13 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(grokRoutes.indexOf("router.use(xaiPhoneRouter)")).toBeLessThan(
       grokRoutes.indexOf("router.use(xaiOutboundRouter)"),
     );
+    const bridge = read("src/routes/xai-outbound-routes.ts");
+    expect(bridge).toContain("neverBridgedNativeVoice");
+    expect(bridge).toContain("meterNativeCarrierAttempt");
+    expect(bridge).toContain("vapiCallId: `twilio:${callSid}`");
+    expect(bridge).toContain("recoverableCompletedRace");
+    const mobile = read("src/routes/native-mobile-voice-routes.ts");
+    expect(mobile).toContain("notifyXAISipCallTransferred(callId)");
   });
 
   it("scopes native mutating tools to the signed exact lead", () => {
