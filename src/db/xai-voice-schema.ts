@@ -9,6 +9,11 @@ import { agents, users } from "./schema-base";
  * certification window so rollback evidence is preserved. New native call
  * routing never overloads those fields: xAI registration ids, Twilio trunk
  * ownership, and the encrypted Standard Webhooks signing secret live here.
+ *
+ * External identifiers are nullable while `status = provisioning`. This lets
+ * Wireline claim the number before any non-idempotent carrier/provider call and
+ * persist each returned identifier immediately instead of risking loss of the
+ * one-time xAI signing secret during a partial failure.
  */
 export const xaiPhoneBindings = pgTable(
   "wireline_xai_phone_bindings",
@@ -21,12 +26,12 @@ export const xaiPhoneBindings = pgTable(
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
     phoneNumber: text("phone_number").notNull(),
-    twilioPhoneNumberSid: text("twilio_phone_number_sid").notNull(),
-    twilioSipTrunkSid: text("twilio_sip_trunk_sid").notNull(),
-    xaiPhoneNumberId: text("xai_phone_number_id").notNull(),
-    xaiWebhookId: text("xai_webhook_id").notNull(),
-    webhookSecretEncrypted: text("webhook_secret_encrypted").notNull(),
-    webhookSecretLastFour: text("webhook_secret_last_four").notNull(),
+    twilioPhoneNumberSid: text("twilio_phone_number_sid"),
+    twilioSipTrunkSid: text("twilio_sip_trunk_sid"),
+    xaiPhoneNumberId: text("xai_phone_number_id"),
+    xaiWebhookId: text("xai_webhook_id"),
+    webhookSecretEncrypted: text("webhook_secret_encrypted"),
+    webhookSecretLastFour: text("webhook_secret_last_four"),
     status: text("status", {
       enum: ["provisioning", "active", "error", "retired"],
     })
