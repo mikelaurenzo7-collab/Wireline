@@ -1,5 +1,21 @@
-export const GROK_VOICE_DEFAULT_MODEL =
-  process.env.XAI_GROK_VOICE_MODEL?.trim() || "grok-voice-think-fast-2.0";
+export const GROK_VOICE_PINNED_MODEL = "grok-voice-think-fast-2.0";
+
+/**
+ * xAI recommends versioned model names for production stability. Preserve an
+ * operator override only when it is itself a versioned Think Fast release;
+ * moving aliases or unrelated text models silently fall back to the certified
+ * Wireline pin instead of changing phone behavior at runtime.
+ */
+export function resolveGrokVoiceModel(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const configured = String(env.XAI_GROK_VOICE_MODEL || "").trim();
+  return /^grok-voice-think-fast-\d+(?:\.\d+)+$/.test(configured)
+    ? configured
+    : GROK_VOICE_PINNED_MODEL;
+}
+
+export const GROK_VOICE_DEFAULT_MODEL = resolveGrokVoiceModel();
 
 export const GROK_VOICE_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 export const GROK_VOICE_CLIENT_SECRETS_URL =
@@ -29,13 +45,6 @@ export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
   { id: "direct", label: "Direct", description: "Decisive, focused, and authoritative." },
 ] as const;
 
-/**
- * World-class live voice personality mapping.
- * Role-tuned profiles + Grok realtime reasoning deliver distinctive,
- * context-aware voices while keeping all vendor details and hype
- * out of the customer experience. Profiles are resolved server-side
- * and paired with safe knowledge tools only.
- */
 const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
   bright: "eve",
   warm: "ara",
