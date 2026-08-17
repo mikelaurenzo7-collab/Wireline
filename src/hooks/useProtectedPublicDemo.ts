@@ -9,6 +9,7 @@ import {
 } from "../lib/voice/browser-pcm";
 
 const PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000;
+const PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 15_000;
 const PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000;
 const CAPTURE_BUFFER_SIZE = 4_096;
 
@@ -110,6 +111,7 @@ export function useProtectedPublicDemo(
   const playbackSource = useRef<AudioBufferSourceNode | null>(null);
   const playbackQueue = useRef<Float32Array[]>([]);
   const playbackActive = useRef(false);
+  const responseActive = useRef(false);
   const sessionReady = useRef(false);
   const sessionAbortRef = useRef<AbortController | null>(null);
   const watchdogRef = useRef<number | null>(null);
@@ -181,6 +183,7 @@ export function useProtectedPublicDemo(
 
   const releaseTransport = useCallback(() => {
     clearTimers();
+    responseActive.current = false;
     sessionReady.current = false;
     sessionAbortRef.current?.abort();
     sessionAbortRef.current = null;
@@ -279,6 +282,7 @@ export function useProtectedPublicDemo(
     const attempt = attemptRef.current + 1;
     attemptRef.current = attempt;
     startedRef.current = false;
+    responseActive.current = false;
     setConnecting(true);
     setError(null);
     emitProductEvent({
@@ -329,23 +333,38 @@ export function useProtectedPublicDemo(
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
+      // Provider session mint happens after mic permission to avoid burning a
+      // one-use ticket when the visitor declines. Retain the stream immediately
+      // so every timeout/network failure is still covered by shared cleanup.
+      microphone.current = stream;
 
-      const providerResponse = await fetch(ticket.providerSessionEndpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ticket.token}`,
-          "Content-Type": "application/json",
-        },
-        credentials: "same-origin",
-        body: "{}",
-      });
+      const providerController = new AbortController();
+      sessionAbortRef.current = providerController;
+      const providerTimeout = window.setTimeout(
+        () => providerController.abort(),
+        PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS,
+      );
+      let providerResponse: Response;
+      try {
+        providerResponse = await fetch(ticket.providerSessionEndpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ticket.token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          body: "{}",
+          signal: providerController.signal,
+        });
+      } finally {
+        window.clearTimeout(providerTimeout);
+        if (sessionAbortRef.current === providerController) sessionAbortRef.current = null;
+      }
       if (!providerResponse.ok) {
-        stream.getTracks().forEach((track) => track.stop());
         throw new Error(await responseMessage(providerResponse));
       }
       const session = (await providerResponse.json()) as DemoProviderSession;
       if (!session.clientSecret || !session.websocketUrl || !session.session) {
-        stream.getTracks().forEach((track) => track.stop());
         throw new Error(session.error || "The protected live demo is temporarily unavailable.");
       }
       if (attempt !== attemptRef.current) {
@@ -388,6 +407,14 @@ export function useProtectedPublicDemo(
         if (type === "conversation.created") {
           ws.send(JSON.stringify({ type: "session.update", session: session.session }));
         }
+        if (type === "response.created") responseActive.current = true;
+        if (
+          type === "response.done" ||
+          type === "response.cancelled" ||
+          type === "response.failed"
+        ) {
+          responseActive.current = false;
+        }
         if (type === "session.updated" && !sessionReady.current) {
           if (watchdogRef.current !== null) {
             window.clearTimeout(watchdogRef.current);
@@ -423,7 +450,10 @@ export function useProtectedPublicDemo(
           wrapUpTimerRef.current = window.setTimeout(
             () => {
               if (attempt !== attemptRef.current || ws.readyState !== WebSocket.OPEN) return;
-              ws.send(JSON.stringify({ type: "response.cancel" }));
+              if (responseActive.current) {
+                ws.send(JSON.stringify({ type: "response.cancel" }));
+                responseActive.current = false;
+              }
               ws.send(
                 JSON.stringify({
                   type: "conversation.item.create",
