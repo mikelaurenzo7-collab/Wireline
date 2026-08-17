@@ -5,17 +5,21 @@
 -- ids and the one-time Standard Webhooks signing secret are stored separately.
 -- The signing secret is encrypted by the application before insert.
 --
+-- xAI returns the signing secret only once and currently documents no deletion
+-- endpoint for phone registrations. user_id and agent_id are ownership pointers,
+-- not cascading foreign keys: deleting a tenant or agent must not erase the only
+-- credential capable of verifying or safely reassigning a provider registration.
+-- Retired rows form a platform cleanup/reuse ledger and remain RLS protected.
+--
 -- External ids are nullable while status='provisioning'. Wireline first claims
--- the tenant number in this table, then persists each non-idempotent provider
--- result as it arrives. This prevents a partial Twilio/xAI/DB failure from
--- losing the one-time webhook signing secret or registering the same number
--- twice without a durable recovery marker. A short-lived UUID claim token
--- prevents concurrent provisioning attempts for the same line.
+-- the number in this table, then persists each non-idempotent provider result as
+-- it arrives. A short-lived UUID claim token prevents concurrent provisioning
+-- attempts for the same line.
 
 CREATE TABLE IF NOT EXISTS public.wireline_xai_phone_bindings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.wireline_users(id) ON DELETE CASCADE,
-  agent_id text NOT NULL REFERENCES public.wireline_agents(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  agent_id text NOT NULL,
   phone_number text NOT NULL,
   twilio_phone_number_sid text,
   twilio_sip_trunk_sid text,
@@ -67,4 +71,4 @@ GRANT SELECT, INSERT, UPDATE, DELETE
   TO wireline_server;
 
 COMMENT ON TABLE public.wireline_xai_phone_bindings IS
-  'Tenant-owned Twilio numbers registered to xAI Direct SIP with encrypted per-number webhook verification secrets.';
+  'Platform-retained Twilio/xAI Direct SIP registration ledger with encrypted one-time webhook verification secrets and current tenant ownership pointers.';
