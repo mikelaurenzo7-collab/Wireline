@@ -54,6 +54,7 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(assignment).toContain("restorePreviousRouting");
     expect(assignment).toContain("currentAgentPredicate");
     expect(assignment).toContain("Native phone assignment database rollback failed");
+    expect(release).toContain("deactivateNativeXAIPhoneLine");
     expect(release).toContain("releaseTwilioLine");
     expect(release).toContain("releaseLegacyTenantNumber");
     expect(release).toContain('status: "retired"');

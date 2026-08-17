@@ -9,6 +9,7 @@ import { releaseTenantNumber as releaseLegacyTenantNumber } from "../phone-provi
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
+import { deactivateNativeXAIPhoneLine } from "./xai-phone-activation-service";
 
 function twilioStatus(error: unknown): number | null {
   const value = Number((error as { status?: unknown } | null)?.status);
@@ -62,6 +63,21 @@ export async function releaseNativeTenantNumber(
     const legacy = await releaseLegacyTenantNumber(userId, phoneNumber);
     if (legacy.ok) await retireBinding(userId, phoneNumber).catch(() => {});
     return legacy;
+  }
+
+  try {
+    await deactivateNativeXAIPhoneLine({ userId, phoneNumber });
+  } catch (error) {
+    log.warn("Native SIP trunk detach could not be confirmed before number release", {
+      userId,
+      phoneSuffix: phoneNumber.slice(-4),
+      carrierIdSuffix: carrierId.slice(-6),
+      error: getErrorMessage(error),
+    });
+    return {
+      ok: false,
+      error: "The SIP route could not be detached. The number remains attached for a safe retry.",
+    };
   }
 
   try {
