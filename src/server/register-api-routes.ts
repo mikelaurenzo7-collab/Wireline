@@ -73,6 +73,7 @@ import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
 import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes";
 import jobRouter from "../routes/job-routes";
+import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";
 import mobileRouter from "../routes/mobile-routes";
 import videoPresenterRouter from "../routes/video-presenter-routes";
 import activationRouter from "../routes/activation-routes";
@@ -209,6 +210,10 @@ export function registerApiRoutes(app: Express): void {
   // a permanent migration response instead of the historical 503.
   app.use(legacyKnowledgeCrawlRouter);
   app.use("/api/jobs", jobRouter);
+  // Native voice owns the two mobile money/control endpoints before the broad
+  // mobile adapter. All unrelated bootstrap, device, wallet, and history routes
+  // continue through mobileRouter unchanged.
+  app.use(nativeMobileVoiceRouter);
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
   app.use(activationRouter);
