@@ -7,6 +7,11 @@ import {
   isAmbiguousXAIRegistrationStatus,
   parseXAIPhoneRegistrationPayload,
 } from "../src/lib/voice/xai-sip-provisioning";
+import {
+  compactXAITranscript,
+  upsertOrderedCallerTranscript,
+  type XAITranscriptLine,
+} from "../src/lib/voice/xai-sip-session";
 import { verifyXAIWebhook } from "../src/lib/voice/xai-webhook-auth";
 
 function signingSecret(raw: Buffer): string {
@@ -84,6 +89,27 @@ describe("native Twilio + xAI voice contracts", () => {
     for (const status of [400, 401, 403, 404, 422]) {
       expect(isAmbiguousXAIRegistrationStatus(status), String(status)).toBe(false);
     }
+  });
+
+  it("preserves caller/agent chronology while cumulative ASR updates correct text", () => {
+    const lines: XAITranscriptLine[] = [];
+    const indexes = new Map<string, number>();
+
+    upsertOrderedCallerTranscript(lines, indexes, "caller-1", "I need a Tues");
+    lines.push({ role: "Agent", text: "Certainly. Which Tuesday works?" });
+    upsertOrderedCallerTranscript(lines, indexes, "caller-1", "I need a Tuesday appointment.");
+    upsertOrderedCallerTranscript(lines, indexes, "caller-2", "Next Tuesday at two.");
+
+    expect(lines).toEqual([
+      { role: "Caller", text: "I need a Tuesday appointment." },
+      { role: "Agent", text: "Certainly. Which Tuesday works?" },
+      { role: "Caller", text: "Next Tuesday at two." },
+    ]);
+    expect(compactXAITranscript(lines)).toBe(
+      "Caller: I need a Tuesday appointment.\n" +
+        "Agent: Certainly. Which Tuesday works?\n" +
+        "Caller: Next Tuesday at two.",
+    );
   });
 
   it("verifies a valid Standard Webhooks signature over the exact raw body", () => {
