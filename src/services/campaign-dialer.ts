@@ -1,75 +1,107 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
-import { drizzle, log } from "../lib/server-context";
-import * as schema from "../db/schema";
-import { eq, and, sql, lt, inArray } from "drizzle-orm";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
-import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
-import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
-import { placeOutboundCall } from "../lib/vapi-client";
-import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
-import { CAMPAIGN_STATUS, LEAD_PROCESSABLE_STATUSES, LEAD_STATUS } from "../lib/outbound-status";
-import { enqueue } from "../lib/job-queue";
-import { jsonSafeId, toJsonbSafe } from "../lib/server-utils";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 
-/**
- * Returns true when `now` (HH:MM, 24-hour) falls inside the [start, end] call
- * window. Handles two cases:
- *   - Same-day window (start <= end, e.g. 09:00–17:00): inclusive on both ends.
- *   - Overnight window (start > end, e.g. 20:00–06:00): matches times on either
- *     side of midnight. The naive `now >= start && now <= end` check would never
- *     be true for an overnight window, so the campaign would never dial.
- * All inputs are zero-padded HH:MM strings, so lexicographic comparison matches
- * chronological order.
- */
+import * as schema from "../db/schema";
+import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { enqueue } from "../lib/job-queue";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
+import {
+  CAMPAIGN_STATUS,
+  LEAD_PROCESSABLE_STATUSES,
+  LEAD_STATUS,
+} from "../lib/outbound-status";
+import { drizzle, log } from "../lib/server-context";
+import { jsonSafeId, toJsonbSafe } from "../lib/server-utils";
+import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
+
 export function isWithinCallWindow(start: string, end: string, now: string): boolean {
-  if (start <= end) {
-    return now >= start && now <= end;
-  }
+  if (start <= end) return now >= start && now <= end;
   return now >= start || now <= end;
 }
 
-/** Format a Date as zero-padded HH:MM in the server's local timezone. */
 export function formatLocalHhMm(date: Date = new Date()): string {
   return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
-/**
- * Next time the workspace call window opens at or after `from` (server local clock).
- * If already inside the window, returns `from`.
- */
 export function nextCallWindowOpenAt(start: string, end: string, from: Date = new Date()): Date {
   const nowHhMm = formatLocalHhMm(from);
-  if (isWithinCallWindow(start, end, nowHhMm)) {
-    return from;
-  }
+  if (isWithinCallWindow(start, end, nowHhMm)) return from;
 
-  const [sh, sm] = start.split(":").map((p) => Number(p));
+  const [hour, minute] = start.split(":").map((part) => Number(part));
   const openToday = new Date(from);
-  openToday.setHours(sh, sm, 0, 0);
-
+  openToday.setHours(hour, minute, 0, 0);
   if (start <= end) {
-    // Same-day window: before open → today; after close → tomorrow.
     if (nowHhMm < start) return openToday;
     const tomorrow = new Date(openToday);
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow;
   }
-
-  // Overnight window: outside means end < now < start → next open is today at start.
   return openToday;
 }
 
-/** Pacing delay before the next batch of an actively-dialing campaign. */
 const CAMPAIGN_CONTINUATION_DELAY_MS = 60_000;
-/** Re-check delay while the last batch's calls are still in flight. */
 const CAMPAIGN_DRAIN_RECHECK_DELAY_MS = 5 * 60_000;
+const LIVE_LEAD_STATUSES = [LEAD_STATUS.DIALING, LEAD_STATUS.CONNECTED] as const;
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/** Merge campaign diagnostics onto the latest row without erasing native voice
+ * correlation written concurrently by Twilio or xAI webhooks. */
+async function updateLeadAfterPlacementFailure(input: {
+  leadId: bigint;
+  userId: string;
+  status: string;
+  attempts: number;
+  error: string;
+  doNotRetry: boolean;
+}) {
+  await drizzle.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(input.leadId)}`}))`,
+    );
+    const [current] = await tx
+      .select({ metadata: schema.outboundLeads.metadata })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.id, input.leadId),
+          eq(schema.outboundLeads.userId, input.userId),
+        ),
+      )
+      .limit(1);
+    const metadata = record(current?.metadata);
+    const nativeVoice = record(metadata.native_voice);
+    await tx
+      .update(schema.outboundLeads)
+      .set({
+        status: input.status,
+        attempts: input.attempts,
+        metadata: toJsonbSafe({
+          ...metadata,
+          native_voice: {
+            ...nativeVoice,
+            ...(input.doNotRetry ? { do_not_retry: true } : {}),
+          },
+          lastError: input.error,
+          lastDialErrorAt: new Date().toISOString(),
+        }) as any,
+      })
+      .where(
+        and(
+          eq(schema.outboundLeads.id, input.leadId),
+          eq(schema.outboundLeads.userId, input.userId),
+        ),
+      );
+  });
+}
 
 export class CampaignDialerService {
-  /**
-   * Processes a single running campaign (launch worker path).
-   * When outside the workspace call window, enqueues a deferred campaign_dial
-   * job for the next eligible open time instead of silently no-oping.
-   */
   async processCampaignById(userId: string, campaignId: string) {
     const [campaign] = await drizzle
       .select()
@@ -94,14 +126,9 @@ export class CampaignDialerService {
       await this.rescheduleCampaignDial(campaign, windowStart, windowEnd);
       return;
     }
-
     await this.processCampaignLeads(campaign);
   }
 
-  /**
-   * Processes running campaigns and dials eligible leads (sweep / cron path).
-   * @param userId Optional filter to only process campaigns for a specific user.
-   */
   async processAllCampaigns(userId?: string) {
     try {
       const activeCampaigns = await drizzle
@@ -117,7 +144,6 @@ export class CampaignDialerService {
         );
 
       log.info(`Processing ${activeCampaigns.length} running campaigns`);
-
       for (const campaign of activeCampaigns) {
         const windowStart = campaign.callWindowStart || "09:00";
         const windowEnd = campaign.callWindowEnd || "17:00";
@@ -132,12 +158,6 @@ export class CampaignDialerService {
     }
   }
 
-  /**
-   * Enqueue a campaign_dial job for `runAt` unless one is already pending for
-   * this campaign. This is the campaign's only continuation driver: nothing
-   * else re-enqueues dialing, so every path that leaves processable or
-   * in-flight leads behind must call this before returning.
-   */
   private async ensureDialJob(
     campaign: { id: string; userId: string; name: string },
     runAt: Date,
@@ -164,31 +184,27 @@ export class CampaignDialerService {
       return;
     }
 
-    const enq = await enqueue(drizzle, {
+    const enqueued = await enqueue(drizzle, {
       userId: campaign.userId,
       type: "campaign_dial",
       payload: { userId: campaign.userId, campaignId: campaign.id },
       runAt,
     });
-    if (!enq.ok) {
+    if (!enqueued.ok) {
       log.error(`Failed to enqueue campaign_dial (${why})`, {
         campaignId: campaign.id,
-        error: enq.error,
+        error: enqueued.error,
         runAt: runAt.toISOString(),
       });
       return;
     }
     log.info(`Campaign ${campaign.name}: dial continuation enqueued (${why})`, {
       campaignId: campaign.id,
-      jobId: enq.jobId,
+      jobId: enqueued.jobId,
       runAt: runAt.toISOString(),
     });
   }
 
-  /**
-   * Enqueue a deferred campaign_dial for the next workspace call-window open.
-   * Campaign stays RUNNING; dialing resumes when the deferred job runs.
-   */
   private async rescheduleCampaignDial(
     campaign: { id: string; userId: string; name: string },
     windowStart: string,
@@ -201,9 +217,6 @@ export class CampaignDialerService {
     );
   }
 
-  /**
-   * Processes leads for a specific campaign.
-   */
   private async processCampaignLeads(campaign: any) {
     const federalGate = assertFederalDncForMarketing();
     if (!federalGate.allowed) {
@@ -224,11 +237,9 @@ export class CampaignDialerService {
           lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3),
         ),
       )
-      .limit(50); // Process in batches
+      .limit(50);
 
-    for (const lead of leads) {
-      await this.dialLead(lead, campaign);
-    }
+    for (const lead of leads) await this.dialLead(lead, campaign);
 
     const [remaining] = await drizzle
       .select({ count: sql<number>`count(*)` })
@@ -240,12 +251,7 @@ export class CampaignDialerService {
           lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3),
         ),
       );
-
     if (Number(remaining?.count || 0) > 0) {
-      // More processable leads than this batch covered (or temporal deferrals
-      // that stay processable). Without this re-enqueue nothing ever dials
-      // them: launch and the call-window rescheduler are the only other
-      // producers of campaign_dial jobs.
       await this.ensureDialJob(
         campaign,
         new Date(Date.now() + CAMPAIGN_CONTINUATION_DELAY_MS),
@@ -254,20 +260,20 @@ export class CampaignDialerService {
       return;
     }
 
+    // Native xAI attachment moves an answered lead from Dialing to Connected
+    // before the conversation ends. Both states are in flight; completing the
+    // campaign while a Connected call is still running would strand a retry or
+    // post-call disposition created moments later.
     const [inFlight] = await drizzle
       .select({ count: sql<number>`count(*)` })
       .from(schema.outboundLeads)
       .where(
         and(
           eq(schema.outboundLeads.campaignId, campaign.id),
-          eq(schema.outboundLeads.status, LEAD_STATUS.DIALING),
+          inArray(schema.outboundLeads.status, [...LIVE_LEAD_STATUSES]),
         ),
       );
-
     if (Number(inFlight?.count || 0) > 0) {
-      // Calls are still in flight. The end-of-call digest can move them to
-      // Retrying, so completing now would strand those leads in a COMPLETED
-      // campaign that no sweep revisits. Check back after the calls land.
       await this.ensureDialJob(
         campaign,
         new Date(Date.now() + CAMPAIGN_DRAIN_RECHECK_DELAY_MS),
@@ -282,22 +288,12 @@ export class CampaignDialerService {
       .where(eq(schema.outboundCampaigns.id, campaign.id));
   }
 
-  /**
-   * Dials a single lead.
-   */
   private async dialLead(lead: any, campaign: any) {
-    const leadIdStr = jsonSafeId(lead.id);
-    // True once a call was actually placed; the catch block must not release
-    // the Dialing claim for a live call.
-    let placed = false;
+    const leadIdString = jsonSafeId(lead.id);
+    let providerAccepted = false;
     try {
       if (!lead.customerNumber) return;
 
-      // Atomically claim the lead before evaluating or dialing. Two dial jobs
-      // for the same campaign (double-clicked launch, overlapping sweeps, a
-      // manual job run racing the cron) select overlapping batches; without
-      // this flip-if-still-processable fence both would dial the same consumer
-      // simultaneously. The loser of the race sees zero rows and moves on.
       const claimed = await drizzle
         .update(schema.outboundLeads)
         .set({ status: LEAD_STATUS.DIALING })
@@ -310,14 +306,13 @@ export class CampaignDialerService {
         .returning({ id: schema.outboundLeads.id });
       if (claimed.length === 0) {
         log.info("Lead already claimed by a concurrent dial job", {
-          leadId: leadIdStr,
+          leadId: leadIdString,
           campaignId: campaign.id,
         });
         return;
       }
       const priorStatus = lead.status as string;
-
-      const metadata = (lead.metadata || {}) as Record<string, unknown>;
+      const metadata = record(lead.metadata);
       const gate = await evaluateOutboundDialGate({
         userId: lead.userId!,
         phone: lead.customerNumber,
@@ -333,25 +328,16 @@ export class CampaignDialerService {
             .set({ status: priorStatus })
             .where(eq(schema.outboundLeads.id, lead.id));
           log.warn("Skipping dial, federal DNC vendor not configured", {
-            leadId: leadIdStr,
+            leadId: leadIdString,
             campaignId: campaign.id,
           });
           return;
         }
 
-        // Temporal denials (TCPA quiet hours, the lead's own 24h duplicate
-        // window) must leave the lead processable. Writing their gate status
-        // would retire the lead from LEAD_PROCESSABLE_STATUSES with no
-        // callbackScheduledAt, so no engine ever re-dials it, max_attempts
-        // becomes a no-op, and the campaign flips to "completed" without ever
-        // dialing the lead. Record the trace in metadata and let the next
-        // sweep re-evaluate once the window opens.
         if (
           gate.reason === "outside_permitted_calling_hours" ||
           gate.reason === "self_recent_call_scheduled"
         ) {
-          // Release the claim: restore the pre-claim processable status so the
-          // next dial job re-evaluates once the window opens.
           await drizzle
             .update(schema.outboundLeads)
             .set({
@@ -360,7 +346,7 @@ export class CampaignDialerService {
             })
             .where(eq(schema.outboundLeads.id, lead.id));
           log.info("Dial deferred by temporal gate; lead stays processable", {
-            leadId: leadIdStr,
+            leadId: leadIdString,
             campaignId: campaign.id,
             reason: gate.reason,
           });
@@ -382,14 +368,14 @@ export class CampaignDialerService {
             event: gate.consentLogEvent,
             state: "blocked",
             metadata: toJsonbSafe({
-              leadId: leadIdStr,
+              leadId: leadIdString,
               campaignId: campaign.id,
               ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
             }),
           });
         } else if (gate.reason === "skipped_duplicate") {
           log.info("Dial blocked by duplicate guard", {
-            leadId: leadIdStr,
+            leadId: leadIdString,
             campaignId: campaign.id,
             reason: gate.reason,
           });
@@ -397,9 +383,7 @@ export class CampaignDialerService {
         return;
       }
 
-      // Campaigns are automated outbound marketing by default — gate enforces consent.
       await assertOutboundVoiceAllowed({ userId: lead.userId!, source: "campaign", units: 0 });
-
       const result = await placeOutboundCall({
         userId: lead.userId!,
         agentId: campaign.agentId!,
@@ -407,10 +391,11 @@ export class CampaignDialerService {
         customerName: lead.customerName,
         context: lead.context || campaign.goal,
         callPurpose: "marketing_or_sales",
+        leadId: lead.id,
       });
 
       if (result.ok) {
-        placed = true;
+        providerAccepted = true;
         await Promise.all([
           drizzle
             .update(schema.outboundLeads)
@@ -428,7 +413,7 @@ export class CampaignDialerService {
             event: "outbound_call_placed",
             state: "initiated",
             metadata: toJsonbSafe({
-              leadId: leadIdStr,
+              leadId: leadIdString,
               campaignId: campaign.id,
               call_purpose: "marketing_or_sales",
               consent_version: OUTBOUND_CONSENT_VERSION,
@@ -436,68 +421,54 @@ export class CampaignDialerService {
             }),
           }),
         ]);
-      } else {
-        // A failed placement is not a placed call: leave lastCalledAt alone so
-        // the 24h duplicate window doesn't suppress the retry, and keep the
-        // lead retryable until attempts run out instead of retiring it to the
-        // terminal Error status on the first provider blip.
-        const attempts = (lead.attempts || 0) + 1;
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({
-            status:
-              attempts >= (campaign.maxAttempts || 3)
-                ? LEAD_STATUS.MAX_ATTEMPTS
-                : LEAD_STATUS.RETRYING,
-            attempts,
-            metadata: toJsonbSafe({
-              ...((lead.metadata as object) || {}),
-              lastError: result.error,
-              lastDialErrorAt: new Date().toISOString(),
-            }) as any,
-          })
-          .where(eq(schema.outboundLeads.id, lead.id));
+        return;
+      }
+
+      const attempts = (lead.attempts || 0) + 1;
+      const doNotRetry = result.doNotRetry === true || result.providerOutcomeAmbiguous === true;
+      const nextStatus = doNotRetry
+        ? LEAD_STATUS.ERROR
+        : attempts >= (campaign.maxAttempts || 3)
+          ? LEAD_STATUS.MAX_ATTEMPTS
+          : LEAD_STATUS.RETRYING;
+      await updateLeadAfterPlacementFailure({
+        leadId: lead.id,
+        userId: lead.userId!,
+        status: nextStatus,
+        attempts,
+        error: result.error || "dial rejected",
+        doNotRetry,
+      });
+      if (doNotRetry) {
+        log.warn("Campaign call outcome uncertain; automatic retry suppressed", {
+          leadId: leadIdString,
+          campaignId: campaign.id,
+        });
       }
     } catch (error: any) {
-      log.error(`Failed to dial lead ${leadIdStr}`, { error: error.message });
-      // The lead was claimed into Dialing above; release the claim so an
-      // exception (spend guard, provider throw) cannot strand it in-flight
-      // forever. Attempts still advance so a hard-failing lead terminates.
-      if (placed) return;
+      log.error(`Failed to dial lead ${leadIdString}`, { error: error.message });
+      if (providerAccepted) return;
       try {
         const attempts = (lead.attempts || 0) + 1;
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({
-            status:
-              attempts >= (campaign.maxAttempts || 3)
-                ? LEAD_STATUS.MAX_ATTEMPTS
-                : LEAD_STATUS.RETRYING,
-            attempts,
-            metadata: toJsonbSafe({
-              ...((lead.metadata as object) || {}),
-              lastError: error?.message || "dial exception",
-              lastDialErrorAt: new Date().toISOString(),
-            }) as any,
-          })
-          .where(
-            and(
-              eq(schema.outboundLeads.id, lead.id),
-              eq(schema.outboundLeads.status, LEAD_STATUS.DIALING),
-            ),
-          );
+        await updateLeadAfterPlacementFailure({
+          leadId: lead.id,
+          userId: lead.userId!,
+          status:
+            attempts >= (campaign.maxAttempts || 3)
+              ? LEAD_STATUS.MAX_ATTEMPTS
+              : LEAD_STATUS.RETRYING,
+          attempts,
+          error: error?.message || "dial exception",
+          doNotRetry: false,
+        });
       } catch (releaseError: any) {
-        log.error(`Failed to release claimed lead ${leadIdStr}`, {
+        log.error(`Failed to release claimed lead ${leadIdString}`, {
           error: releaseError?.message,
         });
       }
     }
   }
 
-  /**
-   * Checks if the current time (or a provided time) is within the workspace
-   * call window. Uses the server's local clock — not lead-state jurisdiction hours.
-   */
   private isWithinWindow(start: string, end: string, currentTimeOverride?: string): boolean {
     const now = currentTimeOverride || formatLocalHhMm();
     return isWithinCallWindow(start, end, now);
