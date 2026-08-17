@@ -1,18 +1,16 @@
 import express from "express";
 import { z } from "zod";
+
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { validateBody } from "../lib/api-validation";
-import type { AuthenticatedRequest } from "../types/auth";
 import {
-  getOpenAILiveVoiceProfile,
-  setOpenAILiveVoiceProfile,
-  type WirelineLiveVoiceProfile,
-} from "../lib/voice/openai-live-agent-service";
+  getXAILiveVoiceProfile,
+  setXAILiveVoiceProfile,
+} from "../lib/voice/xai-live-agent-service";
+import type { WirelineVoiceProfile } from "../lib/voice/grok-voice-config";
+import type { AuthenticatedRequest } from "../types/auth";
 
-// Legacy filename retained for stable imports. Profiles now map exclusively to
-// OpenAI Realtime voices; production custom phone voices must be provisioned
-// through a Vapi-supported streaming voice-library workflow.
 const router = express.Router();
 const limiter = createRateLimiter({ bucket: "api:live-voice-profile", windowMs: 60_000, max: 30 });
 const profileSchema = z.object({
@@ -32,7 +30,7 @@ router.get(
     const agentId = typeof req.query.agentId === "string" ? req.query.agentId.slice(0, 200) : "";
     if (!agentId)
       return res.status(400).json({ error: "agentId is required", code: "AGENT_ID_REQUIRED" });
-    const selected = await getOpenAILiveVoiceProfile(req.user.id, agentId);
+    const selected = await getXAILiveVoiceProfile(req.user.id, agentId);
     res.setHeader("Cache-Control", "no-store");
     res.json(selected);
   },
@@ -44,10 +42,10 @@ router.patch(
   limiter,
   validateBody(profileSchema),
   async (req: AuthenticatedRequest, res) => {
-    const selected = await setOpenAILiveVoiceProfile(
+    const selected = await setXAILiveVoiceProfile(
       req.user.id,
       req.body.agentId,
-      req.body.profile as WirelineLiveVoiceProfile,
+      req.body.profile as WirelineVoiceProfile,
     );
     res.json(selected);
   },
@@ -60,7 +58,8 @@ router.patch(
   validateBody(customVoiceSchema),
   async (_req: AuthenticatedRequest, res) => {
     res.status(409).json({
-      error: "Custom browser-demo voices are not supported. Production phone calls use Vapi-managed phone voices; generated marketing voiceovers are not live call voices.",
+      error:
+        "Custom live voices are not enabled for this deployment. Choose a built-in Wireline voice profile.",
       code: "LIVE_CUSTOM_VOICE_UNSUPPORTED",
       customVoiceConfigured: false,
     });
