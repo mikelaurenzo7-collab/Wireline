@@ -2,6 +2,7 @@ import { getCanonicalAppUrl } from "../app-url";
 
 export const XAI_PHONE_NUMBERS_URL = "https://api.x.ai/v2/phone-numbers";
 export const XAI_REALTIME_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
+export const XAI_REALTIME_WEBSOCKET_URL = "wss://api.x.ai/v1/realtime";
 export const XAI_SIP_HOST = "sip.voice.x.ai";
 export const XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP";
 export const XAI_TWILIO_ORIGINATION_FRIENDLY_NAME = "xAI realtime primary";
@@ -10,6 +11,7 @@ export const XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token";
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 const SIMPLE_CIDR_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?$/;
 const TWILIO_SIP_URI_MAX_LENGTH = 255;
+const XAI_CALL_ID_PATTERN = /^[A-Za-z0-9._:-]{1,200}$/;
 
 export function normalizeXAIPhoneNumber(value: unknown): string | null {
   const phone = String(value || "")
@@ -18,6 +20,22 @@ export function normalizeXAIPhoneNumber(value: unknown): string | null {
   if (!phone.startsWith("+")) return null;
   const normalized = `+${phone.slice(1).replace(/\+/g, "")}`;
   return E164_PATTERN.test(normalized) ? normalized : null;
+}
+
+/**
+ * Join an xAI-managed SIP call by provider call id. SIP sessions are call-bound,
+ * not model-bound: the model is configured with `session.update` after the
+ * WebSocket opens. Keeping this URL builder separate from browser realtime
+ * prevents a general `?model=` URL from leaking onto the SIP control path.
+ */
+export function buildXAISipRealtimeUrl(callId: string): string {
+  const normalized = callId.trim();
+  if (!XAI_CALL_ID_PATTERN.test(normalized)) {
+    throw new Error("A valid xAI SIP call id is required.");
+  }
+  const url = new URL(XAI_REALTIME_WEBSOCKET_URL);
+  url.searchParams.set("call_id", normalized);
+  return url.toString();
 }
 
 /**
