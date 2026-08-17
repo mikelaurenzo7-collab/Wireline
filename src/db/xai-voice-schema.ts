@@ -16,11 +16,13 @@ import { agents, users } from "./schema-base";
  * one-time xAI signing secret during a partial failure. A short-lived claim
  * token prevents two requests from provisioning the same tenant line at once.
  *
- * RLS is schema-owned here. The migration installs Wireline's existing tenant
- * policy separately because it references the database-owned
+ * RLS is schema-owned here. This repository's pinned Drizzle release uses the
+ * pre-v1 `.enableRLS()` API; the current documentation's `pgTable.withRLS()`
+ * form is not present at runtime. The migration installs Wireline's existing
+ * tenant policy separately because it references the database-owned
  * `wireline_current_user_id()` helper and server role.
  */
-export const xaiPhoneBindings = pgTable.withRLS(
+export const xaiPhoneBindings = pgTable(
   "wireline_xai_phone_bindings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -59,7 +61,7 @@ export const xaiPhoneBindings = pgTable.withRLS(
     xaiPhoneUnique: uniqueIndex("uq_xai_phone_bindings_xai_phone").on(table.xaiPhoneNumberId),
     xaiWebhookUnique: uniqueIndex("uq_xai_phone_bindings_xai_webhook").on(table.xaiWebhookId),
   }),
-);
+).enableRLS();
 
 export type XAIPhoneBinding = typeof xaiPhoneBindings.$inferSelect;
 export type NewXAIPhoneBinding = typeof xaiPhoneBindings.$inferInsert;
