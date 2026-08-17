@@ -22,7 +22,6 @@ import {
   xaiVoiceWebhookUrl,
 } from "./xai-sip-config";
 
-const PROVISIONING_CLAIM_TTL_MS = 10 * 60 * 1000;
 const XAI_REGISTRATION_TIMEOUT_MS = 20_000;
 
 export const XAI_OUTCOME_AMBIGUOUS = "XAI_PHONE_REGISTRATION_OUTCOME_AMBIGUOUS";
@@ -51,6 +50,12 @@ type XAIPhoneRegistrationResult = {
 type ProvisioningClaim = {
   binding: XAIPhoneBinding;
   token: string | null;
+  reused: boolean;
+};
+
+type BindingClaimRow = {
+  binding_id: string;
+  claim_token: string | null;
   reused: boolean;
 };
 
@@ -122,17 +127,6 @@ export function isAmbiguousXAIRegistrationStatus(status: number): boolean {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
-function completeBinding(binding: XAIPhoneBinding): boolean {
-  return Boolean(
-    binding.status === "active" &&
-      binding.twilioPhoneNumberSid &&
-      binding.twilioSipTrunkSid &&
-      binding.xaiPhoneNumberId &&
-      binding.xaiWebhookId &&
-      binding.webhookSecretEncrypted,
-  );
-}
-
 function publicActivationError(code: string | null): string | null {
   if (!code) return null;
   if (code === XAI_OUTCOME_AMBIGUOUS) {
@@ -168,80 +162,80 @@ function nativePhoneConfigurationReady(): boolean {
   }
 }
 
+/**
+ * Claim or reuse the exact phone registration through a SECURITY DEFINER
+ * database boundary. The function proves current phone/agent ownership, locks
+ * by E.164 number, and permits cross-tenant adoption only when the retained
+ * provider registration is retired. Retired secrets never become visible
+ * through tenant RLS before ownership is transferred.
+ */
 async function claimProvisioning(input: {
   userId: string;
   agentId: string;
   phoneNumber: string;
 }): Promise<ProvisioningClaim> {
-  return drizzle.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-phone:${input.phoneNumber}`}))`,
-    );
+  const token = randomUUID();
+  try {
+    return await drizzle.transaction(async (tx) => {
+      const result = (await tx.execute(sql`
+        SELECT binding_id, claim_token, reused
+          FROM public.wireline_claim_xai_phone_binding(
+            ${input.userId}::uuid,
+            ${input.agentId},
+            ${input.phoneNumber},
+            ${token}::uuid
+          )
+      `)) as unknown as { rows?: BindingClaimRow[] };
+      const row = result.rows?.[0];
+      if (!row?.binding_id) {
+        throw AppError.internal("Phone activation claim returned no binding.");
+      }
+      if (!row.reused && row.claim_token !== token) {
+        throw AppError.conflict("The phone activation lease was replaced.");
+      }
 
-    const [existing] = await tx
-      .select()
-      .from(xaiPhoneBindings)
-      .where(
-        and(
-          eq(xaiPhoneBindings.userId, input.userId),
-          eq(xaiPhoneBindings.phoneNumber, input.phoneNumber),
-        ),
-      )
-      .limit(1);
-
-    if (existing && completeBinding(existing)) {
-      return { binding: existing, token: null, reused: true };
-    }
-    if (existing?.lastError === XAI_OUTCOME_AMBIGUOUS) {
+      const [binding] = await tx
+        .select()
+        .from(xaiPhoneBindings)
+        .where(
+          and(
+            eq(xaiPhoneBindings.id, row.binding_id),
+            eq(xaiPhoneBindings.userId, input.userId),
+            eq(xaiPhoneBindings.agentId, input.agentId),
+          ),
+        )
+        .limit(1);
+      if (!binding) {
+        throw AppError.internal("Claimed phone registration could not be loaded.");
+      }
+      return {
+        binding,
+        token: row.reused ? null : token,
+        reused: row.reused === true,
+      };
+    });
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    const message = getErrorMessage(error);
+    if (message.includes("XAI_PHONE_OUTCOME_AMBIGUOUS")) {
       throw AppError.serviceUnavailable(
         "Phone activation cannot be retried until the provider registration is reconciled.",
       );
     }
-
-    const now = new Date();
-    if (
-      existing?.status === "provisioning" &&
-      existing.provisioningToken &&
-      existing.provisioningClaimedAt &&
-      now.getTime() - existing.provisioningClaimedAt.getTime() < PROVISIONING_CLAIM_TTL_MS
-    ) {
+    if (message.includes("XAI_PHONE_ALREADY_PROVISIONING")) {
       throw AppError.conflict("This phone line is already being activated.");
     }
-
-    const token = randomUUID();
-    if (existing) {
-      const [claimed] = await tx
-        .update(xaiPhoneBindings)
-        .set({
-          agentId: input.agentId,
-          status: "provisioning",
-          provisioningToken: token,
-          provisioningClaimedAt: now,
-          lastError: null,
-          updatedAt: now,
-        })
-        .where(
-          and(eq(xaiPhoneBindings.id, existing.id), eq(xaiPhoneBindings.userId, input.userId)),
-        )
-        .returning();
-      if (!claimed) throw AppError.conflict("This phone line could not be claimed for activation.");
-      return { binding: claimed, token, reused: false };
+    if (message.includes("XAI_PHONE_OWNED_BY_ANOTHER_TENANT")) {
+      throw AppError.conflict("This phone registration is still active in another workspace.");
     }
-
-    const [created] = await tx
-      .insert(xaiPhoneBindings)
-      .values({
-        userId: input.userId,
-        agentId: input.agentId,
-        phoneNumber: input.phoneNumber,
-        status: "provisioning",
-        provisioningToken: token,
-        provisioningClaimedAt: now,
-      })
-      .returning();
-    if (!created) throw AppError.internal("Phone activation claim could not be persisted.");
-    return { binding: created, token, reused: false };
-  });
+    if (message.includes("XAI_PHONE_OWNERSHIP_MISMATCH")) {
+      throw AppError.conflict("This phone line is not assigned to the selected agent.");
+    }
+    if (message.includes("XAI_PHONE_INVALID_CLAIM")) {
+      throw AppError.badRequest("The native phone activation claim is invalid.");
+    }
+    throw error;
+  }
 }
 
 async function updateClaim(
@@ -411,9 +405,6 @@ async function registerPhoneWithXAI(phoneNumber: string): Promise<XAIPhoneRegist
     if (isAmbiguousXAIRegistrationStatus(response.status)) {
       throw new Error(XAI_OUTCOME_AMBIGUOUS);
     }
-    // Response bodies may contain provider diagnostics, identifiers, or request
-    // fragments. Status is sufficient for console correlation; never return or
-    // log the body on this tenant-facing path.
     log.warn("Realtime voice phone registration rejected", { status: response.status });
     throw AppError.fromHttpStatus(
       response.status,
