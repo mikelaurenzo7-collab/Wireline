@@ -5,8 +5,8 @@ import * as schema from "../db/schema";
 import { isTwilioPhoneNumberSid } from "../lib/agent-phone-lines";
 import { AppError, asyncHandler } from "../lib/api-error";
 import {
+  phoneNumberPatchSchema,
   phoneNumberProvisionSchema,
-  phoneNumberUpdateSchema,
   validateBody,
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
@@ -157,7 +157,6 @@ router.post(
       agentId: req.body.agent_id || undefined,
       areaCode: req.body.area_code || undefined,
       phoneNumber: req.body.phone_number || undefined,
-      campaignLabel: req.body.campaign_label || undefined,
     });
   }),
 );
@@ -182,7 +181,7 @@ router.patch(
   authenticateUser,
   enforceLiveWorkActivation,
   phoneNumberRateLimiter,
-  validateBody(phoneNumberUpdateSchema),
+  validateBody(phoneNumberPatchSchema),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const lineId = parsePhoneNumberRowId(req.params.id);
     const result = await assignNativePhoneLine({
