@@ -6,7 +6,6 @@ import { dispatchAgentToolCall } from "../agent-tool-dispatch";
 import { notifyInboundCall } from "../mobile-push";
 import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
-import { getErrorMessage } from "../server-utils";
 import { trackVoiceMinutes } from "../voice-usage";
 import type { ToolCallContext } from "../../routes/vapi/types";
 import { buildGrokVoiceRealtimeUrl } from "./grok-voice-config";
@@ -36,7 +35,7 @@ type PendingToolCall = {
   arguments: unknown;
 };
 
-type TranscriptLine = {
+export type XAITranscriptLine = {
   role: "Caller" | "Agent";
   text: string;
 };
@@ -70,7 +69,30 @@ function safeToolArguments(value: unknown): unknown {
   }
 }
 
-function compactTranscript(lines: TranscriptLine[]): string {
+/**
+ * xAI transcription `updated` events are cumulative and can correct earlier
+ * words. Insert the caller turn at its first event and mutate that same slot on
+ * every update/completion so later agent turns retain their real chronology.
+ */
+export function upsertOrderedCallerTranscript(
+  lines: XAITranscriptLine[],
+  indexes: Map<string, number>,
+  itemId: string,
+  transcript: string,
+): void {
+  const normalized = transcript.trim();
+  if (!normalized) return;
+  const existingIndex = indexes.get(itemId);
+  if (existingIndex !== undefined) {
+    const existing = lines[existingIndex];
+    if (existing?.role === "Caller") existing.text = normalized;
+    return;
+  }
+  indexes.set(itemId, lines.length);
+  lines.push({ role: "Caller", text: normalized });
+}
+
+export function compactXAITranscript(lines: XAITranscriptLine[]): string {
   const full = lines
     .map((line) => `${line.role}: ${line.text.trim()}`)
     .filter((line) => !line.endsWith(": "))
@@ -299,8 +321,8 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
     if (!apiKey) throw new Error("XAI_API_KEY is missing during SIP session startup.");
 
     const startedAt = Date.now();
-    const userTranscripts = new Map<string, string>();
-    const transcriptLines: TranscriptLine[] = [];
+    const callerTranscriptIndexes = new Map<string, number>();
+    const transcriptLines: XAITranscriptLine[] = [];
     const pendingTools = new Map<string, PendingToolCall>();
     let assistantTurn = "";
     let endedReason = "provider-disconnected";
@@ -319,10 +341,9 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
     const maxDurationMs = resolveXAISipSessionMaxSeconds() * 1_000;
     const maxDurationTimer = setTimeout(() => {
       endedReason = "wireline-max-duration";
-      void hangupXAISipCall(input.callId).catch((error) => {
-        log.warn("xAI max-duration hangup failed", {
+      void hangupXAISipCall(input.callId).catch(() => {
+        log.warn("xAI max-duration hangup could not be confirmed", {
           callId: providerCallId(input.callId),
-          error: getErrorMessage(error),
         });
       });
       ws.close(1000, "Wireline maximum duration reached");
@@ -365,7 +386,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
               callId: call.callId,
               output: JSON.stringify({ result: result.result }).slice(0, MAX_TOOL_OUTPUT_CHARS),
             };
-          } catch (error) {
+          } catch {
             toolCallsFailed += 1;
             return {
               callId: call.callId,
@@ -393,10 +414,18 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
 
     const handleEvent = async (event: Record<string, unknown>) => {
       const type = String(event.type || "");
-      if (type === "conversation.item.input_audio_transcription.updated") {
+      if (
+        type === "conversation.item.input_audio_transcription.updated" ||
+        type === "conversation.item.input_audio_transcription.completed"
+      ) {
         const itemId = String(event.item_id || "caller");
-        const transcript = typeof event.transcript === "string" ? event.transcript.trim() : "";
-        if (transcript) userTranscripts.set(itemId, transcript);
+        const transcript = typeof event.transcript === "string" ? event.transcript : "";
+        upsertOrderedCallerTranscript(
+          transcriptLines,
+          callerTranscriptIndexes,
+          itemId,
+          transcript,
+        );
         return;
       }
       if (
@@ -426,10 +455,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       }
       if (type === "error") {
         pipelineError = "xai_realtime";
-        const error = event.error as { message?: unknown } | undefined;
-        throw new Error(
-          typeof error?.message === "string" ? error.message : "xAI realtime session error.",
-        );
+        throw new Error("XAI_REALTIME_EVENT_ERROR");
       }
     };
 
@@ -449,21 +475,19 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
           eventChain = eventChain.then(() => handleEvent(event));
           eventChain.catch(reject);
         });
-        ws.on("error", (error) => {
+        ws.on("error", () => {
           pipelineError = "connection";
-          reject(error);
+          reject(new Error("XAI_REALTIME_WEBSOCKET_ERROR"));
         });
         ws.on("close", (code, reason) => {
           if (code !== 1000 && endedReason === "provider-disconnected") {
             endedReason = `provider-close-${code}`;
           }
-          if (reason.length) {
-            log.info("xAI SIP WebSocket closed", {
-              callId: providerCallId(input.callId),
-              code,
-              reason: reason.toString().slice(0, 160),
-            });
-          }
+          log.info("xAI SIP WebSocket closed", {
+            callId: providerCallId(input.callId),
+            code,
+            reasonLength: reason.length,
+          });
           eventChain.then(resolve).catch(reject);
         });
       });
@@ -474,7 +498,8 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
         userId: input.userId,
         agentId: input.agentId,
         callId: providerCallId(input.callId),
-        error: getErrorMessage(error),
+        failure: pipelineError,
+        errorClass: error instanceof Error ? error.name : typeof error,
       });
       try {
         await hangupXAISipCall(input.callId);
@@ -485,10 +510,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       clearTimeout(maxDurationTimer);
       clearInterval(heartbeat);
       flushAssistantTurn();
-      for (const transcript of userTranscripts.values()) {
-        transcriptLines.push({ role: "Caller", text: transcript });
-      }
-      const transcript = compactTranscript(transcriptLines);
+      const transcript = compactXAITranscript(transcriptLines);
       await persistFinishedCall({
         call: input,
         callLogId,
