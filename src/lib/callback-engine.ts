@@ -333,6 +333,13 @@ export async function tickDueCallbacks({
           });
 
           if (!res.ok) {
+            if (res.providerOutcomeAmbiguous || res.doNotRetry) {
+              return (await deferOrDrop(
+                `call outcome uncertain: ${res.error || "could not be confirmed"}`,
+              )) === "deferred"
+                ? "deferred"
+                : "skipped";
+            }
             await finish({
               callbackScheduledAt: null,
               summary: `Callback attempt failed: ${res.error || "call could not be placed"}.`,
@@ -388,11 +395,7 @@ export async function tickDueCallbacks({
       });
       await runTenantProviderWorkWithDeletionFence({
         userId: lead.userId,
-        perform: () =>
-          finish({
-            callbackScheduledAt: null,
-            summary: "Callback failed with an internal error. Flagged for manual follow-up.",
-          }),
+        perform: () => deferOrDrop("internal error"),
       }).catch(() => {});
     }
   }

@@ -21,6 +21,7 @@ describe("Studio live tests use the same native xAI Speech-to-Speech brain as PS
     expect(routes).not.toContain("createGrokVoiceClientSession");
     expect(status).toContain('phoneRuntimeProvider: "xai_sip"');
     expect(status).toContain("maxDurationSeconds: STUDIO_BROWSER_TEST_MAX_SECONDS");
+    expect(status).toContain("expires_after: { seconds: STUDIO_BROWSER_TEST_MAX_SECONDS }");
   });
 
   it("keeps the ChatGPT widget on OpenAI Realtime and the rollback Vapi sandbox off the default export", () => {

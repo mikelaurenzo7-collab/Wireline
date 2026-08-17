@@ -5,7 +5,6 @@ import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "./studio-live-test-policy";
 import {
   GROK_VOICE_CLIENT_SECRETS_URL,
   GROK_VOICE_DEFAULT_MODEL,
-  GROK_VOICE_EPHEMERAL_TOKEN_TTL_SECONDS,
   buildGrokVoiceRealtimeUrl,
   type WirelineVoiceProfile,
 } from "./grok-voice-config";
@@ -54,7 +53,7 @@ export async function createXAILiveVoiceSession(input: { userId: string; agentId
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          expires_after: { seconds: GROK_VOICE_EPHEMERAL_TOKEN_TTL_SECONDS },
+          expires_after: { seconds: STUDIO_BROWSER_TEST_MAX_SECONDS },
         }),
       },
       15_000,
@@ -97,7 +96,7 @@ export async function createXAILiveVoiceSession(input: { userId: string; agentId
       clientSecret,
       expiresAt: expiresAtSeconds
         ? new Date(expiresAtSeconds * 1000).toISOString()
-        : new Date(Date.now() + GROK_VOICE_EPHEMERAL_TOKEN_TTL_SECONDS * 1000).toISOString(),
+        : new Date(Date.now() + STUDIO_BROWSER_TEST_MAX_SECONDS * 1000).toISOString(),
       websocketUrl: buildGrokVoiceRealtimeUrl(),
       model: runtime.model,
       voice: runtime.voice,

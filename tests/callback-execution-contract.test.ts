@@ -111,6 +111,8 @@ describe("caller-requested callbacks execute end-to-end", () => {
     const engine = read("src/lib/callback-engine.ts");
     expect(engine).toContain('gate.reason === "outside_permitted_calling_hours"');
     expect(engine).toContain('gate.reason === "self_recent_call_scheduled"');
+    expect(engine).toContain("res.providerOutcomeAmbiguous || res.doNotRetry");
+    expect(engine).toContain('deferOrDrop("internal error")');
   });
 
   it("requested callbacks stay tenant-DNC-protected in the shared gate", () => {

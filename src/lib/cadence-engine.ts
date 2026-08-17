@@ -9,7 +9,7 @@ import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { IntegrationService } from "./integrations";
-import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import { evaluateOutboundDialGate, mergeLeadMetadata } from "./outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 import { drizzle, log } from "./server-context";
 import { jsonSafeId, toJsonbSafe } from "./server-utils";
@@ -51,6 +51,35 @@ function applyVars(template: string, lead: LeadRow): string {
     .replace(/\{\{\s*email\s*\}\}/gi, lead.email || "");
 }
 
+async function stampCadenceComplianceDenial(
+  cadence: CadenceRow,
+  lead: LeadRow,
+  gate: { status: string; reason: string; metadataPatch?: Record<string, unknown>; consentLogEvent?: string },
+): Promise<void> {
+  await drizzle
+    .update(schema.outboundLeads)
+    .set({
+      status: gate.status,
+      lastContactSummary: `Cadence blocked: ${gate.reason}.`,
+      metadata: toJsonbSafe(mergeLeadMetadata(lead.metadata || {}, gate.metadataPatch)) as any,
+    })
+    .where(and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, cadence.userId)));
+  if (gate.consentLogEvent && lead.customerNumber) {
+    await drizzle.insert(schema.consentLog).values({
+      userId: cadence.userId,
+      customerNumber: lead.customerNumber,
+      event: gate.consentLogEvent,
+      state: "blocked",
+      metadata: toJsonbSafe({
+        leadId: jsonSafeId(lead.id),
+        cadenceId: cadence.id,
+        source: "cadence",
+        ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
+      }),
+    });
+  }
+}
+
 /**
  * `retryable` is reserved for failures proven to occur before a provider-side
  * effect. Native call creation treats transport/5xx ambiguity as do-not-retry,
@@ -61,7 +90,7 @@ async function executeStep(
   step: CadenceStep,
   cadence: CadenceRow,
   lead: LeadRow,
-): Promise<{ ok: boolean; result: string; defer?: boolean; retryable?: boolean }> {
+): Promise<{ ok: boolean; result: string; defer?: boolean; retryable?: boolean; failRun?: boolean }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
   if ((step.type === "call" || step.type === "sms") && lead.customerNumber) {
@@ -77,11 +106,22 @@ async function executeStep(
         const temporal =
           gate.reason === "outside_permitted_calling_hours" ||
           gate.reason === "self_recent_call_scheduled";
+        if (!temporal && gate.status !== "AutoDialFailed") {
+          await stampCadenceComplianceDenial(cadence, lead, gate);
+          return {
+            ok: false,
+            result: `skipped: ${gate.reason}`,
+            failRun: true,
+          };
+        }
+        if (gate.reason === "federal_dnc_unconfigured") {
+          return { ok: false, result: `skipped: ${gate.reason}`, retryable: true };
+        }
         return { ok: false, result: `skipped: ${gate.reason}`, defer: temporal };
       }
-    } catch (error: any) {
+    } catch (err: any) {
       log.warn("cadence outbound compliance gate failed, failing closed", {
-        error: error?.message,
+        error: err?.message,
       });
       return { ok: false, result: "compliance gate failed (fail-closed)", retryable: true };
     }
@@ -318,6 +358,19 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
           })
           .where(eq(schema.cadenceRuns.id, run.id));
         deferred++;
+        continue;
+      }
+
+      if (stepResult.failRun) {
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            status: "paused",
+            nextDueAt: null,
+            lastResult: stepResult.result,
+            updatedAt: now,
+          })
+          .where(eq(schema.cadenceRuns.id, run.id));
         continue;
       }
 
