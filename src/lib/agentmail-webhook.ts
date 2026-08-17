@@ -7,6 +7,7 @@ import { log } from "./server-context";
 
 const MAX_EVENT_TYPE_LENGTH = 96;
 const MAX_TEXT_LENGTH = 8_000;
+const MAX_HTML_INPUT_LENGTH = MAX_TEXT_LENGTH * 4;
 
 export type AgentMailWebhookProcessResult = {
   eventType: string;
@@ -38,7 +39,44 @@ function parseDate(value: unknown): Date {
 
 function firstAddress(value: unknown): string | null {
   if (typeof value === "string") return boundedText(value, 320);
-  if (Array.isArray(value) && typeof value[0] === "string") return boundedText(value[0], 320);
+  if (Array.isArray(value)) {
+    for (const candidate of value) {
+      const address = firstAddress(candidate);
+      if (address) return address;
+    }
+    return null;
+  }
+  const record = asRecord(value);
+  if (!record) return null;
+  return boundedText(record.address ?? record.email ?? record.email_address, 320);
+}
+
+function plainTextFromHtml(value: unknown): string | null {
+  const html = boundedText(value, MAX_HTML_INPUT_LENGTH);
+  if (!html) return null;
+  const text = html
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(?:p|div|li|tr|h[1-6])\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/[ \t\f\v]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text ? text.slice(0, MAX_TEXT_LENGTH) : null;
+}
+
+export function agentMailSuppressionReason(
+  eventType: string,
+): "agentmail_bounced" | "agentmail_complained" | null {
+  if (eventType === "message.bounced") return "agentmail_bounced";
+  if (eventType === "message.complained") return "agentmail_complained";
   return null;
 }
 
@@ -52,6 +90,7 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
   snippet: string;
   receivedAt: Date;
   bounceRecipient: string | null;
+  rejectionReason: string | null;
 } {
   const payload = asRecord(raw);
   if (!payload) throw new Error("AgentMail webhook body is not valid JSON");
@@ -60,22 +99,61 @@ export function parseAgentMailWebhookEvent(raw: unknown): {
     MAX_EVENT_TYPE_LENGTH,
   );
   if (!eventType) throw new Error("event type is missing");
+
   const message = asRecord(payload.message) ?? {};
+  const bounce = asRecord(payload.bounce) ?? {};
+  const complaint = asRecord(payload.complaint) ?? {};
+  const reject = asRecord(payload.reject) ?? {};
+  const send = asRecord(payload.send) ?? {};
+  const delivery = asRecord(payload.delivery) ?? {};
+  const eventData =
+    eventType === "message.bounced"
+      ? bounce
+      : eventType === "message.complained"
+        ? complaint
+        : eventType === "message.rejected"
+          ? reject
+          : eventType === "message.sent"
+            ? send
+            : eventType === "message.delivered"
+              ? delivery
+              : message;
+
   const snippet =
     boundedText(message.extracted_text ?? message.extractedText, MAX_TEXT_LENGTH) ||
+    boundedText(message.preview, MAX_TEXT_LENGTH) ||
     boundedText(message.text, MAX_TEXT_LENGTH) ||
+    plainTextFromHtml(message.html) ||
     boundedText(message.subject, 500) ||
     "";
+
   return {
     eventType,
     eventId: boundedText(payload.event_id ?? payload.eventId, 256),
-    messageId: boundedText(message.message_id ?? message.messageId, 256),
-    threadId: boundedText(message.thread_id ?? message.threadId, 256),
+    messageId: boundedText(
+      message.message_id ?? message.messageId ?? eventData.message_id ?? eventData.messageId,
+      256,
+    ),
+    threadId: boundedText(
+      message.thread_id ?? message.threadId ?? eventData.thread_id ?? eventData.threadId,
+      256,
+    ),
     from: firstAddress(message.from),
     subject: boundedText(message.subject, 500) || "",
     snippet,
-    receivedAt: parseDate(message.created_at ?? message.createdAt ?? payload.created_at),
-    bounceRecipient: firstAddress(message.to) ?? firstAddress(payload.to),
+    receivedAt: parseDate(
+      message.timestamp ??
+        message.created_at ??
+        message.createdAt ??
+        eventData.timestamp ??
+        payload.created_at,
+    ),
+    bounceRecipient:
+      firstAddress(bounce.recipients) ??
+      firstAddress(complaint.recipients) ??
+      firstAddress(message.to) ??
+      firstAddress(payload.to),
+    rejectionReason: boundedText(reject.reason, 1_000),
   };
 }
 
@@ -126,20 +204,15 @@ export async function processVerifiedAgentMailWebhook(
     };
   }
 
-  if (
-    event.eventType === "message.bounced" ||
-    event.eventType === "message.complained" ||
-    event.eventType === "message.rejected"
-  ) {
+  const suppressionReason = agentMailSuppressionReason(event.eventType);
+  if (suppressionReason) {
     if (!event.bounceRecipient || !event.bounceRecipient.includes("@")) {
       throw new Error(`${event.eventType} has no valid recipient`);
     }
-    const reason =
-      event.eventType === "message.complained" ? "agentmail_complained" : "agentmail_bounced";
-    await recordTenantEmailSuppression(userId, event.bounceRecipient, reason);
+    await recordTenantEmailSuppression(userId, event.bounceRecipient, suppressionReason);
     log.warn("[agentmail-webhook] tenant recipient suppressed", {
       eventType: event.eventType,
-      reason,
+      reason: suppressionReason,
     });
     return {
       eventType: event.eventType,
@@ -147,6 +220,12 @@ export async function processVerifiedAgentMailWebhook(
       suppressed: true,
       ignored: false,
     };
+  }
+
+  if (event.eventType === "message.rejected") {
+    log.warn("[agentmail-webhook] outbound message rejected", {
+      reason: event.rejectionReason || "unknown",
+    });
   }
 
   return {
