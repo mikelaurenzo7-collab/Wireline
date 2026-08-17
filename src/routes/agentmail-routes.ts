@@ -6,6 +6,8 @@ import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AgentMailConnectError,
   agentmailGrantedScopes,
+  deleteWirelineAgentMailWebhooks,
+  ensureAgentMailWebhook,
   resolveAgentMailInbox,
   verifyAgentMailCredentials,
 } from "../lib/agentmail-mail";
@@ -15,7 +17,7 @@ import {
 } from "../lib/owned-email-account";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { encryptSecret, isVaultConfigured } from "../lib/secret-vault";
+import { encryptSecret, decryptSecret, isVaultConfigured } from "../lib/secret-vault";
 import { authenticateUser } from "../middleware/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -55,9 +57,11 @@ router.post(
     const apiKey = req.body.api_key.replace(/\s+/g, "");
 
     let emailAddress = requestedEmail;
+    let inboxId = requestedEmail;
     try {
       const inbox = await resolveAgentMailInbox(apiKey, requestedEmail);
       emailAddress = inbox.email;
+      inboxId = inbox.inboxId;
       await verifyAgentMailCredentials(emailAddress, apiKey);
     } catch (err) {
       log.warn("AgentMail mailbox connection failed", {
@@ -87,6 +91,39 @@ router.post(
       throw new AppError(409, "EMAIL_ACCOUNT_IN_USE", EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
     }
 
+    // Delivery push is registered here. Account Holders never open AgentMail
+    // webhooks; IMAP remains the fallback if this org cannot subscribe.
+    try {
+      const [stored] = await drizzle
+        .select({ refreshToken: schema.emailAccounts.refreshToken })
+        .from(schema.emailAccounts)
+        .where(eq(schema.emailAccounts.id, emailAccountConnected.id))
+        .limit(1);
+      const ensured = await ensureAgentMailWebhook({
+        apiKey,
+        inboxId,
+        accountId: emailAccountConnected.id,
+        hasStoredSecret: Boolean(stored?.refreshToken),
+      });
+      if (ensured?.secret) {
+        await drizzle
+          .update(schema.emailAccounts)
+          .set({ refreshToken: encryptSecret(ensured.secret) })
+          .where(
+            and(
+              eq(schema.emailAccounts.id, emailAccountConnected.id),
+              eq(schema.emailAccounts.userId, userId),
+            ),
+          );
+      }
+    } catch (err) {
+      log.warn("AgentMail delivery subscription skipped", {
+        userId,
+        email: emailAddress,
+        error: getErrorMessage(err),
+      });
+    }
+
     res.json({ ok: true, email: emailAddress, provider: "agentmail" });
   },
 );
@@ -98,6 +135,28 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     try {
+      const accounts = await drizzle
+        .select({
+          accessToken: schema.emailAccounts.accessToken,
+        })
+        .from(schema.emailAccounts)
+        .where(
+          and(
+            eq(schema.emailAccounts.userId, userId),
+            eq(schema.emailAccounts.provider, "agentmail"),
+          ),
+        );
+      for (const account of accounts) {
+        if (!account.accessToken) continue;
+        try {
+          await deleteWirelineAgentMailWebhooks(decryptSecret(account.accessToken));
+        } catch (err) {
+          log.warn("AgentMail delivery subscription cleanup skipped", {
+            userId,
+            error: getErrorMessage(err),
+          });
+        }
+      }
       await drizzle
         .delete(schema.emailAccounts)
         .where(

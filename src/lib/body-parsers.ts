@@ -34,6 +34,12 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
     express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
   );
 
+  // AgentMail / Svix — same Standard Webhooks envelope as Resend, tenant secret.
+  app.use(
+    "/api/webhooks/agentmail",
+    express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
+  );
+
   // Meta Lead Ads and data-deletion callbacks — raw bytes for HMAC validation.
   app.use("/api/webhooks/meta/leads", express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }));
   app.use("/api/webhooks/meta/deletion", express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }));

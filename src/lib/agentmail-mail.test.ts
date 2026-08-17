@@ -43,11 +43,13 @@ import {
   AgentMailConnectError,
   agentmailLocalPart,
   createAgentMailInbox,
+  ensureAgentMailWebhook,
   fetchAgentMailInbox,
   inboxMatchesAddress,
   isAgentMailManagedAddress,
   listAgentMailInboxes,
   normalizeAgentMailInbox,
+  publicAgentMailWebhookUrl,
   resolveAgentMailInbox,
   sendAgentMail,
   verifyAgentMailCredentials,
@@ -145,12 +147,44 @@ describe("agentmail-mail", () => {
 
   it("creates inboxes with a stable Wireline client id", async () => {
     mockFetchWithTimeout.mockResolvedValueOnce(
-      jsonResponse(201, { inbox_id: "sales@agentmail.to" }),
+      jsonResponse(201, { inbox_id: "trywireline@agentmail.to" }),
     );
-    await createAgentMailInbox("am_test", "sales");
-    expect(JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body).client_id).toBe(
-      "wireline-mailbox",
+    await createAgentMailInbox("am_test", "trywireline", "Aisha");
+    expect(JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body)).toMatchObject({
+      username: "trywireline",
+      display_name: "Aisha",
+      client_id: "wireline-mailbox",
+    });
+  });
+
+  it("registers a public inbox delivery subscription from the mailbox row", async () => {
+    vi.stubEnv("APP_URL", "https://trywireline.com");
+    const accountId = "11111111-1111-4111-8111-111111111111";
+    expect(publicAgentMailWebhookUrl(accountId)).toBe(
+      `https://trywireline.com/api/webhooks/agentmail/${accountId}`,
     );
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(200, { webhooks: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse(201, {
+          webhook_id: "wh_1",
+          url: `https://trywireline.com/api/webhooks/agentmail/${accountId}`,
+          secret: "whsec_test",
+        }),
+      );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "trywireline@agentmail.to",
+        accountId,
+        hasStoredSecret: false,
+      }),
+    ).resolves.toEqual({ webhookId: "wh_1", secret: "whsec_test" });
+    expect(JSON.parse(mockFetchWithTimeout.mock.calls[1][1].body)).toMatchObject({
+      inbox_ids: ["trywireline@agentmail.to"],
+      client_id: "wireline-mailbox-webhook",
+    });
+    vi.unstubAllEnvs();
   });
 
   it("verifies credentials via IMAP INBOX lock", async () => {
