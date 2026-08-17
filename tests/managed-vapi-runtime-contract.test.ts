@@ -15,6 +15,7 @@ describe("managed phone voice runtime policy", () => {
   const rollbackFactory = read("src/lib/vapi-assistant-factory-v2.ts");
   const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
   const nativeOutbound = read("src/lib/voice/outbound-call-service.ts");
+  const nativePlacement = read("src/lib/voice/xai-outbound-placement.ts");
   const vapiFacade = read("src/lib/vapi-client.ts");
   const draftService = read("src/lib/agent-draft-service.ts");
   const voiceRoutes = read("src/routes/voices-routes.ts");
@@ -78,8 +79,10 @@ describe("managed phone voice runtime policy", () => {
     expect(nativeRuntime).toContain("GROK_VOICE_DEFAULT_MODEL");
     expect(nativeRuntime).not.toContain("buildManagedVoiceRuntime");
     expect(nativeRuntime).not.toContain("11labs");
-    expect(nativeOutbound).toContain('provider: "twilio_xai_sip"');
+    expect(nativeOutbound).toContain("claimNativeOutboundPlacement");
+    expect(nativePlacement).toContain('provider: "twilio_xai_sip"');
     expect(nativeOutbound).not.toContain("11labs");
+    expect(nativePlacement).not.toContain("11labs");
     expect(nativeOutbound).not.toContain("buildManagedVoiceRuntime");
     expect(vapiFacade).toContain("Compatibility facade for legacy imports");
     expect(vapiFacade).toContain("placeNativeOutboundCall");
