@@ -3,13 +3,18 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { resolveGrokVoiceModel } from "../src/lib/voice/grok-voice-config";
 import {
   XAI_OUTCOME_AMBIGUOUS,
   buildXAIPhoneRegistrationBody,
   isAmbiguousXAIRegistrationStatus,
   parseXAIPhoneRegistrationPayload,
 } from "../src/lib/voice/xai-sip-provisioning";
-import { buildXAISipRealtimeUrl } from "../src/lib/voice/xai-sip-config";
+import {
+  buildXAISipRealtimeUrl,
+  isValidXAISipAllowedAddress,
+  resolveXAISipAllowedAddresses,
+} from "../src/lib/voice/xai-sip-config";
 import {
   compactXAITranscript,
   upsertOrderedCallerTranscript,
@@ -62,6 +67,34 @@ describe("native Twilio + xAI voice contracts", () => {
       },
     });
     expect(body).not.toHaveProperty("webhook_url");
+  });
+
+  it("validates every SIP allowlist entry as real IPv4/CIDR", () => {
+    for (const value of ["54.172.60.0/23", "54.244.51.1", "0.0.0.0/0", "255.255.255.255/32"]) {
+      expect(isValidXAISipAllowedAddress(value), value).toBe(true);
+    }
+    for (const value of ["999.1.1.1/24", "54.172.60.0/33", "54.172.60/23", "host.example.com"]) {
+      expect(isValidXAISipAllowedAddress(value), value).toBe(false);
+    }
+    expect(
+      resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.0/23,54.172.60.0/23 54.244.51.0/24" }),
+    ).toEqual(["54.172.60.0/23", "54.244.51.0/24"]);
+    expect(() =>
+      resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.999/23" }),
+    ).toThrow("invalid IPv4/CIDR");
+  });
+
+  it("pins production voice to a versioned Think Fast release", () => {
+    expect(resolveGrokVoiceModel({})).toBe("grok-voice-think-fast-2.0");
+    expect(resolveGrokVoiceModel({ XAI_GROK_VOICE_MODEL: "grok-voice-latest" })).toBe(
+      "grok-voice-think-fast-2.0",
+    );
+    expect(resolveGrokVoiceModel({ XAI_GROK_VOICE_MODEL: "grok-voice-think-fast-3.0" })).toBe(
+      "grok-voice-think-fast-3.0",
+    );
+    expect(resolveGrokVoiceModel({ XAI_GROK_VOICE_MODEL: "grok-4.6" })).toBe(
+      "grok-voice-think-fast-2.0",
+    );
   });
 
   it("joins SIP realtime by call id without a model query parameter", () => {
@@ -142,6 +175,33 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(session).toContain("requestToolContinuationWhenReady()");
     expect(route).toContain("businessName: agentContext.businessName");
     expect(route).toContain("complianceMode: agentContext.complianceMode");
+  });
+
+  it("scopes native mutating tools to the signed exact lead", () => {
+    const dispatcher = read("src/lib/agent-tool-dispatch.ts");
+    const nativeTools = read("src/lib/agent-tool-native-voice.ts");
+
+    expect(dispatcher.indexOf("handleNativeVoiceToolCall")).toBeLessThan(
+      dispatcher.indexOf("handleCoreToolCall"),
+    );
+    expect(nativeTools).toContain('call.provider !== "xai"');
+    expect(nativeTools).toContain("eq(schema.outboundLeads.id, exact.leadId)");
+    expect(nativeTools).toContain("eq(schema.outboundLeads.userId, context.agent.user_id)");
+    expect(nativeTools).toContain("eq(schema.outboundLeads.agentId, context.agent.id)");
+    expect(nativeTools).toContain("lastContactSummary: notes");
+    expect(nativeTools).toContain("CALLBACK_REQUEST_MARKER");
+  });
+
+  it("reconciles stale agent assignment and mutable Twilio origination state", () => {
+    const activation = read("src/lib/voice/xai-phone-activation-service.ts");
+    const route = read("src/routes/xai-voice-routes.ts");
+
+    expect(route).toContain('from "../lib/voice/xai-phone-activation-service"');
+    expect(activation).toContain("binding.agentId === input.agentId");
+    expect(activation).toContain("agentId: input.agentId");
+    expect(activation).toContain("await collection(sid).update(payload)");
+    expect(activation).toContain("enabled: true");
+    expect(activation).toContain("xaiSharedTwilioOriginationUri()");
   });
 
   it("verifies a valid Standard Webhooks signature over the exact raw body", () => {
