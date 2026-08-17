@@ -220,10 +220,12 @@ export default function PrivacyPolicyPage() {
           <Section title="3. How We Use Data">
             <p>
               We use data to provide and secure Wireline; process managed AI requests primarily
-              through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes (and xAI
-              only when explicitly enabled); synthesize authorized voice output through ElevenLabs;
-              route calls and messages; execute connected workflows; provide support; prevent fraud
-              and abuse; bill through Stripe; and understand aggregate product performance.
+              through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel
+              AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and
+              <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output
+              through ElevenLabs; route calls and messages; execute connected workflows; provide
+              support; prevent fraud and abuse; bill through Stripe; and understand aggregate
+              product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute

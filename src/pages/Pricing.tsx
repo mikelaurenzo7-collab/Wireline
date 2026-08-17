@@ -145,10 +145,6 @@ const FAQ = [
     "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard cap for profitability. Separate mid call web research tools use a short network timeout so callers are not left waiting in silence.",
   ],
   [
-    "What is Live Video?",
-    "Live Video is an optional $19/month add-on for paid business workspaces. It puts a selected business agent on screen with 60 reserved allowance minutes each month, a five-minute wall-clock ceiling per session, and no automatic overage. The default Wireline voice reserves five allowance minutes per session; optional presenter-managed modes can reserve ten.",
-  ],
-  [
     "Why keep live usage prepaid?",
     "Calls and messages carry real carrier and AI costs. One subscription unlocks every channel, included capacity gets you live, and extra provider usage stays prepaid and visible.",
   ],
@@ -184,14 +180,6 @@ const pricingJsonLd = {
           priceCurrency: "USD",
           description: detail,
         })),
-        {
-          "@type": "Offer",
-          name: "Wireline Live Video add-on",
-          price: 19,
-          priceCurrency: "USD",
-          description:
-            "Optional business-agent Live Video with 60 reserved allowance minutes monthly, five-minute wall-clock session ceilings, and a disclosed five- or ten-minute allowance reservation depending on voice mode.",
-        },
       ],
     },
     {
@@ -213,7 +201,7 @@ export default function Pricing() {
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
         title="Pricing | Wireline Voice Agents from $19/month"
-        description="Build a voice agent free, launch from $19/month, and optionally add Live Video for business agents. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
+        description="Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />
       <script
@@ -407,13 +395,6 @@ export default function Pricing() {
                 Design a Scale Plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </article>
-
-            <div className="mx-auto mt-2 flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card/60 px-4 py-2 text-center text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Live Video $19/mo</span>
-              <span>60 reserved minutes</span>
-              <span>5-minute session max</span>
-              <span>no automatic overage</span>
-            </div>
 
             <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
               <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">

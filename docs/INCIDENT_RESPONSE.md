@@ -48,7 +48,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 1. **Confirm the blast radius.** Check public health, voice status, deployment state, runtime errors/logs, database health, and provider status.
 2. **Protect integrity before availability.** If billing, tenant isolation, webhook authenticity, or data correctness is uncertain, fail closed on the risky mutation path.
-3. **Identify the failing layer.** Separate Wireline deployment/configuration from database, Vapi/telephony, model provider, email, payments, and rate-limit/cache dependencies.
+3. **Identify the failing layer.** Separate Wireline deployment/configuration from database, Twilio + xAI Direct SIP telephony, optional Vapi rollback, model provider, email, payments, and rate-limit/cache dependencies.
 4. **Mitigate using an already-tested path.** Prefer provider fallback, bounded degraded mode, feature pause, or rollback over an improvised production change.
 5. **Verify recovery.** Re-run the exact health surface that detected the issue and verify representative end-to-end behavior before declaring resolution.
 6. **Communicate material customer impact.** Use the public status/support channel appropriate to the incident; do not publish an unverified root cause.
@@ -68,7 +68,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 ## 4. Provider triage
 
-Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Vapi/telephony, OpenAI, configured model fallbacks, Stripe, email delivery, and Upstash Redis. Optional/experimental providers should not be treated as launch dependencies unless the active runtime configuration uses them.
+Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Twilio + xAI Direct SIP telephony, OpenAI, configured model fallbacks, Stripe, email delivery, and Upstash Redis. Vapi is optional rollback/showcase only and should not be treated as a launch dependency unless the active runtime configuration uses it.
 
 Never infer an upstream outage solely from one failed health request. Re-probe after the public-health cache TTL and compare against provider status plus Wireline runtime logs.
 

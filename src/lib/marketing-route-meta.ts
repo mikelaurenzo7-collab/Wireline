@@ -62,7 +62,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "Pricing | Wireline Voice Agents from $19/month",
     description:
-      "Build a voice agent free, launch from $19/month, and optionally add Live Video for business agents. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
     title: "Features | Wireline Voice Agents",

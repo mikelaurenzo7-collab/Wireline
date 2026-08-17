@@ -56,8 +56,8 @@ const customizationLinks = [
     icon: Target,
   },
   {
-    label: "Live video presenter",
-    detail: "Optional on-screen face for business agents.",
+    label: "Identity badge",
+    detail: "In-app face for business agents. Not a live video presenter.",
     href: "/studio/live-video",
     icon: Video,
     businessOnly: true,
