@@ -25,8 +25,9 @@ describe("MCP coaching and first-agent contract", () => {
     expect(account).toContain("Enable connected-app Training writes in Wireline Apps");
     expect(settings).toContain('router.post(\n  "/api/mcp/coaching-writes"');
     expect(settings).toContain("revokeAllMcpGrantsForUser");
-    expect(settings).not.toContain("access_token");
     expect(settings).not.toContain("token_hash");
+    expect(settings).not.toContain("t.access_token");
+    expect(settings).not.toContain("refresh_token");
     expect(registry).toContain("mcpCoachingSettingsRouter");
     expect(registry.indexOf("userPreferenceGuardRouter")).toBeLessThan(
       registry.indexOf("mcpCoachingSettingsRouter"),

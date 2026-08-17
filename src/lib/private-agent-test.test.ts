@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   PRIVATE_AGENT_TEST_TOOL,
   buildPrivateAgentTestUserMessage,
-} from "../src/lib/private-agent-test";
+} from "./private-agent-test";
 
 describe("private agent rehearsal", () => {
   it("keeps the customer-test tool reply-only and closed", () => {

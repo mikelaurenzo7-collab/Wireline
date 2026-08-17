@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 392
-**Protected:** 320
+**Routes scanned:** 395
+**Protected:** 323
 **Public (allowlisted):** 72
 **Violations:** 0
 
@@ -305,6 +305,9 @@
 | marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-vapi/call/web` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
+| mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
+| mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |
+| mcp-coaching-settings-routes.ts | DELETE | `/api/mcp/connections` | inline | — | — | Protected |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |

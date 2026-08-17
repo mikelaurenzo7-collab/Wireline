@@ -40,7 +40,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Coach a Wireline voice agent: draft, privately rehearse, and persist Training that lands in the workspace.",
+      "Create a Wireline account, then draft and privately rehearse your first voice agent.",
     action: "Open ChatGPT apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
@@ -48,7 +48,7 @@ const MCP_CLIENTS = [
   {
     title: "Claude",
     description:
-      "Add Wireline as a remote connector, or find it in the Connectors Directory after publication, to coach the same account-bound agents.",
+      "Add Wireline as a remote connector and build your first voice agent from Claude.",
     action: "Open Claude connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
@@ -56,7 +56,7 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. Same OAuth coach/manager tools. New users create a Wireline account first.",
+      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. New users create a Wireline account, then build their first voice agent.",
     action: "Cursor plugin docs",
     href: "https://trywireline.com/cursor-plugin.html",
     icon: Terminal,

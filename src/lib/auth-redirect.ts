@@ -47,6 +47,11 @@ function isSafeInternalPath(value: string | null): value is string {
   return !/^\/auth\b|^\/signin\b|^\/login\b|^\/signup\b|^\/get-started\b|^\/reset\b/.test(value);
 }
 
+export function readRedirectFromSearch(search: string): string | null {
+  const value = new URLSearchParams(search).get("redirect");
+  return isSafeInternalPath(value) ? value : null;
+}
+
 export function isMcpOAuthRedirect(search: string): boolean {
   const redirect = readRedirectFromSearch(search);
   return Boolean(redirect && redirect.startsWith("/mcp/oauth/"));
