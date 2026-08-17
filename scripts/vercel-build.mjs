@@ -61,28 +61,25 @@ function runLiveVapiSchemaAuditIfRequested() {
   run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"]);
 }
 
-function runDeepLaunchAuditIfRequested() {
+function runComprehensiveReleaseAudit() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (!commitMessage.includes("[launch-deep-audit]")) return;
+  const explicitlyRequested = commitMessage.includes("[launch-deep-audit]");
+  if (!isCanonicalProduction && !explicitlyRequested) return;
 
   console.log(
-    `Running one-shot full TypeScript, ESLint, production-dependency security, and Vitest launch audit for ${environment || "local"}.`,
+    `Running mandatory comprehensive TypeScript, ESLint, production-dependency security, and clean-room Vitest release audit for ${environment || "local"}.`,
   );
   run("npm", ["run", "lint"]);
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
   run("npm", ["run", "lint:eslint"]);
-  // Exact-head preview certification is the release authority while hosted
-  // GitHub runners remain externally unavailable: TypeScript, zero-warning
-  // ESLint, advisory gating, and the complete non-E2E suite all execute here.
+  // Exact-head previews can request the complete audit through the commit
+  // marker. Canonical production never relies on the smaller focused gate:
+  // every production artifact proves the full source tree before migrations or
+  // live provider assertions. The test wrapper strips all live credentials and
+  // forces a deterministic non-production runtime identity.
   run("npm", ["run", "security:audit"]);
-  // Vercel sets NODE_ENV=production and VERCEL=1 for its build process. Vitest
-  // only supplies NODE_ENV=test when the variable is absent, so inheriting the
-  // build flags makes unit tests take live-production secret/Redis paths. Keep
-  // the audit exhaustive while giving the test subprocess its intended,
-  // deterministic runtime identity; deployment-boundary checks above still run
-  // under the real Preview/Production environment.
-  run("npm", ["run", "test:run"], { env: { NODE_ENV: "test", VERCEL: "0" } });
+  run("node", ["scripts/run-test-estate.mjs"]);
 }
 
 function syncShowcaseIfRequested() {
@@ -137,7 +134,7 @@ function verifyStripePortalIfRequested() {
   // Preserve the historical environment-variable name for deployed compatibility,
   // but keep artifact construction read-only with respect to Stripe. Drift must be
   // repaired explicitly through the operator command and then re-verified here.
-  console.log("Verifying the canonical Stripe customer portal after build certification.");
+  console.log("Verifying the canonical Stripe customer portal before live migration.");
   run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
 }
 
@@ -158,9 +155,13 @@ run("node", ["scripts/check-resend-webhook-readiness.mjs"]);
 // state and must not make network calls during a build. Run it for real via
 // `npm run vendor:readiness` in the release checklist.
 run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
-run("npx", [
-  "vitest",
-  "run",
+// Every test process, including this focused always-on tranche, must run through
+// the clean-room wrapper. Canonical production has live database/provider
+// credentials in the parent build environment; invoking Vitest directly here
+// would expose those credentials before the comprehensive audit could sanitize
+// them.
+run("node", [
+  "scripts/run-test-estate.mjs",
   "tests/runtime-provider-chain-contract.test.ts",
   "tests/structured-runtime-policy-contract.test.ts",
   "tests/model-pricing-coverage-contract.test.ts",
@@ -267,9 +268,10 @@ run("npx", [
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
 validateProductionEnvironment();
-runDeepLaunchAuditIfRequested();
+runComprehensiveReleaseAudit();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
+verifyStripePortalIfRequested();
 
 if (shouldMigrate) {
   if (!databaseUrl) {
@@ -308,4 +310,3 @@ run("npx", [
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
 syncShowcaseIfRequested();
-verifyStripePortalIfRequested();
