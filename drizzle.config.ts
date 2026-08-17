@@ -1,4 +1,13 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "drizzle-kit";
+
+// Migration 0152's 185 KB snapshot is deterministically materialized from the
+// committed 0049 graph plus the native xAI table recipe. The script verifies a
+// pinned SHA-256 before Drizzle Kit is allowed to inspect or mutate schema state.
+execFileSync(process.execPath, ["scripts/materialize-drizzle-meta.mjs"], {
+  cwd: process.cwd(),
+  stdio: "inherit",
+});
 
 export default defineConfig({
   // Customer-data tables remain on the canonical application schema surface.
