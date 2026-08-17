@@ -136,23 +136,42 @@ export async function applyWorkCompanionBrief(input: {
   customerNumber?: string | null;
   brief: WorkCompanionBrief;
 }): Promise<{ applied: true }> {
-  const callPrep = formatWorkCompanionCallPrep(input.brief);
-  if (input.agentId && input.brief.facts.length) {
-    await drizzle.insert(schema.knowledge).values(
-      input.brief.facts.slice(0, 5).map((content) => ({
-        userId: input.userId,
-        agentId: input.agentId,
-        content: content.slice(0, 1000),
-      })),
-    );
+  if (!isWorkCompanionKind(input.brief.kind)) {
+    throw AppError.fromHttpStatus(400, "Choose a prep kind.");
   }
-  if (input.leadId) {
+  const subject =
+    typeof input.brief.subject === "string" && input.brief.subject.trim()
+      ? input.brief.subject.trim().slice(0, 240)
+      : "Prep";
+  const brief = normalizeWorkCompanionBrief(input.brief.kind, subject, input.brief);
+  const callPrep = formatWorkCompanionCallPrep(brief);
+  const requestedAgentId = typeof input.agentId === "string" ? input.agentId.trim() : "";
+  if (requestedAgentId) {
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, requestedAgentId), eq(schema.agents.userId, input.userId)))
+      .limit(1);
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
+    if (brief.facts.length) {
+      await drizzle.insert(schema.knowledge).values(
+        brief.facts.slice(0, 5).map((content) => ({
+          userId: input.userId,
+          agentId: agent.id,
+          content: content.slice(0, 1000),
+        })),
+      );
+    }
+  }
+  const leadId = typeof input.leadId === "string" ? input.leadId.trim() : "";
+  if (leadId) {
+    if (!/^\d+$/.test(leadId)) throw AppError.fromHttpStatus(400, "Lead is invalid.");
     await drizzle
       .update(schema.outboundLeads)
-      .set({ context: input.brief.call_objective.slice(0, 2000) })
+      .set({ context: brief.call_objective.slice(0, 2000) })
       .where(
         and(
-          eq(schema.outboundLeads.id, BigInt(input.leadId)),
+          eq(schema.outboundLeads.id, BigInt(leadId)),
           eq(schema.outboundLeads.userId, input.userId),
         ),
       );
@@ -178,9 +197,9 @@ export async function applyWorkCompanionBrief(input: {
         ? { ...(existing.metadata as Record<string, unknown>) }
         : {};
     metadata.work_companion_brief = {
-      kind: input.brief.kind,
+      kind: brief.kind,
       call_prep: callPrep,
-      pending_approval: input.brief.pending_approval,
+      pending_approval: brief.pending_approval,
       updated_at: new Date().toISOString(),
     };
     if (existing) {

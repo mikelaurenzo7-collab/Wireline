@@ -62,6 +62,10 @@ describe("work companion runtime", () => {
     expect(routes).toContain("enforceLaunchHardGate");
     expect(routes).toContain("enforceSpendCap");
     expect(routes).toContain('withAudit("work_companions.run")');
+    expect(routes).toContain('withAudit("work_companions.apply")');
+    expect(runtime).toContain("eq(schema.agents.userId, input.userId)");
+    expect(runtime).toContain('throw AppError.fromHttpStatus(404, "Agent not found.")');
+    expect(runtime).toContain("/^\\d+$/.test(leadId)");
     expect(routes).toContain("assertImagineVideoGenerationOffered");
     expect(runtime).toContain("Never send email, never dial");
     expect(runtime).toContain("never generate a video file");

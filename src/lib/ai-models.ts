@@ -9,7 +9,8 @@
  *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
  *   Grok 4.6 is not in that catalog. Live *voice* is a separate Vapi field:
  *   `voice.provider: "xai"` with Eve/Ara/Rex/Sal/Leo.
- * - **Studio / guest live voice** stays on OpenAI Realtime.
+ * - **Studio browser tests** use Vapi web with the same `grok-4.3` language
+ *   model as PSTN. OpenAI Realtime is backup and ChatGPT-widget simulation.
  * - **Imagine video** exists at xAI as `grok-imagine-video-1.5`. Wireline
  *   does not generate those files: they include a Grok watermark that cannot
  *   be turned off. That is not Grok Bot and not live PSTN.

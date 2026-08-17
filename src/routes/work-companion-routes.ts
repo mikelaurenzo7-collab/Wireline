@@ -80,6 +80,8 @@ router.post(
   "/api/work-companions/apply",
   authenticateUser,
   enforceLaunchHardGate,
+  runRateLimit,
+  withAudit("work_companions.apply"),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const kind = req.body?.brief?.kind;
     if (!isWorkCompanionKind(kind)) {
