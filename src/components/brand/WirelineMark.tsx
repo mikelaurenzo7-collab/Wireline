@@ -3,50 +3,47 @@ import { useId } from "react";
 type WirelineMarkProps = {
   className?: string;
   label?: string;
-  /**
-   * Public/marketing treatment: the mark carries the Aurora signal gradient.
-   * Product/native surfaces can keep the mark monochrome by omitting this.
-   */
+  /** Render the violet-to-platinum brand treatment. Defaults to true. */
   signal?: boolean;
-  /** Stroke width in the 48x48 viewBox. */
+  /**
+   * Retained for source compatibility with the retired monoline mark.
+   * The folded-ribbon identity uses filled geometry instead of a stroke.
+   */
   strokeWidth?: number;
 };
 
 /**
- * Official Wireline mark: one continuous line, two ports.
+ * Official Wireline mark.
  *
- * A single unbroken stroke enters from the left, traces a W, and exits right —
- * the product name drawn literally. The filled terminals are the line's two
- * ports: the call that arrives, and the outcome that leaves.
- *
- * Geometry notes, because they are load-bearing rather than taste:
- *
- * - The artboard is square. Every slot the mark has to survive is square —
- *   favicon, PWA icon, app icon, avatar — and the previous 128x96 board
- *   letterboxed in all of them.
- * - The W is symmetric about x=24: the outer arms span 8 units either side of
- *   center, the inner arms 5. The middle apex sits at y=21, five units under
- *   the 16 cap line, which is the ordinary optical correction for a W; level
- *   with the cap it reads as a crown.
- * - The leads stop 7 units out. Longer and the top edge fuses into one
- *   horizontal bar that reads as a strikethrough; shorter and the line looks
- *   clipped rather than continuous.
- * - No `vector-effect="non-scaling-stroke"`. It pins the stroke to screen
- *   pixels regardless of render size, which thickened the mark into a blob at
- *   favicon sizes — the exact place a mark has to stay legible.
+ * Four precision-cut ribbons form one forward-moving W: violet carries the
+ * first conversation, the shadowed crossover records continuity, and the
+ * platinum finish represents work completed. Filled geometry keeps the mark
+ * crisp from a 16px favicon through full-size campaign artwork.
  */
 export default function WirelineMark({
   className = "",
   label,
-  signal = false,
-  strokeWidth = 5,
+  signal = true,
+  strokeWidth,
 }: WirelineMarkProps) {
-  const gradientId = `wireline-mark-${useId().replace(/:/g, "")}`;
-  const stroke = signal ? `url(#${gradientId})` : "currentColor";
+  void strokeWidth;
+
+  const instanceId = useId().replace(/:/g, "");
+  const purpleDownId = `wireline-purple-down-${instanceId}`;
+  const purpleUpId = `wireline-purple-up-${instanceId}`;
+  const foldId = `wireline-fold-${instanceId}`;
+  const silverId = `wireline-silver-${instanceId}`;
+  const purpleHighlightId = `wireline-purple-highlight-${instanceId}`;
+  const silverHighlightId = `wireline-silver-highlight-${instanceId}`;
+
+  const purpleDown = signal ? `url(#${purpleDownId})` : "currentColor";
+  const purpleUp = signal ? `url(#${purpleUpId})` : "currentColor";
+  const fold = signal ? `url(#${foldId})` : "currentColor";
+  const silver = signal ? `url(#${silverId})` : "currentColor";
 
   return (
     <svg
-      viewBox="0 0 48 48"
+      viewBox="0 0 180 120"
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
@@ -54,29 +51,96 @@ export default function WirelineMark({
       className={`inline-block shrink-0 ${className}`}
       fill="none"
     >
-      {signal && (
+      {signal ? (
         <defs>
           <linearGradient
-            id={gradientId}
-            x1="4"
+            id={purpleDownId}
+            x1="14"
             y1="14"
-            x2="44"
-            y2="34"
+            x2="68"
+            y2="106"
             gradientUnits="userSpaceOnUse"
             colorInterpolation="sRGB"
           >
-            <stop offset="0" stopColor="#8B5CF6" />
-            <stop offset="0.34" stopColor="#A78BFA" />
-            <stop offset="0.7" stopColor="#8B5CF6" />
-            <stop offset="1" stopColor="#C4B5FD" />
+            <stop offset="0" stopColor="#C8B5FF" />
+            <stop offset="0.38" stopColor="#8B5CF6" />
+            <stop offset="1" stopColor="#5221D6" />
+          </linearGradient>
+          <linearGradient
+            id={purpleUpId}
+            x1="42"
+            y1="106"
+            x2="100"
+            y2="14"
+            gradientUnits="userSpaceOnUse"
+            colorInterpolation="sRGB"
+          >
+            <stop offset="0" stopColor="#5B24E8" />
+            <stop offset="0.55" stopColor="#7040F2" />
+            <stop offset="1" stopColor="#B69AFF" />
+          </linearGradient>
+          <linearGradient
+            id={foldId}
+            x1="76"
+            y1="14"
+            x2="132"
+            y2="106"
+            gradientUnits="userSpaceOnUse"
+            colorInterpolation="sRGB"
+          >
+            <stop offset="0" stopColor="#2F2B3D" />
+            <stop offset="0.46" stopColor="#625D72" />
+            <stop offset="1" stopColor="#C8CAD4" />
+          </linearGradient>
+          <linearGradient
+            id={silverId}
+            x1="108"
+            y1="106"
+            x2="166"
+            y2="14"
+            gradientUnits="userSpaceOnUse"
+            colorInterpolation="sRGB"
+          >
+            <stop offset="0" stopColor="#BCC0CB" />
+            <stop offset="0.48" stopColor="#E4E6ED" />
+            <stop offset="1" stopColor="#FFFFFF" />
+          </linearGradient>
+          <linearGradient
+            id={purpleHighlightId}
+            x1="14"
+            y1="14"
+            x2="47"
+            y2="101"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.28" />
+            <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient
+            id={silverHighlightId}
+            x1="166"
+            y1="14"
+            x2="128"
+            y2="106"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.5" />
+            <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
           </linearGradient>
         </defs>
-      )}
-      <g stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 16H11L19 32L24 21L29 32L37 16H44" />
-        <circle cx="4" cy="16" r="3.7" fill={stroke} stroke="none" />
-        <circle cx="44" cy="16" r="3.7" fill={stroke} stroke="none" />
-      </g>
+      ) : null}
+
+      <path d="M76 14H100L132 106H108Z" fill={fold} opacity={signal ? 1 : 0.42} />
+      <path d="M14 14H40L68 106H42Z" fill={purpleDown} />
+      <path d="M42 106H68L100 14H74Z" fill={purpleUp} />
+      <path d="M108 106H134L166 14H140Z" fill={silver} />
+
+      {signal ? (
+        <>
+          <path d="M14 14H20L47 101H42Z" fill={`url(#${purpleHighlightId})`} />
+          <path d="M158 14H166L134 106H128Z" fill={`url(#${silverHighlightId})`} />
+        </>
+      ) : null}
     </svg>
   );
 }
