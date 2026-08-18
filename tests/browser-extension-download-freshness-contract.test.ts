@@ -1,41 +1,32 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { crc32 } from "node:zlib";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 /**
- * `public/downloads/wireline-command-*.zip` are the packages the install page
- * hands to real users, and nothing in `npm run build` or the Vercel build
- * regenerates them. That combination lets the shipped extension silently rot
- * behind `apps/browser-extension/` — which is exactly what happened: the
- * committed packages carried retired product copy long after the source moved
- * on, so every download served stale text.
- *
- * This contract reads the committed zips directly and compares each stored
- * entry's CRC-32 against the source file on disk. It needs no `zip`/`unzip`
- * binary and no build step, so it stays hermetic in CI. When it fails, run:
- *
- *   node apps/browser-extension/scripts/build.mjs
- *
- * and commit the refreshed zips.
+ * Browser-extension archives are generated release artifacts. The canonical
+ * asset build rebuilds them before Vite packages public/, and this contract
+ * creates isolated archives from the current source so committed binary age can
+ * never mask what production will ship.
  */
 
 const root = process.cwd();
 const extensionRoot = resolve(root, "apps/browser-extension");
-
-/** Entries the build copies verbatim from source. Icons are rendered and the
- *  manifest is merged at build time, so both are owned by other contracts. */
+const outputRoot = mkdtempSync(join(tmpdir(), "wireline-extension-contract-"));
 const VERBATIM_SOURCE_DIRS = ["panel", "background"];
 
 type ZipEntry = { name: string; crc: number };
 
-/**
- * Minimal ZIP central-directory reader. The format is stable and tiny: locate
- * the End of Central Directory record, then walk fixed-layout entry headers.
- */
 function readZipCentralDirectory(zipPath: string): ZipEntry[] {
   const buffer = readFileSync(zipPath);
-
   const EOCD_SIGNATURE = 0x06054b50;
   const CENTRAL_SIGNATURE = 0x02014b50;
 
@@ -78,36 +69,52 @@ function listSourceFiles(directory: string): string[] {
   return out;
 }
 
+beforeAll(() => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      resolve(extensionRoot, "scripts/build.mjs"),
+      "--output-root",
+      outputRoot,
+      "--no-publish",
+    ],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout || "Browser-extension test packaging failed.");
+  }
+});
+
+afterAll(() => {
+  rmSync(outputRoot, { recursive: true, force: true });
+});
+
 describe("browser-extension download freshness contract", () => {
+  it("wires extension packaging into the canonical production asset build", () => {
+    const renderer = readFileSync(resolve(root, "scripts/render-image-assets.mjs"), "utf8");
+    expect(renderer).toContain('apps/browser-extension/scripts/build.mjs');
+    expect(renderer).toContain("Browser-extension packaging failed");
+  });
+
   for (const target of ["chromium", "firefox"]) {
-    it(`ships a ${target} package that matches the extension source`, () => {
-      const zipPath = resolve(root, `public/downloads/wireline-command-${target}.zip`);
-      const entries = new Map(readZipCentralDirectory(zipPath).map((e) => [e.name, e.crc]));
+    it(`generates a ${target} package that exactly matches the extension source`, () => {
+      const zipPath = resolve(outputRoot, `wireline-command-${target}.zip`);
+      const entries = new Map(readZipCentralDirectory(zipPath).map((entry) => [entry.name, entry.crc]));
 
       const checked: string[] = [];
-      for (const dir of VERBATIM_SOURCE_DIRS) {
-        for (const sourcePath of listSourceFiles(resolve(extensionRoot, dir))) {
+      for (const directory of VERBATIM_SOURCE_DIRS) {
+        for (const sourcePath of listSourceFiles(resolve(extensionRoot, directory))) {
           const entryName = relative(extensionRoot, sourcePath).replaceAll("\\", "/");
           const packagedCrc = entries.get(entryName);
 
-          expect(
-            packagedCrc,
-            `${target}: ${entryName} is missing from the shipped package — rebuild with ` +
-              "`node apps/browser-extension/scripts/build.mjs`",
-          ).toBeDefined();
-
-          expect(
-            packagedCrc,
-            `${target}: ${entryName} in the shipped package does not match the source — rebuild ` +
-              "with `node apps/browser-extension/scripts/build.mjs` and commit the refreshed zips",
-          ).toBe(crc32(readFileSync(sourcePath)));
-
+          expect(packagedCrc, `${target}: ${entryName} is missing from the generated package`).toBeDefined();
+          expect(packagedCrc, `${target}: ${entryName} does not match current source`).toBe(
+            crc32(readFileSync(sourcePath)),
+          );
           checked.push(entryName);
         }
       }
 
-      // A build that silently stopped copying the panel would otherwise pass an
-      // empty loop. The panel and service worker are the surface users see.
       expect(checked.length, `${target}: no source files were compared`).toBeGreaterThan(3);
       expect(checked).toContain("panel/index.html");
       expect(checked).toContain("background/service-worker.js");
