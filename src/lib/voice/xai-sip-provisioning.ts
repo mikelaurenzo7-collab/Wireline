@@ -59,6 +59,12 @@ type BindingClaimRow = {
   reused: boolean;
 };
 
+type TwilioOriginationRow = {
+  sid?: unknown;
+  sipUrl?: unknown;
+  friendlyName?: unknown;
+};
+
 export type NativeXAIPhoneStatus = {
   configured: boolean;
   binding: {
@@ -79,6 +85,11 @@ export type NativeXAIPhoneStatus = {
 
 function stringField(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function twilioOriginationSid(value: unknown): string | null {
+  const sid = String(value || "").trim();
+  return /^OU[a-f0-9]{32}$/i.test(sid) ? sid : null;
 }
 
 /** Exact xAI BYO-trunk registration contract. */
@@ -339,12 +350,28 @@ async function ensureTwilioTrunk(): Promise<string> {
     disasterRecoveryUrl: twilioVoiceFallbackUrl(),
   });
 
-  const originations = await client.trunking.v1.trunks(trunkSid).originationUrls.list({
+  const originations = (await client.trunking.v1.trunks(trunkSid).originationUrls.list({
     limit: 100,
-  });
+  })) as TwilioOriginationRow[];
   const sipUrl = xaiSharedTwilioOriginationUri();
-  if (!originations.some((row: { sipUrl?: unknown }) => String(row.sipUrl || "") === sipUrl)) {
-    await client.trunking.v1.trunks(trunkSid).originationUrls.create({
+  const exact = originations.filter((row) => String(row.sipUrl || "") === sipUrl);
+  let primary: TwilioOriginationRow;
+
+  if (!exact.length) {
+    primary = await client.trunking.v1.trunks(trunkSid).originationUrls.create({
+      enabled: true,
+      friendlyName: XAI_TWILIO_ORIGINATION_FRIENDLY_NAME,
+      priority: 10,
+      weight: 10,
+      sipUrl,
+    });
+  } else {
+    primary = exact[0];
+    const primarySid = twilioOriginationSid(primary.sid);
+    if (!primarySid) {
+      throw new Error("Carrier returned an invalid SIP origination identifier.");
+    }
+    primary = await client.trunking.v1.trunks(trunkSid).originationUrls(primarySid).update({
       enabled: true,
       friendlyName: XAI_TWILIO_ORIGINATION_FRIENDLY_NAME,
       priority: 10,
@@ -352,6 +379,32 @@ async function ensureTwilioTrunk(): Promise<string> {
       sipUrl,
     });
   }
+
+  const primarySid = twilioOriginationSid(primary.sid);
+  if (!primarySid) {
+    throw new Error("Carrier did not return a valid SIP origination identifier.");
+  }
+
+  // This trunk is Wireline-owned. Disable duplicate target rows and stale rows
+  // carrying Wireline's managed name so a prior console edit cannot remain in
+  // the routing set after activation reports success. Unrelated operator-added
+  // failover URLs are intentionally preserved.
+  const staleManagedOriginations = originations.filter((row) => {
+    const sid = twilioOriginationSid(row.sid);
+    if (!sid || sid === primarySid) return false;
+    return (
+      String(row.sipUrl || "") === sipUrl ||
+      String(row.friendlyName || "") === XAI_TWILIO_ORIGINATION_FRIENDLY_NAME
+    );
+  });
+  for (const row of staleManagedOriginations) {
+    const staleSid = twilioOriginationSid(row.sid);
+    if (!staleSid) continue;
+    await client.trunking.v1.trunks(trunkSid).originationUrls(staleSid).update({
+      enabled: false,
+    });
+  }
+
   return trunkSid;
 }
 
