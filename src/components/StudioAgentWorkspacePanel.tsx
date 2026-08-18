@@ -14,6 +14,7 @@ const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
+  /** Legacy capability profile; never rendered as a separate workspace. */
   isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
@@ -29,7 +30,7 @@ function inferPersonality(value: string | undefined) {
   return PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ?? "Clear";
 }
 
-/** Marks the single directive row that holds this agent's opening greeting. */
+/** Marks the single directive row that holds this Bot's opening greeting. */
 const GREETING_PREFIX = "Opening greeting:";
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
@@ -37,15 +38,7 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
   return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
 }
 
-/**
- * Did /api/train/extract actually store anything?
- *
- * It answers 200 whether the extractor pulled out ten facts or none, so the
- * status alone cannot tell the panel whether it is safe to clear the box. The
- * `readiness` counts are the honest signal. An unreadable body is treated as
- * "captured" — the same posture as the 200 itself — so a response-shape change
- * can't strand a Account Holder who really did save.
- */
+/** Did /api/train/extract actually store anything? */
 async function extractionPersistedSomething(response: Response): Promise<boolean> {
   try {
     const body = (await response.json()) as {
@@ -67,11 +60,8 @@ export default function StudioAgentWorkspacePanel({
   className = "",
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
-    () =>
-      isBusinessAgent
-        ? `Hello, this is ${agentName || "your voice agent"}. How can I help?`
-        : `Hi, this is ${agentName || "your personal agent"}. How can I help?`,
-    [agentName, isBusinessAgent],
+    () => `Hello, this is ${agentName || "your Bot"}. How can I help?`,
+    [agentName],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
@@ -151,6 +141,8 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     try {
+      // The old capability profile remains an input to personality composition
+      // only until stored records are migrated. It does not change the UI model.
       const personalityText = composeSetupPersonality(
         loadedPersonality,
         setupPersonality,
@@ -161,10 +153,6 @@ export default function StudioAgentWorkspacePanel({
 
       await saveManual("personality", personalityText);
       if (isCurrentAgent()) setLoadedPersonality(personalityText);
-      // Always sent, and sent as a replace. Appending made every re-save leave
-      // the previous greeting live alongside the new one, and skipping the call
-      // on an empty field meant clearing the box removed nothing while the panel
-      // still reported the setup as saved.
       await saveManual(
         "directive",
         greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
@@ -178,17 +166,8 @@ export default function StudioAgentWorkspacePanel({
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
         if (!knowledgeResponse.ok) {
-          throw new Error(
-            isBusinessAgent
-              ? "Business information could not be saved."
-              : "Personal preferences could not be saved.",
-          );
+          throw new Error("Workflow information could not be saved.");
         }
-        // /api/train/extract answers 200 even when the extractor decided the
-        // text was too unclear to store anything — its prompt tells it to
-        // return empty arrays when in doubt. Clearing the box on that reply
-        // threw the Account Holder's typing away and still claimed the setup
-        // was saved. Only clear once the server reports something persisted.
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
         if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
       }
@@ -197,17 +176,11 @@ export default function StudioAgentWorkspacePanel({
         if (!knowledgeCaptured) {
           setSetupNotice(null);
           setSetupError(
-            isBusinessAgent
-              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts (hours, pricing, service area, what to do with a lead) and apply again."
-              : "Tone and greeting were saved, but nothing concrete could be pulled out of your preferences. Rewrite them as short, specific statements and apply again.",
+            "Tone and greeting were saved, but nothing concrete could be pulled out of the details. Rewrite them as short, specific facts, rules, hours, pricing, preferences, constraints, or handoff instructions and apply again.",
           );
           return;
         }
-        setSetupNotice(
-          isBusinessAgent
-            ? "Run a customer test before connecting live traffic."
-            : "Run a private test before connecting a live line.",
-        );
+        setSetupNotice("Run a test before connecting live traffic.");
       }
     } catch (reason) {
       if (isCurrentAgent()) {
@@ -223,8 +196,11 @@ export default function StudioAgentWorkspacePanel({
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear job
           </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Configure the playbook, voice, knowledge, tools, channels, and guardrails for this Bot.
+          </p>
         </header>
 
         <section
@@ -236,7 +212,7 @@ export default function StudioAgentWorkspacePanel({
               id="essentials-heading"
               className="text-lg font-semibold tracking-tight text-foreground"
             >
-              Essentials
+              Playbook
             </h3>
           </div>
 
@@ -248,7 +224,7 @@ export default function StudioAgentWorkspacePanel({
           ) : setupLoadError ? (
             <StatusNotice
               tone="destructive"
-              title="Setup unavailable"
+              title="Setup Unavailable"
               action={
                 <Button
                   type="button"
@@ -256,7 +232,7 @@ export default function StudioAgentWorkspacePanel({
                   variant="outline"
                   onClick={() => setReloadKey((current) => current + 1)}
                 >
-                  Try again
+                  Try Again
                 </Button>
               }
             >
@@ -294,7 +270,7 @@ export default function StudioAgentWorkspacePanel({
               </fieldset>
 
               <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
+                <span className="text-sm font-semibold text-foreground">Opening Greeting</span>
                 <textarea
                   id="setup-greeting"
                   value={setupGreeting}
@@ -311,7 +287,7 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                    Essential Knowledge{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
@@ -326,21 +302,17 @@ export default function StudioAgentWorkspacePanel({
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
-                  placeholder={
-                    isBusinessAgent
-                      ? "Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
-                      : "Preferences, hard rules, calendar constraints, and when to text or interrupt you…"
-                  }
+                  placeholder="Services, preferences, hours, pricing, policies, FAQs, calendar constraints, hard rules, and when to hand off…"
                 />
               </div>
 
               {setupNotice ? (
-                <StatusNotice tone="success" title="Changes saved">
+                <StatusNotice tone="success" title="Changes Saved">
                   {setupNotice}
                 </StatusNotice>
               ) : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Setup needs attention">
+                <StatusNotice tone="destructive" title="Setup Needs Attention">
                   {setupError}
                 </StatusNotice>
               ) : null}
@@ -351,7 +323,7 @@ export default function StudioAgentWorkspacePanel({
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {applyingSetup ? "Saving…" : "Save changes"}
+                {applyingSetup ? "Saving…" : "Save Changes"}
               </Button>
             </div>
           )}
@@ -362,16 +334,21 @@ export default function StudioAgentWorkspacePanel({
           aria-labelledby="voice-heading"
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
-              Phone voice
-            </h3>
+            <div>
+              <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
+                Voice
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose how the Bot sounds, then test it before launch.
+              </p>
+            </div>
             {isBusinessAgent ? (
               <Link
                 to={`/studio/live-video?agent=${encodeURIComponent(agentId)}`}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >
                 <Video className="size-3.5" aria-hidden="true" />
-                Live video
+                Live Video
               </Link>
             ) : null}
           </div>
@@ -384,7 +361,14 @@ export default function StudioAgentWorkspacePanel({
           className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
           aria-label="Continue setup"
         >
-          <div className="flex justify-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Channels</h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Connect voice, text, and email as needed. They share this Bot's identity, knowledge,
+                rules, and outcome history.
+              </p>
+            </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <Button
                 type="button"
@@ -392,12 +376,12 @@ export default function StudioAgentWorkspacePanel({
                 onClick={onTestVoiceInChat}
                 className="justify-center"
               >
-                Test conversation
+                Test Conversation
               </Button>
               <Button asChild className="justify-center">
                 <Link to="/connections">
                   <PlugZap className="size-4" aria-hidden="true" />
-                  Connect channels
+                  Connect Channels
                 </Link>
               </Button>
             </div>
