@@ -14,7 +14,7 @@ describe("Wireline folded W identity", () => {
       expect(source).toContain("M76 14H100L132 106H108Z");
       expect(source).toContain("M42 106H68L100 14H74Z");
       expect(source).not.toContain("M4 16H11L19 32L24 21L29 32L37 16H44");
-      expect(source).not.toContain("<circle cx=\"4\" cy=\"16\"");
+      expect(source).not.toContain('<circle cx="4" cy="16"');
     }
   });
 
@@ -87,7 +87,8 @@ describe("Wireline casing hierarchy", () => {
     expect(casing).toContain("text-transform: uppercase");
     expect(casing).toContain(".wl-preserve-case");
     expect(casing).toContain("text-transform: none !important");
-    expect(identity).toContain("Do not duplicate those selectors here");
+    expect(identity).toContain("canonical casing hierarchy remains centralized in uppercase-system.css");
+    expect(identity).toMatch(/Do not duplicate those selectors\s*\*?\s*here/);
     expect(identity).not.toContain("legend, th, label");
     expect(identity).not.toContain("summary),");
   });
