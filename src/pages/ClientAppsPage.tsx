@@ -11,6 +11,7 @@ import {
 import { Link, useLocation } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
+import { WirelineWordmark } from "../components/brand/WirelineBrand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import McpCoachingPanel from "../components/settings/McpCoachingPanel";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -20,7 +21,7 @@ import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 const clientSurfaces = [
   {
     icon: MonitorDown,
-    title: "Wireline Command",
+    title: "WIRELINE Command",
     blurb: "Send the page you are viewing into Studio as call or follow-up context.",
     status: CLIENT_SURFACE_POSTURE.browser.status,
     statusVariant: "info" as const,
@@ -31,7 +32,7 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Create a Wireline account, then draft and privately simulate a Voice Bot in ChatGPT.",
+    blurb: "Create a WIRELINE account, then draft and privately simulate a Voice Bot in ChatGPT.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: "MCP setup",
@@ -41,7 +42,7 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first Wireline Voice Bot from Claude with the same account-bound connector.",
+    blurb: "Build your first WIRELINE Voice Bot from Claude with the same account-bound connector.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,
@@ -51,7 +52,7 @@ const clientSurfaces = [
   {
     icon: Terminal,
     title: "Cursor",
-    blurb: "Install the Cursor plugin to create a Wireline account and your first Voice Bot. Not a repo voice SDK.",
+    blurb: "Install the Cursor plugin to create a WIRELINE account and your first Voice Bot. Not a repo voice SDK.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
@@ -65,7 +66,7 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.android.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.android.action,
-    href: "mailto:support@trywireline.com?subject=Wireline%20for%20Android%20internal%20beta",
+    href: "mailto:support@trywireline.com?subject=WIRELINE%20for%20Android%20internal%20beta",
     emphasis: "muted" as const,
   },
   {
@@ -75,7 +76,7 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.ios.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.ios.action,
-    href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone%20waitlist",
+    href: "mailto:support@trywireline.com?subject=WIRELINE%20for%20iPhone%20waitlist",
     emphasis: "muted" as const,
   },
 ] as const;
@@ -102,7 +103,7 @@ export default function ClientAppsPage() {
         <WorkspacePageIntro title="Apps" titleHidden={inSettings} />
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
-          aria-label="Wireline apps and companion surfaces"
+          aria-label="WIRELINE apps and companion surfaces"
         >
           {clientSurfaces.map(
             ({ icon: Icon, title, blurb, status, statusVariant, action, href, emphasis }) => {
@@ -168,9 +169,10 @@ export default function ClientAppsPage() {
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> where you already work.
-            New users create a Wireline account during OAuth, then build their first Voice Bot in
-            that chat. Privately rehearse it there. Numbers, live calls, messaging, billing, and
-            launch stay in Studio. This is not a way to embed Wireline in another repo.
+            New users create a <WirelineWordmark inline /> account during OAuth, then build their
+            first Voice Bot in that chat. Privately rehearse it there. Numbers, live calls,
+            messaging, billing, and launch stay in Studio. This is not a way to embed{" "}
+            <WirelineWordmark inline /> in another repo.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Button asChild variant="outline" size="sm">
