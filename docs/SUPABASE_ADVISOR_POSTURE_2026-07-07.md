@@ -1,6 +1,6 @@
 # Supabase Advisor Posture - 2026-07-07
 
-Last refreshed: **2026-07-10** via Supabase MCP against project `ogenlhodmwvyacvnrsnj` (`us-east-2`, active healthy, Postgres 17).
+Last refreshed: **2026-08-18** via Supabase MCP against project `ogenlhodmwvyacvnrsnj` (`us-east-2`, `ACTIVE_HEALTHY`, Postgres 17.6.1).
 
 ## Security
 
@@ -13,6 +13,8 @@ Wireline does not use Supabase Auth for sign-up, sign-in, password reset, sessio
 Decision: keep Wireline's custom breached-password control as the production control. Enabling Supabase Auth leaked-password protection is still acceptable as a defense-in-depth dashboard setting, but it is not the active app control and the current connector does not expose an Auth config write.
 
 Remediation reference: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+Live privilege follow-up on 2026-08-18: `wireline_reclaim_abandoned_stripe_event_claim` and `wireline_set_subscription_entitlement_source` were invoker trigger functions that still inherited `PUBLIC EXECUTE`. Migration `0155_hot_path_knowledge_and_jobs_indexes` revokes that grant. They are not `SECURITY DEFINER`.
 
 ## Performance
 
@@ -27,9 +29,13 @@ Decision: do not drop these indexes from a live shared production database solel
 
 Remediation reference: https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index
 
+The 2026-08-18 live audit found the opposite defect: schema-declared hot-path indexes were **missing**, not unused. `pg_stat_statements` showed `wireline_knowledge` tenant recency and agent+user lookups plus `wireline_jobs` retention deletes without covering indexes. Those names were authored in unjournalled `0018_add_more_performance_indexes.sql` and never reached this database. Journalled migration `0155_hot_path_knowledge_and_jobs_indexes` installs them. Other schema-declared indexes that are still absent sit on tiny or empty tables, or are left-prefixes of covering indexes that already exist; they are deferred until a matching query plan appears.
+
+Do not apply native xAI phone-binding migrations `0152`/`0153` through the Supabase migration tool while the production Vercel path owns that journal. `supabase_migrations` currently ends at `0149`; later journalled tags reach Postgres through `drizzle-kit migrate` on production deploys.
+
 ## Current external posture
 
 - Project status: active healthy.
 - Security advisor posture: one warning, accepted because custom auth owns the relevant control.
-- Performance advisor posture: informational; evidence-gated.
-- Data safety posture: no data migrations or index drops were applied in this pass.
+- Performance advisor posture: informational unused-index notices remain evidence-gated; missing hot-path indexes were applied in `0155`.
+- Data safety posture: no unused-index drops, no leftover Lovable `kv_store_64639c03` drop, and no drop of `wireline_training_backup_20260609`.

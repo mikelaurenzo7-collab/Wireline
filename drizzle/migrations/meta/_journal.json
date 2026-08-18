@@ -372,6 +372,13 @@
       "when": 1787025047294,
       "tag": "0154_xai_grok_46_persisted_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1787031000000,
+      "tag": "0155_hot_path_knowledge_and_jobs_indexes",
+      "breakpoints": true
     }
   ]
 }
