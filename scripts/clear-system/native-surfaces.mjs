@@ -1,13 +1,15 @@
 /**
  * Native Android, iOS, CarPlay, and widget contracts.
  *
- * Visible product language is Bot-native and compact interface language is
- * uppercase. Technical classes, route keys, API methods, and persisted records
- * may retain agent/assistant identifiers for compatibility.
+ * Visible product language is Bot-native, the visible company name is WIRELINE,
+ * and compact interface language is uppercase. Technical classes, route keys,
+ * API methods, bundle identifiers, URL schemes, and persisted records may retain
+ * agent/assistant/wireline identifiers for compatibility.
  */
 export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   const androidApp = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
   const androidSetup = read("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt");
+  const androidStrings = read("android/app/src/main/res/values/strings.xml");
   const iosRootTabs = read("ios/Wireline/Views/RootTabView.swift");
   const iosSignIn = read("ios/Wireline/Views/SignInView.swift");
   const iosWorkspace = read("ios/Wireline/Views/WorkspaceView.swift");
@@ -19,6 +21,13 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   const iosBotWidget = read("ios/WirelineWidgets/AssistantWidget.swift");
   const androidBotWidget = read(
     "android/app/src/main/java/com/wireline/app/widget/AssistantWidgetProvider.kt",
+  );
+
+  mustInclude(
+    "android/app/src/main/res/values/strings.xml",
+    androidStrings,
+    /<string name="app_name">WIRELINE<\/string>/,
+    "Android launcher display name must use canonical WIRELINE casing",
   );
 
   for (const [pattern, description] of [
@@ -61,6 +70,34 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     "Android widget must use uppercase Bot identity",
   );
 
+  mustInclude(
+    "ios/Wireline/Info.plist",
+    iosInfo,
+    /<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/,
+    "iOS launcher display name must use canonical WIRELINE casing",
+  );
+  for (const permission of [
+    "NSMicrophoneUsageDescription",
+    "NSCalendarsUsageDescription",
+    "NSCalendarsWriteOnlyAccessUsageDescription",
+    "NSSiriUsageDescription",
+    "NSAppleMusicUsageDescription",
+    "NSRemindersUsageDescription",
+  ]) {
+    mustInclude(
+      "ios/Wireline/Info.plist",
+      iosInfo,
+      new RegExp(`<key>${permission}<\\/key>\\s*<string>WIRELINE\\b`),
+      `${permission} must present the brand as WIRELINE`,
+    );
+  }
+  mustInclude(
+    "ios/WirelineWidgets/Info.plist",
+    iosWidgetInfo,
+    /<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/,
+    "iOS widget display name must use canonical WIRELINE casing",
+  );
+
   for (const [pattern, description] of [
     [/Label\("OVERVIEW", systemImage: "rectangle\.grid\.2x2"\)/, "iOS tab bar must anchor on Overview"],
     [/Label\("BOTS", systemImage: "waveform\.and\.person\.filled"\)/, "iOS tab bar must use Bots"],
@@ -95,8 +132,10 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /WAYS YOUR BOT CAN HELP/, "iOS connections must describe Bot capabilities"],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["BOTS", "CHOOSE A BOT"\]/, "CarPlay must expose Bot selection"],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /CPListTemplate\(title: "BOTS"/, "CarPlay Bot list must use Bots"],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /configurationDisplayName\("Wireline Bots"\)/, "iOS widget gallery must use Bots"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /configurationDisplayName\("WIRELINE Bots"\)/, "iOS widget gallery must use canonical WIRELINE casing"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /description\("Open your WIRELINE Bots/, "iOS widget description must use canonical WIRELINE casing"],
     ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Text\("WIRELINE BOTS"\)/, "iOS widget face must use uppercase Bot identity"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /accessibilityLabel\("WIRELINE Bots\./, "iOS widget accessibility label must use canonical WIRELINE casing"],
   ]) {
     mustInclude(file, source, pattern, description);
   }
@@ -111,7 +150,7 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     "ios/WirelineWidgets/Info.plist",
     iosWidgetInfo,
     /Wireline Assistant/i,
-    "iOS widget display name must remain Wireline",
+    "iOS widget display name must not revive Assistant naming",
   );
 
   for (const [file, source] of [
@@ -143,7 +182,7 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     ["ios/Wireline/Views/AssistantLibraryView.swift", iosBotLibrary, /navigationTitle\("Agents"\)|Text\("Agent Name"\)/],
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /Picker\("Agent"|WAYS YOUR AGENT|Start with an AI profit agent/i],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["Agents"|CPListTemplate\(title: "Agents"/],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Wireline Agents|Text\("Agents"\)/],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Wireline Agents|Wireline Assistants|Text\("Agents"\)/],
   ]) {
     mustExclude(file, source, pattern, "visible native copy must not revive Agent or Assistant branding");
   }
