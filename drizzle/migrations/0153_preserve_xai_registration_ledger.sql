@@ -18,11 +18,12 @@ COMMENT ON TABLE public.wireline_xai_phone_bindings IS
 
 -- RLS must not expose retired provider credentials to another tenant. This
 -- SECURITY DEFINER claim boundary performs the only permitted cross-owner
--- transition after proving the requesting tenant currently owns and assigns the
--- exact Wireline phone line. The number advisory lock is acquired before the
--- ownership read, and the phone row is locked through the claim transaction, so
--- a concurrent reassignment cannot validate stale ownership and reclaim the
--- retained provider secret for the previous agent.
+-- transition after binding the supplied user to the active tenant context and
+-- proving that tenant currently owns and assigns the exact Wireline phone line.
+-- The number advisory lock is acquired before the ownership read, and the phone
+-- row is locked through the claim transaction, so a concurrent reassignment
+-- cannot validate stale ownership and reclaim the retained provider secret for
+-- the previous agent.
 CREATE OR REPLACE FUNCTION public.wireline_claim_xai_phone_binding(
   p_user_id uuid,
   p_agent_id text,
@@ -41,6 +42,10 @@ DECLARE
 BEGIN
   IF p_user_id IS NULL OR p_agent_id IS NULL OR p_phone_number IS NULL OR p_claim_token IS NULL THEN
     RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_INVALID_CLAIM';
+  END IF;
+
+  IF public.wireline_current_user_id() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_TENANT_CONTEXT_MISMATCH';
   END IF;
 
   -- Serialize every ownership proof and binding transition for this E.164
