@@ -10,7 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 import MarketingChrome from "../components/marketing/MarketingChrome";
-import WirelineMark from "../components/brand/WirelineMark";
+import { WirelineLockup } from "../components/brand/WirelineBrand";
 import { PageMeta } from "../lib/page-meta";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 
@@ -80,7 +80,6 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        // Redirect intent is persisted before OAuth begins; never carry bridge secrets forward.
         navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), ""), {
           replace: true,
         });
@@ -94,8 +93,8 @@ export default function OAuthComplete() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Completing sign-in | Wireline"
-        description="Finishing your Wireline sign-in."
+        title="Completing sign-in | WIRELINE"
+        description="Finishing your WIRELINE sign-in."
         path="/auth/oauth-complete"
         noIndex
       />
@@ -109,9 +108,7 @@ export default function OAuthComplete() {
           aria-busy={!error}
         >
           <div className="flex justify-center">
-            <div className="wl-auth-brand-chip" aria-hidden="true">
-              <WirelineMark className="size-8 text-white" />
-            </div>
+            <WirelineLockup size="compact" surface="tile" />
           </div>
 
           <div className="mt-7 flex justify-center" aria-hidden="true">
