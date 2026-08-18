@@ -51,8 +51,8 @@ describe("structured runtime provider chain policy", () => {
   });
 
   it("promotes an explicitly preferred provider without dropping continuity", () => {
-    expect(orderReasoningProviders(ALL, "openai")).toEqual(["openai", "xai", "gemini", "gateway"]);
-    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "xai", "openai", "gateway"]);
+    expect(orderReasoningProviders(ALL, "openai")).toEqual(["openai", "gateway", "xai", "gemini"]);
+    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "gateway", "xai", "openai"]);
   });
 
   it("ignores a preference for a provider that is not configured", () => {
