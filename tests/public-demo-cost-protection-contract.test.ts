@@ -119,12 +119,12 @@ describe("public browser demo cost protection", () => {
     expect(routes).toContain("requireSameOrigin(req)");
   });
 
-  it("keeps the live proof and truthful phone fallback inside the approved console", () => {
+  it("keeps live proof and a truthful phone fallback inside the approved console", () => {
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="stage"');
     expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
-    expect(landing).toContain('aria-label="Call the Public Demo Line"');
-    expect(landing).toContain("Call Demo Line");
+    expect(landing).toContain('aria-label="Call the Public Demo Bot"');
+    expect(landing).toContain("Call Demo Bot");
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");
