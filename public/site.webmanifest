@@ -1,9 +1,9 @@
 {
-  "name": "Wireline | Voice Agents",
+  "name": "WIRELINE | VOICE BOTS THAT GET THE WORK DONE",
   "short_name": "Wireline",
-  "description": "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
+  "description": "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.",
   "id": "/",
-  "start_url": "/studio",
+  "start_url": "/overview",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -37,26 +37,26 @@
       "src": "/wireline-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
     {
-      "name": "Studio",
-      "short_name": "Studio",
-      "description": "Open the agent workroom",
+      "name": "BOT STUDIO",
+      "short_name": "STUDIO",
+      "description": "Build and configure any Bot in the shared Wireline workspace.",
       "url": "/studio"
     },
     {
-      "name": "Agents",
-      "short_name": "Agents",
-      "description": "See your agents",
-      "url": "/agents"
+      "name": "INBOX",
+      "short_name": "INBOX",
+      "description": "Review voice, text, and email conversations in one place.",
+      "url": "/inbox"
     },
     {
-      "name": "Knowledge",
-      "short_name": "Knowledge",
-      "description": "Add facts, sources, rules, and tone",
+      "name": "KNOWLEDGE",
+      "short_name": "KNOWLEDGE",
+      "description": "Add approved facts, sources, rules, and tone for every Bot.",
       "url": "/knowledge"
     }
   ],
