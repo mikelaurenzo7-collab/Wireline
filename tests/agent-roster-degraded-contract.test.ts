@@ -17,7 +17,7 @@ function tsxFiles(dir: string): string[] {
   return out;
 }
 
-/** Files that branch on an empty agent roster and offer a "create one" path. */
+/** Surfaces that branch on an empty Bot/agent roster and offer creation. */
 function rosterEmptyStateSurfaces(): string[] {
   const emptyBranch = /\b\w*[Aa]gents\.length === 0\b|!\w*agents\.length\b/;
   return tsxFiles(SRC)
@@ -29,10 +29,8 @@ function rosterEmptyStateSurfaces(): string[] {
     .sort();
 }
 
-describe("agent roster: empty versus unreachable", () => {
+describe("Bot roster: empty versus unreachable", () => {
   it("covers the surfaces that make a claim about the roster", () => {
-    // Guards the scan itself: if this list empties out because a pattern moved,
-    // the invariant below would pass vacuously.
     const surfaces = rosterEmptyStateSurfaces();
     expect(surfaces.length).toBeGreaterThanOrEqual(5);
     expect(surfaces).toContain("src/components/StudioWorkspaceV2.tsx");
@@ -40,13 +38,6 @@ describe("agent roster: empty versus unreachable", () => {
   });
 
   it("never presents an unreachable roster as an empty one", () => {
-    // `agents.length === 0` is the same value whether the workspace has no
-    // agents or the request for them failed, and the two mean opposite things.
-    // Acting on the wrong one costs real money: the offered next step is to
-    // create an agent, which consumes billed capacity to duplicate one that
-    // already exists. Any surface making that claim has to consult `degraded`.
-    // Requires the flag to be used in a boolean position, not merely present:
-    // destructuring it, or naming it in a comment, is not a check.
     const consulted =
       /\b\w*[Dd]egraded\s*(?:&&|\?)|&&\s*!?\w*[Dd]egraded\b|!\w*[Dd]egraded\b|\(\s*\w*[Dd]egraded\b/;
     const missing = rosterEmptyStateSurfaces().filter((file) => !consulted.test(read(file)));
@@ -58,8 +49,6 @@ describe("agent roster: empty versus unreachable", () => {
     expect(shared).toContain("We could not load your agent roster");
     expect(shared).toContain("Retry workspace");
 
-    // The component started out private to OverviewPage; three more surfaces
-    // needed it, and duplicating the copy is how the wording drifts.
     const redefinitions = tsxFiles(SRC)
       .map((file) => relative(process.cwd(), file).replaceAll("\\", "/"))
       .filter(
@@ -71,8 +60,6 @@ describe("agent roster: empty versus unreachable", () => {
   });
 
   it("checks degraded before falling through to the first-run state", () => {
-    // Order matters: the empty-state return is unconditional once reached, so a
-    // degraded check placed after it never runs.
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const recovery = studio.indexOf("agents.length === 0 && degraded");
     const emptyState = studio.indexOf("return <StudioEmptyState");
@@ -81,8 +68,6 @@ describe("agent roster: empty versus unreachable", () => {
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     const dialGuard = dial.indexOf("voiceAgents.length === 0 && (degraded || phoneLookupDegraded)");
-    // Asserted present before it is ordered: a missing anchor is indexOf -1,
-    // which compares "less than" everything and passes a deleted guard.
     expect(dialGuard).toBeGreaterThan(-1);
     expect(dialGuard).toBeLessThan(dial.indexOf("No voice agents with a phone line yet"));
 
@@ -92,11 +77,9 @@ describe("agent roster: empty versus unreachable", () => {
     );
   });
 
-  it("still offers the create path when the roster is genuinely empty", () => {
-    // The fix must not swallow the first-run experience, which is the whole
-    // point of these surfaces for a new workspace.
+  it("still offers the unified create path when the roster is genuinely empty", () => {
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
-      "return <StudioEmptyState posture={accountType} />",
+      "return <StudioEmptyState />",
     );
     expect(read("src/components/PhoneSetupPanel.tsx")).toContain(
       "agents.length === 0 && !agentsDegraded",
@@ -104,23 +87,22 @@ describe("agent roster: empty versus unreachable", () => {
     expect(read("src/components/OutboundDialDialog.tsx")).toContain(
       "Create and activate one in Studio",
     );
+    const overview = read("src/pages/OverviewPage.tsx");
+    expect(overview).toContain("Create Your Own");
+    expect(overview).toContain('to="/studio?create=1"');
+    expect(overview).not.toContain("posture=");
   });
 });
 
-describe("agent line readiness: attached, absent, or unknown", () => {
+describe("Bot line readiness: attached, absent, or unknown", () => {
   it("separates a missing line from an unanswerable question", () => {
     const withLine = { phone_number: "+15555550123" };
     const withoutLine = { phone_number: null };
 
     expect(agentLineStatus(withLine, false)).toBe("live");
     expect(agentLineStatus(withoutLine, false)).toBe("needs-setup");
-    // The lookup failing empties phone_number for every agent, so without this
-    // third state a live line reads exactly like an unconfigured one.
     expect(agentLineStatus(withoutLine, true)).toBe("unavailable");
     expect(agentLineStatus(undefined, true)).toBe("unavailable");
-
-    // A number already in hand is still trustworthy even if the lookup that
-    // produced it is now failing — don't downgrade what we know.
     expect(agentLineStatus(withLine, true)).toBe("live");
 
     expect(agentReadinessLabel(withLine, false)).toBe("Live");
@@ -129,8 +111,6 @@ describe("agent line readiness: attached, absent, or unknown", () => {
   });
 
   it("keeps both label surfaces on the shared helper", () => {
-    // Both files carried their own `phone_number ? "Live" : "Needs setup"`,
-    // which is how the same wrong claim ended up in two places.
     for (const file of ["src/pages/OverviewPage.tsx", "src/components/WorkspaceShell.tsx"]) {
       const source = read(file);
       expect(source).toContain("agentReadinessLabel(");
@@ -139,12 +119,10 @@ describe("agent line readiness: attached, absent, or unknown", () => {
   });
 
   it("says on screen when the line lookup is what failed", () => {
-    // Silence was the actual defect here: unlike the roster case there was no
-    // notice at all, so the relabelling looked like a real status change.
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("phoneLookupDegraded ? (");
     expect(overview).toContain("Line status unavailable");
-    expect(overview).toContain("agentReadinessLabel(agent, phoneLookupDegraded)");
+    expect(overview).toContain("agentReadinessLabel(bot, phoneLookupDegraded)");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     expect(dial).toContain("(degraded || phoneLookupDegraded)");
