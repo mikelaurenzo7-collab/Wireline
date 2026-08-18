@@ -1,6 +1,5 @@
 name: native-main-merge-integration
-# Final isolated exact-head integration gate. No background agent owns this branch.
-# Rerun after the production xAI credential classification was corrected.
+# Rerun after the final 360px header and Playwright architecture corrections.
 
 on:
   push:
