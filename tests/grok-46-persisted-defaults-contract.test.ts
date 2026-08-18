@@ -33,8 +33,8 @@ describe("persisted Grok 4.6 managed defaults", () => {
       expect(source).toContain('voiceLlmModel: text("voice_llm_model").default("grok-4.6")');
       expect(source).not.toContain('voiceLlmModel: text("voice_llm_model").default("grok-4.3")');
     }
-    expect(schema).toContain("0154_xai_grok_46_persisted_defaults.sql");
-    expect(base).toContain("0154_xai_grok_46_persisted_defaults.sql");
+    expect(schema).toContain("0155_hot_path_knowledge_and_jobs_indexes.sql");
+    expect(base).toContain("0155_hot_path_knowledge_and_jobs_indexes.sql");
     expect(journal).toContain('"idx": 52');
     expect(journal).toContain('"tag": "0154_xai_grok_46_persisted_defaults"');
     expect(materializer).toContain("TARGET_0052_PATH");

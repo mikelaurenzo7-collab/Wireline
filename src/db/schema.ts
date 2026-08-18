@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0154_xai_grok_46_persisted_defaults.sql`.
+ * Latest committed migration: `drizzle/migrations/0155_hot_path_knowledge_and_jobs_indexes.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,

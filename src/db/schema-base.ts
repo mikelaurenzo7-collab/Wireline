@@ -21,7 +21,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0154_xai_grok_46_persisted_defaults.sql`.
+// `drizzle/migrations/0155_hot_path_knowledge_and_jobs_indexes.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -1845,7 +1845,7 @@ export const jobs = pgTable(
   },
   (t) => ({
     statusRunAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_status_run_at ON wireline_jobs USING btree (status, run_at)`,
-    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON wireline_jobs USING btree (user_id, status)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON wireline_jobs USING btree (user_id, status, created_at)`,
     // The sweep's dedup guards all filter WHERE type = $1 AND created_at >= $2.
     typeCreatedAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_type_created_at ON wireline_jobs USING btree (type, created_at)`,
     // One durable post-call workflow owns every call. The expression keeps the
