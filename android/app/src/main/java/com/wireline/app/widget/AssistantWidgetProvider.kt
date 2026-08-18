@@ -53,7 +53,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
-                text = "Wireline Bots",
+                text = "WIRELINE BOTS",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize,
@@ -67,7 +67,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = if (!snapshot.signedIn) "Sign in" else if (snapshot.needsAttention == 0) "All clear" else "${snapshot.needsAttention}",
+                    text = if (!snapshot.signedIn) "SIGN IN" else if (snapshot.needsAttention == 0) "ALL CLEAR" else "${snapshot.needsAttention}",
                     style = TextStyle(
                         color = ColorProvider(if (snapshot.needsAttention > 0) WidgetPalette.Accent else WidgetPalette.Success),
                         fontSize = WirelineDesignTokens.Metric.typographyCaptionSize,
@@ -83,9 +83,9 @@ class AssistantStatusWidget : GlanceAppWidget() {
                 )
                 Text(
                     text = when {
-                        !snapshot.signedIn -> "Signed out"
-                        snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} call(s)"
-                        else -> "No active calls"
+                        !snapshot.signedIn -> "SIGNED OUT"
+                        snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} CALL(S)"
+                        else -> "NO ACTIVE CALLS"
                     },
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),
