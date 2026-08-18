@@ -9,25 +9,29 @@ import { PageMeta } from "../lib/page-meta";
  * Developer surface is MCP-first.
  * There is no Settings → API Access key minting surface today. Session-cookie
  * product APIs and the account-bound MCP connector are the real contracts.
+ * Customer-facing product language is Bot. Technical MCP functions and records
+ * retain agent for compatibility with the existing API and data model.
  */
 
 const MCP_BOUNDARIES = [
   {
     path: "create_agent_draft / update_agent_draft",
-    description: "Create or refine a private Bot configuration draft in natural language.",
+    description:
+      "Create or refine a private agent configuration draft for a Wireline Bot in natural language.",
   },
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
     description:
-      "Coach a Bot: read owner-authored training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
+      "Coach the agent record behind a Bot: read owner-authored training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
   },
   {
     path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
-    description: "Read account-scoped Bots, next steps, and a minimized workspace summary.",
+    description:
+      "Read account-scoped agent records, Bot readiness, next steps, and a minimized workspace summary.",
   },
   {
     path: "start_private_voice_simulation / run_private_agent_turn",
-    description: "Private Bot rehearsal, not a live customer call.",
+    description: "Private agent-runtime rehearsal for a Bot, not a live customer call.",
   },
   {
     path: "/api/openapi.json",
@@ -162,6 +166,10 @@ export default function Developers() {
               Bot. This connector cannot place calls, send messages, provision numbers, or launch
               a live Bot. Training writes land only after you enable them in Apps and confirm each
               change. There is no public API-key product and no repo voice SDK.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Wireline calls the customer-facing product a Bot. MCP and API function names, agent
+              records, and compatibility identifiers retain agent so integrations remain stable.
             </p>
           </div>
 
