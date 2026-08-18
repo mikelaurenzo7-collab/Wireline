@@ -44,7 +44,7 @@ Status: **Active launch policy**
 
 Before general availability, prove all of the following on the exact release commit:
 
-1. Native xAI SIP (`XAI_API_KEY`, `XAI_SIP_ALLOWED_ADDRESSES`) and Twilio credentials pass the read-only readiness probe.
+1. Native xAI SIP (`XAI_API_KEY`) and Twilio credentials pass the read-only readiness probe. Twilio signaling CIDRs default in code; `XAI_SIP_ALLOWED_ADDRESSES` is optional.
 2. One inbound and one outbound native SIP call prove disclosure, interruption, voicemail, tool use, DNC, and transfer.
 3. Inbound overflow and insolvency degrade to take-a-message instead of hanging up or running the full agent.
 4. ElevenLabs production key and curated inventory pass the read-only readiness probe for Studio TTS / cloning.

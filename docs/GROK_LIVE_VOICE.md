@@ -36,7 +36,7 @@ Grok 4.6 (chat) and `grok-voice-think-fast-2.0` (Speech-to-Speech) are different
 | --- | --- | --- |
 | Structured chat / email / tools (`grok-4.6`) | `XAI_API_KEY` | Direct Responses API |
 | Browser preview TTS (`/v1/tts`) | `XAI_API_KEY` | Same key; grant the voice endpoint ACL |
-| Live PSTN + Studio native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` plus `XAI_SIP_ALLOWED_ADDRESSES` | SIP sessions authenticate with the API key. Browsers use minted client secrets. |
+| Live PSTN + Studio native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` | SIP sessions authenticate with the API key. Browsers use minted client secrets. Twilio signaling CIDRs default in `xai-sip-config.ts`; `XAI_SIP_ALLOWED_ADDRESSES` is an optional override. |
 | Isolated xAI experiments | `XAI_API_KEY_CHATKIT` | Optional. Not required to split chat from voice. |
 | Vercel Preview sandbox | `XAI_API_KEY` | Dedicated sandbox key only. Reviewed at `scripts/check-deployment-boundaries.mjs`. Native PSTN stays fail-closed without Twilio Preview credentials. |
 | Imagine photos and video | none | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key. |
@@ -73,7 +73,7 @@ Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech a
 
 - https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech/sip
 - Destination: `sip:+E164@sip.voice.x.ai;transport=tls`
-- Twilio Elastic SIP Trunk origination is documented. Wireline production PSTN is **Twilio → xAI Direct SIP**. `XAI_SIP_ALLOWED_ADDRESSES` must list Twilio signaling CIDRs (prefix length 8–32). Do not allow `0.0.0.0/0`.
+- Twilio Elastic SIP Trunk origination is documented. Wireline production PSTN is **Twilio → xAI Direct SIP**. Native registration sends Twilio's published signaling CIDRs (prefix length 8–32) from `src/lib/voice/xai-sip-config.ts`. `XAI_SIP_ALLOWED_ADDRESSES` is an optional operator override when Twilio publishes a range change ahead of a deploy. Do not allow `0.0.0.0/0`.
 - Outbound: Twilio rings the customer first with synchronous Answering Machine Detection, then signed `<Sip>` bridge TwiML to the tenant's registered xAI number. Marketing/sales machines, fax, and unclassified (`unknown`/empty) answers hang up with no message (`64.1200(b)(3)` — Wireline has no opt-out line). Service and consumer-requested callbacks leave a deterministic identity + spoken callback number after `DetectMessageEnd`; those calls still fail-open `unknown` to the live SIP agent. Humans always bridge.
 - After-hours inbound degrades to take-a-message (custom `outOfHoursMessage` when set) instead of pretending the business is open.
 

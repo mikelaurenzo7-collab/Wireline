@@ -88,11 +88,24 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(() =>
       resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.999/23" }),
     ).toThrow("invalid IPv4/CIDR");
+    expect(resolveXAISipAllowedAddresses({})).toEqual([
+      "54.172.60.0/30",
+      "54.244.51.0/30",
+      "54.171.127.192/30",
+      "35.156.191.128/30",
+      "54.65.63.192/30",
+      "54.169.127.128/30",
+      "54.252.254.64/30",
+      "177.71.206.192/30",
+    ]);
 
     const envValidator = read("src/lib/env-validator.ts");
     const sipAllowlist = envValidator.slice(envValidator.indexOf("XAI_SIP_ALLOWED_ADDRESSES"));
     expect(sipAllowlist.slice(0, 900)).toContain("isValidXAISipAllowedAddress");
-    expect(sipAllowlist.slice(0, 900)).toContain("requiredInProd: true");
+    expect(sipAllowlist.slice(0, 900)).toContain("requiredInProd: false");
+    expect(read("scripts/check-deployment-boundaries.mjs")).not.toContain(
+      "native xAI SIP origination allowlist is missing",
+    );
   });
 
   it("pins production voice to a versioned Think Fast release", () => {

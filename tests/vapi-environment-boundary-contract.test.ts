@@ -13,6 +13,12 @@ describe("Vapi environment boundary", () => {
   it("requires native xAI credentials and fails production on the retired browser publishable key", () => {
     expect(productionCheck).toContain('"XAI_API_KEY"');
     expect(productionCheck).toContain('"XAI_SIP_ALLOWED_ADDRESSES"');
+    expect(
+      productionCheck.slice(
+        productionCheck.indexOf("const required = ["),
+        productionCheck.indexOf("const recommended = ["),
+      ),
+    ).not.toContain('"XAI_SIP_ALLOWED_ADDRESSES"');
     expect(productionCheck).not.toContain('"VITE_VAPI_PUBLIC_KEY"');
     const requiredStart = productionCheck.indexOf("const required = [");
     const recommendedStart = productionCheck.indexOf("const recommended = [");

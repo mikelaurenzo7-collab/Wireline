@@ -116,16 +116,17 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "XAI_SIP_ALLOWED_ADDRESSES",
     group: "voice",
     required: false,
-    requiredInProd: true,
+    requiredInProd: false,
     description:
-      "Comma-separated IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32). Required before registering a Twilio number with xAI.",
+      "Optional override of Twilio Elastic SIP Trunking signaling CIDRs sent to xAI as sip_auth.allowed_addresses. Unset uses the committed defaults in xai-sip-config.ts.",
     validate: (value) =>
+      !value.trim() ||
       value
         .split(/[\s,]+/)
         .map((entry) => entry.trim())
         .filter(Boolean)
         .every((entry) => isValidXAISipAllowedAddress(entry)),
-    formatHint: "comma-separated IPv4 CIDRs with prefix length 8-32, e.g. 54.172.60.0/23",
+    formatHint: "comma-separated IPv4 CIDRs with prefix length 8-32, or unset for Twilio defaults",
   },
   {
     name: "XAI_API_KEY_CHATKIT",

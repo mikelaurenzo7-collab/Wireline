@@ -87,6 +87,26 @@ export function twilioVoiceFallbackUrl(): string {
   return `${getCanonicalAppUrl()}/api/twilio-webhook/voice-fallback`;
 }
 
+/**
+ * Twilio Elastic SIP Trunking regional signaling CIDRs.
+ * https://www.twilio.com/docs/sip-trunking/ip-addresses
+ *
+ * These are public carrier ranges, not a credential. xAI Direct SIP uses them
+ * as `sip_auth.allowed_addresses` so Twilio can originate to sip.voice.x.ai.
+ * Override with `XAI_SIP_ALLOWED_ADDRESSES` only when Twilio publishes a
+ * change ahead of a Wireline deploy.
+ */
+export const TWILIO_SIP_SIGNALING_ADDRESSES = [
+  "54.172.60.0/30",
+  "54.244.51.0/30",
+  "54.171.127.192/30",
+  "35.156.191.128/30",
+  "54.65.63.192/30",
+  "54.169.127.128/30",
+  "54.252.254.64/30",
+  "177.71.206.192/30",
+] as const;
+
 /** Strict IPv4/CIDR validation for xAI's SIP allowlist. */
 export function isValidXAISipAllowedAddress(value: string): boolean {
   const candidate = value.trim();
@@ -111,29 +131,31 @@ export function isValidXAISipAllowedAddress(value: string): boolean {
   if (!prefix || !/^\d{1,2}$/.test(prefix)) return false;
   const length = Number(prefix);
   // `/0` (and other internet-wide prefixes) would authorize Direct SIP from
-  // any source. Twilio publishes regional signaling CIDRs; operators must
-  // list those ranges, not a default-open allowlist.
+  // any source. Twilio publishes regional signaling CIDRs; operators may
+  // override the committed defaults, but never with a default-open allowlist.
   return length >= 8 && length <= 32;
 }
 
 /**
- * xAI Direct SIP must accept Twilio's published signaling ranges. The list is
- * operator-owned because carrier ranges can change independently of a deploy.
- * Set `XAI_SIP_ALLOWED_ADDRESSES` as comma/newline-separated IPv4 CIDR blocks.
+ * xAI Direct SIP must accept Twilio's published signaling ranges. Unset
+ * `XAI_SIP_ALLOWED_ADDRESSES` uses the committed Twilio CIDRs. A set value
+ * replaces the default list entirely so operators can ship a carrier change
+ * without waiting on a deploy of this file.
  */
 export function resolveXAISipAllowedAddresses(
   env: NodeJS.ProcessEnv = process.env,
 ): string[] {
-  const entries = String(env.XAI_SIP_ALLOWED_ADDRESSES || "")
-    .split(/[\s,]+/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  const unique = [...new Set(entries)];
-  if (!unique.length) {
-    throw new Error(
-      "XAI_SIP_ALLOWED_ADDRESSES is required before registering a Twilio number with xAI.",
-    );
-  }
+  const raw = String(env.XAI_SIP_ALLOWED_ADDRESSES || "").trim();
+  if (!raw) return [...TWILIO_SIP_SIGNALING_ADDRESSES];
+  const unique = [
+    ...new Set(
+      raw
+        .split(/[\s,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (!unique.length) return [...TWILIO_SIP_SIGNALING_ADDRESSES];
   if (unique.some((entry) => !isValidXAISipAllowedAddress(entry))) {
     throw new Error("XAI_SIP_ALLOWED_ADDRESSES contains an invalid IPv4/CIDR entry.");
   }

@@ -74,11 +74,6 @@ const required = [
     process.env.XAI_API_KEY,
   ],
   [
-    "XAI_SIP_ALLOWED_ADDRESSES",
-    "IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32)",
-    process.env.XAI_SIP_ALLOWED_ADDRESSES,
-  ],
-  [
     "ELEVENLABS_API_KEY",
     "Server-only managed Studio TTS and authorized private voice cloning",
     process.env.ELEVENLABS_API_KEY,
@@ -161,6 +156,10 @@ const optional = [
   [
     "PERPLEXITY_API_KEY",
     "Preferred live public-research vendor; grounded Gemini covers when unset",
+  ],
+  [
+    "XAI_SIP_ALLOWED_ADDRESSES",
+    "Optional override of Twilio signaling CIDRs for xAI Direct SIP; unset uses committed defaults",
   ],
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
   [

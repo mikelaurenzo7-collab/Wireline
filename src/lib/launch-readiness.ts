@@ -55,7 +55,6 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
 
   const voiceBlockers: string[] = [];
   if (byId.get("xai")?.status !== "configured") voiceBlockers.push("XAI_API_KEY");
-  if (!envPresent("XAI_SIP_ALLOWED_ADDRESSES")) voiceBlockers.push("XAI_SIP_ALLOWED_ADDRESSES");
   if (byId.get("twilio")?.status !== "configured") {
     voiceBlockers.push("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
   }

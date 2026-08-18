@@ -40,10 +40,9 @@ if (isProduction) {
     "the continuity structured runtime and OpenAI Realtime sessions are missing",
   );
   requireValue("XAI_API_KEY", "the native Twilio + xAI Speech-to-Speech runtime is missing");
-  requireValue(
-    "XAI_SIP_ALLOWED_ADDRESSES",
-    "native xAI SIP origination allowlist is missing",
-  );
+  // XAI_SIP_ALLOWED_ADDRESSES is not a production launch credential. Native SIP
+  // origination uses committed Twilio signaling CIDRs in
+  // src/lib/voice/xai-sip-config.ts when the optional override is unset.
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
