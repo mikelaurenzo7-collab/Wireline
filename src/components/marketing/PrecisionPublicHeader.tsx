@@ -29,7 +29,7 @@ export default function PrecisionPublicHeader() {
           </Link>
           <Link
             to="/signup?plan=personal"
-            className="marketing-btn-primary min-h-11 shrink-0 whitespace-nowrap px-3 text-sm font-semibold sm:px-4"
+            className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[379px]:px-3"
           >
             Start Free
           </Link>
