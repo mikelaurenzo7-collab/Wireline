@@ -1,5 +1,6 @@
 name: native-main-merge-integration
 # Final isolated exact-head integration gate for source, migrations, tests, and docs.
+# Rerun after exact Playwright selectors, auth-shell split, and 360px header repair.
 
 on:
   push:
