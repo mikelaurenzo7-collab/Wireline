@@ -38,6 +38,7 @@ Grok 4.6 (chat) and `grok-voice-think-fast-2.0` (Speech-to-Speech) are different
 | Browser preview TTS (`/v1/tts`) | `XAI_API_KEY` | Same key; grant the voice endpoint ACL |
 | Live PSTN + Studio native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` plus `XAI_SIP_ALLOWED_ADDRESSES` | SIP sessions authenticate with the API key. Browsers use minted client secrets. |
 | Isolated xAI experiments | `XAI_API_KEY_CHATKIT` | Optional. Not required to split chat from voice. |
+| Vercel Preview sandbox | `XAI_API_KEY` | Dedicated sandbox key only. Reviewed at `scripts/check-deployment-boundaries.mjs`. Native PSTN stays fail-closed without Twilio Preview credentials. |
 | Imagine photos and video | none | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key. |
 | Vapi rollback | `VAPI_PRIVATE_KEY` | Optional. Not a production launch requirement. |
 
