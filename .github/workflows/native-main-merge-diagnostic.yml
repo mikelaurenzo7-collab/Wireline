@@ -1,7 +1,7 @@
 name: native-main-merge-integration
 # Final isolated exact-head integration gate for source, migrations, tests, and docs.
-# Rerun after exact Playwright selectors, auth-shell split, 360px header repair,
-# canonical public-CTA ordering, and roster-only Admin Settings refresh were reconciled.
+# Rerun after the UI, Admin, provider-bound SIP, DNC, and retired-video contracts
+# were reconciled against current main.
 
 on:
   push:
@@ -106,6 +106,9 @@ jobs:
             python -m py_compile .audit/postmerge/apply.py .audit/postmerge/finalize.py
             python .audit/postmerge/apply.py
             python .audit/postmerge/finalize.py
+            cp \
+              .audit/postmerge/xai-sip-model-binding-contract.test.ts \
+              tests/xai-sip-model-binding-contract.test.ts
             git add -A
 
             npm ci --no-audit --no-fund
