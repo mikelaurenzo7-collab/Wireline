@@ -1,0 +1,64 @@
+name: native-main-integration-repair-v4
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-integration-repair-v4.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-main-integration-repair-v2
+  cancel-in-progress: true
+
+jobs:
+  integrate:
+    if: github.actor != 'audit-bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install browser gate and run final native-main integration
+        shell: bash
+        env:
+          HUSKY: "0"
+          NODE_OPTIONS: "--max-old-space-size=6144"
+          CI: "true"
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+          path = Path("scripts/native-main-integrate-v3.sh")
+          text = path.read_text(encoding="utf-8")
+          needle = "npx playwright test \\\n"
+          if needle not in text:
+              raise SystemExit("targeted Playwright command not found in integration runner")
+          text = text.replace(
+              needle,
+              "npx playwright install --with-deps chromium\n" + needle,
+              1,
+          )
+          text = text.replace(
+              "rm -f .github/workflows/native-main-integration-repair-v3.yml\n",
+              "rm -f .github/workflows/native-main-integration-repair-v3.yml\n"
+              "rm -f .github/workflows/native-main-integration-repair-v4.yml\n",
+              1,
+          )
+          text = text.replace(
+              "rm -f .audit/native-main-integration-repair-v3-failure.txt\n",
+              "rm -f .audit/native-main-integration-repair-v3-failure.txt\n"
+              "rm -f .audit/native-main-integration-repair-v4-failure.txt\n",
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+          bash scripts/native-main-integrate-v3.sh
