@@ -151,7 +151,7 @@ describe("managed phone voice runtime policy", () => {
   it("keeps unrelated avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/SimpleVoicePicker/);
     expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter/);
-    expect(knowledge).toMatch(/Business knowledge/);
+    expect(knowledge).toMatch(/Bot Knowledge/);
     expect(knowledge).toMatch(/Test in Studio/);
     expect(knowledge).not.toMatch(
       /VoiceGallery|AgentPresenceVoiceBridge|WirelineLiveVoiceProfile|SimulatorTab/,
