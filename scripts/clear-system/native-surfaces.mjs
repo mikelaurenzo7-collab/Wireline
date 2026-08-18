@@ -93,7 +93,7 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /navigationTitle\("KNOWLEDGE"\)/, "iOS setup must use Knowledge"],
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /navigationTitle\("CONNECTIONS"\)/, "iOS actions must use Connections"],
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /WAYS YOUR BOT CAN HELP/, "iOS connections must describe Bot capabilities"],
-    ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["BOTS", "CHOOSE A LINE"\]/, "CarPlay must expose Bot lines"],
+    ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["BOTS", "CHOOSE A BOT"\]/, "CarPlay must expose Bot selection"],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /CPListTemplate\(title: "BOTS"/, "CarPlay Bot list must use Bots"],
     ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /configurationDisplayName\("Wireline Bots"\)/, "iOS widget gallery must use Bots"],
     ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Text\("WIRELINE BOTS"\)/, "iOS widget face must use uppercase Bot identity"],
