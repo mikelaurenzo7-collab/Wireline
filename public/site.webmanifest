@@ -1,6 +1,6 @@
 {
   "name": "WIRELINE | VOICE BOTS THAT GET THE WORK DONE",
-  "short_name": "Wireline",
+  "short_name": "WIRELINE",
   "description": "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.",
   "id": "/",
   "start_url": "/overview",
@@ -44,7 +44,7 @@
     {
       "name": "BOT STUDIO",
       "short_name": "STUDIO",
-      "description": "Build and configure any Bot in the shared Wireline workspace.",
+      "description": "Build and configure any Bot in the shared WIRELINE workspace.",
       "url": "/studio"
     },
     {
