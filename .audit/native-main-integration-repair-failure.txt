@@ -1,0 +1,35 @@
+# Native/main integration repair failure
+
+HEAD=f9cd8d16d4e373bf0a4060ec6b40bdc0f78e51b5
+STATUS=1
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32091683738
+
+```text
+Reset branch 'cursor/native-xai-twilio-runtime-review-5789'
+Your branch is up to date with 'origin/cursor/native-xai-twilio-runtime-review-5789'.
+From https://github.com/mikelaurenzo7-collab/Wireline
+ * branch                main       -> FETCH_HEAD
+Auto-merging README.md
+Auto-merging docs/AUTHZ_MATRIX.md
+CONFLICT (content): Merge conflict in docs/AUTHZ_MATRIX.md
+Auto-merging docs/PRODUCT_SHOWCASE_MATRIX.md
+Auto-merging docs/README.md
+Auto-merging docs/business-usage-pricing-decision.md
+CONFLICT (content): Merge conflict in docs/business-usage-pricing-decision.md
+Auto-merging src/data/wireline-knowledge.ts
+CONFLICT (content): Merge conflict in src/data/wireline-knowledge.ts
+Auto-merging src/lib/chatgpt-mcp-account.ts
+CONFLICT (content): Merge conflict in src/lib/chatgpt-mcp-account.ts
+Auto-merging src/lib/marketing-route-meta.ts
+CONFLICT (content): Merge conflict in src/lib/marketing-route-meta.ts
+Auto-merging src/pages/CustomizationSettings.tsx
+CONFLICT (content): Merge conflict in src/pages/CustomizationSettings.tsx
+Auto-merging src/pages/Pricing.tsx
+CONFLICT (content): Merge conflict in src/pages/Pricing.tsx
+Auto-merging src/server/register-api-routes.ts
+CONFLICT (content): Merge conflict in src/server/register-api-routes.ts
+Auto-merging tests/double-pass-launch-honesty-contract.test.ts
+Auto-merging tests/dual-voice-routing-contract.test.ts
+Auto-merging tests/openai-live-demo-contract.test.ts
+Automatic merge failed; fix conflicts and then commit the result.
+```
