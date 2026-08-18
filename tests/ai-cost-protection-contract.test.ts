@@ -135,7 +135,8 @@ describe("AI cost-protection contract", () => {
       agentRoutes.indexOf('router.get("/api/agents"'),
     );
     expect(imagePath).toContain("recordUsage(");
-    expect(imagePath).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(imagePath).toContain("AI_GATEWAY_BASE_URL");
+    expect(imagePath).toContain('"xai/grok-4.5"');
   });
 
   it("records the fixed-price business artifact against the tenant that ordered it", () => {
