@@ -1,21 +1,23 @@
 /**
- * Wireline Letterpress — canonical design vision for web, extension, MCP, and native.
+ * WIRELINE Letterpress — canonical design vision for web, extension, MCP, and native.
  * Contracts: tests/wireline-design-vision-contract.test.ts (manifest),
  * tests/studio-canvas-vision-contract.test.ts (studio IA), design:check.
  * Studio behavioral invariants live in studio-canvas-contract.ts.
  */
 
 export const WIRELINE_DESIGN_VISION = {
-  system: "Wireline Letterpress",
+  system: "WIRELINE Letterpress",
   tone: ["calm", "precise", "useful"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
     "Electric violet is action. Ink is structure. Cool obsidian is calm.",
     "Silver is the wire, it carries the signal, never decorates.",
-    "Bot identity is a role-agnostic Wireline signal signature; status colors communicate state only.",
+    "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
+    "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
+    "Bot identity is a role-agnostic WIRELINE signal signature; status colors communicate state only.",
     "One voice module, one composer dock, one elevation language.",
     "Centered marketing storytelling; left/task-first authenticated work.",
-    "Inter Tight carries big ideas; Inter carries work; IBM Plex Mono carries labels.",
+    "Inter Tight carries big ideas and the WIRELINE wordmark; Inter carries work; IBM Plex Mono carries labels.",
     "No decorative green, orange, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
     "Letterpress depth: inset highlights on surfaces, restrained glow only on active affordances.",
