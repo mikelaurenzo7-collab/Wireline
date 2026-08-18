@@ -17,7 +17,7 @@ const MCP_BOUNDARIES = [
   {
     path: "create_agent_draft / update_agent_draft",
     description:
-      "Create or refine a private agent configuration draft for a Wireline Bot in natural language.",
+      "Create or refine a private Bot configuration draft in natural language.",
   },
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
