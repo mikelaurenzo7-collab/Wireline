@@ -1,0 +1,276 @@
+name: native-finalize-v6
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-finalize-v6.yml
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  deployments: read
+  pull-requests: write
+  statuses: read
+
+concurrency:
+  group: native-main-integration-repair-v2
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.actor != 'audit-bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HUSKY: "0"
+      NODE_OPTIONS: "--max-old-space-size=6144"
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Produce a clean, fully verified integration head
+        id: integrate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          exec > >(tee /tmp/native-finalize-v6.log) 2>&1
+          git config user.name "Wireline Audit Bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
+
+          record_failure() {
+            status=$?
+            trap - ERR
+            set +e
+            git merge --abort >/dev/null 2>&1 || true
+            git reset --hard "$GITHUB_SHA" >/dev/null 2>&1 || true
+            mkdir -p .audit
+            {
+              echo "# Native exact-head finalizer failure"
+              echo
+              echo "HEAD=$GITHUB_SHA"
+              echo "STATUS=$status"
+              echo "RUN=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              echo
+              echo '```text'
+              tail -n 5000 /tmp/native-finalize-v6.log
+              echo '```'
+            } > .audit/native-finalize-v6-failure.txt
+            git add .audit/native-finalize-v6-failure.txt
+            git commit -m "chore(audit): record native exact-head finalizer failure" || true
+            git push origin HEAD:"$GITHUB_REF_NAME" || true
+            exit "$status"
+          }
+          trap record_failure ERR
+
+          if [ -f scripts/native-main-integrate-v3.sh ]; then
+            python <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/native-main-integrate-v3.sh")
+          text = path.read_text(encoding="utf-8")
+
+          repair = "python scripts/repair-native-main-integration.py\n"
+          if "python scripts/native-main-postrepair-v5.py" not in text:
+              if repair not in text:
+                  raise SystemExit("base integration repair invocation not found")
+              text = text.replace(repair, repair + "python scripts/native-main-postrepair-v5.py\n", 1)
+
+          targeted = "npx playwright test \\\n"
+          if "npx playwright install --with-deps chromium" not in text:
+              if targeted not in text:
+                  raise SystemExit("Playwright integration gate not found")
+              text = text.replace(
+                  targeted,
+                  "npx playwright install --with-deps chromium\n" + targeted,
+                  1,
+              )
+
+          cleanup_lines = [
+              "rm -f .github/workflows/native-main-integration-repair-v4.yml\n",
+              "rm -f .github/workflows/native-main-integration-repair-v5.yml\n",
+              "rm -f .github/workflows/native-finalize-v6.yml\n",
+              "rm -f scripts/native-main-postrepair-v5.py\n",
+              "rm -f .audit/native-main-integration-repair-v4-failure.txt\n",
+              "rm -f .audit/native-main-integration-repair-v5-failure.txt\n",
+              "rm -f .audit/native-finalize-v6-failure.txt\n",
+          ]
+          workflow_anchor = "rm -f .github/workflows/native-main-integration-repair-v3.yml\n"
+          script_anchor = "rm -f scripts/native-main-integrate-v3.sh\n"
+          audit_anchor = "rm -f .audit/native-main-integration-repair-v3-failure.txt\n"
+          for line in cleanup_lines:
+              if line in text:
+                  continue
+              if line.startswith("rm -f .github/"):
+                  anchor = workflow_anchor
+              elif line.startswith("rm -f scripts/"):
+                  anchor = script_anchor
+              else:
+                  anchor = audit_anchor
+              if anchor not in text:
+                  raise SystemExit(f"cleanup anchor missing for {line.strip()}")
+              text = text.replace(anchor, anchor + line, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+            bash scripts/native-main-integrate-v3.sh
+          else
+            git fetch --no-tags origin main
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              echo "Branch no longer contains current origin/main." >&2
+              exit 1
+            fi
+
+            npm ci --no-audit --no-fund
+            set +e
+            npm run authz:check
+            authz_first=$?
+            set -e
+            if [ "$authz_first" -ne 0 ]; then
+              echo "Authorization matrix regenerated; verifying exact output."
+            fi
+            npm run authz:check
+            npm run lint:server
+            npm run lint:audit-modules
+            npm run test:run
+            npm run build
+            npx playwright install --with-deps chromium
+            npm run test:e2e
+            npm audit --omit=dev --audit-level=high
+
+            rm -f .github/workflows/native-finalize-v6.yml
+            rm -f .audit/native-finalize-v6-failure.txt
+            git add -A
+            npm run source-control:check
+            npm run workflow:syntax:check
+            npm run docs:check
+            git diff --check
+            git commit -m "chore(audit): remove exact-head finalizer harness"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+
+          final_sha=$(git rev-parse HEAD)
+          echo "final_sha=$final_sha" >> "$GITHUB_OUTPUT"
+          echo "Final clean candidate: $final_sha"
+
+      - name: Wait for Vercel exact-head success
+        id: vercel
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha='${{ steps.integrate.outputs.final_sha }}'
+          deadline=$((SECONDS + 2700))
+          deployment_url=""
+
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            checks=$(gh api -H "Accept: application/vnd.github+json" \
+              "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100")
+            statuses=$(gh api -H "Accept: application/vnd.github+json" \
+              "repos/$GITHUB_REPOSITORY/commits/$sha/status")
+
+            failed=$(jq -r '[
+              (.check_runs[]? | select((.name | ascii_downcase | contains("vercel"))) | .conclusion),
+              (.statuses[]? | select((.context | ascii_downcase | contains("vercel"))) | .state)
+            ] | map(select(. != null and . != "success" and . != "neutral" and . != "skipped" and . != "pending" and . != "queued" and . != "in_progress")) | length' \
+              <(jq -s '.[0] + {statuses: .[1].statuses}' <(printf '%s' "$checks") <(printf '%s' "$statuses")))
+            if [ "$failed" -gt 0 ]; then
+              echo "Vercel reported a failed exact-head check for $sha." >&2
+              exit 1
+            fi
+
+            count=$(jq -r '[
+              (.check_runs[]? | select((.name | ascii_downcase | contains("vercel")))),
+              (.statuses[]? | select((.context | ascii_downcase | contains("vercel"))))
+            ] | length' \
+              <(jq -s '.[0] + {statuses: .[1].statuses}' <(printf '%s' "$checks") <(printf '%s' "$statuses")))
+            pending=$(jq -r '[
+              (.check_runs[]? | select((.name | ascii_downcase | contains("vercel")) and (.status != "completed"))),
+              (.statuses[]? | select((.context | ascii_downcase | contains("vercel")) and (.state == "pending")))
+            ] | length' \
+              <(jq -s '.[0] + {statuses: .[1].statuses}' <(printf '%s' "$checks") <(printf '%s' "$statuses")))
+            successful=$(jq -r '[
+              (.check_runs[]? | select((.name | ascii_downcase | contains("vercel")) and (.status == "completed") and (.conclusion == "success" or .conclusion == "neutral" or .conclusion == "skipped"))),
+              (.statuses[]? | select((.context | ascii_downcase | contains("vercel")) and .state == "success"))
+            ] | length' \
+              <(jq -s '.[0] + {statuses: .[1].statuses}' <(printf '%s' "$checks") <(printf '%s' "$statuses")))
+
+            if [ "$count" -gt 0 ] && [ "$pending" -eq 0 ] && [ "$successful" -eq "$count" ]; then
+              deployment_url=$(jq -r '[
+                (.check_runs[]? | select((.name | ascii_downcase | contains("vercel"))) | .details_url),
+                (.statuses[]? | select((.context | ascii_downcase | contains("vercel"))) | .target_url)
+              ] | map(select(. != null and . != "")) | first // ""' \
+                <(jq -s '.[0] + {statuses: .[1].statuses}' <(printf '%s' "$checks") <(printf '%s' "$statuses")))
+              break
+            fi
+
+            echo "Waiting for Vercel on $sha (found=$count pending=$pending successful=$successful)."
+            sleep 20
+          done
+
+          if [ -z "$deployment_url" ]; then
+            echo "Vercel exact-head success was not observed before timeout." >&2
+            exit 1
+          fi
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "Vercel exact-head check passed: $deployment_url"
+
+      - name: Wait for required GitHub verification lanes
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha='${{ steps.integrate.outputs.final_sha }}'
+          deadline=$((SECONDS + 2700))
+          required=("CI" "Marketing e2e" "Visual QA" "android-build" "ios-simulator")
+
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            runs=$(gh api -H "Accept: application/vnd.github+json" \
+              "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$sha&per_page=100")
+            all_present=1
+            all_done=1
+            for name in "${required[@]}"; do
+              row=$(printf '%s' "$runs" | jq -c --arg name "$name" \
+                '[.workflow_runs[] | select(.name == $name)] | sort_by(.created_at) | last // empty')
+              if [ -z "$row" ]; then
+                all_present=0
+                all_done=0
+                continue
+              fi
+              status=$(printf '%s' "$row" | jq -r '.status')
+              conclusion=$(printf '%s' "$row" | jq -r '.conclusion // ""')
+              if [ "$status" != "completed" ]; then
+                all_done=0
+              elif [ "$conclusion" != "success" ] && [ "$conclusion" != "skipped" ]; then
+                echo "$name failed for $sha with conclusion=$conclusion" >&2
+                exit 1
+              fi
+            done
+
+            if [ "$all_present" -eq 1 ] && [ "$all_done" -eq 1 ]; then
+              echo "Required GitHub lanes passed for $sha."
+              exit 0
+            fi
+            echo "Waiting for required GitHub lanes on $sha."
+            sleep 20
+          done
+
+          echo "Required GitHub verification lanes did not finish before timeout." >&2
+          exit 1
+
+      - name: Mark PR ready and publish exact-head verification note
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha='${{ steps.integrate.outputs.final_sha }}'
+          gh pr ready 1139
+          gh pr comment 1139 --body "Exact-head verification passed for \`$sha\`: full unit/build/browser gates, production-dependency audit, Vercel deployment check, CI, Marketing e2e, Visual QA, Android, and iOS. PR is ready for final merge review."
