@@ -1,0 +1,44 @@
+name: native-main-repair-cadence
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-repair-cadence.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove obsolete cadence pre-repair and retrigger integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Wireline Audit Bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
+
+          python <<'PY'
+          from pathlib import Path
+
+          workflow = Path(".github/workflows/native-main-integration-v2.yml")
+          text = workflow.read_text(encoding="utf-8")
+          start = text.find('          needle = "cadence.indexOf(')
+          end = text.find("\n\n          route_block =", start)
+          if start < 0 or end < 0:
+              raise SystemExit("cadence pre-repair block missing")
+          workflow.write_text(text[:start] + text[end + 2:], encoding="utf-8")
+          PY
+
+          git rm .github/workflows/native-main-repair-cadence.yml
+          git add .github/workflows/native-main-integration-v2.yml
+          git commit -m "ci(audit): remove obsolete cadence patch preprocessor"
+          git push origin HEAD:"$GITHUB_REF_NAME"
