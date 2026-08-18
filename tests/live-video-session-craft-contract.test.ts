@@ -207,15 +207,17 @@ describe("retired talking-head routes do not mint sessions", () => {
 });
 
 describe("retired presenter CSS stays out of the launch cascade", () => {
-  it("deletes face/video sheets and keeps only compact Bot presence", () => {
-    const barrel = read("src/styles/wireline-marketing-surfaces.css");
+  it("deletes face/video sheets and gives compact Bot presence to product surfaces only", () => {
+    const marketing = read("src/styles/wireline-marketing-surfaces.css");
+    const product = read("src/styles/wireline-product-surfaces.css");
     const presence = read("src/styles/agent-presence.css");
 
     expect(existsSync(resolve(process.cwd(), "src/styles/agent-face.css"))).toBe(false);
     expect(existsSync(resolve(process.cwd(), "src/styles/video-receptionist.css"))).toBe(false);
-    expect(barrel).not.toContain("agent-face.css");
-    expect(barrel).not.toContain("video-receptionist.css");
-    expect(barrel).toContain('import "./agent-presence.css"');
+    expect(marketing).not.toContain("agent-face.css");
+    expect(marketing).not.toContain("video-receptionist.css");
+    expect(marketing).not.toContain("agent-presence.css");
+    expect(product).toContain('import "./agent-presence.css"');
 
     expect(presence).toContain("Wireline Bot presence");
     expect(presence).toContain(".wl-presence__frame");
