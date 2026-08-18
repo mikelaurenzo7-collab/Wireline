@@ -1,4 +1,4 @@
-name: native-main-merge-diagnostic
+name: native-main-merge-integration
 
 on:
   push:
@@ -11,21 +11,30 @@ permissions:
   contents: write
 
 concurrency:
-  group: native-main-merge-diagnostic
+  group: native-main-merge-integration
   cancel-in-progress: true
 
 jobs:
-  diagnose:
+  integrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - name: Check out native runtime branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Commit exact merge-conflict report
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Merge current main, resolve verified conflicts, and verify
         shell: bash
+        env:
+          HUSKY: "0"
+          NODE_OPTIONS: "--max-old-space-size=6144"
         run: |
           set -euo pipefail
           git config user.name "Wireline Audit Bot"
@@ -38,31 +47,130 @@ jobs:
           merge_status=$?
           set -e
 
-          report="/tmp/native-main-conflicts.txt"
-          {
-            echo "# Native runtime merge diagnostic"
-            echo
-            echo "MERGE_STATUS=${merge_status}"
-            echo "NATIVE_HEAD=${GITHUB_SHA}"
-            echo "MAIN_HEAD=$(git rev-parse origin/main)"
-            echo
-            echo "## Unmerged paths"
-            git diff --name-only --diff-filter=U || true
-            echo
+          if [ "$merge_status" -ne 0 ]; then
+            cat > /tmp/expected-conflicts.txt <<'EOF'
+          docs/AUTHZ_MATRIX.md
+          docs/business-usage-pricing-decision.md
+          src/data/wireline-knowledge.ts
+          src/lib/chatgpt-mcp-account.ts
+          src/lib/marketing-route-meta.ts
+          src/pages/CustomizationSettings.tsx
+          src/pages/Pricing.tsx
+          src/server/register-api-routes.ts
+          EOF
+            git diff --name-only --diff-filter=U | sort > /tmp/actual-conflicts.txt
+            sort -o /tmp/expected-conflicts.txt /tmp/expected-conflicts.txt
+            diff -u /tmp/expected-conflicts.txt /tmp/actual-conflicts.txt
+          fi
 
-            while IFS= read -r file; do
-              [ -n "$file" ] || continue
-              echo "## Conflict: ${file}"
-              echo '```diff'
-              git diff --cc -- "$file" | sed -n '1,500p'
-              echo '```'
-              echo
-            done < <(git diff --name-only --diff-filter=U)
-          } > "$report"
+          # Generated authorization truth is regenerated after the final route
+          # registry is resolved. Product retirement copy follows current main;
+          # native voice truth remains explicit where it is the live runtime.
+          git checkout --ours docs/AUTHZ_MATRIX.md
+          git checkout --theirs docs/business-usage-pricing-decision.md
+          git checkout --ours src/data/wireline-knowledge.ts
+          git checkout --theirs src/lib/marketing-route-meta.ts
+          git checkout --theirs src/pages/CustomizationSettings.tsx
+          git checkout --theirs src/pages/Pricing.tsx
 
-          git merge --abort || git reset --hard "$GITHUB_SHA"
-          mkdir -p .audit
-          cp "$report" .audit/native-main-conflicts.txt
-          git add .audit/native-main-conflicts.txt
-          git commit -m "chore(audit): record exact native-main merge conflicts"
+          python <<'PY'
+          from pathlib import Path
+
+          def replace_conflict(path: str, replacement: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              start = text.find("<<<<<<< HEAD")
+              if start < 0:
+                  raise SystemExit(f"expected conflict marker missing in {path}")
+              separator = text.find("=======", start)
+              end_marker = ">>>>>>> origin/main"
+              end = text.find(end_marker, separator)
+              if separator < 0 or end < 0:
+                  raise SystemExit(f"malformed conflict markers in {path}")
+              file.write_text(
+                  text[:start] + replacement + text[end + len(end_marker):],
+                  encoding="utf-8",
+              )
+
+          replace_conflict(
+              "src/lib/chatgpt-mcp-account.ts",
+              """ * Private voice in this ChatGPT-hosted widget uses OpenAI Realtime WebRTC
+           * because the iframe may only connect to `https://api.openai.com`. It is not
+           * the Studio or PSTN brain. Studio live tests use a server-minted xAI
+           * ephemeral client secret; tenant PSTN calls use the same xAI Speech-to-Speech
+           * model (`grok-voice-think-fast-2.0`) through Direct SIP.
+           *
+           * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
+           * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling
+           * `@modelcontextprotocol/ext-apps`.""",
+          )
+
+          replace_conflict(
+              "src/server/register-api-routes.ts",
+              """  app.use(mcpCoachingSettingsRouter);
+            // Phone normalization/validation is pure and must precede the identity
+            // guard, whose branding commit would otherwise land before a malformed
+            // phone value 400s the request (silent half-write).""",
+          )
+          PY
+
+          git add \
+            docs/AUTHZ_MATRIX.md \
+            docs/business-usage-pricing-decision.md \
+            src/data/wireline-knowledge.ts \
+            src/lib/chatgpt-mcp-account.ts \
+            src/lib/marketing-route-meta.ts \
+            src/pages/CustomizationSettings.tsx \
+            src/pages/Pricing.tsx \
+            src/server/register-api-routes.ts
+
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "Unresolved merge paths remain:" >&2
+            git diff --name-only --diff-filter=U >&2
+            exit 1
+          fi
+          if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':!package-lock.json'; then
+            echo "Conflict markers remain in the merged tree." >&2
+            exit 1
+          fi
+
+          grep -Fq 'import mcpCoachingSettingsRouter from "../routes/mcp-coaching-settings-routes";' src/server/register-api-routes.ts
+          grep -Fq 'app.use(mcpCoachingSettingsRouter);' src/server/register-api-routes.ts
+          grep -Fq 'import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";' src/server/register-api-routes.ts
+          grep -Fq 'app.use(nativePhoneRoutingRouter);' src/server/register-api-routes.ts
+          grep -Fq 'import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";' src/server/register-api-routes.ts
+          grep -Fq 'app.use(nativePhoneReleaseRouter);' src/server/register-api-routes.ts
+          grep -Fq 'import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";' src/server/register-api-routes.ts
+          grep -Fq 'app.use(nativeMobileVoiceRouter);' src/server/register-api-routes.ts
+
+          npm ci --no-audit --no-fund
+
+          # The first run intentionally rewrites a stale matrix and exits 1; the
+          # second proves the generated artifact is exact and has zero violations.
+          set +e
+          npm run authz:check
+          authz_first=$?
+          set -e
+          if [ "$authz_first" -ne 0 ]; then
+            echo "Authorization matrix was regenerated; verifying exact output."
+          fi
+          npm run authz:check
+
+          npm run lint:server
+          npm run lint:audit-modules
+          npm run test:run
+
+          # Remove the one-shot merge harness and diagnostic artifact before the
+          # integration commit becomes part of the product branch.
+          git rm -f .github/workflows/native-main-merge-diagnostic.yml
+          git rm -f .audit/native-main-conflicts.txt
+          git add -A
+
+          npm run source-control:check
+          npm run workflow:syntax:check
+          npm run docs:check
+          git diff --check
+
+          git status --short
+          git commit -m "Merge main into native Twilio and xAI runtime"
           git push origin HEAD:"$GITHUB_REF_NAME"
