@@ -5,9 +5,10 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("empty-state route hygiene", () => {
-  it("routes phone/SMS/attribution empty CTAs to live settings paths", () => {
+  it("routes Bot creation, phone setup, SMS, and attribution to their live owners", () => {
     const ops = read("src/lib/wireline-ops-design.ts");
     const overview = read("src/pages/OverviewPage.tsx");
+    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
     const shell = read("src/components/WorkspaceShell.tsx");
     const readiness = read("src/lib/agent-readiness.ts");
     const routes = read("src/routes/AppRoutes.tsx");
@@ -21,12 +22,13 @@ describe("empty-state route hygiene", () => {
     expect(ops).toContain("&command=");
     expect(ops).not.toContain("&prompt=");
 
-    expect(overview).toContain('primaryHref: "/settings/phone"');
-    expect(overview).toContain('primaryLabel: "Connect phone"');
+    expect(overview).toContain("<FirstRunWorkspace />");
+    expect(firstRun).toContain('to="/studio?create=1"');
+    expect(firstRun).toContain('to="/templates"');
+    expect(firstRun).toContain("Create Your Own");
+    expect(firstRun).toContain("Browse Templates");
+    expect(firstRun).not.toContain("posture=");
 
-    // The sidebar still labels line readiness, but the wording moved to the
-    // shared helper when a third state ("unavailable") was added — OverviewPage
-    // had its own copy of the same two-state string and they had to agree.
     expect(shell).toContain("agentReadinessLabel(");
     expect(readiness).toContain('"Live"');
     expect(readiness).toContain('"Needs setup"');
@@ -38,8 +40,6 @@ describe("empty-state route hygiene", () => {
     expect(sms).toContain('<Link to="/settings/phone">Review SMS setup</Link>');
     expect(sms).not.toContain('<a href="/settings/phone">Review SMS setup</a>');
 
-    // AgentPresenceLivePreview was removed 2026-08-13 (never mounted); its
-    // billing-link discipline died with it.
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 });
