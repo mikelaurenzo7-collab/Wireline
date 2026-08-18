@@ -22,10 +22,11 @@ export function normalizeXAIPhoneNumber(value: unknown): string | null {
 }
 
 /**
- * Join an xAI-managed SIP call by provider call id. SIP sessions are call-bound,
- * not model-bound: the model is configured with `session.update` after the
- * WebSocket opens. Keeping this URL builder separate from browser realtime
- * prevents a general `?model=` URL from leaking onto the SIP control path.
+ * Join an xAI-managed SIP call by provider call id. xAI binds the model to the
+ * SIP phone session and ignores a `model` query parameter when `call_id` is
+ * present. `session.update` configures instructions, voice, tools, and turn
+ * detection; it does not version-pin the SIP model. Browser Studio sessions are
+ * separately pinned by `grok-voice-config.ts`.
  */
 export function buildXAISipRealtimeUrl(callId: string): string {
   const normalized = callId.trim();
