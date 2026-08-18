@@ -1,0 +1,64 @@
+name: repair-grok46-contract-generator
+
+on:
+  push:
+    branches:
+      - audit/native-xai-main-integration-final-20260818
+    paths:
+      - .github/workflows/repair-grok46-contract-generator.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Repair emitted Grok 4.6 snapshot assertion and retrigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Wireline Audit Bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
+
+          python <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/materialize-grok46-defaults.yml')
+          text = workflow.read_text(encoding='utf-8')
+          marker = '''            python .audit/postmerge/apply-grok46-schema.py
+
+            # Regenerate all reviewed metadata again from the permanent
+'''
+          replacement = '''            python .audit/postmerge/apply-grok46-schema.py
+
+            # The one-shot Python author writes a TypeScript contract. Normalize
+            # the nested JSON/default quoting before ESLint parses that file.
+            python <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/grok-46-persisted-defaults-contract.test.ts")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          matches = [index for index, line in enumerate(lines) if "expect(snapshot).toContain" in line]
+          if len(matches) != 1:
+              raise SystemExit(f"expected one snapshot assertion, found {len(matches)}")
+          lines[matches[0]] = r'''    expect(snapshot).toContain("\\\"default\\\": \\\"'grok-4.6'\\\"");'''
+          path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          PY
+
+            # Regenerate all reviewed metadata again from the permanent
+'''
+          if text.count(marker) != 1:
+              raise SystemExit('materialization insertion marker did not match exactly once')
+          workflow.write_text(text.replace(marker, replacement, 1), encoding='utf-8')
+          PY
+
+          git rm .github/workflows/repair-grok46-contract-generator.yml
+          git rm -f .github/workflows/retrigger-grok46-materialization.yml
+          git add .github/workflows/materialize-grok46-defaults.yml
+          git commit -m "ci(db): repair generated Grok 4.6 contract quoting"
+          git push origin HEAD:"$GITHUB_REF_NAME"
