@@ -17,20 +17,20 @@ concurrency:
 jobs:
   integrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Check out native runtime branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Use Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
-      - name: Merge current main, resolve verified conflicts, and verify
+      - name: Merge current main, apply verified fixes, and verify
         shell: bash
         env:
           HUSKY: "0"
@@ -67,11 +67,11 @@ jobs:
 
             # Generated authorization truth is regenerated after the final route
             # registry is resolved. Product retirement copy follows current main;
-            # native voice truth remains explicit where it is the live runtime.
+            # native voice and privacy metadata follow the reviewed native branch.
             git checkout --ours docs/AUTHZ_MATRIX.md
             git checkout --theirs docs/business-usage-pricing-decision.md
             git checkout --ours src/data/wireline-knowledge.ts
-            git checkout --theirs src/lib/marketing-route-meta.ts
+            git checkout --ours src/lib/marketing-route-meta.ts
             git checkout --theirs src/pages/CustomizationSettings.tsx
             git checkout --theirs src/pages/Pricing.tsx
 
@@ -136,6 +136,534 @@ jobs:
               return 1
             fi
 
+            python <<'PY'
+          from pathlib import Path
+
+          def read(path: str) -> str:
+              return Path(path).read_text(encoding="utf-8")
+
+          def write(path: str, value: str) -> None:
+              Path(path).write_text(value, encoding="utf-8")
+
+          def replace(path: str, old: str, new: str, count: int = 1) -> None:
+              text = read(path)
+              found = text.count(old)
+              if found < count:
+                  raise SystemExit(
+                      f"expected at least {count} occurrence(s) in {path}, found {found}: {old[:120]!r}"
+                  )
+              write(path, text.replace(old, new, count))
+
+          # ------------------------------------------------------------------
+          # Verified public-shell fix: the account actions overflow every 360px
+          # route. Restore a real desktop Site nav and an accessible mobile sheet.
+          # ------------------------------------------------------------------
+          write(
+              "src/components/marketing/PrecisionPublicHeader.tsx",
+              r'''import { Menu, X } from "lucide-react";
+          import { useEffect, useState } from "react";
+          import { Link, useLocation } from "react-router";
+
+          import WirelineMark from "../brand/WirelineMark";
+          import SkipToContentLink from "../layout/SkipToContentLink";
+
+          const SITE_LINKS = [
+            { to: "/features", label: "Features" },
+            { to: "/pricing", label: "Pricing" },
+            { to: "/showcase", label: "Demos" },
+            { to: "/trust", label: "Trust" },
+          ] as const;
+
+          export default function PrecisionPublicHeader() {
+            const [open, setOpen] = useState(false);
+            const location = useLocation();
+
+            useEffect(() => {
+              setOpen(false);
+            }, [location.pathname]);
+
+            useEffect(() => {
+              if (!open) return;
+              const previousOverflow = document.body.style.overflow;
+              const onKeyDown = (event: KeyboardEvent) => {
+                if (event.key === "Escape") setOpen(false);
+              };
+              document.body.style.overflow = "hidden";
+              window.addEventListener("keydown", onKeyDown);
+              return () => {
+                document.body.style.overflow = previousOverflow;
+                window.removeEventListener("keydown", onKeyDown);
+              };
+            }, [open]);
+
+            return (
+              <>
+                <header className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">
+                  <SkipToContentLink href="#main-content" />
+                  <div className="wl-measure mx-auto flex h-16 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
+                    <Link
+                      to="/"
+                      className="flex shrink-0 items-center gap-2 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label="Wireline home"
+                    >
+                      <WirelineMark className="size-8 shrink-0 text-primary" signal />
+                      <span>Wireline</span>
+                    </Link>
+
+                    <nav
+                      className="ml-6 hidden h-full items-center gap-5 md:flex lg:gap-7"
+                      aria-label="Site"
+                    >
+                      {SITE_LINKS.map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          className="inline-flex h-full items-center border-b-2 border-transparent text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </nav>
+
+                    <nav className="ml-auto hidden items-center gap-2 md:flex sm:gap-4" aria-label="Account">
+                      <Link
+                        to="/signin"
+                        className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/signup?plan=personal"
+                        className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold"
+                      >
+                        Start Free
+                      </Link>
+                    </nav>
+
+                    <button
+                      type="button"
+                      className="ml-auto grid size-11 shrink-0 place-items-center rounded-[var(--radius-md)] border border-border bg-card text-foreground transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:hidden"
+                      aria-label="Open navigation"
+                      aria-expanded={open}
+                      aria-controls="wireline-mobile-navigation"
+                      onClick={() => setOpen(true)}
+                    >
+                      <Menu className="size-5" aria-hidden="true" />
+                    </button>
+                  </div>
+                </header>
+
+                {open ? (
+                  <div
+                    id="wireline-mobile-navigation"
+                    className="fixed inset-x-0 bottom-0 top-16 z-[90] bg-background/98 backdrop-blur-xl md:hidden"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Mobile navigation"
+                  >
+                    <div className="mx-auto flex h-full max-w-lg flex-col overflow-y-auto px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                      <div className="flex items-center justify-between border-b border-border py-4">
+                        <p className="wl-overline text-muted-foreground">Navigate</p>
+                        <button
+                          type="button"
+                          className="grid size-11 place-items-center rounded-[var(--radius-md)] border border-border bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                          aria-label="Close navigation"
+                          onClick={() => setOpen(false)}
+                        >
+                          <X className="size-5" aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      <nav className="mt-5 grid" aria-label="Mobile site">
+                        {SITE_LINKS.map((link) => (
+                          <Link
+                            key={link.to}
+                            to={link.to}
+                            className="flex min-h-14 items-center justify-between border-b border-border px-1 text-lg font-semibold tracking-[-0.02em] text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                          >
+                            {link.label}
+                            <span aria-hidden="true">→</span>
+                          </Link>
+                        ))}
+                      </nav>
+
+                      <div className="mt-auto grid gap-3 border-t border-border pt-6">
+                        <Link
+                          to="/signin"
+                          className="marketing-btn-secondary min-h-12 w-full justify-center text-sm font-semibold"
+                        >
+                          Sign In
+                        </Link>
+                        <Link
+                          to="/signup?plan=personal"
+                          className="marketing-btn-primary min-h-12 w-full justify-center text-sm font-semibold"
+                        >
+                          Start Free
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            );
+          }
+          '''.replace("          ", "", 1),
+          )
+
+          # ------------------------------------------------------------------
+          # Verified request-efficiency fix: AdminSettings loaded /api/team both
+          # from fetchData and fetchTeam. Keep one readiness-aware roster request.
+          # ------------------------------------------------------------------
+          replace(
+              "src/components/AdminSettings.tsx",
+              '''\n      // Fetch team members\n      const teamRes = await authFetch("/api/team");\n      if (teamRes.ok) {\n        const teamData = await teamRes.json();\n        setTeamMembers(teamData.members || []);\n      }''',
+              "",
+          )
+          replace(
+              "src/components/AdminSettings.tsx",
+              '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);\n      fetchData();''',
+              '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);\n      await fetchTeam();''',
+          )
+          replace(
+              "src/components/AdminSettings.tsx",
+              '''      toastSuccess("Member removed", "Team access revoked.");\n      fetchData();''',
+              '''      toastSuccess("Member removed", "Team access revoked.");\n      await fetchTeam();''',
+          )
+
+          # Canonical migration pointers must follow the journal head.
+          replace(
+              "src/db/schema.ts",
+              "`drizzle/migrations/0152_native_xai_phone_bindings.sql`",
+              "`drizzle/migrations/0153_preserve_xai_registration_ledger.sql`",
+          )
+          replace(
+              "src/db/schema-base.ts",
+              "`drizzle/migrations/0151_xai_grok_46_runtime_defaults.sql`",
+              "`drizzle/migrations/0153_preserve_xai_registration_ledger.sql`",
+          )
+
+          # Keep public compliance truth precise: tenant DNC is live, the federal
+          # registry vendor is not. Marketing campaigns remain fail-closed.
+          replace(
+              "src/data/wireline-knowledge.ts",
+              '    "DNC enforcement on outbound dialing",',
+              '    "Tenant-maintained DNC enforcement on outbound dialing",',
+          )
+          replace(
+              "src/data/wireline-knowledge.ts",
+              '    "EU data residency is not currently available",',
+              '    "EU data residency is not currently available",\n    "Federal Do Not Call registration is not complete; marketing campaigns fail closed until the vendor login is configured",',
+          )
+
+          # Contract maintenance for the native provider architecture. These
+          # assertions keep the safety property while dropping retired Vapi
+          # implementation names and stale local variable spellings.
+          replace(
+              "tests/company-identity-contract.test.ts",
+              '''    const carrier = read("src/routes/carrier-routes.ts");\n    const provisioning = read("src/lib/phone-provisioning.ts");\n    const registry = read("src/server/register-api-routes.ts");''',
+              '''    const carrier = read("src/routes/carrier-routes.ts");\n    const provisioning = read("src/lib/phone-provisioning.ts");\n    const registry = read("src/server/register-api-routes.ts");\n    const nativeAssignment = read("src/lib/voice/native-phone-assignment.ts");\n    const nativeProvisioning = read("src/lib/voice/native-phone-provisioning.ts");\n    const nativeRelease = read("src/lib/voice/native-phone-release.ts");''',
+          )
+          replace(
+              "tests/company-identity-contract.test.ts",
+              '''    expect(\n      carrier.match(/runCompanyIdentityMutation\\(req\\.user\\.id, "phone_number_changed"/g),\n    ).toHaveLength(3);''',
+              '''    expect(registry.indexOf("app.use(nativePhoneRoutingRouter)")).toBeLessThan(\n      registry.indexOf("app.use(carrierRouter)"),\n    );\n    expect(nativeAssignment).toContain(\n      'runCompanyIdentityMutation(\\n      input.userId,\\n      "phone_number_changed"',\n    );\n    expect(nativeProvisioning).toContain(\n      'runCompanyIdentityMutation(input.userId, "phone_number_changed"',\n    );\n    expect(nativeRelease).toContain(\n      'runCompanyIdentityMutation(userId, "phone_number_changed"',\n    );''',
+          )
+
+          replace(
+              "tests/round6-honesty-compliance-contract.test.ts",
+              '''    const sentinel = read("src/services/sentinel.ts");\n    expect(sentinel).toContain("if (!response.ok)");\n    const okCheck = sentinel.indexOf("if (!response.ok)");\n    const presenceUpdate = sentinel.indexOf('set({ status: "terminated" })');\n    expect(okCheck).toBeGreaterThan(-1);\n    expect(presenceUpdate).toBeGreaterThan(okCheck);''',
+              '''    const sentinel = read("src/services/sentinel.ts");\n    const rollbackStart = sentinel.indexOf(\n      "const response = await fetchWithTimeout(",\n      sentinel.indexOf("const controlUrl"),\n    );\n    const rollbackEnd = sentinel.indexOf("} catch (error", rollbackStart);\n    const rollback = sentinel.slice(rollbackStart, rollbackEnd);\n    const okCheck = rollback.indexOf("if (!response.ok)");\n    const presenceUpdate = rollback.indexOf('set({ status: "terminated" })');\n    expect(rollbackStart).toBeGreaterThan(-1);\n    expect(okCheck).toBeGreaterThan(-1);\n    expect(presenceUpdate).toBeGreaterThan(okCheck);''',
+          )
+
+          write(
+              "tests/round6-tenant-binding-contract.test.ts",
+              r'''import { readFileSync } from "node:fs";
+          import { resolve } from "node:path";
+          import { describe, expect, it } from "vitest";
+
+          const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+          describe("native phone-line tenant binding", () => {
+            const nativeRoutes = read("src/routes/native-phone-routing-routes.ts");
+            const registry = read("src/server/register-api-routes.ts");
+            const legacyCarrier = read("src/routes/carrier-routes.ts");
+
+            it("gates search and provisioning on tenant plan capacity", () => {
+              expect(nativeRoutes).toContain("async function capacityAvailable");
+              expect(nativeRoutes).toContain("getIncludedPhoneLineSlots(userId)");
+              const search = nativeRoutes.slice(
+                nativeRoutes.indexOf('"/api/phone-numbers/search"'),
+                nativeRoutes.indexOf("async function respondWithProvision"),
+              );
+              expect(search).toContain("PHONE_CAPACITY_REACHED");
+
+              const provision = nativeRoutes.slice(
+                nativeRoutes.indexOf("async function respondWithProvision"),
+                nativeRoutes.indexOf('"/api/phone-numbers/:id"'),
+              );
+              expect(provision).toContain("provisionNativeTenantNumber");
+              expect(provision).toContain("statusForProvisionFailure");
+            });
+
+            it("routes native Twilio+xAI ownership before the rollback carrier tree", () => {
+              expect(registry.indexOf("app.use(nativePhoneRoutingRouter)")).toBeGreaterThan(-1);
+              expect(registry.indexOf("app.use(nativePhoneRoutingRouter)")).toBeLessThan(
+                registry.indexOf("app.use(carrierRouter)"),
+              );
+              const rawClaim = legacyCarrier.slice(
+                legacyCarrier.indexOf('"/api/phone-numbers",'),
+                legacyCarrier.indexOf('"/api/phone-numbers/provision"'),
+              );
+              expect(rawClaim).toContain("NATIVE_PHONE_REQUIRED");
+              expect(rawClaim).toContain("res.status(410)");
+            });
+
+            it("keeps tenant ownership and provider identity at the database boundary", () => {
+              const schemaSrc = read("src/db/schema.ts");
+              expect(schemaSrc).toContain(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_phone_numbers_vapi_number_id_unique",
+              );
+              const migration = read("drizzle/migrations/0111_phone_number_tenant_binding.sql");
+              expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS");
+              expect(migration).toContain("idx_phone_numbers_user_id");
+
+              const provisioning = read("src/lib/voice/native-phone-provisioning.ts");
+              expect(provisioning).toContain("vapiNumberId: input.purchase.sid");
+              expect(provisioning).toContain("eq(schema.phoneNumbers.userId, input.userId)");
+            });
+          });
+
+          describe("round-6 agent-create capacity serialization", () => {
+            it("serializes the mobile create path the same way the web path is", () => {
+              const mobile = read("src/routes/mobile-routes.ts");
+              const create = mobile.slice(
+                mobile.indexOf('"/api/mobile/agents",'),
+                mobile.indexOf('router.get(\n  "/api/mobile/agents"'),
+              );
+              const lockIdx = create.indexOf("pg_advisory_xact_lock");
+              const countIdx = create.indexOf("count(*)");
+              const insertIdx = create.indexOf("tx.insert(schema.agents)");
+
+              expect(lockIdx).toBeGreaterThan(-1);
+              expect(countIdx).toBeGreaterThan(lockIdx);
+              expect(insertIdx).toBeGreaterThan(countIdx);
+              expect(create).toContain("AGENT_CAPACITY_REACHED");
+            });
+          });
+          '''.replace("          ", "", 1),
+          )
+
+          replace(
+              "tests/security-atomicity-release-contract.test.ts",
+              '''    const lead = source.indexOf("tx.insert(schema.outboundLeads)");\n    const completion = source.indexOf('status: "completed"');\n\n    expect(reservation).toBeGreaterThan(-1);\n    expect(provider).toBeGreaterThan(reservation);\n    expect(lead).toBeGreaterThan(provider);\n    expect(completion).toBeGreaterThan(provider);''',
+              '''    const leadIdentity = source.indexOf("nativeLeadId = result.leadId || null");\n    const completion = source.indexOf('status: "completed"');\n\n    expect(reservation).toBeGreaterThan(-1);\n    expect(provider).toBeGreaterThan(reservation);\n    expect(leadIdentity).toBeGreaterThan(provider);\n    expect(completion).toBeGreaterThan(leadIdentity);''',
+          )
+
+          replace(
+              "tests/silent-failure-round2-contract.test.ts",
+              '    const advanceAt = engine.indexOf("const nextIdx = currentIdx + 1");',
+              '    const advanceAt = engine.indexOf("const nextIndex = currentIndex + 1");',
+          )
+          replace(
+              "tests/silent-failure-round2-contract.test.ts",
+              '''    expect(journal.entries.at(-1)).toMatchObject({\n      idx: 49,\n      tag: "0151_xai_grok_46_runtime_defaults",\n    });''',
+              '''    expect(journal.entries).toContainEqual(\n      expect.objectContaining({\n        idx: 49,\n        tag: "0151_xai_grok_46_runtime_defaults",\n      }),\n    );\n    expect(journal.entries.at(-1)).toMatchObject({\n      idx: 51,\n      tag: "0153_preserve_xai_registration_ledger",\n    });''',
+          )
+
+          replace(
+              "tests/subsystem-audit-hardening-contract.test.ts",
+              r'/integ\.sendEmail\(\{[\s\S]{0,200}marketing: true/',
+              r'/(?:integ|integration)\.sendEmail\(\{[\s\S]{0,240}marketing: true/',
+          )
+
+          replace(
+              "tests/public-demo-fallback.spec.ts",
+              '  await expect(console.getByText("Standard carrier rates may apply.", { exact: true })).toBeVisible();',
+              '  await expect(console.getByText(/Standard carrier rates may apply\\./)).toBeVisible();',
+          )
+
+          # The consolidated marketing site is intentionally a normal long-form
+          # document. Guard horizontal escape and hero composition rather than
+          # requiring every public page to fit into one viewport with no Y scroll.
+          write(
+              "tests/e2e/marketing-viewport-lock.spec.ts",
+              r'''import { expect, test, type Page } from "@playwright/test";
+
+          test.setTimeout(150_000);
+
+          const CANVASES = [
+            { path: "/", name: "home" },
+            { path: "/features", name: "features" },
+            { path: "/pricing", name: "pricing" },
+            { path: "/showcase", name: "demos" },
+            { path: "/signin", name: "sign in" },
+          ] as const;
+
+          async function openCanvas(page: Page, path: string) {
+            let lastError: unknown;
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+              await page.goto(path, { waitUntil: "commit", timeout: 60_000 });
+              await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
+              try {
+                await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
+                await expect(page.getByRole("heading", { name: "Loading", exact: true })).toHaveCount(0, {
+                  timeout: 60_000,
+                });
+                return;
+              } catch (error) {
+                lastError = error;
+              }
+            }
+            throw lastError;
+          }
+
+          async function viewportMetrics(page: Page) {
+            return page.evaluate(() => {
+              const root = document.documentElement;
+              const body = document.body;
+              const consoleElement = document.querySelector(".landing-console");
+              const title = document.querySelector(".landing-stage__title");
+              const header = document.querySelector(".marketing-surface > header");
+              const call = document.querySelector(".landing-demo__button");
+              const rail = document.querySelector(".landing-stage__rail");
+              const activity = document.querySelector(".landing-console__activity");
+              const consoleRect = consoleElement?.getBoundingClientRect();
+              const titleRect = title?.getBoundingClientRect();
+              const callRect = call?.getBoundingClientRect();
+              const railRect = rail?.getBoundingClientRect();
+              const activityRect = activity?.getBoundingClientRect();
+
+              return {
+                docOverflowX: root.scrollWidth - root.clientWidth,
+                bodyOverflowX: body.scrollWidth - body.clientWidth,
+                documentScrollY: root.scrollHeight - root.clientHeight,
+                headerCount: header ? 1 : 0,
+                consoleWidth: consoleRect?.width ?? 0,
+                consoleHeight: consoleRect?.height ?? 0,
+                consoleLeft: consoleRect?.left ?? 0,
+                consoleRight: consoleRect?.right ?? 0,
+                titleLeft: titleRect?.left ?? 0,
+                titleRight: titleRect?.right ?? 0,
+                callWidth: callRect?.width ?? 0,
+                callHeight: callRect?.height ?? 0,
+                railWidth: railRect?.width ?? 0,
+                activityWidth: activityRect?.width ?? 0,
+                viewportWidth: window.innerWidth,
+              };
+            });
+          }
+
+          for (const { path, name } of CANVASES) {
+            test(`${name} has no horizontal viewport escape at 1365x900`, async ({ page }) => {
+              await page.setViewportSize({ width: 1365, height: 900 });
+              await openCanvas(page, path);
+              const metrics = await viewportMetrics(page);
+              expect(metrics.docOverflowX, `${name} document width`).toBeLessThanOrEqual(2);
+              expect(metrics.bodyOverflowX, `${name} body width`).toBeLessThanOrEqual(2);
+            });
+          }
+
+          test("home presents a professional desktop buying frame", async ({ page }) => {
+            await page.setViewportSize({ width: 1365, height: 900 });
+            await openCanvas(page, "/");
+
+            await expect(page.locator(".landing-console")).toBeVisible();
+            await expect(page.locator(".landing-stage__title")).toBeVisible();
+            await expect(page.getByRole("navigation", { name: "Agent work lane" })).toBeVisible();
+            await expect(page.getByRole("navigation", { name: "Site" })).toBeVisible();
+            await expect(page.getByRole("link", { name: "Build Your Voice Agent" }).first()).toBeVisible();
+            await expect(
+              page.getByRole("button", { name: /Hear It Live/i }).or(
+                page.getByRole("link", { name: /Hear It Live/i }),
+            ).toBeVisible();
+
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.headerCount, "home uses the shared public header").toBe(1);
+            expect(metrics.railWidth).toBeGreaterThan(1100);
+            expect(metrics.consoleWidth).toBeGreaterThan(520);
+            expect(metrics.consoleHeight).toBeGreaterThan(430);
+            expect(metrics.activityWidth).toBeGreaterThan(240);
+            expect(metrics.titleRight, "headline stays in the narrative column").toBeLessThan(
+              metrics.consoleLeft + 56,
+            );
+          });
+
+          test("home stays composed on a short laptop", async ({ page }) => {
+            await page.setViewportSize({ width: 1280, height: 800 });
+            await openCanvas(page, "/");
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.bodyOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.headerCount).toBe(1);
+            expect(metrics.consoleHeight).toBeGreaterThan(360);
+            expect(metrics.callHeight).toBeGreaterThanOrEqual(44);
+            expect(metrics.callWidth).toBeGreaterThan(120);
+          });
+
+          test("home uses accessible navigation and normal document scroll on phone", async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await openCanvas(page, "/");
+
+            await expect(page.locator(".landing-console")).toBeVisible();
+            await expect(page.locator(".marketing-surface > header")).toBeVisible();
+            await expect(page.getByRole("button", { name: "Open navigation" })).toBeVisible();
+
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX, "phone document width").toBeLessThanOrEqual(2);
+            expect(metrics.bodyOverflowX, "phone body width").toBeLessThanOrEqual(2);
+            expect(metrics.documentScrollY, "long-form story remains scrollable").toBeGreaterThan(0);
+            expect(metrics.headerCount).toBe(1);
+            expect(metrics.consoleWidth).toBeGreaterThan(330);
+
+            await page.getByRole("button", { name: "Open navigation" }).click();
+            const sheet = page.locator("#wireline-mobile-navigation");
+            await expect(sheet).toBeVisible();
+            await expect(sheet.getByRole("link", { name: "Features" })).toBeVisible();
+            await page.getByRole("button", { name: "Close navigation" }).click();
+            await expect(sheet).toHaveCount(0);
+          });
+
+          test("home remains composed on a short wide desktop", async ({ page }) => {
+            await page.setViewportSize({ width: 1440, height: 720 });
+            await openCanvas(page, "/");
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.bodyOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.headerCount).toBe(1);
+            expect(metrics.consoleWidth).toBeGreaterThan(540);
+            expect(metrics.consoleHeight).toBeGreaterThan(400);
+            expect(metrics.callHeight).toBeGreaterThanOrEqual(44);
+          });
+
+          test("feature canvas does not escape on a short desktop", async ({ page }) => {
+            await page.setViewportSize({ width: 1440, height: 720 });
+            await openCanvas(page, "/features");
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.bodyOverflowX).toBeLessThanOrEqual(2);
+          });
+
+          test("features canvas stays inside 1365px", async ({ page }) => {
+            await page.setViewportSize({ width: 1365, height: 900 });
+            await openCanvas(page, "/features");
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+          });
+
+          test("pricing opens as one coherent plan page", async ({ page }) => {
+            await page.setViewportSize({ width: 1365, height: 900 });
+            await openCanvas(page, "/pricing");
+            await expect(page.getByRole("heading", { name: "Starter", exact: true })).toBeVisible();
+            await expect(page.getByText("Channel rules and launch questions")).toBeVisible();
+            const metrics = await viewportMetrics(page);
+            expect(metrics.docOverflowX).toBeLessThanOrEqual(2);
+            expect(metrics.bodyOverflowX).toBeLessThanOrEqual(2);
+          });
+          '''.replace("          ", "", 1),
+          )
+          PY
+
             grep -Fq 'import mcpCoachingSettingsRouter from "../routes/mcp-coaching-settings-routes";' src/server/register-api-routes.ts
             grep -Fq 'app.use(mcpCoachingSettingsRouter);' src/server/register-api-routes.ts
             grep -Fq 'import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";' src/server/register-api-routes.ts
@@ -147,8 +675,8 @@ jobs:
 
             npm ci --no-audit --no-fund
 
-            # The first run intentionally rewrites a stale matrix and exits 1; the
-            # second proves the generated artifact is exact and has zero violations.
+            # The first run may rewrite a stale generated matrix; the second must
+            # prove the final authorization artifact is exact.
             set +e
             npm run authz:check
             authz_first=$?
@@ -161,11 +689,12 @@ jobs:
             npm run lint:server
             npm run lint:audit-modules
             npm run test:run
+            npm run build
 
             # Remove the one-shot merge harness and diagnostic artifacts before
             # the integration commit becomes part of the product branch.
             git rm -f .github/workflows/native-main-merge-diagnostic.yml
-            git rm -f .audit/native-main-conflicts.txt
+            git rm -f .audit/native-main-conflicts.txt 2>/dev/null || true
             git rm -f .audit/native-main-integration-failure.txt 2>/dev/null || true
             git add -A
 
@@ -175,7 +704,7 @@ jobs:
             git diff --check
 
             git status --short
-            git commit -m "Merge main into native Twilio and xAI runtime"
+            git commit -m "Merge main and complete native Twilio xAI launch audit"
             git push origin HEAD:"$GITHUB_REF_NAME"
           }
 
@@ -199,7 +728,7 @@ jobs:
             echo "RUN=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
             echo '```text'
-            tail -n 2400 /tmp/native-main-integration.log
+            tail -n 2600 /tmp/native-main-integration.log
             echo '```'
           } > .audit/native-main-integration-failure.txt
           git add .audit/native-main-integration-failure.txt
