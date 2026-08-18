@@ -31,7 +31,7 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Create a Wireline account, then draft and privately simulate a voice agent in ChatGPT.",
+    blurb: "Create a Wireline account, then draft and privately simulate a Voice Bot in ChatGPT.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: "MCP setup",
@@ -41,7 +41,7 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first Wireline voice agent from Claude with the same account-bound connector.",
+    blurb: "Build your first Wireline Voice Bot from Claude with the same account-bound connector.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,
@@ -51,7 +51,7 @@ const clientSurfaces = [
   {
     icon: Terminal,
     title: "Cursor",
-    blurb: "Install the Cursor plugin to create a Wireline account and your first voice agent. Not a repo voice SDK.",
+    blurb: "Install the Cursor plugin to create a Wireline account and your first Voice Bot. Not a repo voice SDK.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
@@ -81,16 +81,9 @@ const clientSurfaces = [
 ] as const;
 
 export default function ClientAppsPage() {
-  // Mounted at both /apps (standalone) and /settings/apps. Inside Settings the
-  // page must carry the settings tab strip and let the selected tab name it
-  // (sr-only h1) like every sibling settings page; standalone keeps its own h1.
   const location = useLocation();
   const inSettings = location.pathname.startsWith("/settings");
 
-  // The workspace scrolls inside .wl-workspace-content, not the window, and
-  // RouteChangeA11y deliberately leaves hash navigation alone — so the
-  // "MCP setup" card's /settings/apps#chatgpt-mcp link needs the same explicit
-  // scroll PhoneSetupPanel uses for #company-identity.
   useEffect(() => {
     if (location.hash !== "#chatgpt-mcp") return;
     const id = window.setTimeout(() => {
@@ -166,16 +159,16 @@ export default function ClientAppsPage() {
           className="mt-6 scroll-mt-24 border-t border-border/70 pt-5"
           aria-labelledby="chatgpt-mcp-heading"
         >
-          <p className="wl-overline text-primary">Account-bound MCP</p>
+          <p className="wl-overline text-primary">Account-Bound MCP</p>
           <h2
             id="chatgpt-mcp-heading"
             className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
-            Build your first voice agent in Cursor, ChatGPT, or Claude
+            Build Your First Voice Bot in Cursor, ChatGPT, or Claude
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> where you already work.
-            New users create a Wireline account during OAuth, then build their first voice agent in
+            New users create a Wireline account during OAuth, then build their first Voice Bot in
             that chat. Privately rehearse it there. Numbers, live calls, messaging, billing, and
             launch stay in Studio. This is not a way to embed Wireline in another repo.
           </p>
@@ -192,7 +185,7 @@ export default function ClientAppsPage() {
             </Button>
             <Button asChild variant="outline" size="sm">
               <a href="/cursor-plugin.html">
-                Cursor plugin <ArrowUpRight size={14} />
+                Cursor Plugin <ArrowUpRight size={14} />
               </a>
             </Button>
             <Button asChild variant="outline" size="sm">
@@ -201,7 +194,7 @@ export default function ClientAppsPage() {
               </a>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/developers">Public developer notes</Link>
+              <Link to="/developers">Public Developer Notes</Link>
             </Button>
           </div>
           <McpCoachingPanel />
