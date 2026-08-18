@@ -99,7 +99,10 @@ export default function BotMark({
       data-active={active ? "true" : "false"}
       data-motif={mark.motif}
     >
-      <span className="wl-bot-mark__core absolute inset-0 overflow-hidden rounded-full" style={coreStyle}>
+      <span
+        className="wl-bot-mark__core absolute inset-0 overflow-hidden rounded-full"
+        style={coreStyle}
+      >
         {imageUrl ? (
           <img src={imageUrl} alt="" className="h-full w-full object-cover" />
         ) : (
@@ -115,7 +118,7 @@ export default function BotMark({
               <span
                 aria-hidden="true"
                 className="wl-bot-mark__monogram"
-                style={{ fontSize: Math.max(7, Math.round(size * 0.23)) }}
+                style={{ fontSize: Math.min(14, Math.max(7, Math.round(size * 0.18))) }}
               >
                 {mark.initial}
               </span>
