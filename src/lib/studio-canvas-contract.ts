@@ -44,7 +44,7 @@ export const STUDIO_CANVAS_LEGACY_LINK_PATTERN = /mode=workroom/;
 
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
-    { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
+    { id: "provider-neutral-studio-route", pattern: /loadAgentStudioHome/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
     // Retired /agents directory page redirects into Studio, which owns the
     // roster under the agent-first IA. Query/hash are preserved for deep-links.

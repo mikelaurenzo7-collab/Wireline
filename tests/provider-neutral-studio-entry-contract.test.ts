@@ -11,7 +11,10 @@ const executableManifest = read("scripts/lib/studio-canvas-contract.mjs");
 
 describe("neutral Studio entry", () => {
   it("uses the canonical Studio module", () => {
-    expect(routes).toContain('import("../pages/AgentStudioHome")');
+    expect(routes).toContain("loadAgentStudioHome");
+    expect(source("src/routes/workspace-route-preload.ts")).toContain(
+      'import("../pages/AgentStudioHome")',
+    );
     expect(routes).not.toContain("AgentStudioHomeClaude");
     expect(studio).toContain("export default function AgentStudioHome()");
   });

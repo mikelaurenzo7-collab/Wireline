@@ -25,9 +25,10 @@ const problems = [];
 // separate serverless entrypoint are enumerated below, and each claim is
 // verified against the mounting file rather than trusted as prose.
 const MOUNTED_ELSEWHERE = [
-  // Public MCP surface mounted by the standalone ChatGPT entrypoint.
-  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
-  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
+  // Public MCP routes mount through the dedicated registrar, which the
+  // standalone ChatGPT entrypoint invokes via registerMcpRoutes(app).
+  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
+  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
 ];
 
 function walkTsFiles(dir) {
@@ -105,11 +106,25 @@ while (queue.length) {
   }
 }
 
-// Verify each MOUNTED_ELSEWHERE claim: the named mounting file must import the
-// router AND pass that identifier to app.use()/router.use(). A stale claim
-// (deleted import or dropped use) means the route file silently 404s while the
-// allowlist keeps this check green — exactly the failure this guards against.
+// Verify each MOUNTED_ELSEWHERE claim: the dedicated route registrar must
+// import the router AND pass that identifier to app.use()/router.use(). A stale
+// claim (deleted import or dropped use) means the route file silently 404s
+// while the allowlist keeps this check green — exactly the failure this guards
+// against.
 const mountedElsewhereFiles = new Set();
+const MCP_ENTRYPOINT = "src/entrypoints/chatgpt-mcp-api.ts";
+const MCP_REGISTRAR = "src/server/register-mcp-routes.ts";
+if (!existsSync(MCP_ENTRYPOINT) || !existsSync(MCP_REGISTRAR)) {
+  problems.push("MCP entrypoint or dedicated route registrar is missing.");
+} else {
+  const entrypoint = readFileSync(MCP_ENTRYPOINT, "utf8");
+  if (!/import\s+\{\s*registerMcpRoutes\s*\}\s+from\s+["'][^"']*register-mcp-routes["']/.test(entrypoint)) {
+    problems.push(`${MCP_ENTRYPOINT} does not import registerMcpRoutes from ${MCP_REGISTRAR}.`);
+  } else if (!/registerMcpRoutes\(app\)/.test(entrypoint)) {
+    problems.push(`${MCP_ENTRYPOINT} does not invoke registerMcpRoutes(app).`);
+  }
+}
+
 for (const { file, mountedBy } of MOUNTED_ELSEWHERE) {
   mountedElsewhereFiles.add(path.resolve(ROUTES_DIR, file));
   if (!existsSync(path.join(ROUTES_DIR, file))) {
