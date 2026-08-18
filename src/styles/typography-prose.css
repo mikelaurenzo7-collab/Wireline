@@ -3,7 +3,7 @@
    Extracted for reusability and maintainability
    ============================================ */
 
-/* Base typography tokens — masterful, past-modern scale from design tokens */
+/* Base typography tokens — canonical scale from design tokens */
 :root {
   --wireline-font-display:
     var(--wireline-font-family-display), Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
@@ -15,7 +15,7 @@
     var(--wireline-font-family-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     monospace;
 
-  /* Semantic sizes/line/weight from tokens for flawless hierarchy */
+  /* Semantic sizes/line/weight from tokens */
   --wireline-font-size-display: var(--wireline-typography-display-size);
   --wireline-font-weight-display: var(--wireline-typography-display-weight);
   --wireline-line-height-display: var(--wireline-typography-display-lineHeight);
@@ -35,8 +35,8 @@
 }
 
 /* ============================================
-   OPERATIONAL UI TYPOGRAPHY (All-caps + Larger sizing)
-   Used for titles, metrics, labels in the product
+   OPERATIONAL UI TYPOGRAPHY
+   Used for titles, metrics, and labels in the product
    ============================================ */
 
 .wl-page-title,
@@ -91,12 +91,12 @@
   }
 }
 
-/* Eyebrow / micro labels — unique, crisp from tokens */
+/* Eyebrow / micro labels — IBM Plex Mono is the canonical metadata face. */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta {
   text-transform: uppercase;
-  font-family: var(--wireline-font-sans);
+  font-family: var(--wireline-font-mono);
   font-size: var(--wireline-font-size-caption);
   letter-spacing: var(--wireline-letter-spacing-overline);
   font-weight: var(--wireline-font-weight-overline);
@@ -207,8 +207,8 @@ html.light .prose {
 /* ==========================================================================
    Wireline canonical typography scale — the single source of truth for
    display headlines, eyebrows, leads, and body across marketing + app.
-   Replaces ~19 scattered text-[Npx] declarations with five steps that
-   scale fluidly from the smallest phone to ultra-wide desktops.
+   Replaces scattered one-off text sizes with five steps that scale fluidly
+   from the smallest phone to ultra-wide desktops.
 
    Defaults live in @layer base so any Tailwind utility wins automatically
    (utilities are in their own higher layer; unlayered CSS would have beaten
@@ -219,7 +219,7 @@ html.light .prose {
 
 /* Display 1 — landing hero headlines (the biggest type on the site). */
 .wl-display-1 {
-  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-family: var(--wireline-font-display);
   font-weight: 400;
   font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
   line-height: 0.98;
@@ -229,7 +229,7 @@ html.light .prose {
 
 /* Display 2 — section headlines on marketing, pricing tiers, dashboards. */
 .wl-display-2 {
-  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-family: var(--wireline-font-display);
   font-weight: 400;
   font-size: clamp(2rem, 1.3rem + 2.8vw, 3.5rem);
   line-height: 1.02;
@@ -239,7 +239,7 @@ html.light .prose {
 
 /* Display 3 — page titles (Account, Billing, Phone, Team, Connections). */
 .wl-display-3 {
-  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-family: var(--wireline-font-display);
   font-weight: 400;
   font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
   line-height: 1.05;
@@ -249,7 +249,7 @@ html.light .prose {
 
 /* Display 4 — card titles and hero number callouts. */
 .wl-display-4 {
-  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-family: var(--wireline-font-display);
   font-weight: 400;
   font-size: clamp(1.125rem, 1rem + 0.6vw, 1.625rem);
   line-height: 1.1;
@@ -311,10 +311,9 @@ html.light .prose {
   padding-block: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
 }
 
-/* Card primitives — one shared shell for every authenticated panel + marketing
-   card. Surfaces that hand-rolled `rounded-[14px] border bg-surface p-5/6`
-   now reach for these classes instead so radius, border, and surface stay
-   consistent across every page. */
+/* Card primitives — one shared shell for authenticated panels + marketing
+   cards. Surfaces that hand-roll radius/border/background should migrate here
+   so geometry and surface tone remain consistent across the product. */
 .wl-card {
   border-radius: var(--wireline-radius-lg);
   border: 1px solid var(--wireline-color-border-default);
