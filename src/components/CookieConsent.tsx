@@ -30,6 +30,9 @@ function noticeAcknowledged(): boolean {
   try {
     return localStorage.getItem(NOTICE_STORAGE_KEY) !== null;
   } catch {
+    // Hardened/private contexts may block storage entirely. Keep the notice
+    // eligible to render while the measurement runtime independently defaults
+    // to off unless it can read an explicit grant.
     return false;
   }
 }
