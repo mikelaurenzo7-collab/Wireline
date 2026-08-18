@@ -1,8 +1,8 @@
 # Native/main integration failure
 
-HEAD=ee8c7464e0672c06e3ca603dc4c25ec3d303138b
+HEAD=54cc4544f0cf12a7fa875ece32362325ccb744c4
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32091721443
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32092147966
 
 ```text
 From https://github.com/mikelaurenzo7-collab/Wireline
@@ -32,9 +32,10 @@ Auto-merging tests/openai-live-demo-contract.test.ts
 Automatic merge failed; fix conflicts and then commit the result.
 Updated 8 paths from the index
 Applied native/main integration fixes.
+Applied final combined-head lint and syntax repairs.
 npm warn deprecated scmp@2.1.0: Just use Node.js's crypto.timingSafeEqual()
-npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.hirok.io
 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.hirok.io
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.hirok.io
 npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
 npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
@@ -42,7 +43,7 @@ npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and con
 > husky
 
 HUSKY=0 skip install
-added 762 packages in 13s
+added 762 packages in 16s
 
 > wireline@1.0.0 authz:check
 > node --import tsx scripts/generate-authz-matrix.ts
@@ -77,13 +78,1137 @@ rm '.github/workflows/native-main-merge-diagnostic.yml'
 > eslint --max-warnings 0 .
 
 
-/home/runner/work/Wireline/Wireline/src/lib/voice/xai-phone-activation-service.ts
-   90:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  158:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+> wireline@1.0.0 test:run
+> vitest run --exclude 'tests/e2e/**'
 
-/home/runner/work/Wireline/Wireline/tests/round6-honesty-compliance-contract.test.ts
-  125:0  error  Parsing error: Declaration or statement expected
 
-✖ 3 problems (1 error, 2 warnings)
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/Wireline/Wireline[39m
 
+ [32m✓[39m tests/billing-proof-contract.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m tests/ai-cost-protection-contract.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m tests/product-voice-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m tests/design/agent-navigation-contract.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/authenticated-agent-flow-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m tests/stripe-runtime-allowance-retry-contract.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/credential-and-spend-boundary-contract.test.ts [2m([22m[2m31 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/code-review-hardening-contract.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/live-video-session-policy.test.ts [2m([22m[2m36 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/letterpress-polish-contract.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/personal-agent-parity-contract.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m tests/company-identity-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/silent-failure-round2-contract.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/stripe-account-identity.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/design-brand-polish-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m tests/resend-webhook-feedback-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/website-knowledge-ingestion-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/double-pass-launch-honesty-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m tests/live-video-stripe-races.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1146[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps a canceled late Checkout disabled and closes its operation [33m 561[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses talking-head checkout after retirement [33m 516[2mms[22m[39m
+ [32m✓[39m tests/callback-execution-contract.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/agentmail-mail.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/current-state-ui-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/capacity-and-carrier-double-pass.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/live-video-session-craft-contract.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/xai-native-voice-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/launch-completeness-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/design/authenticated-mobile-cleanup-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2mreleases the reservation when every configured provider explicitly rejects with 401
+[22m[39m[warn] [ai-runtime] provider request rejected { provider: [32m'OpenAI'[39m, status: [33m401[39m, detail: [32m'{"error":"unauthorized"}'[39m }
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2mreleases the reservation when every configured provider explicitly rejects with 401
+[22m[39m[warn] [ai-circuit-breaker] provider failure recorded {
+  provider: [32m'OpenAI'[39m,
+  failureCount: [33m1[39m,
+  error: [32m'OpenAI request was rejected (401)'[39m
+}
+[warn] [ai-runtime] OpenAI request failed; trying xAI fallback { error: [32m'OpenAI request was rejected (401)'[39m, breakerState: [32m'CLOSED'[39m }
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2mreleases the reservation when every configured provider explicitly rejects with 401
+[22m[39m[warn] [ai-runtime] provider request rejected { provider: [32m'xAI'[39m, status: [33m401[39m, detail: [32m'{"error":"unauthorized"}'[39m }
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2mreleases the reservation when every configured provider explicitly rejects with 401
+[22m[39m[warn] [ai-circuit-breaker] provider failure recorded {
+  provider: [32m'xAI'[39m,
+  failureCount: [33m1[39m,
+  error: [32m'xAI request was rejected (401)'[39m
+}
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2msettles only actual fallback usage after a 401 rejection
+[22m[39m[warn] [ai-runtime] provider request rejected { provider: [32m'OpenAI'[39m, status: [33m401[39m, detail: [32m'{"error":"unauthorized"}'[39m }
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2msettles only actual fallback usage after a 401 rejection
+[22m[39m[warn] [ai-circuit-breaker] provider failure recorded {
+  provider: [32m'OpenAI'[39m,
+  failureCount: [33m2[39m,
+  error: [32m'OpenAI request was rejected (401)'[39m
+}
+[warn] [ai-runtime] OpenAI request failed; trying xAI fallback { error: [32m'OpenAI request was rejected (401)'[39m, breakerState: [32m'CLOSED'[39m }
+
+[90mstdout[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2msettles only actual fallback usage after a 401 rejection
+[22m[39m[info] [ai-runtime] response complete { provider: [32m'xAI'[39m, model: [32m'grok-4.6'[39m, latencyMs: [33m1[39m, structured: [33mtrue[39m }
+
+[90mstderr[2m | tests/website-knowledge-spend.test.ts[2m > [22m[2mwebsite knowledge spend reservation[2m > [22m[2mretains the durable hold without double-writing when actual settlement fails
+[22m[39m[error] Website import actual-cost settlement failed; retaining reserve {
+  userId: [32m'user-1'[39m,
+  hostname: [32m'example.com'[39m,
+  error: [32m'database unavailable'[39m
+}
+
+ [32m✓[39m tests/website-knowledge-spend.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m tests/agent-tool-authorization.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [31m❯[39m tests/marketing-route-meta-contract.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 41[2mms[22m[39m
+     [32m✓[39m keeps the homepage-default constants in sync with the static HTML shell[32m 3[2mms[22m[39m
+     [32m✓[39m prerenders every /for/* wedge, inline commercial page, and guarded account shell[32m 6[2mms[22m[39m
+     [32m✓[39m serves the homepage and unregistered app routes unchanged (null meta)[32m 0[2mms[22m[39m
+     [32m✓[39m derives every /for/:slug page's meta from WEDGES (one source of truth)[32m 4[2mms[22m[39m
+[31m     [31m×[31m keeps the inline-page values verbatim in sync with each page's PageMeta call[39m[32m 15[2mms[22m[39m
+     [32m✓[39m keeps the trust packs' hydrated head sourced from the prerendered registry[32m 1[2mms[22m[39m
+     [32m✓[39m normalizes trailing slashes and strips query/hash[32m 1[2mms[22m[39m
+     [32m✓[39m emits noindex before hydration for account, transition, and not-found routes[32m 6[2mms[22m[39m
+     [32m✓[39m rewrites the static head for a marketing route without touching unrelated markup[32m 1[2mms[22m[39m
+     [32m✓[39m is wired into the build pipeline that both local and Vercel builds run[32m 1[2mms[22m[39m
+ [32m✓[39m tests/conversion-funnel-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/health-surfaces-contract.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [31m❯[39m tests/security-atomicity-release-contract.test.ts [2m([22m[2m8 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 22[2mms[22m[39m
+     [32m✓[39m revokes issued sessions through a monotonic database generation[32m 4[2mms[22m[39m
+     [32m✓[39m claims invitations only for the bound identity and lists verified workspaces[32m 2[2mms[22m[39m
+[31m     [31m×[31m reserves each number before native placement and preserves the lock after uncertain outcomes[39m[32m 7[2mms[22m[39m
+     [32m✓[39m creates resumable Stripe Checkout Sessions with durable idempotency keys[32m 1[2mms[22m[39m
+     [32m✓[39m binds OAuth code deletion to the browser state through a restricted function[32m 1[2mms[22m[39m
+     [32m✓[39m tests exactly one selected webhook and returns delivery truth[32m 0[2mms[22m[39m
+     [32m✓[39m pins hardened route owners ahead of legacy handlers[32m 4[2mms[22m[39m
+     [32m✓[39m terminates a corrupted long-running runtime after telemetry listeners[32m 0[2mms[22m[39m
+ [32m✓[39m tests/mailbox-and-daily-brief-hardening-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/outbound-runtime-behavior.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 106[2mms[22m[39m
+ [32m✓[39m tests/design-token-pipeline-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m tests/prelaunch-account-export-and-twilio.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/stripe-portal-reconciler-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m tests/regroup-audit-hardening-contract.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/authenticated-responsive-polish-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+[90mstderr[2m | tests/xai-tts-service.test.ts[2m > [22m[2mxAI TTS synthesis[2m > [22m[2mconverts a provider rejection into a generic 503 without leaking the body
+[22m[39m[warn] [xai-tts] provider request rejected {
+  status: [33m429[39m,
+  voiceId: [32m'eve'[39m,
+  codec: [32m'mp3'[39m,
+  detail: [32m'quota exceeded for org acct_123'[39m
+}
+
+[90mstderr[2m | tests/xai-tts-service.test.ts[2m > [22m[2mxAI TTS synthesis[2m > [22m[2mtreats empty provider audio as a failure rather than silent output
+[22m[39m[warn] [xai-tts] provider returned empty audio { voiceId: [32m'eve'[39m, codec: [32m'mp3'[39m }
+
+[90mstderr[2m | tests/xai-tts-service.test.ts[2m > [22m[2mxAI TTS synthesis[2m > [22m[2mconverts a transport failure into a 503 instead of surfacing the raw error
+[22m[39m[warn] [xai-tts] synthesis failed { voiceId: [32m'eve'[39m, error: [32m'ECONNRESET api.x.ai'[39m }
+
+[90mstderr[2m | tests/xai-tts-service.test.ts[2m > [22m[2mxAI voice roster[2m > [22m[2mdegrades to the built-in roster when the catalog call fails
+[22m[39m[warn] [xai-tts] voice roster unavailable; using built-in roster { error: [32m'voice roster failed (500)'[39m }
+
+ [32m✓[39m tests/xai-tts-service.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 99[2mms[22m[39m
+ [32m✓[39m tests/tenant-pool-transaction.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m tests/round4-audit-fixes-contract.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/billing-chain-hardening-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/post-call-notification-durability.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/managed-vapi-runtime-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/account-deletion-post-call-fence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m tests/twilio-accepted-reconciliation-behavior.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 564[2mms[22m[39m
+     [33m[2m✓[22m[39m returns carrier acceptance and queues failed local bookkeeping without a second send [33m 496[2mms[22m[39m
+ [32m✓[39m tests/label-tracking-single-source-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/public-health-function.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m tests/chatgpt-app-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/spend-guard-integrity-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/atomic-design-system-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m tests/qa-rubric-and-log-privacy-contract.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+[90mstderr[2m | tests/rbac-role-resolution-contract.test.ts[2m > [22m[2mRBAC stored-role resolution[2m > [22m[2mresolves an unknown stored role down rather than leaving it at the default
+[22m[39m[warn] Unrecognised team member role resolved to least privilege {
+  tenantId: [32m'11111111-1111-4111-8111-111111111111'[39m,
+  userId: [32m'22222222-2222-4222-8222-222222222222'[39m,
+  storedRole: [32m'some-future-tier'[39m,
+  resolvedRole: [32m'viewer'[39m
+}
+
+ [32m✓[39m tests/rbac-role-resolution-contract.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/extra-agent-payment-atomicity.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/auth-oauth-browser-binding-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/full-surface-audit-fixes-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/showcase-truth-sync-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/billing-release-gate-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/plan-catalog.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/fcc-64-1200b-runtime-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/design-system-integrity-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/request-parsing-integrity-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/knowledge-ingest-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m tests/public-health-distributed-cache-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/job-attempt-fencing-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m tests/integration-vendor-operating-map.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/provider-spend-hard-gate-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/ui-floating-surface-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/design/demand-driven-overview-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [31m❯[39m tests/marketing-centering-contract.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 44[2mms[22m[39m
+     [32m✓[39m keeps centered public rails and actions as the marketing default[32m 4[2mms[22m[39m
+[31m     [31m×[31m keeps the compact account header balanced and delays duplicate sticky actions[39m[32m 29[2mms[22m[39m
+     [32m✓[39m keeps each mobile footer column vertical and intrinsically sized[32m 1[2mms[22m[39m
+     [32m✓[39m loads public hierarchy before document flow and the final readable-type layer[32m 2[2mms[22m[39m
+     [32m✓[39m keeps the public signal mark violet from the first terminal[32m 0[2mms[22m[39m
+     [32m✓[39m gives every public route one browser-document scroll owner[32m 1[2mms[22m[39m
+     [32m✓[39m lets a one-screen panel fill the flow instead of sitting under the header[32m 1[2mms[22m[39m
+     [32m✓[39m keeps the retired Sarah call preview fully removed from use cases[32m 1[2mms[22m[39m
+     [32m✓[39m ships structured data on the blog for SEO[32m 1[2mms[22m[39m
+     [32m✓[39m keeps primary public marketing surfaces centered[32m 2[2mms[22m[39m
+ [32m✓[39m tests/provider-call-erasure.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m src/lib/mcp-client-registry.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/final-e2e-bugfix-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/overview-operating-truth-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/ui-ux-double-pass-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/agent-roster-degraded-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m tests/platform-pool-and-webhook-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/carrier-release-integrity.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/round8-billing-integrity-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/public-demo-cost-protection-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/wireline-product-docs.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/dual-voice-routing-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/round6-margin-capacity-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Materialized Drizzle snapshot 0050 (d745e0bbd85d…).
+Materialized Drizzle snapshot 0051 (ca35f3a7f917…).
+ [32m✓[39m tests/migration-journal-integrity-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/subsystem-audit-hardening-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/production-env-policy-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 335[2mms[22m[39m
+     [33m[2m✓[22m[39m fails preview builds that inherit production credentials or provider configuration [33m 325[2mms[22m[39m
+ [32m✓[39m tests/launch-reel-capture-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m tests/omnichannel-outcome-loop-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/runtime-provider-chain-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/twilio-webhook-privacy.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/launch-truth-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/repo-documentation-organization-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/marketing-metadata-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/video-presenter-contract.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/verified-voice-security-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/pageshell-tab-semantics-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/api-response-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-finetune-2026-07-27-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/number-reclamation.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 633[2mms[22m[39m
+     [33m[2m✓[22m[39m releases a number whose subscription is canceled past the grace window [33m 577[2mms[22m[39m
+ [32m✓[39m tests/post-call-csat-preprovider-refund.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 657[2mms[22m[39m
+     [33m[2m✓[22m[39m refunds and rethrows when the durable claim fails before Twilio is called [33m 586[2mms[22m[39m
+ [32m✓[39m tests/agent-runtime-performance-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/launch-creative-consistency-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/wireline-design-vision-contract.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/email-observability-privacy-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m tests/twilio-voice-failover-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/inbound-runtime-guardrails-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/outbound-launch-safety.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/structured-runtime-policy-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/design-token-cross-surface-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m tests/auth-terminal-deletion-gate.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/round6-honesty-compliance-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/compliance-disclosure-contract.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-sextuple-pass-2026-07-27-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/dnc-route-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/yahoo-openid-security.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 660[2mms[22m[39m
+ [32m✓[39m tests/vapi-modern-payload-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/production-schema-effects-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/signup-intent-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/auth-service-behavioral.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 1826[2mms[22m[39m
+     [33m[2m✓[22m[39m produces different tokens for same user after time advances [33m 1101[2mms[22m[39m
+ [32m✓[39m tests/industry-leader-audit-contract.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/voice-wallet-guard.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 523[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a paid plan before any live voice work [33m 450[2mms[22m[39m
+ [32m✓[39m tests/ai-disclosure-evidence-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/transaction-pool-safety-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m tests/subscription-entitlement-provenance-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/design-system-class-definition-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m tests/claude-connector-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/cold-path-and-metric-honesty-contract.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/public-health-probe.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/agent-tool-idempotency.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/product-events-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/production-build-env-gate-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/portalled-surface-case-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstderr[2m | tests/stripe-founder-price-contract.test.ts[2m > [22m[2mstrict Stripe founder-price contract[2m > [22m[2mtreats a configured id as a validated hint and safely falls back
+[22m[39m[warn] Configured Stripe price failed the founder catalog contract; using lookup key {
+  planId: [32m'starter'[39m,
+  interval: [32m'month'[39m,
+  envKey: [32m'STRIPE_STARTER_9_PRICE_ID'[39m
+}
+
+ [32m✓[39m tests/stripe-founder-price-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/stripe-customer-binding-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/round11-review-fixes-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/realtime-spend-reservation-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/durable-enqueue-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/launch-artifact-privacy-and-ops-truth-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/mcp-transport-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/launch-gate-diagnosis-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/stripe-api-modernization.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/voice-usage-event-integrity-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-template-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/rate-limit-behavioral.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 214[2mms[22m[39m
+ [32m✓[39m tests/static-metadata-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/customer-facing-infrastructure-language-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m tests/live-video-economics-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/founder-fleet-composition-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/pr729-hardening-contract.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/database-connection.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/operational-slo-accuracy.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/compliance-runtime-fixes.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m tests/live-call-billing-continuity-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/safe-area-spacing-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/agentmail-mailbox-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/xai-native-phone-lifecycle-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/sales-trust-copy-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/platform-ledger-integrity-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/stripe-product-copy.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/runbook-endpoint-truth-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/showcase-demo-ceiling.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m tests/verified-launch-wins-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/agentmail-webhook.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/browser-extension-download-freshness-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/authz-tooling-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/outbound-compliance-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/design/authenticated-seeded-visual-qa-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/activation-path-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/website-fetch-stream-safety.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/production-promotion-safety-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m tests/browser-extension-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+[90mstderr[2m | tests/federal-dnc-service.test.ts[2m > [22m[2mfederal-dnc-service[2m > [22m[2mfails closed when vendor is configured but lookup errors
+[22m[39m[warn] federal DNC lookup failed { error: [32m'Error: network down'[39m }
+
+[90mstderr[2m | tests/federal-dnc-service.test.ts[2m > [22m[2mfederal-dnc-service[2m > [22m[2mfails closed when vendor is configured but lookup errors
+[22m[39m[warn] federal DNC lookup failed { error: [32m'Error: network down'[39m }
+
+ [32m✓[39m tests/federal-dnc-service.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/round5-finetune-fixes-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/vendor-live-research-posture-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/vapi-voice-model-policy.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/round6-tenant-binding-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-quintuple-pass-2026-07-27-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/marketing-copy-hyphen-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/modal-lifecycle-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/authenticated-minimal-copy-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/dogfood-credential-alias-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/oauth-rate-limit-middleware.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/hero-live-demo-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/retired-client-env-sanitizer-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m tests/voice-catalog-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/daily-brief-scheduler-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/auth-redirect.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/oauth-provider-identity-integrity-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/session-version-revocation-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/platform-cost-metering-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/stripe-modernization-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/auth-transition-case-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/twilio-message-reliability.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-triple-pass-2026-07-27-contract.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/production-schema-database-selection.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/paywall-reachability-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m tests/canonical-phone-routes-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/oauth-active-session-binding-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/native-xai-lifecycle-regression.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/post-call-csat-behavior.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/round7-tenant-identity-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/launch-campaign-vo-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/public-route-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/model-pricing-coverage-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/product-organization-truth-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/inbound-concurrency.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 586[2mms[22m[39m
+     [33m[2m✓[22m[39m admits below the ceiling [33m 534[2mms[22m[39m
+ [32m✓[39m tests/e2e-cleanliness-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/studio-canvas-vision-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/third-party-script-blocking-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/lib/icloud-mail.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-redaction.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-quadruple-pass-2026-07-27-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/stripe-subscription-reversal-retry-defense-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-deep-pass-2026-07-27-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/tenant-facing-errors-and-aggregation-contract.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/openai-runtime-cohesion-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/round10-consent-scope-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/tcpa-calling-hours.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m tests/native-voice-compliance.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/ai-supervisor-live-communication.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/outbound-call-purpose.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/mobile-overlay-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/sms-inbox-error-honesty-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/cursor-plugin-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/vendor-readiness-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/studio-vapi-web-live-test-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/yahoo-jwks-rotation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 205[2mms[22m[39m
+ [32m✓[39m tests/auth-token-atomicity-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/product-event-client-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m tests/webhook-delivery-truth-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/expensive-admission-fail-closed-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/chart-bundle-boundary-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-septuple-pass-2026-07-27-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/stripe-stale-claim-preflight-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/stripe-brand-asset-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/lib/auth-service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 211[2mms[22m[39m
+ [32m✓[39m tests/public-demo-ticket.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/breached-passwords.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m tests/html-visible-text.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/rls-purge-tenant-context-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/studio-chat-stream-settlement-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/product-doctrine-parity-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-authz-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/stripe-product-copy-audit-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/openai-live-demo-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/oauth-email-trust.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/mobile-tcpa-consent-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/signup-bootstrap-integrity-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/call-ops-metrics-truth-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/lifecycle-notification-durability-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/lib/mailbox-identity.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/calendar-time.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m tests/refund-tax-clamp-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/public-navigation-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/live-video-base-plan-cascade-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/review-double-pass-fixes.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/design/fast-start-steps-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/vapi-report-normalization.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/checkout-customer-recovery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/marketing-hero-no-subhead-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m tests/sms-thread-outcome-ownership-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/pricing-cta-case-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/shared-workspace-readiness-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/live-voice-trust-surface-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/call-ops-analytics-truth-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/post-merge-ui-artifact-hardening-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/design-token-reference-integrity-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m tests/orchestration-spine-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/sitemap-prerender-parity-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/security-hardening-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/phone-self-serve-setup-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/twilio-webhook-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/founder-cockpit-purge-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 105[2mms[22m[39m
+ [32m✓[39m tests/internal-jwt-claim-validation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/cold-start-deferral-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+ [32m✓[39m tests/drizzle-schema-parity-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/agent-customization.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/browser-handoff-token-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/authenticated-surfaces.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/vapi-environment-boundary-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/browser-pcm.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m tests/studio-agent-preference.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/signin-failure-durability.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/openai-managed-public-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/calendar-tool-schema.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/action-engine-surface-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/test-estate-environment.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 92[2mms[22m[39m
+[90mstderr[2m | tests/voice-preview-service.test.ts[2m > [22m[2mcurated voice previews[2m > [22m[2mfails safely for unknown voices, missing configuration, and provider errors
+[22m[39m[warn] [xai-tts] provider request rejected { status: [33m429[39m, voiceId: [32m'eve'[39m, codec: [32m'mp3'[39m, detail: [32m'rate limited'[39m }
+
+ [32m✓[39m tests/voice-preview-service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m tests/tenant-marketing-compliance-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/runtime-integrations-registry-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/mcp-coaching-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/native-command-center-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/auth-journey-hardening-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/surfaces-parity-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/vapi-degraded-runtime-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/proactive-enrichment-tenant-isolation-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/double-pass-residual-hardening-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/agent-outcome-scope-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/agent-tool-result-truth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/cadence-outbound-compliance-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/design-consolidation-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/twilio-operational-alert-reliability-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/webhook-dns-pinning-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/agent-role-definitions-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/product-event-server-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/webhook-management-hardening-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/production-outcome-report-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/mcp-client-registry-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/phone-search-no-purchase-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/demo-line-canary-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/safe-number.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m tests/salesforce-runtime-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/webhook-delivery-literal-ssrf-contract.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/twilio-usage-alert-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/account-environment-operator-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/stripe-authoritative-subscription-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/activation-milestone-truth-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/empty-state-route-hygiene-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/production-voice-runtime-policy-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/conversation-trust-surfaces-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/vapi-call-create-idempotency.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m tests/production-activation-report-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/carrier-keywords.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/auth-signin-timing-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/outcome-evidence-loop-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/annual-billing-and-model-routing-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/oauth-provider-error-response-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/settings-entitlement-lockdown-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/wireline-create-flow.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/webhook-response-stream-safety.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/vercel-env-target-policy-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/launch-readiness-dnc-deferral-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/work-companion-retired-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/xai-imagine-video.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/signup-intent.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/account-environment-migration-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/vercel-tooling-pin-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/salesforce-sync-preferences.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/heygen-presence-clips-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/cadence-stripe-gdpr-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/account-type-nav.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/audio-sniff.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-token-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/managed-ai-recipe-health-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/command-bar-chords.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/action-engine-sms-compliance-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/static-icon-integrity-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/video-presenter/live-video-policy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/activation-bootstrap-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/marketing-information-hierarchy-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/approval-inbox-response.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/auth-redirect-returning-plan.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/sales-call-fixtures-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[90mstdout[2m | tests/integration/api-health.test.ts[2m > [22m[2mAPI integration smoke
+[22m[39m{"ts":"2026-08-18T02:33:51.220Z","level":"info","msg":"Environment setup checklist generated. See logs above for details."}
+
+[90mstderr[2m | tests/integration/api-health.test.ts[2m > [22m[2mAPI integration smoke
+[22m[39m{"ts":"2026-08-18T02:33:51.218Z","level":"warn","msg":"Environment validation has missing or invalid settings","errors":["INTERNAL_JWT_SECRET","XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN"],"byGroup":{"core":{"valid":2,"invalid":1,"total":3},"ai":{"valid":12,"invalid":1,"total":12},"voice":{"valid":10,"invalid":0,"total":10},"oauth":{"valid":4,"invalid":0,"total":4},"billing":{"valid":5,"invalid":0,"total":5},"action_engine":{"valid":0,"invalid":0,"total":0},"infrastructure":{"valid":4,"invalid":0,"total":4},"security":{"valid":3,"invalid":0,"total":3},"operational":{"valid":9,"invalid":0,"total":9}}}
+{"ts":"2026-08-18T02:33:51.220Z","level":"error","msg":"UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production, rate limits are per-invocation only and provide no protection in serverless. Set both vars in Vercel project settings before serving real traffic."}
+{"ts":"2026-08-18T02:33:51.220Z","level":"error","msg":"Missing required env vars in production. Affected features will return errors at request time.","missing":["INTERNAL_JWT_SECRET","XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN"],"groupSummary":{"core":{"valid":2,"invalid":1,"total":3},"ai":{"valid":12,"invalid":1,"total":12},"voice":{"valid":10,"invalid":0,"total":10},"oauth":{"valid":4,"invalid":0,"total":4},"billing":{"valid":5,"invalid":0,"total":5},"action_engine":{"valid":0,"invalid":0,"total":0},"infrastructure":{"valid":4,"invalid":0,"total":4},"security":{"valid":3,"invalid":0,"total":3},"operational":{"valid":9,"invalid":0,"total":9}}}
+{"ts":"2026-08-18T02:33:51.220Z","level":"warn","msg":"Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key), marketing/campaign outbound fails closed until a real DNCScrub loginId is set."}
+{"ts":"2026-08-18T02:33:51.220Z","level":"warn","msg":"SENTRY_DSN not set in production, 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic."}
+{"ts":"2026-08-18T02:33:51.221Z","level":"warn","msg":"Recommended env vars not set","recommended":["APP_URL","CORS_ORIGINS"]}
+{"ts":"2026-08-18T02:33:51.222Z","level":"error","msg":"CORS misconfigured: set CORS_ORIGINS and/or APP_URL in production"}
+
+[90mstderr[2m | tests/integration/api-health.test.ts[2m > [22m[2mAPI integration smoke[2m > [22m[2mGET /api/health responds with honest JSON (not opaque 500)
+[22m[39m{"ts":"2026-08-18T02:33:51.250Z","level":"warn","msg":"[rate-limit] UPSTASH_REDIS_REST_URL not set, rate limits are per-invocation only and provide no real protection in serverless. Configure Upstash Redis for production.","requestId":"9a2a6d7c-9f01-46a5-8f23-475495387aa7"}
+
+ [32m✓[39m tests/integration/api-health.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 4535[2mms[22m[39m
+ [32m✓[39m tests/landing-reassurance-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/mcp-oauth-issuer-binding-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/user-display.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/oauth-session-version-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/website-knowledge-timeout.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/free-builder-spend-ui-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/templates-studio-create-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/launch-hard-gate.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/webhook-signing-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/call-recording-security-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-branding-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/entitlement-fail-closed-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/chatgpt-mcp-widget-styles-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/client-bundle-budget-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/auth-route-ownership-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/account-holder-conversation-roles-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/design/fast-start-native-voice-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/data/wireline-knowledge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/mcp-oauth-security-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/dnc-agent-tool-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/safe-date.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/vapi-v2-webhook-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/extra-agent-payment-sdk-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/provider-neutral-studio-entry-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/shareable-artifact-entitlement-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/voice-pricing-display.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m tests/sms-trust-surface-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/admin-settings-load-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/voice-research-timeout-not-call-cap-contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/prerender-runtime-compatibility-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/gtm-conversion-events-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/sms-direction-mapping.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/spend-guard-default-drift-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/tenant-tool-integration-status.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/voice-observability-api-paths-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/dialer-compliance.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/oauth-public-error.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/stripe-checkout-branding-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/vapi-monitor-url.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/vapi-tool-results.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/vapi-showcase-sync-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/twilio-sms-concurrency-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/insights-ai-rate-limit-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/call-reliability-tool-results.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/password-policy.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/ios-networking-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/xai-native-compliance-boundary-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/outbound-consent-copy-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/agentmail-inbox-error-honesty-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/action-extraction-timezone-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/vapi-listen-gate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/pcm-resample.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/ai-client-usage-accounting.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/carrier-sms-toggle-honesty-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/callback-provenance-strictness.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/status-notice-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/home-hero-single-line-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/daily-brief-send-now-rate-limit-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/auth-signup-enumeration-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/phone-settings-attach-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/semantic-token-runtime-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/private-agent-test.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/guided-agent-learning-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/conversation-balance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/xai-native-reassignment-race-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/operator-sql-audits-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/grok-features.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/outcome-action-chronology-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/public-header-mobile-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/soc2-evidence-pack-cta-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/public-metadata-privacy-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/sales-integration-policy-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/client-dom-recovery-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/chunk-recovery-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/recap-artifact-agent-index-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/sales-playbooks-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/xai-native-number-validation-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/activation-funnel-contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/audit-summary-pricing-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/workspace-page-title.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/lib/mcp-app-metadata.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/launch-polish-audit-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/supabase-recap-policy-cleanup-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/job-queue-priority-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/authenticated-visual-selector-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/voice-label.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/agent-draft-live-guard-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/date-display.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/presenter-voice-security-contract.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/mcp-coaching-preferences.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/agent-identity.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/qa-stats.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/marketing-centering-contract.test.ts[2m > [22mmarketing centering contract[2m > [22mkeeps the compact account header balanced and delays duplicate sticky actions
+[31m[1mAssertionError[22m: expected 'import { Link } from "react-router";\…' to contain '<nav className="ml-auto flex items-ce…'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- <nav className="ml-auto flex items-center gap-2 sm:gap-4" aria-label="Account">[39m
+[31m+ import { Link } from "react-router";[39m
+[31m+[39m
+[31m+ import WirelineMark from "../brand/WirelineMark";[39m
+[31m+ import SkipToContentLink from "../layout/SkipToContentLink";[39m
+[31m+[39m
+[31m+ export default function PrecisionPublicHeader() {[39m
+[31m+   return ([39m
+[31m+     <header className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">[39m
+[31m+       <SkipToContentLink href="#main-content" />[39m
+[31m+       <div className="wl-measure mx-auto flex h-16 min-w-0 items-center gap-2 px-2.5 sm:gap-5 sm:px-6 lg:px-8">[39m
+[31m+         <Link[39m
+[31m+           to="/"[39m
+[31m+           className="flex min-w-0 shrink items-center gap-2 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"[39m
+[31m+           aria-label="Wireline home"[39m
+[31m+         >[39m
+[31m+           <WirelineMark className="size-8 shrink-0 text-primary" signal />[39m
+[31m+           <span className="truncate">Wireline</span>[39m
+[31m+         </Link>[39m
+[31m+[39m
+[31m+         <nav[39m
+[31m+           className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"[39m
+[31m+           aria-label="Account"[39m
+[31m+         >[39m
+[31m+           <Link[39m
+[31m+             to="/signin"[39m
+[31m+             className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-2 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-3"[39m
+[31m+           >[39m
+[31m+             Sign In[39m
+[31m+           </Link>[39m
+[31m+           <Link[39m
+[31m+             to="/signup?plan=personal"[39m
+[31m+             className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[379px]:px-3"[39m
+[31m+           >[39m
+[31m+             Start Free[39m
+[31m+           </Link>[39m
+[31m+         </nav>[39m
+[31m+       </div>[39m
+[31m+     </header>[39m
+[31m+   );[39m
+[31m+ }[39m
+[31m+[39m
+
+[36m [2m❯[22m tests/marketing-centering-contract.test.ts:[2m24:20[22m[39m
+    [90m 22|[39m     const stickyCta = read("src/components/marketing/MarketingStickyCt…
+    [90m 23|[39m
+    [90m 24|[39m     [34mexpect[39m(header)[33m.[39m[34mtoContain[39m(
+    [90m   |[39m                    [31m^[39m
+    [90m 25|[39m       '<nav className="ml-auto flex items-center gap-2 sm:gap-4" aria-…
+    [90m 26|[39m     )[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/marketing-route-meta-contract.test.ts[2m > [22mroute meta prerendering[2m > [22mkeeps the inline-page values verbatim in sync with each page's PageMeta call
+[31m[1mAssertionError[22m: /privacy description: expected 'import { useState } from "react";\nim…' to contain 'Privacy for Wireline\'s voice agent p…'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.[39m
+[31m+ import { useState } from "react";[39m
+[31m+ import { ArrowLeft, Cookie, Shield } from "lucide-react";[39m
+[31m+ import { Link } from "react-router";[39m
+[31m+ import { PageMeta } from "../lib/page-meta";[39m
+[31m+ import MarketingChrome from "./marketing/MarketingChrome";[39m
+[31m+ import { ShadButton } from "./ui/shadcn/ShadButton";[39m
+[31m+[39m
+[31m+ const LAST_UPDATED = "August 17, 2026";[39m
+[31m+ const NOTICE_STORAGE_KEY = "wireline_cookie_consent";[39m
+[31m+ const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";[39m
+[31m+ const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";[39m
+[31m+ const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for cross-context campaign measurement as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;[39m
+[31m+[39m
+[31m+ type MeasurementConsent = "granted" | "denied";[39m
+[31m+[39m
+[31m+ type PrivacyAwareNavigator = Navigator & {[39m
+[31m+   globalPrivacyControl?: boolean;[39m
+[31m+ };[39m
+[31m+[39m
+[31m+ function globalPrivacyControlEnabled(): boolean {[39m
+[31m+   if (typeof navigator === "undefined") return false;[39m
+[31m+   return (navigator as PrivacyAwareNavigator).globalPrivacyControl === true;[39m
+[31m+ }[39m
+[31m+[39m
+[31m+ function readMeasurementConsent(): MeasurementConsent {[39m
+[31m+   if (typeof window === "undefined") return "denied";[39m
+[31m+   try {[39m
+[31m+     return localStorage.getItem(MEASUREMENT_STORAGE_KEY) === "granted" ? "granted" : "denied";[39m
+[31m+   } catch {[39m
+[31m+     return "denied";[39m
+[31m+   }[39m
+[31m+ }[39m
+[31m+[39m
+[31m+ function Section({[39m
+[31m+   id,[39m
+[31m+   title,[39m
+[31m+   children,[39m
+[31m+ }: {[39m
+[31m+   id?: string;[39m
+[31m+   title: string;[39m
+[31m+   children: React.ReactNode;[39m
+[31m+ }) {[39m
+[31m+   return ([39m
+[31m+     <section id={id}>[39m
+[31m+       <h2 className="text-base font-semibold uppercase tracking-[0.04em] text-foreground mb-3 border-b border-white/8 pb-2">[39m
+[31m+         {title}[39m
+[31m+       </h2>[39m
+[31m+       <div className="space-y-3 text-sm">{children}</div>[39m
+[31m+     </section>[39m
+[31m+   );[39m
+[31m+ }[39m
+[31m+[39m
+[31m+ export default function PrivacyPolicyPage() {[39m
+[31m+   const privacySignalEnabled = globalPrivacyControlEnabled();[39m
+[31m+   const [measurementConsent, setMeasurementConsent] = useState<MeasurementConsent>(() =>[39m
+[31m+     privacySignalEnabled ? "denied" : readMeasurementConsent(),[39m
+[31m+   );[39m
+[31m+[39m
+[31m+   const saveMeasurementConsent = (requested: MeasurementConsent) => {[39m
+[31m+     const choice = privacySignalEnabled ? "denied" : requested;[39m
+[31m+     try {[39m
+[31m+       localStorage.setItem(NOTICE_STORAGE_KEY, "acknowledged");[39m
+[31m+       localStorage.setItem(MEASUREMENT_STORAGE_KEY, choice);[39m
+[31m+     } catch {[39m
+[31m+       // The measurement runtime defaults to off when browser storage is unavailable.[39m
+[31m+     }[39m
+[31m+     window.dispatchEvent([39m
+[31m+       new CustomEvent(MEASUREMENT_CONSENT_EVENT, {[39m
+[31m+         detail: choice,[39m
+[31m+       }),[39m
+[31m+     );[39m
+[31m+     setMeasurementConsent(choice);[39m
+[31m+   };[39m
+[31m+[39m
+[31m+   return ([39m
+[31m+     <MarketingChrome stickyCta={false}>[39m
+[31m+       <PageMeta[39m
+[31m+         title="Privacy Policy"[39m
+[31m+         description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."[39m
+[31m+         path="/privacy"[39m
+[31m+       />[39m
+[31m+[39m
+[31m+       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">[39m
+[31m+         <Link[39m
+[31m+           to="/"[39m
+[31m+           className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"[39m
+[31m+         >[39m
+[31m+           <ArrowLeft className="w-3.5 h-3.5" /> Back home[39m
+[31m+         </Link>[39m
+[31m+[39m
+[31m+         <div className="mb-3 flex items-center gap-3">[39m
+[31m+           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">[39m
+[31m+             <Shield className="w-5 h-5 text-on-brand" />[39m
+[31m+           </div>[39m
+[31m+           <h1 className="marketing-hero-title text-2xl sm:text-3xl">Privacy Policy</h1>[39m
+[31m+         </div>[39m
+[31m+         <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>[39m
+[31m+[39m
+[31m+         <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">[39m
+[31m+           {[[39m
+[31m+             "We do not sell personal information.",[39m
+[31m+             "Optional advertising measurement stays off unless you allow it.",[39m
+[31m+             "Custom voices stay private and require speaker authorization.",[39m
+[31m+           ].map((item) => ([39m
+[31m+             <div[39m
+[31m+               key={item}[39m
+[31m+               className="flex items-center justify-center rounded-md border border-border bg-background/45 p-4 text-center"[39m
+[31m+             >[39m
+[31m+               <p className="text-sm leading-6 text-foreground">{item}</p>[39m
+[31m+             </div>[39m
+[31m+           ))}[39m
+[31m+         </div>[39m
+[31m+[39m
+[31m+         <div[39m
+[31m+           className="mb-10 rounded-md border border-brand/20 bg-brand/5 p-5"[39m
+[31m+           id="privacy-choices"[39m
+[31m+         >[39m
+[31m+           <div className="flex items-start gap-3">[39m
+[31m+             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand/10">[39m
+[31m+               <Cookie className="h-4 w-4 text-brand" />[39m
+[31m+             </div>[39m
+[31m+             <div className="min-w-0 flex-1 space-y-3">[39m
+[31m+               <div>[39m
+[31m+                 <h2 className="text-sm font-semibold text-foreground">[39m
+[31m+                   Advertising measurement choice[39m
+[31m+                 </h2>[39m
+[31m+                 <p className="mt-1 text-sm leading-6 text-foreground/75">[39m
+[31m+                   Plausible product analytics remains separate and does not use advertising cookies.[39m
+[31m+                   Meta advertising measurement loads only when you choose{" "}[39m
+[31m+                   <strong>Allow measurement</strong>.[39m
+[31m+                 </p>[39m
+[31m+               </div>[39m
+[31m+[39m
+[31m+               {privacySignalEnabled ? ([39m
+[31m+                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">[39m
+[31m+                   Global Privacy Control is active in your browser. Advertising measurement is off[39m
+[31m+                   and cannot be enabled while that signal remains active.[39m
+[31m+                 </p>[39m
+[31m+               ) : ([39m
+[31m+                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">[39m
+[31m+                   Current choice:{" "}[39m
+[31m+                   <strong>{measurementConsent === "granted" ? "Allowed" : "Off"}</strong>[39m
+[31m+                 </p>[39m
+[31m+               )}[39m
+[31m+[39m
+[31m+               <div className="flex flex-wrap gap-2">[39m
+[31m+                 <ShadButton[39m
+[31m+                   type="button"[39m
+[31m+                   variant="outline"[39m
+[31m+                   size="sm"[39m
+[31m+                   disableAnimations[39m
+[31m+                   onClick={() => saveMeasurementConsent("denied")}[39m
+[31m+                 >[39m
+[31m+                   Keep measurement off[39m
+[31m+                 </ShadButton>[39m
+[31m+                 <ShadButton[39m
+[31m+                   type="button"[39m
+[31m+                   size="sm"[39m
+[31m+                   disableAnimations[39m
+[31m+                   disabled={privacySignalEnabled}[39m
+[31m+                   onClick={() => saveMeasurementConsent("granted")}[39m
+[31m+                 >[39m
+[31m+                   Allow measurement[39m
+[31m+                 </ShadButton>[39m
+[31m+               </div>[39m
+[31m+             </div>[39m
+[31m+           </div>[39m
+[31m+         </div>[39m
+[31m+[39m
+[31m+         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">[39m
+[31m+           <Section title="1. Who We Are">[39m
+[31m+             <p>[39m
+[31m+               <strong>Wireline</strong> ("we", "our", or "us") operates a voice agent platform for[39m
+[31m+               business conversations across voice, SMS, and email. Questions about this policy can[39m
+[31m+               be sent to <strong>support@trywireline.com</strong>.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="2. Data We Collect">[39m
+[31m+             <p>[39m
+[31m+               <strong>Account data</strong>: Email address, password hashes, authentication tokens,[39m
+[31m+               and account preferences provided during sign-up and use of the platform.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Agent configuration</strong>: Names, personas, directives, knowledge entries,[39m
+[31m+               connected tools, and voice settings you create for your voice agents.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,[39m
+[31m+               transcripts, summaries, message content, and operational metadata needed to provide[39m
+[31m+               the calling, texting, and email service you configure.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Authorized voice data</strong>: When the account owner creates a custom voice,[39m
+[31m+               we process the submitted recording, voice characteristics, a one-way sample[39m
+[31m+               fingerprint, voice-model identifier, consent record, review audio, approval status,[39m
+[31m+               and lifecycle audit events. Voice characteristics may be biometric or sensitive data[39m
+[31m+               under applicable law.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Usage and billing data</strong>: Feature usage, AI-model consumption, plan and[39m
+[31m+               balance records, and Stripe billing information. We do not store full payment-card[39m
+[31m+               numbers.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Log and diagnostic data</strong>: Server logs, security events, error reports,[39m
+[31m+               and performance metrics used to secure, operate, and improve the service.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               <strong>Website measurement data</strong>: Plausible provides aggregate product[39m
+[31m+               analytics such as page, referrer, browser, device, and approximate country information[39m
+[31m+               without advertising cookies. If you explicitly allow advertising measurement, Meta may[39m
+[31m+               also receive limited browser/device identifiers, IP address, page and referrer URLs,[39m
+[31m+               and conversion events for campaign attribution. We do not send agent content, call[39m
+[31m+               recordings, transcripts, customer contact lists, email or SMS bodies, or payment-card[39m
+[31m+               data to Meta Pixel.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="3. How We Use Data">[39m
+[31m+             <p>[39m
+[31m+               We use data to provide and secure Wireline; process managed AI requests primarily[39m
+[31m+               through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel[39m
+[31m+               AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and[39m
+[31m+               <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output[39m
+[31m+               through ElevenLabs; route calls and messages; execute connected workflows; provide[39m
+[31m+               support; prevent fraud and abuse; bill through Stripe; and understand aggregate[39m
+[31m+               product performance.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               Optional Meta measurement is used only after your explicit choice to attribute[39m
+[31m+               marketing campaigns and measure website conversions. It is not required to create an[39m
+[31m+               account or use Wireline, and you can turn it off at any time using the controls on[39m
+[31m+               this page.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               Wireline does not train its own models on customer agent configurations, recordings,[39m
+[31m+               transcripts, message content, or custom voice samples. AI and voice providers process[39m
+[31m+               submitted data under their applicable contracts, privacy terms, account controls, and[39m
+[31m+               safety obligations.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="4. Third-Party Sub-Processors and Measurement Providers">[39m
+[31m+             <p>We rely on the following providers for defined service functions:</p>[39m
+[31m+             <ul className="list-disc list-inside space-y-1.5 ml-2">[39m
+[31m+               <li>[39m
+[31m+                 <strong>Supabase</strong>: Managed Postgres storage and backup[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone[39m
+[31m+                 conversation over Direct SIP Speech-to-Speech[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the[39m
+[31m+                 production phone runtime[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model[39m
+[31m+                 creation, quality proofs, and voice-model deletion[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>OpenAI</strong>: Continuity inference and realtime voice sessions[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Perplexity</strong>: Optional live public research[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and[39m
+[31m+                 inference observability[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Stripe</strong>: Payment processing, billing, and tax calculation[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Resend</strong>: Transactional email delivery[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Vercel</strong>: Hosting, functions, and edge delivery[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Upstash</strong>: Distributed rate limits and spend controls[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Meta</strong>: Optional advertising measurement and campaign attribution,[39m
+[31m+                 only after explicit consent and subject to Global Privacy Control[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Have I Been Pwned Pwned Passwords</strong>:{" "}[39m
+[31m+                 {"Compromised-password screening using a k-anonymous partial hash prefix"}[39m
+[31m+               </li>[39m
+[31m+               <li>[39m
+[31m+                 <strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce,[39m
+[31m+                 calendar, or team tools, only when you authorize them[39m
+[31m+               </li>[39m
+[31m+             </ul>[39m
+[31m+             <p>[39m
+[31m+               Optional providers receive data only when you enable the related feature or direct an[39m
+[31m+               agent to use it.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               Mobile contact information and SMS opt-in records are not sold or shared with third[39m
+[31m+               parties for their marketing.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="5. Data Retention and Security">[39m
+[31m+             <p>[39m
+[31m+               Operational records are retained while your account is active and as needed to provide[39m
+[31m+               the service, resolve disputes, prevent abuse, and meet legal obligations. Account[39m
+[31m+               deletion starts a documented deletion process; associated personal data is erased[39m
+[31m+               within 30 days except for records we must retain by law or security records that have[39m
+[31m+               been de-identified.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               Wireline processes a custom-voice upload in memory and does not place the source file[39m
+[31m+               in its database or object storage. We retain the one-way fingerprint, authorization,[39m
+[31m+               ownership, review, and audit records needed to prevent duplicate or unauthorized use.[39m
+[31m+               ElevenLabs receives the sample to create and operate the voice model and retains or[39m
+[31m+               deletes provider-side data under its terms, privacy controls, and legal obligations.[39m
+[31m+               Revoking a voice immediately blocks new Wireline calls and requests provider deletion;[39m
+[31m+               if that request fails, deletion remains pending for an authorized retry.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               We use access controls, encryption in transit, restricted secrets, tenant isolation,[39m
+[31m+               audit logging, and database row-level security. No system is perfectly secure, but we[39m
+[31m+               continuously review and improve these safeguards.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="6. International Privacy Rights">[39m
+[31m+             <p>[39m
+[31m+               Depending on where you live, you may have rights to access, correct, delete, restrict[39m
+[31m+               or object to processing, withdraw consent, and receive a portable copy of personal[39m
+[31m+               data. To exercise a right, use Delete Account in Settings or contact[39m
+[31m+               <strong> support@trywireline.com</strong>. Where processing relies on consent,[39m
+[31m+               withdrawing consent does not affect processing completed before withdrawal.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">[39m
+[31m+             <p>{CCPA_SHARING_DISCLOSURE}</p>[39m
+[31m+             <p>[39m
+[31m+               Select <strong>Keep measurement off</strong>, close the privacy notice, or enable[39m
+[31m+               Global Privacy Control to opt out. You may return to the controls above at any time.[39m
+[31m+               We will not discriminate against you for exercising a privacy right.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               California residents may also request access, correction, deletion, or information[39m
+[31m+               about categories of data collected and disclosed by contacting[39m
+[31m+               <strong> support@trywireline.com</strong>. We respond to verified requests within the[39m
+[31m+               period required by applicable law.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="8. Cookies, Local Storage, and Analytics">[39m
+[31m+             <p>[39m
+[31m+               Wireline uses first-party session cookies and local storage necessary for[39m
+[31m+               authentication, security, preferences, and remembering your privacy choice. Plausible[39m
+[31m+               aggregate analytics is separate from advertising measurement and does not use[39m
+[31m+               advertising cookies.[39m
+[31m+             </p>[39m
+[31m+             <p>[39m
+[31m+               Meta Pixel is optional and remains off until you choose{" "}[39m
+[31m+               <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.[39m
+[31m+               Turning measurement off replaces Wireline's browser-side measurement function with a[39m
+[31m+               no-op so future Wireline-triggered Meta events stop;{" "}[39m
+[31m+               {"a request already in flight before revocation may still complete"}.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="9. Children's Privacy">[39m
+[31m+             <p>[39m
+[31m+               Wireline is not directed to children under 13, and we do not knowingly collect[39m
+[31m+               personal information from children. Contact us if you believe a child supplied[39m
+[31m+               information so we can investigate and delete it.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="10. Healthcare Data (HIPAA)">[39m
+[31m+             <p>[39m
+[31m+               <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to[39m
+[31m+               process or transmit Protected Health Information unless and until a written Business[39m
+[31m+               Associate Agreement and an explicitly supported HIPAA configuration are in place.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="11. Changes to This Policy">[39m
+[31m+             <p>[39m
+[31m+               We will post material changes on this page with a revised date and provide additional[39m
+[31m+               notice where required. Material changes to consent-based measurement will not convert[39m
+[31m+               an existing off choice into an allow choice.[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+[39m
+[31m+           <Section title="12. Contact">[39m
+[31m+             <p>[39m
+[31m+               Privacy questions or requests: <strong>support@trywireline.com</strong>[39m
+[31m+             </p>[39m
+[31m+           </Section>[39m
+[31m+         </div>[39m
+[31m+[39m
+[31m+         <div className="mt-16 pt-8 border-t border-white/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">[39m
+[31m+           <Link[39m
+[31m+             to="/privacy"[39m
+[31m+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"[39m
+[31m+           >[39m
+[31m+             Privacy Policy[39m
+[31m+           </Link>[39m
+[31m+           <span aria-hidden="true">·</span>[39m
+[31m+           <Link[39m
+[31m+             to="/terms"[39m
+[31m+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"[39m
+[31m+           >[39m
+[31m+             Terms of Service[39m
+[31m+           </Link>[39m
+[31m+           <span aria-hidden="true">·</span>[39m
+[31m+           <a[39m
+[31m+             href="#privacy-choices"[39m
+[31m+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"[39m
+[31m+           >[39m
+[31m+             Privacy Choices[39m
+[31m+           </a>[39m
+[31m+         </div>[39m
+[31m+       </div>[39m
+[31m+     </MarketingChrome>[39m
+[31m+   );[39m
+[31m+ }[39m
+[31m+[39m
+
+[36m [2m❯[22m tests/marketing-route-meta-contract.test.ts:[2m123:46[22m[39m
+    [90m121|[39m       [35mconst[39m source [33m=[39m [34mread[39m(path)[33m;[39m
+    [90m122|[39m       expect(source, `${route} title`).toContain(meta.title.replace(" …
+    [90m123|[39m       expect(source, `${route} description`).toContain(meta.descriptio…
+    [90m   |[39m                                              [31m^[39m
+    [90m124|[39m       [34mexpect[39m(meta[33m.[39mnoIndex[33m,[39m route)[33m.[39mnot[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m125|[39m     }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/security-atomicity-release-contract.test.ts[2m > [22msecurity and external-operation atomicity[2m > [22mreserves each number before native placement and preserves the lock after uncertain outcomes
+[31m[1mAssertionError[22m: expected -1 to be greater than 7314[39m
+[36m [2m❯[22m tests/security-atomicity-release-contract.test.ts:[2m92:23[22m[39m
+    [90m 90|[39m     [34mexpect[39m(provider)[33m.[39m[34mtoBeGreaterThan[39m(dialing)[33m;[39m
+    [90m 91|[39m     [34mexpect[39m(attachedLead)[33m.[39m[34mtoBeGreaterThan[39m(provider)[33m;[39m
+    [90m 92|[39m     [34mexpect[39m(ambiguous)[33m.[39m[34mtoBeGreaterThan[39m(provider)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m 93|[39m     [34mexpect[39m(completion)[33m.[39m[34mtoBeGreaterThan[39m(ambiguous)[33m;[39m
+    [90m 94|[39m     [34mexpect[39m(source)[33m.[39m[34mtoContain[39m([32m".onConflictDoNothing()"[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m445 passed[39m[22m[90m (448)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m2721 passed[39m[22m[90m (2724)[39m
+[2m   Start at [22m 02:33:05
+[2m   Duration [22m 54.38s[2m (transform 10.23s, setup 3.04s, import 53.45s, tests 19.01s, environment 72ms)[22m
+
+
+::error file=/home/runner/work/Wireline/Wireline/tests/marketing-centering-contract.test.ts,title=tests/marketing-centering-contract.test.ts > marketing centering contract > keeps the compact account header balanced and delays duplicate sticky actions,line=24,column=20::AssertionError: expected 'import { Link } from "react-router";\…' to contain '<nav className="ml-auto flex items-ce…'%0A%0A- Expected%0A+ Received%0A%0A- <nav className="ml-auto flex items-center gap-2 sm:gap-4" aria-label="Account">%0A+ import { Link } from "react-router";%0A+%0A+ import WirelineMark from "../brand/WirelineMark";%0A+ import SkipToContentLink from "../layout/SkipToContentLink";%0A+%0A+ export default function PrecisionPublicHeader() {%0A+   return (%0A+     <header className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%25,transparent)] backdrop-blur-xl">%0A+       <SkipToContentLink href="#main-content" />%0A+       <div className="wl-measure mx-auto flex h-16 min-w-0 items-center gap-2 px-2.5 sm:gap-5 sm:px-6 lg:px-8">%0A+         <Link%0A+           to="/"%0A+           className="flex min-w-0 shrink items-center gap-2 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"%0A+           aria-label="Wireline home"%0A+         >%0A+           <WirelineMark className="size-8 shrink-0 text-primary" signal />%0A+           <span className="truncate">Wireline</span>%0A+         </Link>%0A+%0A+         <nav%0A+           className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"%0A+           aria-label="Account"%0A+         >%0A+           <Link%0A+             to="/signin"%0A+             className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-2 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-3"%0A+           >%0A+             Sign In%0A+           </Link>%0A+           <Link%0A+             to="/signup?plan=personal"%0A+             className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[379px]:px-3"%0A+           >%0A+             Start Free%0A+           </Link>%0A+         </nav>%0A+       </div>%0A+     </header>%0A+   );%0A+ }%0A+%0A%0A ❯ tests/marketing-centering-contract.test.ts:24:20%0A%0A
+
+::error file=/home/runner/work/Wireline/Wireline/tests/marketing-route-meta-contract.test.ts,title=tests/marketing-route-meta-contract.test.ts > route meta prerendering > keeps the inline-page values verbatim in sync with each page's PageMeta call,line=123,column=46::AssertionError: /privacy description: expected 'import { useState } from "react";\nim…' to contain 'Privacy for Wireline\'s voice agent p…'%0A%0A- Expected%0A+ Received%0A%0A- Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.%0A+ import { useState } from "react";%0A+ import { ArrowLeft, Cookie, Shield } from "lucide-react";%0A+ import { Link } from "react-router";%0A+ import { PageMeta } from "../lib/page-meta";%0A+ import MarketingChrome from "./marketing/MarketingChrome";%0A+ import { ShadButton } from "./ui/shadcn/ShadButton";%0A+%0A+ const LAST_UPDATED = "August 17, 2026";%0A+ const NOTICE_STORAGE_KEY = "wireline_cookie_consent";%0A+ const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";%0A+ const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";%0A+ const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for cross-context campaign measurement as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;%0A+%0A+ type MeasurementConsent = "granted" | "denied";%0A+%0A+ type PrivacyAwareNavigator = Navigator & {%0A+   globalPrivacyControl?: boolean;%0A+ };%0A+%0A+ function globalPrivacyControlEnabled(): boolean {%0A+   if (typeof navigator === "undefined") return false;%0A+   return (navigator as PrivacyAwareNavigator).globalPrivacyControl === true;%0A+ }%0A+%0A+ function readMeasurementConsent(): MeasurementConsent {%0A+   if (typeof window === "undefined") return "denied";%0A+   try {%0A+     return localStorage.getItem(MEASUREMENT_STORAGE_KEY) === "granted" ? "granted" : "denied";%0A+   } catch {%0A+     return "denied";%0A+   }%0A+ }%0A+%0A+ function Section({%0A+   id,%0A+   title,%0A+   children,%0A+ }: {%0A+   id?: string;%0A+   title: string;%0A+   children: React.ReactNode;%0A+ }) {%0A+   return (%0A+     <section id={id}>%0A+       <h2 className="text-base font-semibold uppercase tracking-[0.04em] text-foreground mb-3 border-b border-white/8 pb-2">%0A+         {title}%0A+       </h2>%0A+       <div className="space-y-3 text-sm">{children}</div>%0A+     </section>%0A+   );%0A+ }%0A+%0A+ export default function PrivacyPolicyPage() {%0A+   const privacySignalEnabled = globalPrivacyControlEnabled();%0A+   const [measurementConsent, setMeasurementConsent] = useState<MeasurementConsent>(() =>%0A+     privacySignalEnabled ? "denied" : readMeasurementConsent(),%0A+   );%0A+%0A+   const saveMeasurementConsent = (requested: MeasurementConsent) => {%0A+     const choice = privacySignalEnabled ? "denied" : requested;%0A+     try {%0A+       localStorage.setItem(NOTICE_STORAGE_KEY, "acknowledged");%0A+       localStorage.setItem(MEASUREMENT_STORAGE_KEY, choice);%0A+     } catch {%0A+       // The measurement runtime defaults to off when browser storage is unavailable.%0A+     }%0A+     window.dispatchEvent(%0A+       new CustomEvent(MEASUREMENT_CONSENT_EVENT, {%0A+         detail: choice,%0A+       }),%0A+     );%0A+     setMeasurementConsent(choice);%0A+   };%0A+%0A+   return (%0A+     <MarketingChrome stickyCta={false}>%0A+       <PageMeta%0A+         title="Privacy Policy"%0A+         description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."%0A+         path="/privacy"%0A+       />%0A+%0A+       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">%0A+         <Link%0A+           to="/"%0A+           className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"%0A+         >%0A+           <ArrowLeft className="w-3.5 h-3.5" /> Back home%0A+         </Link>%0A+%0A+         <div className="mb-3 flex items-center gap-3">%0A+           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">%0A+             <Shield className="w-5 h-5 text-on-brand" />%0A+           </div>%0A+           <h1 className="marketing-hero-title text-2xl sm:text-3xl">Privacy Policy</h1>%0A+         </div>%0A+         <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>%0A+%0A+         <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">%0A+           {[%0A+             "We do not sell personal information.",%0A+             "Optional advertising measurement stays off unless you allow it.",%0A+             "Custom voices stay private and require speaker authorization.",%0A+           ].map((item) => (%0A+             <div%0A+               key={item}%0A+               className="flex items-center justify-center rounded-md border border-border bg-background/45 p-4 text-center"%0A+             >%0A+               <p className="text-sm leading-6 text-foreground">{item}</p>%0A+             </div>%0A+           ))}%0A+         </div>%0A+%0A+         <div%0A+           className="mb-10 rounded-md border border-brand/20 bg-brand/5 p-5"%0A+           id="privacy-choices"%0A+         >%0A+           <div className="flex items-start gap-3">%0A+             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand/10">%0A+               <Cookie className="h-4 w-4 text-brand" />%0A+             </div>%0A+             <div className="min-w-0 flex-1 space-y-3">%0A+               <div>%0A+                 <h2 className="text-sm font-semibold text-foreground">%0A+                   Advertising measurement choice%0A+                 </h2>%0A+                 <p className="mt-1 text-sm leading-6 text-foreground/75">%0A+                   Plausible product analytics remains separate and does not use advertising cookies.%0A+                   Meta advertising measurement loads only when you choose{" "}%0A+                   <strong>Allow measurement</strong>.%0A+                 </p>%0A+               </div>%0A+%0A+               {privacySignalEnabled ? (%0A+                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">%0A+                   Global Privacy Control is active in your browser. Advertising measurement is off%0A+                   and cannot be enabled while that signal remains active.%0A+                 </p>%0A+               ) : (%0A+                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">%0A+                   Current choice:{" "}%0A+                   <strong>{measurementConsent === "granted" ? "Allowed" : "Off"}</strong>%0A+                 </p>%0A+               )}%0A+%0A+               <div className="flex flex-wrap gap-2">%0A+                 <ShadButton%0A+                   type="button"%0A+                   variant="outline"%0A+                   size="sm"%0A+                   disableAnimations%0A+                   onClick={() => saveMeasurementConsent("denied")}%0A+                 >%0A+                   Keep measurement off%0A+                 </ShadButton>%0A+                 <ShadButton%0A+                   type="button"%0A+                   size="sm"%0A+                   disableAnimations%0A+                   disabled={privacySignalEnabled}%0A+                   onClick={() => saveMeasurementConsent("granted")}%0A+                 >%0A+                   Allow measurement%0A+                 </ShadButton>%0A+               </div>%0A+             </div>%0A+           </div>%0A+         </div>%0A+%0A+         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">%0A+           <Section title="1. Who We Are">%0A+             <p>%0A+               <strong>Wireline</strong> ("we", "our", or "us") operates a voice agent platform for%0A+               business conversations across voice, SMS, and email. Questions about this policy can%0A+               be sent to <strong>support@trywireline.com</strong>.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="2. Data We Collect">%0A+             <p>%0A+               <strong>Account data</strong>: Email address, password hashes, authentication tokens,%0A+               and account preferences provided during sign-up and use of the platform.%0A+             </p>%0A+             <p>%0A+               <strong>Agent configuration</strong>: Names, personas, directives, knowledge entries,%0A+               connected tools, and voice settings you create for your voice agents.%0A+             </p>%0A+             <p>%0A+               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,%0A+               transcripts, summaries, message content, and operational metadata needed to provide%0A+               the calling, texting, and email service you configure.%0A+             </p>%0A+             <p>%0A+               <strong>Authorized voice data</strong>: When the account owner creates a custom voice,%0A+               we process the submitted recording, voice characteristics, a one-way sample%0A+               fingerprint, voice-model identifier, consent record, review audio, approval status,%0A+               and lifecycle audit events. Voice characteristics may be biometric or sensitive data%0A+               under applicable law.%0A+             </p>%0A+             <p>%0A+               <strong>Usage and billing data</strong>: Feature usage, AI-model consumption, plan and%0A+               balance records, and Stripe billing information. We do not store full payment-card%0A+               numbers.%0A+             </p>%0A+             <p>%0A+               <strong>Log and diagnostic data</strong>: Server logs, security events, error reports,%0A+               and performance metrics used to secure, operate, and improve the service.%0A+             </p>%0A+             <p>%0A+               <strong>Website measurement data</strong>: Plausible provides aggregate product%0A+               analytics such as page, referrer, browser, device, and approximate country information%0A+               without advertising cookies. If you explicitly allow advertising measurement, Meta may%0A+               also receive limited browser/device identifiers, IP address, page and referrer URLs,%0A+               and conversion events for campaign attribution. We do not send agent content, call%0A+               recordings, transcripts, customer contact lists, email or SMS bodies, or payment-card%0A+               data to Meta Pixel.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="3. How We Use Data">%0A+             <p>%0A+               We use data to provide and secure Wireline; process managed AI requests primarily%0A+               through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel%0A+               AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and%0A+               <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output%0A+               through ElevenLabs; route calls and messages; execute connected workflows; provide%0A+               support; prevent fraud and abuse; bill through Stripe; and understand aggregate%0A+               product performance.%0A+             </p>%0A+             <p>%0A+               Optional Meta measurement is used only after your explicit choice to attribute%0A+               marketing campaigns and measure website conversions. It is not required to create an%0A+               account or use Wireline, and you can turn it off at any time using the controls on%0A+               this page.%0A+             </p>%0A+             <p>%0A+               Wireline does not train its own models on customer agent configurations, recordings,%0A+               transcripts, message content, or custom voice samples. AI and voice providers process%0A+               submitted data under their applicable contracts, privacy terms, account controls, and%0A+               safety obligations.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="4. Third-Party Sub-Processors and Measurement Providers">%0A+             <p>We rely on the following providers for defined service functions:</p>%0A+             <ul className="list-disc list-inside space-y-1.5 ml-2">%0A+               <li>%0A+                 <strong>Supabase</strong>: Managed Postgres storage and backup%0A+               </li>%0A+               <li>%0A+                 <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS%0A+               </li>%0A+               <li>%0A+                 <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone%0A+                 conversation over Direct SIP Speech-to-Speech%0A+               </li>%0A+               <li>%0A+                 <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the%0A+                 production phone runtime%0A+               </li>%0A+               <li>%0A+                 <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model%0A+                 creation, quality proofs, and voice-model deletion%0A+               </li>%0A+               <li>%0A+                 <strong>OpenAI</strong>: Continuity inference and realtime voice sessions%0A+               </li>%0A+               <li>%0A+                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search%0A+               </li>%0A+               <li>%0A+                 <strong>Perplexity</strong>: Optional live public research%0A+               </li>%0A+               <li>%0A+                 <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and%0A+                 inference observability%0A+               </li>%0A+               <li>%0A+                 <strong>Stripe</strong>: Payment processing, billing, and tax calculation%0A+               </li>%0A+               <li>%0A+                 <strong>Resend</strong>: Transactional email delivery%0A+               </li>%0A+               <li>%0A+                 <strong>Vercel</strong>: Hosting, functions, and edge delivery%0A+               </li>%0A+               <li>%0A+                 <strong>Upstash</strong>: Distributed rate limits and spend controls%0A+               </li>%0A+               <li>%0A+                 <strong>Plausible</strong>: Privacy-oriented aggregate website analytics%0A+               </li>%0A+               <li>%0A+                 <strong>Meta</strong>: Optional advertising measurement and campaign attribution,%0A+                 only after explicit consent and subject to Global Privacy Control%0A+               </li>%0A+               <li>%0A+                 <strong>Have I Been Pwned Pwned Passwords</strong>:{" "}%0A+                 {"Compromised-password screening using a k-anonymous partial hash prefix"}%0A+               </li>%0A+               <li>%0A+                 <strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce,%0A+                 calendar, or team tools, only when you authorize them%0A+               </li>%0A+             </ul>%0A+             <p>%0A+               Optional providers receive data only when you enable the related feature or direct an%0A+               agent to use it.%0A+             </p>%0A+             <p>%0A+               Mobile contact information and SMS opt-in records are not sold or shared with third%0A+               parties for their marketing.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="5. Data Retention and Security">%0A+             <p>%0A+               Operational records are retained while your account is active and as needed to provide%0A+               the service, resolve disputes, prevent abuse, and meet legal obligations. Account%0A+               deletion starts a documented deletion process; associated personal data is erased%0A+               within 30 days except for records we must retain by law or security records that have%0A+               been de-identified.%0A+             </p>%0A+             <p>%0A+               Wireline processes a custom-voice upload in memory and does not place the source file%0A+               in its database or object storage. We retain the one-way fingerprint, authorization,%0A+               ownership, review, and audit records needed to prevent duplicate or unauthorized use.%0A+               ElevenLabs receives the sample to create and operate the voice model and retains or%0A+               deletes provider-side data under its terms, privacy controls, and legal obligations.%0A+               Revoking a voice immediately blocks new Wireline calls and requests provider deletion;%0A+               if that request fails, deletion remains pending for an authorized retry.%0A+             </p>%0A+             <p>%0A+               We use access controls, encryption in transit, restricted secrets, tenant isolation,%0A+               audit logging, and database row-level security. No system is perfectly secure, but we%0A+               continuously review and improve these safeguards.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="6. International Privacy Rights">%0A+             <p>%0A+               Depending on where you live, you may have rights to access, correct, delete, restrict%0A+               or object to processing, withdraw consent, and receive a portable copy of personal%0A+               data. To exercise a right, use Delete Account in Settings or contact%0A+               <strong> support@trywireline.com</strong>. Where processing relies on consent,%0A+               withdrawing consent does not affect processing completed before withdrawal.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">%0A+             <p>{CCPA_SHARING_DISCLOSURE}</p>%0A+             <p>%0A+               Select <strong>Keep measurement off</strong>, close the privacy notice, or enable%0A+               Global Privacy Control to opt out. You may return to the controls above at any time.%0A+               We will not discriminate against you for exercising a privacy right.%0A+             </p>%0A+             <p>%0A+               California residents may also request access, correction, deletion, or information%0A+               about categories of data collected and disclosed by contacting%0A+               <strong> support@trywireline.com</strong>. We respond to verified requests within the%0A+               period required by applicable law.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="8. Cookies, Local Storage, and Analytics">%0A+             <p>%0A+               Wireline uses first-party session cookies and local storage necessary for%0A+               authentication, security, preferences, and remembering your privacy choice. Plausible%0A+               aggregate analytics is separate from advertising measurement and does not use%0A+               advertising cookies.%0A+             </p>%0A+             <p>%0A+               Meta Pixel is optional and remains off until you choose{" "}%0A+               <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.%0A+               Turning measurement off replaces Wireline's browser-side measurement function with a%0A+               no-op so future Wireline-triggered Meta events stop;{" "}%0A+               {"a request already in flight before revocation may still complete"}.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="9. Children's Privacy">%0A+             <p>%0A+               Wireline is not directed to children under 13, and we do not knowingly collect%0A+               personal information from children. Contact us if you believe a child supplied%0A+               information so we can investigate and delete it.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="10. Healthcare Data (HIPAA)">%0A+             <p>%0A+               <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to%0A+               process or transmit Protected Health Information unless and until a written Business%0A+               Associate Agreement and an explicitly supported HIPAA configuration are in place.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="11. Changes to This Policy">%0A+             <p>%0A+               We will post material changes on this page with a revised date and provide additional%0A+               notice where required. Material changes to consent-based measurement will not convert%0A+               an existing off choice into an allow choice.%0A+             </p>%0A+           </Section>%0A+%0A+           <Section title="12. Contact">%0A+             <p>%0A+               Privacy questions or requests: <strong>support@trywireline.com</strong>%0A+             </p>%0A+           </Section>%0A+         </div>%0A+%0A+         <div className="mt-16 pt-8 border-t border-white/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">%0A+           <Link%0A+             to="/privacy"%0A+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"%0A+           >%0A+             Privacy Policy%0A+           </Link>%0A+           <span aria-hidden="true">·</span>%0A+           <Link%0A+             to="/terms"%0A+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"%0A+           >%0A+             Terms of Service%0A+           </Link>%0A+           <span aria-hidden="true">·</span>%0A+           <a%0A+             href="#privacy-choices"%0A+             className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"%0A+           >%0A+             Privacy Choices%0A+           </a>%0A+         </div>%0A+       </div>%0A+     </MarketingChrome>%0A+   );%0A+ }%0A+%0A%0A ❯ tests/marketing-route-meta-contract.test.ts:123:46%0A%0A
+
+::error file=/home/runner/work/Wireline/Wireline/tests/security-atomicity-release-contract.test.ts,title=tests/security-atomicity-release-contract.test.ts > security and external-operation atomicity > reserves each number before native placement and preserves the lock after uncertain outcomes,line=92,column=23::AssertionError: expected -1 to be greater than 7314%0A ❯ tests/security-atomicity-release-contract.test.ts:92:23%0A%0A
 ```
