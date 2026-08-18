@@ -3,6 +3,7 @@ import {
   createBotConfiguration,
   type BotConfigurationDraft,
 } from "../../lib/bot-configuration";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 
 export type BotConfiguratorProps = {
   value: BotConfigurationDraft;
@@ -185,16 +186,15 @@ export default function BotConfigurator({
                       {channel.description}
                     </small>
                   </span>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={channelValue.enabled}
                     disabled={disabled}
+                    aria-label={`${channel.label} enabled`}
                     onChange={(event) =>
                       onChange(
                         updateChannel(value, channel.key, { enabled: event.target.checked }),
                       )
                     }
-                    className="size-4 shrink-0"
                   />
                 </label>
                 <label className="mt-3 block space-y-2 text-xs font-semibold text-foreground">
