@@ -2,8 +2,8 @@
    Wireline Letterpress — authenticated app signature.
 
    Marketing carries the full wire story; the product carries a quieter
-   ledger: copper caps on cards, wired eyebrows in workspace chrome, and a
-   faint ruling on the canvas so authenticated surfaces feel unmistakably
+   ledger: platinum/violet caps on cards, wired eyebrows in workspace chrome,
+   and faint ruling on the canvas so authenticated surfaces feel unmistakably
    Wireline without competing with task density.
    ════════════════════════════════════════════════════════════════════════ */
 
@@ -58,85 +58,7 @@
   justify-content: flex-start;
 }
 
-.wl-workspace-main > .relative.mb-4.pb-3,
-.wl-workspace-main > .relative.lg\:mb-5 {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
-}
-
-.wl-workspace-main
-  > .relative.mb-4.pb-3
-  > .wl-workspace-content-inner,
-.wl-workspace-main
-  > .relative.lg\:mb-5
-  > .wl-workspace-content-inner {
-  width: 100%;
-  max-width: 1480px;
-  padding-inline: 0;
-  align-items: flex-start;
-  justify-content: flex-start;
-}
-
-.wl-workspace-main
-  > .relative.mb-4.pb-3
-  > .wl-workspace-content-inner
-  > .wl-centered-header,
-.wl-workspace-main
-  > .relative.lg\:mb-5
-  > .wl-workspace-content-inner
-  > .wl-centered-header {
-  width: 100%;
-  align-items: flex-start;
-  text-align: left;
-}
-
-.wl-workspace-main
-  > .relative.mb-4.pb-3
-  > .wl-workspace-content-inner
-  > .wl-centered-header
-  :is(h1, p),
-.wl-workspace-main
-  > .relative.lg\:mb-5
-  > .wl-workspace-content-inner
-  > .wl-centered-header
-  :is(h1, p) {
-  margin-inline: 0;
-  text-align: left;
-}
-
-.wl-workspace-main
-  > .relative.mb-4.pb-3
-  > .wl-workspace-content-inner
-  > .wl-centered-header
-  h1,
-.wl-workspace-main
-  > .relative.lg\:mb-5
-  > .wl-workspace-content-inner
-  > .wl-centered-header
-  h1 {
-  overflow: visible;
-  white-space: normal;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  text-wrap: balance;
-}
-
-.wl-workspace-main > .relative.mb-4.pb-3 > .mt-3,
-.wl-workspace-main > .relative.lg\:mb-5 > .mt-3 {
-  position: static;
-  inset: auto;
-  margin-top: 0;
-  transform: none;
-  justify-content: flex-start;
-}
-
-.wl-workspace-main > .mx-3 {
-  width: 100%;
-  max-width: 1480px;
-  margin-inline: auto;
-}
-
+/* Studio owns its own context header outside WorkspaceShell's task header. */
 [data-wireline-route="/studio"] main > div > header.wl-centered-header {
   width: 100%;
   align-items: flex-start;
@@ -163,10 +85,9 @@
   justify-content: flex-start;
 }
 
-/* ── Letterpress card cap (studio + workspace cards + polish primitives) ──
+/* ── Letterpress card wire (Studio + workspace cards + primitives) ─────
    The cap covers every authenticated card surface so migrating from
-   studio-card to the wl-paper / wl-metric-tile primitives keeps the
-   Wireline copper cap rather than silently dropping the signature. */
+   studio-card to wl-paper / wl-metric-tile keeps the Wireline signature. */
 .wl-workspace-content .studio-card,
 .wl-workspace-content .wl-agent-card,
 .wl-workspace-content .wl-paper,
@@ -223,30 +144,7 @@
   color: var(--wireline-color-text-secondary);
 }
 
-/* ── Sidebar agent rail — copper node on active row ──────────────────── */
-.wl-rail-agent-link {
-  position: relative;
-}
-
-.wl-rail-agent-link[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: -0.35rem;
-  top: 50%;
-  width: 3px;
-  height: 1.35rem;
-  border-radius: 999px;
-  transform: translateY(-50%);
-  background: linear-gradient(
-    180deg,
-    var(--wireline-color-action-secondary-default),
-    var(--wireline-color-action-primary-default)
-  );
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent);
-}
-
-/* ── Overview greeting — subtle copper strand under display type ─────── */
+/* ── Overview greeting — subtle platinum/violet strand ──────────────── */
 .wl-overview-greeting {
   position: relative;
 }
@@ -281,20 +179,6 @@
 
   [data-wireline-route="/studio"] main > div > header.wl-centered-header > div:last-child {
     width: auto;
-    justify-content: flex-end;
-  }
-}
-
-@media (min-width: 768px) {
-  .wl-workspace-main > .relative.mb-4.pb-3,
-  .wl-workspace-main > .relative.lg\:mb-5 {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 1.5rem;
-  }
-
-  .wl-workspace-main > .relative.mb-4.pb-3 > .mt-3,
-  .wl-workspace-main > .relative.lg\:mb-5 > .mt-3 {
     justify-content: flex-end;
   }
 }
