@@ -128,6 +128,8 @@ export type FederalDncMarketingGate = {
   allowed: true;
   configured: boolean;
   advisory?: "FEDERAL_DNC_DEFERRED";
+  /** Compatibility alias used by older campaign logging/response branches. */
+  code?: "FEDERAL_DNC_DEFERRED";
   message?: string;
 };
 
@@ -143,6 +145,7 @@ export function assertFederalDncForMarketing(): FederalDncMarketingGate {
     allowed: true,
     configured: false,
     advisory: "FEDERAL_DNC_DEFERRED",
+    code: "FEDERAL_DNC_DEFERRED",
     message:
       "Federal DNC screening is not configured. Continue only under the workspace's applicable consent, purpose, tenant DNC, calling-hours, and approval controls.",
   };
