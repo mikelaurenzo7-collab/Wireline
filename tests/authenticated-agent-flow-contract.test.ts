@@ -286,8 +286,8 @@ describe("authenticated agent flow", () => {
     expect(createDefaults).toContain("composeAgentPersonality");
     expect(createDefaults).toContain("TEMPLATE_OVERLAYS[opts.templateId]");
     expect(templates).toContain("voice_id: values.voiceId");
-    expect(deployModal).toContain("VAPI_CURATED_VOICES");
-    expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
+    expect(deployModal).toContain("WIRELINE_LIVE_VOICES");
+    expect(deployModal).toContain("LIVE_VOICE_BY_GENDER");
     expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
   });
 

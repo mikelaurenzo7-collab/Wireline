@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, MessageCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
-import { normalizeApiVoices, VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES, type VoiceOption } from "../../lib/voice-catalog";
+import { normalizeApiVoices, WIRELINE_LIVE_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import { StatusNotice } from "../molecules";
 import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
 
@@ -35,11 +35,7 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
     )
       .filter((voice): voice is VoiceOption => Boolean(voice))
       .map((voice) => ({ ...voice, provider: "xai" as const }));
-    const vapiVoices = ["Savannah", "Elliot"]
-      .map((id) => VAPI_CURATED_VOICES.find((voice) => voice.id === id))
-      .filter((voice): voice is VoiceOption => Boolean(voice))
-      .map((voice) => ({ ...voice, provider: "vapi" as const }));
-    return [...xaiVoices, ...vapiVoices];
+    return xaiVoices;
   }, []);
   const [studioVoices, setStudioVoices] = useState<VoiceOption[]>([]);
   const [privateVoices, setPrivateVoices] = useState<PrivateVoice[]>([]);
@@ -260,8 +256,8 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
 
       <p className="text-xs text-muted-foreground">
         Browser tests the words. Place a real call to verify the selected audio. Live phone calls
-        use Speech-to-Speech from the agent's role. Savannah and Elliot apply only on the optional
-        Vapi rollback path. Studio clones are Studio TTS, not live PSTN.
+        and authenticated Studio tests use the same xAI Speech-to-Speech runtime. Studio clones are Studio TTS,
+        not live PSTN.
       </p>
 
       {notice ? (

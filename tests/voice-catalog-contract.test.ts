@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("voice catalog", () => {
-  it("exposes multi-provider voice pools for create and studio flows", () => {
+  it("keeps native xAI voices on customer-facing creation and Studio flows", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     expect(catalog).toContain("WIRELINE_LIVE_VOICES");
     expect(catalog).toContain("VAPI_CURATED_VOICES");
@@ -18,7 +18,7 @@ describe("voice catalog", () => {
     // The picker reads the authenticated, server-curated library. It never
     // lists or calls a voice-provider account from the browser.
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
-    expect(picker).toContain("VAPI_CURATED_VOICES");
+    expect(picker).toContain("WIRELINE_LIVE_VOICES");
     expect(picker).toContain('authFetch("/api/voices")');
     expect(picker).toContain("voice.provider");
     expect(picker).not.toContain("api.elevenlabs.io");

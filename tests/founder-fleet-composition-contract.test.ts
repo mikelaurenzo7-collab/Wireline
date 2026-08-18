@@ -8,6 +8,7 @@ import {
 } from "../src/lib/founder-fleet-seed";
 import { plansForClient } from "../src/lib/plan-catalog";
 import { pickRotatedVoiceId } from "../src/data/voice-roster";
+import { WIRELINE_LIVE_VOICES } from "../src/lib/voice-catalog";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
 
 /**
@@ -97,12 +98,15 @@ describe("founder fleet composition", () => {
     expect(personal.some((line) => line.includes("Lead with outcome"))).toBe(false);
   });
 
-  it("spreads managed voices across the seeded fleet", () => {
+  it("spreads the certified native voice roster across the seeded fleet", () => {
     // Every founder agent used to speak as the same voice, so a caller routed
-    // sales -> support -> billing heard one identical person.
+    // sales -> support -> billing heard one identical person. Defaults now stay
+    // inside the certified native xAI roster rather than spilling into rollback.
     const total = Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length;
     const voices = Array.from({ length: total }, (_, index) => pickRotatedVoiceId(index));
-    expect(new Set(voices).size).toBeGreaterThanOrEqual(8);
+    const certifiedIds = new Set(WIRELINE_LIVE_VOICES.map((voice) => voice.id));
+    expect(new Set(voices).size).toBe(certifiedIds.size);
+    expect(voices.every((voiceId) => certifiedIds.has(voiceId))).toBe(true);
     // Adjacent agents must never share a voice.
     for (let i = 1; i < voices.length; i++) {
       expect(voices[i]).not.toBe(voices[i - 1]);

@@ -11,8 +11,8 @@ function read(path: string) {
 describe("Fast Start native voice contract", () => {
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
-  const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-  const managedRuntime = read("src/lib/managed-voice-runtime.ts");
+  const runtime = read("src/lib/voice/xai-agent-runtime.ts");
+  const roster = read("src/data/voice-roster.ts");
 
   it("keeps external provider complexity out of Fast Start", () => {
     expect(createDialog).not.toMatch(/authFetch\("\/api\/voices"\)/);
@@ -21,13 +21,19 @@ describe("Fast Start native voice contract", () => {
     expect(createDialog).toContain("Not now");
   });
 
-  it("resolves every new employee to a managed phone voice", () => {
-    // Studio's managed picker writes curated Vapi voices; the live factory
-    // clamps anything else to the managed default before a call is placed.
-    expect(voicePicker).toMatch(/VAPI_CURATED_VOICES/);
-    expect(voicePicker).toMatch(/provider: "vapi"/);
-    expect(factory).toMatch(/buildManagedVoiceRuntime/);
-    expect(managedRuntime).toMatch(/isManagedVapiVoiceId/);
-    expect(managedRuntime).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
+  it("resolves every new employee and saved phone choice to native xAI", () => {
+    expect(voicePicker).toMatch(/WIRELINE_LIVE_VOICES/);
+    expect(voicePicker).toMatch(/provider: "xai"/);
+    expect(runtime).toMatch(/voiceId: schema\.agents\.voiceId/);
+    expect(runtime).toMatch(/voiceProvider: schema\.agents\.voiceProvider/);
+    expect(runtime).toMatch(/phoneVoiceId: schema\.agents\.phoneVoiceId/);
+    expect(runtime).toMatch(/phoneVoiceProvider: schema\.agents\.phoneVoiceProvider/);
+    expect(runtime).toMatch(/selectedXaiVoice/);
+    expect(runtime).toMatch(/isXaiPstnVoiceId/);
+    expect(runtime).toMatch(/voiceProvider: "xai"/);
+    expect(roster).toContain("const rotation = MANAGED_XAI_VOICE_IDS;");
+    expect(roster).not.toContain(
+      "const rotation = [...MANAGED_XAI_VOICE_IDS, ...MANAGED_VOICE_IDS];",
+    );
   });
 });

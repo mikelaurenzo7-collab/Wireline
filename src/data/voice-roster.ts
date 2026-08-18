@@ -4,9 +4,9 @@ import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../lib/voice-catalog"
  * Managed voice rotation for every Wireline creation surface.
  *
  * Wireline owns the phone-runtime decision. New employees receive a dependable
- * xAI PSTN voice (Eve/Ara/Rex/Sal/Leo through Vapi) without requiring a
- * separate customer voice-provider account, API key, clone, or presenter
- * configuration. Curated Vapi voices remain selectable and stay the fallback.
+ * native xAI PSTN voice without requiring a separate customer voice-provider
+ * account, API key, clone, or presenter configuration. Curated Vapi voices
+ * remain available for explicit rollback and compatibility paths.
  */
 const MANAGED_XAI_VOICE_IDS = WIRELINE_LIVE_VOICES.map((voice) => voice.id);
 
@@ -38,11 +38,9 @@ export function isXaiPstnVoiceId(value: unknown): value is string {
 
 /**
  * Runtime acceptance covers the ENTIRE curated Vapi catalog, not just the
- * rotation pool above. The pickers (SimpleVoicePicker, DeployAgentModal) offer
- * all curated voices and the PATCH stores the pick verbatim — when this check
- * only knew the 8 rotation voices, a user who picked Kai/Rohan/Sagar/Godfrey/
- * Naina previewed one voice and every live call silently spoke as Savannah.
- * Rotation starts on xAI voices, then continues through this curated Vapi pool.
+ * rollback pool above. The pickers (SimpleVoicePicker, DeployAgentModal) may
+ * still encounter legacy Vapi selections, and those stored values must remain
+ * valid until an operator or customer migrates them to native xAI.
  */
 export function isManagedVapiVoiceId(value: unknown): value is string {
   return (
@@ -71,13 +69,12 @@ export function resolvePstnVoiceCandidate(
 }
 
 /**
- * Deterministically distribute managed PSTN voices across a tenant's
- * employees. New agents start on the xAI roster; larger fleets continue
- * through curated Vapi voices. Output is compatible with provider `xai`
- * or `vapi` via `isXaiPstnVoiceId`.
+ * Deterministically distribute new employees across the native xAI PSTN
+ * roster. Legacy Vapi voices are accepted for rollback but are never assigned
+ * implicitly by a customer-facing creation surface.
  */
 export function pickRotatedVoiceId(existingAgentCount: number): string {
-  const rotation = [...MANAGED_XAI_VOICE_IDS, ...MANAGED_VOICE_IDS];
+  const rotation = MANAGED_XAI_VOICE_IDS;
   if (!Number.isFinite(existingAgentCount) || existingAgentCount < 0) {
     return DEFAULT_XAI_VOICE_ID;
   }
