@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Native command center for personal and business plans: dispatch calls,
-/// monitor live work, review follow-ups, and manage agents from mobile.
+/// Native overview for one Wireline workspace: dispatch calls, monitor live
+/// work, review follow-ups, and manage every Bot from mobile.
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var router: WirelineRouter
@@ -25,26 +25,26 @@ struct WorkspaceView: View {
                             }
                             metrics
                             account(me)
-                            agentSection(me)
+                            botSection(me)
                             links
                         }
                         .padding(16)
                     }
                     .background(Brand.canvas)
                 } else if let error {
-                    BrandEmptyState(title: "Couldn't load", message: error, systemImage: "wifi.exclamationmark")
+                    BrandEmptyState(title: "COULDN'T LOAD", message: error, systemImage: "wifi.exclamationmark")
                 } else {
                     ProgressView("Loading Wireline...").tint(Brand.accent)
                 }
             }
-            .navigationTitle(me?.account.mode == .business ? "Command" : "Wireline")
+            .navigationTitle("OVERVIEW")
             .navigationBarTitleDisplayMode(.inline)
             .wirelineBrand()
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
-                        Button("Sign out", role: .destructive) { auth.signOut() }
+                        Button { showSettings = true } label: { Label("SETTINGS", systemImage: "gearshape") }
+                        Button("SIGN OUT", role: .destructive) { auth.signOut() }
                     } label: { Image(systemName: "line.3.horizontal") }
                     .accessibilityLabel("Open menu")
                 }
@@ -71,7 +71,7 @@ struct WorkspaceView: View {
                     .frame(width: 48, height: 48)
                     .background(Brand.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ask Wireline").font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
+                    Text("ASK WIRELINE").font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
                     Text("Dispatch calls, waits, approvals, and follow-ups.").font(.subheadline).foregroundStyle(Brand.text2)
                 }
                 Spacer(minLength: 0)
@@ -93,7 +93,7 @@ struct WorkspaceView: View {
                     .frame(width: 48, height: 48)
                     .background(Brand.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Set callback number").font(.subheadline.weight(.semibold)).foregroundStyle(Brand.text)
+                    Text("SET CALLBACK NUMBER").font(.subheadline.weight(.semibold)).foregroundStyle(Brand.text)
                     Text("Enable live call transfers to your device.").font(.caption).foregroundStyle(Brand.text2)
                 }
                 Spacer(minLength: 0)
@@ -108,25 +108,25 @@ struct WorkspaceView: View {
 
     private var metrics: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Command center").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
+            Text("OVERVIEW").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3)
             HStack(spacing: 8) {
-                Metric(title: "Calls now", value: "\(activeCalls)", icon: "phone.fill", active: activeCalls > 0)
-                Metric(title: "Follow-ups", value: "\(followUps)", icon: "bell.badge.fill", active: followUps > 0)
-                Metric(title: "Agents", value: "\(agents.count)", icon: "person.2.fill", active: false)
+                Metric(title: "CALLS NOW", value: "\(activeCalls)", icon: "phone.fill", active: activeCalls > 0)
+                Metric(title: "FOLLOW-UPS", value: "\(followUps)", icon: "bell.badge.fill", active: followUps > 0)
+                Metric(title: "BOTS", value: "\(agents.count)", icon: "waveform.and.person.filled", active: false)
             }
         }
     }
 
     private func account(_ me: MobileMe) -> some View {
         HStack(spacing: 12) {
-            Medallion(systemImage: me.account.mode == .business ? "person.2.fill" : "person.fill", size: 42)
+            Medallion(systemImage: "waveform.and.person.filled", size: 42)
             VStack(alignment: .leading, spacing: 3) {
                 Text(me.account.businessName ?? me.user.fullName ?? me.user.email).font(.headline).foregroundStyle(Brand.text)
-                Text("\(me.account.planName) - \(quotaText(me.agents))").font(.caption).foregroundStyle(Brand.text2)
+                Text("\(me.account.planName) · \(quotaText(me.agents))").font(.caption).foregroundStyle(Brand.text2)
             }
             Spacer()
             if me.account.subscriptionStatus != "active" {
-                Text("Needs attention").font(.caption2.weight(.semibold)).foregroundStyle(Brand.destructive)
+                Text("NEEDS ATTENTION").font(.caption2.weight(.semibold)).foregroundStyle(Brand.destructive)
             }
         }
         .padding(16)
@@ -134,19 +134,19 @@ struct WorkspaceView: View {
     }
 
     @ViewBuilder
-    private func agentSection(_ me: MobileMe) -> some View {
+    private func botSection(_ me: MobileMe) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Agents").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
+                Text("BOTS").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3)
                 Spacer()
                 Text("\(agents.count)").font(.caption.weight(.semibold)).foregroundStyle(Brand.text2)
             }
             VStack(spacing: 0) {
                 if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Personal and business agents",
-                        message: "Create a personal, front desk, sales, support, or operations agent.",
-                        systemImage: "person.wave.2"
+                        title: "NO BOTS YET",
+                        message: "Build a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom Bot in the same workspace.",
+                        systemImage: "waveform.and.person.filled"
                     )
                 } else {
                     ForEach(agents) { agent in
@@ -156,7 +156,7 @@ struct WorkspaceView: View {
                 }
                 if me.agents.canAddMore, let price = me.extraAgent.priceUsd, me.extraAgent.configured {
                     Divider()
-                    Label("Add an agent - $\(Int(price))/mo", systemImage: "plus.circle")
+                    Label("ADD A BOT · $\(Int(price))/MO", systemImage: "plus.circle")
                         .font(.subheadline.weight(.medium)).foregroundStyle(Brand.accent).padding(16)
                 }
             }
@@ -166,17 +166,17 @@ struct WorkspaceView: View {
 
     private var links: some View {
         VStack(spacing: 0) {
-            NavigationLink { WalletView() } label: { Label("Wallet & credits", systemImage: "creditcard").foregroundStyle(Brand.text).padding(16) }
+            NavigationLink { WalletView() } label: { Label("WALLET & CREDITS", systemImage: "creditcard").foregroundStyle(Brand.text).padding(16) }
             Divider().padding(.leading, 48)
-            NavigationLink { ActivationSetupView() } label: { Label("Activate Wireline everywhere", systemImage: "wand.and.stars").foregroundStyle(Brand.text).padding(16) }
+            NavigationLink { ActivationSetupView() } label: { Label("ACTIVATE WIRELINE EVERYWHERE", systemImage: "wand.and.stars").foregroundStyle(Brand.text).padding(16) }
         }
         .brandGlowCard()
     }
 
     private func quotaText(_ quota: MobileMe.AgentQuota) -> String {
-        if quota.unlimited { return "\(quota.count) agents" }
-        if let cap = quota.effectiveCap { return "\(quota.count) of \(cap) agents" }
-        return "\(quota.count) agents"
+        if quota.unlimited { return "\(quota.count) BOTS" }
+        if let cap = quota.effectiveCap { return "\(quota.count) OF \(cap) BOTS" }
+        return "\(quota.count) BOTS"
     }
 
     @MainActor private func load() async {
