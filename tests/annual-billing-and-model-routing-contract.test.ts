@@ -40,9 +40,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("routes simple work to Luna, medium to Terra, and complex to Sol", () => {
-    expect(selectModelForTask("simple")).toBe("gpt-5.6-luna");
-    expect(selectModelForTask("medium")).toBe("gpt-5.6-terra");
-    expect(selectModelForTask("complex")).toBe("gpt-5.6-sol");
+  it("keeps all workload complexity on the Gateway primary model", () => {
+    expect(selectModelForTask("simple")).toBe("grok-4.6");
+    expect(selectModelForTask("medium")).toBe("grok-4.6");
+    expect(selectModelForTask("complex")).toBe("grok-4.6");
   });
 });

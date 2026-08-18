@@ -18,7 +18,7 @@ describe("managed AI recipe availability", () => {
     expect(modal).not.toContain('primary_provider === "');
     expect(modal).not.toContain("/api/claude/status");
     expect(route).toContain('router.get("/api/ai/status", authenticateUser');
-    expect(route).toContain('primary_provider: "openai"');
+    expect(route).toContain('primary_provider: "gateway"');
     expect(route).toContain("STRUCTURED_PRIMARY_MODEL");
     expect(registry).toContain("app.use(aiStatusRouter)");
   });

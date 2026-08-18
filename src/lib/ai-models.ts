@@ -388,18 +388,14 @@ export function pricingForModel(model: string, totalInputTokens = 0): ModelPrici
 }
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
- * Route structured work by complexity inside the OpenAI continuity lane.
- * The xAI primary remaps non-Grok ids onto Grok 4.6 in `callXAI`. Gemini
- * remains an automatic continuity fallback (see ai-client), not a complexity
- * selector. The OpenAI ladder follows workload guidance: Luna for efficient
- * high-volume work, Terra for balanced work, and Sol for complex professional
- * work.
+ * AI Gateway owns availability routing for structured work. Complexity remains
+ * product metadata for prompts and budgets, but it must not silently select an
+ * OpenAI model ahead of the Gateway policy.
  */
-export function selectModelForTask(complexity: TaskComplexity): string {
-  if (complexity === "simple") return OPENAI_MODELS.GPT_5_6_LUNA;
-  if (complexity === "medium") return OPENAI_MODELS.GPT_5_6_TERRA;
-  return OPENAI_MODELS.GPT_5_6_SOL;
+export function selectModelForTask(_complexity: TaskComplexity): string {
+  return STRUCTURED_PRIMARY_MODEL;
 }
+
 export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
   if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";

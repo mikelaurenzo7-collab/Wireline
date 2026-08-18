@@ -86,10 +86,10 @@ describe("model pricing coverage contract", () => {
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
   });
 
-  it("routes GPT-5.6 by workload complexity and prices cache writes accurately", () => {
-    expect(selectModelForTask("simple")).toBe(OPENAI_MODELS.GPT_5_6_LUNA);
-    expect(selectModelForTask("medium")).toBe(OPENAI_MODELS.GPT_5_6_TERRA);
-    expect(selectModelForTask("complex")).toBe(OPENAI_MODELS.GPT_5_6_SOL);
+  it("keeps workload complexity on the Gateway primary model and prices cache writes accurately", () => {
+    expect(selectModelForTask("simple")).toBe(XAI_MODELS.GROK_4_6);
+    expect(selectModelForTask("medium")).toBe(XAI_MODELS.GROK_4_6);
+    expect(selectModelForTask("complex")).toBe(XAI_MODELS.GROK_4_6);
 
     const cost = estimateCostDetailed(
       {

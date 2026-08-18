@@ -1,7 +1,4 @@
-import {
-  OPENAI_STRUCTURED_PRIMARY_MODEL,
-  STRUCTURED_PRIMARY_MODEL,
-} from "./ai-models";
+import { STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import { GROK_VOICE_DEFAULT_MODEL } from "./voice/grok-voice-config";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
 
@@ -25,14 +22,14 @@ export function getHealthModelTiering() {
       reason: "ChatGPT App private simulation only. Studio and PSTN stay on xAI Speech-to-Speech.",
     },
     reasoning_layer: {
-      provider: "xai" as const,
+      provider: "gateway" as const,
       model: STRUCTURED_PRIMARY_MODEL,
-      reason: "Managed xAI Grok 4.6 primary for training, QA, insights, and post-call work.",
+      reason: "AI Gateway owns structured-routing availability and observability for training, QA, insights, and post-call work.",
     },
     reasoning_fallback: {
-      provider: "openai" as const,
-      model: OPENAI_STRUCTURED_PRIMARY_MODEL,
-      reason: "First automatic continuity lane; Gemini and the AI Gateway follow.",
+      provider: "xai" as const,
+      model: STRUCTURED_PRIMARY_MODEL,
+      reason: "Gateway model chain starts with Grok, then OpenAI and Gemini for continuity.",
     },
   };
 }

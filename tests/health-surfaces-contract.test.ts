@@ -129,7 +129,7 @@ describe("health surfaces contract", () => {
       model: OPENAI_REALTIME_DEFAULT_MODEL,
     });
     expect(tiering.reasoning_layer).toMatchObject({
-      provider: "xai",
+      provider: "gateway",
       model: STRUCTURED_PRIMARY_MODEL,
     });
     expect(tiering.reasoning_fallback).toMatchObject({
