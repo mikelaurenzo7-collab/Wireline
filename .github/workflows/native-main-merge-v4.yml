@@ -1,0 +1,198 @@
+name: native-main-merge-v4
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-merge-v4.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-main-merge-v2
+  cancel-in-progress: true
+
+jobs:
+  integrate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Check out native runtime branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build the idempotent integration runner from repository history
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_commit="$(git log -1 --format=%H --all -- .github/scripts/native-main-integration-v3.sh)"
+          test -n "$source_commit"
+          git show "$source_commit:.github/scripts/native-main-integration-v3.sh" > /tmp/native-main-integration-v4.sh
+
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path("/tmp/native-main-integration-v4.sh")
+          source = path.read_text(encoding="utf-8")
+          source = source.replace("integration v3", "integration v4")
+          source = source.replace("native-main-integration-v3.log", "native-main-integration-v4.log")
+          source = source.replace("native-main-integration-v3-failure.txt", "native-main-integration-v4-failure.txt")
+          source = source.replace(
+              'git rm -f --ignore-unmatch .github/workflows/native-main-merge-v3.yml',
+              'git rm -f --ignore-unmatch .github/workflows/native-main-merge-v3.yml\n'
+              'git rm -f --ignore-unmatch .github/workflows/native-main-merge-v4.yml',
+          )
+          source = source.replace(
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v3-failure.txt',
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v3-failure.txt\n'
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v4-failure.txt',
+          )
+
+          extra = r'''
+          python <<'PY2'
+          from pathlib import Path
+          import re
+
+          def read(path: str) -> str:
+              return Path(path).read_text(encoding="utf-8")
+
+          def write(path: str, text: str) -> None:
+              Path(path).write_text(text, encoding="utf-8")
+
+          def replace_test_block(path: str, title: str, replacement: str) -> None:
+              text = read(path)
+              marker = f'  it("{title}"'
+              start = text.find(marker)
+              if start < 0:
+                  raise SystemExit(f"Test block not found in {path}: {title}")
+              next_it = text.find('\n  it("', start + len(marker))
+              describe_end = text.find("\n});", start + len(marker))
+              candidates = [index for index in (next_it, describe_end) if index >= 0]
+              if not candidates:
+                  raise SystemExit(f"Could not find end of test block in {path}: {title}")
+              end = min(candidates)
+              write(path, text[:start] + replacement.rstrip() + "\n" + text[end:])
+
+          # Company identity now mutates through both native routing and native
+          # release modules. Validate each authoritative path instead of a brittle
+          # global occurrence count inherited from the Vapi carrier monolith.
+          company_path = "tests/company-identity-contract.test.ts"
+          company = read(company_path)
+          company = re.sub(
+              r'\n\s*const nativeNumberRoutes = \[[\s\S]*?expect\(nativeNumberRoutes\)\.toContain\("runCompanyIdentityMutation"\);',
+              '''\n    const nativeRouting = read("src/routes/native-phone-routing-routes.ts");
+    const nativeRelease = read("src/routes/native-phone-release-routes.ts");
+    expect(nativeRouting).toContain("runCompanyIdentityMutation");
+    expect(nativeRelease).toContain("runCompanyIdentityMutation");
+    expect(`${carrier}\\n${provisioning}`).toContain("runCompanyIdentityMutation");''',
+              company,
+              count=1,
+          )
+          write(company_path, company)
+
+          replace_test_block(
+              "tests/security-atomicity-release-contract.test.ts",
+              "reserves each number before dialing and preserves the lock after uncertain outcomes",
+              '''  it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
+    const source = read("src/lib/voice/outbound-call-service.ts");
+    const reservation = source.indexOf("reserveOutboundDialAttempt");
+    const provider = source.indexOf("createTwilioOutboundCall", reservation);
+    const completion = source.indexOf("completeOutboundDialAttempt", provider);
+    expect(reservation).toBeGreaterThan(-1);
+    expect(provider).toBeGreaterThan(reservation);
+    expect(completion).toBeGreaterThan(provider);
+    expect(source).toContain("type DeniedOutboundDialGate = Extract<");
+    expect(source).toContain("providerOutcomeAmbiguous");
+    expect(source).toContain("automatic retry");
+  });''',
+          )
+
+          # Keep the DNC business blocker in the canonical roadmap array, not
+          # merely in a nearby knowledge paragraph.
+          knowledge_path = "src/data/wireline-knowledge.ts"
+          knowledge = read(knowledge_path)
+          status_start = knowledge.find("WIRELINE_COMPLIANCE_STATUS")
+          roadmap_start = knowledge.find("roadmap:", status_start)
+          bracket_start = knowledge.find("[", roadmap_start)
+          bracket_end = knowledge.find("]", bracket_start)
+          if min(status_start, roadmap_start, bracket_start, bracket_end) < 0:
+              raise SystemExit("WIRELINE_COMPLIANCE_STATUS roadmap was not found")
+          phrase = "Federal Do Not Call registration is not complete"
+          roadmap = knowledge[bracket_start:bracket_end]
+          if phrase not in roadmap:
+              insertion = (
+                  '\n    "Federal Do Not Call registration is not complete; marketing campaign outbound remains fail-closed until registration and vendor credentials are configured.",'
+              )
+              knowledge = knowledge[: bracket_start + 1] + insertion + knowledge[bracket_start + 1 :]
+          write(knowledge_path, knowledge)
+
+          replace_test_block(
+              "tests/silent-failure-round2-contract.test.ts",
+              "branches on a retryable step failure before advancing",
+              '''  it("branches on a retryable step failure before advancing", () => {
+    const engine = read("src/lib/cadence-engine.ts");
+    const retryAt = engine.indexOf("if (!stepResult.ok && stepResult.retryable)");
+    const advanceAt = engine.indexOf("const nextIndex = currentIndex + 1");
+    expect(retryAt).toBeGreaterThan(-1);
+    expect(advanceAt).toBeGreaterThan(retryAt);
+    const retryBlock = engine.slice(retryAt, advanceAt);
+    expect(retryBlock).toContain("STEP_EXCEPTION_RETRY_PREFIX");
+    expect(retryBlock).toContain("continue;");
+  });''',
+          )
+
+          replace_test_block(
+              "tests/subsystem-audit-hardening-contract.test.ts",
+              "routes cadence email steps as marketing mail",
+              '''  it("routes cadence email steps as marketing mail", () => {
+    const cadence = read("src/lib/cadence-engine.ts");
+    const emailStart = cadence.indexOf('if (step.type === "email")');
+    const emailEnd = cadence.indexOf("return { ok: false, result: `unknown step type", emailStart);
+    const emailBlock = cadence.slice(emailStart, emailEnd);
+    expect(emailStart).toBeGreaterThan(-1);
+    expect(emailBlock).toContain("integration.sendEmail({");
+    expect(emailBlock).toContain("marketing: true");
+  });''',
+          )
+
+          # Native public browser voice mints an xAI session; the retired Vapi
+          # demo endpoint cannot be the outage interception contract.
+          fallback_path = "tests/e2e/public-demo-fallback.spec.ts"
+          fallback = read(fallback_path)
+          fallback = fallback.replace(
+              '**/api/public/demo-session',
+              '**/api/public/demo-xai-session',
+          )
+          write(fallback_path, fallback)
+          PY2
+          '''
+
+          marker = "\nPY\n\ngit add -A"
+          if marker not in source:
+              raise SystemExit("Could not locate integration patch boundary")
+          source = source.replace(marker, "\nPY\n" + extra + "\ngit add -A", 1)
+          source = source.replace(
+              "npm ci --no-audit --no-fund",
+              "npx prettier --write src/components/marketing/PrecisionPublicHeader.tsx src/components/AdminSettings.tsx src/db/schema.ts src/data/wireline-knowledge.ts src/lib/marketing-route-meta.ts tests/company-identity-contract.test.ts tests/round6-honesty-compliance-contract.test.ts tests/round6-tenant-binding-contract.test.ts tests/security-atomicity-release-contract.test.ts tests/silent-failure-round2-contract.test.ts tests/subsystem-audit-hardening-contract.test.ts tests/e2e/marketing-viewport-lock.spec.ts tests/e2e/public-demo-fallback.spec.ts\n\nnpm ci --no-audit --no-fund",
+              1,
+          )
+          path.write_text(source, encoding="utf-8")
+          PY
+          chmod +x /tmp/native-main-integration-v4.sh
+
+      - name: Merge main, repair verified regressions, and run exact gates
+        shell: bash
+        env:
+          HUSKY: "0"
+          NODE_OPTIONS: "--max-old-space-size=6144"
+          CI: "true"
+        run: bash /tmp/native-main-integration-v4.sh
