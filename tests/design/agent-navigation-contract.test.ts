@@ -149,14 +149,14 @@ describe("agent navigation contract", () => {
   });
 
   it("uses one managed phone voice family throughout setup", () => {
-    expect(simpleVoicePicker).toMatch(/VAPI_CURATED_VOICES/);
-    expect(simpleVoicePicker).toMatch(/Savannah/);
-    expect(simpleVoicePicker).toMatch(/Elliot/);
-    expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
+    expect(simpleVoicePicker).toMatch(/WIRELINE_LIVE_VOICES/);
+    expect(simpleVoicePicker).toMatch(/Ara/);
+    expect(simpleVoicePicker).toMatch(/Rex/);
+    expect(simpleVoicePicker).toMatch(/provider: "xai"/);
     expect(simpleVoicePicker).toMatch(/Browser tests the words/);
     expect(simpleVoicePicker).toMatch(/Test response/);
     expect(simpleVoicePicker).not.toMatch(
-      /api\.elevenlabs\.io|ELEVENLABS_API_KEY|xAI|VoiceGallery|playVoicePreview|Test call/,
+      /api\.elevenlabs\.io|ELEVENLABS_API_KEY|VoiceGallery|playVoicePreview|Test call/,
     );
     expect(studioPanel).toMatch(/<SimpleVoicePicker/);
     expect(studioPanel).not.toMatch(/Wireline manages the voice runtime/);

@@ -19,11 +19,11 @@ export type VoiceOption = {
  * Studio and public browser live conversations use the same native xAI voices.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
-  { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },
-  { id: "ara", name: "Ara · Warm & Professional", provider: "xai" },
-  { id: "rex", name: "Rex · Clear & Confident", provider: "xai" },
-  { id: "sal", name: "Sal · Balanced & Friendly", provider: "xai" },
-  { id: "leo", name: "Leo · Direct & Energetic", provider: "xai" },
+  { id: "eve", name: "Eve · Bright & Energetic", provider: "xai", gender: "female" },
+  { id: "ara", name: "Ara · Warm & Professional", provider: "xai", gender: "female" },
+  { id: "rex", name: "Rex · Clear & Confident", provider: "xai", gender: "male" },
+  { id: "sal", name: "Sal · Balanced & Friendly", provider: "xai", gender: "male" },
+  { id: "leo", name: "Leo · Direct & Energetic", provider: "xai", gender: "male" },
 ] as const;
 
 /**
@@ -264,6 +264,12 @@ export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
 export const MANAGED_VOICE_BY_GENDER = {
   female: "Savannah",
   male: "Elliot",
+} as const;
+
+/** Native xAI defaults for customer-facing agent creation. */
+export const LIVE_VOICE_BY_GENDER = {
+  female: "ara",
+  male: "rex",
 } as const;
 
 const VAPI_V2_VOICE_IDS = new Set(

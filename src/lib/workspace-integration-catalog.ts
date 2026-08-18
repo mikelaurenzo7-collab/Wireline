@@ -80,7 +80,7 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
       "Messaging actions require consent context, DNC enforcement, and carrier-compliant copy.",
     readiness: "platform",
     nextStep:
-      "Keep Twilio as the messaging and fallback telephony substrate; do not move live voice off Vapi yet.",
+      "Keep Twilio as the messaging and carrier substrate; production live voice runs through xAI Direct SIP, while Vapi remains an internal emergency rollback.",
     toolIntegrations: ["twilio"],
     connection: "platform",
   },

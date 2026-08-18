@@ -22,10 +22,9 @@ describe("Fast Start native voice contract", () => {
   });
 
   it("resolves every new employee to a managed phone voice", () => {
-    // Studio's managed picker writes curated Vapi voices; the live factory
-    // clamps anything else to the managed default before a call is placed.
-    expect(voicePicker).toMatch(/VAPI_CURATED_VOICES/);
-    expect(voicePicker).toMatch(/provider: "vapi"/);
+    // Customer-facing creation and Studio picker write native xAI voices.
+    expect(voicePicker).toMatch(/WIRELINE_LIVE_VOICES/);
+    expect(voicePicker).toMatch(/provider: "xai"/);
     expect(factory).toMatch(/buildManagedVoiceRuntime/);
     expect(managedRuntime).toMatch(/isManagedVapiVoiceId/);
     expect(managedRuntime).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
