@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { cn } from "../../lib/utils";
-import WirelineMark from "../brand/WirelineMark";
+import { WirelineLockup, WirelineWordmark } from "../brand/WirelineBrand";
 
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
@@ -74,11 +74,10 @@ export default function MarketingFooter({
           <div className="marketing-footer-brand">
             <Link
               to="/"
-              aria-label="Wireline home"
-              className="inline-flex items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="WIRELINE home"
+              className="inline-flex rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
             >
-              <WirelineMark className="size-11 shrink-0 text-primary" signal />
-              <span>Wireline</span>
+              <WirelineLockup size="large" />
             </Link>
             <p className="mt-3 max-w-sm text-[15px] leading-6 text-muted-foreground">
               Voice Bots that handle the conversation and finish the work.
@@ -153,7 +152,9 @@ export default function MarketingFooter({
         </div>
 
         <div className="marketing-footer-legal mt-9 flex flex-col gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>&copy; {new Date().getFullYear()} Wireline</span>
+          <span>
+            &copy; {new Date().getFullYear()} <WirelineWordmark inline />
+          </span>
           <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
             {LEGAL_LINKS.map((link) => (
               <Link
