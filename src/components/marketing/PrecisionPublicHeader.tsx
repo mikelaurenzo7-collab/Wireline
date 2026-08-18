@@ -14,7 +14,7 @@ export default function PrecisionPublicHeader() {
           aria-label="Wireline home"
         >
           <WirelineMark className="size-8 shrink-0 text-primary" signal />
-          <span className="truncate">Wireline</span>
+          <span className="truncate max-[379px]:hidden">Wireline</span>
         </Link>
 
         <nav
