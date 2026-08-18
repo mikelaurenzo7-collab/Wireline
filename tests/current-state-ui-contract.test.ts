@@ -59,12 +59,12 @@ describe("current-state UI contract", () => {
 
   it("keeps account-bound MCP apps public without overstating authority", () => {
     const developers = read("src/pages/Developers.tsx");
-    expect(developers).toContain("Connect once");
+    expect(developers).toContain("Connect Once");
     expect(developers).toContain("View MCP Endpoint");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("Add to Cursor");
     expect(developers.replace(/\s+/g, " ")).toContain(
-      "This connector cannot place calls, send messages, provision numbers, or launch a live voice agent",
+      "This connector cannot place calls, send messages, provision numbers, or launch a live Bot",
     );
     expect(developers).not.toContain("wl_YOUR_API_KEY");
   });
@@ -102,7 +102,7 @@ describe("current-state UI contract", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Voice, text, email, tools, and outcomes in one workspace.",
+      "Voice, live conversation, text, email, tools, and outcomes in one workspace.",
     );
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain("under your direction");
