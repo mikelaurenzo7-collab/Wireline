@@ -51,7 +51,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "job",
       label: "Job and greeting defined",
       actionLabel: "Define job and greeting",
-      detail: "Give the voice agent one clear customer-facing responsibility.",
+      detail: "Give the Voice Bot one clear customer-facing responsibility.",
       done: p.agents > 0,
       href: "/studio?section=setup",
       icon: Sparkles,
@@ -151,7 +151,7 @@ export default function ActivationChecklist({
           "wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6",
           className,
         )}
-        aria-label="Your voice agent is live"
+        aria-label="Your Voice Bot is live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
