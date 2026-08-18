@@ -19,7 +19,6 @@ import {
 export { getNativeXAIPhoneStatus };
 export type { NativeXAIPhoneStatus };
 
-const XAI_DEACTIVATING = "XAI_PHONE_DEACTIVATING";
 const XAI_DEACTIVATION_FAILED = "XAI_PHONE_DEACTIVATION_FAILED";
 const XAI_DEACTIVATION_OUTCOME_AMBIGUOUS =
   "XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS";
@@ -182,8 +181,7 @@ export async function deactivateNativeXAIPhoneLine(input: {
       phoneSuffix: phoneNumber.slice(-4),
     });
   } catch (error) {
-    const ambiguous =
-      providerMutationAttempted && isAmbiguousTwilioPhoneMutationError(error);
+    const ambiguous = providerMutationAttempted && isAmbiguousTwilioPhoneMutationError(error);
     const failureCode =
       claim.priorLastError === XAI_OUTCOME_AMBIGUOUS
         ? XAI_OUTCOME_AMBIGUOUS
@@ -228,12 +226,19 @@ export async function deactivateNativeXAIPhoneLine(input: {
  * phone attachment, xAI registration, and final activation all finish before
  * status returns to active. No provider-side repair runs after the lease closes.
  */
-export function provisionNativeXAIPhone(input: {
+export async function provisionNativeXAIPhone(input: {
   userId: string;
   agentId: string;
 }): Promise<NativeXAIPhoneStatus> {
-  return provisionNativeXAIPhoneLowLevel(input);
+  try {
+    return await provisionNativeXAIPhoneLowLevel(input);
+  } catch (error) {
+    const message = getErrorMessage(error);
+    if (message.includes("XAI_PHONE_DEACTIVATION_UNRESOLVED")) {
+      throw AppError.serviceUnavailable(
+        "Phone activation is blocked until the previous carrier detach is reconciled.",
+      );
+    }
+    throw error;
+  }
 }
-
-// Keep these private state codes discoverable in source-level release contracts.
-void XAI_DEACTIVATING;
