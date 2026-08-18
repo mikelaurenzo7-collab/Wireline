@@ -1,23 +1,28 @@
 # Grok 4.6 materialization failure
 
-HEAD=7ce3b36932327defd7f8e39ccf219cc116db1230
+HEAD=7bcd865d7e8efb233f446067bf2e6e3cf4f1aefc
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32097377193
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32097499092
 
 ```text
+Materialized Drizzle snapshot 0050 (d745e0bbd85d…).
+Materialized Drizzle snapshot 0051 (ca35f3a7f917…).
 .audit/postmerge/apply-grok46-schema.py:198: SyntaxWarning: invalid escape sequence '\s'
   '''import { readFileSync } from "node:fs";
 /home/runner/work/Wireline/Wireline/.audit/postmerge/apply-grok46-schema.py:198: SyntaxWarning: invalid escape sequence '\s'
   '''import { readFileSync } from "node:fs";
-Traceback (most recent call last):
-  File "/home/runner/work/Wireline/Wireline/.audit/postmerge/apply-grok46-schema.py", line 88, in <module>
-    previous = json.loads(previous_path.read_text(encoding="utf-8"))
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
-    with self.open(mode='r', encoding=encoding, errors=errors) as f:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/Wireline/Wireline/drizzle/migrations/meta/0051_snapshot.json'
+Applied 0154 Grok 4.6 schema metadata (1234052d9b50…).
+file:///home/runner/work/Wireline/Wireline/scripts/materialize-drizzle-meta.mjs:197
+    throw new Error(`Generated snapshot hash mismatch for ${path}: expected ${expectedHash}, got ${actualHash}.`);
+          ^
+
+Error: Generated snapshot hash mismatch for /home/runner/work/Wireline/Wireline/drizzle/migrations/meta/0052_snapshot.json: expected 1234052d9b501c595708d97783f34c498621390ae3568fef8b369ea4f168e460, got 2057ac0cd45cd55bcb39e2edb27615bb6c571dbd6ed9d754cf4af4d0eadd9713.
+    at writeSnapshot (file:///home/runner/work/Wireline/Wireline/scripts/materialize-drizzle-meta.mjs:197:11)
+    at materializeDrizzleMeta (file:///home/runner/work/Wireline/Wireline/scripts/materialize-drizzle-meta.mjs:217:18)
+    at file:///home/runner/work/Wireline/Wireline/scripts/materialize-drizzle-meta.mjs:221:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.2
 ```
