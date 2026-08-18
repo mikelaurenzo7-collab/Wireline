@@ -123,10 +123,10 @@ export default function McpCoachingPanel() {
     <div className="mt-5 space-y-4">
       <div className="flex items-start justify-between gap-4 rounded-[var(--radius-md)] border border-border bg-muted/20 p-4">
         <label htmlFor="mcp-coaching-writes" className="min-w-0">
-          <span className="block font-medium text-foreground">Allow connected apps to save Training</span>
+          <span className="block font-medium text-foreground">Allow Connected Apps to Save Training</span>
           <span id="mcp-coaching-writes-help" className="mt-1 block text-sm leading-6 text-muted-foreground">
             Off by default. When on, a confirmed fact or rule from Cursor, ChatGPT, or Claude lands in
-            Training. It never places a live call or launches the agent.
+            Training. It never places a live call or launches the Bot.
           </span>
         </label>
         <Switch
@@ -136,7 +136,7 @@ export default function McpCoachingPanel() {
           onCheckedChange={(checked) => void updateWrites(checked)}
           disabled={loading || saving}
           aria-describedby="mcp-coaching-writes-help"
-          aria-label="Allow connected apps to save Training"
+          aria-label="Allow Connected Apps to Save Training"
         />
       </div>
 
@@ -145,7 +145,7 @@ export default function McpCoachingPanel() {
       ) : connections.length === 0 ? (
         <p className="text-sm leading-6 text-muted-foreground">
           No connected apps yet. After OAuth, they appear here. New users create a Wireline account
-          during Connect, then build their first voice agent in that chat.
+          during Connect, then build their first Voice Bot in that chat.
         </p>
       ) : (
         <ul className="space-y-2" aria-label="Connected MCP apps">
@@ -177,18 +177,18 @@ export default function McpCoachingPanel() {
           {disconnecting
             ? "Disconnecting…"
             : confirmDisconnect
-              ? "Confirm disconnect all"
-              : "Disconnect all connected apps"}
+              ? "Confirm Disconnect All"
+              : "Disconnect All Connected Apps"}
         </Button>
       ) : null}
 
       {notice ? (
-        <StatusNotice tone="success" title="Connected apps updated">
+        <StatusNotice tone="success" title="Connected Apps Updated">
           {notice}
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Connected apps">
+        <StatusNotice tone="destructive" title="Connected Apps">
           {error}
         </StatusNotice>
       ) : null}

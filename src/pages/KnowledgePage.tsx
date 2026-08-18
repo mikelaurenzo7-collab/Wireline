@@ -23,9 +23,9 @@ const knowledgeTabs: Array<{
 }> = [
   {
     id: "knowledge",
-    label: "Business knowledge",
+    label: "Bot Knowledge",
     shortLabel: "Knowledge",
-    ariaLabel: "Business knowledge",
+    ariaLabel: "Bot knowledge",
   },
   { id: "reports", label: "Reports" },
 ];
@@ -39,11 +39,11 @@ function EmptyKnowledge() {
       withHalo={false}
       className="wl-paper wl-paper-elevated mx-auto w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
       icon={<BookOpen size={30} strokeWidth={1.7} />}
-      title="Knowledge starts with a voice agent"
-      description="Create the agent first, then add the business facts, policies, and answers it may use with customers."
+      title="Knowledge Starts With a Voice Bot"
+      description="Create the Bot first, then add the facts, policies, and answers it may use in customer and personal conversations."
       actions={[
-        { label: "Create voice agent", to: "/studio?create=1", primary: true },
-        { label: "Browse templates", to: "/templates" },
+        { label: "Create Voice Bot", to: "/studio?create=1", primary: true },
+        { label: "Browse Templates", to: "/templates" },
       ]}
     />
   );
@@ -88,10 +88,9 @@ export default function KnowledgePage() {
         <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
           <WorkspacePageIntro title="Knowledge" />
           {/* An empty roster and an unreachable one are the same `agents.length`
-              but opposite facts. Without this check a failed load rendered
-              "Knowledge starts with a voice agent — create the agent
-              first", so a customer whose agents were merely unreachable was
-              told they had none and invited to build a duplicate. */}
+              but opposite facts. Without this check a failed load rendered the
+              first-run Bot state, so a customer whose Bots were merely
+              unreachable was invited to build a duplicate. */}
           {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}
         </WorkspacePageFrame>
       ) : (
@@ -128,7 +127,7 @@ export default function KnowledgePage() {
                     { replace: true },
                   )
                 }
-                aria-label="Choose voice agent"
+                aria-label="Choose Bot"
                 className="min-w-[180px] sm:w-auto"
               >
                 {agents.map((agent) => (

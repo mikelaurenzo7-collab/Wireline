@@ -80,13 +80,14 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps sales wedge copy aligned with profit-recovery positioning", () => {
+  it("keeps the sales wedge aligned with governed voice-first Bot positioning", () => {
     const wedges = read("src/data/vertical-wedges.ts");
-    expect(wedges).toContain("Profit Recovery Phone Agents");
-    expect(wedges).toContain("speed to lead");
+    expect(wedges).toContain("WIRELINE FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP");
+    expect(wedges).toContain("A voice-first Sales Bot for speed-to-lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
+    expect(wedges).not.toContain("Profit Recovery Phone Agents");
   });
 
   it("keeps WireAgentLanding customer-facing without internal meta", () => {
@@ -116,7 +117,7 @@ describe("sales trust copy contract", () => {
     expect(compare).toContain("https://www.bland.ai/pricing");
     expect(compare).toContain("https://www.retellai.com/pricing");
     expect(compare).toContain(
-      "not a claim that unlike products are feature for feature equivalents",
+      "not a claim that unlike products are feature-for-feature equivalents",
     );
     // The hero and the closing CTA band both went; the free-start path now
     // sits inline at the point of comparison, under the before-and-after list.

@@ -14,8 +14,8 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 /**
  * Wireline avoids en and em dashes in customer-facing prose. Standard hyphens
- * remain available for precise compounds such as voice-first, owner-ready,
- * feature-for-feature, and long-term. Slugs, links, classes, and identifiers
+ * remain available for precise compounds such as voice-first, after-hours,
+ * follow-up, owner-ready, and long-term. Slugs, links, classes, and identifiers
  * are not copy and are excluded from the recursive copy scan.
  */
 const LONG_DASH = /[–—]/;
@@ -104,7 +104,9 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
   });
 
   it("preserves useful hyphenated compounds in the approved voice-first system", () => {
+    const wedges = read("src/data/vertical-wedges.ts");
     expect(HOME_DESCRIPTION).toContain("voice-first");
-    expect(read("src/data/vertical-wedges.ts")).toContain("feature-for-feature");
+    expect(wedges).toContain("after-hours");
+    expect(wedges).toContain("follow-up");
   });
 });

@@ -102,7 +102,7 @@ describe("one-workspace Bot parity", () => {
       setupPrompt: "What should your Bot do?",
     });
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
-    expect(BOT_WORKSPACE_PROMISE.title).toBe("One Workspace. Every Bot.");
+    expect(BOT_WORKSPACE_PROMISE.title).toBe("ONE WORKSPACE. EVERY BOT.");
   });
 
   it("keeps business, personal, and custom starters in the same role catalog", () => {

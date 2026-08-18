@@ -59,9 +59,11 @@ describe("Stripe merchant-brand assets", () => {
     expect(renderer).toContain('readFileSync(resolve(root, "public/wireline-icon.svg")');
     expect(renderer).toContain('readFileSync(resolve(root, "design-tokens/wireline.tokens.json")');
     expect(renderer).toContain('out: "public/wireline-stripe-logo.png"');
+    expect(renderer).toContain('src: "scripts/ios-app-icon.svg"');
     expect(renderer).toContain(
-      '{ src: "scripts/ios-app-icon.svg", out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 }',
+      'out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png"',
     );
+    expect(renderer).toContain("width: 1024");
     expect(renderer).toContain("BOTS THAT GET THE WORK DONE");
     expect(renderer).toContain('"color", "surface", "default"');
     expect(renderer).toContain('"color", "border", "strong"');

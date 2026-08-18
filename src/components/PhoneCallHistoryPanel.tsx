@@ -73,7 +73,7 @@ export default function PhoneCallHistoryPanel() {
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="destructive"
-          title="Call history unavailable"
+          title="Call History Unavailable"
           action={
             <Button
               type="button"
@@ -81,7 +81,7 @@ export default function PhoneCallHistoryPanel() {
               size="sm"
               onClick={() => setAttempt((current) => current + 1)}
             >
-              Try again
+              Try Again
             </Button>
           }
         >
@@ -102,14 +102,14 @@ export default function PhoneCallHistoryPanel() {
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Voice agent readiness unavailable"
+          title="Voice Bot Readiness Unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
             </Button>
           }
         >
-          Wireline could not confirm your voice agent or phone setup. Existing configuration is
+          Wireline could not confirm your Voice Bot or phone setup. Existing configuration is
           unchanged.
         </StatusNotice>
       </div>
@@ -121,14 +121,14 @@ export default function PhoneCallHistoryPanel() {
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Phone readiness unavailable"
+          title="Phone Readiness Unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
             </Button>
           }
         >
-          Wireline could not confirm the phone numbers connected to your voice agents. Existing
+          Wireline could not confirm the phone numbers connected to your Voice Bots. Existing
           configuration is unchanged.
         </StatusNotice>
       </div>
@@ -138,38 +138,38 @@ export default function PhoneCallHistoryPanel() {
   const livePhone = agents.find((agent) => agent.phone_number)?.phone_number ?? null;
   const emptyState = !hasAgents
     ? {
-        title: "Create your first voice agent",
+        title: "Create Your First Voice Bot",
         description:
-          "Call history starts after you create a voice agent, connect its number, and handle the first customer conversation.",
+          "Call history starts after you create a Voice Bot, connect its number, and handle the first customer conversation.",
         action: (
           <Button asChild>
-            <Link to="/studio?create=1">Create voice agent</Link>
+            <Link to="/studio?create=1">Create Voice Bot</Link>
           </Button>
         ),
       }
     : !livePhone
       ? {
-          title: "Connect a phone number",
+          title: "Connect a Phone Number",
           description:
-            "Your voice agent is ready for setup. Connect its customer line before expecting call history here.",
+            "Your Voice Bot is ready for setup. Connect its customer line before expecting call history here.",
           action: (
             <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
               <Button asChild>
-                <Link to="/settings/phone">Connect phone</Link>
+                <Link to="/settings/phone">Connect Phone</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/studio?section=setup">Review voice agent</Link>
+                <Link to="/studio?section=setup">Review Voice Bot</Link>
               </Button>
             </div>
           ),
         }
       : {
-          title: "No call history yet",
+          title: "No Call History Yet",
           description:
             "Your customer line is connected. Place one real call to verify audio and populate the first summary, outcome, and follow-up.",
           action: (
             <Button asChild>
-              <a href={`tel:${livePhone}`}>Call your Wireline number</a>
+              <a href={`tel:${livePhone}`}>Call Your Wireline Number</a>
             </Button>
           ),
         };

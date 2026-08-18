@@ -173,16 +173,16 @@ export default function PhoneSetupPanel() {
         body: JSON.stringify({ agent_id: agentId }),
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Could not attach voice agent.");
+      if (!response.ok) throw new Error(body?.error || "Could not attach Voice Bot.");
       setNumbers((previous) =>
         previous.map((number) =>
           number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
         ),
       );
       setSelectedAgentId(agentId || "");
-      setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
+      setMessage(agentId ? "Voice Bot attached to this line." : "Line unassigned.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not attach voice agent.");
+      setError(err instanceof Error ? err.message : "Could not attach Voice Bot.");
     } finally {
       setAttaching(false);
     }
@@ -223,22 +223,22 @@ export default function PhoneSetupPanel() {
           <div className="mt-6 grid gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
-                Voice agent
+                Voice Bot
               </span>
               {agentsLoading ? (
                 <div
                   className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
-                  Loading agents…
+                  Loading Voice Bots…
                 </div>
               ) : agents.length ? (
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger
-                    aria-label="Choose the voice agent for this number"
+                    aria-label="Choose the Voice Bot for this number"
                     className="h-11 border-primary-foreground/20 bg-black/5 text-primary-foreground"
                   >
-                    <SelectValue placeholder="Select voice agent" />
+                    <SelectValue placeholder="Select Voice Bot" />
                   </SelectTrigger>
                   <SelectContent>
                     {agents.map((agent) => (
@@ -249,17 +249,17 @@ export default function PhoneSetupPanel() {
                   </SelectContent>
                 </Select>
               ) : agentsDegraded ? (
-                // An unreachable roster is not an empty one — offering "create
-                // an agent" here invites a duplicate of an agent that exists.
+                // An unreachable roster is not an empty one — offering creation
+                // here invites a duplicate of a Bot that already exists.
                 <div
                   className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
-                  Agent list unavailable. Reload to try again.
+                  Bot list unavailable. Reload to try again.
                 </div>
               ) : (
                 <Button asChild variant="secondary" className="w-full justify-center">
-                  <Link to="/studio?create=1">Create voice agent</Link>
+                  <Link to="/studio?create=1">Create Voice Bot</Link>
                 </Button>
               )}
             </label>
@@ -269,7 +269,7 @@ export default function PhoneSetupPanel() {
                   column — and wrapped to two lines, breaking the row's
                   baseline. The column is 180px now; nowrap is the guard. */}
               <span className="mb-1.5 block whitespace-nowrap text-xs font-semibold text-primary-foreground/80">
-                Preferred area code
+                Preferred Area Code
               </span>
               <span className="relative block">
                 <MapPin
@@ -300,7 +300,7 @@ export default function PhoneSetupPanel() {
               onClick={() => void provisionNumber()}
             >
               <Plus size={16} aria-hidden="true" />
-              {working ? "Activating…" : addingLine ? "Activate another number" : "Activate number"}
+              {working ? "Activating…" : addingLine ? "Activate Another Number" : "Activate Number"}
             </Button>
             <p className="text-xs text-primary-foreground/72 sm:col-span-3">
               Every paid plan includes a dedicated number. If yours needs attention, activation
@@ -324,7 +324,7 @@ export default function PhoneSetupPanel() {
                 <Phone className="size-4" aria-hidden="true" />
               </span>
               <div>
-                <p className="text-sm font-semibold">Call this number now</p>
+                <p className="text-sm font-semibold">Call This Number Now</p>
               </div>
             </div>
             <Button
@@ -332,14 +332,14 @@ export default function PhoneSetupPanel() {
               variant="secondary"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
-              <a href={`tel:${activeNumber.phone_number}`}>Call the line</a>
+              <a href={`tel:${activeNumber.phone_number}`}>Call the Line</a>
             </Button>
           </div>
         )}
         {numbers.length > 1 ? (
           <div className="mt-4 grid gap-2">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary-foreground/70">
-              Your lines
+              Your Lines
             </p>
             <div className="flex flex-wrap gap-2">
               {numbers.map((number) => (
@@ -374,7 +374,7 @@ export default function PhoneSetupPanel() {
               onClick={() => setAddingLine(true)}
             >
               <Plus size={14} aria-hidden="true" />
-              Add another number
+              Add Another Number
             </Button>
           </div>
         ) : null}
@@ -401,10 +401,10 @@ export default function PhoneSetupPanel() {
               }
             >
               <SelectTrigger
-                aria-label="Attach voice agent to this number"
+                aria-label="Assign Voice Bot to this number"
                 className="h-auto min-w-[180px] rounded-md border border-input bg-muted px-2.5 py-2 text-sm"
               >
-                <SelectValue placeholder="Select voice agent" />
+                <SelectValue placeholder="Select Voice Bot" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={PHONE_AGENT_UNSET}>Unassigned</SelectItem>
@@ -424,7 +424,7 @@ export default function PhoneSetupPanel() {
             ) : null}
             {agents.length === 0 && !agentsDegraded ? (
               <Button asChild size="sm">
-                <Link to="/studio?create=1">Create voice agent</Link>
+                <Link to="/studio?create=1">Create Voice Bot</Link>
               </Button>
             ) : null}
           </div>
@@ -432,17 +432,17 @@ export default function PhoneSetupPanel() {
       ) : null}
 
       {message ? (
-        <StatusNotice tone="success" title="Calling is ready">
+        <StatusNotice tone="success" title="Calling Is Ready">
           {message}
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Calling setup needs attention">
+        <StatusNotice tone="destructive" title="Calling Setup Needs Attention">
           <div className="space-y-3">
             <p>{error}</p>
             {recoveryPath ? (
               <Button asChild size="sm" variant="outline">
-                <Link to={recoveryPath}>Choose a plan and continue setup</Link>
+                <Link to={recoveryPath}>Choose a Plan and Continue Setup</Link>
               </Button>
             ) : null}
           </div>

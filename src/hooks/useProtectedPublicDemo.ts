@@ -464,7 +464,7 @@ export function useProtectedPublicDemo(
                     content: [
                       {
                         type: "output_text",
-                        text: "That’s the demo. Build your own Wireline voice agent free when you’re ready.",
+                        text: "That’s the demo. Build your own Wireline Voice Bot free when you’re ready.",
                       },
                     ],
                   },

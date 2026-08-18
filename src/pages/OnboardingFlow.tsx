@@ -12,11 +12,10 @@ export default function OnboardingFlow() {
   const workspaceMode = readStoredWorkspaceMode();
   const language = customerAgentLanguage(workspaceMode);
   const [showFallback, setShowFallback] = useState(false);
-  // Dedicated entry for direct-to-create flows (e.g. ?onboarding or explicit links).
-  // Default post-login (even for fresh) is /overview (Home). Use /studio?create or this flow
-  // to go straight to create in Studio when appropriate for signup or dedicated flows.
-  const target =
-    workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
+  // Dedicated entry for direct-to-create flows. Every account enters the same
+  // one-workspace Bot Studio; the stored legacy mode remains analytics-only.
+  const target = "/studio?create=1";
+
   useEffect(() => {
     emitProductEventOnce({
       event: "onboarding_create_redirect",

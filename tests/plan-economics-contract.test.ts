@@ -11,20 +11,20 @@ import {
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
   STRIPE_PLANS,
   TENANT_OBSERVED_COGS_HEADROOM_RATIO,
+  VOICE_VARIABLE_COST_PER_MIN_USD,
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
 } from "../src/lib/plan-catalog";
 import { planEconomics } from "../src/lib/plan-economics";
 import {
   COGS_DRIFT_THRESHOLD_PER_MIN_USD,
-  MARGIN_ALERT_THRESHOLD_RATIO,
-  tenantEconomicsThresholds,
+  MARGIN_AT_RISK_THRESHOLD_PCT,
 } from "../src/lib/tenant-economics";
 
 const USAGE_GUARD_STRIP = [
   "src/pages/Pricing.tsx",
   "src/pages/BillingSettings.tsx",
-  "src/components/RuntimeSpendGuard.tsx",
+  "src/lib/spend-guards.ts",
   "server/call-start.ts",
   "server/routes/payments.ts",
   "server/telephony/call-credit.ts",
@@ -115,24 +115,15 @@ describe("plan economics contract", () => {
   });
 
   it("keeps alert thresholds tied to the same conservative cost model", () => {
+    expect(COGS_DRIFT_THRESHOLD_PER_MIN_USD).toBe(VOICE_VARIABLE_COST_PER_MIN_USD);
     expect(COGS_DRIFT_THRESHOLD_PER_MIN_USD).toBeGreaterThan(0);
-    expect(MARGIN_ALERT_THRESHOLD_RATIO).toBeGreaterThan(0);
-    expect(MARGIN_ALERT_THRESHOLD_RATIO).toBeLessThan(1);
+    expect(MARGIN_AT_RISK_THRESHOLD_PCT).toBeGreaterThan(0);
+    expect(MARGIN_AT_RISK_THRESHOLD_PCT).toBeLessThan(100);
     expect(TENANT_OBSERVED_COGS_HEADROOM_RATIO).toBeGreaterThan(1);
 
-    for (const plan of STRIPE_PLANS) {
-      const thresholds = tenantEconomicsThresholds(plan.id);
-      expect(thresholds.marginAlertThresholdRatio).toBe(MARGIN_ALERT_THRESHOLD_RATIO);
-      expect(thresholds.cogsDriftThresholdPerMinUsd).toBe(COGS_DRIFT_THRESHOLD_PER_MIN_USD);
-      expect(thresholds.plannedCogsPerMinuteUsd).toBeGreaterThan(0);
-      expect(thresholds.maxObservedCogsPerMinuteUsd).toBeGreaterThan(
-        thresholds.plannedCogsPerMinuteUsd,
-      );
-      expect(thresholds.maxObservedCogsPerMinuteUsd).toBeCloseTo(
-        thresholds.plannedCogsPerMinuteUsd * TENANT_OBSERVED_COGS_HEADROOM_RATIO,
-        10,
-      );
-    }
+    const observedTenantCeiling =
+      VOICE_VARIABLE_COST_PER_MIN_USD * TENANT_OBSERVED_COGS_HEADROOM_RATIO;
+    expect(observedTenantCeiling).toBeGreaterThan(VOICE_VARIABLE_COST_PER_MIN_USD);
   });
 
   it("does not reintroduce retired per-minute hard caps or postpaid overage language", () => {

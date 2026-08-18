@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { BOT_BRAND_IDENTITY } from "../../lib/bot-product";
 import { cn } from "../../lib/utils";
 import WirelineMark from "../brand/WirelineMark";
 
@@ -80,8 +81,11 @@ export default function MarketingFooter({
               <WirelineMark className="size-11 shrink-0 text-primary" signal />
               <span>Wireline</span>
             </Link>
-            <p className="mt-3 max-w-sm text-[15px] leading-6 text-muted-foreground">
-              Voice agents that handle the conversation and finish the work.
+            <p className="mt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {BOT_BRAND_IDENTITY.slogan}
+            </p>
+            <p className="mt-2 max-w-sm text-[15px] leading-6 text-muted-foreground">
+              {BOT_BRAND_IDENTITY.supportingLine}
             </p>
           </div>
 
@@ -103,10 +107,10 @@ export default function MarketingFooter({
             </nav>
 
             <nav
-              aria-label="Who it's for"
+              aria-label="Who It’s For"
               className="marketing-footer-nav flex flex-col items-start gap-0.5"
             >
-              <p className="wl-overline mb-1">Who it&apos;s for</p>
+              <p className="wl-overline mb-1">Who It&apos;s For</p>
               {WHO_ITS_FOR_LINKS.map((link) => (
                 <Link
                   key={link.to}
@@ -170,7 +174,7 @@ export default function MarketingFooter({
               className="inline-flex min-h-11 items-center transition-colors hover:text-foreground"
               onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
             >
-              Privacy choices
+              Privacy Choices
             </button>
           </nav>
         </div>

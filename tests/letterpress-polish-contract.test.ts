@@ -174,18 +174,21 @@ describe("Wireline Letterpress polish layer", () => {
     );
   });
 
-  it("uses the polish primitives in the Overview greeting, metrics, and agent row", () => {
+  it("uses the polish primitives across the unified Overview surfaces", () => {
     const overview = read("src/pages/OverviewPage.tsx");
+    const rail = read("src/components/overview/OverviewRail.tsx");
+    const inbox = read("src/components/overview/UnifiedInbox.tsx");
+
     expect(overview).toContain("wl-metric-tile");
     expect(overview).toContain("wl-reveal");
-    expect(overview).toContain("wl-chip wl-chip--${");
     expect(overview).toContain("wl-focus-ring-halo");
     expect(overview).toContain("wl-press");
-    // Quick actions use Button atoms; recent-call rows use the data-row
-    // primitive; empty state uses the EmptyState atom (renders wl-empty).
-    expect(overview).toContain("wl-data-row");
-    expect(overview).toContain("wl-data-row--divided");
-    expect(overview).toContain("EmptyState");
+    expect(overview).toContain("BotRoster");
+    expect(overview).toContain("UnifiedInbox");
+    expect(rail).toContain("wl-chip wl-chip--${");
+    expect(rail).toContain("wl-focus-ring-halo");
+    expect(inbox).toContain("wl-focus-ring-halo");
+    expect(inbox).toContain("EmptyState");
   });
 
   it("uses the polish primitives in the 404 page", () => {

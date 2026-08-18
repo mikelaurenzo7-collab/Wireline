@@ -82,8 +82,9 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
 
     expect(blog).toContain("Voice Bots");
     expect(blog).not.toContain("AI call agent");
-    expect(pricing).toContain("Build Your Bot");
-    expect(pricing).toContain("Every Paid Bot Includes a Wireline Number");
+    expect(pricing).toContain("Put Your Voice Bot Live");
+    expect(pricing).toContain("Every paid plan includes a Wireline number");
+    expect(pricing).toContain("Build Free");
     expect(pricing).not.toContain("Five Specialized Agents");
     expect(pricing).not.toContain("AI conversation workforce");
     expect(playbooks).toContain("WhatsApp in private beta");

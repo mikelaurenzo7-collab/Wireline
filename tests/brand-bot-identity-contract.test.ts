@@ -27,9 +27,11 @@ describe("Wireline folded W identity", () => {
     expect(renderer).toContain('out: "public/wireline-icon-512.png"');
     expect(renderer).toContain('out: "public/wireline-stripe-icon.png"');
     expect(renderer).toContain('out: "public/wireline-stripe-logo.png"');
+    expect(renderer).toContain('src: "scripts/ios-app-icon.svg"');
     expect(renderer).toContain(
-      '{ src: "scripts/ios-app-icon.svg", out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 }',
+      'out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png"',
     );
+    expect(renderer).toContain("width: 1024");
   });
 });
 

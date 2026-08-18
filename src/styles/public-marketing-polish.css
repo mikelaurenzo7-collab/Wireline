@@ -75,8 +75,8 @@
   text-wrap: balance;
 }
 
-/* Home hero: keep "AI VOICE AGENTS" (~15 chars) on one line from tablet up.
-   Wider caps from the retired employee headline left empty gutters. */
+/* Home hero: keep the compact voice-first Bot headline controlled from tablet
+   up. The narrow cap keeps the approved uppercase identity visually deliberate. */
 .marketing-surface .wireline-home-hero .marketing-hero__title {
   max-width: min(100%, 16ch);
   font-size: clamp(2.55rem, 4.2vw + 1.1rem, 4.85rem);

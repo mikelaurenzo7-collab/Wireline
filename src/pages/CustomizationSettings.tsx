@@ -20,20 +20,20 @@ import { isRouteAvailableForAccount } from "../lib/account-type";
 
 const customizationLinks = [
   {
-    label: "Caller identity",
-    detail: "Legal name, CNAM, support channels for live calls.",
+    label: "Caller Identity",
+    detail: "Legal name, CNAM, and support channels for live calls.",
     href: "/settings/phone#company-identity",
     icon: Building2,
   },
   {
-    label: "Voice & knowledge",
-    detail: "Facts, documents, and tone for the voice agent.",
+    label: "Voice & Knowledge",
+    detail: "Facts, documents, and tone for your Voice Bot.",
     href: "/knowledge",
     icon: Mic2,
   },
   {
-    label: "Phone line",
-    detail: "Provision a number and attach the voice agent.",
+    label: "Phone Line",
+    detail: "Provision a number and attach your Voice Bot.",
     href: "/settings/phone",
     icon: Phone,
   },
@@ -44,20 +44,20 @@ const customizationLinks = [
     icon: PlugZap,
   },
   {
-    label: "Operating rules",
+    label: "Operating Rules",
     detail: "Handoff, escalation, and compliance controls.",
     href: "/settings/compliance",
     icon: ShieldCheck,
   },
   {
-    label: "Success targets",
+    label: "Success Targets",
     detail: "Goals and follow-up KPIs for live work.",
     href: "/insights?tab=performance&view=goals",
     icon: Target,
   },
   {
-    label: "Identity badge",
-    detail: "In-app face for business agents. Not a live video presenter.",
+    label: "Identity Badge",
+    detail: "In-app face for supported Bots. Not a live video presenter.",
     href: "/studio/live-video",
     icon: Video,
     businessOnly: true,
@@ -68,8 +68,8 @@ export default function CustomizationSettings() {
   const { accountType } = useAccount();
   // Success targets lives on /insights, a business surface — offering it to a
   // personal account lands them on a page with no nav entry and no way back.
-  // businessOnly entries (the live video add-on serves business agents) are
-  // likewise offered only in business mode.
+  // businessOnly entries are likewise offered only in business mode while the
+  // legacy entitlement split is retired from the customer-facing workspace.
   const visibleLinks = customizationLinks.filter(
     (link) =>
       isRouteAvailableForAccount(accountType, link.href.split(/[?#]/)[0]) &&
@@ -79,13 +79,13 @@ export default function CustomizationSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-        <WorkspacePageIntro title="Appearance & brand" titleHidden />
+        <WorkspacePageIntro title="Appearance & Brand" titleHidden />
 
         <AppearanceSettings />
         <WorkspaceBrandingSettings />
 
         <section className="mt-8" aria-label="Customization destinations">
-          <p className="wl-eyebrow wl-eyebrow--muted">Customize next</p>
+          <p className="wl-eyebrow wl-eyebrow--muted">Customize Next</p>
           <ul className="mt-3 divide-y divide-border border-y border-border">
             {visibleLinks.map(({ label, detail, href, icon: Icon }) => (
               <li key={href}>
