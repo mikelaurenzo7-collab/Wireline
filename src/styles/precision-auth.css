@@ -65,6 +65,15 @@
   font-size: 0.9375rem;
 }
 
+/*
+ * One Wireline account has one workspace. AuthPortal keeps the legacy selector
+ * mounted only while old signup intent and billing records are migrated; it is
+ * not a customer decision and must never appear in the interface.
+ */
+.wl-auth-workspace-selector {
+  display: none !important;
+}
+
 /* Every keyboard-reachable account control has a visible tokenized focus state. */
 .wl-stitch-oauth-btn:focus-visible,
 .wl-stitch-auth-card button:focus-visible,
