@@ -6,29 +6,21 @@ import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 const isNoDatabaseImportSmoke = () => process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
 
 /**
- * Startup env validation — fail fast in production rather than
- * silently booting with placeholder Supabase URLs / missing webhook
- * secrets.
- *
- * Uses the comprehensive env-validator for detailed, grouped validation
- * with actionable error messages and setup guidance.
+ * Startup env validation: surface production configuration faults without
+ * crashing every route behind an opaque serverless import failure.
  */
 export function validateStartupEnv() {
-  // Run comprehensive validation
   const validation = validateEnv();
   const importSmokeWithoutDatabase = isNoDatabaseImportSmoke();
 
-  // Log results with verbose mode in production. The no-database import smoke
-  // deliberately removes DB env vars, so logging it as a production env failure
-  // makes deploy audits look broken even when runtime env is present.
   if (importSmokeWithoutDatabase) {
     log.info("Skipping startup env error log during no-database import smoke.");
   } else {
     logEnvValidation(IS_PROD);
   }
 
-  // Additional legacy checks for backward compatibility
-  // Validates that JWT secret can be resolved (throws if missing in prod)
+  // Validates that the JWT secret can be resolved; production policy remains
+  // owned by the secret helper and route-level degraded responses.
   getInternalJwtSecret();
 
   const recommended: string[] = [];
@@ -38,12 +30,7 @@ export function validateStartupEnv() {
     recommended.push("CORS_ORIGINS");
   }
 
-  // Rate limiting: without Upstash Redis each Vercel invocation has its own
-  // in-memory state, so limits reset on every cold start and provide no real
-  // protection. This is a security-relevant missing config, not just a perf nit.
-  // We do not throw (see the note below on why boot-time throws hurt more than
-  // they help), but we log at `error` in prod so it surfaces in incident review
-  // and the daily env-health audit script has a distinct signal to key on.
+  // Without shared Redis, serverless rate limits reset on invocation boundaries.
   if (
     !importSmokeWithoutDatabase &&
     IS_PROD &&
@@ -56,22 +43,7 @@ export function validateStartupEnv() {
     );
   }
 
-  // If validation failed, log loudly but DO NOT throw — even in production.
-  //
-  // Previously this threw in IS_PROD, which crashed the Vercel serverless
-  // function at module load. The handler in `api/index.ts` could no longer
-  // import `dist/server.cjs`, so Vercel responded to every request with its
-  // generic "A server error has occurred" HTML page. That broke every
-  // auth surface (Google / Microsoft / Yahoo OAuth and email-password sign-in)
-  // any time a single required env var (e.g. VAPI_WEBHOOK_SECRET) was
-  // forgotten, with zero diagnostic signal to the end user.
-  //
-  // The individual routes already short-circuit cleanly when their
-  // specific env vars are missing (e.g. `/api/auth/google/url` returns
-  // 503 `{"error":"Google sign-in is not configured."}` when
-  // GOOGLE_CLIENT_ID is unset). Keeping the app booted means those
-  // route-level errors surface to the SPA as actionable JSON instead
-  // of an opaque Vercel 500.
+  // Keep the app importable so each affected route can return actionable JSON.
   if (!validation.valid) {
     const missing = validation.errors.map((e) => e.var);
 
@@ -87,7 +59,6 @@ export function validateStartupEnv() {
           },
         );
 
-        // Generate setup checklist for easier onboarding
         generateSetupChecklist();
         log.info("Environment setup checklist generated. See logs above for details.");
       }
@@ -101,7 +72,7 @@ export function validateStartupEnv() {
 
   if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
-      "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key), marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",
+      "Federal DNC screening is not configured. It remains a deferred operations checklist item; outbound continues only through the applicable call-purpose, consent, tenant DNC, calling-hours, approval, and audit controls.",
     );
   }
 
@@ -115,7 +86,6 @@ export function validateStartupEnv() {
     log.warn("Recommended env vars not set", { recommended });
   }
 
-  // Success logging
   if (validation.valid) {
     log.info("Environment validation passed", {
       configured: Object.values(validation.byGroup).reduce((sum, g) => sum + g.valid, 0),
