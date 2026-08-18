@@ -10,7 +10,7 @@ function directCssImports(source: string): string[] {
   return [...source.matchAll(/import\s+["']([^"']+\.css)["']/g)].map((match) => match[1]);
 }
 
-describe("Wireline design-system double-pass contract", () => {
+describe("WIRELINE design-system double-pass contract", () => {
   it("keeps one JavaScript-owned CSS entrypoint", () => {
     const importers = globSync("src/**/*.{ts,tsx}", { cwd: root })
       .map((file) => ({ file: file.replaceAll("\\", "/"), imports: directCssImports(read(file)) }))
@@ -62,7 +62,7 @@ describe("Wireline design-system double-pass contract", () => {
     const botMark = read("src/lib/bot-mark.ts");
 
     expect(vision).toContain(
-      "Bot identity is a role-agnostic Wireline signal signature; status colors communicate state only.",
+      "Bot identity is a role-agnostic WIRELINE signal signature; status colors communicate state only.",
     );
     expect(refinement).toContain('.wl-rail-agent-link[aria-current="page"]');
     expect(botMark).toContain("BOT_MARK_GRADIENT_CAPACITY = 1_048_576");
@@ -80,5 +80,32 @@ describe("Wireline design-system double-pass contract", () => {
     expect(footer).not.toMatch(/\bvoice agents?\b/i);
     expect(demo).not.toMatch(/\bBot avatar\b/i);
     expect(demo).toContain("Bot mark");
+  });
+
+  it("keeps WIRELINE uppercase as one cross-platform visual brand while technical wireline stays data", () => {
+    const brand = read("src/components/brand/WirelineBrand.tsx");
+    const identity = read("src/styles/brand-identity.css");
+    const webManifest = read("public/site.webmanifest");
+    const extensionManifest = read("apps/browser-extension/manifest.base.json");
+    const iosInfo = read("ios/Wireline/Info.plist");
+    const iosWidgetInfo = read("ios/WirelineWidgets/Info.plist");
+    const androidStrings = read("android/app/src/main/res/values/strings.xml");
+
+    expect(brand).toContain('WIRELINE_BRAND_NAME = "WIRELINE"');
+    expect(brand).toContain("WirelineLockup");
+    expect(brand).toContain("WirelineWordmark");
+    expect(identity).toContain("the visible company name is always WIRELINE");
+    expect(identity).toContain("--wl-lockup-mark-width");
+    expect(identity).toContain("--wl-lockup-wordmark-size");
+
+    expect(webManifest).toContain('"short_name": "WIRELINE"');
+    expect(extensionManifest).toContain('"name": "WIRELINE Command"');
+    expect(iosInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/);
+    expect(iosWidgetInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/);
+    expect(androidStrings).toContain('<string name="app_name">WIRELINE</string>');
+
+    // The brand law does not mutate technical identifiers into cosmetic casing.
+    expect(extensionManifest).toContain('"homepage_url": "https://trywireline.com"');
+    expect(iosInfo).toContain("<string>wireline</string>");
   });
 });
