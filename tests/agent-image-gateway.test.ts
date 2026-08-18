@@ -43,7 +43,13 @@ describe("agent image training through AI Gateway", () => {
       input: [
         {
           role: "user",
-          content: expect.arrayContaining([{ type: "input_image", image_url: image }]),
+          content: [
+            {
+              type: "input_text",
+              text: "Extract agent-training information from the image asset named menu.png.",
+            },
+            { type: "input_image", image_url: image, detail: "low" },
+          ],
         },
       ],
       text: { format: { type: "json_schema", name: "studio_asset_extraction" } },

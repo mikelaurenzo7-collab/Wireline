@@ -232,9 +232,12 @@ describe("company identity pack", () => {
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
+    // Manual POST /api/phone-numbers is retired (410). Remaining carrier
+    // mutations are DELETE and pool claim — both still invalidate review.
     expect(
       carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
+    expect(carrier).toContain('code: "NATIVE_PHONE_REQUIRED"');
     expect(carrier).toContain("desc(schema.phoneNumbers.id)");
     expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
     expect(provisioning).toContain("compensateProvisionedNumber");

@@ -80,13 +80,16 @@ describe("security and external-operation atomicity", () => {
     const source = read("src/routes/outbound-dial-atomic-routes.ts");
     const reservation = source.indexOf(".insert(outboundDialReservations)");
     const provider = source.indexOf("await placeOutboundCall");
-    const lead = source.indexOf("tx.insert(schema.outboundLeads)");
+    const leadCapture = source.indexOf("nativeLeadId = result.leadId");
     const completion = source.indexOf('status: "completed"');
 
+    // Lead rows are created inside placeOutboundCall; this route only reserves,
+    // dials, and reconciles the dial lock — never inserts outboundLeads itself.
     expect(reservation).toBeGreaterThan(-1);
     expect(provider).toBeGreaterThan(reservation);
-    expect(lead).toBeGreaterThan(provider);
+    expect(leadCapture).toBeGreaterThan(provider);
     expect(completion).toBeGreaterThan(provider);
+    expect(source).not.toContain("tx.insert(schema.outboundLeads)");
     expect(source).toContain("type DeniedOutboundDialGate = Extract<");
     expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
     expect(source).toContain(".onConflictDoNothing()");

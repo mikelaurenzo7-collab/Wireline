@@ -103,8 +103,10 @@ describe("sentinel killCall verifies the Vapi response", () => {
   it("does not mark presence terminated when the terminate call was rejected", () => {
     const sentinel = read("src/services/sentinel.ts");
     expect(sentinel).toContain("if (!response.ok)");
+    // Native xAI hangup updates presence first; the Vapi rollback path must
+    // still only mark terminated after the end-call response succeeds.
     const okCheck = sentinel.indexOf("if (!response.ok)");
-    const presenceUpdate = sentinel.indexOf('set({ status: "terminated" })');
+    const presenceUpdate = sentinel.indexOf('set({ status: "terminated" })', okCheck);
     expect(okCheck).toBeGreaterThan(-1);
     expect(presenceUpdate).toBeGreaterThan(okCheck);
   });

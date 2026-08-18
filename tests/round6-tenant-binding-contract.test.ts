@@ -7,13 +7,15 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("round-6 phone-line tenant binding", () => {
   const carrier = read("src/routes/carrier-routes.ts");
 
-  it("gates the manual line-claim endpoint on plan capacity", () => {
+  it("retires the manual line-claim POST in favor of native phone setup", () => {
     const handler = carrier.slice(
       carrier.indexOf('"/api/phone-numbers",'),
       carrier.indexOf('"/api/phone-numbers/provision"'),
     );
-    expect(handler).toContain("getIncludedPhoneLineSlots(req.user.id)");
-    expect(handler).toContain("PHONE_CAPACITY_REACHED");
+    // POST /api/phone-numbers appears after GET; the create arm is closed.
+    expect(handler).toContain('code: "NATIVE_PHONE_REQUIRED"');
+    expect(handler).toContain("res.status(410).json");
+    expect(handler).not.toContain("getIncludedPhoneLineSlots(req.user.id)");
   });
 
   it("gates the pool claim and area-code search endpoints on plan capacity", () => {
@@ -22,6 +24,7 @@ describe("round-6 phone-line tenant binding", () => {
       carrier.indexOf('"/api/carrier/numbers"'),
     );
     expect(claim).toContain("getIncludedPhoneLineSlots(req.user.id)");
+    expect(claim).toContain("PHONE_CAPACITY_REACHED");
     expect(claim).toContain("rethrowIfAppError");
 
     const search = carrier.slice(
@@ -32,13 +35,13 @@ describe("round-6 phone-line tenant binding", () => {
   });
 
   it("refuses to bind a Vapi line already held by another workspace", () => {
-    const handler = carrier.slice(
-      carrier.indexOf('"/api/phone-numbers",'),
-      carrier.indexOf('"/api/phone-numbers/provision"'),
+    const claim = carrier.slice(
+      carrier.indexOf('"/api/phone-numbers/claim"'),
+      carrier.indexOf('"/api/carrier/numbers"'),
     );
-    expect(handler).toContain("schema.phoneNumbers.vapiNumberId, vapi_number_id");
-    expect(handler).toContain("claimed.userId !== req.user.id");
-    expect(handler).toContain("NUMBER_ALREADY_BOUND");
+    expect(claim).toContain("selectClaimedVapiIdsOutsideTenantContext");
+    expect(claim).toContain("claimed.has(match.id)");
+    expect(claim).toContain("That number was just claimed");
   });
 
   it("keeps the storage-layer backstop that makes a duplicate claim impossible", () => {
