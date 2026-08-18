@@ -107,9 +107,6 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /idempotencyKey:\s*ref\?\.idempotencyKey/,
     "credit wallet must write idempotency keys",
   );
-  // The retired post-hoc voice debit in credit-wallet carried its own ledger
-  // copy; live voice settlement writes the customer-visible reason from
-  // voice-completion-grace instead.
   mustInclude(
     "src/lib/voice-completion-grace.ts",
     read("src/lib/voice-completion-grace.ts"),
@@ -156,19 +153,19 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Wireline Starter[\s\S]*Wireline Starter Plus[\s\S]*Wireline Pro[\s\S]*Wireline Scale & Enterprise/,
-    "shared product knowledge must match the launch catalog",
+    /WIRELINE Starter[\s\S]*WIRELINE Starter Plus[\s\S]*WIRELINE Pro[\s\S]*WIRELINE Scale & Enterprise/,
+    "shared product knowledge must match the launch catalog with canonical WIRELINE casing",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /\$159|Wireline Business/,
+    /\$159|WIRELINE Business/i,
     "shared product knowledge must not quote the retired self-serve Business offer",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Legacy Wireline|Wireline Plus|one Assistants|Assistants analytics/,
+    /Legacy WIRELINE|WIRELINE Plus|one Assistants|Assistants analytics/i,
     "shared product knowledge must purge legacy catalog and assistant copy",
   );
   mustExclude(
@@ -195,10 +192,6 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /Everyday:|Plus:\s+\$|Studio:\s+\$|Account Holder:|first working assistant|my assistant/i,
     "demo-line personas must quote current agent and pricing language",
   );
-  // The commercial model is Free Builder (build/test one agent free, no
-  // card, no time limit) → pick a live plan for a customer number. There
-  // is no time-boxed trial to promise or "extend" — live sales/support
-  // agent scripts that offer one are lying to real prospects on the phone.
   const TRIAL_LANGUAGE_PATTERN = /14-day trial|fourteen-day trial|trial extension|extend a trial/i;
   mustExclude(
     "src/lib/wireline-agent-personas.ts",
