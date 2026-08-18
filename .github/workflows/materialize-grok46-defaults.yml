@@ -152,3 +152,5 @@ jobs:
           git commit -m "chore(audit): record Grok 4.6 materialization failure"
           git push origin HEAD:"$GITHUB_REF_NAME"
           exit "$status"
+
+# Exact-head rerun includes the restored mainline AgentsContext contract.
