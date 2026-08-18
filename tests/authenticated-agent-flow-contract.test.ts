@@ -200,7 +200,7 @@ describe("authenticated Bot flow", () => {
     expect(copy).toContain("POST_CREATE_WIZARD_COPY");
   });
 
-  it("keeps Live Video retired to identity-only surfaces", () => {
+  it("keeps Live Video retired to a redirect plus BotMark-only compatibility shell", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
     const page = read("src/pages/LiveVideoStudioPage.tsx");
     const presenter = read("src/components/LiveVideoPresenter.tsx");
@@ -208,11 +208,13 @@ describe("authenticated Bot flow", () => {
     expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
     expect(routes).toContain("res.status(410).json");
     expect(page).toContain("Live talking-head lip-sync is retired");
-    expect(page).toContain('title="Identity"');
-    expect(page).toContain("AgentFace");
+    expect(page).toContain('<Navigate to="/studio" replace />');
+    expect(page).not.toContain("AgentFace");
     expect(page).not.toContain("OpenAILiveVoiceSandbox");
     expect(presenter).toContain("LiveAvatar / HeyGen WebRTC lip-sync is retired");
-    expect(presenter).toContain("AgentFace");
+    expect(presenter).toContain('import BotMark from "./BotMark"');
+    expect(presenter).toContain("<BotMark");
+    expect(presenter).not.toContain("AgentFace");
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 
