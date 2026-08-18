@@ -47,6 +47,7 @@ const CUSTOMER_BOT_SURFACES = [
 
 describe("one-workspace Bot product contract", () => {
   it("uses Bot as the customer object while retaining agent as the technical domain", () => {
+    expect(BOT_BRAND.name).toBe("WIRELINE");
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
       slogan: "BOTS THAT GET THE WORK DONE",
@@ -59,7 +60,7 @@ describe("one-workspace Bot product contract", () => {
       proofLoop: ["Build", "Configure", "Launch", "Improve"],
     });
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Present one Wireline workspace, never separate personal and business workspaces.",
+      "Present one WIRELINE workspace, never separate personal and business workspaces.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Treat employee roles as starting templates, not product categories or permanent limits.",
@@ -72,6 +73,9 @@ describe("one-workspace Bot product contract", () => {
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Never require customers to classify a Bot as personal or business before describing the work.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Render the WIRELINE brand name in uppercase everywhere it is customer-visible, including prose, metadata, and legal copy.",
     );
   });
 
@@ -113,7 +117,7 @@ describe("one-workspace Bot product contract", () => {
     expect(MARKETING_VOICE.proof).toEqual(BRAND_SYSTEM.proofLoop);
     expect(WORKSPACE_VOICE.emptyCue).toContain("voice, text, email");
     expect(AGENT_NUMBER_PROMISE).toContain("Every paid Bot");
-    expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
+    expect(AGENT_NUMBER_PROMISE).toContain("includes a WIRELINE number");
     expect(AGENT_NUMBER_PROMISE).toContain("answer and make calls");
   });
 
