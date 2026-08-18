@@ -5,20 +5,12 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("round-7 shared-provider tenant identity", () => {
-  it("scopes the Vapi number listing to lines the caller owns", () => {
-    // One shared Vapi account holds every tenant's line, so the raw upstream
-    // list is a directory of every customer's business number plus the id that
-    // outbound dialing and inbound routing key off.
-    const carrier = read("src/routes/carrier-routes.ts");
-    const handler = carrier.slice(carrier.indexOf('"/api/carrier/numbers"'));
+  it("scopes the live carrier listing to lines the caller owns", () => {
+    const native = read("src/routes/native-phone-routing-routes.ts");
+    const handler = native.slice(native.indexOf('"/api/carrier/numbers"'));
     expect(handler).toContain("schema.phoneNumbers.userId, req.user.id");
-    expect(handler).toContain("ownedVapiIds");
-    // The upstream array must be narrowed to owned lines BEFORE it is shaped
-    // into the response — filtering after mapping would still have serialized
-    // every tenant's number.
-    expect(handler).toMatch(
-      /\.filter\(\(num\) => ownedVapiIds\.has\(num\.id\) \|\| ownedNumbers\.has\(num\.number\)\)\s*\n\s*\.map\(/,
-    );
+    expect(handler).not.toContain("listVapiNumbers");
+    expect(handler).not.toContain("ownedVapiIds");
   });
 
   it("refuses to adopt a telecom identity the workspace does not own", () => {

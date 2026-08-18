@@ -5,6 +5,30 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("native Twilio + xAI phone lifecycle", () => {
+  it("reuses an already-owned E.164 instead of compensating the live Twilio SID", () => {
+    const provisioning = read("src/lib/voice/native-phone-provisioning.ts");
+    expect(provisioning).toContain('kind: "existing_owned"');
+    expect(provisioning).toContain("PHONE_ALREADY_OWNED");
+    expect(provisioning).toContain("persisted.line.vapiNumberId !== purchase.sid");
+    expect(provisioning).toContain("sameCarrierId");
+  });
+
+  it("tombs shadowed Vapi bind, patch, and delete writes", () => {
+    const carrier = read("src/routes/carrier-routes.ts");
+    expect(carrier).toContain("NATIVE_PHONE_REQUIRED");
+    const bind = carrier.slice(
+      carrier.indexOf("function nativePhoneRequired"),
+      carrier.indexOf('"/api/phone-numbers/provision"'),
+    );
+    const patch = carrier.slice(
+      carrier.indexOf('"/api/phone-numbers/:id"'),
+      carrier.indexOf('"/api/phone-numbers/area-codes"'),
+    );
+    expect(bind).toContain("nativePhoneRequired");
+    expect(patch).toContain("nativePhoneRequired");
+    expect(patch).not.toContain("drizzle");
+  });
+
   it("gives native self-serve phone routes precedence over rollback carrier routes", () => {
     const registry = read("src/server/register-api-routes.ts");
 

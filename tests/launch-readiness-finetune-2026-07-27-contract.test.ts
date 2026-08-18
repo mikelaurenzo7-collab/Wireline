@@ -15,18 +15,16 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(admin).toContain("Could not fetch available Wireline phone numbers.");
   });
 
-  it("fails closed when carrier sync lacks the platform Vapi key", () => {
-    const carrier = read("src/routes/carrier-routes.ts");
-    const block = carrier.slice(
-      carrier.indexOf('"/api/carrier/numbers"'),
-      carrier.indexOf("export default router"),
+  it("lists owned native carrier numbers without a shared Vapi directory", () => {
+    const native = read("src/routes/native-phone-routing-routes.ts");
+    const block = native.slice(
+      native.indexOf('"/api/carrier/numbers"'),
+      native.indexOf("export default router"),
     );
-    expect(block).not.toMatch(
-      /if\s*\(\s*!vapiSecret\s*\)\s*return\s+res\.json\(\s*\{\s*numbers:\s*\[\s*\]\s*\}\s*\)/,
-    );
-    expect(block).toContain("Voice carrier sync is temporarily unavailable");
-    expect(block).toContain("AppError.fromHttpStatus(");
-    expect(block).toContain("503");
+    expect(block).not.toContain("VAPI_PRIVATE_KEY");
+    expect(block).not.toContain("listVapiNumbers");
+    expect(block).toContain("schema.phoneNumbers.userId, req.user.id");
+    expect(block).toContain('provider: isTwilioPhoneNumberSid(row.id) ? "twilio" : "legacy_rollback"');
   });
 
   it("OutcomeLedger and ApprovalInbox surface non-OK loads instead of silent empty lists", () => {

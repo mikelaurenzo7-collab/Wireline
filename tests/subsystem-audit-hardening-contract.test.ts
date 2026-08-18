@@ -79,7 +79,7 @@ describe("marketing email honors suppression and unsubscribe on every transport"
 
   it("routes cadence email steps as marketing mail", () => {
     expect(read("src/lib/cadence-engine.ts")).toMatch(
-      /integ\.sendEmail\(\{[\s\S]{0,200}marketing: true/,
+      /integration\.sendEmail\(\{[\s\S]{0,200}marketing: true/,
     );
   });
 });

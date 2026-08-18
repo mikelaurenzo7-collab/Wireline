@@ -189,6 +189,9 @@ describe("company identity pack", () => {
     const settingsGuard = read("src/routes/company-identity-settings-guard-routes.ts");
     const carrier = read("src/routes/carrier-routes.ts");
     const provisioning = read("src/lib/phone-provisioning.ts");
+    const nativeAssignment = read("src/lib/voice/native-phone-assignment.ts");
+    const nativeProvisioning = read("src/lib/voice/native-phone-provisioning.ts");
+    const nativeRelease = read("src/lib/voice/native-phone-release.ts");
     const registry = read("src/server/register-api-routes.ts");
 
     expect(mutation).toContain("acquireCompanyIdentityMutationLock");
@@ -232,10 +235,11 @@ describe("company identity pack", () => {
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
-    expect(
-      carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
-    ).toHaveLength(3);
+    expect(nativeAssignment).toContain('"phone_number_changed"');
+    expect(nativeProvisioning).toContain('"phone_number_changed"');
+    expect(nativeRelease).toContain('"phone_number_changed"');
     expect(carrier).toContain("desc(schema.phoneNumbers.id)");
+    expect(carrier).toContain('runCompanyIdentityMutation(req.user.id, "phone_number_changed"');
     expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
     expect(provisioning).toContain("compensateProvisionedNumber");
     expect(provisioning).toContain("Carrier compensation completed");

@@ -6,15 +6,16 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("phone search does not buy a number", () => {
   it("lists Twilio inventory without calling provision", () => {
-    const search = read("src/routes/carrier-routes.ts").slice(
-      read("src/routes/carrier-routes.ts").indexOf('"/api/phone-numbers/search"'),
-      read("src/routes/carrier-routes.ts").indexOf('"/api/phone-numbers/claim"'),
+    const native = read("src/routes/native-phone-routing-routes.ts");
+    const search = native.slice(
+      native.indexOf('"/api/phone-numbers/search"'),
+      native.indexOf("async function respondWithProvision"),
     );
-    expect(search).toContain("listTwilioAvailableLocalNumbers");
-    expect(search).not.toContain("provisionVapiNumber");
-    expect(search).not.toContain("purchaseTwilioLocalNumber");
-    expect(read("src/lib/phone-provisioning.ts")).toContain(
-      "Preview Twilio local inventory without buying",
+    expect(search).toContain("listNativeAvailableLocalNumbers");
+    expect(search).not.toContain("provisionNativeTenantNumber");
+    expect(search).not.toContain("incomingPhoneNumbers.create");
+    expect(read("src/lib/voice/native-phone-carrier.ts")).toContain(
+      "client.availablePhoneNumbers(\"US\").local.list",
     );
   });
 

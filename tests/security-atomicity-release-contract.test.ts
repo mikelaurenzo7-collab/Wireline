@@ -78,15 +78,22 @@ describe("security and external-operation atomicity", () => {
 
   it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
     const source = read("src/routes/outbound-dial-atomic-routes.ts");
+    const outbound = read("src/lib/voice/outbound-call-service.ts");
+    const placement = read("src/lib/voice/xai-outbound-placement.ts");
     const reservation = source.indexOf(".insert(outboundDialReservations)");
     const provider = source.indexOf("await placeOutboundCall");
-    const lead = source.indexOf("tx.insert(schema.outboundLeads)");
     const completion = source.indexOf('status: "completed"');
+    const claim = outbound.indexOf("await claimNativeOutboundPlacement");
+    const twilioCreate = outbound.indexOf("twilio.calls.create");
+    const leadInsert = placement.indexOf(".insert(schema.outboundLeads)");
 
     expect(reservation).toBeGreaterThan(-1);
     expect(provider).toBeGreaterThan(reservation);
-    expect(lead).toBeGreaterThan(provider);
     expect(completion).toBeGreaterThan(provider);
+    expect(claim).toBeGreaterThan(-1);
+    expect(twilioCreate).toBeGreaterThan(claim);
+    expect(leadInsert).toBeGreaterThan(-1);
+    expect(outbound).toContain("markNativeOutboundPlacementFailure");
     expect(source).toContain("type DeniedOutboundDialGate = Extract<");
     expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
     expect(source).toContain(".onConflictDoNothing()");

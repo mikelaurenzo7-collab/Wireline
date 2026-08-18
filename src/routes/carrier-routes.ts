@@ -5,13 +5,9 @@ import { log, fetchWithTimeout, drizzle, tenantStore } from "../lib/server-conte
 import * as schema from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import {
-  validateBody,
-  phoneNumberPatchSchema,
-  phoneNumberProvisionSchema,
-} from "../lib/api-validation";
+import { validateBody, phoneNumberProvisionSchema } from "../lib/api-validation";
 import { PhoneNumberCreateRequestSchema } from "../../contracts/api-types";
-import { getErrorMessage, parseBigIntId } from "../lib/server-utils";
+import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
@@ -69,18 +65,22 @@ router.get(
   },
 );
 
+function nativePhoneRequired(res: Response) {
+  return res.status(410).json({
+    code: "NATIVE_PHONE_REQUIRED",
+    error:
+      "Phone lines are provisioned, assigned, and released through native Twilio and xAI. Use Phone setup.",
+  });
+}
+
 router.post(
   "/api/phone-numbers",
   authenticateUser,
   enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   validateBody(PhoneNumberCreateRequestSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    res.status(410).json({
-      code: "NATIVE_PHONE_REQUIRED",
-      error:
-        "Phone lines are provisioned through native Twilio and xAI. Use Phone setup to search and provision a number.",
-    });
+  async (_req: AuthenticatedRequest, res: Response) => {
+    nativePhoneRequired(res);
   },
 );
 
@@ -165,60 +165,8 @@ router.patch(
   "/api/phone-numbers/:id",
   authenticateUser,
   rateLimiters.phoneNumberRateLimiter,
-  validateBody(phoneNumberPatchSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { agent_id, campaign_label } = req.body;
-
-      if (agent_id) {
-        const [agent] = await drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
-          .limit(1);
-        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-      }
-
-      // Build patch object — accept agent_id and/or campaign_label so the
-      // same PATCH endpoint serves both Carrier-panel assign-agent and the
-      // new campaign-attribution label editor.
-      const patch: Record<string, any> = {};
-      if (agent_id !== undefined) patch.agentId = agent_id;
-      if (campaign_label !== undefined) {
-        const label = typeof campaign_label === "string" ? campaign_label.trim() : null;
-        patch.campaignLabel = label && label.length > 0 ? label : null;
-      }
-      if (Object.keys(patch).length === 0) {
-        return res
-          .status(400)
-          .json({ error: "Nothing to update, pass agent_id or campaign_label." });
-      }
-
-      const numberId = parseBigIntId(req.params.id);
-      if (numberId === null) {
-        throw AppError.fromHttpStatus(400, "Phone number id must be a positive integer");
-      }
-
-      const updated = (await drizzle
-        .update(schema.phoneNumbers)
-        .set(patch)
-        .where(
-          and(eq(schema.phoneNumbers.id, numberId), eq(schema.phoneNumbers.userId, req.user.id)),
-        )
-        .returning()) as unknown[];
-
-      // Reporting success for an update that matched no rows told the caller its
-      // change was saved when the number was never theirs or no longer exists.
-      if (!updated.length) throw AppError.fromHttpStatus(404, "Phone number not found");
-
-      res.json({ success: true });
-    } catch (error: any) {
-      // Deliberate 400/404s are thrown inside the try block; without this they
-      // are caught here and reported as a 500.
-      rethrowIfAppError(error);
-      log.error("Failed to update phone number", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to update phone number");
-    }
+  async (_req: AuthenticatedRequest, res: Response) => {
+    nativePhoneRequired(res);
   },
 );
 
@@ -226,29 +174,8 @@ router.delete(
   "/api/phone-numbers/:id",
   authenticateUser,
   rateLimiters.phoneNumberRateLimiter,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const numberId = parseBigIntId(req.params.id);
-      if (numberId === null) {
-        throw AppError.fromHttpStatus(400, "Phone number id must be a positive integer");
-      }
-
-      await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
-        await tx
-          .delete(schema.phoneNumbers)
-          .where(
-            and(eq(schema.phoneNumbers.id, numberId), eq(schema.phoneNumbers.userId, req.user.id)),
-          );
-      });
-
-      res.json({ success: true });
-    } catch (error: any) {
-      // Deliberate 400/404s are thrown inside the try block; without this they
-      // are caught here and reported as a 500.
-      rethrowIfAppError(error);
-      log.error("Failed to delete phone number", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to delete phone number.");
-    }
+  async (_req: AuthenticatedRequest, res: Response) => {
+    nativePhoneRequired(res);
   },
 );
 

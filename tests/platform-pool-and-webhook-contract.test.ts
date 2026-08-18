@@ -88,11 +88,12 @@ describe("shared number pool is read platform-wide", () => {
   });
 
   it("keeps the sibling carrier listing scoped to owned lines", () => {
-    // /api/carrier/numbers hits the same shared Vapi account and was already
-    // fixed by intersecting with owned rows. It must stay that way — it is the
-    // route that exposes the internal Vapi id.
+    const native = read("src/routes/native-phone-routing-routes.ts");
+    const listing = native.slice(native.indexOf('"/api/carrier/numbers"'));
+    expect(listing).toContain("eq(schema.phoneNumbers.userId, req.user.id)");
+    expect(listing).not.toContain("listVapiNumbers");
+
     const routes = read("src/routes/carrier-routes.ts");
-    expect(routes).toContain("eq(schema.phoneNumbers.userId, req.user.id)");
     expect(routes).toContain("ownedVapiIds.has(num.id) || ownedNumbers.has(num.number)");
   });
 });

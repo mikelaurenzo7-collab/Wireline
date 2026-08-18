@@ -1268,9 +1268,10 @@ export const phoneNumbers = pgTable(
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_user_id ON wireline_phone_numbers USING btree (user_id)`,
     agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_agent_id ON wireline_phone_numbers USING btree (agent_id)`,
-    // UNIQUE: inbound webhooks resolve the owning tenant by vapi_number_id with
-    // LIMIT 1, so a second tenant holding a row for the same Vapi line would
-    // silently capture the call. Migration 0111.
+    // UNIQUE: inbound webhooks resolve the owning tenant by E.164 with LIMIT 1
+    // (`phone_number` is unique) and by vapi_number_id with LIMIT 1. Native rows
+    // store the Twilio PN SID in vapi_number_id; a second tenant holding the
+    // same SID would silently capture the call. Migration 0111.
     vapiNumberIdIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_phone_numbers_vapi_number_id_unique ON wireline_phone_numbers (vapi_number_id) WHERE vapi_number_id IS NOT NULL`,
   }),
 );

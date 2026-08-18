@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
@@ -34,6 +34,7 @@ export type NativePhoneProvisionResult = {
 type PersistOutcome =
   | { kind: "inserted"; line: typeof schema.phoneNumbers.$inferSelect }
   | { kind: "existing_agent"; line: typeof schema.phoneNumbers.$inferSelect }
+  | { kind: "existing_owned"; line: typeof schema.phoneNumbers.$inferSelect }
   | { kind: "capacity" };
 
 function autoProvisioningEnabled(): boolean {
@@ -76,6 +77,24 @@ async function persistPurchasedNumber(input: {
         .limit(1);
       if (existing) return { kind: "existing_agent" as const, line: existing };
     }
+
+    // Unique E.164 / Twilio SID are the cross-tenant backstop. Reuse a row this
+    // workspace already holds so a retry cannot compensate by releasing the
+    // live Twilio number that inbound still routes through.
+    const [owned] = await tx
+      .select()
+      .from(schema.phoneNumbers)
+      .where(
+        and(
+          eq(schema.phoneNumbers.userId, input.userId),
+          or(
+            eq(schema.phoneNumbers.phoneNumber, input.purchase.phoneNumber),
+            eq(schema.phoneNumbers.vapiNumberId, input.purchase.sid),
+          ),
+        ),
+      )
+      .limit(1);
+    if (owned) return { kind: "existing_owned" as const, line: owned };
 
     const [{ held }] = await tx
       .select({ held: sql<number>`count(*)` })
@@ -272,12 +291,41 @@ export async function provisionNativeTenantNumber(input: {
     };
   }
 
+  if (persisted.kind === "existing_owned") {
+    if (persisted.line.vapiNumberId !== purchase.sid) {
+      await releasePurchasedNativeNumber({
+        userId: input.userId,
+        purchase,
+        cause: "PHONE_ALREADY_OWNED",
+      });
+    }
+    if (input.agentId) {
+      return activateLine({
+        userId: input.userId,
+        agentId: input.agentId,
+        phoneNumber: persisted.line.phoneNumber,
+        carrierNumberId: persisted.line.vapiNumberId,
+        reused: true,
+      });
+    }
+    return {
+      ok: true,
+      phoneNumber: persisted.line.phoneNumber,
+      carrierNumberId: persisted.line.vapiNumberId || purchase.sid,
+      reused: true,
+    };
+  }
+
   if (persisted.kind !== "inserted") {
-    await releasePurchasedNativeNumber({
-      userId: input.userId,
-      purchase,
-      cause: persisted.kind === "capacity" ? "PHONE_CAPACITY_RACE" : "AGENT_ALREADY_PROVISIONED",
-    });
+    const sameCarrierId =
+      persisted.kind === "existing_agent" && persisted.line.vapiNumberId === purchase.sid;
+    if (!sameCarrierId) {
+      await releasePurchasedNativeNumber({
+        userId: input.userId,
+        purchase,
+        cause: persisted.kind === "capacity" ? "PHONE_CAPACITY_RACE" : "AGENT_ALREADY_PROVISIONED",
+      });
+    }
     if (persisted.kind === "capacity") {
       return {
         ok: false,

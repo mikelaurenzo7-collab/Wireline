@@ -99,12 +99,25 @@ describe("agent capacity is race-safe on the MCP draft path", () => {
   });
 });
 
-describe("sentinel killCall verifies the Vapi response", () => {
-  it("does not mark presence terminated when the terminate call was rejected", () => {
+describe("sentinel killCall verifies hangup before presence termination", () => {
+  it("does not mark presence terminated when native or rollback hangup was rejected", () => {
     const sentinel = read("src/services/sentinel.ts");
-    expect(sentinel).toContain("if (!response.ok)");
-    const okCheck = sentinel.indexOf("if (!response.ok)");
-    const presenceUpdate = sentinel.indexOf('set({ status: "terminated" })');
+    const xaiHangup = sentinel.indexOf("await hangupXAISipCall");
+    const xaiTerminated = sentinel.indexOf('set({ status: "terminated" })');
+    const xaiCatch = sentinel.indexOf("Native xAI DNC hangup could not be confirmed");
+    expect(xaiHangup).toBeGreaterThan(-1);
+    expect(xaiTerminated).toBeGreaterThan(xaiHangup);
+    expect(xaiCatch).toBeGreaterThan(xaiTerminated);
+    expect(sentinel.slice(xaiHangup, xaiCatch)).toContain("return true");
+    expect(sentinel.slice(xaiCatch, sentinel.indexOf("const apiKey = process.env.VAPI_PRIVATE_KEY"))).toContain(
+      "return false",
+    );
+
+    const vapiStart = sentinel.indexOf("const apiKey = process.env.VAPI_PRIVATE_KEY");
+    const vapi = sentinel.slice(vapiStart);
+    expect(vapi).toContain("if (!response.ok)");
+    const okCheck = vapi.indexOf("if (!response.ok)");
+    const presenceUpdate = vapi.indexOf('set({ status: "terminated" })');
     expect(okCheck).toBeGreaterThan(-1);
     expect(presenceUpdate).toBeGreaterThan(okCheck);
   });
