@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -40,10 +40,11 @@ describe("bot visual identity", () => {
     expect(rail).not.toContain("<AgentFace");
   });
 
-  it("keeps Fast Start free of avatar and presenter choices", () => {
+  it("keeps Fast Start and the tracked client tree free of avatar selection UI", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
     expect(dialog).toContain("Not Now");
     expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
+    expect(existsSync(resolve(root, "src/components/AgentPresenceAvatarPicker.tsx"))).toBe(false);
   });
 });
 
@@ -52,7 +53,7 @@ describe("Live Video retirement", () => {
     const routes = source("src/routes/AppRoutes.tsx");
     const page = source("src/pages/LiveVideoStudioPage.tsx");
 
-    expect(routes).not.toContain('lazy(() => import("../pages/LiveVideoStudioPage"))');
+    expect(routes).not.toContain("LiveVideoStudioPage");
     expect(routes).toContain(
       '<Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />',
     );
