@@ -1,5 +1,5 @@
 /**
- * Canonical Wireline product knowledge - the single source of truth that gets:
+ * Canonical WIRELINE product knowledge - the single source of truth that gets:
  *   1. Injected into every Vapi agent system prompt as a "WIRELINE KNOWLEDGE" block.
  *   2. Rendered in the in-app /help route so signed-in account holders see the same story.
  *   3. Referenced by public-facing demo and marketing surfaces.
@@ -9,61 +9,61 @@ export const WIRELINE_URL = "https://trywireline.com";
 export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
 
 export const WIRELINE_ONE_LINER =
-  "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
+  "WIRELINE runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use that same voice brain. OpenAI Realtime is only the ChatGPT App preview, not the phone agent."
+  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use that same voice brain. OpenAI Realtime is only the ChatGPT App preview, not the phone Bot.";
 
 export const WIRELINE_PLANS = [
   {
-    name: "Wireline Free Builder",
+    name: "WIRELINE Free Builder",
     price: "Free to create, train, and privately simulate",
-    bestFor: "Trying Wireline before going live.",
+    bestFor: "Trying WIRELINE before going live.",
     includes: [
-      "One private draft agent",
+      "One private draft Bot",
       "Full setup, training, and knowledge tools unlocked",
       "Private simulation only: no live calls, texts, or number until you activate a paid plan",
     ],
   },
   {
-    name: "Wireline Starter",
+    name: "WIRELINE Starter",
     price: "$19/mo",
     bestFor: "Solo or founder use going live for the first time.",
     includes: [
-      "1 live agent and 1 production number, provisioned when needed",
+      "1 live Bot and 1 production number, provisioned when needed",
       "50 guaranteed live-voice minutes each month",
       "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
       "Lead Hunt access and connected email workflows",
     ],
   },
   {
-    name: "Wireline Starter Plus",
+    name: "WIRELINE Starter Plus",
     price: "$39/mo",
-    bestFor: "Founders who need a personal Concierge and a business voice agent.",
+    bestFor: "Founders who want two distinct Bots live in the same workspace.",
     includes: [
-      "2 live agents and 2 production numbers, provisioned when needed",
+      "2 live Bots and 2 production numbers, provisioned when needed",
       "100 guaranteed live-voice minutes each month",
       "$3 monthly Runtime Allowance + $3 managed AI allowance",
       "Full Lead Hunt, enrichment, research, email, and SMS workflows",
     ],
   },
   {
-    name: "Wireline Pro",
+    name: "WIRELINE Pro",
     price: "$79/mo",
-    bestFor: "Revenue, support, and front desk teams.",
+    bestFor: "Revenue, support, front desk, and multi-role operations.",
     includes: [
-      "Up to 5 live agents and 5 production numbers, provisioned when needed",
+      "Up to 5 live Bots and 5 production numbers, provisioned when needed",
       "190 guaranteed live-voice minutes each month",
       "$6 monthly Runtime Allowance + $6 managed AI allowance",
       "CRM sync, routing, approvals, and campaign workflows",
     ],
   },
   {
-    name: "Wireline Scale & Enterprise",
+    name: "WIRELINE Scale & Enterprise",
     price: "Custom committed usage",
-    bestFor: "Governed rollout for organizations that need 25 or more agents.",
+    bestFor: "Governed rollout for organizations that need 25 or more Bots.",
     includes: [
-      "Custom agent and production-number capacity",
+      "Custom Bot and production-number capacity",
       "SSO, security review, retention controls, and implementation support",
       "Custom integrations, channel economics, and service commitments",
       "Founder-led scoping instead of self-serve checkout",
@@ -86,7 +86,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Inbound support",
     blurb:
-      "Agents pick up 24/7, answer questions, route urgent calls, schedule appointments, and capture intent.",
+      "Bots pick up 24/7, answer questions, route urgent calls, schedule appointments, and capture intent.",
   },
   {
     title: "Outbound sales",
@@ -94,14 +94,14 @@ export const WIRELINE_FEATURES = [
       "Upload a CSV, pick a playbook, launch outbound campaigns, and hand qualified meetings to the calendar.",
   },
   {
-    title: "Email agents",
+    title: "Email workflows",
     blurb:
-      "Agents triage your inbox, reply on-brand, follow up, and escalate the threads you need to see personally.",
+      "Bots triage your inbox, reply on-brand, follow up, and escalate the threads you need to see personally.",
   },
   {
     title: "Two-way texting",
     blurb:
-      "Agents text customers and reply in-thread when customers text back, with STOP and UNSUBSCRIBE handling in place.",
+      "Bots text customers and reply in-thread when customers text back, with STOP and UNSUBSCRIBE handling in place.",
   },
   {
     title: "Recaps and oversight",
@@ -110,15 +110,15 @@ export const WIRELINE_FEATURES = [
 ] as const;
 
 /**
- * The growth-engine story - Wireline's autonomous outbound and follow-up stack,
+ * The growth-engine story - WIRELINE's autonomous outbound and follow-up stack,
  * framed as the answer to "I need more leads" or "my pipeline is dry."
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "Wireline's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
+  "WIRELINE's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
 
 /**
- * Pain -> capability map. When a caller names a problem, the agent should
- * surface the matching Wireline capability without being asked.
+ * Pain -> capability map. When a caller names a problem, the Bot should
+ * surface the matching WIRELINE capability without being asked.
  */
 export const WIRELINE_PAIN_SOLUTIONS = [
   {
@@ -129,27 +129,27 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Missing calls or losing business after hours",
     solution:
-      "inbound agents that answer 24/7, capture intent, and book or route the work so missed calls do not die in voicemail",
+      "inbound Bots that answer 24/7, capture intent, and book or route the work so missed calls do not die in voicemail",
   },
   {
     pain: "No time to follow up or leads going cold",
     solution:
-      "cadences and email agents that follow up automatically across call, text, and email until the lead responds or opts out",
+      "cadences and email workflows that follow up automatically across call, text, and email until the lead responds or opts out",
   },
   {
     pain: "Drowning in the inbox",
     solution:
-      "email agents that triage, reply on-brand, and escalate only the messages that need a human",
+      "Bots that triage email, reply on-brand, and escalate only the messages that need a human",
   },
   {
     pain: "Can't justify or afford more staff",
     solution:
-      "one operating layer of trained agents covering inbound, outbound, and email for a fraction of another full-time hire",
+      "one operating layer of trained Bots covering inbound, outbound, and email for a fraction of another full-time hire",
   },
   {
-    pain: "Worried quality will slip or agents will go off-script",
+    pain: "Worried quality will slip or Bots will go off-script",
     solution:
-      "a supervised workroom with transcripts, approvals, and a feedback loop that keeps improving what the agents do",
+      "a supervised workroom with transcripts, approvals, and a feedback loop that keeps improving what the Bots do",
   },
 ] as const;
 
@@ -173,7 +173,7 @@ export const WIRELINE_INTEGRATIONS = [
   "Zoom when connected",
   "Meta (Facebook + Instagram Ads) when connected",
   "X (Twitter) when connected",
-  "Stripe for Wireline billing",
+  "Stripe for WIRELINE billing",
   "bring-your-own carrier where supported",
 ] as const;
 
@@ -194,8 +194,8 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "Account deletion with a delayed hard-delete workflow",
   ],
   inProgress: [
-    "SOC 2 readiness work is in progress; Wireline is not SOC 2 certified today",
-    "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
+    "SOC 2 readiness work is in progress; WIRELINE is not SOC 2 certified today",
+    "HIPAA and BAA support are not currently available; do not present WIRELINE as HIPAA-certified",
     "Database policy and exposure reviews continue as the product surface expands",
     "EU data residency is not currently available",
   ],
