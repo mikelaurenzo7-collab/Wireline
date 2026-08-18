@@ -47,12 +47,13 @@ describe("video presenter integration", () => {
 
   it("keeps Overview identity passive and attached to the unified Bot roster", () => {
     const overview = source("src/pages/OverviewPage.tsx");
+    const rail = source("src/components/overview/OverviewRail.tsx");
     expect(overview).toContain("BotRoster");
-    expect(overview).toContain("<AgentFace");
-    expect(overview).toContain("title={`${bot.name} face`}");
-    expect(overview).not.toContain('to="/studio/live-video"');
-    expect(overview).not.toContain("Identity and clips");
-    expect(overview).not.toContain(">Live Video</span>");
+    expect(rail).toContain("<AgentFace");
+    expect(rail).toContain("title={`${bot.name} face`}");
+    expect(`${overview}\n${rail}`).not.toContain('to="/studio/live-video"');
+    expect(`${overview}\n${rail}`).not.toContain("Identity and clips");
+    expect(`${overview}\n${rail}`).not.toContain(">Live Video</span>");
   });
 
   it("closes checkout and entitlement for the retired talking-head add-on", () => {
