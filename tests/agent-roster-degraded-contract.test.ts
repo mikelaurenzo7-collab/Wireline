@@ -60,15 +60,20 @@ describe("Bot roster: empty versus unreachable", () => {
 
   it("checks degraded before falling through to first run", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
-    const recovery = studio.indexOf("agents.length === 0 && degraded");
-    const emptyState = studio.indexOf("return <StudioEmptyState");
-    expect(recovery).toBeGreaterThan(-1);
-    expect(recovery).toBeLessThan(emptyState);
+    const recoveryGuard = studio.indexOf("if (agents.length === 0 && degraded)");
+    const emptyGuard = studio.indexOf("if (agents.length === 0)");
+    expect(recoveryGuard).toBeGreaterThan(-1);
+    expect(emptyGuard).toBeGreaterThan(-1);
+    expect(recoveryGuard).toBeLessThan(emptyGuard);
+    expect(studio.slice(recoveryGuard, emptyGuard)).toContain("WorkspaceRecovery");
+    expect(studio.slice(emptyGuard)).toContain("StudioEmptyState");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     const dialGuard = dial.indexOf("voiceAgents.length === 0 && (degraded || phoneLookupDegraded)");
+    const dialEmptyState = dial.indexOf(": voiceAgents.length === 0 ? (");
     expect(dialGuard).toBeGreaterThan(-1);
-    expect(dialGuard).toBeLessThan(dial.indexOf("No voice agents with a phone line yet"));
+    expect(dialEmptyState).toBeGreaterThan(-1);
+    expect(dialGuard).toBeLessThan(dialEmptyState);
 
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("degraded && !hasBots");

@@ -87,11 +87,11 @@ export default function BrowserCallWidget({
               size={208}
               speaking={demo.callActive && demo.speakerActive}
               className="landing-demo__face"
-              title={`${agentName} agent avatar`}
+              title={`${agentName} Bot avatar`}
             />
           </div>
           <p className="landing-demo__name wl-preserve-case">{agentName}</p>
-          <p className="landing-demo__role">Demo Voice Agent</p>
+          <p className="landing-demo__role">Demo Voice Bot</p>
         </div>
 
         <div className="landing-demo__controls">
@@ -103,7 +103,7 @@ export default function BrowserCallWidget({
                   aria-hidden="true"
                 />
                 <WaveBars volume={demo.volume} active={demo.speakerActive} />
-                <span>{demo.speakerActive ? "Agent speaking" : "Listening"}</span>
+                <span>{demo.speakerActive ? "Bot speaking" : "Listening"}</span>
               </>
             ) : demo.connecting ? (
               <>
@@ -189,7 +189,7 @@ export default function BrowserCallWidget({
             seed={`public-demo:${agentName}`}
             size={48}
             speaking={demo.callActive && demo.speakerActive}
-            title={`${agentName} agent avatar`}
+            title={`${agentName} Bot avatar`}
           />
         </div>
       </SignalOrbFrame>
@@ -253,7 +253,7 @@ export default function BrowserCallWidget({
           />
           <WaveBars volume={demo.volume} active={demo.speakerActive} />
           <span className="font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
-            {demo.speakerActive ? "Agent speaking" : "Listening"}
+            {demo.speakerActive ? "Bot speaking" : "Listening"}
           </span>
         </div>
       ) : null}
