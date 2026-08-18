@@ -3,6 +3,7 @@ import { ChevronUp } from "lucide-react";
 import { Link } from "react-router";
 
 import { cn } from "../../lib/utils";
+import { WirelineWordmark } from "../brand/WirelineBrand";
 
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
@@ -77,10 +78,6 @@ export default function MarketingChromeBar({ className }: { className?: string }
 
   return (
     <footer className={cn("marketing-chrome-bar", className)}>
-      {/* Painted above the bar row, so the sitemap opens upward into the page
-          instead of pushing the bar past the bottom of a frame that cannot
-          scroll. `hidden` keeps the links in the document for crawlers while
-          removing them from the tab order when collapsed. */}
       <div id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
         <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-4 lg:px-8">
           {COLUMNS.map(({ heading, links }) => (
@@ -110,20 +107,10 @@ export default function MarketingChromeBar({ className }: { className?: string }
         </div>
       </div>
 
-      {/*
-        One row, on the same rail as the content above it.
-
-        It was two: a branding row (mark + "Wireline" + tagline) stacked on a
-        legal row that opened with "© Wireline". The mark and the wordmark are
-        both already fixed in the header, so the bar showed a visitor the logo
-        twice and the company name three times — and the two rows sat on
-        different grids, which is what made the sitemap control read as
-        off-centre against the copyright beneath it.
-      */}
       <div className="marketing-chrome-bar__row">
         <div className="marketing-chrome-bar__rail wl-public-rail flex flex-nowrap items-center gap-x-4 overflow-hidden">
           <span className="marketing-chrome-bar__copy shrink-0 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Wireline
+            &copy; {new Date().getFullYear()} <WirelineWordmark inline />
           </span>
 
           <nav
