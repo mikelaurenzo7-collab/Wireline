@@ -1,329 +1,39 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Bot,
   CalendarCheck2,
   Clock3,
-  Flame,
-  ListTodo,
+  Inbox,
   Mail,
   MessageSquare,
   Phone,
-  Play,
-  PlugZap,
+  Plus,
+  ShieldCheck,
   Sparkles,
-  Badge,
+  Workflow,
 } from "lucide-react";
 import { Link } from "react-router";
 
 import ActivationChecklist from "../components/ActivationChecklist";
-import OutcomeLedger from "../components/OutcomeLedger";
-import { Button, EmptyState, Skeleton } from "../components/atoms";
-import { StatusNotice } from "../components/molecules";
-import WorkspaceShell from "../components/WorkspaceShell";
-import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
+import OutcomeLedger from "../components/OutcomeLedger";
+import WorkspaceRecovery from "../components/WorkspaceRecovery";
+import WorkspaceShell from "../components/WorkspaceShell";
+import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { StatusNotice } from "../components/molecules";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
-import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
+import { formatAgentRoleLabel } from "../lib/product-copy";
 
-function metricRows(
-  conversationsToday: number,
-  highIntentToday: number,
-  totalAppointments: number,
-  activeWork: number,
-  accountType: "personal" | "business",
-) {
-  return [
-    {
-      label: "Customer conversations today",
-      value: String(conversationsToday),
-      tone: conversationsToday > 0 ? ("success" as const) : ("neutral" as const),
-      href: "/inbox",
-      icon: Phone,
-    },
-    {
-      label: "High-intent today",
-      value: String(highIntentToday),
-      tone: highIntentToday > 0 ? ("primary" as const) : ("neutral" as const),
-      // Insights is a business surface (account-type.ts): a personal account
-      // landing there finds no nav entry and no way back. Their high-intent
-      // conversations live in the inbox.
-      href: accountType === "personal" ? "/inbox" : "/insights",
-      icon: Flame,
-    },
-    {
-      label: "Appointments booked",
-      value: String(totalAppointments),
-      tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
-      href: totalAppointments > 0 ? "/phone?tab=appointments" : "/connections",
-      icon: CalendarCheck2,
-    },
-    {
-      label: "Needs attention",
-      value: String(activeWork),
-      tone: activeWork > 0 ? ("warning" as const) : ("success" as const),
-      href: "/approvals",
-      icon: ListTodo,
-    },
-  ];
-}
-
-function MetricSkeleton() {
-  return (
-    <div className="wl-metric-tile" aria-hidden="true">
-      <Skeleton shape="text" className="h-3 w-28" />
-      <Skeleton shape="text" className="mt-5 h-8 w-12" />
-    </div>
-  );
-}
-
-function AgentLoadingRows() {
-  return (
-    <div className="grid gap-2" aria-busy="true" aria-label="Loading agents">
-      {Array.from({ length: 3 }, (_, index) => (
-        <div key={index} className="rounded-[10px] border border-border px-3 py-3">
-          <div className="flex items-center gap-3">
-            <Skeleton shape="circle" className="size-8 rounded-lg" />
-            <div className="min-w-0 flex-1">
-              <Skeleton shape="text" className="h-4 w-24" />
-              <Skeleton shape="text" className="mt-1 h-3 w-36" />
-            </div>
-            <Skeleton shape="text" className="h-3 w-14" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
-  const language = customerAgentLanguage(posture);
-  const steps = [
-    posture === "personal" ? "Choose one personal job" : "Choose one customer job",
-    "Connect your line",
-    "Review outcomes",
-  ];
-
-  return (
-    <section
-      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-7"
-      aria-labelledby="first-run-title"
-    >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
-        <div>
-          <h1 id="first-run-title" className="wl-app-page-title text-balance">
-            Start with one job
-          </h1>
-          <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-            {posture === "personal"
-              ? "Give it one personal task. Wireline handles the call, the follow-up, and the record."
-              : "Give it one customer job. Wireline handles the call, the follow-up, and the record."}
-          </p>
-          <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-            <Button asChild className="w-full justify-center sm:w-auto">
-              <Link
-                to={
-                  posture === "personal"
-                    ? "/studio?create=1&posture=personal"
-                    : "/studio?create=1&posture=business"
-                }
-              >
-                <span className="sm:hidden">{language.createCtaShort}</span>
-                <span className="hidden sm:inline">{language.createCta}</span>
-                <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="w-full justify-center sm:w-auto">
-              <Link to="/showcase">Hear a demo</Link>
-            </Button>
-          </div>
-        </div>
-
-        <ol className="grid gap-2" aria-label="Setup steps">
-          {steps.map((step, index) => (
-            <li
-              key={step}
-              className={`flex items-center gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
-                index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
-              }`}
-            >
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
-                {index + 1}
-              </span>
-              <span className="text-sm font-semibold text-foreground">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-function DemandReadinessCard({
-  hasLiveLine,
-  hasConversationHistory,
-  conversationsToday,
-  activeWork,
-  connectionsCount,
-  connectionsDetail,
-  setupHref,
-  testHref,
-  subjectLabel,
-}: {
-  hasLiveLine: boolean;
-  hasConversationHistory: boolean;
-  conversationsToday: number;
-  activeWork: number;
-  connectionsCount: number;
-  connectionsDetail: string;
-  setupHref: string;
-  testHref: string;
-  subjectLabel: string;
-}) {
-  const state = !hasLiveLine
-    ? {
-        eyebrow: "Phone line",
-        title: "Connect a phone line",
-        detail: undefined,
-        primaryHref: "/settings/phone",
-        primaryLabel: "Connect phone",
-        secondaryHref: undefined,
-        secondaryLabel: undefined,
-      }
-    : !hasConversationHistory
-      ? {
-          eyebrow: "Line ready",
-          title: "Your line is live",
-          detail: "Put it where customers already call.",
-          primaryHref: "/settings/phone",
-          primaryLabel: "Review phone setup",
-          secondaryHref: testHref,
-          secondaryLabel: "Run a test conversation",
-        }
-      : activeWork > 0
-        ? {
-            eyebrow: "Action required",
-            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} attention`,
-            detail: "Review approvals and human handoffs while the context is fresh.",
-            primaryHref: "/approvals",
-            primaryLabel: "Review work",
-            secondaryHref: "/inbox",
-            secondaryLabel: "Open conversations",
-          }
-        : {
-            eyebrow: conversationsToday > 0 ? "Customer demand today" : "Line ready",
-            title: conversationsToday > 0 ? "Handling conversations" : "No new conversations today",
-            detail:
-              conversationsToday > 0
-                ? "Outcomes are being recorded as they happen."
-                : "Your customer line is still ready.",
-            primaryHref: "/inbox",
-            primaryLabel: "Review conversations",
-            secondaryHref: setupHref,
-            secondaryLabel: `Improve the ${subjectLabel}`,
-          };
-
-  return (
-    <section
-      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6"
-      aria-label="Demand readiness"
-    >
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 max-w-3xl">
-          <div className="flex items-center gap-2">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-              <PlugZap size={17} aria-hidden="true" />
-            </span>
-            <p className="text-eyebrow text-primary">{state.eyebrow}</p>
-          </div>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {state.title}
-          </h2>
-          {state.detail ? (
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
-          ) : null}
-          {connectionsCount > 0 ? (
-            <p
-              className="mt-3 truncate text-xs font-medium text-muted-foreground"
-              aria-label={`Live connections: ${connectionsDetail}`}
-              title={`Live: ${connectionsDetail}`}
-            >
-              Live: {connectionsDetail}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
-          <Button asChild>
-            <Link to={state.primaryHref}>{state.primaryLabel}</Link>
-          </Button>
-          {state.secondaryHref && state.secondaryLabel ? (
-            <Button asChild variant="secondary">
-              <Link to={state.secondaryHref}>{state.secondaryLabel}</Link>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CompactAgentRow({
-  agent,
-  phoneLookupDegraded,
-}: {
-  agent: WorkspaceAgentSummary;
-  phoneLookupDegraded: boolean;
-}) {
-  const live = Boolean(agent.phone_number);
-  const readiness = agentReadinessLabel(agent, phoneLookupDegraded);
-  const enc = encodeURIComponent(agent.id);
-  const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
-  return (
-    <Link
-      to={`/studio?agent=${enc}`}
-      className={`group flex min-h-[56px] min-w-0 items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-press wl-focus-ring-halo ${
-        live
-          ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
-          : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
-      }`}
-    >
-      <AgentFace
-        seed={agent.name || agent.id}
-        size={32}
-        title={`${agent.name} face`}
-        className="shrink-0"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {formatAgentRoleLabel(agent.role)}
-        </span>
-      </span>
-      <span
-        className={`wl-chip wl-chip--${live ? "success" : "warning"} shrink-0`}
-        aria-label={`${language.singular} status: ${readiness}`}
-      >
-        <span className="wl-chip__dot" aria-hidden="true" />
-        {readiness}
-      </span>
-      <ArrowRight
-        className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
-        aria-hidden="true"
-      />
-    </Link>
-  );
-}
-
-type AgentKind = "personal" | "business";
+type ConversationChannel = "voice" | "email" | "sms";
 
 type RecentConversation = {
   id: string;
-  channel: "voice" | "email" | "sms";
+  channel: ConversationChannel;
   contact: string;
   headline?: string | null;
   summary?: string | null;
@@ -332,134 +42,616 @@ type RecentConversation = {
   agent_name?: string | null;
 };
 
-const OVERVIEW_AGENT_PREVIEW = 6;
+type OverviewMetrics = {
+  conversationsToday: number;
+  highIntentToday: number;
+  appointmentsBooked: number;
+  activeWork: number;
+};
 
-function AgentSection({
-  kind,
-  agents,
-  phoneLookupDegraded,
-}: {
-  kind: AgentKind;
-  agents: WorkspaceAgentSummary[];
-  phoneLookupDegraded: boolean;
-}) {
-  const language = customerAgentLanguage(kind);
-  const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
-  if (agents.length === 0) return null;
-  const overflowCount = Math.max(0, agents.length - OVERVIEW_AGENT_PREVIEW);
+const EMPTY_METRICS: OverviewMetrics = {
+  conversationsToday: 0,
+  highIntentToday: 0,
+  appointmentsBooked: 0,
+  activeWork: 0,
+};
 
-  return (
-    <section className="min-w-0" aria-label={heading}>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-eyebrow text-muted-foreground">{heading}</p>
-        <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-          {agents.length}
-        </span>
-      </div>
-      <div className="grid min-w-0 gap-2">
-        {agents
-          .map((agent) => (
-            <CompactAgentRow
-              key={agent.id}
-              agent={agent}
-              phoneLookupDegraded={phoneLookupDegraded}
-            />
-          ))
-          .slice(0, OVERVIEW_AGENT_PREVIEW)}
-        {overflowCount > 0 ? (
-          <Link
-            to="/studio"
-            className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            {overflowCount} more in Studio
-          </Link>
-        ) : null}
-        <Link
-          to={`/studio?create=1&posture=${kind}`}
-          className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          + New {language.singular}
-        </Link>
-        {kind === "business" ? (
-          // Identity: badge only. Live talking-head and clip substitutes are retired.
-          <Link
-            to="/studio/live-video"
-            className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            <Badge size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Identity</span>
-            <ArrowRight
-              className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
-              aria-hidden="true"
-            />
-          </Link>
-        ) : null}
-      </div>
-    </section>
-  );
+function channelLabel(channel: ConversationChannel) {
+  if (channel === "email") return "Email";
+  if (channel === "sms") return "Text";
+  return "Voice";
 }
 
-function formatConversationMeta(createdAt: string, durationSeconds?: number | null) {
-  if (!createdAt) return "";
-  const date = new Date(createdAt);
-  const timeStr = date.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  if (durationSeconds) {
-    const min = Math.floor(durationSeconds / 60);
-    const sec = durationSeconds % 60;
-    const durationStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
-    return `${timeStr} · ${durationStr}`;
-  }
-  return timeStr;
-}
-
-function conversationHref(channel: RecentConversation["channel"]) {
+function channelHref(channel: ConversationChannel) {
   if (channel === "email") return "/inbox?tab=email";
   if (channel === "sms") return "/inbox?tab=sms";
   return "/phone?tab=logs";
 }
 
-function conversationChannelLabel(channel: RecentConversation["channel"]) {
-  if (channel === "email") return "Email";
-  if (channel === "sms") return "SMS";
-  return "Call";
+function channelIcon(channel: ConversationChannel) {
+  if (channel === "email") return Mail;
+  if (channel === "sms") return MessageSquare;
+  return Phone;
+}
+
+function formatConversationTime(value: string, durationSeconds?: number | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const time = Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (!durationSeconds) return time;
+  const minutes = Math.floor(durationSeconds / 60);
+  const seconds = durationSeconds % 60;
+  const duration = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+  return [time, duration].filter(Boolean).join(" · ");
+}
+
+function conversationPreview(conversation: RecentConversation) {
+  return (
+    conversation.headline?.trim() ||
+    conversation.summary?.trim() ||
+    "Conversation recorded. Open the thread for the full details."
+  );
+}
+
+function DashboardLoadingState() {
+  return (
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.65fr)]">
+      <div className="wl-paper wl-paper-elevated min-h-[520px] p-5" aria-hidden="true">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton shape="text" className="h-5 w-40" />
+          <Skeleton shape="text" className="h-9 w-24" />
+        </div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(15rem,0.82fr)_minmax(0,1.18fr)]">
+          <div className="grid gap-2">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="rounded-xl border border-border p-3">
+                <Skeleton shape="text" className="h-4 w-32" />
+                <Skeleton shape="text" className="mt-2 h-3 w-48" />
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl border border-border p-5">
+            <Skeleton shape="text" className="h-4 w-24" />
+            <Skeleton shape="text" className="mt-4 h-7 w-48" />
+            <Skeleton shape="text" className="mt-3 h-3 w-full" />
+            <Skeleton shape="text" className="mt-2 h-3 w-4/5" />
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-4">
+        {Array.from({ length: 2 }, (_, index) => (
+          <div key={index} className="wl-paper wl-paper-elevated p-5" aria-hidden="true">
+            <Skeleton shape="text" className="h-4 w-32" />
+            <Skeleton shape="text" className="mt-5 h-24 w-full" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FirstRunWorkspace() {
+  const roleStarters = [
+    "Receptionist",
+    "Sales Associate",
+    "Support Specialist",
+    "Scheduler",
+    "Personal Assistant",
+  ];
+
+  return (
+    <section className="wl-paper wl-paper-elevated overflow-hidden">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)]">
+        <div className="relative overflow-hidden p-6 sm:p-8 lg:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+              <Sparkles size={13} aria-hidden="true" />
+              One workspace
+            </span>
+            <h1 className="mt-5 max-w-[15ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,5vw,4rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-foreground">
+              Build Your Bot
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+              Start with a proven role or create your own. Configure voice, text, email,
+              knowledge, tools, guardrails, approvals, and handoffs without choosing a
+              personal or business workspace.
+            </p>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+              <Button asChild className="justify-center sm:min-w-[170px]">
+                <Link to="/studio?create=1">
+                  <Plus size={15} aria-hidden="true" />
+                  Create Your Own
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="justify-center sm:min-w-[170px]">
+                <Link to="/templates">
+                  Browse Templates
+                  <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-7 flex flex-wrap gap-2" aria-label="Example Bot roles">
+              {roleStarters.map((role) => (
+                <span
+                  key={role}
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground"
+                >
+                  {role}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-border bg-muted/25 p-5 sm:p-7 lg:border-l lg:border-t-0">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Configure once
+          </p>
+          <ol className="mt-4 grid gap-3">
+            {[
+              [
+                "1",
+                "Choose the job",
+                "Pick a business role, a personal starter, or a blank canvas.",
+              ],
+              [
+                "2",
+                "Connect the channels",
+                "Use voice, text, and email together or only where the workflow needs them.",
+              ],
+              [
+                "3",
+                "Launch with control",
+                "Set knowledge, tools, approvals, consent rules, handoffs, and stopping conditions.",
+              ],
+            ].map(([number, title, detail]) => (
+              <li key={number} className="flex gap-3 rounded-xl border border-border bg-card p-4">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 font-mono text-xs font-semibold text-primary">
+                  {number}
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-sm font-semibold text-foreground">{title}</strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BotRoster({
+  bots,
+  phoneLookupDegraded,
+}: {
+  bots: WorkspaceAgentSummary[];
+  phoneLookupDegraded: boolean;
+}) {
+  return (
+    <section className="wl-paper wl-paper-elevated p-5" aria-labelledby="overview-bots-title">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Workspace
+          </p>
+          <h2 id="overview-bots-title" className="mt-1 text-base font-semibold text-foreground">
+            Bots
+          </h2>
+        </div>
+        <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-[10px] font-semibold text-muted-foreground">
+          {bots.length}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {bots.slice(0, 4).map((bot) => {
+          const readiness = agentReadinessLabel(bot, phoneLookupDegraded);
+          const live = Boolean(bot.phone_number);
+          return (
+            <Link
+              key={bot.id}
+              to={`/studio?agent=${encodeURIComponent(bot.id)}&section=setup`}
+              className="group flex min-h-[56px] min-w-0 items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-muted/30 wl-focus-ring-halo"
+            >
+              <AgentFace
+                seed={bot.name || bot.id}
+                size={32}
+                title={`${bot.name} face`}
+                className="shrink-0"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-foreground">
+                  {bot.name}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {formatAgentRoleLabel(bot.role)}
+                </span>
+              </span>
+              <span className={`wl-chip wl-chip--${live ? "success" : "warning"} shrink-0`}>
+                <span className="wl-chip__dot" aria-hidden="true" />
+                {readiness}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button asChild variant="secondary" size="sm" className="justify-center">
+          <Link to="/studio">All Bots</Link>
+        </Button>
+        <Button asChild size="sm" className="justify-center">
+          <Link to="/studio?create=1">
+            <Plus size={14} aria-hidden="true" />
+            New Bot
+          </Link>
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function ConfigureCard({ bot }: { bot?: WorkspaceAgentSummary }) {
+  const setupHref = bot
+    ? `/studio?agent=${encodeURIComponent(bot.id)}&section=setup`
+    : "/studio?create=1";
+  const links = [
+    {
+      label: "Playbook & Voice",
+      detail: "Role, behavior, tone, and voice",
+      href: setupHref,
+      icon: Bot,
+    },
+    {
+      label: "Channels & Tools",
+      detail: "Voice, text, email, calendar, and CRM",
+      href: "/connections",
+      icon: Workflow,
+    },
+    {
+      label: "Knowledge",
+      detail: "Facts, files, policies, and preferences",
+      href: "/knowledge",
+      icon: ShieldCheck,
+    },
+  ];
+
+  return (
+    <section className="wl-paper wl-paper-elevated p-5" aria-labelledby="overview-config-title">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        Configure
+      </p>
+      <h2 id="overview-config-title" className="mt-1 text-base font-semibold text-foreground">
+        One control surface
+      </h2>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        Every Bot uses the same building blocks. Start from a role, then shape the workflow.
+      </p>
+      <div className="mt-4 grid gap-1">
+        {links.map(({ label, detail, href, icon: Icon }) => (
+          <Link
+            key={label}
+            to={href}
+            className="group flex min-h-[54px] items-center gap-3 rounded-xl px-2.5 py-2 transition-colors hover:bg-muted/50 wl-focus-ring-halo"
+          >
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Icon size={15} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-foreground">{label}</span>
+              <span className="block truncate text-xs text-muted-foreground">{detail}</span>
+            </span>
+            <ArrowRight
+              size={14}
+              className="shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+              aria-hidden="true"
+            />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MetricsCard({ metrics }: { metrics: OverviewMetrics }) {
+  const rows = [
+    {
+      label: "Customer conversations today",
+      value: metrics.conversationsToday,
+      href: "/inbox",
+      icon: Inbox,
+    },
+    {
+      label: "High-intent today",
+      value: metrics.highIntentToday,
+      href: "/insights",
+      icon: Sparkles,
+    },
+    {
+      label: "Appointments booked",
+      value: metrics.appointmentsBooked,
+      href: "/phone?tab=appointments",
+      icon: CalendarCheck2,
+    },
+    {
+      label: "Needs attention",
+      value: metrics.activeWork,
+      href: "/approvals",
+      icon: ShieldCheck,
+    },
+  ];
+  const maximum = Math.max(1, ...rows.map((row) => row.value));
+
+  return (
+    <section className="wl-paper wl-paper-elevated p-5" aria-labelledby="overview-metrics-title">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Today
+          </p>
+          <h2 id="overview-metrics-title" className="mt-1 text-base font-semibold text-foreground">
+            Today&apos;s Overview
+          </h2>
+        </div>
+        <Clock3 size={16} className="text-primary" aria-hidden="true" />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {rows.map(({ label, value, href, icon: Icon }) => (
+          <Link
+            key={label}
+            to={href}
+            className="rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30 hover:bg-muted/30 wl-focus-ring-halo"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-medium leading-4 text-muted-foreground">
+                {label}
+              </span>
+              <Icon size={14} className="shrink-0 text-primary" aria-hidden="true" />
+            </div>
+            <strong className="mt-2 block font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-none text-foreground tabular-nums">
+              {value}
+            </strong>
+            <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+              <span
+                className="block h-full rounded-full bg-primary"
+                style={{ width: `${Math.max(value > 0 ? 12 : 0, (value / maximum) * 100)}%` }}
+              />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UnifiedInbox({
+  conversations,
+  selectedId,
+  onSelect,
+  loading,
+  unavailable,
+}: {
+  conversations: RecentConversation[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  loading: boolean;
+  unavailable: boolean;
+}) {
+  const selected =
+    conversations.find((conversation) => conversation.id === selectedId) ?? conversations[0];
+  const SelectedIcon = selected ? channelIcon(selected.channel) : Inbox;
+
+  return (
+    <section className="wl-paper wl-paper-elevated overflow-hidden" aria-labelledby="unified-inbox-title">
+      <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+            Voice · Text · Email
+          </p>
+          <h2 id="unified-inbox-title" className="mt-1 text-lg font-semibold text-foreground">
+            Unified Inbox
+          </h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            ["All", "/inbox"],
+            ["Calls", "/inbox?tab=voice"],
+            ["Texts", "/inbox?tab=sms"],
+            ["Email", "/inbox?tab=email"],
+          ].map(([label, href], index) => (
+            <Link
+              key={label}
+              to={href}
+              className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+                index === 0
+                  ? "border-primary/30 bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid min-h-[430px] lg:grid-cols-[minmax(17rem,0.82fr)_minmax(0,1.18fr)]">
+        <div className="border-b border-border p-3 lg:border-b-0 lg:border-r">
+          {loading ? (
+            <div className="grid gap-2" aria-busy="true" aria-label="Loading conversations">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="rounded-xl border border-border p-3">
+                  <Skeleton shape="text" className="h-4 w-32" />
+                  <Skeleton shape="text" className="mt-2 h-3 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : unavailable ? (
+            <StatusNotice tone="warning" title="Inbox preview unavailable">
+              Open Inbox or refresh to try again. Your conversation history is unchanged.
+            </StatusNotice>
+          ) : conversations.length === 0 ? (
+            <EmptyState
+              density="compact"
+              titleTone="ui"
+              icon={<Inbox aria-hidden="true" />}
+              title="No conversations yet"
+              action={
+                <Button asChild size="sm">
+                  <Link to="/studio">Test a Bot</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <ul className="grid gap-1.5" aria-label="Recent customer conversations">
+              {conversations.map((conversation) => {
+                const Icon = channelIcon(conversation.channel);
+                const active = selected?.id === conversation.id;
+                return (
+                  <li key={`${conversation.channel}-${conversation.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(conversation.id)}
+                      aria-pressed={active}
+                      className={`flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors wl-focus-ring-halo ${
+                        active
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-transparent hover:border-border hover:bg-muted/35"
+                      }`}
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                        <Icon size={16} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-3">
+                          <strong className="truncate text-sm font-semibold text-foreground">
+                            {conversation.contact || "Unknown contact"}
+                          </strong>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {formatConversationTime(conversation.occurred_at)}
+                          </span>
+                        </span>
+                        <span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
+                          {conversationPreview(conversation)}
+                        </span>
+                        <span className="mt-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                          {channelLabel(conversation.channel)}
+                          {conversation.agent_name ? ` · ${conversation.agent_name}` : ""}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <Button asChild variant="secondary" size="sm" className="mt-3 w-full justify-center">
+            <Link to="/inbox">
+              Open Inbox
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="min-w-0 p-5 sm:p-6">
+          {selected ? (
+            <div className="flex h-full min-h-[300px] flex-col">
+              <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <SelectedIcon size={20} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                      {channelLabel(selected.channel)} conversation
+                    </p>
+                    <h3 className="mt-1 truncate text-xl font-semibold text-foreground">
+                      {selected.contact || "Unknown contact"}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {[
+                        selected.agent_name,
+                        formatConversationTime(selected.occurred_at, selected.duration_seconds),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </div>
+                <Button asChild variant="secondary" size="sm" className="shrink-0 justify-center">
+                  <Link to={channelHref(selected.channel)}>Open Thread</Link>
+                </Button>
+              </div>
+
+              <div className="flex flex-1 flex-col justify-between gap-6 py-6">
+                <div>
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Conversation summary
+                  </p>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-foreground">
+                    {conversationPreview(selected)}
+                  </p>
+                  {selected.headline &&
+                  selected.summary &&
+                  selected.headline !== selected.summary ? (
+                    <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
+                      {selected.summary}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ["Channel", channelLabel(selected.channel)],
+                    ["Handled By", selected.agent_name || "Wireline Bot"],
+                    ["Status", "Recorded"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-xl border border-border bg-muted/25 p-3">
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        {label}
+                      </span>
+                      <strong className="mt-1.5 block truncate text-sm font-semibold text-foreground">
+                        {value}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              density="compact"
+              titleTone="ui"
+              icon={<MessageSquare aria-hidden="true" />}
+              title="Select a conversation"
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default function OverviewPage() {
-  const { accountType } = useAccount();
   const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
-  const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
-
-  const [conversationsToday, setConversationsToday] = useState(0);
-  const [highIntentToday, setHighIntentToday] = useState(0);
-  const [connectionsCount, setConnectionsCount] = useState(0);
-  const [connectionsDetail, setConnectionsDetail] = useState("Checking connections…");
-  const [totalAppointments, setTotalAppointments] = useState(0);
-  const [activeWork, setActiveWork] = useState(0);
-  const [recentConversations, setRecentConversations] = useState<RecentConversation[]>([]);
+  const [metrics, setMetrics] = useState<OverviewMetrics>(EMPTY_METRICS);
+  const [conversations, setConversations] = useState<RecentConversation[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
-  const [statsUnavailable, setStatsUnavailable] = useState(false);
-  const [recentUnavailable, setRecentUnavailable] = useState(false);
-
-  // The roster context refreshes on window focus and returns a NEW array each
-  // time even when nothing changed. Keying this effect on that identity (and
-  // re-arming the skeletons every run) made Home visibly tear down — four
-  // metric tiles and the activity list flashing grey — on every alt-tab back.
-  // Depend on the one derived fact the dashboard actually reads, plus an
-  // explicit debounced focus tick so metrics still refresh when the user
-  // returns — silently, because skeletons only show before the first load.
-  const hasPhoneLine = agents.some((agent) => agent.phone_number);
-  const dashboardLoadedOnceRef = useRef(false);
-  const [dashboardRefreshTick, setDashboardRefreshTick] = useState(0);
+  const [dashboardUnavailable, setDashboardUnavailable] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const loadedOnceRef = useRef(false);
 
   useEffect(() => {
     let timer: number | null = null;
     const onFocus = () => {
       if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(() => setDashboardRefreshTick((tick) => tick + 1), 1_500);
+      timer = window.setTimeout(() => setRefreshTick((value) => value + 1), 1_500);
     };
     window.addEventListener("focus", onFocus);
     return () => {
@@ -471,403 +663,179 @@ export default function OverviewPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadDashboard() {
-      if (!dashboardLoadedOnceRef.current) setLoadingDashboard(true);
-      setStatsUnavailable(false);
-      setRecentUnavailable(false);
+    async function loadOverview() {
+      if (!loadedOnceRef.current) setLoadingDashboard(true);
+      setDashboardUnavailable(false);
       const dayBoundary = new Date();
       dayBoundary.setHours(0, 0, 0, 0);
       const since = dayBoundary.toISOString();
 
-      const [recentRes, operatingRes, crmRes, calendarRes, mailboxRes] = await Promise.all([
+      const [recentResponse, metricsResponse] = await Promise.all([
         authFetch("/api/overview/recent-conversations").catch(() => null),
         authFetch(`/api/overview/operating-metrics?since=${encodeURIComponent(since)}`).catch(
           () => null,
         ),
-        authFetch("/api/oauth/crm/status").catch(() => null),
-        authFetch("/api/calendar/accounts").catch(() => null),
-        authFetch("/api/emails/accounts").catch(() => null),
       ]);
 
       if (cancelled) return;
 
-      if (recentRes?.ok) {
-        const data = await recentRes.json().catch(() => null);
-        const conversations: RecentConversation[] = Array.isArray(data?.conversations)
-          ? data.conversations
+      if (recentResponse?.ok) {
+        const body = await recentResponse.json().catch(() => null);
+        const nextConversations = Array.isArray(body?.conversations)
+          ? (body.conversations as RecentConversation[]).slice(0, 8)
           : [];
-        setRecentConversations(conversations.slice(0, 4));
+        setConversations(nextConversations);
+        setSelectedConversationId((current) => {
+          if (current && nextConversations.some((item) => item.id === current)) return current;
+          return nextConversations[0]?.id ?? null;
+        });
       } else {
-        setRecentUnavailable(true);
-        setStatsUnavailable(true);
+        setDashboardUnavailable(true);
       }
 
-      if (operatingRes?.ok) {
-        const data = await operatingRes.json().catch(() => null);
-        setConversationsToday(Number(data?.conversationsToday ?? 0));
-        setHighIntentToday(Number(data?.highIntentToday ?? 0));
-        setTotalAppointments(Number(data?.appointmentsBooked ?? 0));
-        setActiveWork(Number(data?.activeWork ?? 0));
+      if (metricsResponse?.ok) {
+        const body = await metricsResponse.json().catch(() => null);
+        setMetrics({
+          conversationsToday: Number(body?.conversationsToday ?? 0),
+          highIntentToday: Number(body?.highIntentToday ?? 0),
+          appointmentsBooked: Number(body?.appointmentsBooked ?? 0),
+          activeWork: Number(body?.activeWork ?? 0),
+        });
       } else {
-        setStatsUnavailable(true);
+        setDashboardUnavailable(true);
       }
 
-      const activeProviders: string[] = [];
-      if (crmRes?.ok) {
-        const data = await crmRes.json().catch(() => null);
-        if (data) {
-          activeProviders.push(
-            ...Object.entries(data as Record<string, { connected?: boolean }>)
-              .filter(([, connection]) => connection?.connected)
-              .map(([name]) =>
-                name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
-              ),
-          );
-        }
-      }
-
-      const coreConnections: string[] = [];
-      if (hasPhoneLine) coreConnections.push("Phone");
-      if (mailboxRes?.ok) {
-        const mailboxData = await mailboxRes.json().catch(() => null);
-        if (Array.isArray(mailboxData?.accounts) && mailboxData.accounts.length > 0) {
-          coreConnections.push("Email");
-        }
-      }
-      if (calendarRes?.ok) {
-        const calendarData = await calendarRes.json().catch(() => null);
-        if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
-          coreConnections.push("Calendar");
-        }
-      }
-
-      const allConnections = [...new Set([...coreConnections, ...activeProviders])];
-      setConnectionsCount(allConnections.length);
-      setConnectionsDetail(
-        allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
-      );
-      if (!cancelled) {
-        setLoadingDashboard(false);
-        dashboardLoadedOnceRef.current = true;
-      }
+      setLoadingDashboard(false);
+      loadedOnceRef.current = true;
     }
 
-    void loadDashboard();
+    void loadOverview();
     return () => {
       cancelled = true;
     };
-  }, [hasPhoneLine, dashboardRefreshTick]);
+  }, [refreshTick]);
 
-  const personalAgents = agents.filter((agent) => !agent.is_business_agent);
-  const businessAgents = agents.filter((agent) => agent.is_business_agent);
-  const hasAgents = !loading && agents.length > 0;
-  const isFirstRun = !loading && !degraded && agents.length === 0;
-  const missingFounderPairPosture =
-    hasAgents &&
-    ((personalAgents.length === 0 && businessAgents.length > 0) ||
-      (businessAgents.length === 0 && personalAgents.length > 0));
-  const founderPairHref =
-    personalAgents.length === 0
-      ? "/studio?create=1&posture=personal"
-      : "/studio?create=1&posture=business";
-  const founderPairLabel =
-    personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
-  const primaryAgent = agents[0];
-  const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
-  const hasConversationHistory = recentConversations.length > 0 || conversationsToday > 0;
-  const emptyStudioHref =
-    accountType === "personal"
-      ? "/studio?create=1&posture=personal"
-      : "/studio?create=1&posture=business";
-  const primaryStudioHref = primaryAgent
-    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=setup`
-    : emptyStudioHref;
-  const primaryTestHref = primaryAgent
-    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=test`
-    : emptyStudioHref;
+  const primaryBot = agents[0];
+  const hasBots = agents.length > 0;
+  const hasLiveLine = agents.some((bot) => Boolean(bot.phone_number));
+  const isFirstRun = !loading && !degraded && !hasBots;
+  const primaryStudioHref = primaryBot
+    ? `/studio?agent=${encodeURIComponent(primaryBot.id)}&section=setup`
+    : "/studio?create=1";
+
+  const selectedConversation = useMemo(
+    () =>
+      conversations.find((conversation) => conversation.id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId],
+  );
 
   return (
-    <WorkspaceShell contentClassName="pt-4 pb-5 lg:pt-5">
-      {/* First run has one card and no data, so the page rendered a 540px void
-          under it: the activation panel sat pinned to the top of an otherwise
-          empty screen. Centring the block in the content area turns that into
-          composition. Once the workspace has agents, the page fills normally
-          and the modifier is not applied. */}
-      <WorkspacePageFrame
-        mode="standard"
-        className={hasAgents ? "wl-overview" : "wl-overview wl-overview--first-run"}
-      >
-        {hasAgents ? (
-          <section className="relative wl-overview-greeting text-left">
-            <div className="flex flex-col items-start gap-5">
-              <h1 className="wl-app-page-title sr-only">Overview</h1>
-              <div className="flex flex-wrap items-center justify-start gap-2">
-                <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
-                  <Link to={primaryStudioHref}>
-                    <Sparkles aria-hidden="true" size={15} />
-                    Manage {language.navLabel.toLowerCase()}
-                  </Link>
-                </Button>
-                {hasLiveLine ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="shrink-0 justify-center sm:min-w-[154px]"
-                    onClick={() => setShowOutboundDial(true)}
-                  >
-                    <Phone aria-hidden="true" size={15} />
-                    Start a call
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    variant="secondary"
-                    className="shrink-0 justify-center sm:min-w-[154px]"
-                  >
-                    <Link to={primaryTestHref}>
-                      <Play aria-hidden="true" size={15} />
-                      Test {language.navShort.toLowerCase()}
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </section>
-        ) : null}
+    <WorkspaceShell contentClassName="pt-3 pb-5 lg:pt-4">
+      <WorkspacePageFrame mode="operate" className="wl-overview">
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+              One workspace
+            </p>
+            <h1 className="wl-app-page-title mt-1">Overview</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Build and operate Bots for business roles, personal work, or any custom workflow.
+              Voice, text, email, knowledge, tools, and outcomes stay together.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild variant="secondary" className="justify-center">
+              <Link to="/templates">Browse Templates</Link>
+            </Button>
+            {hasLiveLine ? (
+              <Button
+                type="button"
+                className="justify-center"
+                onClick={() => setShowOutboundDial(true)}
+              >
+                <Phone size={15} aria-hidden="true" />
+                Start a Call
+              </Button>
+            ) : (
+              <Button asChild className="justify-center">
+                <Link to={hasBots ? primaryStudioHref : "/studio?create=1"}>
+                  {hasBots ? (
+                    <Sparkles size={15} aria-hidden="true" />
+                  ) : (
+                    <Plus size={15} aria-hidden="true" />
+                  )}
+                  {hasBots ? "Configure Bot" : "Create Bot"}
+                </Link>
+              </Button>
+            )}
+          </div>
+        </header>
 
         {isFirstRun ? (
-          <FirstRunLaunchpad posture={accountType} />
-        ) : degraded && !hasAgents ? (
+          <FirstRunWorkspace />
+        ) : degraded && !hasBots ? (
           <WorkspaceRecovery onRetry={refresh} />
+        ) : loading && !hasBots ? (
+          <DashboardLoadingState />
         ) : (
           <>
-            <ActivationChecklist className="mb-2" />
-
-            {!hasLiveLine || !hasConversationHistory ? (
-              <DemandReadinessCard
-                hasLiveLine={hasLiveLine}
-                hasConversationHistory={hasConversationHistory}
-                conversationsToday={conversationsToday}
-                activeWork={activeWork}
-                connectionsCount={connectionsCount}
-                connectionsDetail={connectionsDetail}
-                setupHref={primaryStudioHref}
-                testHref={primaryTestHref}
-                subjectLabel={language.navShort.toLowerCase()}
-              />
-            ) : null}
-
-            <section
-              className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
-              aria-label="Customer demand and outcomes"
-              // The skeletons are aria-hidden, so while these load the region is
-              // simply empty to assistive tech and the numbers then appear with
-              // no announcement. Overview is the post-login destination and this
-              // row is the answer to "what happened while I was away".
-              aria-busy={loadingDashboard}
-            >
-              {loadingDashboard
-                ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
-                : metricRows(
-                    conversationsToday,
-                    highIntentToday,
-                    totalAppointments,
-                    activeWork,
-                    accountType,
-                  ).map((item, index) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.href}
-                        className={`wl-metric-tile wl-metric-tile--compact wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
-                        data-tone={item.tone}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="wl-metric-tile__label">{item.label}</p>
-                          <Icon
-                            className="wl-metric-tile__icon size-4 shrink-0 text-primary"
-                            aria-hidden="true"
-                          />
-                        </div>
-                        <div className="wl-metric-tile__value">{item.value}</div>
-                      </Link>
-                    );
-                  })}
-            </section>
-            <p className="sr-only" role="status">
-              {loadingDashboard
-                ? "Loading today's numbers."
-                : `${conversationsToday} conversations today, ${highIntentToday} high intent, ${totalAppointments} appointments booked, ${activeWork} needing attention.`}
-            </p>
+            <ActivationChecklist className="mb-0" />
 
             {degraded ? (
-              <StatusNotice tone="warning" title="Status partial">
-                Agent links are recovering, showing the last safe state.
+              <StatusNotice tone="warning" title="Bot roster partial">
+                Wireline is showing the last safe Bot roster while account data recovers.
               </StatusNotice>
             ) : null}
-
-            {!degraded && phoneLookupDegraded ? (
+            {phoneLookupDegraded ? (
               <StatusNotice tone="warning" title="Line status unavailable">
-                We could not check which numbers are attached. Your phone lines are unchanged.
+                We could not verify attached phone numbers. Your lines and Bots are unchanged.
               </StatusNotice>
             ) : null}
-
-            {statsUnavailable && !loadingDashboard ? (
-              <StatusNotice tone="warning" title="Home data partial">
-                We couldn&apos;t load every Home data source. Refresh to try again. Affected metrics
-                or recent activity may not be current.
+            {dashboardUnavailable && !loadingDashboard ? (
+              <StatusNotice tone="warning" title="Overview data partial">
+                Some metrics or conversation previews could not be refreshed. Open Inbox for the
+                full record.
               </StatusNotice>
             ) : null}
 
             <section
-              className="wl-paper wl-paper-elevated p-5 sm:p-6"
-              aria-label="Customer outcomes"
+              className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.65fr)]"
+              aria-label="Customer demand and outcomes"
             >
-              {/* A busy line fills five rows before lunch, and the page has
-                  spare room below — give the ledger a real working window. */}
-              <OutcomeLedger limit={4} showViewAll followUpsHref="/approvals" />
-            </section>
-
-            <section
-              className="grid gap-4 lg:grid-cols-[1fr_1fr]"
-              aria-label="Agents and recent customer conversations"
-            >
-              <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    Agents
-                  </p>
-                  <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
-                    Manage
-                  </Link>
-                </div>
-                {loading ? (
-                  <AgentLoadingRows />
-                ) : hasAgents ? (
-                  <div className="grid gap-5">
-                    <AgentSection
-                      kind="personal"
-                      agents={personalAgents}
-                      phoneLookupDegraded={phoneLookupDegraded}
-                    />
-                    <AgentSection
-                      kind="business"
-                      agents={businessAgents}
-                      phoneLookupDegraded={phoneLookupDegraded}
-                    />
-                    {missingFounderPairPosture ? (
-                      <Link
-                        to={founderPairHref}
-                        className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                      >
-                        + {founderPairLabel}
-                      </Link>
-                    ) : null}
+              <UnifiedInbox
+                conversations={conversations}
+                selectedId={selectedConversation?.id ?? null}
+                onSelect={setSelectedConversationId}
+                loading={loadingDashboard}
+                unavailable={dashboardUnavailable && conversations.length === 0}
+              />
+              <aside className="grid content-start gap-4" aria-label="Workspace summary">
+                {loadingDashboard ? (
+                  <div className="wl-paper wl-paper-elevated p-5" aria-busy="true">
+                    <Skeleton shape="text" className="h-4 w-32" />
+                    <Skeleton shape="text" className="mt-5 h-28 w-full" />
                   </div>
                 ) : (
-                  <EmptyState
-                    density="compact"
-                    titleTone="ui"
-                    withHalo={false}
-                    icon={<Bot aria-hidden="true" />}
-                    title="No agents yet"
-                    action={
-                      <Button asChild size="sm">
-                        <Link to={emptyStudioHref}>{language.createCta}</Link>
-                      </Button>
-                    }
-                  />
+                  <MetricsCard metrics={metrics} />
                 )}
-              </article>
+                <BotRoster bots={agents} phoneLookupDegraded={phoneLookupDegraded} />
+                <ConfigureCard bot={primaryBot} />
+              </aside>
+            </section>
 
-              <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-                <div className="mb-4">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    Recent customer conversations
+            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Proof of work
                   </p>
+                  <h2 className="mt-1 text-base font-semibold text-foreground">Outcomes</h2>
                 </div>
-                <div className="grid gap-0">
-                  {loadingDashboard ? (
-                    <div
-                      className="grid gap-3 py-2"
-                      aria-busy="true"
-                      aria-label="Loading recent customer conversations"
-                    >
-                      {Array.from({ length: 3 }, (_, index) => (
-                        <div key={index} className="flex items-center gap-3 py-2">
-                          <Skeleton shape="circle" className="size-2 rounded-full" />
-                          <div className="min-w-0 flex-1">
-                            <Skeleton shape="text" className="h-4 w-48" />
-                            <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : recentUnavailable ? (
-                    <StatusNotice tone="warning" title="Recent activity unavailable">
-                      Refresh to try again. Your conversation history is unchanged.
-                    </StatusNotice>
-                  ) : recentConversations.length > 0 ? (
-                    recentConversations.map((conversation) => {
-                      const ChannelIcon =
-                        conversation.channel === "email"
-                          ? Mail
-                          : conversation.channel === "sms"
-                            ? MessageSquare
-                            : Phone;
-                      return (
-                        <Link
-                          key={`${conversation.channel}-${conversation.id}`}
-                          to={conversationHref(conversation.channel)}
-                          className="wl-data-row wl-data-row--divided group"
-                        >
-                          <span className="wl-data-row__leading" aria-hidden="true">
-                            <ChannelIcon className="size-3.5 text-primary" />
-                          </span>
-                          <span className="wl-data-row__main">
-                            <span className="wl-data-row__title">{conversation.contact}</span>
-                            <span className="wl-data-row__detail wl-data-row__detail--clamp">
-                              {[
-                                conversation.agent_name,
-                                conversationChannelLabel(conversation.channel),
-                                formatConversationMeta(
-                                  conversation.occurred_at,
-                                  conversation.duration_seconds,
-                                ),
-                                conversation.headline,
-                                conversation.summary,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </span>
-                          </span>
-                          <span className="wl-data-row__trailing">
-                            <Clock3
-                              className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
-                              aria-hidden="true"
-                            />
-                          </span>
-                        </Link>
-                      );
-                    })
-                  ) : (
-                    <EmptyState
-                      density="compact"
-                      titleTone="ui"
-                      icon={<MessageSquare aria-hidden="true" />}
-                      title="No customer conversations yet"
-                      action={
-                        <Button asChild size="sm">
-                          <Link to={hasLiveLine ? primaryTestHref : "/connections"}>
-                            {hasLiveLine ? "Run test conversation" : "Open Connections"}
-                          </Link>
-                        </Button>
-                      }
-                    />
-                  )}
-                </div>
-              </article>
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/insights">Open Analytics</Link>
+                </Button>
+              </div>
+              <OutcomeLedger limit={5} showViewAll followUpsHref="/approvals" />
             </section>
           </>
         )}
