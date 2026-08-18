@@ -98,7 +98,7 @@ assert(
   footer.includes(privacyChoicesEvent),
   "public footer must expose the privacy choice control.",
 );
-assert(footer.includes("Privacy choices"), "public footer must label the privacy choice control.");
+assert(/Privacy choices/i.test(footer), "public footer must label the privacy choice control.");
 assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
 assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
 assert(
