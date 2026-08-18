@@ -204,8 +204,8 @@ requirePattern(
 );
 requirePattern(
   "src/routes/voices-routes.ts",
-  /requirePlatformAdmin[\s\S]*voiceMutationRateLimit[\s\S]*cloneIpRateLimit/,
-  "Private voice creation must remain founder-only and rate-limited.",
+  /authenticateUser[\s\S]*voiceMutationRateLimit[\s\S]*cloneIpRateLimit[\s\S]*consentAccepted !== true/,
+  "Private voice creation must require authenticated, consented, rate-limited tenant use.",
 );
 requirePattern(
   "src/routes/voices-routes.ts",

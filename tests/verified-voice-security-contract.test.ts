@@ -27,16 +27,19 @@ describe("verified private voice security contract", () => {
     expect(routes).not.toMatch(/process\.env\.ELEVENLABS_API_KEY/);
   });
 
-  it("puts auth, founder authorization, and spend controls before mutations", () => {
+  it("puts tenant auth, ownership, consent, and spend controls before user mutations", () => {
     expect(routes).toMatch(
-      /"\/api\/voices\/clone",[\s\S]*authenticateUser,[\s\S]*requirePlatformAdmin,[\s\S]*voiceMutationRateLimit,[\s\S]*cloneIpRateLimit/,
+      /"\/api\/voices\/clone",[\s\S]*authenticateUser,[\s\S]*voiceMutationRateLimit,[\s\S]*cloneIpRateLimit/,
     );
     expect(routes).toMatch(
-      /"\/api\/voices\/:id\/approve",[\s\S]*authenticateUser,[\s\S]*requirePlatformAdmin,[\s\S]*voiceMutationRateLimit/,
+      /"\/api\/voices\/:id\/approve",[\s\S]*authenticateUser,[\s\S]*voiceMutationRateLimit/,
     );
     expect(routes).toMatch(
-      /router\.delete\([\s\S]*authenticateUser,[\s\S]*requirePlatformAdmin,[\s\S]*voiceMutationRateLimit/,
+      /router\.delete\([\s\S]*authenticateUser,[\s\S]*voiceMutationRateLimit/,
     );
+    expect(routes).toContain("eq(schema.clonedVoices.userId, req.user.id)");
+    expect(routes).toContain("consentAccepted !== true");
+    expect(routes).toContain("cloneIpRateLimit");
   });
 
   it("rejects malformed uploads and preserves durable consent evidence", () => {
