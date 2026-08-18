@@ -646,6 +646,10 @@ async function runRealtimeSession(
     hangupAfterOpening = false;
     awaitingExactOpeningPlayback = false;
     toolContinuationPending = false;
+    if (maxDurationTimer) {
+      clearTimeout(maxDurationTimer);
+      maxDurationTimer = null;
+    }
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
       ws.close(1000, "Wireline transferred");
     }
@@ -839,10 +843,11 @@ async function runRealtimeSession(
       }
 
       try {
+        let transferCompleted = false;
         if (outcome.result.destination?.number) {
           await referXAISipCall(input.callId, outcome.result.destination.number);
           if (call.name === "escalate_to_human") escalationSucceeded = true;
-          endedReason = "transferred";
+          transferCompleted = true;
         }
         sendJson(ws, {
           type: "conversation.item.create",
@@ -852,6 +857,12 @@ async function runRealtimeSession(
             output: boundedToolOutput({ result: outcome.result.result }),
           },
         });
+        if (transferCompleted) {
+          // REFER hands the PSTN call to the destination. Close only Wireline's
+          // realtime session and disarm its watchdog; never hang up the new leg.
+          notifyTransferred();
+          break;
+        }
         if (call.name === "add_to_dnc") {
           await endForCallerDnc(undefined);
           break;
@@ -1012,6 +1023,7 @@ async function runRealtimeSession(
               ? 300_000
               : resolveXAISipSessionMaxSeconds() * 1_000;
         maxDurationTimer = setTimeout(() => {
+          if (endedReason === "transferred" || endedReason === "caller-dnc") return;
           endedReason = "wireline-max-duration";
           void hangupXAISipCall(input.callId).catch(() => {
             log.warn("xAI max-duration hangup could not be confirmed", {
