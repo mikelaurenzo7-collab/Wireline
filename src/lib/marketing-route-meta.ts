@@ -65,9 +65,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
-    title: "Features | Wireline Voice Agents",
+    title: "FEATURES | WIRELINE VOICE BOTS",
     description:
-      "Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory.",
+      "Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory.",
   },
   "/compare": {
     title: "Why Wireline",
@@ -75,19 +75,19 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing.",
   },
   "/about": {
-    title: "About Wireline | Voice Agents for Calls and Follow up",
+    title: "ABOUT WIRELINE | VOICE-FIRST BOTS FOR CALLS AND FOLLOW-THROUGH",
     description:
-      "Wireline is an independent voice agent platform. How we build, what we enforce in the runtime, and how to reach the people who make it.",
+      "Wireline is an independent platform for Voice Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
   },
   "/showcase": {
-    title: "Try Wireline",
+    title: "TRY WIRELINE | HEAR A VOICE BOT",
     description:
-      "Hear the voice agent your customers will meet first, then build one for voice, SMS, and email.",
+      "Hear the Voice Bot your customers will meet first, then build one that handles calls, live conversations, text, and email from one workspace.",
   },
   "/blog": {
-    title: "Wireline Notes | Voice agent guides for small business phone coverage",
+    title: "WIRELINE NOTES | VOICE BOT GUIDES FOR SMALL BUSINESS",
     description:
-      "Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate.",
+      "Practical guides for Voice Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate.",
   },
   "/support": {
     title: "Support | Wireline",
