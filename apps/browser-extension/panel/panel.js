@@ -17,17 +17,17 @@ const trainingButton = document.querySelector("#open-training");
 const studioButton = document.querySelector("#open-studio");
 
 const actionPrompts = {
-  call: "Have a Wireline agent prepare a call from this page. Ask me for the number and confirmation before any live call.",
-  text: "Have a Wireline agent draft a text from this page. Ask me to review before sending.",
+  call: "Have my WIRELINE Bot prepare a call from this page. Ask me for the number and confirmation before any live call.",
+  text: "Have my WIRELINE Bot draft a text from this page. Ask me to review before sending.",
   followup: "Create a concise follow-up from this page with next step, owner, and timing.",
-  task: "Use this page and selected text as context for a Wireline agent task.",
+  task: "Use this page and selected text as context for a WIRELINE Bot task.",
 };
 
 function sendMessage(message) {
   return api.runtime.sendMessage(message)
     .then((response) => {
       if (!response?.ok) {
-        throw new Error(response?.error || "Wireline Command could not complete that request.");
+        throw new Error(response?.error || "WIRELINE Command could not complete that request.");
       }
       return response.result;
     })
@@ -49,7 +49,7 @@ function compact(value, length) {
 }
 
 function showEmptyContextState() {
-  title.textContent = "Wireline Command";
+  title.textContent = "WIRELINE Command";
   host.textContent = "Click Refresh to load this tab, or send a command below.";
   selectionPreview.hidden = true;
   status.textContent = "";
@@ -74,7 +74,7 @@ async function loadContext() {
     }
   } catch (error) {
     title.textContent = "This page cannot be read";
-    host.textContent = "You can still open Wireline Studio and continue there.";
+    host.textContent = "You can still open WIRELINE Studio and continue there.";
     status.textContent = error instanceof Error ? error.message : "Unable to load the active tab.";
   } finally {
     refreshButton.disabled = false;
