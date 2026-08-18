@@ -81,7 +81,7 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     const browser = read("src/pages/BrowserCommandInstallPage.tsx");
     expect(blog).toContain("Voice agent");
     expect(blog).not.toContain("AI call agent");
-    expect(pricing).toContain("Five specialized agents. One supervised workspace.");
+    expect(pricing).toContain("Five Specialized Agents. One Supervised Workspace");
     expect(pricing).not.toContain('publicName: "Business"');
     expect(pricing).not.toContain("AI conversation workforce");
     expect(playbooks).toContain("WhatsApp in private beta");
