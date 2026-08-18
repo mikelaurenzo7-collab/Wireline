@@ -32,6 +32,26 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(routes).toContain('provider: "twilio_xai_native"');
   });
 
+  it("converges the managed Twilio origination route instead of trusting stale console state", () => {
+    const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
+    const start = provisioning.indexOf("async function ensureTwilioTrunk");
+    const end = provisioning.indexOf("async function attachPhoneToTrunk", start);
+    const trunk = provisioning.slice(start, end);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    expect(trunk).toContain("originationUrls(primarySid).update");
+    expect(trunk).toContain("enabled: true");
+    expect(trunk).toContain("friendlyName: XAI_TWILIO_ORIGINATION_FRIENDLY_NAME");
+    expect(trunk).toContain("priority: 10");
+    expect(trunk).toContain("weight: 10");
+    expect(trunk).toContain("sipUrl");
+    expect(trunk).toContain("staleManagedOriginations");
+    expect(trunk).toContain("originationUrls(staleSid).update");
+    expect(trunk).toContain("enabled: false");
+    expect(trunk).toContain("Unrelated operator-added");
+  });
+
   it("compensates failed purchases and preserves ambiguous outcomes for cleanup", () => {
     const carrier = read("src/lib/voice/native-phone-carrier.ts");
     const ledger = read("src/lib/orphan-carrier-ledger.ts");
