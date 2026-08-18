@@ -62,7 +62,22 @@ describe("Live Video retirement", () => {
     expect(page).not.toContain("<AgentFace");
   });
 
-  it("fails closed for new avatar, enable, and session requests", () => {
+  it("does not mount presenter APIs and terminates stale checkout before legacy billing", () => {
+    const registry = source("src/server/register-api-routes.ts");
+
+    expect(registry).not.toContain('import videoPresenterRouter from "../routes/video-presenter-routes"');
+    expect(registry).not.toContain("app.use(videoPresenterRouter)");
+    expect(registry).toContain('app.all("/api/billing/live-video-checkout"');
+    expect(registry).toContain('error: "FEATURE_RETIRED"');
+    expect(registry).toContain("res.status(410)");
+
+    const terminalCheckout = registry.indexOf('app.all("/api/billing/live-video-checkout"');
+    const legacyBillingMount = registry.indexOf('app.use("/api", billingRouter)');
+    expect(terminalCheckout).toBeGreaterThan(-1);
+    expect(legacyBillingMount).toBeGreaterThan(terminalCheckout);
+  });
+
+  it("keeps archived presenter routes fail-closed if they are ever mounted during rollback", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
     expect(routes).toContain('router.get("/api/video-presenter/avatars"');
