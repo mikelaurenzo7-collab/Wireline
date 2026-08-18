@@ -1,50 +1,15 @@
 /* Wireline identity layer.
  *
- * Compact interface language is deliberately uppercase. Longer explanatory
- * copy remains sentence case, and customer-authored names are always exempt.
+ * The canonical casing hierarchy remains centralized in uppercase-system.css:
+ * compact interface language is uppercase, while longer explanatory copy and
+ * customer-authored text stay sentence case. Do not duplicate those selectors
+ * here. This file owns only the folded-W brand treatment and its surface tokens.
  */
 :root {
   --wireline-brand-violet: #7c3aed;
   --wireline-brand-violet-light: #a78bfa;
   --wireline-brand-platinum: #e4e6ed;
   --wireline-brand-obsidian: #09090d;
-}
-
-.wl-ui-caps :where(h1, h2, h3, h4, h5, h6, legend, th),
-.wl-ui-caps :where(.wl-page-title, .wl-public-section-heading, .wl-eyebrow, .text-eyebrow),
-.wl-ui-caps :where([data-ui-title], [data-ui-heading], [data-ui-label]),
-.wl-ui-caps :where(button, [role="button"], [role="tab"], summary),
-.wl-ui-caps nav :where(a, button),
-.wl-ui-caps :where(label, .wl-label, .wl-rail-link, .marketing-btn-primary, .marketing-btn-secondary) {
-  text-transform: uppercase;
-}
-
-.wl-ui-caps :where(h1, h2, h3, h4, h5, h6, .wl-page-title, .wl-public-section-heading) {
-  letter-spacing: -0.025em;
-}
-
-.wl-ui-caps :where(.wl-eyebrow, .text-eyebrow, [data-ui-label], legend, th, label, .wl-label) {
-  letter-spacing: 0.09em;
-}
-
-.wl-ui-caps :where(button, [role="button"], [role="tab"], nav a, nav button) {
-  letter-spacing: 0.055em;
-}
-
-.wl-ui-caps :where(
-    .wl-preserve-case,
-    [data-preserve-case="true"],
-    input,
-    textarea,
-    select,
-    option,
-    code,
-    pre,
-    kbd,
-    samp
-  ) {
-  text-transform: none !important;
-  letter-spacing: normal;
 }
 
 /* The authenticated rail uses the same obsidian app-icon treatment as the
