@@ -155,6 +155,18 @@ jobs:
           if text.count(route_block) != 1:
               raise SystemExit("marketing route date patch block missing or duplicated")
           text = text.replace(route_block, "", 1)
+
+          atomic_start_marker = '''replaceRegexOnce(
+            "tests/security-atomicity-release-contract.test.ts",'''
+          atomic_end_marker = '''
+
+          replaceOnce(
+            "tests/silent-failure-round2-contract.test.ts",'''
+          atomic_start = text.find(atomic_start_marker)
+          atomic_end = text.find(atomic_end_marker, atomic_start)
+          if atomic_start < 0 or atomic_end < 0:
+              raise SystemExit("atomic test patch block missing")
+          text = text[:atomic_start] + text[atomic_end + 2:]
           apply_path.write_text(text, encoding="utf-8")
 
           viewport = Path(".audit/postmerge/marketing-viewport-lock.spec.ts")
@@ -172,13 +184,48 @@ jobs:
 
             python <<'PY'
           from pathlib import Path
+
           route_meta = Path("src/lib/marketing-route-meta.ts")
-          text = route_meta.read_text(encoding="utf-8")
-          old = "Last updated August 1, 2026."
-          if old not in text:
+          route_text = route_meta.read_text(encoding="utf-8")
+          old_date = "Last updated August 1, 2026."
+          if old_date not in route_text:
               raise SystemExit("marketing route date source missing")
           route_meta.write_text(
-              text.replace(old, "Last updated August 17, 2026."),
+              route_text.replace(old_date, "Last updated August 17, 2026."),
+              encoding="utf-8",
+          )
+
+          atomic = Path("tests/security-atomicity-release-contract.test.ts")
+          atomic_text = atomic.read_text(encoding="utf-8")
+          start_marker = '  it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {'
+          end_marker = '  it("creates resumable Stripe Checkout Sessions with durable idempotency keys", () => {'
+          start = atomic_text.find(start_marker)
+          end = atomic_text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit("atomic test source markers missing")
+          replacement = '''  it("reserves each number before native placement and preserves the lock after uncertain outcomes", () => {
+            const source = read("src/routes/outbound-dial-atomic-routes.ts");
+            const reservationAt = source.indexOf("reservePhoneOperation");
+            const dialingAt = source.indexOf('status: "dialing"', reservationAt);
+            const providerAt = source.indexOf("placeOutboundCall({", dialingAt);
+            const attachedLeadAt = source.indexOf("nativeLeadId = result.leadId", providerAt);
+            const ambiguousAt = source.indexOf("result.providerOutcomeAmbiguous", providerAt);
+            const completionAt = source.indexOf('status: "completed"', providerAt);
+
+            expect(reservationAt).toBeGreaterThan(-1);
+            expect(dialingAt).toBeGreaterThan(reservationAt);
+            expect(providerAt).toBeGreaterThan(dialingAt);
+            expect(attachedLeadAt).toBeGreaterThan(providerAt);
+            expect(ambiguousAt).toBeGreaterThan(providerAt);
+            expect(completionAt).toBeGreaterThan(ambiguousAt);
+            expect(source).toContain("await getPhoneOperation(operationKey)");
+            expect(source).toContain("ambiguous_failure");
+            expect(source).toContain("already_processing");
+          });
+
+          '''
+          atomic.write_text(
+              atomic_text[:start] + replacement + atomic_text[end:],
               encoding="utf-8",
           )
           PY
