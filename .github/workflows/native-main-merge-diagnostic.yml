@@ -1,10 +1,10 @@
 name: native-main-merge-integration
-# Exact-head gate retriggered after final contract corrections and v3 cleanup.
+# Final isolated exact-head integration gate. No background agent owns this branch.
 
 on:
   push:
     branches:
-      - cursor/native-xai-twilio-runtime-review-5789
+      - audit/native-xai-main-integration-final-20260818
     paths:
       - .github/workflows/native-main-merge-diagnostic.yml
 
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: native-main-merge-integration
+  group: native-main-merge-integration-final
   cancel-in-progress: true
 
 jobs:
