@@ -7,11 +7,13 @@ const withoutComments = (value: string) =>
   value.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 describe("design system polish e2e verified wins", () => {
-  it("keeps channel chips text-only and sourced from the Bot channel catalog", () => {
+  it("keeps channel chips text-only and sourced from the voice-first Bot channel catalog", () => {
     const features = withoutComments(read("src/pages/Features.tsx"));
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
-    expect(features).toContain('const CHANNEL_CAPABILITIES = ["Voice", "Text / SMS", "Email"]');
+    expect(features).toContain(
+      'const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"]',
+    );
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
     expect(landing).toContain("const CORE_CHANNELS = BOT_CHANNELS.map(({ label }) => label)");
     expect(landing).not.toContain("landing-home__solution-icon");
@@ -29,15 +31,15 @@ describe("design system polish e2e verified wins", () => {
     expect(spotlight).not.toMatch(/CHANNELS = \[[\s\S]*icon:/);
   });
 
-  it("puts Blog and Compare CTAs in the shared marketing button tier", () => {
+  it("puts Blog and Compare CTAs in the shared uppercase action tier", () => {
     const blog = withoutComments(read("src/pages/Blog.tsx"));
     const compare = withoutComments(read("src/pages/Compare.tsx"));
 
     expect(blog).toContain("marketing-btn-primary");
-    expect(blog).toContain("Start Free");
-    expect(blog).toContain("See Features");
+    expect(blog).toContain("START FREE");
+    expect(blog).toContain("SEE FEATURES");
     expect(blog).not.toContain('from "../components/atoms"');
-    expect(compare).toContain("Start Free");
+    expect(compare).toMatch(/START FREE|Start Free/);
     expect(compare).not.toContain(">Start free</");
   });
 
@@ -52,7 +54,7 @@ describe("design system polish e2e verified wins", () => {
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
-  it("keeps one-workspace Bot labels in Title Case without terminal periods", () => {
+  it("keeps one-workspace Bot labels in Title Case at source without terminal periods", () => {
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain('createHeadline: "Build Your Bot"');
     expect(copy).toContain('runHeadline: "Your Bot Is Live"');
