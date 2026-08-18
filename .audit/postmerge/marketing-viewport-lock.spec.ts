@@ -2,12 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.setTimeout(150_000);
 
-const PUBLIC_ROUTES = [
+const MARKETING_ROUTES = [
   { path: "/", name: "home" },
   { path: "/features", name: "features" },
   { path: "/pricing", name: "pricing" },
   { path: "/showcase", name: "demos" },
-  { path: "/signin", name: "sign in" },
 ] as const;
 
 async function openPublicRoute(page: Page, path: string) {
@@ -28,7 +27,7 @@ async function openPublicRoute(page: Page, path: string) {
   throw lastError;
 }
 
-async function publicMetrics(page: Page) {
+async function marketingMetrics(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;
     const body = document.body;
@@ -39,9 +38,7 @@ async function publicMetrics(page: Page) {
     const title = document.querySelector<HTMLElement>(".landing-stage__title");
     const call = document.querySelector<HTMLElement>(".landing-demo__button");
     const accountNav = document.querySelector<HTMLElement>('nav[aria-label="Account"]');
-    const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
-      (link) => link.textContent?.trim() === "Start Free",
-    );
+    const startFree = document.querySelector<HTMLElement>('[data-testid="header-cta"]');
     const rect = (element: Element | null | undefined) => element?.getBoundingClientRect();
     const rootRect = rect(root);
     const bodyRect = rect(body);
@@ -86,7 +83,7 @@ async function publicMetrics(page: Page) {
 }
 
 function expectNoHorizontalEscape(
-  metrics: Awaited<ReturnType<typeof publicMetrics>>,
+  metrics: Awaited<ReturnType<typeof marketingMetrics>>,
   name: string,
 ) {
   expect(metrics.rootHorizontalOverflow, `${name} root horizontal overflow`).toBeLessThanOrEqual(2);
@@ -101,11 +98,11 @@ function expectNoHorizontalEscape(
   );
 }
 
-for (const { path, name } of PUBLIC_ROUTES) {
+for (const { path, name } of MARKETING_ROUTES) {
   test(`${name} uses document flow without horizontal escape at 1365x900`, async ({ page }) => {
     await page.setViewportSize({ width: 1365, height: 900 });
     await openPublicRoute(page, path);
-    const metrics = await publicMetrics(page);
+    const metrics = await marketingMetrics(page);
 
     expect(metrics.viewportMode).toBe("document");
     expect(metrics.flowOverflowY).toBe("visible");
@@ -114,6 +111,26 @@ for (const { path, name } of PUBLIC_ROUTES) {
     expectNoHorizontalEscape(metrics, name);
   });
 }
+
+test("sign in uses the public document mode without marketing-shell assumptions", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await openPublicRoute(page, "/signin");
+  await expect(page.locator(".wl-stitch-auth-shell")).toBeVisible();
+
+  const metrics = await page.evaluate(() => ({
+    viewportMode:
+      document.documentElement.dataset.wirelineViewport ||
+      document.body.dataset.wirelineViewport ||
+      "",
+    rootHorizontalOverflow:
+      document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    bodyHorizontalOverflow: document.body.scrollWidth - document.body.clientWidth,
+  }));
+
+  expect(metrics.viewportMode).toBe("document");
+  expect(metrics.rootHorizontalOverflow).toBeLessThanOrEqual(2);
+  expect(metrics.bodyHorizontalOverflow).toBeLessThanOrEqual(2);
+});
 
 test("home presents a professional desktop buying frame", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
@@ -125,12 +142,10 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Account" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Build Your Voice Agent" }).first()).toBeVisible();
   await expect(
-    page
-      .getByRole("button", { name: /Hear It Live/i })
-      .or(page.getByRole("link", { name: /Hear It Live/i })),
+    page.locator(".landing-demo").getByRole("button", { name: "Hear It Live", exact: true }),
   ).toBeVisible();
 
-  const metrics = await publicMetrics(page);
+  const metrics = await marketingMetrics(page);
   expectNoHorizontalEscape(metrics, "desktop home");
   expect(metrics.consoleWidth).toBeGreaterThan(520);
   expect(metrics.consoleHeight).toBeGreaterThan(430);
@@ -141,7 +156,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
 test("home remains usable on a short laptop", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await openPublicRoute(page, "/");
-  const metrics = await publicMetrics(page);
+  const metrics = await marketingMetrics(page);
 
   expectNoHorizontalEscape(metrics, "short-laptop home");
   expect(metrics.consoleHeight).toBeGreaterThan(400);
@@ -163,7 +178,7 @@ test("home keeps account actions and normal document scrolling on phone", async 
   await expect(account.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
   await expect(account.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
 
-  const metrics = await publicMetrics(page);
+  const metrics = await marketingMetrics(page);
   expectNoHorizontalEscape(metrics, "phone home");
   expect(metrics.documentVerticalOverflow).toBeGreaterThan(0);
   expect(metrics.accountLeft).toBeGreaterThanOrEqual(0);
@@ -173,7 +188,7 @@ test("home keeps account actions and normal document scrolling on phone", async 
   expect(metrics.consoleWidth).toBeGreaterThan(320);
 
   const scrollPosition = await page.evaluate(() => {
-    window.scrollTo({ top: 180, behavior: "instant" });
+    window.scrollTo(0, 180);
     return window.scrollY;
   });
   expect(scrollPosition, "public document must be mechanically scrollable").toBeGreaterThan(0);
@@ -182,7 +197,7 @@ test("home keeps account actions and normal document scrolling on phone", async 
 test("home remains composed on a short wide desktop", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 720 });
   await openPublicRoute(page, "/");
-  const metrics = await publicMetrics(page);
+  const metrics = await marketingMetrics(page);
 
   expectNoHorizontalEscape(metrics, "short-wide home");
   expect(metrics.consoleWidth).toBeGreaterThan(540);
@@ -195,7 +210,7 @@ test("features and pricing remain scrollable without horizontal clipping", async
 
   for (const path of ["/features", "/pricing"] as const) {
     await openPublicRoute(page, path);
-    const metrics = await publicMetrics(page);
+    const metrics = await marketingMetrics(page);
     expectNoHorizontalEscape(metrics, path);
     expect(metrics.documentVerticalOverflow).toBeGreaterThanOrEqual(0);
   }
