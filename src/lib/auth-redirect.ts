@@ -5,6 +5,10 @@ import {
 } from "./signup-intent";
 import { clearFreshSignupSession, isFreshSignupSession } from "./post-signup-onboarding";
 
+/**
+ * Legacy capability profile retained for account, billing, and migration
+ * compatibility. It no longer represents separate customer workspaces.
+ */
 export type WorkspaceMode = "personal" | "business";
 
 export const WORKSPACE_MODE_KEY = "wireline.mode";
@@ -77,7 +81,7 @@ function returningPaidIntentDestination(search: string): string | null {
 }
 
 export function resolvePostAuthDestination(
-  workspaceMode: WorkspaceMode,
+  _workspaceMode: WorkspaceMode,
   search = typeof window !== "undefined" ? window.location.search : "",
 ): string {
   /**
@@ -86,11 +90,9 @@ export function resolvePostAuthDestination(
    * any persisted redirect left by an earlier sign-in flow.
    * Otherwise:
    * - Returning users who explicitly chose a paid plan go directly to Billing.
-   * - For immediate post-signup (fresh flag): Studio create (consumed after use).
-   * - For returning sign-ins: persisted AUTH_REDIRECT_KEY (consumed after use).
-   * - Default for all logged-in sessions: /overview (Home).
-   * Studio is kept as the tool/create surface (nav, /studio, ?create=1 links).
-   * Fresh signups can reach create in Studio when appropriate via links or the one-time flow.
+   * - Every fresh signup enters the same Bot creation flow in the same Studio.
+   * - Returning sign-ins consume a safe persisted redirect when present.
+   * - The default for all logged-in sessions is /overview.
    */
   const freshSignup = isFreshSignupSession();
   const fromSearch = readRedirectFromSearch(search);
@@ -111,9 +113,7 @@ export function resolvePostAuthDestination(
   if (freshSignup) {
     // A redirect persisted by an earlier sign-in must never override a direct
     // signup. Only a safe redirect on the current signup URL, or a stored MCP
-    // OAuth return from Connect, may beat Fast Start. Google/Microsoft signup
-    // comes back through OAuthComplete with an empty search string, so the
-    // persisted MCP path is the only way a new user can finish consent.
+    // OAuth return from Connect, may beat Fast Start.
     const storedMcpRedirect =
       typeof window !== "undefined" ? window.localStorage.getItem(AUTH_REDIRECT_KEY) : null;
     if (isMcpOAuthPath(storedMcpRedirect)) {
@@ -123,7 +123,7 @@ export function resolvePostAuthDestination(
     }
     persistAuthRedirect(null);
     clearFreshSignupSession();
-    return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
+    return "/studio?create=1";
   }
 
   if (typeof window !== "undefined") {
