@@ -16,7 +16,7 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('{ id: "outbound", label: "Outbound" }');
   });
 
-  it("lets the customer choose the agent and area code before provisioning", () => {
+  it("lets the customer choose the Voice Bot and area code before provisioning", () => {
     const setup = read("src/components/PhoneSetupPanel.tsx");
 
     expect(setup).toContain("agent_id: selectedAgentId");
@@ -25,9 +25,9 @@ describe("self-service calling setup", () => {
     // surfacing a raw field-level validation error.
     expect(setup).toContain("area_code: requestedAreaCode");
     expect(setup).toContain("Enter a full 3-digit area code");
-    expect(setup).toContain('aria-label="Choose the voice agent for this number"');
+    expect(setup).toContain('aria-label="Choose the Voice Bot for this number"');
     expect(setup).toContain('aria-label="Preferred phone number area code"');
-    expect(setup).toContain("Activate number");
+    expect(setup).toContain("Activate Number");
     // Active paid workspaces used to read a "Paid plan required" gate that did
     // not apply to them; the note now states the plan-inclusive truth and the
     // server-driven recovery path handles the unpaid case.
@@ -43,8 +43,8 @@ describe("self-service calling setup", () => {
 
     expect(setup).toContain("body.recovery_path");
     expect(setup).toContain('body.code === "ACTIVATION_REQUIRED"');
-    expect(setup).toContain("Choose a plan and continue setup");
-    expect(setup).toContain("Call this number now");
+    expect(setup).toContain("Choose a Plan and Continue Setup");
+    expect(setup).toContain("Call This Number Now");
     expect(setup).toContain("href={`tel:${activeNumber.phone_number}`}");
   });
 });
