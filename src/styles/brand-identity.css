@@ -1,9 +1,9 @@
-/* Wireline identity layer.
+/* WIRELINE identity layer.
  *
- * The canonical casing hierarchy remains centralized in uppercase-system.css:
- * compact interface language is uppercase, while longer explanatory copy and
- * customer-authored text stay sentence case. Do not duplicate those selectors
- * here. This file owns only the folded-W brand treatment and its surface tokens.
+ * Brand rule: the visible company name is always WIRELINE. It behaves like a
+ * wordmark even inside prose. Technical identifiers, URLs, domains, email
+ * addresses, package names, analytics keys, and persistence fields keep their
+ * native casing because they are data rather than brand presentation.
  */
 :root {
   --wireline-brand-violet: var(--wireline-color-action-primary-default);
@@ -13,13 +13,99 @@
    * light appearance even though product surfaces do. */
   --wireline-brand-obsidian: #0a0a0e;
   --wireline-brand-obsidian-deeper: #050508;
+  --wl-wordmark-tracking: 0.095em;
+  --wl-wordmark-inline-tracking: 0.055em;
 }
 
-/* The authenticated rail uses the same obsidian app-icon treatment as the
- * favicon and native icons instead of a generic flat action-color tile. */
-.wl-workspace-shell a[aria-label="Wireline"] > span:first-child {
+/* Canonical wordmark ------------------------------------------------------ */
+.wl-wireline-wordmark {
+  display: inline-block;
+  color: currentColor;
+  font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1em;
+  font-weight: 690;
+  font-variation-settings: "wght" 690;
+  letter-spacing: var(--wl-wordmark-tracking);
+  line-height: 0.92;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
+  text-rendering: geometricPrecision;
+}
+
+/* In running copy, reduce the cap height and tracking slightly. The word still
+ * interrupts the sentence deliberately, but it sits on the same optical line
+ * as surrounding lowercase instead of ballooning above it. */
+.wl-wireline-wordmark[data-inline="true"] {
+  position: relative;
+  top: -0.015em;
+  font-size: 0.92em;
+  font-weight: 700;
+  font-variation-settings: "wght" 700;
+  letter-spacing: var(--wl-wordmark-inline-tracking);
+  line-height: inherit;
+}
+
+/* Canonical folded-W + wordmark lockup ------------------------------------ */
+.wl-wireline-lockup {
+  --wl-lockup-mark-width: 2rem;
+  --wl-lockup-mark-height: 1.333rem;
+  --wl-lockup-wordmark-size: 0.9rem;
+  --wl-lockup-gap: 0.62rem;
+
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--wl-lockup-gap);
+  color: var(--wireline-color-text-primary);
+  line-height: 1;
+}
+
+.wl-wireline-lockup[data-size="compact"] {
+  --wl-lockup-mark-width: 1.65rem;
+  --wl-lockup-mark-height: 1.1rem;
+  --wl-lockup-wordmark-size: 0.76rem;
+  --wl-lockup-gap: 0.5rem;
+}
+
+.wl-wireline-lockup[data-size="large"] {
+  --wl-lockup-mark-width: 2.5rem;
+  --wl-lockup-mark-height: 1.667rem;
+  --wl-lockup-wordmark-size: 1.08rem;
+  --wl-lockup-gap: 0.72rem;
+}
+
+.wl-wireline-lockup__mark {
+  display: inline-grid;
+  width: var(--wl-lockup-mark-width);
+  height: var(--wl-lockup-mark-height);
+  flex: 0 0 var(--wl-lockup-mark-width);
+  place-items: center;
+  color: var(--wireline-brand-violet);
+}
+
+.wl-wireline-lockup__mark > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wl-wireline-lockup__wordmark {
+  min-width: 0;
+  font-size: var(--wl-lockup-wordmark-size);
+  line-height: 0.9;
+}
+
+/* Tile is a surface treatment, not a different logo. The geometry and wordmark
+ * ratio stay identical; only the mark's carrier gains the fixed obsidian icon
+ * material used by authenticated/native chrome. */
+.wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark {
+  width: calc(var(--wl-lockup-mark-width) + 0.42rem);
+  height: calc(var(--wl-lockup-mark-height) + 0.42rem);
+  flex-basis: calc(var(--wl-lockup-mark-width) + 0.42rem);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 18%, transparent);
+  border-radius: var(--wireline-radius-sm);
   background:
     radial-gradient(
       circle at 38% 24%,
@@ -35,24 +121,30 @@
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--wireline-brand-platinum) 14%, transparent),
     0 7px 18px rgba(0, 0, 0, 0.22);
-  color: var(--wireline-color-text-primary);
 }
 
-.wl-workspace-shell a[aria-label="Wireline"] > span:first-child svg {
-  width: 24px;
-  height: 17px;
+.wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark > svg {
+  width: 78%;
+  height: 78%;
 }
 
-.wl-public-header a[aria-label="Wireline home"] svg {
-  width: 38px;
-  height: 26px;
+/* Inline links and interactive lockups inherit one focus language instead of
+ * each surface inventing a logo-specific ring. */
+a:has(> .wl-wireline-lockup):focus-visible,
+button:has(> .wl-wireline-lockup):focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  border-radius: var(--wireline-radius-md);
 }
 
-/* Preserve the title-case corporate wordmark while all surrounding navigation
- * and control language follows the uppercase interface tier. */
-.wl-public-header a[aria-label="Wireline home"] > span,
-.wl-workspace-shell a[aria-label="Wireline"] > span:last-child,
-.landing-console__brand > span {
-  text-transform: none;
-  letter-spacing: -0.025em;
+@media (forced-colors: active) {
+  .wl-wireline-lockup__mark {
+    color: CanvasText;
+  }
+
+  .wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
 }
