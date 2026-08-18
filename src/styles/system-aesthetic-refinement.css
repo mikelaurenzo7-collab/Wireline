@@ -1,5 +1,5 @@
 /*
- * Wireline system aesthetic refinement
+ * WIRELINE system aesthetic refinement
  * --------------------------------------------------------------------------
  * Final semantic presentation pass. This layer does not introduce a new
  * palette or component language; it closes high-value visual/UX gaps that are
@@ -86,6 +86,11 @@
 }
 
 /* Workspace rhythm ------------------------------------------------------- */
+.wl-task-header {
+  min-width: 0;
+  position: relative;
+}
+
 .wl-workspace-content :where(h1, h2, h3, h4) {
   text-wrap: balance;
 }
