@@ -1,7 +1,7 @@
 name: native-main-merge-integration
 # Final isolated exact-head integration gate for source, migrations, tests, and docs.
-# Rerun after the UI, Admin, provider-bound SIP, DNC, and retired-video contracts
-# were reconciled against current main.
+# Rerun after the UI, Admin, provider-bound SIP, DNC, retired-video, and native
+# phone activation/deactivation lease contracts were reconciled against current main.
 
 on:
   push:
@@ -103,8 +103,12 @@ jobs:
               return 1
             fi
 
-            python -m py_compile .audit/postmerge/apply.py .audit/postmerge/finalize.py
+            python -m py_compile \
+              .audit/postmerge/apply.py \
+              .audit/postmerge/prepare-finalize.py
             python .audit/postmerge/apply.py
+            python .audit/postmerge/prepare-finalize.py
+            python -m py_compile .audit/postmerge/finalize.py
             python .audit/postmerge/finalize.py
             cp \
               .audit/postmerge/xai-sip-model-binding-contract.test.ts \
