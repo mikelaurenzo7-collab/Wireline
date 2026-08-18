@@ -30,13 +30,15 @@ export const STUDIO_CANVAS_FORBIDDEN = {
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
-    // The spatial-card prototype was retired with the managed Vapi runtime.
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
   ],
   workspacePanel: [
     { id: "fake-badge", pattern: />\s*wired\s*</ },
-    // External voice/avatar experiments stay out of the managed setup panel.
     { id: "external-voice", pattern: /VoiceGallery|AgentPresenceLivePreview/ },
+  ],
+  overview: [
+    { id: "posture-split", pattern: /personalAgents|businessAgents|founderPair|posture=/ },
+    { id: "account-mode-copy", pattern: /customerAgentLanguage|useAccount/ },
   ],
 } as const;
 
@@ -46,8 +48,6 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
-    // Retired /agents directory page redirects into Studio, which owns the
-    // roster under the agent-first IA. Query/hash are preserved for deep-links.
     {
       id: "agents-redirect",
       pattern:
@@ -87,13 +87,16 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   overview: [
     { id: "overview-title", pattern: /wl-app-page-title/ },
-    { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
-    { id: "agent-preview-cap", pattern: /OVERVIEW_AGENT_PREVIEW\s*=\s*6/ },
-    { id: "agent-overflow-link", pattern: /overflowCount[\s\S]*more in Studio/ },
-    { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
+    { id: "unified-inbox", pattern: /UnifiedInbox/ },
+    { id: "bot-roster", pattern: /BotRoster/ },
+    { id: "configuration-surface", pattern: /ConfigureCard/ },
+    { id: "create-entry", pattern: /\/studio\?create=1/ },
+    { id: "template-entry", pattern: /\/templates/ },
+    { id: "operating-metrics", pattern: /Customer conversations today/ },
+    { id: "recent-conversations", pattern: /Recent customer conversations/ },
+    { id: "studio-link", pattern: /\/studio\?agent=/ },
   ],
   canvas: [
-    // Studio is a three-step orchestrator: Set up → Test → Review.
     { id: "setup-section", pattern: /section === "setup"/ },
     { id: "test-section", pattern: /section === "test"/ },
     { id: "review-section", pattern: /section === "review"/ },
