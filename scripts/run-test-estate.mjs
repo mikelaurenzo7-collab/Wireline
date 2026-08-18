@@ -19,6 +19,32 @@ import { buildTestEstateEnvironment } from "./lib/test-estate-environment.mjs";
 
 const source = process.env;
 const productionTarget = String(source.VERCEL_ENV || "").trim() === "production";
+const explicitPreviewAudit =
+  String(source.VERCEL_ENV || "").trim() === "preview" &&
+  String(source.VERCEL_GIT_COMMIT_MESSAGE || "").includes("[launch-deep-audit]");
+const extraArgs = process.argv.slice(2);
+
+// Exact-head preview audits use the same clean-room environment through the
+// compact reporter, but print only actionable failures so Vercel does not bury
+// the suite list beneath large source diffs. Production remains on this runner.
+if (explicitPreviewAudit && extraArgs.length === 0) {
+  const compact = spawnSync(
+    process.execPath,
+    [resolve(process.cwd(), "scripts/run-test-estate-compact.mjs")],
+    {
+      cwd: process.cwd(),
+      env: source,
+      stdio: "inherit",
+    },
+  );
+  if (compact.error) throw compact.error;
+  if (compact.signal) {
+    console.error(`Compact clean-room test estate terminated by signal ${compact.signal}.`);
+    process.exit(1);
+  }
+  process.exit(compact.status ?? 1);
+}
+
 const isolatedHome = mkdtempSync(join(tmpdir(), "wireline-test-estate-"));
 const env = buildTestEstateEnvironment(source, isolatedHome);
 
@@ -28,7 +54,6 @@ writeFileSync(env.NPM_CONFIG_USERCONFIG, "", { encoding: "utf8" });
 writeFileSync(env.GIT_CONFIG_GLOBAL, "", { encoding: "utf8" });
 
 const vitest = resolve(process.cwd(), "node_modules/vitest/vitest.mjs");
-const extraArgs = process.argv.slice(2);
 const selection = extraArgs.length
   ? `focused selection (${extraArgs.length} file${extraArgs.length === 1 ? "" : "s"})`
   : "complete non-E2E estate";
