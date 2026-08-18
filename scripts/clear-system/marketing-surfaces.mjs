@@ -20,6 +20,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const marketingSurfaceIndex = read("src/styles/wireline-marketing-surfaces.css");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
+  const botProduct = read("src/lib/bot-product.ts");
   const developersPage = read("src/pages/Developers.tsx");
   const solutionsPage = read("src/pages/SolutionsPage.tsx");
   const featuresPage = read("src/pages/Features.tsx");
@@ -73,7 +74,19 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/lib/product-copy.ts",
     productCopy,
     /MARKETING_VOICE/,
-    "marketing voice must live in the shared product-copy module",
+    "legacy marketing voice adapter must remain available to existing public routes",
+  );
+  mustInclude(
+    "src/lib/bot-product.ts",
+    botProduct,
+    /BOT_ROLE_TEMPLATES/,
+    "the unified Bot role-template catalog must remain centralized",
+  );
+  mustInclude(
+    "src/lib/bot-product.ts",
+    botProduct,
+    /BOT_WORKSPACE_PROMISE/,
+    "the one-workspace Bot promise must remain centralized",
   );
 
   for (const [pattern, description] of [
@@ -114,16 +127,17 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/MARKETING_VOICE\.headline/, "landing must consume the shared headline"],
     [/MARKETING_VOICE\.subline/, "landing must consume the shared supporting line"],
     [/MARKETING_VOICE\.primaryCta/, "landing must consume the shared primary action"],
-    [/MARKETING_VOICE\.spine/, "landing must consume the shared Build Train Launch spine"],
+    [/MARKETING_VOICE\.spine/, "landing must consume the shared operating spine"],
     [/<PrecisionPublicHeader\s*\/>/, "landing must use the minimal shared public header"],
     [/<LandingFooter\s*\/>/, "landing must retain full footer wayfinding"],
-    [/id="solutions"/, "landing must include solutions in the main story"],
+    [/id="solutions"/, "landing must include role templates in the main story"],
     [/id="features"/, "landing must include product capabilities in the main story"],
     [/id="pricing"/, "landing must include pricing in the main story"],
     [/id="trust"/, "landing must include controls and trust in the main story"],
-    [/aria-label="Agent work lane"/, "work lanes must stay reachable as named navigation"],
+    [/aria-label="Bot template lane"/, "Bot role starters must stay reachable as named navigation"],
+    [/BOT_ROLE_TEMPLATES\.map/, "landing must render the shared business, personal, and custom role catalog"],
     [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
-    [/landing-console__activity/, "home must show an outcome ledger beside the live agent"],
+    [/landing-console__activity/, "home must show an outcome ledger beside the live Bot"],
     [/Illustrative Workflow/, "home must label static proof as illustrative"],
     [/From first answer to confirmed next step/, "home must explain the completed-work proof"],
     [/Booked and logged/, "home must expose a concrete outcome"],
@@ -219,7 +233,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/styles/landing-live-console.css",
     landingConsoleCss,
     /\.landing-console__body[\s\S]*grid-template-columns:/,
-    "live proof must preserve separate agent and outcome panes",
+    "live proof must preserve separate Bot and outcome panes",
   );
   mustInclude(
     "src/styles/landing-longform.css",
@@ -304,12 +318,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/Developers.tsx",
     developersPage,
     /create or refine a private agent configuration draft/i,
-    "developer surface must position agents, not assistants",
+    "developer surface must position technical API objects as agents",
   );
   mustExclude(
     "src/pages/Developers.tsx",
     developersPage,
     /\bassistant(s)?\b/i,
-    "developer surface must use agent language",
+    "developer surface must use agent language rather than assistant language",
   );
 }
