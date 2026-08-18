@@ -16,6 +16,7 @@ import { captureException } from "./lib/sentry";
 // One CSS entrypoint owns the complete design-system cascade. Keeping the
 // import graph centralized prevents duplicated foundations and order drift.
 import "./index.css";
+import "./styles/brand-identity.css";
 
 if (typeof window !== "undefined") {
   // Preserve campaign and plan intent before a public landing-page CTA changes

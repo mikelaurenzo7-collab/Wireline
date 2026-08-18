@@ -317,13 +317,19 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /create or refine a private agent configuration draft/i,
-    "developer surface must position technical API objects as agents",
+    /create_agent_draft \/ update_agent_draft/,
+    "developer surface must preserve technical agent identifiers for API compatibility",
+  );
+  mustInclude(
+    "src/pages/Developers.tsx",
+    developersPage,
+    /Create or refine a private Bot configuration draft/,
+    "developer surface must describe technical agent objects as Bots to customers",
   );
   mustExclude(
     "src/pages/Developers.tsx",
     developersPage,
     /\bassistant(s)?\b/i,
-    "developer surface must use agent language rather than assistant language",
+    "developer surface must use Bot language rather than assistant language",
   );
 }

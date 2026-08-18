@@ -3,7 +3,7 @@ import UIKit
 
 /// Driving-safe Communication template. CallKit remains responsible for native
 /// call UI; this scene contains only high-glanceability active-call, callback,
-/// and agent-line controls once Apple grants the CarPlay entitlement.
+/// and Bot-line controls once Apple grants the CarPlay entitlement.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     private var interfaceController: CPInterfaceController?
 
@@ -25,10 +25,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func loadingTemplate() -> CPListTemplate {
         if KeychainStore.loadToken() == nil {
-            let item = CPListItem(text: "Open Wireline on your phone to sign in", detailText: nil)
+            let item = CPListItem(text: "OPEN WIRELINE ON YOUR PHONE TO SIGN IN", detailText: nil)
             return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
         }
-        let item = CPListItem(text: "Loading your calls…", detailText: nil)
+        let item = CPListItem(text: "LOADING YOUR CALLS…", detailText: nil)
         return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
     }
 
@@ -60,9 +60,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         var buttons: [CPGridButton] = []
 
         for call in activeCalls.prefix(4) {
-            let title = call.label ?? call.customerNumber ?? "Active call"
+            let title = call.label ?? call.customerNumber ?? "ACTIVE CALL"
             let button = CPGridButton(
-                titleVariants: [title, "Take call"],
+                titleVariants: [title, "TAKE CALL"],
                 image: symbol("waveform")
             ) { [weak self] _ in
                 Task {
@@ -78,7 +78,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         for call in recents.compactMap({ $0.customerNumber == nil ? nil : $0 }).prefix(2) {
             guard let number = call.customerNumber else { continue }
             let button = CPGridButton(
-                titleVariants: [formatPhone(number), "Call again"],
+                titleVariants: [formatPhone(number), "CALL AGAIN"],
                 image: symbol("phone.arrow.up.right")
             ) { [weak self] _ in
                 Task {
@@ -91,10 +91,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         if !agents.isEmpty {
             let button = CPGridButton(
-                titleVariants: ["Agents", "Choose a line"],
-                image: symbol("person.2")
+                titleVariants: ["BOTS", "CHOOSE A BOT"],
+                image: symbol("waveform.and.person.filled")
             ) { [weak self] _ in
-                self?.showAgents(agents)
+                self?.showBots(agents)
             }
             buttons.append(button)
         }
@@ -104,23 +104,25 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return CPGridTemplate(title: title, gridButtons: Array(buttons.prefix(8)))
         }
 
-        let item = CPListItem(text: "No calls right now", detailText: "Ask Wireline on your phone")
+        let item = CPListItem(text: "NO CALLS RIGHT NOW", detailText: "ASK WIRELINE ON YOUR PHONE")
         return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
     }
 
-    private func showAgents(_ agents: [Agent]) {
+    private func showBots(_ agents: [Agent]) {
         let items = agents.map { agent -> CPListItem in
-            let item = CPListItem(
-                text: agent.name,
-                detailText: agent.role?.replacingOccurrences(of: "_", with: " ").capitalized
-            )
+            let normalizedRole = agent.role?
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "assistant", with: "Bot", options: .caseInsensitive)
+                .capitalized
+            let detail = normalizedRole.map { $0.lowercased().hasSuffix("bot") ? $0 : "\($0) Bot" } ?? "Voice Bot"
+            let item = CPListItem(text: agent.name, detailText: detail)
             item.handler = { [weak self] _, completion in
                 self?.interfaceController?.popTemplate(animated: true, completion: nil)
                 completion()
             }
             return item
         }
-        let template = CPListTemplate(title: "Agents", sections: [CPListSection(items: items)])
+        let template = CPListTemplate(title: "BOTS", sections: [CPListSection(items: items)])
         interfaceController?.pushTemplate(template, animated: true, completion: nil)
     }
 

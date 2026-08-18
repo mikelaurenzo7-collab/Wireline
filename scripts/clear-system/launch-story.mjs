@@ -1,13 +1,14 @@
 /**
- * Launch story. One workspace, configurable Bots, and role templates are the
- * active truth across metadata, conversion, and billing. Retired brand eras
- * must not return to active product surfaces.
+ * Launch story. One workspace, voice-first configurable Bots, and role
+ * templates are the active truth across metadata, conversion, and billing.
+ * Retired brand eras must not return to active product surfaces.
  */
 const RETIRED_PRODUCT_TERMS = [
   "Ametrine Precision",
   "Browser Companion",
   "AI profit agent",
   "AI profit agents",
+  "Voice agents that get the work done",
   "7-day free trial",
 ];
 
@@ -24,32 +25,32 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline \| Voice agents that get the work done<\/title>/,
+    /<title>WIRELINE \| VOICE BOTS THAT GET THE WORK DONE<\/title>/,
     "static metadata must state the current product promise",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
+    /Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace\./,
     "static metadata must state the current product category and value",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline \| Voice agents that get the work done"/,
+    /DEFAULT_TITLE = "WIRELINE \| VOICE BOTS THAT GET THE WORK DONE"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
+    /Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace\./,
     "runtime metadata must use the current product description",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline \| Voice Agents"/,
-    "install metadata must use the canonical voice category",
+    /"name"\s*:\s*"WIRELINE \| VOICE BOTS THAT GET THE WORK DONE"/,
+    "install metadata must use the canonical voice-first Bot category",
   );
   mustExclude(
     "public/site.webmanifest",
@@ -61,9 +62,23 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /headline:\s*"Build a Bot for Any Job"/,
-    "shared Bot product model must preserve the configurable-job promise",
+    /slogan:\s*"BOTS THAT GET THE WORK DONE"/,
+    "shared Bot product model must preserve the approved outcome promise",
   );
+  mustInclude(
+    "src/lib/bot-product.ts",
+    botProduct,
+    /supportingLine:\s*"VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"/,
+    "shared Bot product model must keep every core conversation channel explicit",
+  );
+  for (const productType of ["Voice Bot", "Conversation Bot", "Human Bot"]) {
+    mustInclude(
+      "src/lib/bot-product.ts",
+      botProduct,
+      new RegExp(`name:\\s*"${productType}"`),
+      `shared Bot product model must expose ${productType} as a configurable starting point`,
+    );
+  }
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
@@ -73,7 +88,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /title:\s*"One Workspace\. Every Bot\."/,
+    /title:\s*"ONE WORKSPACE\. EVERY BOT\."/,
     "shared Bot product model must preserve the one-workspace architecture",
   );
   for (const channel of ["Voice", "Text", "Email"]) {

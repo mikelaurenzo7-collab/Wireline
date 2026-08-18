@@ -7,32 +7,36 @@ import { PageMeta } from "../lib/page-meta";
 
 /**
  * Developer surface is MCP-first.
- * There is no Settings → API Access key minting surface today — session-cookie
+ * There is no Settings → API Access key minting surface today. Session-cookie
  * product APIs and the account-bound MCP connector are the real contracts.
+ * Customer-facing product language is Bot. Technical MCP functions and records
+ * retain agent for compatibility with the existing API and data model.
  */
 
 const MCP_BOUNDARIES = [
   {
     path: "create_agent_draft / update_agent_draft",
-    description: "Create or refine a private agent configuration draft in natural language.",
+    description:
+      "Create or refine a private Bot configuration draft in natural language.",
   },
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
     description:
-      "Coach an agent: read owner-authored Training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
+      "Coach the agent record behind a Bot: read owner-authored training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
   },
   {
     path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
-    description: "Read account-scoped agents, next steps, and a minimized workspace summary.",
+    description:
+      "Read account-scoped agent records, Bot readiness, next steps, and a minimized workspace summary.",
   },
   {
     path: "start_private_voice_simulation / run_private_agent_turn",
-    description: "Private rehearsal, not a live customer call.",
+    description: "Private agent-runtime rehearsal for a Bot, not a live customer call.",
   },
   {
     path: "/api/openapi.json",
     description:
-      "Machine-readable map of the session-authenticated product API used by the web app (not a public API-key product).",
+      "Machine-readable map of the session-authenticated product API used by the web app, not a public API-key product.",
   },
 ] as const;
 
@@ -40,23 +44,23 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create a Wireline account, then draft and privately rehearse your first voice agent.",
-    action: "Open ChatGPT apps",
+      "Create a Wireline account, then draft and privately rehearse your first Voice Bot.",
+    action: "Open ChatGPT Apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
   },
   {
     title: "Claude",
     description:
-      "Add Wireline as a remote connector and build your first voice agent from Claude.",
-    action: "Open Claude connectors",
+      "Add Wireline as a remote connector and build your first Voice Bot from Claude.",
+    action: "Open Claude Connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
   },
   {
     title: "Cursor",
     description:
-      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. New users create a Wireline account, then build their first voice agent.",
+      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. New users create a Wireline account, then build their first Voice Bot.",
     action: "Add to Cursor",
     href: "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==",
     icon: Terminal,
@@ -88,21 +92,18 @@ export default function Developers() {
   return (
     <MarketingPageFrame>
       <PageMeta
-        title="Developer Portal | Wireline"
-        description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Create an account, build your first voice agent in the chat you already use, then continue in Studio. No public API keys."
+        title="DEVELOPER PORTAL | WIRELINE BOTS"
+        description="Connect Wireline to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same Wireline workspace. No public API keys."
         path="/developers"
       />
 
-      {/* The hero shares the opening screen with the three clients it is about.
-          On its own it was a headline and two links occupying a full viewport
-          above the only thing a developer came here to see. */}
       <section
         className="marketing-section marketing-section--screen border-b border-border bg-card"
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Bring Wireline into the tools you already use
+            Bring Wireline into the Tools You Already Use
           </h1>
           <div className="marketing-hero__actions mt-7">
             <a
@@ -119,9 +120,8 @@ export default function Developers() {
             </a>
           </div>
 
-          {/* A label, not a second headline: one screen carries one. */}
           <p id="mcp-apps-heading" className="wl-eyebrow mt-9 text-muted-foreground">
-            Connect once
+            Connect Once
           </p>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -158,17 +158,18 @@ export default function Developers() {
               </code>
               <Button variant="outline" size="sm" onClick={handleCopy}>
                 <Copy className="mr-1 h-3.5 w-3.5" />
-                {copied ? "Copied" : "Copy endpoint"}
+                {copied ? "Copied" : "Copy Endpoint"}
               </Button>
             </div>
-            {/* The auth model and the private-by-default boundary were a whole
-                panel each, one of them headed by its own display line and a
-                48px icon. They are two facts, and they read as two lines. */}
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Connected apps help new users create a Wireline account and build their first voice
-              agent. This connector cannot place calls, send messages, provision numbers, or launch
-              a live voice agent. Training writes land only after you enable them in Apps and
-              confirm each change. There is no public API-key product and no repo voice SDK.
+              Connected apps help new users create a Wireline account and build their first Voice
+              Bot. This connector cannot place calls, send messages, provision numbers, or launch
+              a live Bot. Training writes land only after you enable them in Apps and confirm each
+              change. There is no public API-key product and no repo voice SDK.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Wireline calls the customer-facing product a Bot. MCP and API function names, agent
+              records, and compatibility identifiers retain agent so integrations remain stable.
             </p>
           </div>
 

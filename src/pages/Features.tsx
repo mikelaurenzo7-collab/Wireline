@@ -13,7 +13,7 @@ import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader
 import { PageMeta } from "../lib/page-meta";
 import { MARKETING_VOICE } from "../lib/product-copy";
 
-const CHANNEL_CAPABILITIES = ["Voice", "Text / SMS", "Email"] as const;
+const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"] as const;
 
 const CORE_FEATURES = [
   {
@@ -39,7 +39,7 @@ const CORE_FEATURES = [
   {
     icon: SlidersHorizontal,
     title: "Training by Workflow",
-    body: "Tune one voice agent for sales, support, billing, scheduling, recovery, or a custom playbook.",
+    body: "Tune one Bot for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
@@ -52,8 +52,8 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
-        title="Features | Wireline Voice Agents"
-        description="Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory."
+        title="FEATURES | WIRELINE VOICE BOTS"
+        description="Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -65,17 +65,17 @@ export default function Features() {
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
-            title="Voice Agents for Every Customer Conversation"
-            primaryAction={{ label: "Build Your Voice Agent", to: "/signup?plan=personal" }}
+            title="VOICE-FIRST BOTS FOR EVERY CUSTOMER CONVERSATION"
+            primaryAction={{ label: "BUILD YOUR BOT", to: "/signup?plan=personal" }}
             secondaryAction={{
-              label: "Hear a Demo",
+              label: "HEAR A DEMO",
               to: "/showcase",
               tone: "secondary",
             }}
           />
 
           <div className="wl-public-rail mt-3">
-            <p className="sr-only">Build. Train. Launch. Improve.</p>
+            <p className="sr-only">Build. Configure. Launch. Improve.</p>
             <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
               {MARKETING_VOICE.proof.map((step, index) => (
                 <li key={step} className="flex items-center gap-2">

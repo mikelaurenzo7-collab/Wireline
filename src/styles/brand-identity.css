@@ -1,0 +1,46 @@
+/* Wireline identity layer.
+ *
+ * The canonical casing hierarchy remains centralized in uppercase-system.css:
+ * compact interface language is uppercase, while longer explanatory copy and
+ * customer-authored text stay sentence case. Do not duplicate those selectors
+ * here. This file owns only the folded-W brand treatment and its surface tokens.
+ */
+:root {
+  --wireline-brand-violet: #7c3aed;
+  --wireline-brand-violet-light: #a78bfa;
+  --wireline-brand-platinum: #e4e6ed;
+  --wireline-brand-obsidian: #09090d;
+}
+
+/* The authenticated rail uses the same obsidian app-icon treatment as the
+ * favicon and native icons instead of the retired flat-purple tile. */
+.wl-workspace-shell a[aria-label="Wireline"] > span:first-child {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, white 14%, transparent);
+  background:
+    radial-gradient(circle at 38% 24%, rgba(124, 58, 237, 0.16), transparent 52%),
+    linear-gradient(145deg, #1d1b23 0%, var(--wireline-brand-obsidian) 58%, #050507 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 7px 18px rgba(0, 0, 0, 0.22);
+  color: white;
+}
+
+.wl-workspace-shell a[aria-label="Wireline"] > span:first-child svg {
+  width: 24px;
+  height: 17px;
+}
+
+.wl-public-header a[aria-label="Wireline home"] svg {
+  width: 38px;
+  height: 26px;
+}
+
+/* Preserve the title-case corporate wordmark while all surrounding navigation
+ * and control language follows the uppercase interface tier. */
+.wl-public-header a[aria-label="Wireline home"] > span,
+.wl-workspace-shell a[aria-label="Wireline"] > span:last-child,
+.landing-console__brand > span {
+  text-transform: none;
+  letter-spacing: -0.025em;
+}

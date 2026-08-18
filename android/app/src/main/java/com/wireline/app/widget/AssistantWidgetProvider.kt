@@ -1,7 +1,6 @@
 package com.wireline.app.widget
 
 import android.content.Context
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -54,7 +53,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
-                text = "Wireline Agents",
+                text = "WIRELINE BOTS",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize,
@@ -64,11 +63,11 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Follow-ups: ",
+                    text = "FOLLOW-UPS  ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = if (!snapshot.signedIn) "Sign in" else if (snapshot.needsAttention == 0) "All clear" else "${snapshot.needsAttention}",
+                    text = if (!snapshot.signedIn) "SIGN IN" else if (snapshot.needsAttention == 0) "ALL CLEAR" else "${snapshot.needsAttention}",
                     style = TextStyle(
                         color = ColorProvider(if (snapshot.needsAttention > 0) WidgetPalette.Accent else WidgetPalette.Success),
                         fontSize = WirelineDesignTokens.Metric.typographyCaptionSize,
@@ -79,14 +78,14 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Active: ",
+                    text = "ACTIVE  ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
                     text = when {
-                        !snapshot.signedIn -> "Signed out"
-                        snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} call(s)"
-                        else -> "No active calls"
+                        !snapshot.signedIn -> "SIGNED OUT"
+                        snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} CALL(S)"
+                        else -> "NO ACTIVE CALLS"
                     },
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),

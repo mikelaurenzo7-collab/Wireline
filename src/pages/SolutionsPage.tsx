@@ -7,13 +7,13 @@ import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const SOLUTIONS = {
   sales: {
-    title: "Every Good Lead Gets a Next Step",
+    title: "EVERY GOOD LEAD GETS A NEXT STEP",
     description:
-      "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
-    primary: { href: "/signup?wedge=sales", label: "Create Sales Agent" },
+      "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook. It calls, holds the conversation, texts, and emails until the next step is booked or clearly logged.",
+    primary: { href: "/signup?wedge=sales", label: "Create Sales Bot" },
     secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
-      ["A Lead Reaches Out", "A voice agent responds on the channel the lead already chose."],
+      ["A Lead Reaches Out", "A Voice Bot responds on the channel the lead already chose."],
       [
         "It Qualifies by Your Rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",
@@ -26,11 +26,11 @@ const SOLUTIONS = {
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
       [
-        "Follow Up Across Channels",
-        "Continue by SMS or email without restarting the conversation.",
+        "Follow-Up Across Channels",
+        "Continue by text or email without restarting the conversation.",
       ],
       [
-        "Calendar Aware Booking",
+        "Calendar-Aware Booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
@@ -38,21 +38,18 @@ const SOLUTIONS = {
       "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
   },
   support: {
-    title: "A Front Desk That Answers Before Demand Goes Cold",
+    title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD",
     description:
-      "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
-    // Wedge intent only — preselecting the $79 5-agent Pro plan for a
-    // one-agent front-desk buyer mis-tuned the later "Matched from visit"
-    // badge in billing; the sales wedge passes intent the same way.
+      "Give a trained Front Desk Bot your policies, calendar, and handoff rules. It answers calls, holds natural conversations, continues by text and email, then resolves or routes the next step.",
     primary: {
       href: "/signup?wedge=support",
-      label: "Create Front Desk Agent",
+      label: "Create Front Desk Bot",
     },
     secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
       [
         "A Customer Reaches Out",
-        "A voice agent answers on call, text, or email with the same identity.",
+        "A Conversation Bot answers by call, text, or email with the same identity and context.",
       ],
       [
         "It Uses Your Business Truth",

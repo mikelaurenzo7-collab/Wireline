@@ -10,21 +10,24 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the direct voice agent promise", () => {
+  it("keeps static and runtime fallback metadata aligned to the voice-first Bot promise", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline | Voice agents that get the work done");
+    expect(staticHead).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
     expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline | Voice agents that get the work done"',
+      'const DEFAULT_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE"',
     );
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("Build one for your business or your life.");
-      expect(source).toContain("call, answer, text, email, book, and follow through");
+      expect(source).toContain("Build a voice-first Bot");
+      expect(source).toContain("answers and makes calls");
+      expect(source).toContain("text and email");
+      expect(source).toContain("one workspace");
       expect(source).not.toContain("—");
     }
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
+    expect(runtimeMeta).not.toContain("Voice agents that get the work done");
   });
 
   it("does not hard-code plan prices into public structured data", () => {

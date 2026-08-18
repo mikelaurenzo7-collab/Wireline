@@ -14,48 +14,40 @@ const POSITIONS = [
   },
   {
     heading: "Trained, Not Templated",
-    copy: "An agent learns your tone, your scripts, and your service knowledge. It does not ship as a generic script you edit around.",
+    copy: "A Bot learns your tone, scripts, service knowledge, rules, and handoffs. It does not ship as a generic script you edit around.",
   },
   {
     heading: "Under Your Control",
-    copy: "Calling-hour rules, Do Not Call checks, and opt-outs are enforced in the runtime: before a dial, not after a complaint.",
+    copy: "Calling-hour rules, Do Not Call checks, opt-outs, approvals, and escalation boundaries are enforced in the runtime before execution.",
   },
   {
     heading: "One Record",
-    copy: "The call, the follow-up text, the email, and the outcome stay on one thread. Nothing is finished until it is written down.",
+    copy: "The call, live conversation, follow-up text, email, and outcome stay on one thread. Nothing is finished until it is written down.",
   },
 ] as const;
 
 /**
- * About — a statement page, not a second landing page.
+ * About is a statement page, not a second landing page.
  *
- * It used to open with a headline and two buttons in an otherwise empty
- * viewport, then show three benefit cards and close with a "Build your voice
- * agent" band: the landing page's shape, the landing page's vocabulary, and the
- * landing page's call to action, four screens long, on the page a visitor opens
- * precisely because they want something *other* than the pitch.
- *
- * So this one is built to be unmistakable at a glance. It is left-aligned where
- * every other public page is centred, it is a numbered column rather than a card
- * grid, and it has no primary CTA — the header carries Start Free on every route
- * already. What it offers instead is the thing an About page owes a buyer: a
- * position, and a way to reach a person.
+ * It is left-aligned where other public pages are centered, it is a numbered
+ * column rather than a card grid, and it has no redundant primary CTA. The
+ * global header already carries the path into Bot Studio.
  */
 export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
-        title="About Wireline | Voice Agents for Calls and Follow up"
-        description="Wireline is an independent voice agent platform. How we build, what we enforce in the runtime, and how to reach the people who make it."
+        title="ABOUT WIRELINE | VOICE-FIRST BOTS FOR CALLS AND FOLLOW-THROUGH"
+        description="Wireline is an independent platform for Voice Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it."
         path="/about"
       />
 
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail grid gap-10 !text-left lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
           <div>
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">About</p>
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
             <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              Built by the people who answer the support email
+              BUILT BY THE PEOPLE WHO ANSWER THE SUPPORT EMAIL
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a
@@ -63,7 +55,7 @@ export default function About() {
               className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
               <Mail className="h-4 w-4" aria-hidden="true" />
-              support@trywireline.com
+              <span className="wl-preserve-case">support@trywireline.com</span>
             </a>
           </div>
 

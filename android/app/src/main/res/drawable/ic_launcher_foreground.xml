@@ -4,22 +4,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Canonical Wireline mark (src/components/brand/WirelineMark.tsx), scaled
-         1.5x from the 48-unit board and centered inside Android's adaptive-icon
-         safe zone. Stroked rather than filled so it matches the web mark
-         exactly; no shadow or gradient, per adaptive-icon guidance. -->
-    <group android:translateX="18" android:translateY="30" android:scaleX="1.5" android:scaleY="1.5">
+    <!-- Simplified solid-color edition of the canonical folded Wireline W.
+         The geometry is identical to WirelineMark.tsx and remains centered
+         inside Android's adaptive-icon safe zone. -->
+    <group
+        android:translateX="9"
+        android:translateY="27.5"
+        android:scaleX="0.5"
+        android:scaleY="0.5">
         <path
-            android:strokeColor="#F9F9FF"
-            android:strokeWidth="5"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:pathData="M4,16H11L19,32L24,21L29,32L37,16H44" />
+            android:fillColor="#625D72"
+            android:pathData="M76,14H100L132,106H108Z" />
         <path
-            android:fillColor="#F9F9FF"
-            android:pathData="M4,12.3a3.7,3.7 0 1,0 0,7.4a3.7,3.7 0 1,0 0,-7.4" />
+            android:fillColor="#8B5CF6"
+            android:pathData="M14,14H40L68,106H42Z" />
         <path
-            android:fillColor="#F9F9FF"
-            android:pathData="M44,12.3a3.7,3.7 0 1,0 0,7.4a3.7,3.7 0 1,0 0,-7.4" />
+            android:fillColor="#6D28D9"
+            android:pathData="M42,106H68L100,14H74Z" />
+        <path
+            android:fillColor="#E4E6ED"
+            android:pathData="M108,106H134L166,14H140Z" />
     </group>
 </vector>

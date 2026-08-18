@@ -6,16 +6,16 @@ const SITE_URL = "https://trywireline.com";
 
 const NOTES = [
   {
-    title: "Start with One Repeatable Call",
-    copy: "The best first job is clear and common: check a refill, confirm an appointment, ask about an order, or get through a support queue.",
+    title: "Start with One Repeatable Conversation",
+    copy: "The best first job is clear and common: answer a call, confirm an appointment, qualify a request, follow up on an order, or handle a support queue.",
   },
   {
     title: "Write Down the Boundaries",
-    copy: "Tell your agent what it can say, what it should not do, and when it should stop and ask you to take over.",
+    copy: "Tell your Bot what it can say, what it must not do, and when it should stop and hand the conversation to a person.",
   },
   {
     title: "Ask for the Useful Result",
-    copy: "A good handoff ends with a plain answer and the next step, not a long transcript you have to decode.",
+    copy: "A good handoff ends with a plain answer, the next step, and a reviewable record, not a long transcript you have to decode.",
   },
 ] as const;
 
@@ -58,7 +58,7 @@ const structuredData = {
       "@type": "CollectionPage",
       name: "Wireline Notes",
       description:
-        "Practical guides for voice agents: appointments, support queues, handoff boundaries, and getting time back.",
+        "Practical guides for Voice Bots, customer conversations, support queues, handoff boundaries, and getting time back.",
       url: `${SITE_URL}/blog`,
     },
   ],
@@ -68,8 +68,8 @@ export default function Blog() {
   return (
     <MarketingPageFrame longform>
       <PageMeta
-        title="Wireline Notes | Voice agent guides for small business phone coverage"
-        description="Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate."
+        title="WIRELINE NOTES | VOICE BOT GUIDES FOR SMALL BUSINESS"
+        description="Practical guides for Voice Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
         path="/blog"
         structuredData={structuredData}
       />
@@ -77,7 +77,7 @@ export default function Blog() {
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-3xl">
           <h1 className="wl-stitch-marketing-hero text-balance">
-            Practical Notes for Getting Time Back
+            PRACTICAL NOTES FOR GETTING TIME BACK
           </h1>
         </div>
         <div className="mx-auto mt-10 grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
@@ -100,20 +100,20 @@ export default function Blog() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-              Teach an Agent the Call You Keep Putting Off
+              TEACH A BOT THE CONVERSATION YOU KEEP PUTTING OFF
             </h2>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/signup"
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                Start Free
+                START FREE
               </Link>
               <Link
                 to="/features"
                 className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
               >
-                See Features
+                SEE FEATURES
               </Link>
             </div>
           </div>

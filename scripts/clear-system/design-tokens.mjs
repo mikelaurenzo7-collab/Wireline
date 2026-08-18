@@ -1,9 +1,11 @@
 /**
- * Design tokens and palette — the Wireline dark system runs on the Aurora
- * violet action token everywhere tokens are generated, and the retired
- * purple/blue palette must not reappear on any active design surface.
+ * Design tokens and brand geometry. The Wireline dark system runs on the
+ * Aurora violet action token, while the folded W uses its own violet-to-
+ * platinum identity palette on an obsidian field. Retired purple/blue palette
+ * values must not reappear on active design surfaces.
  */
 const OLD_PALETTE = /#5D3FD3|#451EBB|#F8F9FF|#EFF4FF|#E5EEFF|#0B1C30|rgba\(93,\s*63,\s*211/i;
+const FOLDED_W_PATH = /M42[ ,]106H68L100[ ,]14H74Z/;
 
 export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   const tokenSource = read("design-tokens/wireline.tokens.json");
@@ -22,6 +24,9 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   const ogImage = read("public/og-image.svg");
   const extensionIcon = read("apps/browser-extension/assets/icon.svg");
   const androidLauncherBg = read("android/app/src/main/res/drawable/ic_launcher_background.xml");
+  const androidLauncherForeground = read(
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+  );
 
   mustInclude(
     "design-tokens/wireline.tokens.json",
@@ -99,14 +104,26 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   mustInclude(
     "public/wireline-icon.svg",
     publicIcon,
-    /fill="#6D28D9"/,
-    "public app icon must use the Aurora violet brand mark",
+    FOLDED_W_PATH,
+    "public app icon must use the canonical folded W geometry",
+  );
+  mustInclude(
+    "public/wireline-icon.svg",
+    publicIcon,
+    /#8B5CF6/,
+    "public app icon must carry the violet ribbon",
+  );
+  mustInclude(
+    "public/wireline-icon.svg",
+    publicIcon,
+    /#E4E6ED/,
+    "public app icon must carry the platinum ribbon",
   );
   mustInclude(
     "public/favicon.svg",
     favicon,
-    /fill="#6D28D9"/,
-    "favicon must use the Aurora violet brand mark",
+    FOLDED_W_PATH,
+    "favicon must use the canonical folded W geometry",
   );
   mustInclude(
     "public/og-image.svg",
@@ -123,14 +140,32 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   mustInclude(
     "apps/browser-extension/assets/icon.svg",
     extensionIcon,
-    /fill="#6D28D9"/,
-    "browser extension icon must use the Aurora violet brand mark",
+    FOLDED_W_PATH,
+    "browser extension icon must use the canonical folded W geometry",
+  );
+  mustInclude(
+    "apps/browser-extension/assets/icon.svg",
+    extensionIcon,
+    /#0A0A0E|#0D0D12/,
+    "browser extension icon must use the obsidian brand field",
   );
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_background.xml",
     androidLauncherBg,
-    /android:fillColor="#6D28D9"/,
-    "Android launcher background must use the Aurora violet brand mark",
+    /android:fillColor="#0A0A0E"/,
+    "Android launcher background must use the obsidian brand field",
+  );
+  mustInclude(
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+    androidLauncherForeground,
+    FOLDED_W_PATH,
+    "Android launcher foreground must use the canonical folded W geometry",
+  );
+  mustInclude(
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+    androidLauncherForeground,
+    /android:fillColor="#E4E6ED"/,
+    "Android launcher foreground must carry the platinum ribbon",
   );
 
   const paletteSweep = [
@@ -168,6 +203,7 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "public/og-image.svg",
     "apps/browser-extension/assets/icon.svg",
     "android/app/src/main/res/drawable/ic_launcher_background.xml",
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
     "src/styles/letterpress-polish.css",
   ];
   for (const file of paletteSweep) {

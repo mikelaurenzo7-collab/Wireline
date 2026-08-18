@@ -6,39 +6,39 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 const DIFFERENCES = [
   {
     title: "Makes the Call",
-    copy: "Handles the conversation on voice, email, or text.",
+    copy: "Handles natural conversations by voice, email, or text.",
   },
   {
     title: "Plain Instructions",
-    copy: "Your voice, playbook, and training. No scripts, no flowcharts.",
+    copy: "Your voice, playbook, knowledge, and rules. No flowchart required.",
   },
   {
     title: "A Clear Next Step",
-    copy: "Booked, handed off, or logged.",
+    copy: "Booked, handed off, followed up, or logged.",
   },
   {
     title: "Persistent Memory",
-    copy: "Every lesson, objection, and preference stays in the agent's memory.",
+    copy: "Every lesson, objection, and preference stays in the Bot's shared memory.",
   },
   {
     title: "Real Calendar Booking",
-    copy: "Availability checks, timezone aware, no double booking.",
+    copy: "Availability checks, timezone aware, and no double booking.",
   },
   {
     title: "Across Channels",
-    copy: "Starts on voice, follows up by email or text. Connected and coherent.",
+    copy: "Starts on voice and continues by email or text with the same context.",
   },
   {
-    title: "After Hours Coverage",
+    title: "After-Hours Coverage",
     copy: "24/7 without overtime, burnout, or missed calls.",
   },
   {
     title: "Every Outcome Visible",
-    copy: "Transcripts, summaries, and analytics for every conversation.",
+    copy: "Transcripts, summaries, actions, and analytics for every conversation.",
   },
   {
-    title: "Improves With Use",
-    copy: "Post call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
+    title: "Improves with Use",
+    copy: "Post-call review in Studio captures lessons. Automated retraining from every call remains on the roadmap.",
   },
 ] as const;
 
@@ -47,7 +47,7 @@ const MARKET_OPTIONS = [
     name: "Wireline",
     price: "$0 to build · live from $19/mo",
     usage: "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
-    fit: "Owners who want one trained voice agent across voice, SMS, email, follow up, and outcomes",
+    fit: "Owners who want one Voice Bot across calls, live conversations, text, email, follow-up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",
     internal: true,
@@ -65,7 +65,7 @@ const MARKET_OPTIONS = [
     name: "Smith.ai",
     price: "$0 free · Pro from $150/mo",
     usage: "25 live calls on Free; 75 included live calls on the first paid Pro tier",
-    fit: "AI receptionist buyers who prefer per call capacity and service backed tiers",
+    fit: "AI receptionist buyers who prefer per-call capacity and service-backed tiers",
     href: "https://smith.ai/pricing/ai-receptionist",
     source: "Smith.ai pricing",
     internal: false,
@@ -82,8 +82,8 @@ const MARKET_OPTIONS = [
   {
     name: "Retell",
     price: "$0.07 to $0.31/min",
-    usage: "Pay as you go voice components; phone numbers and messaging have separate rates",
-    fit: "Developers optimizing model, voice, telephony, and add on choices per deployment",
+    usage: "Pay-as-you-go voice components; phone numbers and messaging have separate rates",
+    fit: "Developers optimizing model, voice, telephony, and add-on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
     internal: false,
@@ -91,16 +91,16 @@ const MARKET_OPTIONS = [
 ] as const;
 
 const TABLE_ROWS = [
-  ["Call during business hours", "Your agent can handle routine coverage"],
-  ["Wait on hold", "Your agent waits and reports back"],
-  ["Repeat the same details", "Your agent keeps the instructions"],
+  ["Call during business hours", "Your Bot can handle routine coverage"],
+  ["Wait on hold", "Your Bot waits and reports back"],
+  ["Repeat the same details", "Your Bot keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
-  ["Miss after hours calls", "Your agent picks up 24/7, no voicemail tag"],
-  ["Train a new receptionist", "Your agent ships with your playbook on day one"],
-  ["Log calls manually in a CRM", "Your agent writes the summary and syncs the record"],
+  ["Miss after-hours calls", "Your Bot picks up 24/7, without voicemail tag"],
+  ["Train a new receptionist", "Your Bot starts with your playbook on day one"],
+  ["Log calls manually in a CRM", "Your Bot writes the summary and syncs the record"],
   [
     "Follow up on every inbound lead",
-    "Your agent qualifies, books, or hands off. Nothing falls through",
+    "Your Bot qualifies, books, or hands off. Nothing falls through",
   ],
 ] as const;
 
@@ -108,20 +108,19 @@ export default function Compare() {
   return (
     <MarketingPageFrame className="wl-compare-page">
       <PageMeta
-        title="Why Wireline"
-        description="Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing."
+        title="WHY WIRELINE | COMPARE VOICE BOTS"
+        description="Compare Wireline's voice-first Bot workspace with per-agent, per-call, and developer voice infrastructure pricing."
         path="/compare"
       />
 
       {/* No hero. A comparison page's answer to "versus what" is the nine
           differences, not a headline and two buttons occupying the screen above
-          them — and the buttons were a third copy of the header's Start Free and
-          the header's Demos. The title rides the same screen as its evidence. */}
+          them. The title rides the same screen as its evidence. */}
       <section className="marketing-section marketing-section--screen">
         <div className="mx-auto mb-8 max-w-6xl text-center">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Compare</p>
           <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Wireline vs. other voice AI
+            Wireline vs. Other Voice AI
           </h1>
         </div>
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
@@ -139,7 +138,7 @@ export default function Compare() {
       <section className="marketing-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Compare the model, not the sticker</h2>
+            <h2 className="wl-stitch-display text-balance">Compare the Model, Not the Sticker</h2>
           </div>
 
           <div className="mt-8 overflow-x-auto border border-border bg-card">
@@ -154,13 +153,13 @@ export default function Compare() {
                     Option
                   </th>
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Public entry price
+                    Public Entry Price
                   </th>
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Usage boundary
+                    Usage Boundary
                   </th>
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Best fit
+                    Best Fit
                   </th>
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Source
@@ -180,7 +179,7 @@ export default function Compare() {
                       {option.name}
                       {option.internal ? (
                         <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
-                          This product
+                          This Product
                         </span>
                       ) : null}
                     </th>
@@ -222,7 +221,7 @@ export default function Compare() {
             Public prices were checked on the linked official pages on August 1, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference,{" "}
-            {"not a claim that unlike products are feature for feature equivalents."}
+            {"not a claim that unlike products are feature-for-feature equivalents."}
           </p>
         </div>
       </section>
@@ -231,7 +230,7 @@ export default function Compare() {
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="text-center">
             <h2 className="wl-stitch-display text-balance">
-              The routine call should not become a project
+              The Routine Call Should Not Become a Project
             </h2>
           </div>
           <div className="overflow-hidden border border-border bg-card">
@@ -251,11 +250,6 @@ export default function Compare() {
             ))}
           </div>
 
-          {/* One line, at the point of comparison. Removing the closing CTA
-              band left this page with no way to act on what it had just
-              proved: the fixed header carries Start Free, but a visitor who has
-              read eight rows of before-and-after should not have to travel back
-              up to the chrome to use it. A band is not the fix; a link is. */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             <Link to="/signup?plan=personal" className="font-semibold text-primary hover:underline">
               Start Free

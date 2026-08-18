@@ -24,9 +24,9 @@ const SITE_URL = "https://trywireline.com";
 const BRAND_SUFFIX = " | Wireline";
 
 /** Exact static strings in `index.html` that carry the homepage defaults. */
-export const HOME_TITLE = "Wireline | Voice agents that get the work done";
+export const HOME_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE";
 export const HOME_DESCRIPTION =
-  "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
+  "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.";
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
 const HOME_OG_URL_TAG = '<meta property="og:url" content="https://trywireline.com/" />';
 const HOME_ROBOTS_TAG =
@@ -60,34 +60,34 @@ function withBrand(title: string): string {
  */
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | Wireline Voice Agents from $19/month",
+    title: "PRICING | WIRELINE VOICE BOTS FROM $19/MONTH",
     description:
-      "Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
-    title: "Features | Wireline Voice Agents",
+    title: "FEATURES | WIRELINE VOICE BOTS",
     description:
-      "Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory.",
+      "Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory.",
   },
   "/compare": {
-    title: "Why Wireline",
+    title: "WHY WIRELINE | COMPARE VOICE BOTS",
     description:
-      "Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing.",
+      "Compare Wireline's voice-first Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
   },
   "/about": {
-    title: "About Wireline | Voice Agents for Calls and Follow up",
+    title: "ABOUT WIRELINE | VOICE-FIRST BOTS FOR CALLS AND FOLLOW-THROUGH",
     description:
-      "Wireline is an independent voice agent platform. How we build, what we enforce in the runtime, and how to reach the people who make it.",
+      "Wireline is an independent platform for Voice Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
   },
   "/showcase": {
-    title: "Try Wireline",
+    title: "TRY WIRELINE | HEAR A VOICE BOT",
     description:
-      "Hear the voice agent your customers will meet first, then build one for voice, SMS, and email.",
+      "Hear the Voice Bot your customers will meet first, then build one that handles calls, live conversations, text, and email from one workspace.",
   },
   "/blog": {
-    title: "Wireline Notes | Voice agent guides for small business phone coverage",
+    title: "WIRELINE NOTES | VOICE BOT GUIDES FOR SMALL BUSINESS",
     description:
-      "Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate.",
+      "Practical guides for Voice Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate.",
   },
   "/support": {
     title: "Support | Wireline",
@@ -134,9 +134,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Proof that matches the product. A concise starting point for security, procurement, and operations teams evaluating Wireline today.",
   },
   "/developers": {
-    title: "Developer Portal | Wireline",
+    title: "DEVELOPER PORTAL | WIRELINE BOTS",
     description:
-      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Create an account, build your first voice agent in the chat you already use, then continue in Studio. No public API keys.",
+      "Connect Wireline to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same Wireline workspace. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | Wireline",
@@ -154,14 +154,14 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
   },
   "/solutions/sales": {
-    title: "Every Good Lead Gets a Next Step | Wireline",
+    title: "EVERY GOOD LEAD GETS A NEXT STEP | Wireline",
     description:
-      "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
+      "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook. It calls, holds the conversation, texts, and emails until the next step is booked or clearly logged.",
   },
   "/solutions/support": {
-    title: "A Front Desk That Answers Before Demand Goes Cold | Wireline",
+    title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD | Wireline",
     description:
-      "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
+      "Give a trained Front Desk Bot your policies, calendar, and handoff rules. It answers calls, holds natural conversations, continues by text and email, then resolves or routes the next step.",
   },
 };
 
@@ -178,12 +178,12 @@ const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/signup": {
     title: "Create your account",
-    description: "Create a Wireline account and build your first voice agent.",
+    description: "Create a Wireline account and build your first Bot.",
     noIndex: true,
   },
   "/get-started": {
     title: "Create your account",
-    description: "Create a Wireline account and build your first voice agent.",
+    description: "Create a Wireline account and build your first Bot.",
     canonicalPath: "/signup",
     noIndex: true,
   },

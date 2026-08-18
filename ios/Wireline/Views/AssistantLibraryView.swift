@@ -17,15 +17,15 @@ struct AssistantLibraryView: View {
             Group {
                 if let loadError {
                     BrandEmptyState(
-                        title: "Couldn't load agents",
+                        title: "COULDN'T LOAD BOTS",
                         message: loadError,
                         systemImage: "wifi.exclamationmark"
                     )
                 } else if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Build your agent bench",
-                        message: "Add agents for personal calls, reception, sales, support, and operations.",
-                        systemImage: "person.wave.2"
+                        title: "NO BOTS YET",
+                        message: "Build a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom Bot in one workspace.",
+                        systemImage: "waveform.and.person.filled"
                     )
                 } else {
                     List(agents) { agent in
@@ -35,12 +35,12 @@ struct AssistantLibraryView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Agents")
+            .navigationTitle("BOTS")
             .wirelineBrand()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Create agent")
+                        .accessibilityLabel("Create Bot")
                 }
             }
             .sheet(isPresented: $showCreate) { createSheet }
@@ -52,34 +52,37 @@ struct AssistantLibraryView: View {
     private var roleChoices: [AgentRole] {
         if !agentRoles.isEmpty { return agentRoles }
         return [
-            AgentRole(id: "scheduler", label: "Personal agent", archetype: "Scheduler"),
-            AgentRole(id: "customer_service", label: "Support desk", archetype: "Support"),
-            AgentRole(id: "receptionist", label: "Front desk", archetype: "Receptionist"),
-            AgentRole(id: "custom", label: "Operations", archetype: "Custom"),
+            AgentRole(id: "scheduler", label: "Appointment Setter", archetype: "Scheduler"),
+            AgentRole(id: "customer_service", label: "Support Desk", archetype: "Support"),
+            AgentRole(id: "receptionist", label: "Front Desk", archetype: "Receptionist"),
+            AgentRole(id: "custom", label: "Create Your Own", archetype: "Custom"),
         ]
     }
 
     private var createSheet: some View {
         NavigationStack {
             Form {
-                Section("Agent type") {
-                    Picker("Posture", selection: $isBusinessAgent) {
-                        Text("Personal agent").tag(false)
-                        Text("Business agent").tag(true)
+                Section("ROLE CONTEXT") {
+                    Picker("ROLE CONTEXT", selection: $isBusinessAgent) {
+                        Text("PERSONAL ROLE").tag(false)
+                        Text("BUSINESS ROLE").tag(true)
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: isBusinessAgent) { _, business in
                         if business, role == "scheduler" { role = "receptionist" }
                     }
+                    Text("Voice, live conversation, text, email, knowledge, tools, and outcomes stay in the same workspace.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                Section("Start with one clear job") {
-                    TextField("Name", text: $name)
+                Section("START WITH ONE CLEAR JOB") {
+                    TextField("BOT NAME", text: $name)
                     if rolesLoading && agentRoles.isEmpty {
-                        ProgressView("Loading agent roles…")
+                        ProgressView("Loading roles…")
                     } else {
-                        Picker("Job", selection: $role) {
+                        Picker("ROLE", selection: $role) {
                             ForEach(roleChoices, id: \.id) { choice in
-                                Text(choice.label).tag(choice.id)
+                                Text(choice.label.uppercased()).tag(choice.id)
                             }
                         }
                     }
@@ -91,7 +94,7 @@ struct AssistantLibraryView: View {
                         if isCreating {
                             ProgressView().frame(maxWidth: .infinity)
                         } else {
-                            Label("Create agent", systemImage: "wand.and.stars")
+                            Label("CREATE BOT", systemImage: "wand.and.stars")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -103,16 +106,16 @@ struct AssistantLibraryView: View {
                     Section { Text(creationError).foregroundStyle(Brand.destructive) }
                 }
             }
-            .navigationTitle(isBusinessAgent ? "New business agent" : "New personal agent")
+            .navigationTitle("NEW BOT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showCreate = false }
+                    Button("CANCEL") { showCreate = false }
                 }
             }
             .task { await loadRoles() }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     @MainActor private func loadRoles() async {

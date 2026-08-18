@@ -13,8 +13,10 @@ import {
   WORKSPACE_VOICE,
 } from "../src/lib/product-copy";
 import {
+  BOT_BRAND,
   BOT_CHANNELS,
   BOT_MARKETING_VOICE,
+  BOT_PRODUCT_TYPES,
   BOT_ROLE_TEMPLATES,
   BOT_WORKSPACE_PROMISE,
 } from "../src/lib/bot-product";
@@ -38,10 +40,13 @@ const CORE_BUYING_SURFACES = [
 describe("one-workspace Bot product contract", () => {
   it("uses Bot as the customer object while retaining agent as the technical domain", () => {
     expect(BRAND_SYSTEM).toMatchObject({
-      northStar: "One Bot for calls, texts, email, and the work between them.",
+      northStar: BOT_BRAND.promise,
+      slogan: "BOTS THAT GET THE WORK DONE",
+      supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL",
       productNoun: "Bot",
       buyingNoun: "Bot",
       defaultRole: "Your Bot",
+      productTypes: BOT_PRODUCT_TYPES,
       brandSpine: ["Build", "Configure", "Launch"],
       proofLoop: ["Build", "Configure", "Launch", "Improve"],
     });
@@ -53,6 +58,9 @@ describe("one-workspace Bot product contract", () => {
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Use Bot as the customer-facing object while keeping agent as the technical domain.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Use Voice Bot, Conversation Bot, and Human Bot as configurable starting points, never separate products or workspaces.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Never require customers to classify a Bot as personal or business before describing the work.",
@@ -74,10 +82,11 @@ describe("one-workspace Bot product contract", () => {
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
   });
 
-  it("keeps voice, text, and email as configurable channels", () => {
+  it("keeps voice, live conversation, text, and email explicit", () => {
     expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Voice", "Text", "Email"]);
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Voice calls",
+      "Live conversations",
       "Text messages",
       "Email follow-up",
       "Shared knowledge",
@@ -89,6 +98,24 @@ describe("one-workspace Bot product contract", () => {
     expect(WORKSPACE_VOICE.emptyCue).toContain("voice, text, email");
     expect(AGENT_NUMBER_PROMISE).toContain("Every paid Bot");
     expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
+    expect(AGENT_NUMBER_PROMISE).toContain("answer and make calls");
+  });
+
+  it("defines Voice Bot, Conversation Bot, and Human Bot inside one product", () => {
+    expect(BOT_PRODUCT_TYPES.map((type) => type.name)).toEqual([
+      "Voice Bot",
+      "Conversation Bot",
+      "Human Bot",
+    ]);
+    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Voice Bot")?.description).toContain(
+      "Answer inbound calls",
+    );
+    expect(
+      BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,
+    ).toContain("voice, text, and email");
+    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain(
+      "real human role",
+    );
   });
 
   it("keeps employee roles, personal starters, and Create Your Own in one template catalog", () => {
@@ -113,8 +140,9 @@ describe("one-workspace Bot product contract", () => {
     ]) {
       expect(names).toContain(role);
     }
-    expect(BOT_WORKSPACE_PROMISE.title).toBe("One Workspace. Every Bot.");
-    expect(BOT_WORKSPACE_PROMISE.description).toContain("never separate workspaces");
+    expect(BOT_WORKSPACE_PROMISE.title).toBe("ONE WORKSPACE. EVERY BOT.");
+    expect(BOT_WORKSPACE_PROMISE.description).toContain("same workspace");
+    expect(BOT_WORKSPACE_PROMISE.description).toContain("shared context");
   });
 
   it("keeps role positioning concrete and action-oriented", () => {
@@ -124,7 +152,7 @@ describe("one-workspace Bot product contract", () => {
     expect(AGENT_DIRECTION_MODES.outbound.loop).toEqual(["Research", "Call", "Book", "Log"]);
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow Up", "Sync"]);
-    expect(OUTBOUND_WEDGE.headline).toBe("A Bot that moves growth work forward");
+    expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Moves Growth Work Forward");
     for (const verb of ["researches", "calls", "texts", "emails", "books", "logs proof"]) {
       expect(OUTBOUND_WEDGE.subline.toLowerCase()).toContain(verb);
     }
@@ -150,12 +178,14 @@ describe("one-workspace Bot product contract", () => {
   });
 
   it("keeps shared marketing and application voice aligned", () => {
-    expect(MARKETING_VOICE.headline).toBe("Build a Bot for Any Job");
+    expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
     expect(MARKETING_VOICE.primaryCta).toBe("Build Your Bot");
+    expect(MARKETING_VOICE.subline).toContain("answers and makes calls");
+    expect(MARKETING_VOICE.subline).toContain("text and email");
     expect(MARKETING_VOICE.subline).toContain("one workspace");
-    expect(BOT_MARKETING_VOICE.headline).toBe("Build a Bot for Any Job");
+    expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
     expect(BOT_MARKETING_VOICE.primaryCta).toBe("Build Your Bot");
-    expect(BOT_MARKETING_VOICE.subline).toContain("voice, text, and email");
+    expect(BOT_MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
   });
 
   it("keeps included phone capacity aligned to live Bot capacity", () => {
