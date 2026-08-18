@@ -40,7 +40,7 @@ export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
 export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
-/** Wireline founder catalog — keep in sync with scripts/.stripe-env.generated.json */
+/** Wireline founder catalog. Keep in sync with scripts/.stripe-env.generated.json. */
 export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
@@ -54,7 +54,7 @@ export type StripePlan = {
   voice_minutes_monthly: number;
   /**
    * Subscription-funded flexible runtime for optional work. Voice minutes remain
-   * separately guaranteed so document/research/SMS usage cannot disable the phone agent.
+   * separately guaranteed so document, research, and text usage cannot disable the Voice Bot.
    */
   runtime_allowance_usd_monthly: number;
   /**
@@ -128,15 +128,15 @@ const PAID_EXTRA_AGENT_ADDON = {
 } satisfies Partial<StripePlan>;
 
 const EXTRA_AGENT_FEATURE =
-  "+$15/mo per additional live agent adds 50 guaranteed voice minutes and 1 number slot";
+  "+$15/mo per additional live Bot adds 50 guaranteed voice minutes and 1 number slot";
 
 /**
  * Founder Early Access commercial contract:
- * - Free Builder creates, trains, and privately simulates one draft agent.
+ * - Free Builder creates, configures, and privately simulates one draft Bot.
  * - Every paid tier guarantees live voice capacity and an on-demand number slot.
- * - Paid extra-agent add-ons increase both agent count and included voice capacity.
+ * - Paid extra-Bot add-ons increase both Bot count and included voice capacity.
  * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
- * - Optional SMS and business-artifact generation use a smaller flexible monthly
+ * - Optional text and business-artifact generation use a smaller flexible monthly
  *   Runtime Allowance included in the same subscription. Platform AI, live
  *   research, and enrichment use a separate, explicit AI-spend allowance,
  *   metered per account. Every platform-funded provider call is recorded there.
@@ -161,11 +161,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     // Free Builder is not a Stripe product.
     public: true,
     features: [
-      "1 private draft communications agent",
-      "Agent setup, training, knowledge, and private simulation",
+      "1 private draft Bot",
+      "Bot setup, configuration, knowledge, and private simulation",
       // Derived disclosure, not marketing: the free tier's real monthly
       // simulation envelope (FREE_BUILDER_SIMULATION_ALLOWANCE_USD) must be
-      // visible before signup — hitting it silently mid-training is the
+      // visible before signup because hitting it silently during setup is the
       // likeliest place a converting prospect churns. Keep the number and the
       // enforced constant in lockstep via the metering contract.
       "Includes $1.50 of private AI simulation each month",
@@ -191,12 +191,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "starter_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "1 live communications agent",
+      "1 live Voice Bot",
       "1 production-number slot, provisioned when needed",
       "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
-      "Voice, SMS, and email under one agent identity",
+      "Voice, live conversations, text, and email under one Bot identity",
       "Lead Hunt access and connected email workflows",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -221,12 +221,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "team_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "2 live agents, personal Concierge + business voice agent",
+      "2 live Bots in one workspace",
       "2 production-number slots, provisioned when needed",
       "100 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$3 monthly Runtime Allowance + $3 managed AI allowance",
-      "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
+      "Full Lead Hunt, enrichment, niche research, email, and text workflows",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -251,13 +251,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "business_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 5 live communications agents",
+      "Up to 5 live Bots",
       "Up to 5 production-number slots, provisioned when needed",
       "190 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$6 monthly Runtime Allowance + $6 managed AI allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
-      "Connected calendar, CRM, email, SMS, contracts, and commerce actions",
+      "Connected calendar, CRM, email, text, contracts, and commerce actions",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -286,13 +286,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     public: false,
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 15 live communications agents",
+      "Up to 15 live Bots",
       "Up to 15 production-number slots, provisioned when needed",
       "350 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$12 monthly Runtime Allowance + $12 managed AI allowance",
       "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
-      "Connected calendar, email, SMS, contracts, payments, and commerce actions",
+      "Connected calendar, email, text, contracts, payments, and commerce actions",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
       "Priority support posture and no automatic overages",
@@ -301,15 +301,15 @@ export const STRIPE_PLANS: StripePlan[] = [
 ];
 
 /**
- * Two-floor margin policy (catalog v6 — see docs/PRICING_DECISION_2026-07-25.md).
+ * Two-floor margin policy (catalog v6; see docs/PRICING_DECISION_2026-07-25.md).
  *
  * Planning floor: contribution at EXPECTED_INCLUDED_UTILIZATION of minutes and
- * allowance (numbers always reserved in full — a provisioned line bills
+ * allowance (numbers always reserved in full because a provisioned line bills
  * regardless of use) must clear LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
  *
- * Hard floor: contribution at 100% utilization — the bounded worst case of a
- * prepaid-only catalog — must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
- * intervals; annual (discounted revenue, unchanged COGS) is always binding.
+ * Hard floor: contribution at 100% utilization, the bounded worst case of a
+ * prepaid-only catalog, must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
+ * intervals; annual discounted revenue with unchanged COGS is always binding.
  */
 export const LAUNCH_CONTRIBUTION_MARGIN_FLOOR = 0.45;
 export const HARD_CONTRIBUTION_MARGIN_FLOOR = 0.3;
@@ -362,7 +362,7 @@ export function estimatedContributionMarginAtFullIncludedUsage(
 }
 
 /**
- * Contribution margin at expected included utilization — the planning-floor
+ * Contribution margin at expected included utilization, the planning-floor
  * view. Minutes and both allowances are reserved at
  * EXPECTED_INCLUDED_UTILIZATION; number slots stay fully reserved because a
  * provisioned line bills whether or not it is used. Judged against
@@ -457,7 +457,7 @@ export function planById(id: string | null | undefined): StripePlan | null {
   return STRIPE_PLANS.find((plan) => plan.id === canonical) || null;
 }
 
-/** Paid plans that include room for a personal agent + a business voice agent. */
+/** Paid plans that include room for two independently configured Bots. */
 export function supportsFounderAgentPair(planId: string | null | undefined): boolean {
   const plan = planById(planId);
   return Boolean(plan && plan.price_usd_monthly > 0 && plan.max_agents >= 2);
@@ -497,8 +497,7 @@ export function plansForClient() {
       extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
       extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
       extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
-      extra_agent_configured:
-        !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
+      extra_agent_configured: !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
       features: plan.features,
       configured: isFree || paidCheckoutAvailable,
       annual_configured: isFree || (checkoutReleased && monthlyConfigured && annualConfigured),
