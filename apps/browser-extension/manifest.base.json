@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Wireline Command",
+  "name": "WIRELINE Command",
   "version": "0.1.2",
-  "description": "Send the current page into Wireline Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only. No background browsing.",
+  "description": "Send the current page into WIRELINE Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only. No background browsing.",
   "homepage_url": "https://trywireline.com",
   "action": {
-    "default_title": "Open Wireline Command",
+    "default_title": "Open WIRELINE Command",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",
@@ -33,7 +33,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Send the current page to Wireline Studio"
+      "description": "Send the current page to WIRELINE Studio"
     }
   }
 }
