@@ -71,6 +71,14 @@ replace_exact(
 )
 
 replace_exact(
+    "src/data/wireline-knowledge.ts",
+    '''export const WIRELINE_VOICE_STACK =
+  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use the same voice brain. OpenAI Realtime is limited to the ChatGPT App preview because that host permits only OpenAI realtime WebRTC; it is not the PSTN runtime.";''',
+    '''export const WIRELINE_VOICE_STACK =
+  "Live calls run through Wireline's Twilio plus xAI Direct SIP voice plane. xAI currently routes registered SIP calls through Think Fast 2.0, while Studio tests pin that same version directly. OpenAI Realtime is limited to the ChatGPT App preview and is not the phone runtime.";''',
+)
+
+replace_exact(
     "tests/security-atomicity-release-contract.test.ts",
     '    const ambiguous = source.indexOf("result.providerOutcomeAmbiguous", provider);',
     '    const ambiguous = source.indexOf("if (isAmbiguousProviderResult(result))", provider);',
@@ -165,4 +173,4 @@ describe("AdminSettings load and roster refresh contract", () => {
 ''',
 )
 
-print("Applied final combined-head UI, Admin Settings, lint, metadata, and contract repairs.")
+print("Applied final combined-head UI, Admin Settings, voice truth, lint, metadata, and contract repairs.")
