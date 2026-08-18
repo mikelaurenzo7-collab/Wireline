@@ -1,0 +1,135 @@
+name: native-release-v7
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-release-v7.yml
+
+permissions:
+  contents: write
+  pull-requests: write
+  deployments: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: native-main-merge-v2
+  cancel-in-progress: true
+
+jobs:
+  integrate-certify-and-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HUSKY: "0"
+      NODE_OPTIONS: "--max-old-space-size=6144"
+      CI: "true"
+    steps:
+      - name: Check out native runtime branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Reconstruct the v6 release runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          v6_commit="$(git log -1 --format=%H --all -- .github/workflows/native-release-v6.yml)"
+          test -n "$v6_commit"
+          git show "$v6_commit:.github/workflows/native-release-v6.yml" > /tmp/native-release-v6.yml
+
+          python <<'PY'
+          from pathlib import Path
+
+          source = Path("/tmp/native-release-v6.yml").read_text(encoding="utf-8").splitlines()
+
+          def extract(step_name: str, destination: str) -> None:
+              step = next(
+                  index
+                  for index, line in enumerate(source)
+                  if line.strip() == f"- name: {step_name}"
+              )
+              run_marker = next(
+                  index
+                  for index in range(step + 1, len(source))
+                  if source[index].strip() == "run: |"
+              )
+              end = next(
+                  (
+                      index
+                      for index in range(run_marker + 1, len(source))
+                      if source[index].startswith("      - name:")
+                  ),
+                  len(source),
+              )
+              body = source[run_marker + 1 : end]
+              indent = min(len(line) - len(line.lstrip()) for line in body if line.strip())
+              Path(destination).write_text(
+                  "\n".join(line[indent:] if line.strip() else "" for line in body) + "\n",
+                  encoding="utf-8",
+              )
+
+          extract("Reconstruct the verified v4 integration runner", "/tmp/v6-reconstruct.sh")
+          extract("Extend the runner with dependency, Visual QA, and Vercel gates", "/tmp/v6-extend.sh")
+          PY
+
+          bash /tmp/v6-reconstruct.sh
+          bash /tmp/v6-extend.sh
+          test -s /tmp/native-main-integration-v4.sh
+
+      - name: Correct the Visual QA classifier and v7 cleanup contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path("/tmp/native-main-integration-v4.sh")
+          source = path.read_text(encoding="utf-8")
+          source = source.replace("integration v6", "integration v7")
+          source = source.replace("native-main-integration-v6.log", "native-main-integration-v7.log")
+          source = source.replace("native-main-integration-v6-failure.txt", "native-main-integration-v7-failure.txt")
+          source = source.replace(
+              'git rm -f --ignore-unmatch .github/workflows/native-release-v6.yml',
+              'git rm -f --ignore-unmatch .github/workflows/native-release-v6.yml\n'
+              'git rm -f --ignore-unmatch .github/workflows/native-release-v7.yml',
+          )
+          source = source.replace(
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v6-failure.txt',
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v6-failure.txt\n'
+              'git rm -f --ignore-unmatch .audit/native-main-integration-v7-failure.txt',
+          )
+
+          exact_policy = r"""
+          python <<'PY3'
+          from pathlib import Path
+
+          candidate = Path("scripts/gate-visual-qa-manifest-v2.mjs")
+          canonical = Path("scripts/gate-visual-qa-manifest.mjs")
+          if not candidate.exists():
+              raise SystemExit("Exact Visual QA policy source is missing")
+          canonical.write_text(candidate.read_text(encoding="utf-8"), encoding="utf-8")
+          candidate.unlink()
+          PY3
+          """
+
+          marker = "\nPY\n\ngit add -A"
+          if marker not in source:
+              raise SystemExit("Could not locate the release patch boundary")
+          source = source.replace(marker, "\nPY\n" + exact_policy + "\ngit add -A", 1)
+          path.write_text(source, encoding="utf-8")
+          PY
+          chmod +x /tmp/native-main-integration-v4.sh
+
+      - name: Integrate, verify, certify on Vercel, and merge
+        shell: bash
+        run: bash /tmp/native-main-integration-v4.sh
