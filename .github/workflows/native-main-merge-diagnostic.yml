@@ -1,4 +1,5 @@
 name: native-main-merge-integration
+# Exact-head gate retriggered after the mobile CTA contract repair.
 
 on:
   push:
