@@ -1,0 +1,178 @@
+/*
+ * Wireline system aesthetic refinement
+ * --------------------------------------------------------------------------
+ * Final semantic presentation pass. This layer does not introduce a new
+ * palette or component language; it closes high-value visual/UX gaps that are
+ * difficult to solve inside individual routes.
+ *
+ * Rules:
+ * - identity/selection uses violet + platinum, never status color;
+ * - status color is reserved for actual operational state;
+ * - focus is always visible without changing layout;
+ * - motion is short, purposeful, and disabled when requested;
+ * - depth comes from Letterpress edges and inset light, not glass novelty.
+ */
+
+/* Bot navigation ---------------------------------------------------------- */
+.wl-rail-agent-link {
+  position: relative;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  transition:
+    color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    background-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wl-rail-agent-link:hover {
+    transform: translateX(1px);
+    border-color: color-mix(
+      in srgb,
+      var(--wireline-color-action-secondary-default) 10%,
+      var(--wireline-color-border-default)
+    );
+    background: color-mix(in srgb, var(--wireline-color-surface-raised) 48%, transparent);
+  }
+}
+
+/* aria-current means navigation selection, not "healthy". Override the legacy
+ * success-tinted utility classes still present on the row until every old call
+ * site has aged out. */
+.wl-rail-agent-link[aria-current="page"] {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 25%,
+    var(--wireline-color-border-default)
+  );
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 13%, transparent),
+    color-mix(in srgb, var(--wireline-color-surface-raised) 42%, transparent)
+  );
+  color: var(--wireline-color-text-primary);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent),
+    0 10px 24px -22px color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, black);
+}
+
+.wl-rail-agent-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -0.28rem;
+  width: 2px;
+  height: 1rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+  box-shadow: 0 0 9px color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
+}
+
+:where(.wl-rail-link, .wl-rail-agent-link):focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  box-shadow:
+    0 0 0 var(--wireline-interaction-focus-haloWidth)
+      color-mix(in srgb, var(--wireline-color-focus-default) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent);
+}
+
+/* Workspace rhythm ------------------------------------------------------- */
+.wl-workspace-content :where(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+
+.wl-workspace-content :where(p, li):not(.wl-preserve-case) {
+  text-wrap: pretty;
+}
+
+/* Keep desktop scroll affordance visible but subordinate to the content. */
+@media (pointer: fine) {
+  .wl-workspace-content {
+    scrollbar-width: thin;
+    scrollbar-color:
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent)
+      transparent;
+  }
+
+  .wl-workspace-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .wl-workspace-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .wl-workspace-content::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wireline-color-action-secondary-default) 22%, transparent);
+    background-clip: padding-box;
+  }
+}
+
+/* Overlays --------------------------------------------------------------- */
+[data-slot="dialog-overlay"] {
+  background: var(--wireline-color-overlay-scrim);
+  -webkit-backdrop-filter: blur(4px) saturate(108%);
+  backdrop-filter: blur(4px) saturate(108%);
+}
+
+[data-slot="dialog-content"][data-presentation="modal"] {
+  scrollbar-width: thin;
+  scrollbar-color:
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent)
+    transparent;
+}
+
+/* Form focus should gain presence, never jump in geometry. */
+.wl-workspace-content
+  :where(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"],
+    [data-slot="select-trigger"]
+  ):focus-visible {
+  box-shadow:
+    0 0 0 var(--wireline-interaction-focus-haloWidth)
+      color-mix(in srgb, var(--wireline-color-focus-default) 12%, transparent),
+    inset 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-slot="dialog-overlay"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-rail-agent-link {
+    transition: none;
+  }
+
+  .wl-rail-agent-link:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(.wl-rail-link, .wl-rail-agent-link)[aria-current="page"] {
+    border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  :where(.wl-rail-link, .wl-rail-agent-link):focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+}
