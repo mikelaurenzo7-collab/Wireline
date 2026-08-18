@@ -128,7 +128,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/From first answer to confirmed next step/, "home must explain the completed-work proof"],
     [/Booked and logged/, "home must expose a concrete outcome"],
     [/rules, approvals, spend, and handoffs/, "home must keep owner control explicit"],
-    [/Build free/, "landing must keep the free builder visible"],
+    [/Build Free/, "landing must keep the free builder visible"],
     [/View Pricing/, "landing must preserve a direct pricing path"],
     [/STRIPE_PLANS/, "landing pricing must stay tied to the Stripe plan catalog"],
     [/Runtime\s+Balance/, "landing pricing must explain prepaid Runtime Balance"],
