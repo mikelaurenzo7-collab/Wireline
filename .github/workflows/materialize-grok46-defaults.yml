@@ -44,11 +44,16 @@ jobs:
           finalize() {
             set -euo pipefail
 
+            # The repository stores snapshot 0049 and deterministically
+            # synthesizes 0050–0051. Materialize those reviewed predecessors
+            # before cloning 0051 into the new 0052 default-only snapshot.
+            node scripts/materialize-drizzle-meta.mjs
+
             python -m py_compile .audit/postmerge/apply-grok46-schema.py
             python .audit/postmerge/apply-grok46-schema.py
 
-            # Regenerate the reviewed metadata from its permanent materializer.
-            # Fixed hashes make any nondeterminism or unreviewed schema drift fail.
+            # Regenerate all reviewed metadata again from the permanent
+            # materializer. Fixed hashes make nondeterminism or drift fail.
             node scripts/materialize-drizzle-meta.mjs
 
             # Validate the exact product tree that will remain on the branch.
