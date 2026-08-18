@@ -16,14 +16,14 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 /**
- * Live Video is retired from the active product. These historical settlement
- * contracts remain because old reservations, reversals, and webhook records
- * still need safe reconciliation; they must not imply that a presenter UI or
- * new-session surface is available.
+ * Historical Live Video settlement contracts remain because old paid records,
+ * refunds, and reversals must reconcile safely after the customer-facing
+ * presenter product is retired. These tests protect accounting behavior only;
+ * they do not make Live Video an active product.
  */
 
-describe("unused historical reservations come back", () => {
-  it("refunds whole minutes the historical session did not occupy", () => {
+describe("unused reserved minutes come back", () => {
+  it("refunds whole minutes the session did not occupy", () => {
     expect(liveVideoRefundMinutes(5, 0)).toBe(5);
     expect(liveVideoRefundMinutes(5, 90)).toBe(3);
     expect(liveVideoRefundMinutes(5, 300)).toBe(0);
@@ -45,7 +45,7 @@ describe("unused historical reservations come back", () => {
   });
 });
 
-describe("the historical charged duration cannot be talked down by the client", () => {
+describe("the charged duration cannot be talked down by the client", () => {
   const issuedAtMs = 1_000_000_000_000;
 
   it("bills wall-clock time since the mint when the client under-reports", () => {
@@ -59,7 +59,7 @@ describe("the historical charged duration cannot be talked down by the client", 
     expect(liveVideoRefundMinutes(5, charged)).toBe(1);
   });
 
-  it("still refunds a historical session that genuinely never connected", () => {
+  it("still refunds a session that genuinely never connected", () => {
     const charged = liveVideoChargeableSeconds({
       clientWatchedSeconds: 0,
       issuedAtMs,
@@ -92,7 +92,7 @@ describe("the historical charged duration cannot be talked down by the client", 
   });
 });
 
-describe("historical settlement receipts are signed, bound, and single-use", () => {
+describe("settlement receipts are signed, bound, and single-use", () => {
   beforeEach(() => {
     resetLiveVideoSettlementClaimsForTests();
   });
@@ -219,7 +219,7 @@ describe("retired presenter CSS stays out of the launch cascade", () => {
     expect(marketing).not.toContain("agent-presence.css");
     expect(product).toContain('import "./agent-presence.css"');
 
-    expect(presence).toContain("Wireline Bot presence");
+    expect(presence).toContain("WIRELINE Bot presence");
     expect(presence).toContain(".wl-presence__frame");
     expect(presence).toContain(".wl-presence__strip");
     expect(presence).toContain(".wl-presence__chip");
