@@ -45,10 +45,12 @@ describe("video presenter integration", () => {
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
-  it("gives identity discovery from Overview without selling live talking-head", () => {
+  it("keeps Overview identity passive and attached to the unified Bot roster", () => {
     const overview = source("src/pages/OverviewPage.tsx");
-    expect(overview).toContain('to="/studio/live-video"');
-    expect(overview).toContain(">Identity</span>");
+    expect(overview).toContain("BotRoster");
+    expect(overview).toContain("<AgentFace");
+    expect(overview).toContain("title={`${bot.name} face`}");
+    expect(overview).not.toContain('to="/studio/live-video"');
     expect(overview).not.toContain("Identity and clips");
     expect(overview).not.toContain(">Live Video</span>");
   });
