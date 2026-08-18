@@ -61,22 +61,45 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(activation).toContain("trunk.phoneNumbers(associationSid).remove()");
   });
 
-  it("retains one-time xAI secrets outside tenant and agent cascades", () => {
+  it("retains one-time xAI secrets outside cascades behind a tenant-bound claim function", () => {
     const schema = read("src/db/xai-voice-schema.ts");
+    const baseMigration = read("drizzle/migrations/0152_native_xai_phone_bindings.sql");
     const migration = read("drizzle/migrations/0153_preserve_xai_registration_ledger.sql");
     const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
 
     expect(schema).not.toContain(".references(() => users.id");
     expect(schema).not.toContain(".references(() => agents.id");
+    expect(baseMigration).toContain("REVOKE ALL ON TABLE public.wireline_xai_phone_bindings");
+    expect(baseMigration).toContain("FROM PUBLIC, anon, authenticated, service_role");
     expect(migration).toContain("DROP CONSTRAINT IF EXISTS wireline_xai_phone_bindings_user_id_fkey");
     expect(migration).toContain("DROP CONSTRAINT IF EXISTS wireline_xai_phone_bindings_agent_id_fkey");
     expect(migration).toContain("SECURITY DEFINER");
-    expect(migration).toContain("SET search_path = pg_catalog, public, pg_temp");
+    expect(migration).toContain("SET search_path = ''");
+    expect(migration).toContain("wireline_current_user_id() IS DISTINCT FROM p_user_id");
+    expect(migration).toContain("XAI_PHONE_TENANT_MISMATCH");
     expect(migration).toContain("wireline_phone_numbers AS phone");
     expect(migration).toContain("pg_advisory_xact_lock");
     expect(migration).toContain("v_binding.status <> 'retired'");
+    expect(migration).toContain("FROM PUBLIC, anon, authenticated, service_role");
     expect(migration).toContain("TO wireline_server");
     expect(provisioning).toContain("wireline_claim_xai_phone_binding");
+
+    const tenantCheck = migration.indexOf(
+      "public.wireline_current_user_id() IS DISTINCT FROM p_user_id",
+    );
+    const advisoryLock = migration.indexOf("pg_advisory_xact_lock", tenantCheck);
+    const ownershipRow = migration.indexOf("wireline_phone_numbers AS phone", advisoryLock);
+    const ownershipLock = migration.indexOf("FOR UPDATE", ownershipRow);
+    const retainedBindingLock = migration.indexOf(
+      "FROM public.wireline_xai_phone_bindings",
+      ownershipLock,
+    );
+
+    expect(tenantCheck).toBeGreaterThan(-1);
+    expect(advisoryLock).toBeGreaterThan(tenantCheck);
+    expect(ownershipRow).toBeGreaterThan(advisoryLock);
+    expect(ownershipLock).toBeGreaterThan(ownershipRow);
+    expect(retainedBindingLock).toBeGreaterThan(ownershipLock);
   });
 
   it("journals and materializes the retained-registration migration", () => {
