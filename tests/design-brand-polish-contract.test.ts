@@ -237,9 +237,15 @@ describe("E2E design and brand polish", () => {
     const unmarked: string[] = [];
     for (const file of files) {
       const text = source(file);
-      for (const [, titleId] of text.matchAll(/aria-labelledby="([^"{}]+)"/g)) {
+      for (const match of text.matchAll(/<[^>]*role="dialog"[^>]*>/gs)) {
+        const dialogTag = match[0];
+        const titleId = dialogTag.match(/aria-labelledby="([^"{}]+)"/)?.[1];
+        if (!titleId) continue;
         const at = text.indexOf(`id="${titleId}"`);
-        if (at === -1) continue;
+        if (at === -1) {
+          unmarked.push(`${file} (missing #${titleId})`);
+          continue;
+        }
         const tag = text.slice(text.lastIndexOf("<", at), text.indexOf(">", at) + 1);
         if (tag.includes("sr-only") || tag.includes('data-slot="dialog-title"')) continue;
         unmarked.push(`${file} (#${titleId})`);
