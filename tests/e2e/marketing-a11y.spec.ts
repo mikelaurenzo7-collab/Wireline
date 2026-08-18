@@ -22,7 +22,7 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage live console has visible navigation and no serious axe violations", async ({
+test("homepage live console has visible account navigation and no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
@@ -34,7 +34,10 @@ test("homepage live console has visible navigation and no serious axe violations
   await expect(
     page.getByRole("heading", { name: "How Wireline works", exact: true }),
   ).toBeAttached();
-  await expect(page.getByRole("button", { name: "Open navigation" })).toBeVisible();
+  const accountNav = page.getByRole("navigation", { name: "Account" });
+  await expect(accountNav).toBeVisible();
+  await expect(accountNav.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(accountNav.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
   await expect(page.locator(".landing-console")).toBeVisible();
   await expect(page.getByText("Booked and logged", { exact: true })).toBeVisible();
 
