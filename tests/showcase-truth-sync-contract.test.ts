@@ -9,6 +9,7 @@ import {
 import {
   WIRELINE_COMPLIANCE_STATUS,
   WIRELINE_INTEGRATIONS,
+  WIRELINE_VOICE_STACK,
 } from "../src/data/wireline-knowledge";
 import { buildShowcaseAssistantPayload } from "../src/lib/showcase-assistant";
 import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard";
@@ -91,7 +92,15 @@ describe("public showcase truth guard", () => {
     const roadmap = WIRELINE_COMPLIANCE_STATUS.inProgress.join(" ");
     expect(roadmap).toContain("not SOC 2 certified today");
     expect(roadmap).toContain("not currently available");
+    expect(roadmap).toContain("Federal Do Not Call registration is not complete");
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
+    expect(WIRELINE_COMPLIANCE_STATUS.done.join(" ")).not.toMatch(/Federal Do Not Call/);
+    expect(WIRELINE_VOICE_STACK).toContain("currently routes registered SIP calls");
+    expect(WIRELINE_VOICE_STACK).toContain("Studio tests pin that same version directly");
+    expect(WIRELINE_VOICE_STACK).not.toContain("OpenAI-first conversation runtime");
+    const knowledgeSource = read("src/data/wireline-knowledge.ts");
+    expect(knowledgeSource).not.toContain("every Vapi agent system prompt");
+    expect(knowledgeSource).not.toContain("autonomous growth engine");
     const marcusScope = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope || "";
     expect(marcusScope).toContain("HIPAA and BAA support are not currently available");
     expect(marcusScope).not.toMatch(/BAA available|Enterprise roadmap/i);
