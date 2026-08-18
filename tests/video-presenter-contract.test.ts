@@ -1,116 +1,95 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("video presenter integration", () => {
-  it("keeps historical provider ids as identity badges, not live sessions", () => {
-    const identity = source("src/lib/agent-identity.ts");
-    expect(identity).toContain('"liveavatar"');
-    expect(identity).toContain('surfaceLabel: "Identity badge"');
-    expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
-    expect(source("src/lib/video-presenter/liveavatar-service.ts")).toContain(
-      'videoPresenterProvider: "synthetic"',
-    );
+describe("bot visual identity", () => {
+  it("uses a compact role-agnostic Bot Mark as the active identity primitive", () => {
+    const mark = source("src/components/BotMark.tsx");
+    const policy = source("src/lib/bot-mark.ts");
+
+    expect(mark).toContain("botMarkFor");
+    expect(mark).toContain("rounded-full");
+    expect(mark).toContain("imageUrl");
+    expect(mark).toContain("mark.initial");
+    expect(policy).toContain("role never affects the mark");
+    expect(policy).toContain("BOT_MARK_PALETTE");
+    expect(policy).not.toContain("status-success");
+    expect(policy).not.toContain("status-warning");
+    expect(policy).not.toContain("status-error");
   });
 
-  it("treats synthetic avatars as app identity badges, not video presenters", () => {
-    const identity = source("src/lib/agent-identity.ts");
-    expect(identity).toContain('surfaceLabel: "Identity badge"');
-    expect(identity).toContain('headline: "Agent identity badge"');
-    expect(identity).toContain("Not a video presenter");
-    const face = source("src/components/AgentFace.tsx");
-    expect(face).toContain("deterministic in-app identity badge");
-    expect(face).toContain('aria-label={title || "Agent identity badge"}');
+  it("retires human/cartoon face rendering without forcing an unsafe all-at-once import rename", () => {
+    const compatibility = source("src/components/AgentFace.tsx");
+    expect(compatibility).toContain('import BotMark from "./BotMark"');
+    expect(compatibility).toContain("Human/cartoon faces are retired");
+    expect(compatibility).not.toContain("HairShape");
+    expect(compatibility).not.toContain("faceConfigFor");
+    expect(compatibility).not.toContain("<ellipse");
+    expect(compatibility).not.toContain("<path");
   });
 
-  it("keeps Fast Start free of avatar and presenter pickers", () => {
+  it("uses Bot Marks directly in the primary Overview roster", () => {
+    const rail = source("src/components/overview/OverviewRail.tsx");
+    expect(rail).toContain('import BotMark from "../BotMark"');
+    expect(rail).toContain("<BotMark");
+    expect(rail).toContain("seed={bot.id}");
+    expect(rail).toContain("title={`${bot.name} mark`}");
+    expect(rail).not.toContain("<AgentFace");
+  });
+
+  it("keeps Fast Start free of avatar and presenter choices", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
     expect(dialog).toContain("Not Now");
     expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
   });
+});
 
-  it("retires LiveAvatar sessions and the Web SDK", () => {
-    const service = source("src/lib/video-presenter/liveavatar-service.ts");
-    const live = source("src/components/LiveVideoPresenter.tsx");
-    const routes = source("src/routes/video-presenter-routes-base.ts");
-    expect(service).toContain("retired: true");
-    expect(service).not.toContain("https://api.liveavatar.com");
-    expect(service).not.toContain("mintLiveAvatarLiteSessionToken");
-    expect(live).not.toContain("@heygen/liveavatar-web-sdk");
-    expect(live).toContain("AgentFace");
-    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
-    expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
-  });
-
-  it("keeps Overview identity passive and attached to the unified Bot roster", () => {
-    const overview = source("src/pages/OverviewPage.tsx");
-    const rail = source("src/components/overview/OverviewRail.tsx");
-    expect(overview).toContain("BotRoster");
-    expect(rail).toContain("<AgentFace");
-    expect(rail).toContain("title={`${bot.name} face`}");
-    expect(`${overview}\n${rail}`).not.toContain('to="/studio/live-video"');
-    expect(`${overview}\n${rail}`).not.toContain("Identity and clips");
-    expect(`${overview}\n${rail}`).not.toContain(">Live Video</span>");
-  });
-
-  it("closes checkout and entitlement for the retired talking-head add-on", () => {
-    const entitlements = source("src/lib/video-presenter/live-video-entitlements.ts");
-    expect(entitlements).toContain("addonOffered: false");
-    expect(entitlements).toContain("liveVideoCheckoutAvailable: false");
-    expect(entitlements).toContain("return false;");
-    expect(source("src/lib/video-presenter/live-video-addon.ts")).toContain("return false;");
-    expect(source("src/routes/billing-routes.ts")).toContain("/billing/live-video-checkout");
-    expect(source("src/routes/billing-routes.ts")).toContain("LIVE_VIDEO_CATALOG_UNAVAILABLE");
-    expect(source("scripts/lib/stripe-founder-catalog.mjs")).toContain(
-      "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
-    );
-  });
-
-  it("mounts identity studio without a live session mint or clip-script bait", () => {
-    const page = source("src/pages/LiveVideoStudioPage.tsx");
-    expect(page).toContain("Identity");
-    expect(page).not.toContain("Draft clip script");
-    expect(page).not.toContain('kind: "video_clip"');
-    expect(page).not.toContain("/video-presenter/session");
-    expect(page).not.toContain("@heygen/liveavatar-web-sdk");
+describe("Live Video retirement", () => {
+  it("removes the product page while preserving safe historical deep links", () => {
     const routes = source("src/routes/AppRoutes.tsx");
-    const liveVideoMount = routes.indexOf('path="/studio/live-video"');
-    const studioWildcard = routes.indexOf('path="/studio/*"');
-    expect(liveVideoMount).toBeGreaterThan(-1);
-    expect(studioWildcard).toBeGreaterThan(-1);
-    expect(liveVideoMount).toBeLessThan(studioWildcard);
-  });
-
-  it("keeps live-video provider membership client-safe", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
-    expect(page).not.toContain('from "../lib/video-presenter/live-video-addon"');
-    const providers = source("src/lib/video-presenter/live-video-providers.ts");
-    const valueImports = providers
-      .split("\n")
-      .filter((line) => /^import\s/.test(line) && !/^import\s+type\s/.test(line));
-    expect(valueImports).toEqual([]);
-    expect(source("src/lib/video-presenter/live-video-addon.ts")).toContain(
-      'export { agentLiveVideoOptedIn, isLiveVideoProvider } from "./live-video-providers"',
+
+    expect(routes).not.toContain('lazy(() => import("../pages/LiveVideoStudioPage"))');
+    expect(routes).toContain(
+      '<Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />',
     );
+    expect(page).toContain('<Navigate to="/studio" replace />');
+    expect(page).not.toContain("authFetch(");
+    expect(page).not.toContain("<select");
+    expect(page).not.toContain("<AgentFace");
   });
 
-  it("retires the presenter sample and reports no live engines", () => {
+  it("fails closed for new avatar, enable, and session requests", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
-    expect(routes).toContain('"/api/agents/:id/video-presenter/sample"');
+    expect(routes).toContain('"LIVE_VIDEO_RETIRED"');
+    expect(routes).toContain('router.get("/api/video-presenter/avatars"');
+    expect(routes).toContain('"/api/agents/:id/video-presenter/session"');
+    expect(routes).toContain("throwLiveVideoRetired");
     expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
+  });
+
+  it("keeps Live Video out of the active Stripe catalog", () => {
+    const catalog = source("scripts/lib/stripe-founder-catalog.mjs");
+    const contract = source("scripts/check-stripe-catalog-contract.mjs");
+
+    expect(catalog).not.toContain('key: "live_video"');
+    expect(catalog).not.toContain('key: "live_video_monthly"');
+    expect(catalog).not.toContain("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID");
+    expect(contract).toContain("Retired Live Video must stay out of the active Founder Stripe manifest");
+    expect(contract).toContain("FOUNDER_PRODUCTS.length !== 7");
+    expect(contract).toContain("FOUNDER_PRICES.length !== 13");
+  });
+
+  it("reports no live-video engines while retaining historical provider ids for old records", () => {
     expect(source("src/routes/health-routes.ts")).toContain("live_video_engines: []");
     expect(source("src/routes/health-routes.ts")).toContain("live_video_retired: true");
-  });
 
-  it("seeds business agents with synthetic identity", () => {
-    expect(source("src/routes/agent-routes-v2.ts")).toContain(
-      "businessAgentVideoPresenterDefaults",
-    );
-    expect(source("src/lib/video-presenter/liveavatar-service.ts")).toContain(
-      'videoPresenterProvider: "synthetic"',
-    );
+    const identity = source("src/lib/agent-identity.ts");
+    expect(identity).toContain('"liveavatar"');
+    expect(identity).toContain('"tavus"');
+    expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
   });
 });
