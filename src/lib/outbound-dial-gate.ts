@@ -1,7 +1,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, ne } from "drizzle-orm";
-import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
+import { isFederalDncListed } from "./federal-dnc-service";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
@@ -19,6 +19,7 @@ export function mergeLeadMetadata(
 }
 
 export type OutboundDialDenyReason =
+  /** Legacy response value retained while route clients age out; no new gate result emits it. */
   | "federal_dnc_unconfigured"
   | "blocked_internal_dnc"
   | "blocked_tcpa"
@@ -34,6 +35,7 @@ export type OutboundDialGateResult =
       reason: OutboundDialDenyReason;
       metadataPatch?: Record<string, unknown>;
       consentLogEvent?: string;
+      /** Legacy fields retained for backwards-compatible response narrowing. */
       federalDncCode?: string;
       federalDncMessage?: string;
       tcpaDecision?: ConsentDecision;
@@ -41,9 +43,9 @@ export type OutboundDialGateResult =
 
 /**
  * Shared compliance gate for campaign dials, intake auto-dial, and manual
- * Studio/mobile outbound. Marketing paths require federal DNC + express
- * written consent; non-marketing Studio dials still run tenant DNC + TCPA
- * + the 24h duplicate window.
+ * Studio/mobile outbound. Missing Federal DNC vendor credentials do not block
+ * the entire product. When configured, the federal lookup remains authoritative;
+ * every path still enforces tenant DNC, consent, calling hours, and duplicates.
  */
 export async function evaluateOutboundDialGate(opts: {
   userId: string;
@@ -52,28 +54,20 @@ export async function evaluateOutboundDialGate(opts: {
   leadId?: bigint | number | string;
   lastCalledAt?: Date | null;
   metadata?: Record<string, unknown>;
-  /**
-   * Marketing/campaign/intake default to true. Manual Studio dials pass the
-   * call-purpose marketing flag so non-marketing dials skip the federal
-   * vendor requirement while still enforcing tenant DNC + TCPA + duplicates.
-   */
+  /** Marketing/campaign/intake default to true; direct service calls pass false. */
   isMarketingCall?: boolean;
   /** Explicit consent override; falls back to metadata.has_express_written_consent. */
   hasExpressWrittenConsent?: boolean;
   /**
    * Caller-requested callbacks are a distinct TCPA class: the consumer asked,
-   * on a recorded line, to be called back — prior express consent for that
-   * specific return call. This flag (a) treats the dial as non-marketing,
-   * (b) supplies that consent, and (c) skips the 24h duplicate guard, because
-   * a callback within a day of the original call is the entire point.
-   * Quiet hours and tenant/federal DNC lookups still apply — a caller who
-   * lands on DNC after requesting a callback stays protected.
+   * on a recorded line, to be called back. The return call is non-marketing,
+   * supplies that consent, and skips the 24-hour duplicate guard. Calling hours,
+   * tenant DNC, and configured Federal DNC screening still apply.
    */
   isRequestedCallback?: boolean;
   /**
-   * In-session follow-up (e.g. SMS during a live call the consumer is on).
-   * Keeps tenant + federal DNC; skips quiet hours and the 24h duplicate
-   * window because the consumer is already engaged on the line.
+   * In-session follow-up, such as SMS during a live call. Tenant and configured
+   * Federal DNC checks remain; quiet hours and duplicate suppression are skipped.
    */
   isLiveSessionFollowUp?: boolean;
 }): Promise<OutboundDialGateResult> {
@@ -86,8 +80,8 @@ export async function evaluateOutboundDialGate(opts: {
     metadata.has_express_written_consent === true ||
     isRequestedCallback;
 
-  // TCPA quiet hours first — local computation, cheapest fail-closed check.
-  // Live-session follow-up skips this: the consumer is already on the line.
+  // TCPA quiet hours first: local computation and the cheapest fail-closed check.
+  // Live-session follow-up skips this because the consumer is already engaged.
   if (!isLiveSessionFollowUp) {
     const callingHours = resolveCallingHoursForPhone(opts.phone);
     if (!callingHours.allowed) {
@@ -98,23 +92,6 @@ export async function evaluateOutboundDialGate(opts: {
         metadataPatch: {
           auto_dial_error: "Outside TCPA permitted calling hours (8am to 9pm local).",
           calling_hours: callingHours,
-        },
-      };
-    }
-  }
-
-  if (isMarketingCall) {
-    const federalGate = assertFederalDncForMarketing();
-    if (!federalGate.allowed) {
-      return {
-        allowed: false,
-        status: "AutoDialFailed",
-        reason: "federal_dnc_unconfigured",
-        federalDncCode: federalGate.code,
-        federalDncMessage: federalGate.message,
-        metadataPatch: {
-          auto_dial_error: federalGate.message,
-          federal_dnc_code: federalGate.code,
         },
       };
     }
@@ -159,7 +136,7 @@ export async function evaluateOutboundDialGate(opts: {
         status: LEAD_STATUS.SKIPPED_DUPLICATE,
         reason: "skipped_duplicate",
         metadataPatch: {
-          // jsonb cannot store raw JS BigInt — always stringify lead IDs
+          // jsonb cannot store raw JS BigInt: always stringify lead IDs.
           duplicate_of_lead_id: jsonSafeId(otherRecent.id),
           duplicate_guard: "other_within_24h",
         },
@@ -178,13 +155,8 @@ export async function evaluateOutboundDialGate(opts: {
 
   const isFederalDnc = await isFederalDncListed(opts.phone);
 
-  // Requested callbacks are treated as non-marketing (is_marketing_call=false)
-  // to waive the express-written-consent requirement — but evaluateOutboundConsent
-  // ALSO skips its federal-DNC block for non-marketing calls, which would let a
-  // federally-listed number be dialed on the callback path. The platform stays
-  // fail-closed on the federal registry, so enforce it explicitly here (also
-  // fires when the lookup errored, since isFederalDncListed returns listed on
-  // failure). Quiet hours + tenant DNC already ran above.
+  // Requested callbacks are non-marketing for express-consent purposes, but a
+  // configured federal provider's listed/error result still blocks explicitly.
   if (isRequestedCallback && isFederalDnc) {
     return {
       allowed: false,
