@@ -1,6 +1,6 @@
 # Wireline
 
-Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT. Marketing and campaign calling remain blocked until federal Do Not Call registration is complete.
 
 The public operating loop is **Build -> Train -> Launch -> Improve**. Product architecture expresses that loop through Create, Training, Wire, and Studio:
 
@@ -16,7 +16,7 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 - **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
-- **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
+- **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar and HeyGen sessions are not minted.
 
 Every paid agent includes a **production-number slot**. Wireline provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
 
@@ -25,7 +25,7 @@ Every paid agent includes a **production-number slot**. Wireline provisions the 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and a Vercel-capable server bundle.
 - **Design:** the **Wireline Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android.
 - **Managed reasoning:** xAI Grok 4.6 primary with OpenAI, Gemini, and Vercel AI Gateway continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
-- **Voice/PSTN:** Twilio plus xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) own production calling and Studio live tests. OpenAI Realtime is ChatGPT App private simulation only. Vapi is rollback-only. Realtime test surfaces never take over customer PSTN calls.
+- **Voice/PSTN:** Twilio plus xAI Direct SIP own production calling. xAI currently routes registered SIP calls through Think Fast 2.0, but the SIP `call_id` session is provider-bound rather than version-pinned by Wireline. Studio live tests pin `grok-voice-think-fast-2.0` directly. OpenAI Realtime is limited to ChatGPT App private simulation, and Vapi is rollback-only. Realtime test surfaces never take over customer PSTN calls.
 - **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
 - **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
 - **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.
@@ -74,7 +74,7 @@ Use `npm run verify` for focused implementation branches. Use `npm run verify:fu
 | Client/release boundaries | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md) |
 | Pricing and billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md) |
 | Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
+| Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/GROK_LIVE_VOICE.md](./docs/GROK_LIVE_VOICE.md), [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
 | Browser extension | `apps/browser-extension/` |
 | Native clients | `ios/`, `android/` |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
