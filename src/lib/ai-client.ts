@@ -277,6 +277,7 @@ async function callResponsesEndpoint(args: {
   body: RuntimeRequest;
   options?: RuntimeRequestOptions;
   provider: RuntimeProviderName;
+  gatewayModels?: readonly string[];
 }): Promise<RuntimeMessage> {
   assertNotAborted(args.options?.signal);
   const tool = structuredOutputTool(args.body);
@@ -296,6 +297,9 @@ async function callResponsesEndpoint(args: {
           content: extractText(item.content),
         })),
         max_output_tokens: args.body.max_tokens ?? 4096,
+        ...(args.gatewayModels?.length
+          ? { providerOptions: { gateway: { models: args.gatewayModels } } }
+          : {}),
         ...(tool
           ? {
               text: {
@@ -412,10 +416,20 @@ async function callGateway(
   options?: RuntimeRequestOptions,
 ): Promise<RuntimeMessage> {
   if (!isAIGatewayConfigured()) throw new Error("AI Gateway is not configured");
+  const requested = String(body.model || "").trim();
+  const primary = gatewayModelId(
+    requested || process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() || `xai/${XAI_STRUCTURED_PRIMARY_MODEL}`,
+  );
+  const models = [
+    primary,
+    gatewayModelId(process.env.WIRELINE_GATEWAY_OPENAI_MODEL?.trim() || `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`),
+    gatewayModelId(process.env.WIRELINE_GATEWAY_GEMINI_MODEL?.trim() || `google/${GEMINI_STRUCTURED_FALLBACK_MODEL}`),
+  ].filter((model, index, entries) => model && entries.indexOf(model) === index);
   return callResponsesEndpoint({
     endpoint: `${AI_GATEWAY_BASE_URL}/responses`,
     headers: gatewayHeaders(),
-    model: gatewayModelId(String(body.model || STRUCTURED_PRIMARY_MODEL)),
+    model: primary,
+    gatewayModels: models,
     body,
     options,
     provider: "AI Gateway",
@@ -614,8 +628,13 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
 };
 
 function configuredProviders(): RuntimeProvider[] {
+  // Production structured work stays on the Gateway so its model fallbacks,
+  // provider credentials, budgets, and observability govern the entire turn.
+  // Direct vendor lanes remain only as a safe degraded-mode path if Gateway
+  // authentication is unavailable, and xAI direct remains required for voice.
+  if (RUNTIME_PROVIDER_REGISTRY.gateway.available()) return [RUNTIME_PROVIDER_REGISTRY.gateway.provider];
   const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter((id) =>
-    RUNTIME_PROVIDER_REGISTRY[id].available(),
+    id !== "gateway" && RUNTIME_PROVIDER_REGISTRY[id].available(),
   );
   return orderReasoningProviders(available, resolveReasoningPreference()).map(
     (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,

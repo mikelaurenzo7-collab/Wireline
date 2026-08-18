@@ -21,14 +21,14 @@ const realtime = read("src/lib/voice/openai-realtime-config.ts");
 const ALL: ReasoningProviderId[] = ["openai", "gemini", "gateway", "xai"];
 
 describe("structured runtime provider chain policy", () => {
-  it("defaults to xAI, then OpenAI, then Gemini, then the AI Gateway", () => {
-    expect(DEFAULT_REASONING_PROVIDER).toBe("xai");
-    expect([...REASONING_PROVIDER_ORDER]).toEqual(["xai", "openai", "gemini", "gateway"]);
-    expect(orderReasoningProviders(ALL)).toEqual(["xai", "openai", "gemini", "gateway"]);
+  it("defaults to AI Gateway before any direct degraded-mode lane", () => {
+    expect(DEFAULT_REASONING_PROVIDER).toBe("gateway");
+    expect([...REASONING_PROVIDER_ORDER]).toEqual(["gateway", "xai", "openai", "gemini"]);
+    expect(orderReasoningProviders(ALL)).toEqual(["gateway", "xai", "openai", "gemini"]);
   });
 
   it("keeps the managed default when no preference is configured", () => {
-    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("xai");
+    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("gateway");
   });
 
   it("ignores an unrecognized preference instead of routing traffic off-policy", () => {
@@ -36,7 +36,7 @@ describe("structured runtime provider chain policy", () => {
       resolveReasoningPreference({
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "not-a-provider",
       } as NodeJS.ProcessEnv),
-    ).toBe("xai");
+    ).toBe("gateway");
     expect(normalizeReasoningProvider("not-a-provider")).toBeNull();
     expect(normalizeReasoningProvider("")).toBeNull();
     expect(normalizeReasoningProvider(undefined)).toBeNull();
@@ -60,7 +60,7 @@ describe("structured runtime provider chain policy", () => {
   });
 
   it("preserves relative order for whatever subset is configured", () => {
-    expect(orderReasoningProviders(["gateway", "openai"])).toEqual(["openai", "gateway"]);
+    expect(orderReasoningProviders(["gateway", "openai"])).toEqual(["gateway", "openai"]);
     expect(orderReasoningProviders(["xai"])).toEqual(["xai"]);
     expect(orderReasoningProviders([])).toEqual([]);
   });
@@ -89,15 +89,16 @@ describe("structured runtime transport", () => {
   it("routes each lane to its documented endpoint", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
-    expect(models).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
-    );
+    expect(client).toContain("gatewayModels: models");
+    expect(client).toContain("providerOptions: { gateway: { models: args.gatewayModels } }");
+    expect(client).toContain("if (RUNTIME_PROVIDER_REGISTRY.gateway.available())");
     expect(models).toContain('GROK_4_6: "grok-4.6"');
   });
 
   it("delegates eligibility and ordering to the policy module", () => {
     expect(client).toContain("orderReasoningProviders(available, resolveReasoningPreference())");
     expect(client).toContain("isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY)");
+    expect(client).toContain("id !== \"gateway\"");
     // Every lane in the policy must have a transport entry, or a configured
     // credential would resolve to a provider the client cannot call.
     for (const id of REASONING_PROVIDER_ORDER) {

@@ -44,13 +44,13 @@ export type ReasoningProviderOption = {
  * reached only when the providers before it have failed for this request.
  */
 export const REASONING_PROVIDER_ORDER: readonly ReasoningProviderId[] = [
+  "gateway",
   "xai",
   "openai",
   "gemini",
-  "gateway",
 ] as const;
 
-export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "xai";
+export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "gateway";
 
 export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
   {
@@ -75,7 +75,7 @@ export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
     id: "gateway",
     label: "AI Gateway",
     envKeys: ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
-    note: "Governed multi-model continuity route.",
+    note: "Governed structured-reasoning route with xAI, OpenAI, and Gemini model fallbacks.",
   },
 ] as const;
 
