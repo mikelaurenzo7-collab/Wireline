@@ -1,0 +1,52 @@
+name: native-main-merge-diagnostic
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-merge-diagnostic.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-main-merge-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out native runtime branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Report exact merge conflicts against origin/main
+        shell: bash
+        run: |
+          set -uo pipefail
+          git fetch --no-tags origin main
+          set +e
+          git merge --no-commit --no-ff origin/main
+          merge_status=$?
+          set -e
+
+          echo "MERGE_STATUS=${merge_status}"
+          echo "NATIVE_HEAD=$(git rev-parse HEAD)"
+          echo "MAIN_HEAD=$(git rev-parse origin/main)"
+          echo "CONFLICTS_BEGIN"
+          git diff --name-only --diff-filter=U || true
+          echo "CONFLICTS_END"
+
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            echo "===== CONFLICT: ${file} ====="
+            git diff --cc -- "$file" | sed -n '1,320p'
+            echo "===== END CONFLICT: ${file} ====="
+          done < <(git diff --name-only --diff-filter=U)
+
+          git merge --abort || true
+          exit 0
