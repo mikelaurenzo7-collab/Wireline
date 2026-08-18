@@ -1,4 +1,5 @@
 from pathlib import Path
+from shutil import copyfile
 
 
 def read(path: str) -> str:
@@ -15,6 +16,25 @@ def replace_exact(path: str, old: str, new: str) -> None:
         raise RuntimeError(f"{path}: expected exactly one match for {old[:100]!r}")
     write(path, text.replace(old, new, 1))
 
+
+# These files deliberately override main after the native/main merge. They are
+# validated against rendered output below, then the staging directory is removed
+# before the final product commit.
+for source, target in (
+    (
+        ".audit/postmerge/PrecisionPublicHeader.tsx",
+        "src/components/marketing/PrecisionPublicHeader.tsx",
+    ),
+    (
+        ".audit/postmerge/marketing-viewport-lock.spec.ts",
+        "tests/e2e/marketing-viewport-lock.spec.ts",
+    ),
+    (
+        ".audit/postmerge/marketing-a11y.spec.ts",
+        "tests/e2e/marketing-a11y.spec.ts",
+    ),
+):
+    copyfile(source, target)
 
 activation_path = "src/lib/voice/xai-phone-activation-service.ts"
 activation = read(activation_path)
@@ -39,7 +59,9 @@ replace_exact(
     expect(header).toContain("ml-auto flex min-w-0 shrink-0 items-center");
     expect(header).toContain("min-h-11");
     expect(header).toContain("whitespace-nowrap");
-    expect(header).toContain("shrink-0");''',
+    expect(header).toContain("shrink-0");
+    expect(header).toContain('data-testid="header-cta"');
+    expect(header).toContain("max-[379px]:hidden");''',
 )
 
 replace_exact(
@@ -54,4 +76,4 @@ replace_exact(
     '    const ambiguous = source.indexOf("if (isAmbiguousProviderResult(result))", provider);',
 )
 
-print("Applied final combined-head lint, metadata, and contract repairs.")
+print("Applied final combined-head UI, lint, metadata, and contract repairs.")
