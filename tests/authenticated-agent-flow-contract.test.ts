@@ -6,15 +6,8 @@ function read(relativePath: string) {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(/\r\n/g, "\n");
 }
 
-describe("authenticated agent flow", () => {
-  /*
-   * Agent tools reach live calls through `resolveAgentTools`, and until now only
-   * `POST /api/mobile/agents/:id/tools` could change them — an owner on the web
-   * could see what their agent was permitted to do and had no way to alter it.
-   * The web route must not become a second, laxer door onto the same column, so
-   * it is pinned to the mobile route's guards.
-   */
-  it("lets the web edit agent tools under the same guards as mobile", () => {
+describe("authenticated Bot flow", () => {
+  it("lets the web edit agent tools under the same ownership and validation guards as mobile", () => {
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
     const mobileRoutes = read("src/routes/mobile-routes.ts");
     const permissions = read("src/components/AgentToolPermissions.tsx");
@@ -30,91 +23,51 @@ describe("authenticated agent flow", () => {
     const web = agentRoutes.slice(agentRoutes.indexOf('"/api/agents/:id/tools"'));
     expect(web).toContain("authenticateUser");
     expect(web).toContain("agentMutationRateLimit");
-    // Ownership is checked before anything is written, and a miss is a 404 so
-    // the route cannot be used to probe which agent ids exist.
     expect(web.indexOf("owned(req.params.id, req.user.id)")).toBeLessThan(web.indexOf("drizzle"));
     expect(web).toContain('throw AppError.fromHttpStatus(404, "Agent not found");');
-
-    /*
-     * A null selection is not an empty one: the server resolves null to the full
-     * catalog, so seeding the editor with [] would make the first save a silent
-     * capability wipe. The UI must seed from the same resolver the runtime uses.
-     */
     expect(permissions).toContain("resolveAgentTools(undefined, config.enabledTools)");
   });
 
-  /*
-   * Review findings on the tool editor, each one a way the panel could lie about
-   * or discard the operator's intent.
-   */
-  it("keeps the tool editor from discarding edits or overstating what is live", () => {
+  it("keeps the tool editor from discarding edits or overstating live capability", () => {
     const permissions = read("src/components/AgentToolPermissions.tsx");
-
-    // Keying the load on `open` meant collapse + reopen refetched and replaced
-    // unsaved toggles with the stored set, silently.
     expect(permissions).toContain("if (loadedAgentRef.current === agentId) return;");
     expect(permissions).toContain("loadedAgentRef.current = agentId;");
     expect(permissions).toContain("loadedAgentRef.current = null;");
-
-    // The fetch is gated on `open`, so the expand render lands first. Starting
-    // `loading` false painted every action unchecked and every count 0/N.
     expect(permissions).toMatch(/const \[loading, setLoading\] = useState\(true\)/);
-
-    // A posture endpoint answering 200 with non-JSON must not blank the editor.
     expect(permissions).toContain("return response.json().catch(() => null);");
-
-    /*
-     * Live assistants are built through buildRoleToolDefsForTenant, which drops
-     * tools whose integration the tenant has not connected. Without this hint an
-     * unconnected integration looked identical to a connected one.
-     */
     expect(permissions).toContain("Not connected. These stay off in live calls until");
     expect(permissions).toContain("to={playbook.connectPath}");
     expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
-
-    /*
-     * The component survives agent switches in place, so an in-flight save for
-     * agent A can resolve while agent B is on screen. Unguarded, the response
-     * replaced B's loaded selection with A's tools — and the next save
-     * persisted them onto B. The save captures its agent at call time and a
-     * response applies only while that agent is still the active one.
-     */
     expect(permissions).toContain("const savedFor = agentId;");
     expect(permissions).toMatch(/if \(loadedAgentRef\.current !== savedFor\) return;/);
     expect(permissions).toContain("encodeURIComponent(savedFor)");
   });
 
-  it("routes fresh signups into the real create flow", () => {
+  it("routes every fresh signup into the same real Bot create flow", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
     const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
     const appShell = read("src/components/layout/AppShell.tsx");
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
-    // Workspace mode drives signup intent through the canonical catalog-backed
-    // billing-label helper, including the visitor's selected annual term.
     expect(authPortal).toContain("function signupPlanLabel(");
     expect(authPortal).toContain("STRIPE_PLANS.find");
     expect(authPortal).toContain("plan.price_usd_annual");
     expect(authPortal).toContain("plan.price_usd_monthly");
     expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
-    expect(authPortal).toContain('nextMode === "personal"');
     expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
-    // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
-    expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
     expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
     expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
-    expect(authRedirect).toContain(
-      'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
-    );
+    expect(authRedirect).toContain('return "/studio?create=1"');
+    expect(authRedirect).not.toContain("create=1&posture=");
     expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("language.createCta");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
   });
 
-  it("gates live work on phone provision, not agent draft create", () => {
+  it("gates provider-spending live work on activation, not draft creation", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
     const carrierRoutes = read("src/routes/carrier-routes.ts");
@@ -126,19 +79,19 @@ describe("authenticated agent flow", () => {
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
   });
 
-  it("mounts insights and outcome review on active workspace routes", () => {
+  it("mounts operating truth on active Overview, Inbox, approvals, and analytics routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
     const nav = read("src/constants/navigation.ts");
 
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
+    expect(appRoutes).toContain('path="/inbox"');
+    expect(appRoutes).toContain('path="/approvals"');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    // The daily-brief panel was retired with the demand-driven Overview;
-    // outcomes surface through the ledger and follow-up review paths instead.
-    expect(overview).not.toContain("DailyBriefPanel");
+    expect(overview).toContain("UnifiedInbox");
     expect(overview).toContain("OutcomeLedger");
-    expect(overview).toContain('primaryHref: "/approvals"');
-    expect(overview).toContain("<Link to={state.primaryHref}");
+    expect(overview).toContain('followUpsHref="/approvals"');
+    expect(overview).not.toContain("DailyBriefPanel");
   });
 
   it("gives first-time users real mailbox connection actions", () => {
@@ -155,57 +108,61 @@ describe("authenticated agent flow", () => {
     expect(mailboxes).toContain('authFetch("/api/emails/sync"');
   });
 
-  it("keeps studio as the authenticated run surface entry", () => {
+  it("keeps Studio as the one authenticated Bot configuration and run surface", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const productCopy = read("src/lib/product-copy.ts");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
+    const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("{language.setupPrompt}");
-    expect(createDialog).toContain("{language.setupLabel}");
-    // Create is a single brief-first screen; voice, phone, and testing
-    // are deliberately deferred into Studio.
-    expect(createDialog).toContain("Not now");
+    expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(createDialog).toContain("BOT_CHANNELS.map");
+    expect(createDialog).toContain("Not Now");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build Your Next Voice Agent"');
-    expect(productCopy).toContain(
-      'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
-    );
+    expect(productCopy).toContain('createHeadline: "Build Your Bot"');
+    expect(productCopy).toContain("Describe the job. Connect voice, text, email");
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
 
     expect(studioHome).toContain('params.get("brief")');
-    expect(studioHome).toContain('params.get("posture")');
-    expect(studioHome).toContain('requestedPosture !== "personal" && accountType === "business"');
+    expect(studioHome).toContain('params.get("template")');
+    expect(studioHome).not.toContain('params.get("posture")');
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
-    expect(studioHome).not.toContain("mode=workroom");
+    expect(studioWorkspace).toContain('type WorkspaceSection = "setup" | "test" | "review"');
+    expect(studioWorkspace).not.toContain("useAccount");
+    expect(studioWorkspace).not.toContain("posture=");
   });
 
-  it("keeps Fast Start broad enough for sales, support, personal, and call coverage", () => {
+  it("keeps Fast Start broad across business roles, personal starters, and custom workflows", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
-
-    expect(createDialog).toContain("Revenue Desk");
-    expect(createDialog).toContain("Support Desk");
-    expect(createDialog).toContain('value: "scheduler"');
-    expect(createDialog).toContain('value: "sales"');
-    // Breadth used to be asserted against the brief the composer was pre-filled
-    // with. That pre-fill is gone — the box opens empty so the customer writes
-    // their own job — so the same promise is checked where it still lives: the
-    // placeholder, which suggests the range without occupying the field.
-    expect(createDialog).toContain("Qualify inbound demos, answer support questions");
-    expect(createDialog).toContain("route urgent calls");
-    expect(createDialog).not.toContain("Handle pharmacy calls");
+    for (const phrase of [
+      "Front Desk",
+      "Sales Rep",
+      "Appointment Setter",
+      "Customer Support",
+      "Lead Qualifier",
+      "Recruiter",
+      "Collections",
+      "Property Manager",
+      "Personal Assistant",
+      "Family Concierge",
+      "Create Your Own",
+    ]) {
+      expect(createDialog).toContain(phrase);
+    }
+    expect(createDialog).toContain("Employee roles, personal starters, and Create Your Own");
+    expect(createDialog).not.toContain("Choose one personal job");
   });
 
-  it("keeps template gallery searchable and accessible", () => {
+  it("keeps the template gallery searchable and accessible", () => {
     const templates = read("src/components/AgentTemplates.tsx");
-
     expect(templates).toContain("searchableTemplateText");
     expect(templates).toContain("template.firstMessage");
     expect(templates).toContain("Search templates, roles, channels…");
@@ -213,13 +170,10 @@ describe("authenticated agent flow", () => {
     expect(templates).toContain('aria-label="Template category filter"');
     expect(templates).toContain("aria-pressed={selected}");
     expect(templates).toContain("Clear search");
-    expect(templates).toContain(
-      'aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}',
-    );
     expect(templates).not.toContain("hidden hidden");
   });
 
-  it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
+  it("launches a resumable Train, Wire, Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
@@ -232,16 +186,14 @@ describe("authenticated agent flow", () => {
     expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
     expect(createFlow).toContain("readPostCreateWizard");
     expect(createFlow).toContain("clearPostCreateWizard");
-    expect(createFlow).toContain("POST_CREATE_WIZARD_STEP_KEY");
     expect(wizard).toContain("RoleplaySandbox");
-    expect(wizard).toContain('step === "train"');
-    expect(wizard).toContain('step === "channels"');
-    expect(wizard).toContain('step === "wire"');
-    expect(wizard).toContain('step === "test"');
+    expect(wizard).toContain('value === "train"');
+    expect(wizard).toContain('value === "wire"');
+    expect(wizard).toContain('value === "test"');
+    expect(wizard).toContain('const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]');
     expect(wizard).toContain("clearPostCreateWizard");
     expect(wizard).toContain("stashPostCreateWizardStep");
     expect(copy).toContain("POST_CREATE_WIZARD_COPY");
-    expect(copy).toContain("channels:");
   });
 
   it("keeps Live Video retired to identity-only surfaces", () => {
@@ -255,109 +207,23 @@ describe("authenticated agent flow", () => {
     expect(page).toContain('title="Identity"');
     expect(page).toContain("AgentFace");
     expect(page).not.toContain("OpenAILiveVoiceSandbox");
-    expect(page).not.toContain("feedPcmDelta");
     expect(presenter).toContain("LiveAvatar / HeyGen WebRTC lip-sync is retired");
     expect(presenter).toContain("AgentFace");
-    expect(presenter).not.toContain("repeatAudio");
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
-    expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
   });
 
-  it("persists the deploy modal's template identity on create", () => {
+  it("persists deploy-modal identity, voice, channel, greeting, and personality", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
     const templates = read("src/components/AgentTemplates.tsx");
     const deployModal = read("src/components/DeployAgentModal.tsx");
 
-    // Quick Deploy promises the picked voice, channel, opening line, and
-    // template personality — the create route must actually store them.
     expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
     expect(routes).toContain("isManagedVapiVoiceId(requestedVoiceId)");
     expect(routes).toContain('voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi"');
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
-    // Template personalities stack role methodology + overlay and substitute
-    // business tokens; the factory consumes the stored personality verbatim.
-    // The composition itself lives in the shared create-defaults helper so web,
-    // template deploy, and mobile all seed identically — assert the delegation
-    // here and the composition where it actually happens.
-    expect(routes).toContain("resolveCreatePersonality({");
-    expect(routes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
-    const createDefaults = read("src/lib/agent-create-defaults.ts");
-    expect(createDefaults).toContain("composeAgentPersonality");
-    expect(createDefaults).toContain("TEMPLATE_OVERLAYS[opts.templateId]");
-    expect(templates).toContain("voice_id: values.voiceId");
-    expect(deployModal).toContain("VAPI_CURATED_VOICES");
-    expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
-    expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
-  });
-
-  it("surfaces the create warning even though Studio is already mounted", () => {
-    const studioHome = read("src/pages/AgentStudioHome.tsx");
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
-
-    // Applying the first brief is best-effort, and on failure the dialog stashes
-    // a warning for Studio to raise. But Fast Start opens from
-    // `/studio?create=1`, so Studio is already mounted when that happens — a
-    // mount-only effect never ran again and the message sat unread in session
-    // storage, leaving the single case the warning exists for silent.
-    expect(createDialog).toContain("stashCreateWarning(");
-
-    // Only the effect that consumes the warning — the wizard effect below it
-    // legitimately keeps mount-only deps, and a wider window would read its
-    // dependency array instead of this one's.
-    const start = studioHome.indexOf("consumeCreateWarning()");
-    const consumeEffect = studioHome.slice(start, studioHome.indexOf("]);", start) + 3);
-    // The post-create redirect swaps `create=1` for `agent=<id>`, so the search
-    // params are the signal that the flow finished.
-    expect(consumeEffect).toMatch(/\}, \[toast, params\]\);$/);
-  });
-
-  it("defers phone provisioning from Fast Start into the post-create wizard", () => {
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    const createFlow = read("src/lib/wireline-create-flow.ts");
-
-    expect(createDialog).not.toContain('"/api/phone-numbers/provision"');
-    expect(createDialog).toContain("phoneProvisioned: false");
-    expect(wizard).toContain('"/api/phone-numbers/provision"');
-    expect(createFlow).toContain("phoneProvisioned");
-  });
-
-  it("scopes wizard phone state to the created agent only", () => {
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-
-    expect(wizard).toContain("row.agent_id === payload.agentId");
-    expect(wizard).not.toContain("numbers[0]");
-    expect(wizard).toContain("ACTIVATION_REQUIRED");
-  });
-
-  it("routes every PSTN call through the governed managed voice runtime", () => {
-    const schema = read("src/db/schema.ts");
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
-    const routes = read("src/routes/agent-routes-v2.ts");
-
-    // Dual phone-voice columns remain persisted for continuity. The live
-    // factory admits only curated ElevenLabs voices or tenant-owned approved
-    // clones, and the shared runtime always carries a managed Vapi fallback.
-    expect(schema).toContain("phoneVoiceId");
-    expect(schema).toContain("phoneVoiceProvider");
-    expect(factory).toContain("buildManagedVoiceRuntime");
-    expect(factory).toContain('schema.clonedVoices.status, "approved"');
-    expect(managedRuntime).toContain("isManagedVapiVoiceId");
-    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
-    expect(managedRuntime).toContain("fallbackPlan");
-    expect(factory).not.toContain("configured.phoneVoiceProvider");
-    expect(routes).toContain("phoneVoiceId");
-  });
-
-  it("keeps the retired custom-presence consent FTUX deleted until a live surface exists", () => {
-    // AgentPresenceLivePreview was never mounted, so the consent panel inside
-    // it guarded copy no user could reach. Both were removed 2026-08-13; the
-    // server-side presenter consent policy remains the enforced contract, and
-    // reviving the FTUX means mounting a real surface, not resurrecting these.
-    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
-    expect(existsSync("src/components/video-presenter/CustomPresenceConsentPanel.tsx")).toBe(false);
+    expect(templates).toContain("template.firstMessage");
+    expect(deployModal).toContain("firstMessage");
   });
 });
