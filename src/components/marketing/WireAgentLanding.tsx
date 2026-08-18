@@ -317,7 +317,7 @@ export default function WireAgentLanding() {
                           })
                         }
                       >
-                        <Phone className="size-4" aria-hidden="true" />
+                        <PhoneCall className="size-4" aria-hidden="true" />
                         <span>Call Demo Line</span>
                       </a>
                     }
