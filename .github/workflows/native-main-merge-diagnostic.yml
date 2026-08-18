@@ -1,4 +1,5 @@
 name: native-main-merge-integration
+# Single authoritative merge, verification, and branch-cleanup gate.
 
 on:
   push:
