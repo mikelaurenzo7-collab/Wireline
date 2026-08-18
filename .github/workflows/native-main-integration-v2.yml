@@ -144,6 +144,17 @@ jobs:
               'cadence.indexOf(\'if (step.type === "email")\')), '
           )
           text = text[:line_start] + replacement + text[line_end:]
+
+          route_block = '''replaceOnce(
+            "src/lib/marketing-route-meta.ts",
+            "Last updated August 1, 2026.",
+            "Last updated August 17, 2026.",
+          );
+
+          '''
+          if text.count(route_block) != 1:
+              raise SystemExit("marketing route date patch block missing or duplicated")
+          text = text.replace(route_block, "", 1)
           apply_path.write_text(text, encoding="utf-8")
 
           viewport = Path(".audit/postmerge/marketing-viewport-lock.spec.ts")
@@ -158,6 +169,20 @@ jobs:
 
             node --check .audit/postmerge/apply.mjs
             node .audit/postmerge/apply.mjs
+
+            python <<'PY'
+          from pathlib import Path
+          route_meta = Path("src/lib/marketing-route-meta.ts")
+          text = route_meta.read_text(encoding="utf-8")
+          old = "Last updated August 1, 2026."
+          if old not in text:
+              raise SystemExit("marketing route date source missing")
+          route_meta.write_text(
+              text.replace(old, "Last updated August 17, 2026."),
+              encoding="utf-8",
+          )
+          PY
+
             rm -rf .audit/postmerge
             git add -A
 
