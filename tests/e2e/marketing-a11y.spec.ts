@@ -60,10 +60,9 @@ test("homepage live console has visible account navigation and no serious axe vi
     workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.hybrid.label}\\b`) }),
   ).toBeVisible();
 
+  await expect(page.getByRole("link", { name: "Hear It Live", exact: true })).toBeVisible();
   await expect(
-    page
-      .getByRole("button", { name: /Hear It Live/i })
-      .or(page.getByRole("link", { name: /Hear It Live/i })),
+    page.locator(".landing-demo").getByRole("button", { name: "Hear It Live", exact: true }),
   ).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
