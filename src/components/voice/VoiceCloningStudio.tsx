@@ -108,6 +108,9 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dubbingUrl, setDubbingUrl] = useState("");
+  const [dubbingLanguage, setDubbingLanguage] = useState("es");
+  const [dubbingRightsAccepted, setDubbingRightsAccepted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileSelectionRef = useRef(0);
 
@@ -192,6 +195,34 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
       });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Voice could not be created.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function startDubbing(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy("dub");
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await authFetch("/api/voices/dub", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceUrl: dubbingUrl.trim(),
+          targetLanguage: dubbingLanguage.trim(),
+          rightsAccepted: dubbingRightsAccepted,
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as { error?: string; dubbingId?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Dubbing could not be started.");
+      setNotice(`Dubbing started${body?.dubbingId ? `. Job ${body.dubbingId}` : ""}.`);
+      setDubbingUrl("");
+      setDubbingRightsAccepted(false);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Dubbing could not be started.");
     } finally {
       setBusy(null);
     }
@@ -301,6 +332,50 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
           {error}
         </StatusNotice>
       ) : null}
+
+      <form onSubmit={startDubbing} className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Dub media</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Start a dubbed audio or video job from a public HTTPS media URL. You retain control of the source and destination language.
+          </p>
+        </div>
+        <input
+          type="url"
+          required
+          value={dubbingUrl}
+          onChange={(event) => setDubbingUrl(event.target.value)}
+          placeholder="https://example.com/source-video.mp4"
+          className="min-h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-xs font-medium text-foreground" htmlFor="dubbing-language">Target language</label>
+          <input
+            id="dubbing-language"
+            required
+            pattern="[A-Za-z]{2,3}"
+            value={dubbingLanguage}
+            onChange={(event) => setDubbingLanguage(event.target.value)}
+            className="min-h-10 w-20 rounded-lg border border-border bg-background px-3 text-sm"
+            aria-label="Target language code"
+          />
+          <button
+            type="submit"
+            disabled={!configured || !dubbingRightsAccepted || busy !== null}
+            className="min-h-10 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy === "dub" ? "Starting…" : "Start dubbing"}
+          </button>
+        </div>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground" htmlFor="dubbing-rights">
+          <Checkbox
+            id="dubbing-rights"
+            checked={dubbingRightsAccepted}
+            onChange={(event) => setDubbingRightsAccepted(event.target.checked)}
+          />
+          I have the rights and consent needed to dub this media.
+        </label>
+      </form>
 
       {!open ? (
         <div className="space-y-2">

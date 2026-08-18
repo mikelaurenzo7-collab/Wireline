@@ -106,7 +106,7 @@ describe("managed phone voice runtime policy", () => {
   });
 
   it("gates private voices on authorization, human proof review, and revocation", () => {
-    expect(voiceRoutes).toMatch(/requirePlatformAdmin/);
+    expect(voiceRoutes).toMatch(/authenticateUser,[\s\S]*voiceMutationRateLimit/);
     expect(voiceRoutes).toMatch(/ELEVENLABS_VOICE_CONSENT_VERSION/);
     expect(voiceRoutes).toMatch(/sourceAudioRetained: false/);
     expect(voiceRoutes).toMatch(/createHash\("sha256"\)/);

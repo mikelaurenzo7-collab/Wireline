@@ -24,6 +24,7 @@ import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agen
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
+import { isElevenLabsLibraryVoiceAvailable } from "../lib/elevenlabs-client";
 import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
@@ -702,8 +703,8 @@ router.patch(
             ),
           )
           .limit(1);
-        if (!approvedClone) {
-          throw AppError.fromHttpStatus(400, "This private voice has not passed review.");
+        if (!approvedClone && !(await isElevenLabsLibraryVoiceAvailable(voiceId))) {
+          throw AppError.fromHttpStatus(400, "Choose a Wireline voice from the library.");
         }
       }
     }

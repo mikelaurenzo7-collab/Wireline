@@ -19,11 +19,11 @@ export type VoiceOption = {
  * Studio and public browser live conversations use the same native xAI voices.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
-  { id: "eve", name: "Eve · Bright & Energetic", provider: "xai", gender: "female" },
-  { id: "ara", name: "Ara · Warm & Professional", provider: "xai", gender: "female" },
-  { id: "rex", name: "Rex · Clear & Confident", provider: "xai", gender: "male" },
-  { id: "sal", name: "Sal · Balanced & Friendly", provider: "xai", gender: "male" },
-  { id: "leo", name: "Leo · Direct & Energetic", provider: "xai", gender: "male" },
+  { id: "eve", name: "Wireline Eve · Bright & Energetic", provider: "xai", gender: "female" },
+  { id: "ara", name: "Wireline Ara · Warm & Professional", provider: "xai", gender: "female" },
+  { id: "rex", name: "Wireline Rex · Clear & Confident", provider: "xai", gender: "male" },
+  { id: "sal", name: "Wireline Sal · Balanced & Friendly", provider: "xai", gender: "male" },
+  { id: "leo", name: "Wireline Leo · Direct & Energetic", provider: "xai", gender: "male" },
 ] as const;
 
 /**

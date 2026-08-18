@@ -38,6 +38,7 @@ import {
   buildManagedVoiceRuntime,
   isCuratedElevenLabsVoiceId,
 } from "./managed-voice-runtime";
+import { isElevenLabsLibraryVoiceAvailable } from "./elevenlabs-client";
 import { sanitizeAmbientNoise } from "./workspace-planner";
 import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "./voice/studio-live-test-policy";
 
@@ -148,7 +149,7 @@ export async function buildVapiAssistant({
         ),
       )
       .limit(1);
-    approvedClone = Boolean(clone);
+    approvedClone = Boolean(clone) || (await isElevenLabsLibraryVoiceAvailable(requestedVoice));
   }
   const voiceRuntime = buildManagedVoiceRuntime({
     voiceProvider: configured.voiceProvider,
