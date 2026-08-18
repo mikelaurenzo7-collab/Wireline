@@ -33,6 +33,9 @@ for (const [path, source] of [
     fail(`${path} does not forbid the former provider-bound route`);
 }
 
+// Route ownership belongs in architecture and Studio-specific contracts. Product
+// voice tests intentionally verify customer language and should not be coupled
+// to an implementation filename.
 const dependentSources = [
   "ARCHITECTURE.md",
   "CODEBASE_HEALTH.md",
@@ -40,7 +43,7 @@ const dependentSources = [
   "tests/authenticated-agent-flow-contract.test.ts",
   "tests/browser-extension-contract.test.ts",
   "tests/orchestration-spine-contract.test.ts",
-  "tests/product-voice-contract.test.ts",
+  "tests/studio-canvas-vision-contract.test.ts",
   "tests/voice-catalog-contract.test.ts",
 ];
 
