@@ -1,8 +1,8 @@
 # Native/main integration failure
 
-HEAD=01e514f991fb22de9295d3e4ca83046eb1005ca9
+HEAD=b0baae67349a08e0af43ec84692f27474303f26e
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32096102460
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32096373343
 
 ```text
 From https://github.com/mikelaurenzo7-collab/Wireline
