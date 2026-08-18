@@ -73,6 +73,21 @@ jobs:
             python -m py_compile .audit/postmerge/apply-grok46-schema.py
             python .audit/postmerge/apply-grok46-schema.py
 
+            # Normalize the generated TypeScript assertion. The migration author
+            # nests a SQL string literal inside a JSON fragment inside TypeScript;
+            # emit that boundary explicitly so ESLint parses the permanent test.
+            python <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/grok-46-persisted-defaults-contract.test.ts")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          matches = [index for index, line in enumerate(lines) if "expect(snapshot).toContain" in line]
+          if len(matches) != 1:
+              raise SystemExit(f"expected one snapshot assertion, found {len(matches)}")
+          lines[matches[0]] = r'''    expect(snapshot).toContain("\"default\": \"'grok-4.6'\"");'''
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
             # Regenerate all reviewed metadata again from the permanent
             # materializer. Fixed hashes make nondeterminism or drift fail.
             node scripts/materialize-drizzle-meta.mjs
