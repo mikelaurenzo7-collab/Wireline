@@ -133,8 +133,8 @@ describe("health surfaces contract", () => {
       model: STRUCTURED_PRIMARY_MODEL,
     });
     expect(tiering.reasoning_fallback).toMatchObject({
-      provider: "openai",
-      model: expect.any(String),
+      provider: "xai",
+      model: STRUCTURED_PRIMARY_MODEL,
     });
 
     const routeSource = read("src/routes/health-routes.ts");
