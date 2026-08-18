@@ -8,7 +8,13 @@ import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/shadcn/Select";
 import { cn } from "../../lib/utils";
 import {
   SALES_PLAYBOOKS,
@@ -100,7 +106,7 @@ export default function CampaignsPanel() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Failed to create campaign");
       }
-      toast.success("Campaign created");
+      toast.success("Campaign Created");
       setShowCreate(false);
       setName("");
       setGoal("");
@@ -140,7 +146,7 @@ export default function CampaignsPanel() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Launch failed");
       }
-      toast.success("Campaign launched");
+      toast.success("Campaign Launched");
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't launch campaign");
@@ -154,7 +160,7 @@ export default function CampaignsPanel() {
     try {
       const res = await authFetch(`/api/campaigns/${id}/stop`, { method: "POST" });
       if (!res.ok) throw new Error("Stop failed");
-      toast.success("Campaign stopped");
+      toast.success("Campaign Stopped");
       await load();
     } catch {
       toast.error("Couldn't stop campaign");
@@ -169,7 +175,7 @@ export default function CampaignsPanel() {
     try {
       const res = await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
-      toast.success("Campaign deleted");
+      toast.success("Campaign Deleted");
       await load();
     } catch {
       toast.error("Couldn't delete campaign");
@@ -180,7 +186,7 @@ export default function CampaignsPanel() {
 
   if (loading) {
     return (
-      <ClientRouteLoading icon={<Megaphone className="h-5 w-5" />} label="Loading campaigns" />
+      <ClientRouteLoading icon={<Megaphone className="h-5 w-5" />} label="Loading Campaigns" />
     );
   }
 
@@ -201,8 +207,8 @@ export default function CampaignsPanel() {
             variant="outline"
             size="sm"
             onClick={() => void load()}
-            aria-label="Refresh campaigns"
-            title="Refresh campaigns"
+            aria-label="Refresh Campaigns"
+            title="Refresh Campaigns"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           </ShadButton>
@@ -214,7 +220,7 @@ export default function CampaignsPanel() {
               onClick={() => setShowCreate(true)}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
-              Create campaign
+              Create Campaign
             </ShadButton>
           ) : null}
         </div>
@@ -230,20 +236,20 @@ export default function CampaignsPanel() {
       )}
 
       {showCreate && (
-        <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
+        <div className="mx-4 mt-4 space-y-3 rounded-md border border-border bg-card p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Create campaign</h3>
+            <h3 className="text-sm font-medium">Create Campaign</h3>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              aria-label="Close campaign form"
+              aria-label="Close Campaign Form"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           <Input
-            aria-label="Campaign name"
-            placeholder="Campaign name"
+            aria-label="Campaign Name"
+            placeholder="Campaign Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -251,8 +257,8 @@ export default function CampaignsPanel() {
             value={playbookId}
             onValueChange={(value) => setPlaybookId(value as SalesPlaybookId)}
           >
-            <SelectTrigger aria-label="Sales playbook">
-              <SelectValue placeholder="Sales playbook" />
+            <SelectTrigger aria-label="Sales Playbook">
+              <SelectValue placeholder="Sales Playbook" />
             </SelectTrigger>
             <SelectContent>
               {SALES_PLAYBOOKS.map((playbook) => (
@@ -266,8 +272,8 @@ export default function CampaignsPanel() {
             {SALES_PLAYBOOKS.find((playbook) => playbook.id === playbookId)?.objective}
           </p>
           <Input
-            aria-label="Campaign notes"
-            placeholder="Notes (optional)"
+            aria-label="Campaign Notes"
+            placeholder="Notes (Optional)"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
           />
@@ -275,11 +281,11 @@ export default function CampaignsPanel() {
             value={agentId || "__none__"}
             onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}
           >
-            <SelectTrigger aria-label="Assign voice agent">
-              <SelectValue placeholder="Assign voice agent" />
+            <SelectTrigger aria-label="Assign Voice Bot">
+              <SelectValue placeholder="Assign Voice Bot" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">No voice agent assigned</SelectItem>
+              <SelectItem value="__none__">No Voice Bot Assigned</SelectItem>
               {agents.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   {a.name}
@@ -292,12 +298,12 @@ export default function CampaignsPanel() {
             disabled={creating || !name.trim()}
             onClick={() => void createCampaign()}
           >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create draft"}
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Draft"}
           </ShadButton>
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <div className="min-h-0 flex-1 overflow-auto p-4">
         {campaigns.length === 0 && !error ? (
           <div className="flex w-full flex-col items-center px-2 py-6 sm:px-4">
             <EmptyState
@@ -309,8 +315,10 @@ export default function CampaignsPanel() {
               icon={Megaphone}
               title={OPS_CHANNEL_EMPTY.campaigns.title}
               actions={[
-                { label: "Create campaign", onClick: () => setShowCreate(true), primary: true },
-                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create campaign"),
+                { label: "Create Campaign", onClick: () => setShowCreate(true), primary: true },
+                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter(
+                  (a) => a.label.toLowerCase() !== "create campaign",
+                ),
               ]}
             />
           </div>
@@ -319,23 +327,23 @@ export default function CampaignsPanel() {
             {campaigns.map((c) => (
               <li
                 key={c.id}
-                className="rounded-md border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between"
+                className="flex flex-col justify-between gap-3 rounded-md border border-border bg-card p-4 sm:flex-row sm:items-center"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="wl-preserve-case font-medium truncate">{c.name}</h3>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="wl-preserve-case truncate font-medium">{c.name}</h3>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                       {STATUS_LABEL[c.status] || c.status}
                     </span>
                   </div>
                   {c.goal && (
-                    <p className="text-sm text-muted-foreground mt-1 truncate">{c.goal}</p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">{c.goal}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {c.leads_count} leads · {c.dialed_count} dialed · {c.connected_count} connected
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   {c.status === "draft" || c.status === "paused" ? (
                     <ShadButton
                       type="button"
@@ -367,6 +375,7 @@ export default function CampaignsPanel() {
                     type="button"
                     size="sm"
                     variant="ghost"
+                    aria-label="Delete Campaign"
                     disabled={busyId === c.id}
                     onClick={() => void deleteCampaign(c.id)}
                   >
