@@ -1,8 +1,8 @@
 # Native/main integration v2 failure
 
-HEAD=3175635cd43715aa80e24b65f6f30d8fd8a17ac4
+HEAD=c70c29735a6f42af13cae340098e0373f5a26cfb
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32089879031
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32090087949
 
 ```text
 From https://github.com/mikelaurenzo7-collab/Wireline
@@ -36,16 +36,5 @@ Updated 1 path from the index
 Updated 1 path from the index
 Updated 1 path from the index
 Updated 1 path from the index
-file:///home/runner/work/Wireline/Wireline/.audit/postmerge/apply.mjs:23
-    throw new Error(`${path}: expected one regex match, found ${matches.length}`);
-          ^
-
-Error: tests/security-atomicity-release-contract.test.ts: expected one regex match, found 0
-    at replaceRegexOnce (file:///home/runner/work/Wireline/Wireline/.audit/postmerge/apply.mjs:23:11)
-    at file:///home/runner/work/Wireline/Wireline/.audit/postmerge/apply.mjs:269:1
-    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
-
-Node.js v22.23.2
+cadence replacement marker missing
 ```
