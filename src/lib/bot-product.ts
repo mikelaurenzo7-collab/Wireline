@@ -1,22 +1,63 @@
 export type BotChannelKey = "voice" | "text" | "email";
 export type BotTemplateCategory = "Business" | "Personal" | "Custom";
 export type BotDirection = "inbound" | "outbound" | "hybrid";
+export type BotProductTypeKey = "voice" | "conversation" | "human";
+
+export const BOT_BRAND = {
+  name: "Wireline",
+  slogan: "BOTS THAT GET THE WORK DONE",
+  supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL",
+  promise:
+    "Start with voice. Build a Bot that answers and makes calls, holds natural conversations, continues by text and email, books next steps, and follows through from one workspace.",
+} as const;
+
+export const BOT_PRODUCT_TYPES = [
+  {
+    key: "voice" as const,
+    name: "Voice Bot",
+    label: "VOICE BOT",
+    description:
+      "Answer inbound calls, make outbound calls, qualify needs, book next steps, transfer, and recap.",
+  },
+  {
+    key: "conversation" as const,
+    name: "Conversation Bot",
+    label: "CONVERSATION BOT",
+    description:
+      "Carry one continuous customer conversation across voice, text, and email with shared context.",
+  },
+  {
+    key: "human" as const,
+    name: "Human Bot",
+    label: "HUMAN BOT",
+    description:
+      "Configure a Bot around a real human role, playbook, tone, approvals, tools, and handoffs.",
+  },
+] as const satisfies ReadonlyArray<{
+  key: BotProductTypeKey;
+  name: string;
+  label: string;
+  description: string;
+}>;
 
 export const BOT_CHANNELS = [
   {
     key: "voice" as const,
     label: "Voice",
-    description: "Answer and make calls, qualify needs, book, transfer, and recap.",
+    description:
+      "Answer and make calls, hold natural conversations, qualify needs, book, transfer, and recap.",
   },
   {
     key: "text" as const,
     label: "Text",
-    description: "Continue the conversation by SMS for follow-up, reminders, and updates.",
+    description:
+      "Continue the same conversation by SMS for follow-up, reminders, confirmations, and updates.",
   },
   {
     key: "email" as const,
     label: "Email",
-    description: "Read, reply, follow up, and preserve the full conversation record.",
+    description:
+      "Read, reply, follow up, and preserve the complete conversation and outcome record.",
   },
 ] as const;
 
@@ -112,15 +153,15 @@ export const BOT_ROLE_TEMPLATES = [
 ] as const;
 
 export const BOT_MARKETING_VOICE = {
-  headline: "Build a Bot for Any Job",
-  subline:
-    "Configure one Bot for voice, text, and email with your knowledge, tools, rules, approvals, and handoffs.",
+  eyebrow: BOT_BRAND.supportingLine,
+  headline: BOT_BRAND.slogan,
+  subline: BOT_BRAND.promise,
   primaryCta: "Build Your Bot",
   spine: ["Choose a Role", "Connect Channels", "Train Your Bot", "Go Live"],
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {
-  title: "One Workspace. Every Bot.",
+  title: "ONE WORKSPACE. EVERY BOT.",
   description:
-    "Business roles, personal help, and custom use cases live in the same workspace, never separate workspaces. The role changes. The operating system does not.",
+    "Start with a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom workflow. Every Bot uses the same workspace, shared context, controls, inbox, and operating history.",
 } as const;
