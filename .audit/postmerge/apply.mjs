@@ -9,47 +9,48 @@ const write = (path, content) => writeFileSync(filePath(path), content, "utf8");
 function replaceOnce(path, needle, replacement) {
   const source = read(path);
   const first = source.indexOf(needle);
-  if (first < 0) throw new Error(`${path}: required text was not found`);
+  if (first < 0) throw new Error(`${path}: required text was not found: ${needle.slice(0, 120)}`);
   if (source.indexOf(needle, first + needle.length) >= 0) {
-    throw new Error(`${path}: required text is not unique`);
+    throw new Error(`${path}: required text is not unique: ${needle.slice(0, 120)}`);
   }
   write(path, source.slice(0, first) + replacement + source.slice(first + needle.length));
 }
 
 function replaceRegexOnce(path, pattern, replacement) {
   const source = read(path);
-  const matches = [...source.matchAll(new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`))];
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  const matches = [...source.matchAll(new RegExp(pattern.source, flags))];
   if (matches.length !== 1) {
-    throw new Error(`${path}: expected one regex match, found ${matches.length}`);
+    throw new Error(`${path}: expected one regex match, found ${matches.length}: ${pattern}`);
   }
   write(path, source.replace(pattern, replacement));
 }
 
-copyFileSync(
-  filePath(".audit/postmerge/PrecisionPublicHeader.tsx"),
-  filePath("src/components/marketing/PrecisionPublicHeader.tsx"),
-);
-copyFileSync(
-  filePath(".audit/postmerge/marketing-viewport-lock.spec.ts"),
-  filePath("tests/e2e/marketing-viewport-lock.spec.ts"),
-);
-copyFileSync(
-  filePath(".audit/postmerge/round6-tenant-binding-contract.test.ts"),
-  filePath("tests/round6-tenant-binding-contract.test.ts"),
-);
-copyFileSync(
-  filePath(".audit/postmerge/admin-settings-load-contract.test.ts"),
-  filePath("tests/admin-settings-load-contract.test.ts"),
-);
-copyFileSync(
-  filePath(".audit/postmerge/public-header-mobile-contract.test.ts"),
-  filePath("tests/public-header-mobile-contract.test.ts"),
-);
+function replaceIfPresent(path, needle, replacement) {
+  const source = read(path);
+  if (!source.includes(needle)) return;
+  write(path, source.replace(needle, replacement));
+}
+
+for (const [staged, destination] of [
+  [".audit/postmerge/PrecisionPublicHeader.tsx", "src/components/marketing/PrecisionPublicHeader.tsx"],
+  [".audit/postmerge/marketing-viewport-lock.spec.ts", "tests/e2e/marketing-viewport-lock.spec.ts"],
+  [".audit/postmerge/round6-tenant-binding-contract.test.ts", "tests/round6-tenant-binding-contract.test.ts"],
+  [".audit/postmerge/admin-settings-load-contract.test.ts", "tests/admin-settings-load-contract.test.ts"],
+  [".audit/postmerge/public-header-mobile-contract.test.ts", "tests/public-header-mobile-contract.test.ts"],
+]) {
+  copyFileSync(filePath(staged), filePath(destination));
+}
 
 replaceOnce(
   "src/db/schema.ts",
   "Latest committed migration: `drizzle/migrations/0152_native_xai_phone_bindings.sql`.",
   "Latest committed migration: `drizzle/migrations/0153_preserve_xai_registration_ledger.sql`.",
+);
+replaceIfPresent(
+  "src/db/schema-base.ts",
+  "`drizzle/migrations/0151_xai_grok_46_runtime_defaults.sql`",
+  "`drizzle/migrations/0153_preserve_xai_registration_ledger.sql`",
 );
 
 replaceOnce(
@@ -59,56 +60,24 @@ replaceOnce(
 );
 replaceRegexOnce(
   "src/data/wireline-knowledge.ts",
-  /export const WIRELINE_VOICE_STACK =\n  "[^"]*";/,
-  'export const WIRELINE_VOICE_STACK =\n  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use the same voice brain. OpenAI Realtime is limited to the ChatGPT App preview because that host permits only OpenAI\'s realtime endpoint; it is not the PSTN runtime.";',
+  /export const WIRELINE_VOICE_STACK =\s*\n\s*"[^"]*";?/,
+  'export const WIRELINE_VOICE_STACK =\n  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use the same voice brain. OpenAI Realtime is limited to the ChatGPT App preview because that host permits only OpenAI\\\'s realtime endpoint; it is not the PSTN runtime.";',
 );
-
 replaceOnce(
-  "src/lib/marketing-route-meta.ts",
-  "Last updated August 1, 2026.",
-  "Last updated August 17, 2026.",
+  "src/data/wireline-knowledge.ts",
+  '    "DNC enforcement on outbound dialing",',
+  '    "Tenant-maintained DNC enforcement on outbound dialing",',
+);
+replaceOnce(
+  "src/data/wireline-knowledge.ts",
+  '    "EU data residency is not currently available",',
+  '    "EU data residency is not currently available",\n    "Federal Do Not Call registration is not complete; marketing campaigns fail closed until the vendor login is configured",',
 );
 
 replaceOnce(
   "src/components/marketing/BrowserCallWidget.tsx",
   '                  ? "Call the public demo line below. Standard carrier rates may apply."\n                  : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}',
   '                  ? (\n                      <>\n                        Call the public demo line below.{" "}\n                        <span>Standard carrier rates may apply.</span>\n                      </>\n                    )\n                  : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}',
-);
-
-replaceOnce(
-  "src/components/marketing/MarketingChrome.tsx",
-  `/**
- * Header, pinned chrome bar, and an optional mobile sticky CTA, for pages that
- * bring their own content width: legal, trust, status, changelog, support.
- *
- * These are the long-form routes, and they are exactly why the frame is a frame
- * rather than a per-page decision. A terms-of-service page has to scroll; what
- * it must not do is scroll the *window*, because then the header detaches, the
- * chrome bar drops off the bottom, and the route stops matching every other
- * public page. So it gets the same 100dvh surface as the composed pages, and
- * the document flows inside the same single \`.marketing-flow\` scroller.
- */`,
-  `/**
- * Shared fixed header, document-flow content, and optional mobile sticky CTA
- * for public routes that bring their own content width.
- *
- * Public pages deliberately use the browser document as the vertical scroll
- * owner. The authenticated workspace keeps the fixed-viewport application
- * shell; keeping those contracts separate prevents nested or clipped scrolling.
- */`,
-);
-replaceOnce(
-  "src/components/marketing/MarketingChrome.tsx",
-  `          /* One scroller, and it is this one. The header offset is authored on
-             \`.marketing-flow\` itself, so no page reserves h-16 of its own. */`,
-  `          /* The shared flow owns the fixed-header offset. Document mode turns
-             this region into normal page flow; workspace mode remains isolated. */`,
-);
-
-replaceRegexOnce(
-  "src/styles/ruthless-mobile-cleanup.css",
-  /\n  \/\* -----------------------------------------------------------------------\n   \* Public drawer: no miniature landing page inside a navigation sheet\.\n   \* --------------------------------------------------------------------- \*\/\n  #wireline-mobile-navigation > div \{[\s\S]*?\n  #wireline-mobile-navigation > div > div:last-child \{\n    padding-top: 1\.25rem;\n  \}\n/,
-  "\n",
 );
 
 replaceOnce(
@@ -211,9 +180,19 @@ replaceOnce(
   '    const provisioning = read("src/lib/phone-provisioning.ts");\n    const registry = read("src/server/register-api-routes.ts");',
   '    const nativeProvisioning = read("src/lib/voice/native-phone-provisioning.ts");\n    const nativeAssignment = read("src/lib/voice/native-phone-assignment.ts");\n    const nativeRouting = read("src/routes/native-phone-routing-routes.ts");\n    const registry = read("src/server/register-api-routes.ts");',
 );
-replaceRegexOnce(
+replaceOnce(
   "tests/company-identity-contract.test.ts",
-  /    expect\(\n      carrier\.match\(\/runCompanyIdentityMutation\\\(req\\\.user\\\.id, \"phone_number_changed\"\/g\),\n    \)\.toHaveLength\(3\);[\s\S]*?      "Number provisioning could not be saved; the provider allocation was released\.",\n    \);/,
+  `    expect(
+      carrier.match(/runCompanyIdentityMutation\\(req\\.user\\.id, "phone_number_changed"/g),
+    ).toHaveLength(3);
+    expect(carrier).toContain("desc(schema.phoneNumbers.id)");
+    expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
+    expect(provisioning).toContain("compensateProvisionedNumber");
+    expect(provisioning).toContain("Carrier compensation completed");
+    expect(provisioning).toContain("Carrier compensation queued in durable orphan ledger");
+    expect(provisioning).toContain(
+      "Number provisioning could not be saved; the provider allocation was released.",
+    );`,
   `    const manualClaim = carrier.slice(
       carrier.indexOf('"/api/phone-numbers",'),
       carrier.indexOf('"/api/phone-numbers/provision"'),
@@ -223,7 +202,6 @@ replaceRegexOnce(
     expect(registry.indexOf("app.use(nativePhoneRoutingRouter)")).toBeLessThan(
       registry.indexOf("app.use(carrierRouter)"),
     );
-
     expect(nativeRouting).toContain("provisionNativeTenantNumber");
     expect(nativeRouting).toContain("assignNativePhoneLine");
     expect(nativeProvisioning).toContain(
@@ -260,41 +238,58 @@ replaceOnce(
     expect(nativeHangup).toBeGreaterThan(nativeBranch);
     expect(nativePresence).toBeGreaterThan(nativeHangup);
 
-    const rollbackBranch = sentinel.indexOf("const url = \`${VAPI_API_BASE}/call/${controlUrl}/terminate\`");
-    const providerRequest = sentinel.indexOf("const response = await fetchWithTimeout", rollbackBranch);
+    const controlUrl = sentinel.indexOf("const controlUrl =");
+    const providerRequest = sentinel.indexOf("const response = await fetchWithTimeout", controlUrl);
     const okCheck = sentinel.indexOf("if (!response.ok)", providerRequest);
     const rollbackPresence = sentinel.indexOf('set({ status: "terminated" })', okCheck);
-    expect(rollbackBranch).toBeGreaterThan(-1);
-    expect(providerRequest).toBeGreaterThan(rollbackBranch);
+    expect(controlUrl).toBeGreaterThan(-1);
+    expect(providerRequest).toBeGreaterThan(controlUrl);
     expect(okCheck).toBeGreaterThan(providerRequest);
     expect(rollbackPresence).toBeGreaterThan(okCheck);
   });
 });`,
 );
 
-replaceRegexOnce(
+replaceOnce(
   "tests/security-atomicity-release-contract.test.ts",
-  /  it\("reserves each number before dialing and preserves the lock after uncertain outcomes", \(\) => \{[\s\S]*?\n  \}\);\n\n  it\("prevents the legacy route from bypassing the atomic owner",/,
+  `  it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
+    const source = read("src/routes/outbound-dial-atomic-routes.ts");
+    const reservation = source.indexOf(".insert(outboundDialReservations)");
+    const provider = source.indexOf("await placeOutboundCall");
+    const lead = source.indexOf("tx.insert(schema.outboundLeads)");
+    const completion = source.indexOf('status: "completed"');
+
+    expect(reservation).toBeGreaterThan(-1);
+    expect(provider).toBeGreaterThan(reservation);
+    expect(lead).toBeGreaterThan(provider);
+    expect(completion).toBeGreaterThan(provider);
+    expect(source).toContain("type DeniedOutboundDialGate = Extract<");
+    expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
+    expect(source).toContain(".onConflictDoNothing()");
+    expect(source).toContain('status: "dialing",\\n            failureCode: "provider_outcome_ambiguous"');
+    expect(source).toContain('failureCode: "post_provider_persistence_failed"');
+    expect(source).toContain('code: "DIAL_STATUS_UNCERTAIN"');
+    expect(source).toContain('code: "DIAL_ACCEPTED_RECONCILING"');
+  });`,
   `  it("reserves each number before native placement and preserves the lock after uncertain outcomes", () => {
-    const reservationAt = atomic.indexOf("reservePhoneOperation");
-    const dialingAt = atomic.indexOf('status: "dialing"', reservationAt);
-    const providerAt = atomic.indexOf("placeOutboundCall({", dialingAt);
-    const attachedLeadAt = atomic.indexOf("nativeLeadId = result.leadId", providerAt);
-    const ambiguousAt = atomic.indexOf("result.providerOutcomeAmbiguous", providerAt);
-    const completionAt = atomic.indexOf('status: "completed"', providerAt);
+    const source = read("src/routes/outbound-dial-atomic-routes.ts");
+    const reservation = source.indexOf(".insert(outboundDialReservations)");
+    const provider = source.indexOf("await placeOutboundCall");
+    const leadIdentity = source.indexOf("nativeLeadId = result.leadId || null");
+    const completion = source.indexOf('status: "completed"');
 
-    expect(reservationAt).toBeGreaterThan(-1);
-    expect(dialingAt).toBeGreaterThan(reservationAt);
-    expect(providerAt).toBeGreaterThan(dialingAt);
-    expect(attachedLeadAt).toBeGreaterThan(providerAt);
-    expect(ambiguousAt).toBeGreaterThan(providerAt);
-    expect(completionAt).toBeGreaterThan(ambiguousAt);
-    expect(atomic).toContain("await getPhoneOperation(operationKey)");
-    expect(atomic).toContain("ambiguous_failure");
-    expect(atomic).toContain("already_processing");
-  });
-
-  it("prevents the legacy route from bypassing the atomic owner",`,
+    expect(reservation).toBeGreaterThan(-1);
+    expect(provider).toBeGreaterThan(reservation);
+    expect(leadIdentity).toBeGreaterThan(provider);
+    expect(completion).toBeGreaterThan(leadIdentity);
+    expect(source).toContain("type DeniedOutboundDialGate = Extract<");
+    expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
+    expect(source).toContain(".onConflictDoNothing()");
+    expect(source).toContain('status: "dialing",\\n            failureCode: "provider_outcome_ambiguous"');
+    expect(source).toContain('failureCode: "post_provider_persistence_failed"');
+    expect(source).toContain('code: "DIAL_STATUS_UNCERTAIN"');
+    expect(source).toContain('code: "DIAL_ACCEPTED_RECONCILING"');
+  });`,
 );
 
 replaceOnce(
@@ -329,10 +324,12 @@ replaceOnce(
   });`,
   `  it("routes cadence email steps as marketing mail", () => {
     const cadence = read("src/lib/cadence-engine.ts");
+    const emailStart = cadence.indexOf('if (step.type === "email")');
     const emailStep = cadence.slice(
-      cadence.indexOf('if (step.type === "email")'),
-      cadence.indexOf('return { ok: false, result: `unknown step type', cadence.indexOf('if (step.type === "email")')),
+      emailStart,
+      cadence.indexOf('return { ok: false, result: \`unknown step type', emailStart),
     );
+    expect(emailStart).toBeGreaterThan(-1);
     expect(emailStep).toContain("new IntegrationService(cadence.userId)");
     expect(emailStep).toContain("integration.sendEmail({");
     expect(emailStep).toContain("marketing: true");
