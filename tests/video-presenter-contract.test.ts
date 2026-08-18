@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { BOT_MARK_GRADIENT_CAPACITY, botMarkFor } from "../src/lib/bot-mark";
+
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
@@ -25,6 +27,7 @@ describe("bot visual identity", () => {
 
     expect(policy).toContain("role never affects the mark");
     expect(policy).toContain("BOT_MARK_PALETTE");
+    expect(policy).toContain("BOT_MARK_GRADIENT_CAPACITY");
     expect(policy).toContain("BOT_MARK_MOTIFS");
     for (const motif of ["orbit", "relay", "split", "loop", "pulse", "weave"]) {
       expect(policy).toContain(`"${motif}"`);
@@ -42,6 +45,36 @@ describe("bot visual identity", () => {
     expect(optics).not.toContain("--wireline-color-status-warning");
     expect(optics).not.toContain("--wireline-color-status-error");
     expect(index).toContain('@import "./styles/bot-mark.css";');
+  });
+
+  it("has more distinct gradient signatures than the maximum standard purchasable Bot capacity", () => {
+    const plans = source("src/lib/plan-catalog.ts");
+    const extraBotRoute = source("src/routes/extra-agent-billing-atomic-routes.ts");
+    const baseCaps = [...plans.matchAll(/max_agents:\s*(\d+)/g)].map((match) => Number(match[1]));
+    const extraCap = Number(extraBotRoute.match(/target > (\d+)/)?.[1] || 0);
+    const maximumStandardCapacity = Math.max(...baseCaps) + extraCap;
+
+    expect(Math.max(...baseCaps)).toBe(15);
+    expect(extraCap).toBe(100);
+    expect(maximumStandardCapacity).toBe(115);
+    expect(BOT_MARK_GRADIENT_CAPACITY).toBeGreaterThan(maximumStandardCapacity);
+
+    const marks = Array.from({ length: maximumStandardCapacity }, (_, index) =>
+      botMarkFor({ id: `capacity-${index}` }),
+    );
+    expect(new Set(marks.map((mark) => mark.gradientSignature)).size).toBe(maximumStandardCapacity);
+    expect(
+      new Set(
+        marks.map((mark) =>
+          [
+            mark.palette.surfaceFrom,
+            mark.palette.surfaceTo,
+            mark.palette.wire,
+            mark.palette.accent,
+          ].join("|"),
+        ),
+      ).size,
+    ).toBe(maximumStandardCapacity);
   });
 
   it("retires human/cartoon face rendering without forcing an unsafe all-at-once import rename", () => {
