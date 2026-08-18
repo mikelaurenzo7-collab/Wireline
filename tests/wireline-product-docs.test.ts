@@ -88,12 +88,13 @@ describe("Wireline product documentation contract", () => {
     expect(themeLight).toContain(":root.light");
   });
 
-  it("keeps extension docs positioned as Wireline Command", () => {
+  it("keeps extension docs positioned as WIRELINE Command with Bot-native IA", () => {
     const readme = read("apps/browser-extension/README.md");
-    expect(readme).toContain("# Wireline Command");
+    expect(readme).toContain("# WIRELINE Command");
     expect(readme).toContain("Prepare a call");
     expect(readme).toContain("Draft a text");
-    expect(readme).toContain("Send an agent task");
+    expect(readme).toContain("Send a Bot task");
+    expect(readme).toContain("Bots, Connections, Phone, Inbox, Knowledge, or Studio");
   });
 
   it("keeps product docs aligned with Training and agent-first copy", () => {
@@ -148,8 +149,6 @@ describe("Wireline product documentation contract", () => {
   it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
-    // Real authenticated surfaces from src/routes/AppRoutes.tsx. Keep these in
-    // sync with the router so crawler policy never drifts from the actual app.
     const privateRoutes = [
       "/admin",
       "/agents",
