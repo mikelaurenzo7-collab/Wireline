@@ -76,4 +76,93 @@ replace_exact(
     '    const ambiguous = source.indexOf("if (isAmbiguousProviderResult(result))", provider);',
 )
 
-print("Applied final combined-head UI, lint, metadata, and contract repairs.")
+# Team mutations should refresh only the roster. Re-fetching settings, agents,
+# and phone numbers created duplicate load, extra 503 noise, and unrelated UI
+# churn after a successful invitation or removal.
+replace_exact(
+    "src/components/AdminSettings.tsx",
+    '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
+      fetchData();''',
+    '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
+      await fetchTeam();''',
+)
+replace_exact(
+    "src/components/AdminSettings.tsx",
+    '''      toastSuccess("Member removed", "Team access revoked.");
+      fetchData();''',
+    '''      toastSuccess("Member removed", "Team access revoked.");
+      await fetchTeam();''',
+)
+
+write(
+    "tests/admin-settings-load-contract.test.ts",
+    '''import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const source = readFileSync(
+  resolve(process.cwd(), "src/components/AdminSettings.tsx"),
+  "utf8",
+);
+
+describe("AdminSettings load and roster refresh contract", () => {
+  it("loads the team endpoint once on mount", () => {
+    const mount = source.slice(
+      source.indexOf("useEffect(() =>"),
+      source.indexOf("const fetchData = async () =>"),
+    );
+    const loader = source.slice(
+      source.indexOf("const fetchData = async () =>"),
+      source.indexOf("const syncCarrierNumbers = async () =>"),
+    );
+
+    expect(mount).toContain("fetchTeam();");
+    expect(loader).not.toContain('authFetch("/api/team")');
+  });
+
+  it("treats the deliberate workspace-certification gate as an empty roster", () => {
+    const teamLoader = source.slice(
+      source.indexOf("const fetchTeam = async () =>"),
+      source.indexOf("const fetchData = async () =>"),
+    );
+
+    expect(teamLoader).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
+    expect(teamLoader).toContain("setTeamMembers([])");
+  });
+
+  it("always releases the primary loading state after an early failed response", () => {
+    const loader = source.slice(
+      source.indexOf("const fetchData = async () =>"),
+      source.indexOf("const syncCarrierNumbers = async () =>"),
+    );
+    const earlyReturn = loader.indexOf(
+      'toastError("Settings unavailable", "Could not load settings. Please refresh.")',
+    );
+    const finallyBlock = loader.indexOf("} finally {");
+    const release = loader.indexOf("setIsLoading(false)", finallyBlock);
+
+    expect(earlyReturn).toBeGreaterThan(-1);
+    expect(finallyBlock).toBeGreaterThan(earlyReturn);
+    expect(release).toBeGreaterThan(finallyBlock);
+  });
+
+  it("refreshes only the team roster after team mutations", () => {
+    const invitation = source.slice(
+      source.indexOf("const inviteTeamMember"),
+      source.indexOf("const removeTeamMember"),
+    );
+    const removal = source.slice(
+      source.indexOf("const removeTeamMember"),
+      source.indexOf("const addPhoneNumber"),
+    );
+
+    expect(invitation).toContain("await fetchTeam()");
+    expect(invitation).not.toContain("fetchData()");
+    expect(removal).toContain("await fetchTeam()");
+    expect(removal).not.toContain("fetchData()");
+  });
+});
+''',
+)
+
+print("Applied final combined-head UI, Admin Settings, lint, metadata, and contract repairs.")
