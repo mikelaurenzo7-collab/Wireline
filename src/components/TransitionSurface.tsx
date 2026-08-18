@@ -6,7 +6,7 @@ import { Link } from "react-router";
 // Tooltip, Switch …) which does not tree-shake — pulling ~94 KB of dialog code
 // into the marketing homepage, which renders none of it.
 import { Button } from "./atoms/Button";
-import WirelineMark from "./brand/WirelineMark";
+import { WirelineLockup } from "./brand/WirelineBrand";
 
 type TransitionDetail = {
   label: string;
@@ -42,10 +42,7 @@ export default function TransitionSurface({
     <div className={`wl-transition-shell ${className}`.trim()}>
       <main className="wl-transition-rail">
         <div className="wl-transition-brand">
-          <span className="wl-transition-mark">
-            <WirelineMark className="size-7 text-primary" />
-          </span>
-          <span className="wl-overline">Wireline</span>
+          <WirelineLockup size="compact" surface="tile" />
         </div>
 
         <section className="studio-card wl-transition-panel">
