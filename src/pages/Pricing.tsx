@@ -201,7 +201,7 @@ export default function Pricing() {
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
         title="Pricing | Wireline Voice Agents from $19/month"
-        description="Build a voice agent free, launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
+        description="Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />
       <script
@@ -421,9 +421,8 @@ export default function Pricing() {
                   ))}
                 </div>
                 <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-                  Every plan enforces calling-hour rules, tenant Do Not Call lists, and instant
-                  opt-out honoring in the runtime. Marketing and campaign outbound stay blocked
-                  until federal Do Not Call registration is complete.{" "}
+                  Every plan enforces calling-hour rules, Do Not Call checks before marketing dials,
+                  and instant opt-out honoring in the runtime.{" "}
                   <Link
                     to="/trust"
                     className="font-semibold text-primary underline underline-offset-4"

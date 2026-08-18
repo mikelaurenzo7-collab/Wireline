@@ -120,7 +120,7 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
 
     // Strip sensitive credentials — return boolean presence flags instead.
     // The raw key is never needed by the browser; only server-side code
-    // uses it (and reads from process.env.VAPI_PRIVATE_KEY, not this column).
+    // uses it (and reads from process.env.XAI_API_KEY, not this column).
     const safe = data ? { ...data } : ({} as any);
     if (isOwnerEmail(req.user.email)) {
       safe.subscriptionStatus = "active";
@@ -129,10 +129,13 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
       safe.founderUnlimitedAgents = true;
     }
     if ("vapiPrivateKey" in safe) {
-      // Managed Vapi: the runtime reads process.env.VAPI_PRIVATE_KEY, not the
-      // tenant column (which stays null for normal workspaces). Report platform
-      // voice readiness so clients do not think voice is unconfigured.
-      safe.has_vapi_key = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
+      // Native Twilio + xAI is the live voice runtime. Report platform voice
+      // readiness so clients do not think voice is unconfigured. The legacy
+      // has_vapi_key flag stays true when either the native key or a rollback
+      // Vapi key is present.
+      safe.has_vapi_key = Boolean(
+        process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim(),
+      );
       delete safe.vapiPrivateKey;
     }
 
@@ -387,7 +390,9 @@ router.get(
           ]),
         );
 
-      const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
+      const platformVoiceReady = Boolean(
+        process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim(),
+      );
       const tenantHasNumber =
         Number(phoneRow?.count || 0) > 0 || Boolean(settingsRow?.vapiPhoneNumberId);
 
@@ -395,8 +400,8 @@ router.get(
         has_agents: Number(agentRow?.count || 0) > 0,
         has_calls: Number(callLogRow?.count || 0) > 0,
         has_billing: settingsRow?.subscriptionStatus === "active",
-        // Managed Vapi: voice is ready when the platform key is present and the
-        // tenant has a bound number (or legacy settings phone id).
+        // Native Twilio + xAI: voice is ready when the platform key is present
+        // and the tenant has a bound number (or legacy settings phone id).
         has_voice: platformVoiceReady && tenantHasNumber,
         completed: !!prefsRow?.onboardingCompleted,
       });

@@ -10,9 +10,7 @@ Wireline is one protected agent platform with multiple deliberate control surfac
 | Browser extension | `apps/browser-extension/` | Explicit page, selection, phone-number, call, text, follow-up, and task handoff into Studio | Session state, extraction policies, agent lifecycle, outbound execution |
 | iOS | `ios/` | Native calls, Siri, widgets, CallKit, push, and approved CarPlay communication flows | Prompt construction, entitlements, call control decisions, data ownership |
 | Android | `android/` | Native calls, notifications, widgets, Telecom, FCM, and approved Android Auto communication flows | Prompt construction, consent, plan enforcement, data ownership |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` | New-user signup plus first-agent drafting, refinement, rehearsal, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions |
-| Claude Connector | Shared `/mcp` server, `docs/CLAUDE_CONNECTOR.md`, `docs/CLAUDE_CONNECTOR_SUBMISSION.md` | Same account-bound tools and MCP App widget inside Claude and Claude Code | Same server-owned OAuth, tenant, and launch boundary |
-| Cursor plugin | `.mcp.json`, `plugin.json`, `mcp.json`, `docs/CURSOR_PLUGIN.md` | Cursor Directory install so a new user can create a Wireline account and first agent | Same server-owned OAuth, tenant, and launch boundary |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` | Account-bound private agent drafting, refinement, simulation, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions |
 | Live Video | `src/lib/video-presenter/`, `src/routes/video-presenter-routes.ts`, `src/components/LiveVideoPresenter.tsx` | Identity badges. Live talking-head is retired. | Vendor credentials stay unused; leftover Stripe webhooks fail-closed; no video file generation |
 
 ## Immediate layout
@@ -25,11 +23,8 @@ Wireline is one protected agent platform with multiple deliberate control surfac
 /src                     # Existing web/API runtime; remains deployment root for now
   /routes/chatgpt-*      # ChatGPT transport and OAuth surface
   /lib/chatgpt-*         # ChatGPT policies, widgets, protocol helpers
-  /lib/mcp-*             # Shared MCP OAuth, transport, and app metadata
   /lib/video-presenter   # Presenter provider adapter, consent, catalog, billing, and fallback logic
 /docs                    # Product, security, and release contracts
-plugin.json mcp.json .mcp.json  # Cursor Directory / Open Plugins package
-skills/ rules/ agents/          # Cursor Directory skill, rule, and agent discovery
 ```
 
 The repository root remains the deployed Vercel web/API runtime during this phase. The goal is not to move folders cosmetically; it is to establish clean, testable, release-specific ownership without interrupting Vercel, Xcode, Gradle, Supabase, or store signing.
@@ -86,10 +81,10 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Early access**. Account-bound MCP/OAuth app acquires new users and helps them build their first voice agent; Claude and Cursor share the same `/mcp` server. Cursor Directory packaging uses `.mcp.json`, `plugin.json`, and `mcp.json` (`docs/CURSOR_PLUGIN.md`). Claude directory submission uses `docs/CLAUDE_CONNECTOR.md`. No guest tool transport exists. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
-| Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `src/lib/mcp-*`, `api/mcp.ts`, `plugin.json`, `mcp.json`, `.mcp.json`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, `docs/CLAUDE_CONNECTOR.md`, `docs/CURSOR_PLUGIN.md`, and related OAuth/config docs. |
+| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). No guest tool transport exists. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
+| Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, and related OAuth/config docs. |
 | Required checks before release | `node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com` for production-target release; local MCP discovery/tool/resource probe; OAuth PKCE reviewer flow; private simulation boundary test; contract review for every new tool. |
-| Non-goals | ChatGPT App cannot provision numbers, place live calls, launch agents, perform outbound communication, change billing, bypass approvals, embed Wireline as a repo voice SDK, or claim external actions happened unless Wireline actually performed them through server-owned workflows. Private rehearsals are in-app only. Training writes fail closed until the Apps toggle is on. |
+| Non-goals | ChatGPT App cannot provision numbers, dial, launch agents, perform outbound communication, change billing, bypass approvals, or claim external actions happened unless Wireline actually performed them through server-owned workflows. |
 | Security/privacy constraints | Account-bound OAuth only; least-privilege MCP tools/resources; no provider keys or broad tenant data in ChatGPT; draft/simulate by default; respect tenant authorization and redact/minimize returned data. |
 | Rollback criteria | Disable tools or roll back if OAuth/PKCE, tenant scoping, tool discovery, or reviewer flow fails; immediately remove any tool that can provision numbers, dial, launch agents, or trigger side effects outside approved server authorization. |
 
@@ -130,7 +125,7 @@ Do **not** extract business behavior into a client package. `packages/contracts`
 3. Agent creation may start in any client, but launch, phone provisioning, connected-action authorization, and external side effects remain deliberate server-backed workflows.
 4. iOS stays SwiftUI and Android stays Kotlin/Compose. Their OS-level calling, widgets, intents, and push behavior are reasons to preserve native stacks—not reasons to fork backend logic.
 5. Wireline Command is a user-initiated browser command surface. It must never become a hidden scraper, CRM mirror, or independent background agent.
-6. The ChatGPT App, Claude Connector, and Cursor plugin stay account-bound. Their job is a Wireline account plus a first voice-agent draft. They can privately rehearse an owned agent after confirmation. They cannot provision numbers, place live calls, launch agents, or act as a repo-embedded voice SDK.
+6. The ChatGPT App stays account-bound, draft/simulation-first, and unable to provision numbers, dial, or launch agents until a separate, reviewed product decision expands its action surface.
 7. Live talking-head video remains retired. Identity badges stay. Clip scripts are reviewable drafts. Do not call a Grok Bot API and do not generate Imagine files.
 
 ## Mobile API adapter discipline
@@ -146,8 +141,6 @@ Native clients authenticate with Bearer tokens and should use the complete `/api
 | iOS | XcodeGen generation, simulator build, physical-device PushKit/CallKit acceptance checks, privacy/account deletion review |
 | Android | Gradle compile, emulator smoke, physical-device Telecom/FCM acceptance checks, Play Data safety/account deletion review |
 | ChatGPT App | MCP discovery/tool/resource probe, OAuth PKCE reviewer flow, private simulation boundary test, no-side-effect tool review |
-| Claude Connector | Same `/mcp` probe plus custom-connector OAuth in Claude, MCP App widget screenshots, directory portal packet in `docs/CLAUDE_CONNECTOR_SUBMISSION.md` |
-| Cursor plugin | Same `/mcp` probe plus Cursor Directory auto-detect of `.mcp.json`, `plugin.json`, and `mcp.json`; OAuth in Cursor; packet in `docs/CURSOR_PLUGIN_SUBMISSION.md` |
 | Live Video | Consent/voice-fallback smoke, provider readiness, Stripe entitlement, cost/metering, emergency-disable, copy/privacy review |
 
 Every release pipeline can develop at its own speed, but all surfaces consume the same canonical agent customization contract. That is the organizational line between a platform and a collection of unrelated apps.

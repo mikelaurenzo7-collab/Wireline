@@ -1,13 +1,9 @@
-import {
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
-} from "../ai-models";
-import { OPENAI_REALTIME_DEFAULT_MODEL } from "./openai-realtime-config";
+import { GROK_VOICE_DEFAULT_MODEL } from "./grok-voice-config";
 
 /**
  * Studio live tests must use the same managed default as live phone calls.
- * Users do not pick a separate test brain. OpenAI Realtime is backup only
- * when Vapi is unavailable — never a parallel default.
+ * Users do not pick a separate test brain. OpenAI Realtime is the ChatGPT App
+ * widget only — never a Studio default or automatic browser backup.
  */
 export const STUDIO_BROWSER_TEST_MAX_SECONDS = 180 as const;
 export const STUDIO_VAPI_WEB_TICKET_TTL_SECONDS = 120 as const;
@@ -18,24 +14,21 @@ export function isStudioVapiWebConfigured(): boolean {
   return Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
 }
 
-export function isStudioOpenAIRealtimeConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+export function isStudioXAIRealtimeConfigured(): boolean {
+  return Boolean(process.env.XAI_API_KEY?.trim());
 }
 
 export function getStudioLiveVoiceStatus() {
-  const vapiConfigured = isStudioVapiWebConfigured();
-  const openaiConfigured = isStudioOpenAIRealtimeConfigured();
+  const xaiConfigured = isStudioXAIRealtimeConfigured();
   return {
-    configured: vapiConfigured || openaiConfigured,
-    defaultProvider: vapiConfigured ? "vapi" : "openai_realtime",
-    fallbackProvider: openaiConfigured ? "openai_realtime" : null,
-    provider: vapiConfigured ? VAPI_TENANT_DEFAULT_PROVIDER : "openai",
-    model: vapiConfigured ? VAPI_TENANT_DEFAULT_MODEL : OPENAI_REALTIME_DEFAULT_MODEL,
-    sessionMode: vapiConfigured
-      ? "authenticated_browser_vapi_web"
-      : "authenticated_browser_and_mobile_webrtc",
+    configured: xaiConfigured,
+    defaultProvider: "xai_realtime",
+    fallbackProvider: null,
+    provider: "xai",
+    model: GROK_VOICE_DEFAULT_MODEL,
+    sessionMode: "authenticated_browser_websocket_ephemeral_token",
     transcriptionEnabled: true,
-    phoneDemoProvider: "vapi",
-    openaiFallbackConfigured: openaiConfigured,
+    phoneRuntimeProvider: "xai_sip",
+    openaiFallbackConfigured: false,
   } as const;
 }

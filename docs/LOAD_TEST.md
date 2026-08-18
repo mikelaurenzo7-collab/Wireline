@@ -1,7 +1,11 @@
 # Load testing the voice webhook path
 
 ## Scope
-This load test targets the `/api/vapi-webhook` endpoint, which is the primary voice call ingress path for Wireline. Run tests against a production-like deployment with representative downstream integrations enabled or stubbed.
+Production PSTN ingress is `POST /api/webhooks/xai/voice` (xAI Direct SIP Standard Webhooks).
+The rollback/showcase path `/api/vapi-webhook` remains mounted and is the historical load-test
+target below. Run tests against a production-like deployment with representative downstream
+integrations enabled or stubbed. Do not treat a 200 from the Vapi rollback webhook as proof that
+native SIP is healthy.
 
 ## Methodology
 - Preferred tool: k6 for repeatable HTTP load profiles and easy CI usage.
@@ -22,7 +26,9 @@ Each Vercel Function invocation handles one request at a time. Concurrent traffi
 - With 1000 concurrent executions on Vercel Pro, the theoretical upper bound is roughly 5000 concurrent calls per second, assuming even distribution and no downstream throttling.
 
 ## Bottleneck analysis
-The practical concurrency ceiling is usually determined by Vapi, ElevenLabs, and Twilio throughput or rate limits before Vercel itself becomes the bottleneck. Application load tests should therefore include downstream provider monitoring and failure-mode validation.
+The practical concurrency ceiling is usually determined by xAI Direct SIP, Twilio, and optional
+Vapi rollback throughput or rate limits before Vercel itself becomes the bottleneck. Application
+load tests should therefore include downstream provider monitoring and failure-mode validation.
 
 ## Monitoring guidance
 - Track concurrent executions in the Vercel dashboard during every test window.
@@ -30,6 +36,10 @@ The practical concurrency ceiling is usually determined by Vapi, ElevenLabs, and
 - Correlate latency, error rate, and downstream provider throttling during peak intervals.
 
 ## Sample k6 script
+The copy-pasteable sample still posts to the mounted rollback path `/api/vapi-webhook` so a
+historical extra path segment after `vapi` cannot silently load-test the 404 handler. Native SIP
+load tests must sign Standard Webhooks against `/api/webhooks/xai/voice`.
+
 ```javascript
 import http from 'k6/http';
 import { check, sleep } from 'k6';

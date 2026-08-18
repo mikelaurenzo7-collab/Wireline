@@ -1,14 +1,19 @@
 /**
- * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0151_xai_grok_46_runtime_defaults.sql`.
+ * Canonical application schema entrypoint.
+ * Latest committed migration: `drizzle/migrations/0154_xai_grok_46_persisted_defaults.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,
  * and 0134 changed their database-owned defaults and classification fields.
- * Explicit exports override the same names from `export *` so callers and
- * Drizzle Kit observe the current migrated definitions. `voice-usage-schema.ts` (migration 0135)
- * is re-exported so Drizzle Kit sees `wireline_voice_usage_events` — without
- * it, `drizzle-kit generate` would emit a DROP for the idempotency table.
+ * Explicit exports override the same names from `export *` so callers observe
+ * the current migrated definitions. `voice-usage-schema.ts` (migration 0135)
+ * is re-exported so the runtime sees `wireline_voice_usage_events`.
+ *
+ * Provider-secret schemas are intentionally not re-exported from this customer
+ * data surface. Drizzle Kit receives them as an additional schema input in
+ * `drizzle.config.ts`; runtime owners import those tables directly. This keeps
+ * encrypted webhook credentials and carrier identifiers out of account export
+ * enumeration while their user/agent foreign keys still guarantee erasure.
  */
 export * from "./schema-base";
 export * from "./voice-usage-schema";
@@ -73,7 +78,7 @@ export const settings = pgTable("wireline_settings", {
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   voiceLlmProvider: text("voice_llm_provider").default("xai"),
-  voiceLlmModel: text("voice_llm_model").default("grok-4.3"),
+  voiceLlmModel: text("voice_llm_model").default("grok-4.6"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),

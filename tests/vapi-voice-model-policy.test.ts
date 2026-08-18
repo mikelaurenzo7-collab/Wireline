@@ -88,14 +88,18 @@ describe("managed PSTN voice model policy", () => {
     expect(isDefinitiveVapiVoiceModelRejection(400, "provider rate limit exceeded")).toBe(false);
   });
 
-  it("retries rejected xAI and Gemini outbound models through OpenAI at the application layer", () => {
-    const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
-    expect(vapi).toContain("retrying with OpenAI voice fallback");
-    expect(vapi).toContain("isDefinitiveVapiVoiceModelRejection(");
-    expect(vapi).toContain("await vapiResponse.clone().text()");
-    expect(vapi).toContain("!retryTransportErrors");
-    expect(vapi).toContain("voiceSelection.provider === \"xai\"");
-    expect(vapi).toContain("VAPI_VOICE_FALLBACK_MODEL");
-    expect(vapi).toContain("delete fallbackPayload.assistant.model.fallbackModels");
+  it("keeps Vapi model-fallback helpers off the native Twilio + xAI SIP path", () => {
+    const models = readFileSync(resolve(process.cwd(), "src/lib/ai-models.ts"), "utf8");
+    const facade = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
+    const native = readFileSync(
+      resolve(process.cwd(), "src/lib/voice/outbound-call-service.ts"),
+      "utf8",
+    );
+    expect(models).toContain("export function isDefinitiveVapiVoiceModelRejection");
+    expect(models).toContain("VAPI_VOICE_FALLBACK_MODEL");
+    expect(facade).not.toContain("retrying with OpenAI voice fallback");
+    expect(facade).not.toContain("api.vapi.ai");
+    expect(native).not.toContain("VAPI_VOICE_FALLBACK_MODEL");
+    expect(native).toContain("machineDetection");
   });
 });

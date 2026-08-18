@@ -15,7 +15,6 @@ describe("demand-driven authenticated experience", () => {
   const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
   const studioTest = read("src/components/StudioWorkroom.tsx");
   const studioTestRoute = read("src/routes/agent-test-routes.ts");
-  const privateAgentTest = read("src/lib/private-agent-test.ts");
   const routeRegistry = read("src/server/register-api-routes.ts");
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
@@ -121,15 +120,14 @@ describe("demand-driven authenticated experience", () => {
   it("tests the saved voice-agent configuration without persisting roleplay messages", () => {
     expect(routeRegistry).toMatch(/agentTestRouter/);
     expect(routeRegistry).toMatch(/app\.use\(agentTestRouter\)/);
-    expect(studioTestRoute).toMatch(/loadPrivateAgentTestContext/);
-    expect(privateAgentTest).toMatch(/personality/);
-    expect(privateAgentTest).toMatch(/directives/);
-    expect(privateAgentTest).toMatch(/knowledge/);
-    expect(privateAgentTest).toMatch(/Business facts/);
-    expect(privateAgentTest).toMatch(
+    expect(studioTestRoute).toMatch(/personality/);
+    expect(studioTestRoute).toMatch(/directives/);
+    expect(studioTestRoute).toMatch(/knowledge/);
+    expect(studioTestRoute).toMatch(/Business facts/);
+    expect(studioTestRoute).toMatch(
       /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
     );
-    expect(privateAgentTest).toMatch(
+    expect(studioTestRoute).toMatch(
       /Do not claim a booking, transfer, message, payment/,
     );
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
@@ -139,9 +137,8 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTest).toMatch(/messages\.slice\(-12\)/);
     expect(studioTest).toMatch(/history: mode === "test" \? history/);
     expect(studioTestRoute).toMatch(/history: z/);
-    expect(studioTestRoute).toMatch(/buildPrivateAgentTestUserMessage/);
-    expect(privateAgentTest).toMatch(/Conversation so far/);
-    expect(privateAgentTest).toMatch(/history\s*\.slice\(-12\)/);
+    expect(studioTestRoute).toMatch(/Conversation so far/);
+    expect(studioTestRoute).toMatch(/history\s*\.slice\(-12\)/);
   });
 
   it("distinguishes browser response testing from real phone voice testing", () => {

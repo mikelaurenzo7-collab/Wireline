@@ -19,8 +19,11 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("outboundConsentMetadata({");
       expect(source).toContain("tcpaBlocked: true");
       expect(source).toContain("DUPLICATE_DIAL_SUPPRESSED");
-      expect(source).toContain("lastCalledAt: new Date()");
+      expect(source).toContain("OUTSIDE_PERMITTED_CALLING_HOURS");
     }
+
+    expect(mobile).toContain("lastCalledAt: new Date()");
+    expect(read("src/lib/voice/xai-outbound-placement.ts")).toContain("lastCalledAt:");
 
     expect(gate).toContain("assertFederalDncForMarketing()");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "Wireline",
-    "subtitle": "Build your first voice agent",
-    "description": "Wireline lets a new ChatGPT user create a Wireline account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in Wireline.",
+    "subtitle": "Build and inspect AI voice agents",
+    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI voice agent drafts from ChatGPT, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
     "category": "BUSINESS",
     "logo_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     "website_url": "https://trywireline.com",
@@ -90,54 +90,6 @@
         "open_world_justification": "Reads only private Wireline account state and does not contact customers, publish data, or mutate any external system.",
         "destructive_justification": "Does not change agents, billing, phone numbers, communications, integrations, credentials, or launch state."
       }
-    },
-    "get_wireline_agent_status": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Reads one owned agent's next step and Wireline links without phone numbers or customer content.",
-        "open_world_justification": "Does not write to public internet state or any external third-party system.",
-        "destructive_justification": "Does not delete, overwrite, launch, call, or perform an irreversible action."
-      }
-    },
-    "run_private_agent_turn": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Runs a confirmed private text rehearsal that does not contact a customer or change launch state.",
-        "open_world_justification": "Does not place calls, send messages, or modify public internet state.",
-        "destructive_justification": "Does not delete, launch, charge, or perform an irreversible external action."
-      }
-    },
-    "get_agent_coaching_brief": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Reads owner-authored Training facts and operating rules for one owned agent.",
-        "open_world_justification": "Does not write to public internet state or any external third-party system.",
-        "destructive_justification": "Does not delete, overwrite, launch, or perform an irreversible action."
-      }
-    },
-    "train_wireline_agent": {
-      "annotations": {
-        "readOnlyHint": false,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Saves a confirmed owner-authored Training fact or rule after the Apps toggle is enabled.",
-        "open_world_justification": "Writes only to the user's private Wireline Training store and does not contact customers.",
-        "destructive_justification": "Does not delete existing Training, launch the agent, attach a number, or contact a customer."
-      }
     }
   },
   "test_cases": [
@@ -179,46 +131,6 @@
       "file_attachment_urls": null,
       "tools_triggered": "get_wireline_workspace_summary",
       "expected_output": "Returns tenant-scoped aggregate counts, activation and subscription status, channel connection state, and a Wireline link without customer identities, message bodies, transcripts, recordings, or secrets.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Inspect one agent's next step without exposing a phone number.",
-      "user_prompt": "What is the next step for this Wireline agent, and where do I continue in Wireline?",
-      "file_attachment_urls": null,
-      "tools_triggered": "get_wireline_agent_status",
-      "expected_output": "Returns next-step copy and Wireline links without the phone number or customer content.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Privately rehearse a hypothetical customer line.",
-      "user_prompt": "Privately rehearse this Wireline agent answering: Do you have Saturday appointments?",
-      "file_attachment_urls": null,
-      "tools_triggered": "run_private_agent_turn",
-      "expected_output": "Returns a private rehearsal reply with live_call false and does not claim a customer was contacted.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Create a first voice agent after a new user connects an account.",
-      "user_prompt": "I am new to Wireline. Help me create my first after-hours receptionist and confirm it.",
-      "file_attachment_urls": null,
-      "tools_triggered": "create_agent_draft",
-      "expected_output": "Requests account connection if needed, then creates an unlaunched private draft only after explicit confirmation and returns the Wireline link.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Read owner-authored Training without exposing customer content.",
-      "user_prompt": "Show me the coaching brief for this Wireline agent and the next Training step.",
-      "file_attachment_urls": null,
-      "tools_triggered": "get_agent_coaching_brief",
-      "expected_output": "Returns owner-authored facts and rules plus the next step, without phone numbers, transcripts, or customer identities.",
-      "expected_output_url": null
-    },
-    {
-      "description": "Save a confirmed Training fact after the Apps toggle is on.",
-      "user_prompt": "Save this confirmed Training fact in Wireline: We serve residential HVAC in the 787xx ZIP codes.",
-      "file_attachment_urls": null,
-      "tools_triggered": "train_wireline_agent",
-      "expected_output": "Persists the fact only after confirmation and the Apps toggle. If the toggle is off, the app sends the user to Wireline Apps instead of inventing a workaround.",
       "expected_output_url": null
     }
   ],

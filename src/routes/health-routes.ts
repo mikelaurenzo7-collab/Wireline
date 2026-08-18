@@ -12,16 +12,19 @@ import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-ad
 import { getPlatformSloSnapshot } from "../lib/operator-slos";
 import { evaluatePlatformOperationalSlos } from "../lib/platform-operational-slos";
 import {
-  OPENAI_MODELS,
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   STRUCTURED_PRIMARY_MODEL,
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   VAPI_PREMIUM_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
 } from "../lib/ai-models";
+import { GROK_VOICE_DEFAULT_MODEL } from "../lib/voice/grok-voice-config";
 import { getHealthModelTiering } from "../lib/health-model-policy";
 import { describeRuntimeChain } from "../lib/ai-client";
-import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";
+import {
+  probeOpenAIModelDiagnostic,
+  probeXAIControlPlaneDiagnostic,
+} from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
@@ -177,8 +180,10 @@ router.get(
       db,
       capabilities: getHealthCapabilities(),
       app_model: STRUCTURED_PRIMARY_MODEL,
-      voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
-      voice_agent_premium_model: VAPI_PREMIUM_MODEL,
+      voice_agent_model: GROK_VOICE_DEFAULT_MODEL,
+      voice_agent_premium_model: GROK_VOICE_DEFAULT_MODEL,
+      rollback_vapi_model: VAPI_TENANT_DEFAULT_MODEL,
+      rollback_vapi_premium_model: VAPI_PREMIUM_MODEL,
       llm_tiering: getHealthModelTiering(),
       timestamp: new Date().toISOString(),
     });
@@ -312,12 +317,12 @@ router.get(
     });
   },
 );
-// Every /models request drives two live platform-key OpenAI probes, so this
-// diagnostic must not be reachable by arbitrary tenants: an IP-keyed limiter
-// alone leaves a multi-IP loop free to burn unmetered platform spend. Ops
-// monitors authenticate with the monitor token; humans must be platform admins
-// (same posture as /slos). Named so the authz-matrix scanner sees the
-// requireMonitorToken enforcement in the chain.
+// Every /models request drives a live xAI control-plane GET plus one OpenAI
+// Responses probe, so this diagnostic must not be reachable by arbitrary
+// tenants: an IP-keyed limiter alone leaves a multi-IP loop free to burn
+// unmetered platform spend. Ops monitors authenticate with the monitor token;
+// humans must be platform admins (same posture as /slos). Named so the
+// authz-matrix scanner sees the requireMonitorToken enforcement in the chain.
 function requireMonitorTokenOrPlatformAdmin(req: Request, res: Response, next: NextFunction) {
   if (monitorTokenOk(req)) return next();
   return authenticateUser(req, res, (authError?: unknown) => {
@@ -328,7 +333,7 @@ function requireMonitorTokenOrPlatformAdmin(req: Request, res: Response, next: N
 router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, async (_req, res) => {
   const started = Date.now();
   const [voice, reasoning] = await Promise.all([
-    probeOpenAIModelDiagnostic(OPENAI_MODELS.GPT_4O),
+    probeXAIControlPlaneDiagnostic(GROK_VOICE_DEFAULT_MODEL),
     probeOpenAIModelDiagnostic(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
   const ok = voice.ok && reasoning.ok;

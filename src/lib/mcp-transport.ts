@@ -79,11 +79,10 @@ export function mcpOAuthChallenge(
   resourceMetadataUrl: string,
   requiredScope: string,
   description = "Connect a Wireline account to continue.",
-  error: "insufficient_scope" | "invalid_token" = "insufficient_scope",
 ): string {
   return [
     `Bearer resource_metadata="${quotedChallengeValue(resourceMetadataUrl)}"`,
-    `error="${error}"`,
+    'error="insufficient_scope"',
     `error_description="${quotedChallengeValue(description)}"`,
     `scope="${quotedChallengeValue(requiredScope)}"`,
   ].join(", ");

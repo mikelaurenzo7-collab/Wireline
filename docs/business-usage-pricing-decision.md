@@ -39,12 +39,9 @@ while the former margin gate reserved only the first two. The revised capacities
 prices and prepaid-only experience while every monthly and annual plan remains above the 30%
 contribution floor at simultaneous full utilization. There were no production customers to migrate.
 
-The $19/month Live Video talking-head add-on is **retired**. Identity badges remain
-on every agent. Checkout is closed (`addonOffered: false`); leftover Stripe SKU
-metadata and any existing add-on subscriptions must not mint a provider session.
-Cancel unused add-ons from billing. Historical session-reservation economics
-(`LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY`, `LIVE_VIDEO_SESSION_RESERVATION_MINUTES`)
-stay in code only to settle leftover ledger rows.
+The former $19/month Live Video add-on is retired from public sale. Checkout and entitlement
+return closed (`addonOffered: false`). Leftover `STRIPE_LIVE_VIDEO_*` price IDs remain webhook-only
+so historical subscriptions can still sync; do not advertise or re-offer the talking-head SKU.
 
 Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
 automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**

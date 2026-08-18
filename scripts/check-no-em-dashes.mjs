@@ -49,7 +49,6 @@ const GLOBS = [
   "ios/**/*.swift",
   "android/**/*.kt",
   "chatgpt-app-submission.json",
-  "claude-connector-submission.json",
 ];
 
 function stripComments(src) {

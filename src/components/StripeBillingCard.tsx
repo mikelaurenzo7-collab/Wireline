@@ -382,7 +382,7 @@ export default function StripeBillingCard({
         <div className="rounded-md wl-panel border border-dashed border-border p-6 md:p-8 space-y-3">
           <WiredEyebrow>Add-on</WiredEyebrow>
           <h3 className="font-semibold tracking-[-.02em] text-xl text-foreground">
-            Talking-head video
+            Live video presence
           </h3>
           <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
             {liveVideoAddonPitch()} {liveVideoMeteringNote()}
@@ -396,7 +396,7 @@ export default function StripeBillingCard({
                 to="/studio/live-video"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
               >
-                Open identity
+                Set up your presenter
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
@@ -410,7 +410,7 @@ export default function StripeBillingCard({
               className="inline-flex gap-2 px-5 py-2.5 rounded-md border-[color:var(--wireline-color-action-secondary-default)] text-[var(--wireline-color-text-onAction)] bg-[var(--wireline-color-action-secondary-default)] hover:opacity-95"
             >
               {liveVideoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Talking-head checkout is retired
+              Subscribe · $19/mo
             </ShadButton>
           ) : (
             <div className="space-y-2">
@@ -418,7 +418,7 @@ export default function StripeBillingCard({
                 {!selfServeBillingReleased
                   ? CHECKOUT_RELEASE_MESSAGE
                   : liveVideoAddon.reason ||
-                    "Talking-head video is retired. Identity badges stay on this workspace."}
+                    "Restore an active paid plan before using live video."}
               </p>
               {sub?.has_subscription ? (
                 <button

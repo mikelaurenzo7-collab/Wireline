@@ -12,7 +12,7 @@ const LIVE_PRODUCT_COPY = [
   "Up to 15 live voice agents, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
   "Custom plan for 25+ agents with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
   "+1 live voice agent, +1 production-number slot, and +50 guaranteed voice minutes/month.",
-  "Retired talking-head add-on. Identity badges remain. Existing subscriptions no longer mint live sessions. Leftover SKU: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
+  "Live Video for a paid business agent: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
   "Prepaid Runtime Balance for usage beyond included capacity. No automatic overages.",
 ] as const;
 

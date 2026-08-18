@@ -85,14 +85,6 @@ describe("mcp transport contract", () => {
       "agents.write",
     );
     expect(challenge).toContain('error="insufficient_scope"');
-    expect(
-      mcpOAuthChallenge(
-        "https://trywireline.com/.well-known/oauth-protected-resource",
-        "agents.read",
-        "Connect a Wireline account to continue.",
-        "invalid_token",
-      ),
-    ).toContain('error="invalid_token"');
     expect(challenge).toContain('error_description="Connect a Wireline account to continue."');
     expect(challenge).toContain('scope="agents.write"');
     expect(

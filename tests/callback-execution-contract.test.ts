@@ -66,7 +66,7 @@ describe("caller-requested callbacks execute end-to-end", () => {
     expect(handler).toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
     // ...and intake metadata is stored verbatim, so it must be stripped there
     // or the account holder could assert it over HTTP.
-    expect(intake).toContain("k !== CALLBACK_REQUEST_MARKER");
+    expect(intake).toContain("keyName !== CALLBACK_REQUEST_MARKER");
     // The bulk lead import stores account-holder metadata verbatim too — the
     // same trust boundary, one route over. An imported cold list carrying the
     // marker would dial as consented callbacks after any writer of
@@ -96,6 +96,8 @@ describe("caller-requested callbacks execute end-to-end", () => {
     // inlining the logic where only a substring could vouch for it.
     expect(engine).toContain("const nextMetadata = nextCallbackLeadMetadata({");
     expect(engine).toContain("terminal: patch.callbackScheduledAt === null,");
+    expect(engine).not.toContain("metadata: { ...metadata, callback_deferrals");
+    expect(engine).toContain("metadata: { callback_deferrals: 0 }");
   });
 
   /*
@@ -109,6 +111,8 @@ describe("caller-requested callbacks execute end-to-end", () => {
     const engine = read("src/lib/callback-engine.ts");
     expect(engine).toContain('gate.reason === "outside_permitted_calling_hours"');
     expect(engine).toContain('gate.reason === "self_recent_call_scheduled"');
+    expect(engine).toContain("res.providerOutcomeAmbiguous || res.doNotRetry");
+    expect(engine).toContain('deferOrDrop("internal error")');
   });
 
   it("requested callbacks stay tenant-DNC-protected in the shared gate", () => {

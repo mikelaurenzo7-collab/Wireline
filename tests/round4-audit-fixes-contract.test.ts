@@ -66,30 +66,27 @@ describe("round-4 audit fix contracts", () => {
     const client = read("src/lib/vapi-client.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const policy = read("src/lib/vapi-artifact-plan.ts");
+    const session = read("src/lib/voice/xai-sip-session.ts");
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("videoRecordingEnabled: false");
     expect(policy).toContain("pcapEnabled: false");
     expect(policy).toContain("transcriptPlan: { enabled: true }");
-    expect(client).toContain("buildVapiTranscriptOnlyArtifactPlan()");
     expect(factory).toContain("buildVapiTranscriptOnlyArtifactPlan()");
-    expect(client).toContain("artifactPlan,");
     expect(factory).toContain("artifactPlan,");
-    expect(client).not.toContain(
-      'const recordingEnabled = agentConfig.complianceMode !== "hipaa";',
-    );
+    expect(client).not.toContain("buildVapiTranscriptOnlyArtifactPlan()");
+    expect(session).toContain("recordingEnabled: false");
     expect(factory).not.toContain(
       'const recordingEnabled = configured.complianceMode !== "hipaa";',
     );
   });
 
-  it("actual Vapi openings carry outbound AI identity and purpose disclosures", () => {
-    const client = read("src/lib/vapi-client.ts");
+  it("actual live openings carry outbound AI identity and purpose disclosures", () => {
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(client).toContain("complianceFirstMessagePrefix(");
-    expect(client).toContain("settings?.businessName || agentConfig.name");
-    expect(client).toContain("outboundAiCall: true");
-    expect(client).toContain("recordingEnabled: artifactPlan.recordingEnabled");
-    expect(client).toContain("firstMessage: disclosurePrefix + openingMessage");
+    const session = read("src/lib/voice/xai-sip-session.ts");
+    expect(session).toContain("complianceFirstMessagePrefix(");
+    expect(session).toContain("outboundAiCall: true");
+    expect(session).toContain("recordingEnabled: false");
+    expect(session).toContain("formatCallbackNumberForSpeech");
     expect(factory).toContain("userSettings?.businessName || configured.name");
     expect(factory).toContain("outboundAiCall: isOutbound");
     expect(factory).toContain("recordingEnabled: artifactPlan.recordingEnabled");
@@ -122,21 +119,23 @@ describe("round-4 audit fix contracts", () => {
     expect(planner).toContain('WORKSPACE_AMBIENT_OPTIONS = ["off", "office"]');
     expect(planner).toContain("export function sanitizeAmbientNoise");
     expect(read("src/routes/agent-workspace-routes.ts")).toContain('spec.kind === "ambient"');
-    expect(read("src/lib/vapi-client.ts")).toContain(
-      "sanitizeAmbientNoise(agentConfig.ambientNoise)",
-    );
     expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain(
       "sanitizeAmbientNoise(configured.ambientNoise)",
+    );
+    expect(read("src/lib/vapi-client.ts")).not.toContain(
+      "sanitizeAmbientNoise(agentConfig.ambientNoise)",
     );
   });
 
   it("outbound prompts are capped like inbound — no 500-row interpolation", () => {
-    const client = read("src/lib/vapi-client.ts");
-    expect(client).toContain(".limit(MAX_RUNTIME_DIRECTIVES)");
-    expect(client).toContain(".limit(MAX_RUNTIME_KNOWLEDGE)");
-    expect(client).toContain("truncateRuntimeSnippet");
-    expect(client).toContain("clampRuntimePromptPreservingTail(runtime.prompt)");
-    expect(client).not.toContain(".limit(500)");
+    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    expect(nativeRuntime).toContain("MAX_INITIAL_KNOWLEDGE_ITEMS");
+    expect(nativeRuntime).toContain(".limit(40)");
+    expect(nativeRuntime).toContain(".limit(80)");
+    expect(nativeRuntime).not.toContain(".limit(500)");
+    expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain(
+      "clampRuntimePromptPreservingTail",
+    );
   });
 
   it("the public showcase line carries a COGS duration ceiling", () => {

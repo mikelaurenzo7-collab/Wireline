@@ -21,43 +21,62 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  *   ignored outbound — the same agent got a different brain per direction.
  * - No call had a duration ceiling, so worst-case COGS per call was bounded
  *   only by the Vapi account default.
+ *
+ * Production PSTN is native Twilio + xAI SIP. The Vapi factory remains the
+ * rollback assistant builder and is still pinned so that path cannot silently
+ * lose guardrails while it exists.
  */
 describe("inbound/outbound runtime parity contract", () => {
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-  const outbound = read("src/lib/vapi-client.ts");
+  const session = read("src/lib/voice/xai-sip-session.ts");
+  const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+  const admission = read("src/lib/voice/native-inbound-admission.ts");
+  const placement = read("src/lib/voice/outbound-call-service.ts");
+  const bridge = read("src/routes/xai-outbound-routes.ts");
 
   it("inbound factory honors the Account Holder system prompt override", () => {
     expect(factory).toContain("resolveAssistantBasePrompt");
     expect(factory).toContain("configured.systemPromptOverride");
+    expect(nativeRuntime).toContain("systemPromptOverride");
+    expect(nativeRuntime).toContain("CUSTOM ROLE INSTRUCTIONS");
   });
 
   it("inbound factory layers the runtime guardrails like outbound does", () => {
     expect(factory).toContain("buildAgentRuntimeContext");
     expect(factory).toContain("disallowed_topics: configured.disallowedTopics");
     expect(factory).toContain("personality_vibe: configured.personalityVibe");
+    expect(nativeRuntime).toContain("disallowedTopics");
+    expect(nativeRuntime).toContain("personalityVibe");
   });
 
   it("after-hours inbound switches to message-taking instead of pretending to be open", () => {
     expect(factory).toContain("AFTER-HOURS MODE");
     expect(factory).toContain("runtime.outOfHoursMessage");
+    expect(admission).toContain("after_hours");
+    expect(admission).toContain("isWithinBusinessHours");
+    expect(admission).toContain("outOfHoursMessage");
+    expect(session).toContain("AFTER-HOURS MODE");
   });
 
   it("both call directions carry a hard duration ceiling", () => {
     expect(factory).toContain("maxDurationSeconds");
-    expect(outbound).toContain("maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS");
+    expect(session).toContain("resolveXAISipSessionMaxSeconds()");
+    expect(bridge).toContain("resolveXAISipSessionMaxSeconds()");
   });
 
   it("outbound respects the per-agent brain as a coherent pair, then tenant defaults", () => {
-    // resolveCoherentVoiceModel prevents crossing the agent's provider with the
-    // tenant's model (which would collapse to the default and lose the choice).
-    expect(outbound).toContain("resolveCoherentVoiceModel(agentConfig, settings)");
+    // Rollback Vapi still uses resolveCoherentVoiceModel. Native PSTN is one
+    // Speech-to-Speech roster; Studio and phone share grok-voice-think-fast-2.0.
     expect(factory).toContain("resolveCoherentVoiceModel(configured, userSettings)");
-    expect(outbound).toContain("clampVoiceTemperature(agentConfig.llmTemperature");
+    expect(nativeRuntime).toContain("resolveWirelineGrokVoice(runtime.agent.role, profile)");
+    expect(read("src/lib/vapi-client.ts")).not.toContain("resolveCoherentVoiceModel");
   });
 
   it("outbound uses native voicemail detection with a deterministic fallback message", () => {
-    expect(outbound).toContain("voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN");
-    expect(outbound).toContain("voicemailMessage: buildOutboundVoicemailMessage(");
+    expect(placement).toContain("machineDetection");
+    expect(bridge).toContain("buildOutboundVoicemailMessage(");
+    expect(bridge).toContain("AnsweredBy");
+    expect(read("src/lib/voice/native-outbound-amd.ts")).toContain("DetectMessageEnd");
   });
 
   it("voicemail fallback never discloses call context (FDCPA-safe)", () => {
@@ -83,14 +102,14 @@ describe("inbound/outbound runtime parity contract", () => {
   });
 
   it("call analysis includes success evaluation on BOTH call directions", () => {
-    // The Wireline-tuned analysis plan lives in one shared constant so the
-    // outbound fleet can never silently fall back to Vapi generic defaults
-    // again (it did, until round 4 — inbound-only analysisPlan).
+    // Rollback Vapi still ships one shared analysis plan. Native SIP uses the
+    // same deterministic transcript summary for inbound and outbound so the
+    // two directions cannot drift onto different post-call brains.
     const profile = read("src/lib/voice-agent-profile.ts");
     expect(profile).toContain("VAPI_ANALYSIS_PLAN");
     expect(profile).toContain("successEvaluationPrompt");
     expect(factory).toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
-    const client = read("src/lib/vapi-client.ts");
-    expect(client).toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
+    expect(session).toContain("deterministicSummary(input.transcript)");
+    expect(read("src/lib/vapi-client.ts")).not.toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
   });
 });

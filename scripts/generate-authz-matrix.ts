@@ -51,6 +51,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
   {
+    pattern: /^\/api\/webhooks\/xai\/voice$/,
+    reason: "xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission",
+  },
+  {
     pattern: /^\/api\/webhooks\/resend$/,
     reason: "Resend/Svix timestamped HMAC-SHA256 signature + replay window",
   },

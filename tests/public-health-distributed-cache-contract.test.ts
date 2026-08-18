@@ -70,15 +70,16 @@ describe("distributed public health boundary", () => {
     const functionSource = read("src/entrypoints/public-health-api.ts");
     const probeSource = read("src/lib/public-health-probe.ts");
 
-    expect(functionSource).toContain("probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY)");
+    expect(functionSource).toContain("probeXAIVoiceRuntime(process.env.XAI_API_KEY)");
     expect(functionSource).toContain("voiceFallback: voice");
     expect(functionSource).toContain(
       "probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY)",
     );
     expect(functionSource).not.toContain("VAPI_VOICE_FALLBACK_MODEL");
+    expect(functionSource).not.toContain("probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY)");
 
-    // Vapi can be verified without generating a call or model output.
-    expect(probeSource).toContain('url: "https://api.vapi.ai/assistant?limit=1"');
+    // Native xAI can be verified without generating a call or model output.
+    expect(probeSource).toContain('url: "https://api.x.ai/v1/models"');
     expect(probeSource).toContain('method: "GET"');
 
     // Reasoning health must exercise the same Responses endpoint customers use,
@@ -131,7 +132,7 @@ describe("distributed public health boundary", () => {
     const expressHealth = read("src/routes/health-routes.ts");
     const registration = read("src/server/register-api-routes.ts");
 
-    expect(directFunction).toContain("probeVapiManagedVoice");
+    expect(directFunction).toContain("probeXAIVoiceRuntime");
     expect(directFunction).toContain("probeOpenAIModel");
     expect(directFunction).toContain("RESULT_TTL_SECONDS");
     expect(directFunction).not.toContain("publicProbeCache");

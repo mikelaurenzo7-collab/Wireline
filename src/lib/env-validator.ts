@@ -1,6 +1,7 @@
 import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
+import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
 
 export type EnvGroup =
   | "core"
@@ -107,8 +108,24 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "One xAI inference key for Grok 4.6 structured chat and browser preview TTS. Live PSTN Grok 4.3 uses VAPI_PRIVATE_KEY. OpenAI remains continuity and Realtime",
+      "One xAI inference key for Grok 4.6 structured chat, browser realtime, and native Twilio SIP Speech-to-Speech. Chat and voice share this key; splitting keys does not reduce latency. OpenAI remains continuity and Realtime",
     validate: nonEmpty,
+    requiredInProd: true,
+  },
+  {
+    name: "XAI_SIP_ALLOWED_ADDRESSES",
+    group: "voice",
+    required: false,
+    requiredInProd: true,
+    description:
+      "Comma-separated IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32). Required before registering a Twilio number with xAI.",
+    validate: (value) =>
+      value
+        .split(/[\s,]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .every((entry) => isValidXAISipAllowedAddress(entry)),
+    formatHint: "comma-separated IPv4 CIDRs with prefix length 8-32, e.g. 54.172.60.0/23",
   },
   {
     name: "XAI_API_KEY_CHATKIT",
@@ -171,16 +188,16 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "VAPI_PRIVATE_KEY",
     group: "voice",
     required: false,
-    requiredInProd: true,
-    description: "Managed Vapi PSTN orchestration and phone handling",
+    requiredInProd: false,
+    description: "Rollback-only Vapi control plane. Native PSTN uses Twilio and xAI Direct SIP",
     validate: nonEmpty,
   },
   {
     name: "VAPI_WEBHOOK_SECRET",
     group: "voice",
     required: false,
-    requiredInProd: true,
-    description: "Vapi webhook verification",
+    requiredInProd: false,
+    description: "Rollback-only Vapi webhook verification",
     validate: nonEmpty,
   },
   {

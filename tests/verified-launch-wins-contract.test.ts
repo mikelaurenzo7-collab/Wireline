@@ -23,6 +23,11 @@ describe("verified launch-readiness wins", () => {
     );
     expect(dnc).toContain("End this conversation immediately.");
     expect(dnc).not.toContain("void sentinel.terminateActiveCallsForNumber");
+
+    const session = read("src/lib/voice/xai-sip-session.ts");
+    expect(session).toContain("endForCallerDnc");
+    expect(session).toContain('optOut.kind === "dnc"');
+    expect(session).toContain('endedReason = "caller-dnc"');
   });
 
   it("does not promise caller follow-up work that was never persisted", () => {

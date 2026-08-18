@@ -180,7 +180,7 @@ const TRUST_PACK_SECTIONS = [
     icon: Database,
     title: "Subprocessors & vendors",
     items: [
-      "Production voice: Twilio and Vapi for telephony and orchestration, Deepgram for transcription, OpenAI for managed call models and realtime voice, and ElevenLabs for managed text-to-speech and authorized private voices where enabled.",
+      "Production voice: Twilio for PSTN and xAI Direct SIP Speech-to-Speech for live conversation. OpenAI remains continuity inference and ChatGPT-widget realtime. ElevenLabs is managed text-to-speech and authorized private voices. Vapi is optional rollback and public-showcase PSTN only.",
       "Payments: Stripe (PCI scope reduced, Wireline never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
       "Provider credentials and routing stay server-side. Wireline owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
@@ -220,7 +220,7 @@ export default function Security() {
               </div>
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · August 11, 2026</span>
+              <span className="whitespace-nowrap">Last updated · August 17, 2026</span>
             </p>
           </motion.div>
 

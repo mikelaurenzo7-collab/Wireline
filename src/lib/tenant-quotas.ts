@@ -4,7 +4,7 @@
 //
 // Three scopes:
 //   • claude_tokens_daily   — input+output Anthropic tokens per UTC day
-//   • voice_minutes_daily   — sum of Vapi call durations per UTC day
+//   • voice_minutes_daily   — sum of native SIP/Twilio call durations per UTC day
 //   • api_requests_per_min  — burst rate cap on /api/* (per user)
 //
 // The ENFORCED LIMIT is `min(plan_default, per_tenant_override)`. Plan
@@ -31,7 +31,7 @@ export type PlanTier = "free" | "personal" | "team" | "business" | "enterprise";
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
   claude_tokens_daily: number;
-  /** Sum of Vapi call duration in minutes per UTC day. */
+  /** Sum of native SIP/Twilio call duration in minutes per UTC day. */
   voice_minutes_daily: number;
   /** Concurrent in-flight outbound dials per tenant. */
   concurrent_dials: number;
@@ -40,8 +40,8 @@ export interface QuotaProfile {
   /** Lead-intake API requests per minute per tenant. */
   intake_rpm: number;
   /**
-   * Live-simulation minutes per UTC day (OpenAI Realtime test sessions,
-   * plus any optional Grok experiment path). Each session mint charges its 5-minute secret TTL — the
+   * Live-simulation minutes per UTC day (Studio xAI Speech-to-Speech tests
+   * and ChatGPT OpenAI Realtime previews). Each session mint charges its 5-minute secret TTL — the
    * per-minute rate limiter stops bursts, this stops a tenant running
    * back-to-back realtime sessions all day on vendor-metered keys.
    */
@@ -450,6 +450,20 @@ export class QuotaTracker {
         const current = await this.getUsageForPeriod(userId, dimension, periodKey);
         return authoritativeDecision({
           allowed: false,
+          dimension,
+          limit,
+          used: current,
+          periodKey,
+          resetAt,
+        });
+      }
+
+      // A zero-delta probe must still refuse when the window is already full.
+      // `used + 0 <= limit` would otherwise admit work at the exact cap.
+      if (units === 0) {
+        const current = await this.getUsageForPeriod(userId, dimension, periodKey);
+        return authoritativeDecision({
+          allowed: current < limit,
           dimension,
           limit,
           used: current,

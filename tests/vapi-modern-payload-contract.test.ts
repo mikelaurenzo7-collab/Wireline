@@ -77,24 +77,16 @@ describe("current Vapi assistant payload contract", () => {
   });
 
   it("pins the verbal SMS consent script quoted in the Twilio toll-free verification", () => {
-    // The toll-free verification submitted to Twilio quotes this script as the
-    // product's verbal opt-in flow. If the script drifts, the compliance
-    // attestation silently stops describing what agents actually say. The
-    // script must carry all four carrier-required consent elements (Twilio
-    // campaign-rejection code 30924): message type, frequency, rate
-    // disclosure, and opt-out instructions.
     const sms = vapiToolExecutionGuidance("send_text_message");
     expect(sms).toContain(
       '"Want me to text that to you at this number? It will be one message with the info you asked for. Message and data rates may apply, and you can reply STOP at any time to opt out."',
     );
     expect(sms).toContain("only after the caller clearly agrees");
-    // 30923/30931: consent is refusable, never a condition of service, and a
-    // declined ask is not repeated.
     expect(sms).toContain("do not ask again");
     expect(sms).toContain("never a condition of service");
   });
 
-  it("prefers a Vapi Custom Credential and retains the supported migration fallback", () => {
+  it("prefers a Vapi Custom Credential and retains the supported rollback fallback", () => {
     expect(
       buildVapiServerConfig(
         "https://trywireline.com/api/vapi-webhook",
@@ -117,23 +109,31 @@ describe("current Vapi assistant payload contract", () => {
     });
   });
 
-  it("uses current nested tools and server objects across every live assistant path", () => {
-    const outbound = read("src/lib/vapi-client.ts");
-    const inbound = read("src/lib/vapi-assistant-factory-v2.ts");
+  it("keeps Vapi DTOs on rollback paths and native phone sessions provider-native", () => {
+    const facade = read("src/lib/vapi-client.ts");
+    const rollbackInbound = read("src/lib/vapi-assistant-factory-v2.ts");
     const showcase = read("src/lib/showcase-assistant.ts");
     const patcher = read("scripts/patch-vapi-prod-webhooks.mjs");
+    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    const nativeSession = read("src/lib/voice/xai-sip-session.ts");
+    const nativeOutbound = read("src/lib/voice/outbound-call-service.ts");
 
-    for (const source of [outbound, inbound]) {
-      expect(source).toContain("toVapiFunctionTools");
-      expect(source).toMatch(/model:\s*\{[\s\S]*?tools:/);
-      expect(source).not.toMatch(/^\s+functions:/m);
-    }
-    for (const source of [outbound, inbound, showcase]) {
-      expect(source).toContain("server:");
-    }
-    expect(outbound).not.toContain("serverUrlSecret");
+    expect(rollbackInbound).toContain("toVapiFunctionTools");
+    expect(rollbackInbound).toMatch(/model:\s*\{[\s\S]*?tools:/);
+    expect(rollbackInbound).not.toMatch(/^\s+functions:/m);
+    for (const source of [rollbackInbound, showcase]) expect(source).toContain("server:");
     expect(showcase).not.toContain("serverUrlSecret");
     expect(patcher).not.toContain("serverUrl:");
     expect(patcher).not.toContain("serverUrlSecret");
+
+    expect(facade).toContain("Compatibility facade for legacy imports");
+    expect(facade).toContain("placeNativeOutboundCall");
+    expect(facade).not.toContain("toVapiFunctionTools");
+    expect(nativeOutbound).not.toContain("toVapiFunctionTools");
+    expect(nativeOutbound).not.toContain("api.vapi.ai");
+    expect(nativeRuntime).toContain("tools,");
+    expect(nativeRuntime).toContain('tool_choice: "auto"');
+    expect(nativeSession).toContain('type: "session.update"');
+    expect(nativeSession).toContain('type: "function_call_output"');
   });
 });

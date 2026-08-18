@@ -18,9 +18,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Wireline Command | `apps/browser-extension/` | **Early access** explicit-action browser handoff. |
 | iOS | `ios/` | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight. |
 | Android | `android/` | **Internal beta** until device acceptance, signing, privacy review, and Play release. |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor. |
-| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://trywireline.com/mcp` | **Early access** directory submission of the same remote MCP server. |
-| Cursor plugin | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json` | **Early access** Cursor Directory package so a new user can create a Wireline account and first agent. |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface. |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Retired live talking-head.** Identity badges only. |
 
 ## Product interface rules
@@ -46,8 +44,6 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md) | Agent-first positioning and roster-compatible launch framing. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Web, browser, native, ChatGPT, and presenter ownership and release boundaries. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App behavior, OAuth, tool boundaries, and release verification. |
-| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md) | Claude Connector Directory and MCP App behavior for the shared `/mcp` server. |
-| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md) | Cursor Directory plugin package and account-bound MCP behavior. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Canonical billing model and Runtime Balance posture. |
 | [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | Checkout, entitlement, webhook, cancellation, and reconciliation proof. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | Whole-product feature and commercial-status matrix. |
@@ -56,7 +52,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md) | Shareable recap/proposal artifact contract and entitlement boundaries. |
 | [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md) | Number, calling, SMS, and email identity boundaries. |
 | [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary. |
-| [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | Vapi Grok 4.3 PSTN/Studio default, Speech-to-Speech research, OpenAI backup. No work-companion API. |
+| [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | Native Twilio + xAI Speech-to-Speech PSTN/Studio default, OpenAI ChatGPT widget. No work-companion API. |
 | [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md) | Vendor and surface status: live, beta, planned, or retire. |
 | [ACCESSIBILITY.md](./ACCESSIBILITY.md) | Product accessibility commitment. |
 | [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md) | Responsive, spacing, and component-containment rules. |
@@ -85,8 +81,6 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [HARNESS_WINGMAN.md](./HARNESS_WINGMAN.md) | Operations and infrastructure harness doctrine. |
 | [CHATGPT_APP_DASHBOARD_CONFIG.md](./CHATGPT_APP_DASHBOARD_CONFIG.md) | OAuth/CIMD dashboard registration record. |
 | [CHATGPT_APP_SUBMISSION.md](./CHATGPT_APP_SUBMISSION.md) | Submission and reviewer contract. |
-| [CLAUDE_CONNECTOR_SUBMISSION.md](./CLAUDE_CONNECTOR_SUBMISSION.md) | Claude Connectors Directory portal packet and reviewer contract. |
-| [CURSOR_PLUGIN_SUBMISSION.md](./CURSOR_PLUGIN_SUBMISSION.md) | Cursor Directory submission packet and reviewer contract. |
 | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) | Incident classification, containment, communication, and recovery. |
 | [SLA.md](./SLA.md) | Service-level commitments. |
 | [LOAD_TEST.md](./LOAD_TEST.md) | Load-test methodology for voice webhook ingress. |
@@ -123,8 +117,6 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | --- | --- |
 | [AGENTS.md](../AGENTS.md) | Cursor Cloud discovery instructions at the required root path. |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code discovery instructions at the required root path. |
-| [agents/wireline.md](../agents/wireline.md) | Cursor Directory agent discovery path for the Wireline MCP plugin. |
-| [skills/wireline-voice-agent/SKILL.md](../skills/wireline-voice-agent/SKILL.md) | Cursor Directory / Open Plugins skill discovery path. |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Narrow compatibility pointer to the canonical database runbook. |
 | [DEPLOY.md](../DEPLOY.md) | Narrow compatibility pointer retained for legacy links, development-tool discovery, and regression contracts. |
 | [apps/browser-extension/README.md](../apps/browser-extension/README.md) | Browser-extension entry point beside its source and build script. |

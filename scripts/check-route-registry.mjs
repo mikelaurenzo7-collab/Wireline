@@ -25,9 +25,9 @@ const problems = [];
 // separate serverless entrypoint are enumerated below, and each claim is
 // verified against the mounting file rather than trusted as prose.
 const MOUNTED_ELSEWHERE = [
-  // Public MCP surface mounted by the dedicated MCP stack (Vercel function + local server).
-  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
-  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
+  // Public MCP surface mounted by the standalone ChatGPT entrypoint.
+  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
+  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
 ];
 
 function walkTsFiles(dir) {

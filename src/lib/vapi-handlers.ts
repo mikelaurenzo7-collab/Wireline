@@ -64,7 +64,7 @@ export interface CallReportPayload {
   };
 }
 
-async function persistTranscriptDncSuppression(input: {
+export async function persistTranscriptDncSuppression(input: {
   userId: string;
   callId: string | null;
   rawCallerNumber: string;

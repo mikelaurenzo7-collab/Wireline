@@ -29,22 +29,6 @@ const expectedAnnotations = new Map([
     "get_wireline_workspace_summary",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
-  [
-    "get_wireline_agent_status",
-    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-  ],
-  [
-    "run_private_agent_turn",
-    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
-  ],
-  [
-    "get_agent_coaching_brief",
-    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-  ],
-  [
-    "train_wireline_agent",
-    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
-  ],
 ]);
 
 function assert(condition, message) {
@@ -104,32 +88,6 @@ assert(
   "Privacy notice must distinguish widget-only simulation credentials.",
 );
 
-const mcpPrivacy = await request("/mcp-privacy.html", { headers: { Accept: "text/html" } });
-assert(mcpPrivacy.response.status === 200, "MCP connector privacy notice must return HTTP 200.");
-assert(
-  typeof mcpPrivacy.body === "string" &&
-    mcpPrivacy.body.includes("Information returned to the connecting client"),
-  "MCP privacy notice must disclose information returned to connecting clients.",
-);
-
-const claudeDocs = await request("/claude-connector.html", { headers: { Accept: "text/html" } });
-assert(claudeDocs.response.status === 200, "Claude connector documentation must return HTTP 200.");
-assert(
-  typeof claudeDocs.body === "string" && claudeDocs.body.includes("https://trywireline.com/mcp"),
-  "Claude connector documentation must publish the MCP endpoint.",
-);
-
-const cursorDocs = await request("/cursor-plugin.html", { headers: { Accept: "text/html" } });
-assert(cursorDocs.response.status === 200, "Cursor plugin documentation must return HTTP 200.");
-assert(
-  typeof cursorDocs.body === "string" && cursorDocs.body.includes("https://trywireline.com/mcp"),
-  "Cursor plugin documentation must publish the MCP endpoint.",
-);
-assert(
-  typeof cursorDocs.body === "string" && cursorDocs.body.includes("not a repo voice SDK"),
-  "Cursor plugin documentation must refuse repo-SDK positioning.",
-);
-
 const protectedResource = await request("/.well-known/oauth-protected-resource");
 assert(
   protectedResource.response.status === 200,
@@ -181,8 +139,8 @@ const initialized = await jsonRpc("initialize", {
   clientInfo: { name: "wireline-release-probe", version: "1.0.0" },
 });
 assert(
-  initialized.result.serverInfo?.name === "wireline",
-  "MCP server identity is not Wireline.",
+  initialized.result.serverInfo?.name === "wireline-chatgpt",
+  "MCP server identity is not Wireline ChatGPT.",
 );
 
 const tools = await jsonRpc("tools/list");
@@ -203,7 +161,6 @@ for (const tool of liveTools) {
     tool.outputSchema && typeof tool.outputSchema === "object",
     `${tool.name}: outputSchema is missing.`,
   );
-  assert(typeof tool.title === "string" && tool.title.trim().length > 0, `${tool.name}: title is missing.`);
   const expected = expectedAnnotations.get(tool.name);
   assert(expected, `Unexpected MCP tool exposed: ${tool.name}.`);
   for (const [key, value] of Object.entries(expected)) {
@@ -213,38 +170,6 @@ for (const tool of liveTools) {
     );
     assert(tool.annotations[key] === value, `${tool.name}: ${key} must be ${value}.`);
   }
-}
-
-const lazyAuthCalls = [
-  ["create_agent_draft", { business_name: "Acme", primary_goal: "Answer after hours" }],
-  ["update_agent_draft", { agent_id: "draft" }],
-  ["run_private_agent_turn", { agent_id: "draft", customer_message: "Do you have Saturday appointments?" }],
-  ["train_wireline_agent", { agent_id: "draft", kind: "fact", content: "We serve residential HVAC." }],
-  ["list_wireline_agents", {}],
-];
-for (const [name, args] of lazyAuthCalls) {
-  const { response, body } = await request("/mcp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: name,
-      method: "tools/call",
-      params: { name, arguments: args },
-    }),
-  });
-  assert(
-    response.status === 401,
-    `${name}: unauthenticated tools/call must be HTTP 401 so the host can show Connect, received ${response.status}.`,
-  );
-  assert(
-    (response.headers.get("www-authenticate") || "").includes("invalid_token"),
-    `${name}: WWW-Authenticate must challenge with invalid_token.`,
-  );
-  assert(
-    body && typeof body === "object" && body.error?.code === -32001,
-    `${name}: unauthenticated tools/call must be a JSON-RPC auth error, not a 200 isError result.`,
-  );
 }
 
 const resources = await jsonRpc("resources/list");
@@ -272,40 +197,12 @@ assert(
   "Widget CSP must explicitly allow the OpenAI Realtime HTTPS domain.",
 );
 assert(
-  content?._meta?.ui?.csp?.resourceDomains?.includes("https://assets.claude.ai"),
-  "Widget CSP must allow Claude host fonts.",
-);
-assert(
-  typeof content?._meta?.ui?.domain === "string" &&
-    content._meta.ui.domain.endsWith(".claudemcpcontent.com"),
-  "Widget must declare a Claude MCP App host domain.",
-);
-assert(
   !content?._meta?.ui?.csp?.connectDomains?.includes("wss://api.x.ai"),
   "Account widget CSP must not require Grok realtime — private voice is OpenAI Realtime.",
 );
 assert(
   !content?._meta?.ui?.csp?.connectDomains?.includes("https://api.x.ai"),
   "Account widget CSP must not require xAI hosts for private voice.",
-);
-
-const prompts = await jsonRpc("prompts/list");
-assert(
-  Array.isArray(prompts.result.prompts) && prompts.result.prompts.length >= 3,
-  "MCP prompts/list must advertise reviewer prompts.",
-);
-assert(
-  prompts.result.prompts.some((prompt) => prompt?.name === "create_first_voice_agent"),
-  "MCP prompts/list must advertise create_first_voice_agent.",
-);
-
-const serverCard = await request("/mcp/server-card");
-assert(serverCard.response.status === 200, "MCP server card must return HTTP 200.");
-assert(
-  serverCard.body &&
-    typeof serverCard.body === "object" &&
-    serverCard.body.remotes?.[0]?.url?.endsWith("/mcp"),
-  "MCP server card must advertise the streamable HTTP remote.",
 );
 
 console.log(`ChatGPT App release probe passed for ${origin}.`);

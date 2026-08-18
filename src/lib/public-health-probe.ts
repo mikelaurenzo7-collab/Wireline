@@ -112,9 +112,26 @@ async function probeGetEndpoint(input: {
 }
 
 /**
- * Check the managed Vapi control plane without creating a call, chat, or model
- * output. The exact primary/fallback assistant schema is certified separately
- * during preview builds by creating and deleting one inert assistant.
+ * Check the native xAI voice control plane without creating a call or model
+ * output. Catalog GET is the same authenticated surface SIP registration uses.
+ */
+export function probeXAIVoiceRuntime(
+  apiKey: string | undefined,
+  timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
+): Promise<PublicModelProbe> {
+  return probeGetEndpoint({
+    url: "https://api.x.ai/v1/models",
+    apiKey,
+    keyName: "XAI_API_KEY",
+    label: "xai-native-voice",
+    failurePrefix: "xAI control-plane probe failed",
+    timeoutMs,
+  });
+}
+
+/**
+ * Rollback-only Vapi control-plane probe. Production health uses
+ * `probeXAIVoiceRuntime`. Kept exported so rollback diagnostics stay testable.
  */
 export function probeVapiManagedVoice(
   apiKey: string | undefined,

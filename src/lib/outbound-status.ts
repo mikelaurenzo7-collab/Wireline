@@ -35,6 +35,22 @@ export const LEAD_PROCESSABLE_STATUSES = [
   LEAD_STATUS.RETRYING,
 ] as const;
 
+export const DEFAULT_LEAD_MAX_ATTEMPTS = 3;
+
+/**
+ * Busy, no-answer, canceled, and marketing AMD drops consume one attempt.
+ * Remaining budget returns the lead to the campaign dialer; exhaustion is
+ * terminal. Fax is handled by callers as a separate non-retryable failure.
+ */
+export function resolveRetryableLeadStatus(
+  attempts: number | null | undefined,
+  maxAttempts: number | null | undefined,
+): typeof LEAD_STATUS.RETRYING | typeof LEAD_STATUS.MAX_ATTEMPTS {
+  const current = Math.max(1, Number(attempts) || 0);
+  const budget = Math.max(1, Number(maxAttempts) || DEFAULT_LEAD_MAX_ATTEMPTS);
+  return current < budget ? LEAD_STATUS.RETRYING : LEAD_STATUS.MAX_ATTEMPTS;
+}
+
 export function isTerminalLeadStatus(status: string | null | undefined): boolean {
   const terminalStatuses: readonly string[] = [
     LEAD_STATUS.COMPLETED,

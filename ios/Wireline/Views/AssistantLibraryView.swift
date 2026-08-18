@@ -41,7 +41,6 @@ struct AssistantLibraryView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Create agent")
-                        .disabled(loadError != nil)
                 }
             }
             .sheet(isPresented: $showCreate) { createSheet }

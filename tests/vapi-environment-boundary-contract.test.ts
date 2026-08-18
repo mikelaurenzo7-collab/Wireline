@@ -10,11 +10,17 @@ describe("Vapi environment boundary", () => {
   const health = read("scripts/check-vercel-env-health.mjs");
   const sync = read("scripts/sync-vapi-env-to-vercel.mjs");
 
-  it("requires server credentials and fails production on the browser publishable key", () => {
-    expect(productionCheck).toContain('"VAPI_PRIVATE_KEY"');
-    expect(productionCheck).toContain('"VAPI_WEBHOOK_SECRET"');
+  it("requires native xAI credentials and fails production on the retired browser publishable key", () => {
+    expect(productionCheck).toContain('"XAI_API_KEY"');
+    expect(productionCheck).toContain('"XAI_SIP_ALLOWED_ADDRESSES"');
     expect(productionCheck).not.toContain('"VITE_VAPI_PUBLIC_KEY"');
-    expect(deployment).toContain('requireValue("VAPI_PRIVATE_KEY"');
+    const requiredStart = productionCheck.indexOf("const required = [");
+    const recommendedStart = productionCheck.indexOf("const recommended = [");
+    const requiredBlock = productionCheck.slice(requiredStart, recommendedStart);
+    expect(requiredBlock).toContain('"XAI_API_KEY"');
+    expect(requiredBlock).not.toContain('"VAPI_PRIVATE_KEY"');
+    expect(deployment).toContain('requireValue("XAI_API_KEY"');
+    expect(deployment).not.toContain('requireValue("VAPI_PRIVATE_KEY"');
     expect(deployment).toContain(
       "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production",
     );

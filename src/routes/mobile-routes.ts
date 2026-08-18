@@ -39,7 +39,8 @@ import {
   normalizedExpressConsent,
   outboundConsentMetadata,
 } from "../lib/outbound-call-purpose";
-import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
+import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import { transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -654,9 +655,9 @@ router.delete(
 
 // ── POST /api/mobile/calls/outbound — "call the doctor, I'll be 5 min late" ─
 // Mirrors POST /api/outbound/dial exactly: same spend/trial guard, the same DNC
-// + TCPA gates, and the same `placeOutboundCall` client (which builds the
-// dynamic system prompt server-side from the agent's stored config). The app
-// sends only the target + a free-text context; no prompt logic on device.
+// + TCPA gates, and the same native `placeOutboundCall` entrypoint (Twilio +
+// xAI SIP). The app sends only the target + a free-text context; no prompt
+// logic on device.
 const mobileDialSchema = z.object({
   agentId: z.string().min(1, "agentId is required"),
   customerNumber: z
@@ -735,6 +736,15 @@ router.post(
             error: tcpa?.disclosure_script || "Call blocked by TCPA consent rules.",
             tcpaBlocked: true,
             tcpa,
+          });
+        }
+        if (gate.reason === "outside_permitted_calling_hours") {
+          return res.status(403).json({
+            code: "OUTSIDE_PERMITTED_CALLING_HOURS",
+            error:
+              "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
+            reason: gate.reason,
+            calling_hours: gate.metadataPatch?.calling_hours,
           });
         }
         log.warn("Mobile outbound dial blocked by duplicate guard", {

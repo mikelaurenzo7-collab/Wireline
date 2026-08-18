@@ -7,7 +7,7 @@ import {
   PlugZap,
   ShieldCheck,
   Target,
-  Badge,
+  Video,
 } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
@@ -56,10 +56,10 @@ const customizationLinks = [
     icon: Target,
   },
   {
-    label: "Identity",
-    detail: "Identity badge for business agents. Live talking-head video is retired.",
+    label: "Identity badge",
+    detail: "In-app face for business agents. Not a live video presenter.",
     href: "/studio/live-video",
-    icon: Badge,
+    icon: Video,
     businessOnly: true,
   },
 ] as const;
@@ -68,7 +68,7 @@ export default function CustomizationSettings() {
   const { accountType } = useAccount();
   // Success targets lives on /insights, a business surface — offering it to a
   // personal account lands them on a page with no nav entry and no way back.
-  // businessOnly entries (identity studio is for business agents) are
+  // businessOnly entries (the live video add-on serves business agents) are
   // likewise offered only in business mode.
   const visibleLinks = customizationLinks.filter(
     (link) =>

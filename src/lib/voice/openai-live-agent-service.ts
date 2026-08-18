@@ -375,7 +375,7 @@ export async function createOpenAILiveVoiceCall(input: {
         profile,
         voice,
         tools: LIVE_DEMO_TOOLS.map((tool) => tool.name),
-        phoneDemoProvider: "vapi",
+        phoneRuntimeProvider: "xai_sip",
       },
     };
   } catch (error) {
@@ -490,7 +490,7 @@ export function getOpenAILiveVoiceStatus() {
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     sessionMode: "authenticated_browser_and_mobile_webrtc",
     transcriptionEnabled: true,
-    phoneDemoProvider: "vapi",
+    phoneRuntimeProvider: "xai_sip",
   };
 }
 

@@ -8,7 +8,7 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("launch artifact privacy and operations truth", () => {
-  it("uses one transcript-only Vapi artifact policy across managed call surfaces", () => {
+  it("keeps rollback Vapi artifacts transcript-only and native xAI audio recording disabled", () => {
     const policy = read("src/lib/vapi-artifact-plan.ts");
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("videoRecordingEnabled: false");
@@ -16,26 +16,32 @@ describe("launch artifact privacy and operations truth", () => {
     expect(policy).toContain("loggingEnabled: true");
     expect(policy).toContain("transcriptPlan: { enabled: true }");
 
+    // Vapi remains only as a rollback/historical path during certification.
     for (const path of [
       "src/lib/vapi-assistant-factory-v2.ts",
-      "src/lib/vapi-client.ts",
       "src/routes/vapi-v2.ts",
       "scripts/sync-wireline-showcase.mts",
     ]) {
       expect(read(path), path).toContain("buildVapiTranscriptOnlyArtifactPlan");
     }
-
     expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain("artifactPlan,");
-    expect(read("src/lib/vapi-client.ts")).toContain("artifactPlan,");
     expect(read("src/routes/vapi-v2.ts")).toContain("artifactPlan:");
     expect(read("scripts/sync-wireline-showcase.mts")).toContain(
       "payload.artifactPlan = buildVapiTranscriptOnlyArtifactPlan();",
     );
+
+    const nativeSession = read("src/lib/voice/xai-sip-session.ts");
+    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    expect(nativeSession).toContain("recordingEnabled: false");
+    expect(nativeSession).toContain("transcript: input.transcript || null");
+    expect(nativeSession).not.toContain("recordingUrl:");
+    expect(nativeRuntime).not.toContain("11labs");
   });
 
-  it("makes unauthenticated browser proof shorter, private, and non-retained", () => {
+  it("makes unauthenticated native browser proof short, tool-free, and non-retained", () => {
     const policy = read("src/lib/public-browser-demo.ts");
     const route = read("src/routes/marketing-runtime-routes.ts");
+    const session = read("src/lib/voice/xai-public-demo-session.ts");
     const hook = read("src/hooks/useProtectedPublicDemo.ts");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     const budget = read("src/lib/public-demo-budget.ts");
@@ -44,9 +50,14 @@ describe("launch artifact privacy and operations truth", () => {
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("loggingEnabled: false");
     expect(policy).toContain("transcriptPlan: { enabled: false }");
-    expect(route).toContain("process.env.VAPI_PRIVATE_KEY");
-    expect(route).toContain('router.post("/api/public/demo-vapi/call/web"');
-    expect(route).toContain("buildPublicBrowserDemoArtifactPlan()");
+    expect(route).toContain("publicXAIDemoConfigured");
+    expect(route).toContain('"/api/public/demo-xai-session"');
+    expect(route).toContain("createPublicXAILiveDemoSession");
+    expect(route).not.toContain("process.env.VAPI_PRIVATE_KEY");
+    expect(route).not.toContain('router.post("/api/public/demo-vapi/call/web"');
+    expect(session).toContain("tools: []");
+    expect(session).toContain('tool_choice: "none"');
+    expect(session).not.toContain("recording");
     expect(hook).toContain('fetch("/api/public/demo-session"');
     expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
     expect(widget).not.toContain("/api/public/assistant/");

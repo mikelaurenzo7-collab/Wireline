@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTH_REDIRECT_KEY,
-  isMcpOAuthRedirect,
   readRedirectFromSearch,
   resolvePostAuthDestination,
 } from "./auth-redirect";
@@ -38,27 +37,12 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("recognizes MCP OAuth return paths so signup can complete the connector", () => {
-    expect(isMcpOAuthRedirect("?redirect=%2Fmcp%2Foauth%2Fauthorize%3Fclient_id%3Dx")).toBe(true);
-    expect(isMcpOAuthRedirect("?redirect=%2Foverview")).toBe(false);
-    expect(isMcpOAuthRedirect("?redirect=https://evil.example/mcp/oauth/authorize")).toBe(false);
-  });
-
   it("defaults to /overview (Home) for returning users; fresh signups are sent to Studio create once then default to overview", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/overview");
     expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1");
     expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
-  });
-
-  it("returns a fresh MCP OAuth signup to consent instead of Studio Fast Start", () => {
-    localStorage.setItem(AUTH_REDIRECT_KEY, "/mcp/oauth/authorize?client_id=x");
-    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-
-    expect(resolvePostAuthDestination("personal", "")).toBe("/mcp/oauth/authorize?client_id=x");
-    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
-    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
 
   it("ignores a stale sign-in redirect when a direct personal signup completes", () => {

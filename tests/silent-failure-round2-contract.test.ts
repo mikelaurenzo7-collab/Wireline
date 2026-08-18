@@ -213,9 +213,10 @@ describe("a scheduled report survives a failed runtime reservation", () => {
 describe("a cadence retries a failed touch instead of consuming the step", () => {
   it("branches on a retryable step failure before advancing", () => {
     const engine = read("src/lib/cadence-engine.ts");
-    const advanceAt = engine.indexOf("const nextIdx = currentIdx + 1");
+    const advanceAt = engine.indexOf("const nextIndex = currentIndex + 1");
     const retryAt = engine.indexOf("if (!stepResult.ok && stepResult.retryable)");
     expect(retryAt).toBeGreaterThan(-1);
+    expect(advanceAt).toBeGreaterThan(-1);
     expect(retryAt).toBeLessThan(advanceAt);
     // Shares the exception path's single-retry budget and marker.
     const retryBlock = engine.slice(retryAt, advanceAt);
@@ -334,9 +335,21 @@ describe("the retention purge deletes event data, never live configuration", () 
         tag: "0150_post_call_digest_job_idempotency",
       }),
     );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 49,
+        tag: "0151_xai_grok_46_runtime_defaults",
+      }),
+    );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 51,
+        tag: "0153_preserve_xai_registration_ledger",
+      }),
+    );
     expect(journal.entries.at(-1)).toMatchObject({
-      idx: 49,
-      tag: "0151_xai_grok_46_runtime_defaults",
+      idx: 52,
+      tag: "0154_xai_grok_46_persisted_defaults",
     });
   });
 });

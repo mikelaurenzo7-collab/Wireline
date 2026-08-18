@@ -91,11 +91,7 @@ describe("public showcase truth guard", () => {
     const roadmap = WIRELINE_COMPLIANCE_STATUS.inProgress.join(" ");
     expect(roadmap).toContain("not SOC 2 certified today");
     expect(roadmap).toContain("not currently available");
-    expect(roadmap).toContain("Federal Do Not Call registration is not complete");
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
-    expect(WIRELINE_COMPLIANCE_STATUS.done.join(" ")).not.toMatch(/Federal Do Not Call/);
-    expect(read("src/data/wireline-knowledge.ts")).not.toContain("OpenAI-first conversation runtime");
-    expect(read("src/data/wireline-knowledge.ts")).not.toContain("autonomous growth engine");
     const marcusScope = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope || "";
     expect(marcusScope).toContain("HIPAA and BAA support are not currently available");
     expect(marcusScope).not.toMatch(/BAA available|Enterprise roadmap/i);

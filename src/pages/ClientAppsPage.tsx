@@ -12,7 +12,6 @@ import { Link, useLocation } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
-import McpCoachingPanel from "../components/settings/McpCoachingPanel";
 import WorkspaceShell from "../components/WorkspaceShell";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
@@ -31,7 +30,7 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Create a Wireline account, then draft and privately simulate a voice agent in ChatGPT.",
+    blurb: "Draft and privately simulate a voice agent with the account-bound MCP connector.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: "MCP setup",
@@ -41,7 +40,7 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first Wireline voice agent from Claude with the same account-bound connector.",
+    blurb: "Add Wireline as a remote connector for the same account-bound draft tools.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,
@@ -51,11 +50,11 @@ const clientSurfaces = [
   {
     icon: Terminal,
     title: "Cursor",
-    blurb: "Install the Cursor plugin to create a Wireline account and your first voice agent. Not a repo voice SDK.",
+    blurb: "Register Wireline as a remote MCP server: OAuth, no separate plugin package.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
-    href: "/cursor-plugin.html",
+    href: "https://docs.cursor.com/context/mcp",
     emphasis: "primary" as const,
   },
   {
@@ -113,9 +112,7 @@ export default function ClientAppsPage() {
         >
           {clientSurfaces.map(
             ({ icon: Icon, title, blurb, status, statusVariant, action, href, emphasis }) => {
-              const documentLink = href.endsWith(".html");
-              const external =
-                href.startsWith("https://") || href.startsWith("mailto:") || documentLink;
+              const external = href.startsWith("https://") || href.startsWith("mailto:");
               return (
                 <article
                   key={title}
@@ -171,13 +168,14 @@ export default function ClientAppsPage() {
             id="chatgpt-mcp-heading"
             className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
-            Build your first voice agent in Cursor, ChatGPT, or Claude
+            {/* The instructions below happen inside those apps, so the honest
+                claim is the inverse of the old headline. */}
+            Use Wireline without leaving ChatGPT, Claude, or Cursor
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Add <code className="wl-code">https://trywireline.com/mcp</code> where you already work.
-            New users create a Wireline account during OAuth, then build their first voice agent in
-            that chat. Privately rehearse it there. Numbers, live calls, messaging, billing, and
-            launch stay in Studio. This is not a way to embed Wireline in another repo.
+            Add <code className="wl-code">https://trywireline.com/mcp</code> as a remote MCP
+            connector, then sign in with your Wireline account. Draft and privately simulate here.
+            Numbers, dialing, training, billing, and launch stay in Studio.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Button asChild variant="outline" size="sm">
@@ -185,21 +183,10 @@ export default function ClientAppsPage() {
                 Open ChatGPT <ArrowUpRight size={14} />
               </a>
             </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href="https://claude.ai/settings/connectors" target="_blank" rel="noreferrer">
-                Open Claude <ArrowUpRight size={14} />
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href="/cursor-plugin.html">
-                Cursor plugin <ArrowUpRight size={14} />
-              </a>
-            </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/developers">Public developer notes</Link>
             </Button>
           </div>
-          <McpCoachingPanel />
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>

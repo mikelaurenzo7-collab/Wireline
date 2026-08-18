@@ -22,9 +22,6 @@ const vercelPath = resolve(repoRoot, "vercel.json");
 const staticHtmlSources = [
   "index.html",
   "public/chatgpt-app-privacy.html",
-  "public/mcp-privacy.html",
-  "public/claude-connector.html",
-  "public/cursor-plugin.html",
   "public/legal/data-deletion.html",
 ];
 

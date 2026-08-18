@@ -273,6 +273,40 @@ export function complianceFirstMessagePrefix(
   return `${sentences.join(" ")} `;
 }
 
+const CALLBACK_DIGIT_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+] as const;
+
+function speakDigitChunk(digits: string): string {
+  return [...digits]
+    .map((digit) => CALLBACK_DIGIT_WORDS[Number(digit)] || digit)
+    .join(" ");
+}
+
+/**
+ * 64.1200(b)(2) requires a spoken callback number, not merely caller ID.
+ * Group NANP numbers the way a person would read them so Speech-to-Speech
+ * does not slur "+15551234567" into an unusable string.
+ */
+export function formatCallbackNumberForSpeech(value: string | null | undefined): string {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  const national = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (national.length === 10) {
+    return `${speakDigitChunk(national.slice(0, 3))}, ${speakDigitChunk(national.slice(3, 6))}, ${speakDigitChunk(national.slice(6))}`;
+  }
+  return speakDigitChunk(national);
+}
+
 /**
  * Soft topic guardrails — produces a directive block instructing the
  * agent to refuse or redirect when a disallowed topic comes up. Empty

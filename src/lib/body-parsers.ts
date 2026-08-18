@@ -13,6 +13,7 @@ type ExpressApp = ReturnType<typeof express>;
 
 const RAW_WEBHOOK_LIMIT = "1mb";
 const RESEND_WEBHOOK_LIMIT = "256kb";
+const XAI_VOICE_WEBHOOK_LIMIT = "256kb";
 const AGENTMAIL_WEBHOOK_LIMIT = "1mb";
 const TWILIO_WEBHOOK_LIMIT = "256kb";
 
@@ -33,6 +34,14 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
   app.use(
     "/api/webhooks/resend",
     express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
+  );
+
+  // xAI Direct SIP incoming-call events use Standard Webhooks HMAC signing.
+  // The verifier signs the exact bytes, so this parser must stay before the
+  // global JSON middleware and must never parse/re-stringify the body first.
+  app.use(
+    "/api/webhooks/xai/voice",
+    express.raw({ type: "application/json", limit: XAI_VOICE_WEBHOOK_LIMIT }),
   );
 
   // AgentMail / Svix — signed raw JSON. AgentMail documents a 1 MB payload
@@ -59,7 +68,8 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
     }),
   );
 
-  // Vapi webhook — JSON with the exact body retained for signature checks.
+  // Legacy Vapi webhook — retained only during the rollback certification
+  // window. Native xAI/Twilio traffic never enters this parser or route.
   app.use(
     "/api/vapi-webhook",
     express.json({

@@ -7,7 +7,7 @@ import * as schema from "../db/schema";
 import { and, eq } from "drizzle-orm";
 
 /** Twilio incoming-phone-number SIDs start with PN; Vapi ids are UUIDs. */
-export function isTwilioPhoneNumberSid(id: string | null | undefined): boolean {
+export function isTwilioPhoneNumberSid(id: string | null | undefined): id is string {
   return typeof id === "string" && id.startsWith("PN");
 }
 

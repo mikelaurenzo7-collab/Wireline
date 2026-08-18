@@ -2,18 +2,14 @@ import { randomBytes } from "node:crypto";
 import { AppError } from "./api-error";
 
 /**
- * Dynamic OAuth client registration (RFC 7591) plus CIMD allowlists for the
- * Wireline MCP server.
+ * Dynamic OAuth client registration (RFC 7591) for the Wireline MCP server.
  *
  * ChatGPT identifies itself with a Client ID Metadata Document hosted on
- * chatgpt.com, so it never registers. Claude.ai and Claude.com connectors
- * register dynamically. Claude Code uses Anthropic's published CIMD and an
- * RFC 8252 loopback redirect. Cursor connectors register dynamically against
- * Cursor-operated callbacks. Registration is closed to those official URIs.
+ * chatgpt.com, so it never registers. Claude and Cursor connectors register
+ * dynamically; registration is closed to provider-operated callback URIs.
  */
 
 export const MCP_DYNAMIC_CLIENT_ID_PREFIX = "wlmcp_client_";
-export const CLAUDE_CODE_CLIENT_METADATA_PATH = "/oauth/claude-code-client-metadata";
 const ANTHROPIC_REDIRECT_HOSTS = new Set(["claude.ai", "claude.com"]);
 const CURSOR_REDIRECTS = new Set([
   "cursor://anysphere.cursor-mcp/oauth/callback",
@@ -46,102 +42,8 @@ export function isCursorRedirectUri(value: unknown): boolean {
   return typeof value === "string" && CURSOR_REDIRECTS.has(value);
 }
 
-/** RFC 8252 loopback used by Claude Code's CIMD (`/callback`, ephemeral port). */
-export function isLoopbackCallbackUri(value: unknown): boolean {
-  if (typeof value !== "string" || value.length > 2048) return false;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "http:") return false;
-    if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") return false;
-    if (url.pathname !== "/callback") return false;
-    if (url.search || url.hash || url.username || url.password) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function isChatGptRedirectUri(value: unknown): boolean {
-  if (typeof value !== "string" || value.length > 2048) return false;
-  try {
-    const url = new URL(value);
-    return (
-      url.protocol === "https:" &&
-      url.hostname === "chatgpt.com" &&
-      url.pathname.startsWith("/connector/oauth/")
-    );
-  } catch {
-    return false;
-  }
-}
-
 export function isTrustedDynamicRedirectUri(value: unknown): boolean {
   return isAnthropicRedirectUri(value) || isCursorRedirectUri(value);
-}
-
-export function isChatGptClientMetadataUrl(clientId: string): URL | null {
-  try {
-    const url = new URL(clientId);
-    if (url.protocol !== "https:" || url.hostname !== "chatgpt.com") return null;
-    if (!/^\/oauth\/.+\/client\.json$/.test(url.pathname)) return null;
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-export function isClaudeCodeClientMetadataUrl(clientId: string): URL | null {
-  try {
-    const url = new URL(clientId);
-    if (url.protocol !== "https:" || !ANTHROPIC_REDIRECT_HOSTS.has(url.hostname)) return null;
-    if (url.pathname !== CLAUDE_CODE_CLIENT_METADATA_PATH) return null;
-    if (url.search || url.hash || url.username || url.password || url.port) return null;
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-export function isTrustedCimdClientId(clientId: string): URL | null {
-  return isChatGptClientMetadataUrl(clientId) || isClaudeCodeClientMetadataUrl(clientId);
-}
-
-export function isTrustedCimdRedirectUri(clientIdUrl: URL, redirectUri: string): boolean {
-  if (clientIdUrl.hostname === "chatgpt.com") return isChatGptRedirectUri(redirectUri);
-  if (ANTHROPIC_REDIRECT_HOSTS.has(clientIdUrl.hostname)) {
-    return isLoopbackCallbackUri(redirectUri) || isAnthropicRedirectUri(redirectUri);
-  }
-  return false;
-}
-
-function loopbackIdentity(value: string): string | null {
-  try {
-    const url = new URL(value);
-    if (!isLoopbackCallbackUri(value)) return null;
-    return `${url.protocol}//${url.hostname}${url.pathname}`;
-  } catch {
-    return null;
-  }
-}
-
-export function redirectUriMatches(registered: string, requested: string): boolean {
-  if (registered === requested) return true;
-  // Claude Code CIMD advertises loopback without a port and the client picks
-  // an ephemeral one. A registered URI that already includes a port (Cursor's
-  // http://localhost:8787/callback) is exact-match only — otherwise DCR of
-  // Cursor's callback would authorize any localhost port.
-  try {
-    if (new URL(registered).port) return false;
-  } catch {
-    return false;
-  }
-  const registeredLoopback = loopbackIdentity(registered);
-  const requestedLoopback = loopbackIdentity(requested);
-  return Boolean(registeredLoopback && requestedLoopback && registeredLoopback === requestedLoopback);
-}
-
-export function redirectUriAllowed(registeredUris: string[], requested: string): boolean {
-  return registeredUris.some((uri) => redirectUriMatches(uri, requested));
 }
 
 export function newDynamicClientId(): string {
@@ -219,23 +121,9 @@ export function validateDynamicClientRegistration(
   return { clientName: clientName || defaultName, redirectUris: normalized };
 }
 
-/** Hostname shown as the relying party on the consent screen (CIMD uses client_id host). */
-export function relyingPartyHost(clientId: string, redirectUri: string): string {
-  const cimd = isTrustedCimdClientId(clientId);
-  if (cimd) return cimd.hostname;
-  try {
-    if (redirectUri.startsWith("cursor:")) return "cursor.com";
-    return new URL(redirectUri).hostname;
-  } catch {
-    return "the connecting app";
-  }
-}
-
-/** Human name for the consent screen, derived from the client and callback. */
-export function clientDisplayName(redirectUri: string, clientId?: string): string {
-  if (clientId && isClaudeCodeClientMetadataUrl(clientId)) return "Claude Code";
+/** Human name for the consent screen, derived from the OAuth callback host. */
+export function clientDisplayName(redirectUri: string): string {
   if (isCursorRedirectUri(redirectUri)) return "Cursor";
-  if (isLoopbackCallbackUri(redirectUri)) return "Claude Code";
   try {
     const host = new URL(redirectUri).hostname;
     if (ANTHROPIC_REDIRECT_HOSTS.has(host)) return "Claude";
@@ -244,39 +132,6 @@ export function clientDisplayName(redirectUri: string, clientId?: string): strin
     // fall through to the generic label
   }
   return "your MCP client";
-}
-
-function parseStoredRedirectUris(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-  return [];
-}
-
-/** Apps-panel label for a stored MCP grant. Prefer callback metadata over DCR ids. */
-export function connectedAppLabel(
-  clientId: string,
-  clientName: string | null | undefined,
-  redirectUris?: unknown,
-): string {
-  const uris = parseStoredRedirectUris(redirectUris);
-  if (uris.some((uri) => isCursorRedirectUri(uri))) return "Cursor";
-  if (isClaudeCodeClientMetadataUrl(clientId) || uris.some((uri) => isLoopbackCallbackUri(uri))) {
-    return "Claude Code";
-  }
-  if (uris.some((uri) => isAnthropicRedirectUri(uri))) return "Claude";
-  if (isChatGptClientMetadataUrl(clientId) || uris.some((uri) => isChatGptRedirectUri(uri))) {
-    return "ChatGPT";
-  }
-  if (clientName && clientName.trim()) return clientName.trim().slice(0, 80);
-  try {
-    const host = new URL(clientId).hostname;
-    if (host === "chatgpt.com") return "ChatGPT";
-    if (ANTHROPIC_REDIRECT_HOSTS.has(host)) return "Claude";
-  } catch {
-    // fall through
-  }
-  return "Connected app";
 }
 
 export function mcpDraftSourceForClient(
@@ -289,12 +144,6 @@ export function mcpDraftSourceForClient(
       ? [redirectUriOrUris]
       : [];
   if (redirectUris.some((uri) => isCursorRedirectUri(uri))) return "cursor_mcp";
-  if (
-    isClaudeCodeClientMetadataUrl(clientId) ||
-    redirectUris.some((uri) => isAnthropicRedirectUri(uri) || isLoopbackCallbackUri(uri))
-  ) {
-    return "claude_mcp";
-  }
   if (isDynamicClientId(clientId)) return "claude_mcp";
   return "chatgpt_mcp";
 }

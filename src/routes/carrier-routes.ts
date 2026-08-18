@@ -76,80 +76,11 @@ router.post(
   rateLimiters.phoneNumberRateLimiter,
   validateBody(PhoneNumberCreateRequestSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { phone_number, vapi_number_id } = req.body;
-
-      // This endpoint binds a caller-supplied line to the tenant. Without a
-      // capacity gate it was an unmetered way to accumulate billable numbers,
-      // and without an ownership gate a tenant could bind another tenant's
-      // vapi_number_id and capture their inbound calls (the webhook resolver
-      // keys on that column). Migration 0111 makes the duplicate physically
-      // impossible; these checks return a clean error instead of a 500.
-      const slots = await getIncludedPhoneLineSlots(req.user.id);
-      const [{ held }] = await drizzle
-        .select({ held: sql<number>`count(*)` })
-        .from(schema.phoneNumbers)
-        .where(eq(schema.phoneNumbers.userId, req.user.id));
-      if (Number(held || 0) >= slots) {
-        return res.status(403).json({
-          code: "PHONE_CAPACITY_REACHED",
-          error: `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
-        });
-      }
-
-      if (vapi_number_id) {
-        const [claimed] = await drizzle
-          .select({ userId: schema.phoneNumbers.userId })
-          .from(schema.phoneNumbers)
-          .where(eq(schema.phoneNumbers.vapiNumberId, vapi_number_id))
-          .limit(1);
-        if (claimed && claimed.userId !== req.user.id) {
-          return res.status(409).json({
-            code: "NUMBER_ALREADY_BOUND",
-            error: "That line is already bound to another workspace.",
-          });
-        }
-      }
-
-      await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
-        // Re-check capacity under the identity advisory lock — two concurrent
-        // binds with distinct numbers both pass the unlocked pre-count (the
-        // 0111 uniqueness index only stops identical numbers). Same treatment
-        // as phone-provisioning.ts's post-buy recount.
-        const [{ held: lockedHeld }] = await tx
-          .select({ held: sql<number>`count(*)` })
-          .from(schema.phoneNumbers)
-          .where(eq(schema.phoneNumbers.userId, req.user.id));
-        if (Number(lockedHeld || 0) >= slots) {
-          const raceErr = new Error("PHONE_CAPACITY_RACE");
-          (raceErr as Error & { code?: string }).code = "PHONE_CAPACITY_RACE";
-          throw raceErr;
-        }
-        await tx.insert(schema.phoneNumbers).values({
-          phoneNumber: phone_number,
-          vapiNumberId: vapi_number_id,
-          userId: req.user.id,
-        });
-      });
-      res.json({ success: true });
-    } catch (err: any) {
-      const message = getErrorMessage(err);
-      if ((err as { code?: string })?.code === "PHONE_CAPACITY_RACE") {
-        const slots = await getIncludedPhoneLineSlots(req.user.id).catch(() => 0);
-        return res.status(403).json({
-          code: "PHONE_CAPACITY_REACHED",
-          error: `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
-        });
-      }
-      if (/duplicate key|unique constraint/i.test(message)) {
-        return res.status(409).json({
-          code: "NUMBER_ALREADY_BOUND",
-          error: "That line is already registered.",
-        });
-      }
-      log.error("POST /api/phone-numbers failed", { error: message });
-      throw AppError.fromHttpStatus(500, "Failed to add phone number");
-    }
+    res.status(410).json({
+      code: "NATIVE_PHONE_REQUIRED",
+      error:
+        "Phone lines are provisioned through native Twilio and xAI. Use Phone setup to search and provision a number.",
+    });
   },
 );
 

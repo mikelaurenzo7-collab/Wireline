@@ -35,9 +35,14 @@ describe("dual-voice PSTN routing contracts", () => {
     const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
     expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
     expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
-    // The outbound client applies the same candidate resolution.
+    // Native PSTN uses the xAI Speech-to-Speech roster, not Vapi candidate resolution.
+    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    const grokConfig = read("src/lib/voice/grok-voice-config.ts");
     const client = read("src/lib/vapi-client.ts");
-    expect(client).toContain("resolvePstnVoiceCandidate");
+    expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
+    expect(grokConfig).toContain("WIRELINE_LIVE_VOICE_PROFILES");
+    expect(client).toContain("placeNativeOutboundCall");
+    expect(client).not.toContain("resolvePstnVoiceCandidate");
   });
 
   it("routes Studio phone picks through the managed voice PATCH", () => {
@@ -99,23 +104,26 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(chatkitIndex).toBeGreaterThan(openaiIndex);
   });
 
-  it("uses one XAI_API_KEY for chat and preview TTS; PSTN stays on Vapi", () => {
+  it("uses one XAI_API_KEY for chat, preview TTS, Studio, and native PSTN", () => {
     const envExample = read(".env.example");
     expect(envExample).toContain("XAI_API_KEY=");
     expect(envExample).toContain("XAI_API_KEY_CHATKIT=");
+    expect(envExample).toContain("XAI_SIP_ALLOWED_ADDRESSES=");
     expect(envExample).not.toContain("XAI_API_KEY_VOICE=");
     expect(envExample).toContain("Wireline does not require a second env");
     expect(envExample).toContain("var for chat vs voice");
-    expect(envExample).toContain(
+    expect(envExample).toContain("Latency is per model and endpoint, not");
+    expect(envExample).toContain("Rate limits are per xAI team and model");
+    expect(envExample).toContain("Do not add XAI_API_KEY_VOICE");
+    expect(envExample).toContain("Native Twilio SIP Speech-to-Speech");
+    expect(envExample).not.toContain(
       "Live PSTN Grok 4.3 + xAI Eve/Ara/Rex/Sal/Leo use VAPI_PRIVATE_KEY",
     );
-    expect(envExample).toContain("never");
-    expect(envExample).toContain("send XAI_API_KEY in Vapi assistant payloads");
   });
 
   it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {
     const widget = read("src/lib/chatgpt-mcp-account.ts");
-    const metadata = read("src/lib/mcp-app-metadata.ts");
+    const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
 
     expect(widget).toContain("new RTCPeerConnection()");
     expect(widget).toContain("https://api.openai.com/v1/realtime/calls");
@@ -124,7 +132,7 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(widget).not.toContain("api.x.ai");
     expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(metadata).toContain('connectDomains: ["https://api.openai.com"]');
-    expect(metadata).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
+    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(accountRoutes).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
   });
 });

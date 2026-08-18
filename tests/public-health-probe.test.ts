@@ -4,6 +4,7 @@ import {
   buildPublicHealthPayload,
   probeOpenAIModel,
   probeVapiManagedVoice,
+  probeXAIVoiceRuntime,
 } from "../src/lib/public-health-probe";
 
 afterEach(() => {
@@ -58,13 +59,13 @@ describe("public health probe", () => {
         ok: false,
         latency_ms: 5,
         model: "voice",
-        error: "Vapi control-plane probe failed (401)",
+        error: "xAI control-plane probe failed (401)",
       },
       voiceFallback: {
         ok: false,
         latency_ms: 5,
         model: "voice-fallback",
-        error: "Vapi control-plane probe failed (401)",
+        error: "xAI control-plane probe failed (401)",
       },
       reasoning: { ok: true, latency_ms: 5, model: "reasoning" },
     });
@@ -84,6 +85,12 @@ describe("public health probe", () => {
       model: "gpt-test",
       error: "OPENAI_API_KEY not configured",
     });
+    await expect(probeXAIVoiceRuntime(undefined)).resolves.toMatchObject({
+      ok: false,
+      latency_ms: 0,
+      model: "xai-native-voice",
+      error: "XAI_API_KEY not configured",
+    });
     await expect(probeVapiManagedVoice(undefined)).resolves.toMatchObject({
       ok: false,
       latency_ms: 0,
@@ -93,7 +100,7 @@ describe("public health probe", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("checks the owning Vapi control plane without creating calls or output", async () => {
+  it("checks the owning xAI control plane without creating calls or output", async () => {
     const cancel = vi.fn().mockResolvedValue(undefined);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -102,16 +109,16 @@ describe("public health probe", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(probeVapiManagedVoice("test-vapi-key")).resolves.toMatchObject({
+    await expect(probeXAIVoiceRuntime("test-xai-key")).resolves.toMatchObject({
       ok: true,
-      model: "vapi-managed-voice",
+      model: "xai-native-voice",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.vapi.ai/assistant?limit=1",
+      "https://api.x.ai/v1/models",
       expect.objectContaining({
         method: "GET",
         headers: {
-          Authorization: "Bearer test-vapi-key",
+          Authorization: "Bearer test-xai-key",
           Accept: "application/json",
         },
       }),

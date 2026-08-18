@@ -1,6 +1,12 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+execFileSync(process.execPath, ["scripts/materialize-drizzle-meta.mjs"], {
+  cwd: process.cwd(),
+  stdio: "inherit",
+});
 
 const MIGRATIONS_DIR = resolve(process.cwd(), "drizzle/migrations");
 
@@ -27,7 +33,7 @@ const numericPrefix = (tag: string): number => {
  * committed but absent from meta/_journal.json therefore never executes on that
  * path, silently and with no error to notice.
  *
- * The repository is in that state today for 105 of its 138 migrations: they were
+ * The repository is in that state today for 105 of its 139 migrations: they were
  * applied out of band through the authenticated Supabase migration tool (the
  * urgent path in docs/DATABASE_OPERATIONS.md) and the journal was never
  * back-filled. That history is NOT something to "repair" from here — adding those
@@ -124,6 +130,21 @@ describe("migration journal integrity contract", () => {
       expect(migrationFiles, securityMigration).toContain(securityMigration);
       expect(journalTags.has(securityMigration), `${securityMigration} is journalled`).toBe(false);
     }
+  });
+
+  it("journals and materializes the managed Grok 4.6 persisted defaults", () => {
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 52,
+      tag: "0154_xai_grok_46_persisted_defaults",
+    });
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0052_PATH");
+    expect(materializer).toContain("buildGrok46DefaultsSnapshot");
+    expect(materializer).toContain('voice_llm_model").default = "\'grok-4.6\'"');
+    expect(materializer).not.toContain("PENDING_COMPUTE");
   });
 
   it("documents the split so the journal is not read as the whole history", () => {

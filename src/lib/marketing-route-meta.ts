@@ -62,7 +62,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "Pricing | Wireline Voice Agents from $19/month",
     description:
-      "Build a voice agent free, launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
     title: "Features | Wireline Voice Agents",
@@ -136,7 +136,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "Developer Portal | Wireline",
     description:
-      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Create an account, build your first voice agent in the chat you already use, then continue in Studio. No public API keys.",
+      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | Wireline",
@@ -146,7 +146,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.",
+      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
   },
   "/terms": {
     title: "Terms of Service",

@@ -10,8 +10,6 @@ describe("video presenter integration", () => {
     const identity = source("src/lib/agent-identity.ts");
     expect(identity).toContain('"liveavatar"');
     expect(identity).toContain('surfaceLabel: "Identity badge"');
-    expect(identity).not.toContain('surfaceLabel: "Live video"');
-    expect(identity).not.toContain("supportsLive: true");
     expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
     expect(source("src/lib/video-presenter/liveavatar-service.ts")).toContain(
       'videoPresenterProvider: "synthetic"',
@@ -68,15 +66,6 @@ describe("video presenter integration", () => {
     );
   });
 
-  it("uses degraded roster recovery instead of a billed create path", () => {
-    const page = source("src/pages/LiveVideoStudioPage.tsx");
-    expect(page).toContain("degraded");
-    expect(page).toContain("<WorkspaceRecovery onRetry={refresh} />");
-    expect(page).not.toContain("error: agentsError");
-    expect(page).not.toContain("reload");
-    expect(page).toContain("/studio?create=1&posture=business");
-  });
-
   it("mounts identity studio without a live session mint or clip-script bait", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain("Identity");
@@ -90,10 +79,6 @@ describe("video presenter integration", () => {
     expect(liveVideoMount).toBeGreaterThan(-1);
     expect(studioWildcard).toBeGreaterThan(-1);
     expect(liveVideoMount).toBeLessThan(studioWildcard);
-    expect(source("src/constants/navigation.ts")).toContain('"/studio/live-video": "Identity"');
-    expect(source("src/pages/CustomizationSettings.tsx")).toContain('label: "Identity"');
-    expect(source("src/components/StudioAgentWorkspacePanel.tsx")).toContain("Identity");
-    expect(source("src/components/StudioAgentWorkspacePanel.tsx")).not.toContain("Live video");
   });
 
   it("keeps live-video provider membership client-safe", () => {

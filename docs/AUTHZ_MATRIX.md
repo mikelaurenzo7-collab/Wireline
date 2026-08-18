@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 395
-**Protected:** 323
-**Public (allowlisted):** 72
+**Routes scanned:** 404
+**Protected:** 329
+**Public (allowlisted):** 75
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -48,7 +48,7 @@
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/public/demo-session` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/public/demo-vapi/call/web` | Aggregated, no-PII marketing counters; rate-limited |
+| `POST /api/public/demo-xai-session` | Aggregated, no-PII marketing counters; rate-limited |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
@@ -85,6 +85,9 @@
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /api/health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /api/voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
+| `POST /api/twilio-webhook/xai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/xai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/webhooks/xai/voice` | xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission |
 
 ## Full Matrix
 
@@ -257,8 +260,6 @@
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
-| grok-voice-routes.ts | POST | `/api/voice/live/vapi/call/web` | inline | — | — | Protected |
-| grok-voice-routes.ts | POST | `/api/voice/live/web-session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voices/curated/preview` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/actions` | inline | platform_admin | — | Protected |
@@ -303,11 +304,8 @@
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
-| marketing-runtime-routes.ts | POST | `/api/public/demo-vapi/call/web` | — | — | yes | Public (allowlisted) |
+| marketing-runtime-routes.ts | POST | `/api/public/demo-xai-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
-| mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
-| mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |
-| mcp-coaching-settings-routes.ts | DELETE | `/api/mcp/connections` | inline | — | — | Protected |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
@@ -328,6 +326,15 @@
 | mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
 | mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
+| native-mobile-voice-routes.ts | POST | `/api/mobile/calls/:callId/handoff` | inline | — | — | Protected |
+| native-mobile-voice-routes.ts | POST | `/api/mobile/calls/outbound` | inline | — | — | Protected |
+| native-phone-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | GET | `/api/carrier/numbers` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | PATCH | `/api/phone-numbers/:id` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | GET | `/api/phone-numbers/available` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
 | nav-counts-truth-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
 | oauth/apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
 | oauth/apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
@@ -485,3 +492,8 @@
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
+| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-bridge` | — | — | yes | Public (allowlisted) |
+| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-status` | — | — | yes | Public (allowlisted) |
+| xai-voice-routes.ts | POST | `/api/voice/native/phone/provision` | inline | — | — | Protected |
+| xai-voice-routes.ts | GET | `/api/voice/native/phone/status` | inline | — | — | Protected |
+| xai-voice-routes.ts | POST | `/api/webhooks/xai/voice` | — | — | yes | Public (allowlisted) |

@@ -80,6 +80,18 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     );
   });
 
+  it("records native xAI SIP ingress as an explicit public security decision", () => {
+    expect(matrix).toMatch(
+      /\| xai-voice-routes\.ts \| POST \| `\/api\/webhooks\/xai\/voice` \|.*\| Public \(allowlisted\) \|/,
+    );
+    expect(matrix).toContain("xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission");
+    expect(matrix).toMatch(
+      /\| xai-outbound-routes\.ts \| POST \| `\/api\/twilio-webhook\/xai-outbound-bridge` \|.*\| Public \(allowlisted\) \|/,
+    );
+    expect(matrix).toContain("`POST /api/public/demo-xai-session`");
+    expect(matrix).not.toContain("`POST /api/public/demo-vapi/call/web`");
+  });
+
   it("verifies MOUNTED_ELSEWHERE claims instead of trusting prose", () => {
     const registryCheck = read("scripts/check-route-registry.mjs");
     expect(registryCheck).toContain("mountedBy");
