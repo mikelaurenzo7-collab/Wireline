@@ -3,7 +3,7 @@ import { AlertCircle, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-reac
 
 import { useProtectedPublicDemo } from "../../hooks/useProtectedPublicDemo";
 import { cn } from "../../lib/utils";
-import AgentFace from "../AgentFace";
+import BotMark from "../BotMark";
 import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
@@ -82,12 +82,13 @@ export default function BrowserCallWidget({
             {presence}
           </div>
           <div className="landing-demo__face-frame">
-            <AgentFace
+            <BotMark
               seed={`public-demo:${agentName}`}
+              name={agentName}
               size={208}
-              speaking={demo.callActive && demo.speakerActive}
+              active={demo.callActive && demo.speakerActive}
               className="landing-demo__face"
-              title={`${agentName} Bot avatar`}
+              title={`${agentName} Bot mark`}
             />
           </div>
           <p className="landing-demo__name wl-preserve-case">{agentName}</p>
@@ -185,11 +186,12 @@ export default function BrowserCallWidget({
         )}
       >
         <div className="rounded-[18px] border border-border/80 bg-background p-1.5 shadow-sm">
-          <AgentFace
+          <BotMark
             seed={`public-demo:${agentName}`}
+            name={agentName}
             size={48}
-            speaking={demo.callActive && demo.speakerActive}
-            title={`${agentName} Bot avatar`}
+            active={demo.callActive && demo.speakerActive}
+            title={`${agentName} Bot mark`}
           />
         </div>
       </SignalOrbFrame>
