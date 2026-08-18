@@ -244,14 +244,19 @@ describe("native Twilio + xAI voice contracts", () => {
 
   it("reconciles stale agent assignment and mutable Twilio origination state", () => {
     const activation = read("src/lib/voice/xai-phone-activation-service.ts");
+    const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
+    const migration = read("drizzle/migrations/0153_preserve_xai_registration_ledger.sql");
     const route = read("src/routes/xai-voice-routes.ts");
 
     expect(route).toContain('from "../lib/voice/xai-phone-activation-service"');
-    expect(activation).toContain("binding.agentId === input.agentId");
-    expect(activation).toContain("agentId: input.agentId");
-    expect(activation).toContain("await collection(sid).update(payload)");
-    expect(activation).toContain("enabled: true");
-    expect(activation).toContain("xaiSharedTwilioOriginationUri()");
+    expect(activation).toContain("wireline_claim_xai_phone_deactivation");
+    expect(activation).not.toContain("binding.agentId === input.agentId");
+    expect(migration).toContain("phone.agent_id = p_agent_id");
+    expect(migration).toContain("agent_id = p_agent_id");
+    expect(provisioning).toContain("xaiSharedTwilioOriginationUri()");
+    expect(provisioning).toContain("originationUrls(primarySid).update");
+    expect(provisioning).toContain("enabled: true");
+    expect(provisioning).toContain("staleManagedOriginations");
   });
 
   it("verifies a valid Standard Webhooks signature over the exact raw body", () => {
