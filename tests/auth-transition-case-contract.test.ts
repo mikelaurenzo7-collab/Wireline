@@ -36,13 +36,16 @@ describe("auth transition and control case contract", () => {
     }
   });
 
-  it("uses the same branded auth canvas for OAuth and invitation transitions", () => {
+  it("uses the same canonical WIRELINE lockup on OAuth and invitation transitions", () => {
     for (const file of ["src/pages/OAuthComplete.tsx", "src/pages/AcceptInvite.tsx"]) {
       const page = source(file);
       expect(page).toContain("authCanvas");
       expect(page).toContain("wl-auth-card");
-      expect(page).toContain("wl-auth-brand-chip");
-      expect(page).toContain("WirelineMark");
+      expect(page).toContain("WirelineLockup");
+      expect(page).toContain('size="compact"');
+      expect(page).toContain('surface="tile"');
+      expect(page).not.toContain("wl-auth-brand-chip");
+      expect(page).not.toContain("WirelineMark");
       expect(page).toContain('id="main-content"');
       expect(page).toContain('aria-live="polite"');
     }
