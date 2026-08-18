@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through the managed Wireline voice bridge with low-latency transcription, speech, and an OpenAI-first conversation runtime. Provider routing and fallbacks are managed by Wireline and can change without changing the customer workflow.";
+  "Live calls run through the managed Wireline voice bridge with low-latency transcription, speech, and a managed conversation runtime. Provider routing and fallbacks are managed by Wireline and can change without changing the customer workflow.";
 
 export const WIRELINE_PLANS = [
   {
@@ -91,7 +91,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Outbound sales",
     blurb:
-      "Upload a CSV, pick a playbook, launch outbound campaigns, and hand qualified meetings to the calendar.",
+      "Upload a CSV, pick a playbook, and run outbound campaigns when federal Do Not Call registration is complete. Qualified meetings hand off to the calendar.",
   },
   {
     title: "Email agents",
@@ -114,7 +114,7 @@ export const WIRELINE_FEATURES = [
  * framed as the answer to "I need more leads" or "my pipeline is dry."
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "Wireline's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
+  "Wireline works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations. Marketing and campaign outbound stay blocked until federal Do Not Call registration is complete.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the agent should
@@ -124,7 +124,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Struggling with leads, dry pipeline, or need more customers",
     solution:
-      "the autonomous growth engine - outbound campaigns that dial and qualify leads, run multi-touch follow-up, and book qualified meetings without adding SDR headcount",
+      "outbound campaigns that dial and qualify leads when federal Do Not Call registration is complete, then run multi-touch follow-up and book qualified meetings",
   },
   {
     pain: "Missing calls or losing business after hours",
@@ -190,7 +190,7 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "Per-tenant data isolation in the application and database policy layers",
     "Audit logging for protected state changes",
     "TCPA consent and opt-out records for outbound workflows",
-    "DNC enforcement on outbound dialing",
+    "Tenant Do Not Call lists and TCPA consent on outbound workflows",
     "Account deletion with a delayed hard-delete workflow",
   ],
   inProgress: [
@@ -198,5 +198,6 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
     "Database policy and exposure reviews continue as the product surface expands",
     "EU data residency is not currently available",
+    "Federal Do Not Call registration is not complete; marketing and campaign outbound stay blocked",
   ],
 } as const;

@@ -52,6 +52,15 @@ describe("auth-redirect", () => {
     expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
   });
 
+  it("returns a fresh MCP OAuth signup to consent instead of Studio Fast Start", () => {
+    localStorage.setItem(AUTH_REDIRECT_KEY, "/mcp/oauth/authorize?client_id=x");
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "")).toBe("/mcp/oauth/authorize?client_id=x");
+    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
+    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  });
+
   it("ignores a stale sign-in redirect when a direct personal signup completes", () => {
     localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
