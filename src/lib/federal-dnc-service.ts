@@ -1,6 +1,10 @@
 /**
- * Federal DNC registry lookup — vendor-neutral stub behind env configuration.
- * Marketing/campaign outbound hard-blocks when the vendor is not configured.
+ * Federal DNC registry lookup behind optional vendor configuration.
+ *
+ * Missing vendor credentials are an operations/readiness item, not a global
+ * outbound kill switch. Tenant DNC, opt-out, calling-hours, consent, duplicate,
+ * approval, and audit controls remain authoritative. When a federal provider is
+ * configured, its listed results still block and provider errors fail closed.
  */
 import { log } from "./server-context";
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
@@ -67,8 +71,6 @@ async function lookupFederalDncDncScrub(
 ): Promise<FederalDncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
-    // Never log the raw consumer number: this runs on every marketing dial and
-    // the structured log is not a compliance-safe place for subscriber PII.
     log.warn("federal DNC dncscrub: invalid US phone for scrub", {
       phoneDigits: phone.replace(/\D/g, "").length,
     });
@@ -115,11 +117,6 @@ async function lookupFederalDncGenericPost(
     return { listed: true, source: "error", checked_at };
   }
   const data = (await response.json()) as { listed?: unknown };
-  // Fail closed on anything that is not an explicit boolean. `listed === true`
-  // silently treated a 200 with a renamed/missing field — a vendor schema
-  // change, an error envelope, a proxy's HTML page — as "not listed" and let
-  // the dial proceed to a registered number. The DNCScrub path already fails
-  // closed on unrecognized dispositions; this path must match.
   if (typeof data?.listed !== "boolean") {
     log.warn("federal DNC vendor returned an unrecognized payload, failing closed");
     return { listed: true, source: "error", checked_at };
@@ -128,23 +125,26 @@ async function lookupFederalDncGenericPost(
 }
 
 export type FederalDncMarketingGate = {
-  allowed: boolean;
-  code?: "FEDERAL_DNC_NOT_CONFIGURED";
+  allowed: true;
+  configured: boolean;
+  advisory?: "FEDERAL_DNC_DEFERRED";
   message?: string;
 };
 
-/** Marketing and campaign dials require a configured federal DNC vendor in production. */
+/**
+ * Missing Federal DNC credentials no longer disable outbound globally. The
+ * readiness report continues to surface the integration as deferred. Callers
+ * still run the shared tenant DNC/TCPA/quiet-hours/duplicate gate, and a
+ * configured federal provider remains authoritative through lookupFederalDnc.
+ */
 export function assertFederalDncForMarketing(): FederalDncMarketingGate {
-  if (isFederalDncVendorConfigured()) return { allowed: true };
-  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
-  if (!isProd && process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED === "true") {
-    return { allowed: true };
-  }
+  if (isFederalDncVendorConfigured()) return { allowed: true, configured: true };
   return {
-    allowed: false,
-    code: "FEDERAL_DNC_NOT_CONFIGURED",
+    allowed: true,
+    configured: false,
+    advisory: "FEDERAL_DNC_DEFERRED",
     message:
-      "Marketing dials need Federal DNC scrub enabled on this workspace. Studio and other non-marketing calls still work with your tenant DNC and TCPA rules. Ask your admin to finish Federal DNC setup before campaign dialing.",
+      "Federal DNC screening is not configured. Continue only under the workspace's applicable consent, purpose, tenant DNC, calling-hours, and approval controls.",
   };
 }
 
