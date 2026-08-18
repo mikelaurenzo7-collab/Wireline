@@ -9,8 +9,6 @@ import {
 
 describe("federal-dnc-service", () => {
   beforeEach(() => {
-    // Vercel preview builds can inherit production-scoped vendor credentials.
-    // Keep these unit tests deterministic and prevent accidental live lookups.
     vi.stubEnv("FEDERAL_DNC_API_KEY", "");
     vi.stubEnv("FEDERAL_DNC_API_URL", "");
     vi.stubEnv("FEDERAL_DNC_PROVIDER", "");
@@ -100,15 +98,20 @@ describe("federal-dnc-service", () => {
     expect(isFederalDncVendorConfigured()).toBe(false);
   });
 
-  it("blocks marketing outbound when vendor is not configured in production", () => {
+  it("defers missing vendor credentials instead of globally blocking production outbound", () => {
     process.env.NODE_ENV = "production";
     const gate = assertFederalDncForMarketing();
-    expect(gate.allowed).toBe(false);
-    expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(gate.allowed).toBe(true);
+    expect(gate.configured).toBe(false);
+    expect(gate.advisory).toBe("FEDERAL_DNC_DEFERRED");
   });
 
-  it("allows marketing outbound in dev when explicitly opted in", () => {
-    process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED = "true";
-    expect(assertFederalDncForMarketing().allowed).toBe(true);
+  it("reports configured when federal screening credentials are valid", () => {
+    process.env.FEDERAL_DNC_API_URL = "https://dnc.example.com/check";
+    process.env.FEDERAL_DNC_API_KEY = "test-key";
+    const gate = assertFederalDncForMarketing();
+    expect(gate.allowed).toBe(true);
+    expect(gate.configured).toBe(true);
+    expect(gate.advisory).toBeUndefined();
   });
 });
