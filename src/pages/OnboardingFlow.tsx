@@ -3,26 +3,23 @@ import { useNavigate } from "react-router";
 
 import TransitionSurface from "../components/TransitionSurface";
 import { PageMeta } from "../lib/page-meta";
-import { readStoredWorkspaceMode } from "../lib/auth-redirect";
 import { customerAgentLanguage } from "../lib/product-copy";
 import { emitProductEventOnce } from "../lib/product-event-client";
 
+const CREATE_DESTINATION = "/studio?create=1";
+
 export default function OnboardingFlow() {
   const navigate = useNavigate();
-  const workspaceMode = readStoredWorkspaceMode();
-  const language = customerAgentLanguage(workspaceMode);
+  const language = customerAgentLanguage("personal");
   const [showFallback, setShowFallback] = useState(false);
-  // Dedicated entry for direct-to-create flows. Every account enters the same
-  // one-workspace Bot Studio; the stored legacy mode remains analytics-only.
-  const target = "/studio?create=1";
 
   useEffect(() => {
     emitProductEventOnce({
       event: "onboarding_create_redirect",
-      metadata: { workspace_mode: workspaceMode, target },
+      metadata: { workspace_model: "one_workspace", target: CREATE_DESTINATION },
     });
-    navigate(target, { replace: true });
-  }, [navigate, target, workspaceMode]);
+    navigate(CREATE_DESTINATION, { replace: true });
+  }, [navigate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowFallback(true), 1800);
@@ -39,7 +36,7 @@ export default function OnboardingFlow() {
         actions={
           showFallback
             ? [
-                { href: target, label: "Continue now" },
+                { href: CREATE_DESTINATION, label: "Continue now" },
                 { href: "/", label: "Back home", variant: "secondary" },
               ]
             : []
