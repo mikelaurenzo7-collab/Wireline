@@ -90,7 +90,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   );
 
   for (const [pattern, description] of [
-    [/aria-label="Wireline home"/, "public header must provide a named home link"],
+    [/aria-label="WIRELINE home"/, "public header must provide a named WIRELINE home link"],
     [/aria-label="Account"/, "public header must expose only account actions"],
     [/to="\/signin"/, "public header must keep sign in visible"],
     [/to="\/signup\?plan=personal"/, "public header must keep free signup visible"],
@@ -119,7 +119,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
-    /aria-label="Wireline capabilities"/,
+    /aria-label="WIRELINE capabilities"/i,
     "minimal shared heroes must not reintroduce capability chips",
   );
 
@@ -136,7 +136,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/id="trust"/, "landing must include controls and trust in the main story"],
     [/aria-label="Bot template lane"/, "Bot role starters must stay reachable as named navigation"],
     [/BOT_ROLE_TEMPLATES\.map/, "landing must render the shared business, personal, and custom role catalog"],
-    [/variant="stage"/, "home must stage live proof in the proprietary Wireline console"],
+    [/variant="stage"/, "home must stage live proof in the proprietary WIRELINE console"],
     [/landing-console__activity/, "home must show an outcome ledger beside the live Bot"],
     [/Illustrative Workflow/, "home must label static proof as illustrative"],
     [/From first answer to confirmed next step/, "home must explain the completed-work proof"],
@@ -258,7 +258,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       file,
       executable(source),
       /#4ade80|#fbbf24|#7dd3fc|#2563eb|landing-phone|landing-os/,
-      "landing styles must stay on the Wireline token system without retired device selectors",
+      "landing styles must stay on the WIRELINE token system without retired device selectors",
     );
   }
 
@@ -292,7 +292,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /\$159|Wireline\s+Business/,
+    /\$159|WIRELINE\s+Business/i,
     "pricing must not revive the retired self-serve Business offer",
   );
   mustInclude(
