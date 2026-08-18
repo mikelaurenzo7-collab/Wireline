@@ -1,5 +1,5 @@
 name: native-main-merge-integration
-# Exact-head gate includes final Twilio client typing and contract-syntax repair.
+# Sole authoritative exact-head gate after removing competing repair workflows.
 
 on:
   push:
