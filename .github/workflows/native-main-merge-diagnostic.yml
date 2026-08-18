@@ -36,44 +36,46 @@ jobs:
           HUSKY: "0"
           NODE_OPTIONS: "--max-old-space-size=6144"
         run: |
-          set -euo pipefail
+          set -uo pipefail
           git config user.name "Wireline Audit Bot"
           git config user.email "audit-bot@users.noreply.github.com"
           git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
-          git fetch --no-tags origin main
 
-          set +e
-          git merge --no-commit --no-ff origin/main
-          merge_status=$?
-          set -e
+          run_integration() {
+            set -euo pipefail
+            git fetch --no-tags origin main
 
-          if [ "$merge_status" -ne 0 ]; then
-            cat > /tmp/expected-conflicts.txt <<'EOF'
-          docs/AUTHZ_MATRIX.md
-          docs/business-usage-pricing-decision.md
-          src/data/wireline-knowledge.ts
-          src/lib/chatgpt-mcp-account.ts
-          src/lib/marketing-route-meta.ts
-          src/pages/CustomizationSettings.tsx
-          src/pages/Pricing.tsx
-          src/server/register-api-routes.ts
-          EOF
-            git diff --name-only --diff-filter=U | sort > /tmp/actual-conflicts.txt
-            sort -o /tmp/expected-conflicts.txt /tmp/expected-conflicts.txt
-            diff -u /tmp/expected-conflicts.txt /tmp/actual-conflicts.txt
-          fi
+            set +e
+            git merge --no-commit --no-ff origin/main
+            merge_status=$?
+            set -e
 
-          # Generated authorization truth is regenerated after the final route
-          # registry is resolved. Product retirement copy follows current main;
-          # native voice truth remains explicit where it is the live runtime.
-          git checkout --ours docs/AUTHZ_MATRIX.md
-          git checkout --theirs docs/business-usage-pricing-decision.md
-          git checkout --ours src/data/wireline-knowledge.ts
-          git checkout --theirs src/lib/marketing-route-meta.ts
-          git checkout --theirs src/pages/CustomizationSettings.tsx
-          git checkout --theirs src/pages/Pricing.tsx
+            if [ "$merge_status" -ne 0 ]; then
+              printf '%s\n' \
+                docs/AUTHZ_MATRIX.md \
+                docs/business-usage-pricing-decision.md \
+                src/data/wireline-knowledge.ts \
+                src/lib/chatgpt-mcp-account.ts \
+                src/lib/marketing-route-meta.ts \
+                src/pages/CustomizationSettings.tsx \
+                src/pages/Pricing.tsx \
+                src/server/register-api-routes.ts \
+                | sort > /tmp/expected-conflicts.txt
+              git diff --name-only --diff-filter=U | sort > /tmp/actual-conflicts.txt
+              diff -u /tmp/expected-conflicts.txt /tmp/actual-conflicts.txt
+            fi
 
-          python <<'PY'
+            # Generated authorization truth is regenerated after the final route
+            # registry is resolved. Product retirement copy follows current main;
+            # native voice truth remains explicit where it is the live runtime.
+            git checkout --ours docs/AUTHZ_MATRIX.md
+            git checkout --theirs docs/business-usage-pricing-decision.md
+            git checkout --ours src/data/wireline-knowledge.ts
+            git checkout --theirs src/lib/marketing-route-meta.ts
+            git checkout --theirs src/pages/CustomizationSettings.tsx
+            git checkout --theirs src/pages/Pricing.tsx
+
+            python <<'PY'
           from pathlib import Path
 
           def replace_conflict(path: str, replacement: str) -> None:
@@ -114,63 +116,93 @@ jobs:
           )
           PY
 
-          git add \
-            docs/AUTHZ_MATRIX.md \
-            docs/business-usage-pricing-decision.md \
-            src/data/wireline-knowledge.ts \
-            src/lib/chatgpt-mcp-account.ts \
-            src/lib/marketing-route-meta.ts \
-            src/pages/CustomizationSettings.tsx \
-            src/pages/Pricing.tsx \
-            src/server/register-api-routes.ts
+            git add \
+              docs/AUTHZ_MATRIX.md \
+              docs/business-usage-pricing-decision.md \
+              src/data/wireline-knowledge.ts \
+              src/lib/chatgpt-mcp-account.ts \
+              src/lib/marketing-route-meta.ts \
+              src/pages/CustomizationSettings.tsx \
+              src/pages/Pricing.tsx \
+              src/server/register-api-routes.ts
 
-          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
-            echo "Unresolved merge paths remain:" >&2
-            git diff --name-only --diff-filter=U >&2
-            exit 1
-          fi
-          if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':!package-lock.json'; then
-            echo "Conflict markers remain in the merged tree." >&2
-            exit 1
-          fi
+            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+              echo "Unresolved merge paths remain:" >&2
+              git diff --name-only --diff-filter=U >&2
+              return 1
+            fi
+            if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':!package-lock.json'; then
+              echo "Conflict markers remain in the merged tree." >&2
+              return 1
+            fi
 
-          grep -Fq 'import mcpCoachingSettingsRouter from "../routes/mcp-coaching-settings-routes";' src/server/register-api-routes.ts
-          grep -Fq 'app.use(mcpCoachingSettingsRouter);' src/server/register-api-routes.ts
-          grep -Fq 'import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";' src/server/register-api-routes.ts
-          grep -Fq 'app.use(nativePhoneRoutingRouter);' src/server/register-api-routes.ts
-          grep -Fq 'import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";' src/server/register-api-routes.ts
-          grep -Fq 'app.use(nativePhoneReleaseRouter);' src/server/register-api-routes.ts
-          grep -Fq 'import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";' src/server/register-api-routes.ts
-          grep -Fq 'app.use(nativeMobileVoiceRouter);' src/server/register-api-routes.ts
+            grep -Fq 'import mcpCoachingSettingsRouter from "../routes/mcp-coaching-settings-routes";' src/server/register-api-routes.ts
+            grep -Fq 'app.use(mcpCoachingSettingsRouter);' src/server/register-api-routes.ts
+            grep -Fq 'import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";' src/server/register-api-routes.ts
+            grep -Fq 'app.use(nativePhoneRoutingRouter);' src/server/register-api-routes.ts
+            grep -Fq 'import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";' src/server/register-api-routes.ts
+            grep -Fq 'app.use(nativePhoneReleaseRouter);' src/server/register-api-routes.ts
+            grep -Fq 'import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";' src/server/register-api-routes.ts
+            grep -Fq 'app.use(nativeMobileVoiceRouter);' src/server/register-api-routes.ts
 
-          npm ci --no-audit --no-fund
+            npm ci --no-audit --no-fund
 
-          # The first run intentionally rewrites a stale matrix and exits 1; the
-          # second proves the generated artifact is exact and has zero violations.
+            # The first run intentionally rewrites a stale matrix and exits 1; the
+            # second proves the generated artifact is exact and has zero violations.
+            set +e
+            npm run authz:check
+            authz_first=$?
+            set -e
+            if [ "$authz_first" -ne 0 ]; then
+              echo "Authorization matrix was regenerated; verifying exact output."
+            fi
+            npm run authz:check
+
+            npm run lint:server
+            npm run lint:audit-modules
+            npm run test:run
+
+            # Remove the one-shot merge harness and diagnostic artifacts before
+            # the integration commit becomes part of the product branch.
+            git rm -f .github/workflows/native-main-merge-diagnostic.yml
+            git rm -f .audit/native-main-conflicts.txt
+            git rm -f .audit/native-main-integration-failure.txt 2>/dev/null || true
+            git add -A
+
+            npm run source-control:check
+            npm run workflow:syntax:check
+            npm run docs:check
+            git diff --check
+
+            git status --short
+            git commit -m "Merge main into native Twilio and xAI runtime"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          }
+
           set +e
-          npm run authz:check
-          authz_first=$?
+          run_integration 2>&1 | tee /tmp/native-main-integration.log
+          integration_status=${PIPESTATUS[0]}
           set -e
-          if [ "$authz_first" -ne 0 ]; then
-            echo "Authorization matrix was regenerated; verifying exact output."
+
+          if [ "$integration_status" -eq 0 ]; then
+            exit 0
           fi
-          npm run authz:check
 
-          npm run lint:server
-          npm run lint:audit-modules
-          npm run test:run
-
-          # Remove the one-shot merge harness and diagnostic artifact before the
-          # integration commit becomes part of the product branch.
-          git rm -f .github/workflows/native-main-merge-diagnostic.yml
-          git rm -f .audit/native-main-conflicts.txt
-          git add -A
-
-          npm run source-control:check
-          npm run workflow:syntax:check
-          npm run docs:check
-          git diff --check
-
-          git status --short
-          git commit -m "Merge main into native Twilio and xAI runtime"
+          git merge --abort 2>/dev/null || true
+          git reset --hard "$GITHUB_SHA"
+          mkdir -p .audit
+          {
+            echo "# Native/main integration failure"
+            echo
+            echo "HEAD=$GITHUB_SHA"
+            echo "STATUS=$integration_status"
+            echo "RUN=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo '```text'
+            tail -n 2400 /tmp/native-main-integration.log
+            echo '```'
+          } > .audit/native-main-integration-failure.txt
+          git add .audit/native-main-integration-failure.txt
+          git commit -m "chore(audit): record native-main integration failure"
           git push origin HEAD:"$GITHUB_REF_NAME"
+          exit "$integration_status"
