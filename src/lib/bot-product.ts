@@ -4,7 +4,7 @@ export type BotDirection = "inbound" | "outbound" | "hybrid";
 export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
-  name: "Wireline",
+  name: "WIRELINE",
   slogan: "BOTS THAT GET THE WORK DONE",
   supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL",
   promise:
