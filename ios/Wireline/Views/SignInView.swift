@@ -11,15 +11,17 @@ struct SignInView: View {
             Medallion(systemImage: "phone.connection.fill", size: 72)
             VStack(spacing: 6) {
                 Text("Wireline").font(.largeTitle.weight(.bold))
-                Text("Voice agents for appointments, lead revival, promotions, and follow-up.")
+                Text("BOTS THAT GET THE WORK DONE")
+                    .font(.headline.weight(.semibold))
+                Text("Voice-first Bots for calls, live conversations, text, and email.")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Wireline, voice agents for appointments, lead revival, promotions, and follow-up")
+            .accessibilityLabel("Wireline. Bots that get the work done. Voice-first Bots for calls, live conversations, text, and email.")
 
             VStack(spacing: 12) {
-                TextField("Email", text: $email)
+                TextField("EMAIL", text: $email)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
@@ -28,7 +30,7 @@ struct SignInView: View {
                     .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd))
                     .accessibilityLabel("Email address")
 
-                SecureField("Password", text: $password)
+                SecureField("PASSWORD", text: $password)
                     .textContentType(.password)
                     .submitLabel(.go)
                     .padding(14)
@@ -47,7 +49,7 @@ struct SignInView: View {
             Button {
                 Task { await auth.signIn(email: email, password: password) }
             } label: {
-                if auth.isWorking { ProgressView().tint(.white) } else { Text("Sign in") }
+                if auth.isWorking { ProgressView().tint(.white) } else { Text("SIGN IN") }
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(auth.isWorking || email.isEmpty || password.isEmpty)
