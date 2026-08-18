@@ -28,7 +28,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Apply verified Admin Settings load fix
+      - name: Apply and verify the Admin Settings load fix
         shell: bash
         env:
           HUSKY: "0"
@@ -37,123 +37,17 @@ jobs:
           git config user.name "Wireline Audit Bot"
           git config user.email "audit-bot@users.noreply.github.com"
 
-          python <<'PY'
-          from pathlib import Path
-
-          path = Path("src/components/AdminSettings.tsx")
-          text = path.read_text(encoding="utf-8")
-
-          duplicate = '''
-      // Fetch team members
-      const teamRes = await authFetch("/api/team");
-      if (teamRes.ok) {
-        const teamData = await teamRes.json();
-        setTeamMembers(teamData.members || []);
-      }
-          '''
-          if text.count(duplicate) != 1:
-              raise SystemExit("expected one duplicate team fetch block")
-          text = text.replace(duplicate, "", 1)
-
-          text = text.replace(
-              '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
-      fetchData();''',
-              '''      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
-      await fetchTeam();''',
-              1,
-          )
-          text = text.replace(
-              '''      toastSuccess("Member removed", "Team access revoked.");
-      fetchData();''',
-              '''      toastSuccess("Member removed", "Team access revoked.");
-      await fetchTeam();''',
-              1,
-          )
-
-          old_tail = '''    } catch (e) {
-      clientLog.error("admin-settings:load", e);
-      toastError("Settings unavailable", "Could not load settings. Please refresh.");
-    }
-    setIsLoading(false);
-  };'''
-          new_tail = '''    } catch (e) {
-      clientLog.error("admin-settings:load", e);
-      toastError("Settings unavailable", "Could not load settings. Please refresh.");
-    } finally {
-      setIsLoading(false);
-    }
-  };'''
-          if text.count(old_tail) != 1:
-              raise SystemExit("expected fetchData loading tail")
-          text = text.replace(old_tail, new_tail, 1)
-          path.write_text(text, encoding="utf-8")
-
-          contract = Path("tests/admin-settings-load-contract.test.ts")
-          contract.write_text('''import { readFileSync } from "node:fs";
-          import { resolve } from "node:path";
-          import { describe, expect, it } from "vitest";
-
-          const source = readFileSync(
-            resolve(process.cwd(), "src/components/AdminSettings.tsx"),
-            "utf8",
-          );
-
-          describe("AdminSettings initial-load contract", () => {
-            it("loads the team endpoint once on mount", () => {
-              const mount = source.slice(
-                source.indexOf("useEffect(() =>"),
-                source.indexOf("const fetchData = async () =>"),
-              );
-              const loader = source.slice(
-                source.indexOf("const fetchData = async () =>"),
-                source.indexOf("const syncCarrierNumbers = async () =>"),
-              );
-
-              expect(mount).toContain("fetchTeam();");
-              expect(loader).not.toContain('authFetch("/api/team")');
-            });
-
-            it("releases the loading state even after an early failed response", () => {
-              const loader = source.slice(
-                source.indexOf("const fetchData = async () =>"),
-                source.indexOf("const syncCarrierNumbers = async () =>"),
-              );
-              const earlyReturn = loader.indexOf(
-                'toastError("Settings unavailable", "Could not load settings. Please refresh.")',
-              );
-              const finallyBlock = loader.indexOf("} finally {");
-              const release = loader.indexOf("setIsLoading(false)", finallyBlock);
-
-              expect(earlyReturn).toBeGreaterThan(-1);
-              expect(finallyBlock).toBeGreaterThan(earlyReturn);
-              expect(release).toBeGreaterThan(finallyBlock);
-            });
-
-            it("refreshes only the team roster after team mutations", () => {
-              const invitation = source.slice(
-                source.indexOf("const inviteTeamMember"),
-                source.indexOf("const removeTeamMember"),
-              );
-              const removal = source.slice(
-                source.indexOf("const removeTeamMember"),
-                source.indexOf("const addPhoneNumber"),
-              );
-
-              expect(invitation).toContain("await fetchTeam()");
-              expect(invitation).not.toContain("fetchData()");
-              expect(removal).toContain("await fetchTeam()");
-              expect(removal).not.toContain("fetchData()");
-            });
-          });
-          '''.replace("          ", ""), encoding="utf-8")
-          PY
-
+          python .audit/apply-admin-settings-fix.py
           npm ci --no-audit --no-fund
           npx vitest run tests/admin-settings-load-contract.test.ts
           npm run lint
-
-          git rm .github/workflows/audit-admin-settings-fix.yml
-          git add src/components/AdminSettings.tsx tests/admin-settings-load-contract.test.ts
           git diff --check
+
+          git rm \
+            .github/workflows/audit-admin-settings-fix.yml \
+            .audit/apply-admin-settings-fix.py
+          git add \
+            src/components/AdminSettings.tsx \
+            tests/admin-settings-load-contract.test.ts
           git commit -m "fix(admin): avoid duplicate team loads and stuck loading"
           git push origin HEAD:audit/1599364-wireline-deep-review-20260817
