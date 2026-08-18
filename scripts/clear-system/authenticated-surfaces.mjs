@@ -1,8 +1,8 @@
 import { assertStudioCanvasContract } from "../lib/studio-canvas-contract.mjs";
 
 /**
- * Authenticated product surfaces — routing, shell geometry, responsive
- * navigation, account entry, Studio, Training, settings, and companion chrome.
+ * Authenticated product surfaces: routing, shell geometry, responsive
+ * navigation, account entry, Studio, Knowledge, settings, and companion chrome.
  */
 export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const appRoutes = read("src/routes/AppRoutes.tsx");
@@ -10,9 +10,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const responsiveCss = read("src/styles/responsive.css");
   const safeAreaOwnership = read("src/styles/safe-area-ownership.css");
   const navigation = read("src/constants/navigation.ts");
-  const mobileBrowserUtilities = read(
-    "src/components/MobileBrowserUtilities.tsx",
-  );
+  const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
   const authPortal = read("src/components/AuthPortal.tsx");
   const authRedirect = read("src/lib/auth-redirect.ts");
   const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
@@ -129,19 +127,26 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,
+    /BOT_ROLE_TEMPLATES\.map/,
+    "create flow must expose shared business, personal, and custom role starters",
+  );
+  mustInclude(
+    "src/components/CreateAgentDialog.tsx",
+    createDialog,
     /\/studio\?agent=/,
     "create flow must hand into the real Studio canvas",
+  );
+  mustExclude(
+    "src/components/CreateAgentDialog.tsx",
+    createDialog,
+    /setPosture|rolesForPosture|business\?: boolean|posture === "business"/,
+    "create flow must not ask customers to choose a personal or business workspace",
   );
   mustInclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    // Matches the named-intermediate form: a plan the visitor explicitly asked
-    // for is hoisted into `statedPaidPlan`, and the business branch falls back
-    // to Starter when none was stated. The personal branch now reuses the same
-    // value instead of overwriting it with the free tier, so the old inline
-    // ternary this used to pin no longer exists.
     /current\?\.preferredPlanId[\s\S]*current\.preferredPlanId !== "personal"[\s\S]*statedPaidPlan \?\? "starter"/,
-    "business workspace selection must preserve paid intent or default to Starter",
+    "paid signup intent must remain truthful even though the workspace is unified",
   );
   mustInclude(
     "src/components/AuthPortal.tsx",
@@ -158,14 +163,20 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /AuthBrandPanel|wl-auth-brand-badge">W</,
+    /AuthBrandPanel|wl-auth-brand-badge">W/,
     "account entry must not revive the retired split panel or boxed W",
   );
   mustInclude(
     "src/lib/auth-redirect.ts",
     authRedirect,
-    /workspaceMode === "business" \? "\/studio\?create=1&posture=business" : "\/studio\?create=1"/,
-    "fresh signups must route directly into the real create dialog",
+    /return "\/studio\?create=1"/,
+    "fresh signups must route directly into the one real create dialog",
+  );
+  mustExclude(
+    "src/lib/auth-redirect.ts",
+    authRedirect,
+    /create=1&posture=/,
+    "fresh signup routing must not create posture-specific workspaces",
   );
   mustInclude(
     "src/pages/OnboardingFlow.tsx",
@@ -187,6 +198,12 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "old Studio assistant rail must not be active",
   );
   mustExclude(
+    "src/components/StudioWorkspaceV2.tsx",
+    studioWorkspace,
+    /useAccount|posture=/,
+    "Studio must not branch the customer workspace by personal or business posture",
+  );
+  mustExclude(
     "src/components/StudioWorkroom.tsx",
     studioWorkroom,
     /PanelRightOpen|Working context|Detailed view/,
@@ -197,13 +214,13 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/KnowledgePage.tsx",
     trainingPage,
     /KnowledgeBaseClaude/,
-    "Training Knowledge must mount the real Knowledge Base",
+    "Knowledge must mount the real Knowledge Base",
   );
   mustInclude(
     "src/pages/KnowledgePage.tsx",
     trainingPage,
     /id: "knowledge"[\s\S]*id: "reports"/,
-    "Training must expose Business knowledge and Reports under the managed runtime",
+    "Knowledge must expose knowledge and reports under the managed runtime",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
@@ -236,6 +253,12 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     productCopy,
     /WORKSPACE_VOICE/,
     "workspace voice must live in shared product copy",
+  );
+  mustInclude(
+    "src/lib/product-copy.ts",
+    productCopy,
+    /Present one Wireline workspace/,
+    "shared product copy must document the one-workspace rule",
   );
   mustInclude(
     "src/lib/wireline-design-vision.ts",
@@ -283,11 +306,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/BillingSettings.tsx",
     "src/components/StudioWorkroom.tsx",
   ]) {
-    mustExclude(
-      file,
-      read(file),
-      /Â|â|�/,
-      "authenticated surfaces must not expose mojibake",
-    );
+    mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");
   }
 }
