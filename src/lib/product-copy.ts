@@ -1,16 +1,22 @@
+import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
+
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
 export const BRAND_SYSTEM = {
-  northStar: "One Bot for calls, texts, email, and the work between them.",
+  northStar: BOT_BRAND.promise,
+  slogan: BOT_BRAND.slogan,
+  supportingLine: BOT_BRAND.supportingLine,
   productNoun: "Bot",
   buyingNoun: "Bot",
   defaultRole: "Your Bot",
+  productTypes: BOT_PRODUCT_TYPES,
   brandSpine: ["Build", "Configure", "Launch"],
   proofLoop: ["Build", "Configure", "Launch", "Improve"],
   toneRules: [
-    "Lead with the job and outcome before AI mechanics.",
+    "Lead with voice, the job, and the outcome before AI mechanics.",
     "Present one Wireline workspace, never separate personal and business workspaces.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
+    "Use Voice Bot, Conversation Bot, and Human Bot as configurable starting points, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
     "Make clear that one Bot can use voice, text, and email under one identity and memory.",
     "Let customers configure the playbook, voice, channels, knowledge, tools, guardrails, approvals, and handoffs.",
@@ -18,10 +24,10 @@ export const BRAND_SYSTEM = {
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never require customers to classify a Bot as personal or business before describing the work.",
-    "Rank by case. Titles, headers, heroes, tabs, and buttons render uppercase; sentences do not.",
-    "Write titles, labels, tabs, and buttons of three words or fewer in Title Case at the source, so they read as deliberate labels wherever the uppercase tier does not apply.",
-    "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
+    "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase.",
+    "Keep the Wireline wordmark and named Bot types in Title Case when used inside prose.",
     "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
+    "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, and stacked claims on public buying surfaces.",
   ],
@@ -87,25 +93,25 @@ export const AGENT_DIRECTION_MODES = {
     eyebrow: "Bot for inbound demand",
     loop: ["Answer", "Qualify", "Act", "Log"],
     promise:
-      "Answers live demand, continues by text or email when useful, and routes only what needs a person.",
+      "Answers live demand by voice, continues by text or email when useful, and routes only what needs a person.",
   },
   hybrid: {
     label: "All-Purpose Bot",
     eyebrow: "Bot for flexible operations",
     loop: ["Answer", "Act", "Follow Up", "Sync"],
     promise:
-      "Keeps calls, texts, email, sales, service, scheduling, and follow-through in one visible workflow under your direction.",
+      "Keeps calls, live conversations, texts, email, sales, service, scheduling, and follow-through in one visible workflow under your direction.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid Bot includes a Wireline number at no extra line fee. It can call, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Every paid Bot includes a Wireline number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "A Bot that moves growth work forward",
+  headline: "A Bot That Moves Growth Work Forward",
   subline:
-    "Start with a Sales Associate Bot that researches leads, calls, texts, emails, sells, books, follows up, and logs proof. Change the role or add another Bot only when the work calls for it.",
+    "Start with a Sales Associate Bot that researches leads, calls, holds the conversation, texts, emails, sells, books, follows up, and logs proof. Change the role or add another Bot only when the work calls for it.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -115,21 +121,21 @@ export const OUTBOUND_WEDGE = {
     "Inbound conversion",
   ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Researches", "Calls", "Texts", "Emails", "Books", "Reports"],
+  proof: ["Researches", "Calls", "Conversations", "Texts", "Emails", "Books", "Reports"],
   differentiator:
-    "Wireline turns calls, texts, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
+    "Wireline turns voice calls, live conversations, texts, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
     "Build one capable Bot or a coordinated roster. Configure each role, connect the right channels, and improve from logged outcomes.",
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: null,
-  headline: "Build a Bot for Any Job",
+  eyebrow: BOT_BRAND.supportingLine,
+  headline: BOT_BRAND.slogan,
   primaryCta: "Build Your Bot",
-  subline:
-    "Choose a role or describe the work. Configure its voice, text, email, knowledge, tools, and rules in one workspace.",
+  subline: BOT_BRAND.promise,
   channelProof: [
     "Voice calls",
+    "Live conversations",
     "Text messages",
     "Email follow-up",
     "Shared knowledge",
@@ -147,19 +153,20 @@ export const MARKETING_VOICE = {
 export const CLIENT_SURFACE_POSTURE = {
   summary:
     "Launch on the web. Build, Configure, Launch, and Improve are complete in the browser; the rest are optional companions. None are required for the core product.",
-  browser: { status: "Early access", action: "Install guide" },
-  chatgpt: { status: "Early access", action: "Open guide" },
-  claude: { status: "Early access", action: "Add connector" },
+  browser: { status: "Early access", action: "Install Guide" },
+  chatgpt: { status: "Early access", action: "Open Guide" },
+  claude: { status: "Early access", action: "Add Connector" },
   cursor: { status: "Early access", action: "Add in Cursor" },
-  android: { status: "Internal beta", action: "Internal testing" },
-  ios: { status: "Planned", action: "Join waitlist" },
+  android: { status: "Internal beta", action: "Internal Testing" },
+  ios: { status: "Planned", action: "Join Waitlist" },
 } as const;
 
 /** Retained export name for compatibility with older marketing modules. */
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "Bots for every customer conversation",
-  proof: ["Calls customers", "Texts follow-ups", "Sends email", "Logs outcomes"],
-  differentiator: "Wireline keeps valuable conversations moving across voice, text, and email.",
+  eyebrow: "VOICE-FIRST BOTS FOR EVERY CUSTOMER CONVERSATION",
+  proof: ["Answers calls", "Makes calls", "Continues by text", "Sends email", "Logs outcomes"],
+  differentiator:
+    "Wireline keeps valuable conversations moving across voice, live conversation, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
@@ -177,11 +184,12 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "One Bot, any use case",
-  tagline: "Start with one Bot. Add another only when a separate role or more capacity helps.",
+  eyebrow: "ONE BOT. ANY USE CASE.",
+  tagline:
+    "Start with a Voice Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
-    "Bots for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
-  hero: "One workspace for the Bots and conversations that keep work and life moving.",
+    "Bots for calling, live conversation, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
+  hero: "One workspace for every Bot and every conversation that keeps work and life moving.",
 } as const;
 
 /** Legacy keys remain, but both render the same unified Bot posture. */
@@ -191,14 +199,14 @@ export const PRODUCT_POSTURE = {
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Voice, text, email, tools, and outcomes in one workspace.",
+    emptyBody: "Voice, live conversation, text, email, tools, and outcomes in one workspace.",
   },
   business: {
     badge: "Bot",
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Voice, text, email, tools, and outcomes in one workspace.",
+    emptyBody: "Voice, live conversation, text, email, tools, and outcomes in one workspace.",
   },
 } as const;
 
