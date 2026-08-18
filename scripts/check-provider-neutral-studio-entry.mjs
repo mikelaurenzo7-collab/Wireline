@@ -11,13 +11,16 @@ const fail = (message) => {
 const canonicalPath = "src/pages/AgentStudioHome.tsx";
 const legacyPath = "src/pages/AgentStudioHomeClaude.tsx";
 const routes = read("src/routes/AppRoutes.tsx");
+const routePreloads = read("src/routes/workspace-route-preload.ts");
 const manifest = read("src/lib/studio-canvas-contract.ts");
 const executableManifest = read("scripts/lib/studio-canvas-contract.mjs");
 
 if (!existsSync(resolve(root, canonicalPath))) fail(`${canonicalPath} is missing`);
 if (existsSync(resolve(root, legacyPath))) fail(`${legacyPath} must be removed`);
-if (!routes.includes('import("../pages/AgentStudioHome")'))
-  fail("authenticated Studio route is not using AgentStudioHome");
+if (!routes.includes("loadAgentStudioHome"))
+  fail("authenticated Studio route is not using the shared AgentStudioHome importer");
+if (!routePreloads.includes('import("../pages/AgentStudioHome")'))
+  fail("shared Studio route importer is not loading AgentStudioHome");
 if (routes.includes("AgentStudioHomeClaude"))
   fail("authenticated Studio route still references the former provider-named module");
 
