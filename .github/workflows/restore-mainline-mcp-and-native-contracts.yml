@@ -1,0 +1,47 @@
+name: restore-mainline-mcp-and-native-contracts
+
+on:
+  push:
+    branches:
+      - audit/native-xai-main-integration-final-20260818
+    paths:
+      - .github/workflows/restore-mainline-mcp-and-native-contracts.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-mainline-mcp-and-native-contracts
+  cancel-in-progress: true
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore mainline MCP product surfaces and reconcile native contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Wireline Audit Bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
+
+          python -m py_compile scripts/restore-mainline-mcp-and-native-contracts.py
+          python scripts/restore-mainline-mcp-and-native-contracts.py
+
+          git rm scripts/restore-mainline-mcp-and-native-contracts.py
+          git rm .github/workflows/restore-mainline-mcp-and-native-contracts.yml
+          git rm -f .github/workflows/repair-grok46-contract-generator.yml || true
+          git rm -f .github/workflows/retrigger-grok46-materialization.yml || true
+          git rm -f .github/workflows/materialize-grok46-migration.yml || true
+          rm -f .audit/grok46-materialization-failure.txt
+
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(mcp): preserve mainline clients through native voice migration"
+          git push origin HEAD:"$GITHUB_REF_NAME"
