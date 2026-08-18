@@ -1,7 +1,7 @@
 /**
- * Launch story. Build, Train, Launch and the voice agent operating model are
- * the active truth across metadata, install surfaces, shared copy, conversion,
- * and billing. Retired brand eras must not return to active product surfaces.
+ * Launch story. One workspace, configurable Bots, and role templates are the
+ * active truth across metadata, conversion, and billing. Retired brand eras
+ * must not return to active product surfaces.
  */
 const RETIRED_PRODUCT_TERMS = [
   "Ametrine Precision",
@@ -15,7 +15,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   const indexHtml = read("index.html");
   const pageMeta = read("src/lib/page-meta.tsx");
   const manifest = read("public/site.webmanifest");
-  const productCopy = read("src/lib/product-copy.ts");
+  const botProduct = read("src/lib/bot-product.ts");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const landingPage = read("src/pages/LandingPage.tsx");
   const planCatalog = read("src/lib/plan-catalog.ts");
@@ -49,13 +49,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "public/site.webmanifest",
     manifest,
     /"name"\s*:\s*"Wireline \| Voice Agents"/,
-    "install metadata must use the canonical voice agent positioning",
-  );
-  mustInclude(
-    "public/site.webmanifest",
-    manifest,
-    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
-    "install metadata must explain the operating value",
+    "install metadata must use the canonical voice category",
   );
   mustExclude(
     "public/site.webmanifest",
@@ -65,56 +59,49 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   );
 
   mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /northStar:\s*"Voice agents that call, answer, follow up, and finish the work\."/,
-    "shared copy must preserve the north star promise",
+    "src/lib/bot-product.ts",
+    botProduct,
+    /headline:\s*"Build a Bot for Any Job"/,
+    "shared Bot product model must preserve the configurable-job promise",
   );
   mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /productNoun:\s*"Voice agent"/,
-    "shared copy must define the canonical product noun",
+    "src/lib/bot-product.ts",
+    botProduct,
+    /name:\s*"Create Your Own"/,
+    "shared Bot product model must expose a custom-role starting point",
   );
   mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /brandSpine:\s*\["Build", "Train", "Launch"\]/,
-    "shared copy must define the canonical brand spine",
+    "src/lib/bot-product.ts",
+    botProduct,
+    /title:\s*"One Workspace\. Every Bot\."/,
+    "shared Bot product model must preserve the one-workspace architecture",
   );
-  mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /AGENT_NUMBER_PROMISE/,
-    "shared copy must expose the included number promise",
-  );
-  mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /includes a Wireline number at no extra line fee/,
-    "the included number promise must stay explicit",
-  );
+  for (const channel of ["Voice", "Text", "Email"]) {
+    mustInclude(
+      "src/lib/bot-product.ts",
+      botProduct,
+      new RegExp(`label:\\s*"${channel}"`),
+      `shared Bot product model must expose ${channel.toLowerCase()} as a configurable channel`,
+    );
+  }
   mustExclude(
-    "src/lib/product-copy.ts",
-    productCopy,
+    "src/lib/bot-product.ts",
+    botProduct,
     /guaranteed profit|profit guarantee/i,
-    "shared copy must never promise guaranteed profit",
+    "shared product model must never promise guaranteed profit",
   );
 
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /MARKETING_VOICE\.headline/,
-    "landing must consume the shared headline",
+    "landing must consume the shared Bot headline",
   );
-  // The landing hero is deliberately minimal — the shared subline is no longer
-  // rendered as a hero subhead. It still backs the SEO/social description in
-  // index.html, which static-metadata-contract guards.
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /\/signup\?plan=starter&mode=outbound/,
-    "sales conversion must preserve Starter intent",
+    /BOT_ROLE_TEMPLATES\.map/,
+    "landing must expose the shared role-template catalog",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -125,7 +112,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,
-    /MARKETING_VOICE/,
+    /MARKETING_VOICE|BOT_MARKETING_VOICE/,
     "landing metadata or composition must preserve shared product voice",
   );
 
@@ -170,7 +157,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     ["index.html", indexHtml],
     ["src/lib/page-meta.tsx", pageMeta],
     ["public/site.webmanifest", manifest],
-    ["src/lib/product-copy.ts", productCopy],
+    ["src/lib/bot-product.ts", botProduct],
     ["src/components/marketing/WireAgentLanding.tsx", wireAgentLanding],
     ["src/pages/LandingPage.tsx", landingPage],
   ];
