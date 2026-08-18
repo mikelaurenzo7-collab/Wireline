@@ -1,10 +1,8 @@
-/* Marketing and signature surfaces: clarity, wire accent, agent presence, video. */
+/* Marketing and signature surfaces: clarity, wire accent, compact Bot presence. */
 @import "./clarity-system.css";
 @import "./wireline-signature.css";
 @import "./wireline-app-signature.css";
-@import "./agent-face.css";
 @import "./agent-presence.css";
-@import "./video-receptionist.css";
 @import "./public-marketing-polish.css";
 @import "./marketing-information-hierarchy.css";
 @import "./viewport-first-marketing.css";
