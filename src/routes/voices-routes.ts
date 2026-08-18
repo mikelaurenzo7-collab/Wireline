@@ -24,6 +24,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -329,10 +330,10 @@ router.get(
   "/api/voices",
   authenticateUser,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
-    // Every tenant manages only the voice rows constrained to their user id.
-    // No founder/admin capability is required for a user to create, review, or
-    // revoke their own consented clone.
-    const canManageVoices = true;
+    const canManageVoices = await isPlatformAdmin(req.user).catch((error) => {
+      log.warn("voice library admin lookup failed", { error: getErrorMessage(error) });
+      return false;
+    });
     const privateRows = await drizzle
       .select({
         voiceId: schema.clonedVoices.voiceId,
@@ -423,6 +424,9 @@ router.get(
     const voiceId = req.params.id.trim();
     const curated = isCuratedElevenLabsVoiceId(voiceId);
     if (!curated) {
+      if (!(await isPlatformAdmin(req.user))) {
+        throw AppError.notFound("Voice not found.");
+      }
       const [owned] = await drizzle
         .select({ status: schema.clonedVoices.status })
         .from(schema.clonedVoices)
@@ -493,6 +497,7 @@ router.post(
 router.post(
   "/api/voices/clone",
   authenticateUser,
+  requirePlatformAdmin,
   voiceMutationRateLimit,
   cloneIpRateLimit,
   enforceLaunchHardGate,
@@ -640,6 +645,7 @@ router.post(
 router.post(
   "/api/voices/:id/approve",
   authenticateUser,
+  requirePlatformAdmin,
   voiceMutationRateLimit,
   enforceLaunchHardGate,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
@@ -728,6 +734,7 @@ router.post(
 router.delete(
   "/api/voices/:id",
   authenticateUser,
+  requirePlatformAdmin,
   voiceMutationRateLimit,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const voiceId = req.params.id.trim();
