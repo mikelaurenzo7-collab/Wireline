@@ -26,7 +26,7 @@ import {
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
 import { isRouteAvailableForAccount } from "../lib/account-type";
-import AgentFace from "./AgentFace";
+import BotMark from "./BotMark";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import WirelineMark from "./brand/WirelineMark";
 
@@ -241,16 +241,18 @@ function DesktopRail({ pathname }: { pathname: string }) {
                   key={agent.id}
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
                   aria-current={active ? "page" : undefined}
-                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[var(--wireline-radius-md)] px-2 py-1.5 transition-colors ${
+                  data-wireline-bot-selected={active ? "true" : undefined}
+                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[var(--wireline-radius-md)] px-2 py-1.5 ${
                     active
-                      ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "border border-primary/25 bg-primary/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <AgentFace
-                    seed={agent.name || agent.id}
+                  <BotMark
+                    seed={agent.id}
+                    name={agent.name}
                     size={24}
-                    title={`${agent.name} face`}
+                    title={`${agent.name} Bot mark`}
                     className="shrink-0"
                   />
                   <span className="min-w-0">
@@ -390,8 +392,8 @@ export default function WorkspaceShell({
         >
           {showHeader ? (
             <div className="relative mb-4 pb-3 lg:mb-5">
-              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-3 sm:px-6 md:px-12 lg:px-20">
-                <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
+              <div className="wl-workspace-content-inner mx-auto grid w-full max-w-[1480px] grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:gap-6">
+                <div className="wl-task-header flex min-w-0 flex-col items-start text-left">
                   {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
                   {title ? (
                     <h1 className="max-w-[32ch] break-words text-balance font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
@@ -399,17 +401,17 @@ export default function WorkspaceShell({
                     </h1>
                   ) : null}
                   {description ? (
-                    <p className="mx-auto mt-2 max-w-[42ch] text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-2 max-w-[48ch] text-sm leading-relaxed text-muted-foreground">
                       {description}
                     </p>
                   ) : null}
                 </div>
+                {action ? (
+                  <div className="flex min-w-0 flex-wrap items-center justify-start gap-2 md:justify-end">
+                    {action}
+                  </div>
+                ) : null}
               </div>
-              {action ? (
-                <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end">
-                  {action}
-                </div>
-              ) : null}
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
