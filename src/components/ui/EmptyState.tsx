@@ -46,7 +46,7 @@ export interface EmptyStateProps {
   fill?: boolean;
   /** compact = embedded panels with less vertical padding */
   density?: "default" | "compact";
-  /** Nested empties under a display page title should use UI sans, not a second serif headline. */
+  /** Nested empties under a display page title should use UI sans, not a second display headline. */
   titleTone?: "display" | "ui";
   /** Optional slot between description and action buttons (task grids, hints). */
   children?: ReactNode;
@@ -142,19 +142,19 @@ export function EmptyState({
 
       {action ? <div className={cn("mt-6", compact && "mt-4")}>{action}</div> : null}
 
-      {resolvedActions.length > 0 && (
+      {resolvedActions.length > 0 ? (
         <div
           className={cn(
-            "flex flex-col sm:flex-row flex-wrap justify-center items-stretch sm:items-center gap-2 w-full max-w-full",
+            "flex w-full max-w-full flex-col flex-wrap items-stretch justify-center gap-2 sm:flex-row sm:items-center",
             compact ? "mt-4" : "mt-6",
           )}
         >
           {resolvedActions.map((actionItem, index) => {
             const isPrimary = !!actionItem.primary;
-
-            const primaryTextStyle = isPrimary
-              ? { color: "var(--wireline-color-text-onAction)" }
-              : undefined;
+            const actionClassName = cn(
+              "w-full justify-center sm:w-auto",
+              isPrimary && "app-primary-action",
+            );
 
             if (actionItem.to) {
               const internal = actionItem.to.startsWith("/") && !actionItem.to.startsWith("//");
@@ -163,21 +163,7 @@ export function EmptyState({
                   key={index}
                   asChild
                   variant={isPrimary ? "default" : "outline"}
-                  style={primaryTextStyle}
-                  className={cn(
-                    "rounded-full touch-press w-full sm:w-auto justify-center",
-                    isPrimary && "app-primary-action",
-                    isPrimary &&
-                      compact &&
-                      "!normal-case !tracking-normal !text-[length:var(--wireline-typography-overline-size)] !font-semibold",
-                    !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
-                    !isPrimary &&
-                      compact &&
-                      // !important to actually beat the Button base uppercase —
-                      // without it the outline sibling rendered UPPERCASE next
-                      // to a sentence-case primary.
-                      "!normal-case !tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
-                  )}
+                  className={actionClassName}
                 >
                   {internal ? (
                     <Link to={actionItem.to} className="text-center">
@@ -195,25 +181,14 @@ export function EmptyState({
                 key={index}
                 onClick={actionItem.onClick}
                 variant={isPrimary ? "default" : "outline"}
-                style={primaryTextStyle}
-                className={cn(
-                  "rounded-full touch-press w-full sm:w-auto justify-center",
-                  isPrimary && "app-primary-action",
-                  isPrimary &&
-                    compact &&
-                    "!normal-case !tracking-normal !text-[length:var(--wireline-typography-overline-size)] !font-semibold",
-                  !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
-                  !isPrimary &&
-                    compact &&
-                    "!normal-case !tracking-normal text-[length:var(--wireline-typography-overline-size)] font-medium",
-                )}
+                className={actionClassName}
               >
                 {actionItem.label}
               </Button>
             );
           })}
         </div>
-      )}
+      ) : null}
     </motion.div>
   );
 
