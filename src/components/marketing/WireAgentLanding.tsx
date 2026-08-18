@@ -14,7 +14,12 @@ import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import LandingFooter from "./LandingFooter";
 import BrowserCallWidget from "./BrowserCallWidget";
 import WirelineMark from "../brand/WirelineMark";
-import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
+import {
+  BOT_CHANNELS,
+  BOT_MARKETING_VOICE as MARKETING_VOICE,
+  BOT_ROLE_TEMPLATES,
+  BOT_WORKSPACE_PROMISE,
+} from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
@@ -24,32 +29,11 @@ const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
 const PERSONAL_SIGNUP = "/signup?plan=personal";
 const STARTER_PRICE =
   STRIPE_PLANS.find((plan) => plan.id === "starter")?.price_usd_monthly ?? 19;
-
-const AUDIENCES = [
-  {
-    key: "outbound" as const,
-    label: AGENT_DIRECTION_MODES.outbound.label,
-    detail: "Lead Response and Follow Through",
-    uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
-    href: "/signup?plan=starter&mode=outbound",
-  },
-  {
-    key: "inbound" as const,
-    label: AGENT_DIRECTION_MODES.inbound.label,
-    detail: "Front Desk and Support Triage",
-    uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
-    href: "/signup?plan=starter&mode=inbound",
-  },
-  {
-    key: "hybrid" as const,
-    label: AGENT_DIRECTION_MODES.hybrid.label,
-    detail: "Daily Calls, Booking, and Handoffs",
-    uses: ["Sales Desk", "Collections Desk", "Appointment Desk"],
-    href: "/signup?plan=starter&mode=hybrid",
-  },
-] as const;
-
-const CORE_CHANNELS = ["Voice", "Text", "Email"] as const;
+const STARTER_TEMPLATE_KEYS = new Set<string>(["front-desk", "sales-rep", "custom"]);
+const STARTER_TEMPLATES = BOT_ROLE_TEMPLATES.filter((template) =>
+  STARTER_TEMPLATE_KEYS.has(template.key),
+);
+const CORE_CHANNELS = BOT_CHANNELS.map(({ label }) => label);
 
 const EXAMPLE_RUN = [
   {
@@ -75,25 +59,17 @@ const EXAMPLE_RUN = [
 ] as const;
 
 const CAPABILITIES = [
+  ...BOT_CHANNELS.map((channel) => ({
+    title: channel.label,
+    body: channel.description,
+  })),
   {
-    title: "Voice",
-    body: "Answer, call, qualify, book, transfer, and recap.",
+    title: "Knowledge",
+    body: "Ground every response in the information you approve.",
   },
   {
-    title: "Text",
-    body: "Confirm, remind, nurture, and recover under consent rules.",
-  },
-  {
-    title: "Email",
-    body: "Follow up, reply, and preserve the conversation record.",
-  },
-  {
-    title: "Shared Memory",
-    body: "One identity, knowledge base, history, and rule set.",
-  },
-  {
-    title: "Approvals",
-    body: "Keep sensitive actions behind explicit owner control.",
+    title: "Actions",
+    body: "Connect tools, calendars, workflows, approvals, and handoffs.",
   },
   {
     title: "Outcomes",
@@ -103,20 +79,20 @@ const CAPABILITIES = [
 
 const CONTROL_POINTS = [
   {
+    title: "Role",
+    body: "Define the job, goals, tone, boundaries, and success criteria.",
+  },
+  {
+    title: "Channels",
+    body: "Turn voice, text, and email on only where the Bot needs them.",
+  },
+  {
     title: "Approvals",
-    body: "Require a person before sensitive actions.",
-  },
-  {
-    title: "Spend",
-    body: "Set prepaid limits with no automatic overages.",
-  },
-  {
-    title: "Handoffs",
-    body: "Escalate with context, not a cold transfer.",
+    body: "Require a person before sensitive actions or commitments.",
   },
   {
     title: "Proof",
-    body: "Keep transcripts, outcomes, and audit history.",
+    body: "Keep transcripts, outcomes, decisions, and audit history together.",
   },
 ] as const;
 
@@ -125,22 +101,22 @@ const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_PRESENTATION = {
   personal: {
     name: "Free Builder",
-    description: "Build, train, and privately simulate one draft agent.",
+    description: "Build, train, and privately simulate one Bot in your workspace.",
     cta: "Build Free",
   },
   starter: {
     name: "Starter",
-    description: "Put one focused communications agent live.",
+    description: "Put one focused Bot live with the channels its job requires.",
     cta: "Choose Starter",
   },
   team: {
     name: "Starter Plus",
-    description: "Run a personal and business agent together.",
+    description: "Run two Bots for different jobs in the same workspace.",
     cta: "Choose Starter Plus",
   },
   business: {
     name: "Pro",
-    description: "Operate a supervised team of specialized agents.",
+    description: "Operate a supervised team of specialized Bots from one workspace.",
     cta: "Choose Pro",
   },
 } as const;
@@ -189,11 +165,11 @@ export default function WireAgentLanding() {
     });
   }, []);
 
-  const selectAudience = (audience: (typeof AUDIENCES)[number]["key"]) => {
+  const selectTemplate = (template: (typeof BOT_ROLE_TEMPLATES)[number]["key"]) => {
     emitProductEvent({
       event: "landing_audience_selected",
       surface: "marketing_web",
-      metadata: { audience, source: "solutions_section" },
+      metadata: { audience: template, source: "bot_templates" },
     });
   };
 
@@ -221,7 +197,7 @@ export default function WireAgentLanding() {
             <div className="landing-stage__copy">
               <div className="landing-stage__eyebrow">
                 <span className="landing-stage__live-dot" aria-hidden="true" />
-                Live Voice Demo
+                Live Bot Demo
               </div>
 
               <h1 className="landing-stage__title">{MARKETING_VOICE.headline}</h1>
@@ -237,7 +213,7 @@ export default function WireAgentLanding() {
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
                 <a href="#hear-a-demo" className="marketing-btn-secondary landing-stage__secondary">
-                  Hear It Live
+                  Hear a Bot Live
                 </a>
               </div>
 
@@ -264,17 +240,17 @@ export default function WireAgentLanding() {
 
               <div className="landing-stage__lane-group">
                 <p className="landing-stage__lanes-label">Start With</p>
-                <nav className="landing-stage__lanes" aria-label="Agent work lane">
-                  {AUDIENCES.map((audience) => (
+                <nav className="landing-stage__lanes" aria-label="Bot template lane">
+                  {STARTER_TEMPLATES.map((template) => (
                     <a
-                      key={audience.key}
+                      key={template.key}
                       href="#solutions"
                       className="landing-stage__lane"
-                      onClick={() => selectAudience(audience.key)}
+                      onClick={() => selectTemplate(template.key)}
                     >
-                      <strong>{audience.label}</strong>
+                      <strong>{template.name}</strong>
                       <span className="sr-only">
-                        {audience.detail}. {audience.uses.join(", ")}.
+                        {template.summary} {template.outcomes.join(", ")}.
                       </span>
                       <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
                     </a>
@@ -288,7 +264,7 @@ export default function WireAgentLanding() {
                 <header className="landing-console__header">
                   <div className="landing-console__brand">
                     <WirelineMark signal className="landing-console__mark" />
-                    <span>Wireline Live</span>
+                    <span>Wireline Bot</span>
                   </div>
                   <div className="landing-console__status">
                     <span aria-hidden="true" />
@@ -305,7 +281,7 @@ export default function WireAgentLanding() {
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}
                         className="landing-demo__button"
-                        aria-label="Call the Public Demo Line"
+                        aria-label="Call the Public Demo Bot"
                         onClick={() =>
                           emitProductEvent({
                             event: "landing_demo_clicked",
@@ -318,7 +294,7 @@ export default function WireAgentLanding() {
                         }
                       >
                         <PhoneCall className="size-4" aria-hidden="true" />
-                        <span>Call Demo Line</span>
+                        <span>Call Demo Bot</span>
                       </a>
                     }
                   />
@@ -368,7 +344,7 @@ export default function WireAgentLanding() {
                     <ShieldCheck aria-hidden="true" />
                     <span>You set the rules, approvals, spend, and handoffs.</span>
                   </div>
-                  <ul className="landing-console__channels" aria-label="Core agent channels">
+                  <ul className="landing-console__channels" aria-label="Bot channels">
                     {CORE_CHANNELS.map((label) => (
                       <li key={label}>{label}</li>
                     ))}
@@ -382,26 +358,30 @@ export default function WireAgentLanding() {
         <section id="solutions" className="marketing-section landing-home__section">
           <div className="wl-public-rail">
             <SectionHeading
-              eyebrow="Solutions"
-              title="Start with One Job"
-              body="Choose the work. Wireline keeps every channel, rule, and outcome together."
+              eyebrow="Templates"
+              title="Start with a Role. Make It Yours"
+              body="Choose a proven job or create your own. Business and personal templates are starting points, never separate workspaces."
             />
 
             <div className="landing-home__solution-grid">
-              {AUDIENCES.map((audience) => (
-                <article key={audience.key} className="landing-home__solution-card">
-                  <p className="wl-eyebrow">{audience.label}</p>
-                  <h3>{audience.detail}</h3>
+              {BOT_ROLE_TEMPLATES.map((template) => (
+                <article key={template.key} className="landing-home__solution-card">
+                  <p className="wl-eyebrow">{template.category}</p>
+                  <h3>{template.name}</h3>
+                  <p>{template.summary}</p>
                   <ul>
-                    {audience.uses.map((use) => (
-                      <li key={use}>
+                    {template.outcomes.map((outcome) => (
+                      <li key={outcome}>
                         <Check aria-hidden="true" />
-                        {use}
+                        {outcome}
                       </li>
                     ))}
                   </ul>
-                  <Link to={audience.href} onClick={() => selectAudience(audience.key)}>
-                    Start Here
+                  <Link
+                    to={`${PERSONAL_SIGNUP}&template=${template.key}`}
+                    onClick={() => selectTemplate(template.key)}
+                  >
+                    {template.key === "custom" ? "Create Your Bot" : `Use ${template.name}`}
                     <ArrowRight aria-hidden="true" />
                   </Link>
                 </article>
@@ -410,12 +390,15 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section id="features" className="marketing-section landing-home__section landing-home__section--tinted">
+        <section
+          id="features"
+          className="marketing-section landing-home__section landing-home__section--tinted"
+        >
           <div className="wl-public-rail">
             <SectionHeading
-              eyebrow="Product"
-              title="One Agent Across Every Conversation"
-              body="Voice, text, email, memory, approvals, and proof stay in one operating system."
+              eyebrow="Configure"
+              title="One Bot Across Every Conversation"
+              body="Choose voice, text, and email. Add the knowledge, tools, actions, approvals, and outcomes the job requires."
             />
 
             <div className="landing-home__compact-grid">
@@ -438,9 +421,9 @@ export default function WireAgentLanding() {
               {PLAN_CARDS.map(({ id, plan, presentation }) => {
                 const free = id === "personal";
                 const featured = id === "team";
-                const agentCount = free
-                  ? "1 private draft"
-                  : `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}`;
+                const botCount = free
+                  ? "1 private Bot"
+                  : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`;
                 const capacity = free
                   ? `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} private simulation`
                   : `${plan.voice_minutes_monthly} voice minutes`;
@@ -455,7 +438,9 @@ export default function WireAgentLanding() {
                     key={id}
                     className={`landing-home__price-card${featured ? " is-featured" : ""}`}
                   >
-                    {featured ? <span className="landing-home__price-badge">Most Popular</span> : null}
+                    {featured ? (
+                      <span className="landing-home__price-badge">Most Popular</span>
+                    ) : null}
                     <p className="wl-eyebrow">{presentation.name}</p>
                     <div className="landing-home__price">
                       <strong>${plan.price_usd_monthly}</strong>
@@ -463,7 +448,7 @@ export default function WireAgentLanding() {
                     </div>
                     <p className="landing-home__price-description">{presentation.description}</p>
                     <ul>
-                      {[agentCount, capacity, numberCount].map((fact) => (
+                      {[botCount, capacity, numberCount].map((fact) => (
                         <li key={fact}>
                           <Check aria-hidden="true" />
                           {fact}
@@ -491,12 +476,15 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section id="trust" className="marketing-section landing-home__section landing-home__section--tinted">
+        <section
+          id="trust"
+          className="marketing-section landing-home__section landing-home__section--tinted"
+        >
           <div className="wl-public-rail landing-home__trust-layout">
             <SectionHeading
-              eyebrow="Trust"
-              title="Control Stays with You"
-              body="Wireline can act. You decide where it stops, asks, escalates, and records proof."
+              eyebrow="Workspace"
+              title={BOT_WORKSPACE_PROMISE.title}
+              body={BOT_WORKSPACE_PROMISE.description}
             />
 
             <div className="landing-home__control-grid">
@@ -516,8 +504,8 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail landing-home__final-card">
             <WirelineMark signal className="landing-home__final-mark" />
             <p className="wl-eyebrow text-primary">Wireline</p>
-            <h2>Build Your Voice Agent</h2>
-            <p>Start free. Go live when the work is ready.</p>
+            <h2>Build Your Bot</h2>
+            <p>Start with a role or create your own. Add the channels the job needs.</p>
             <div>
               <Link to={PERSONAL_SIGNUP} className="marketing-btn-primary">
                 Start Free
