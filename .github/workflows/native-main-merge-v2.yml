@@ -1,0 +1,39 @@
+name: native-main-merge-v2
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-merge-v2.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-main-merge-v2
+  cancel-in-progress: true
+
+jobs:
+  integrate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out native runtime branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Merge main, repair verified regressions, and run exact gates
+        shell: bash
+        env:
+          HUSKY: "0"
+          NODE_OPTIONS: "--max-old-space-size=6144"
+          CI: "true"
+        run: bash .github/scripts/native-main-integration-v2.sh
