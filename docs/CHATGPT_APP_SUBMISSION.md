@@ -3,7 +3,7 @@
 ## App identity
 
 - **Name:** Wireline
-- **Subtitle:** Build and inspect voice agents
+- **Subtitle:** Build your first voice agent
 - **Category:** Business productivity / customer communications
 - **Hosted logo:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
 - **Public MCP endpoint:** `https://trywireline.com/mcp`
@@ -83,13 +83,15 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 1. Use the approved Wireline app in the ChatGPT review environment with MCP endpoint `https://trywireline.com/mcp`.
 2. Run: **"Use Wireline to create a sales and support voice agent for my business. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
 3. Confirm ChatGPT requests a Wireline account connection.
-4. Sign in to the supplied reviewer account in Wireline and approve the requested permissions.
+4. New users create a Wireline account on the signup screen and return to consent. Reviewers may sign in to the supplied reviewer account instead, then approve the requested permissions.
 5. Repeat the request and review the proposed profile summary.
 6. Explicitly confirm creation.
 7. Confirm the resulting Wireline card identifies the role, business, and private draft state.
 8. Select **Try private voice** and confirm the agent uses the saved customization.
 9. Confirm the agent does not claim it booked, called, transferred, messaged, accessed records, or completed any outside action.
 10. Open Wireline and confirm the new draft has no attached phone number and is not live.
+11. Ask to privately rehearse "Do you have Saturday appointments?" and confirm `live_call` is false.
+12. Ask for the next step in Wireline. Confirm the result has Studio/Training/Wire links and no phone number.
 
 ### Workspace summary path
 

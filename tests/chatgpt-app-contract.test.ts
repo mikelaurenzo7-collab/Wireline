@@ -12,8 +12,9 @@ const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
 const privacyNotice = read("public/chatgpt-app-privacy.html");
 const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
-  app_info: { logo_url: string };
+  app_info: { logo_url: string; subtitle?: string };
   oauth: { client_url: string };
+  test_cases?: unknown;
   tools: Record<
     string,
     {
@@ -152,6 +153,11 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(submissionPacket).toContain("No agent launch.");
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
     expect(submissionPacket).toContain("OAuth authorization code flow with PKCE `S256`.");
+    expect(submissionPacket).toContain("Build your first voice agent");
+    expect(submission.app_info.subtitle).toBe("Build your first voice agent");
+    expect(JSON.stringify(submission.test_cases)).toContain("create_agent_draft");
+    expect(JSON.stringify(submission.test_cases)).toContain("get_agent_coaching_brief");
+    expect(JSON.stringify(submission.test_cases)).toContain("train_wireline_agent");
   });
 
   it("does not expose MCP tools that provision numbers, dial, or launch agents", () => {

@@ -684,6 +684,33 @@ const MCP_PROMPTS = [
   },
 ] as const;
 
+const MCP_PROMPT_MESSAGES: Record<(typeof MCP_PROMPTS)[number]["name"], string> = {
+  create_first_voice_agent: `Help me create a Wireline account if I do not have one, then build my first voice agent in this chat.
+
+Workflow:
+1. If tools require Connect, wait for me to finish OAuth. New users sign up and return to consent.
+2. Call list_wireline_agents once. If the workspace is empty, this is a first-agent session.
+3. Ask what the agent should handle: receptionist, scheduler, sales, or support.
+4. Summarize identity, goal, rules, prohibited topics, and escalation. Call create_agent_draft only after I explicitly confirm.
+5. Privately rehearse with run_private_agent_turn or start_private_voice_simulation.
+6. Point me to open_in_wireline_url for a number and launch. Do not place a live call or claim a customer was contacted.`,
+  create_after_hours_receptionist: `Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.
+
+Summarize the proposed identity, goal, rules, and boundaries first. Call create_agent_draft only after I confirm. Then offer a private rehearsal. Do not place a live call.`,
+  refine_draft_boundaries: `Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.
+
+Summarize the changes, then call update_agent_draft only after I confirm. Do not launch the agent.`,
+  inspect_workspace_status: `Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.
+
+Use get_wireline_workspace_summary. Never ask for or repeat customer identities, transcripts, recordings, or phone numbers.`,
+  rehearse_agent_reply: `Trigger a private text rehearsal of a saved Wireline agent with a hypothetical customer line.
+
+Ask me for the line if I have not given one. Call run_private_agent_turn only after I confirm. State that this is not a live call.`,
+  coach_agent_training: `Read the coaching brief for a Wireline agent, then add a confirmed Training fact or operating rule that lands in Wireline.
+
+Use get_agent_coaching_brief first. If train_wireline_agent says the Apps toggle is off, send me to Wireline Apps. Do not invent a workaround or claim a live call happened.`,
+};
+
 function inputFromArgs(args: Record<string, unknown>): AgentCustomizationInput {
   return {
     agent_name: args.agent_name,
@@ -742,7 +769,7 @@ router.post("/mcp", async (req, res) => {
         messages: [
           {
             role: "user",
-            content: { type: "text", text: prompt.description },
+            content: { type: "text", text: MCP_PROMPT_MESSAGES[prompt.name] },
           },
         ],
       });

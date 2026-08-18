@@ -3,7 +3,7 @@
 ## Listing identity
 
 - **Name:** Wireline (max 100)
-- **Tagline:** Build and inspect voice agents (31 / 55)
+- **Tagline:** Build your first voice agent (27 / 55)
 - **Slug:** `wireline` (permanent once published)
 - **Categories:** business, productivity
 - **Icon:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
@@ -55,6 +55,7 @@ Suggested captures, matching `claude-connector-submission.json`:
 2. Updated draft boundaries card
 3. Workspace summary aggregates
 4. Private voice controls on the draft card
+5. Private text rehearsal that states it is not a live call
 
 Use the [MCP Apps Figma community file](https://www.figma.com/community/file/1597641111449594397/mcp-apps-for-claude) if a carousel template is needed.
 

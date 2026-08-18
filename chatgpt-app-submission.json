@@ -196,6 +196,30 @@
       "tools_triggered": "run_private_agent_turn",
       "expected_output": "Returns a private rehearsal reply with live_call false and does not claim a customer was contacted.",
       "expected_output_url": null
+    },
+    {
+      "description": "Create a first voice agent after a new user connects an account.",
+      "user_prompt": "I am new to Wireline. Help me create my first after-hours receptionist and confirm it.",
+      "file_attachment_urls": null,
+      "tools_triggered": "create_agent_draft",
+      "expected_output": "Requests account connection if needed, then creates an unlaunched private draft only after explicit confirmation and returns the Wireline link.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Read owner-authored Training without exposing customer content.",
+      "user_prompt": "Show me the coaching brief for this Wireline agent and the next Training step.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_agent_coaching_brief",
+      "expected_output": "Returns owner-authored facts and rules plus the next step, without phone numbers, transcripts, or customer identities.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Save a confirmed Training fact after the Apps toggle is on.",
+      "user_prompt": "Save this confirmed Training fact in Wireline: We serve residential HVAC in the 787xx ZIP codes.",
+      "file_attachment_urls": null,
+      "tools_triggered": "train_wireline_agent",
+      "expected_output": "Persists the fact only after confirmation and the Apps toggle. If the toggle is off, the app sends the user to Wireline Apps instead of inventing a workaround.",
+      "expected_output_url": null
     }
   ],
   "negative_test_cases": [

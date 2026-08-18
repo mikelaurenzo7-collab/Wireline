@@ -33,10 +33,12 @@
     "Create a Wireline account and a confirmed first voice-agent draft from a conversation.",
     "Refine a saved draft's tone, prohibited topics, and handoff policy.",
     "Inspect aggregate workspace status without exposing customer content.",
-    "Run a short private, tool-free voice simulation of a saved draft."
+    "Run a short private, tool-free voice simulation of a saved draft.",
+    "Privately rehearse a hypothetical customer line without placing a live call.",
+    "Read owner-authored Training and, after the Apps toggle, save a confirmed fact or rule."
   ],
   "prerequisites": [
-    "A Wireline account at https://trywireline.com.",
+    "New users create a Wireline account during OAuth. Existing users sign in.",
     "OAuth consent for agents.read, agents.write, and demo.voice."
   ],
   "reviewer_prompts": [
@@ -59,6 +61,11 @@
       "prompt": "Let me privately try the voice simulation for this Wireline draft.",
       "tools": ["start_private_voice_simulation"],
       "screenshot_subject": "Private voice controls on the draft card"
+    },
+    {
+      "prompt": "Privately rehearse this Wireline agent answering: Do you have Saturday appointments?",
+      "tools": ["run_private_agent_turn"],
+      "screenshot_subject": "Private rehearsal reply with live_call false"
     }
   ],
   "negative_prompts": [

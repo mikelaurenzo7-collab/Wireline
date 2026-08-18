@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AppError } from "./api-error";
 import {
   clientDisplayName,
+  connectedAppLabel,
   isAnthropicRedirectUri,
   isClaudeCodeClientMetadataUrl,
   isCursorRedirectUri,
@@ -111,6 +112,29 @@ describe("mcp dynamic client registration", () => {
       ),
     ).toBe("Claude Code");
     expect(clientDisplayName("not-a-url")).toBe("your MCP client");
+  });
+
+  it("labels stored MCP grants from callback metadata, not DCR ids", () => {
+    const dynamicId = newDynamicClientId();
+    expect(
+      connectedAppLabel(dynamicId, "Claude", ["cursor://anysphere.cursor-mcp/oauth/callback"]),
+    ).toBe("Cursor");
+    expect(
+      connectedAppLabel(dynamicId, null, ["https://claude.ai/api/mcp/auth_callback"]),
+    ).toBe("Claude");
+    expect(
+      connectedAppLabel(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        null,
+        ["http://127.0.0.1:3118/callback"],
+      ),
+    ).toBe("Claude Code");
+    expect(
+      connectedAppLabel("https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json", null, [
+        "https://chatgpt.com/connector/oauth/7i4vMCsl-J2L",
+      ]),
+    ).toBe("ChatGPT");
+    expect(connectedAppLabel(dynamicId, null, [])).toBe("Connected app");
   });
 
   it("accepts Claude Code CIMD and port-agnostic loopback callbacks", () => {

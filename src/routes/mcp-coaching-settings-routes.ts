@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
+import { connectedAppLabel } from "../lib/mcp-client-registry";
 import {
   readMcpCoachingWritesEnabled,
   writeMcpCoachingWritesEnabled,
@@ -14,19 +15,6 @@ import { userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
-
-function clientLabel(clientId: string, clientName: string | null): string {
-  if (clientName && clientName.trim()) return clientName.trim();
-  try {
-    const host = new URL(clientId).hostname;
-    if (host === "chatgpt.com") return "ChatGPT";
-    if (host === "claude.ai" || host === "claude.com") return "Claude";
-  } catch {
-    // fall through
-  }
-  if (clientId.startsWith("wlmcp_client_")) return "Cursor or Claude";
-  return "Connected app";
-}
 
 router.get(
   "/api/mcp/connections",
@@ -42,7 +30,8 @@ router.get(
             t.scope,
             t.expires_at,
             t.created_at,
-            c.client_name
+            c.client_name,
+            c.redirect_uris
           FROM wireline_mcp_access_tokens t
           LEFT JOIN wireline_mcp_oauth_clients c ON c.client_id = t.client_id
           WHERE t.user_id = ${req.user.id}::uuid
@@ -56,12 +45,13 @@ router.get(
             expires_at: Date | string;
             created_at: Date | string;
             client_name: string | null;
+            redirect_uris: unknown;
           }>;
         };
         return {
           coaching_writes_enabled: coachingWritesEnabled,
           connections: (result.rows || []).map((row) => ({
-            client: clientLabel(row.client_id, row.client_name),
+            client: connectedAppLabel(row.client_id, row.client_name, row.redirect_uris),
             scope: row.scope,
             created_at:
               row.created_at instanceof Date

@@ -164,7 +164,7 @@ export const MARKETING_VOICE = {
 
 export const CLIENT_SURFACE_POSTURE = {
   summary:
-    "Launch on the web. Create, Train, Wire, and Run are complete in the browser; the rest are optional companions. None are required for the core product.",
+    "Launch on the web. Build, Train, and Launch are complete in the browser; companion apps are optional. None are required for the core product.",
   browser: {
     status: "Early access",
     action: "Install guide",

@@ -246,6 +246,39 @@ export function clientDisplayName(redirectUri: string, clientId?: string): strin
   return "your MCP client";
 }
 
+function parseStoredRedirectUris(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return [];
+}
+
+/** Apps-panel label for a stored MCP grant. Prefer callback metadata over DCR ids. */
+export function connectedAppLabel(
+  clientId: string,
+  clientName: string | null | undefined,
+  redirectUris?: unknown,
+): string {
+  const uris = parseStoredRedirectUris(redirectUris);
+  if (uris.some((uri) => isCursorRedirectUri(uri))) return "Cursor";
+  if (isClaudeCodeClientMetadataUrl(clientId) || uris.some((uri) => isLoopbackCallbackUri(uri))) {
+    return "Claude Code";
+  }
+  if (uris.some((uri) => isAnthropicRedirectUri(uri))) return "Claude";
+  if (isChatGptClientMetadataUrl(clientId) || uris.some((uri) => isChatGptRedirectUri(uri))) {
+    return "ChatGPT";
+  }
+  if (clientName && clientName.trim()) return clientName.trim().slice(0, 80);
+  try {
+    const host = new URL(clientId).hostname;
+    if (host === "chatgpt.com") return "ChatGPT";
+    if (ANTHROPIC_REDIRECT_HOSTS.has(host)) return "Claude";
+  } catch {
+    // fall through
+  }
+  return "Connected app";
+}
+
 export function mcpDraftSourceForClient(
   clientId: string,
   redirectUriOrUris?: string | string[],

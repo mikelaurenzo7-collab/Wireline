@@ -20,6 +20,8 @@ describe("Claude Connector Directory contract", () => {
   const listing = JSON.parse(read("claude-connector-submission.json")) as {
     listing: { name: string; tagline: string; slug: string; description: string };
     server: { url: string; allowed_link_uris: string[]; authentication: string[] };
+    prerequisites?: string[];
+    use_cases?: string[];
   };
 
   it("keeps a shared remote MCP server named wireline", () => {
@@ -73,6 +75,12 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.server.url).toBe("https://trywireline.com/mcp");
     expect(listing.server.allowed_link_uris).toEqual(["https://trywireline.com"]);
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
+    expect(listing.listing.tagline).toBe("Build your first voice agent");
+    expect(packet).toContain("Build your first voice agent");
+    expect(listing.prerequisites?.some((item) => /create a Wireline account/i.test(item))).toBe(
+      true,
+    );
+    expect(listing.use_cases?.some((item) => /rehearse/i.test(item))).toBe(true);
   });
 
   it("publishes public docs and privacy pages required by the portal", () => {

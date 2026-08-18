@@ -41,5 +41,8 @@ describe("MCP coaching and first-agent contract", () => {
     expect(coaching).not.toContain("recording");
     expect(account).toContain("owner-authored Training facts");
     expect(account).toContain("create_first_voice_agent");
+    expect(account).toContain("MCP_PROMPT_MESSAGES");
+    expect(account).toContain("this is a first-agent session");
+    expect(account).toContain("Do not place a live call or claim a customer was contacted");
   });
 });

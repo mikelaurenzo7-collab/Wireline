@@ -262,6 +262,10 @@ assert(
   Array.isArray(prompts.result.prompts) && prompts.result.prompts.length >= 3,
   "MCP prompts/list must advertise reviewer prompts.",
 );
+assert(
+  prompts.result.prompts.some((prompt) => prompt?.name === "create_first_voice_agent"),
+  "MCP prompts/list must advertise create_first_voice_agent.",
+);
 
 const serverCard = await request("/mcp/server-card");
 assert(serverCard.response.status === 200, "MCP server card must return HTTP 200.");
