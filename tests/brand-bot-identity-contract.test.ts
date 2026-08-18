@@ -27,6 +27,9 @@ describe("Wireline folded W identity", () => {
     expect(renderer).toContain('out: "public/wireline-icon-512.png"');
     expect(renderer).toContain('out: "public/wireline-stripe-icon.png"');
     expect(renderer).toContain('out: "public/wireline-stripe-logo.png"');
+    expect(renderer).toContain(
+      '{ src: "scripts/ios-app-icon.svg", out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 }',
+    );
   });
 });
 
@@ -35,7 +38,9 @@ describe("Wireline voice-first Bot language", () => {
     const product = read("src/lib/bot-product.ts");
 
     expect(product).toContain('slogan: "BOTS THAT GET THE WORK DONE"');
-    expect(product).toContain('supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"');
+    expect(product).toContain(
+      'supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"',
+    );
     expect(product).toContain('name: "Voice Bot"');
     expect(product).toContain('name: "Conversation Bot"');
     expect(product).toContain('name: "Human Bot"');
@@ -51,7 +56,9 @@ describe("Wireline voice-first Bot language", () => {
     expect(html).toContain('"slogan": "BOTS THAT GET THE WORK DONE"');
     expect(html).not.toContain("Voice agents that get the work done");
     expect(landing).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
-    expect(productCopy).toContain("Technical routes, schemas, events, and APIs retain `agent` for compatibility");
+    expect(productCopy).toContain(
+      "Technical routes, schemas, events, and APIs retain `agent` for compatibility",
+    );
   });
 
   it("installs into the unified workspace without a legacy Agents shortcut", () => {
@@ -71,13 +78,17 @@ describe("Wireline voice-first Bot language", () => {
 });
 
 describe("Wireline casing hierarchy", () => {
-  it("uppercases interface language while protecting customer-authored content", () => {
+  it("uses the canonical uppercase system and keeps identity CSS free of broad prose selectors", () => {
     const identity = read("src/styles/brand-identity.css");
+    const casing = read("src/styles/uppercase-system.css");
     const main = read("src/main.tsx");
 
     expect(main).toContain('import "./styles/brand-identity.css"');
-    expect(identity).toContain("text-transform: uppercase");
-    expect(identity).toContain(".wl-preserve-case");
-    expect(identity).toContain("text-transform: none !important");
+    expect(casing).toContain("text-transform: uppercase");
+    expect(casing).toContain(".wl-preserve-case");
+    expect(casing).toContain("text-transform: none !important");
+    expect(identity).toContain("Do not duplicate those selectors here");
+    expect(identity).not.toContain("legend, th, label");
+    expect(identity).not.toContain("summary),");
   });
 });
