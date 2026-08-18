@@ -14,19 +14,20 @@ export const BRAND_SYSTEM = {
   proofLoop: ["Build", "Configure", "Launch", "Improve"],
   toneRules: [
     "Lead with voice, the job, and the outcome before AI mechanics.",
-    "Present one Wireline workspace, never separate personal and business workspaces.",
+    "Present one WIRELINE workspace, never separate personal and business workspaces.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Voice Bot, Conversation Bot, and Human Bot as configurable starting points, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
     "Make clear that one Bot can use voice, text, and email under one identity and memory.",
     "Let customers configure the playbook, voice, channels, knowledge, tools, guardrails, approvals, and handoffs.",
-    "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
+    "State that the included WIRELINE number applies to paid plans so the free builder is never misrepresented.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never require customers to classify a Bot as personal or business before describing the work.",
     "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase.",
-    "Keep the Wireline wordmark and named Bot types in Title Case when used inside prose.",
-    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
+    "Render the WIRELINE brand name in uppercase everywhere it is customer-visible, including prose, metadata, and legal copy.",
+    "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
+    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case apart from the WIRELINE brand name.",
     "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, and stacked claims on public buying surfaces.",
@@ -105,7 +106,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid Bot includes a Wireline number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Every paid Bot includes a WIRELINE number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -123,7 +124,7 @@ export const OUTBOUND_WEDGE = {
   loop: AGENT_DIRECTION_MODES.outbound.loop,
   proof: ["Researches", "Calls", "Conversations", "Texts", "Emails", "Books", "Reports"],
   differentiator:
-    "Wireline turns voice calls, live conversations, texts, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
+    "WIRELINE turns voice calls, live conversations, texts, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
     "Build one capable Bot or a coordinated roster. Configure each role, connect the right channels, and improve from logged outcomes.",
 } as const;
@@ -166,7 +167,7 @@ export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "VOICE-FIRST BOTS FOR EVERY CUSTOMER CONVERSATION",
   proof: ["Answers calls", "Makes calls", "Continues by text", "Sends email", "Logs outcomes"],
   differentiator:
-    "Wireline keeps valuable conversations moving across voice, live conversation, text, and email.",
+    "WIRELINE keeps valuable conversations moving across voice, live conversation, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
@@ -217,7 +218,7 @@ export function formatAgentRoleLabel(role?: string | null): string {
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
-  "Wireline Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, Wireline logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
+  "WIRELINE Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, WIRELINE logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const total = personalCount + businessCount;
