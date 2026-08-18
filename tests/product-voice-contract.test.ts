@@ -37,6 +37,14 @@ const CORE_BUYING_SURFACES = [
   "src/components/marketing/MarketingFooter.tsx",
 ] as const;
 
+const CUSTOMER_BOT_SURFACES = [
+  "src/components/ActivationChecklist.tsx",
+  "src/components/OutboundDialDialog.tsx",
+  "src/components/outbound/CampaignsPanel.tsx",
+  "src/components/marketing/BrowserCallWidget.tsx",
+  "src/lib/voice/xai-public-demo-session.ts",
+] as const;
+
 describe("one-workspace Bot product contract", () => {
   it("uses Bot as the customer object while retaining agent as the technical domain", () => {
     expect(BRAND_SYSTEM).toMatchObject({
@@ -65,6 +73,14 @@ describe("one-workspace Bot product contract", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Never require customers to classify a Bot as personal or business before describing the work.",
     );
+  });
+
+  it("keeps operational customer surfaces on Bot terminology", () => {
+    for (const path of CUSTOMER_BOT_SURFACES) {
+      const source = withoutComments(read(path));
+      expect(source, path).not.toMatch(/\bvoice agents?\b/i);
+      expect(source, path).not.toMatch(/\bagent speaking\b/i);
+    }
   });
 
   it("resolves both legacy postures to the same customer language", () => {
