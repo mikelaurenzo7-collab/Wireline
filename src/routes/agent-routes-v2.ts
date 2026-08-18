@@ -25,11 +25,8 @@ import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 import { AI_TOOLS } from "../lib/ai-tools";
-import {
-  isGeminiModelId,
-  isOpenAIModelId,
-  OPENAI_STRUCTURED_PRIMARY_MODEL,
-} from "../lib/ai-models";
+import { isGeminiModelId, isOpenAIModelId } from "../lib/ai-models";
+import { AI_GATEWAY_BASE_URL, gatewayHeaders, isAIGatewayConfigured } from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
@@ -182,9 +179,14 @@ function responseText(payload: Record<string, unknown>) {
   return chunks.join("\n");
 }
 
-async function extractImageAsset(fileName: string, dataUrl: string): Promise<ExtractedConfig> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw AppError.fromHttpStatus(503, "Image intake requires an OpenAI runtime key.");
+export async function extractImageAsset(fileName: string, dataUrl: string): Promise<ExtractedConfig> {
+  if (!isAIGatewayConfigured()) {
+    throw AppError.fromHttpStatus(503, "Image intake requires AI Gateway configuration.");
+  }
+  // Grok 4.5 accepts images through AI Gateway. Keep this separate from the
+  // text route because uploaded-image content must not be flattened by the
+  // text-only structured-runtime adapter.
+  const visionModel = process.env.WIRELINE_GATEWAY_VISION_MODEL?.trim() || "xai/grok-4.5";
   const schemaDefinition = {
     type: "object",
     additionalProperties: false,
@@ -215,14 +217,11 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
     required: ["directives", "knowledge", "personality"],
   };
   const startedAt = Date.now();
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch(`${AI_GATEWAY_BASE_URL}/responses`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: gatewayHeaders(),
     body: JSON.stringify({
-      model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+      model: visionModel,
       instructions:
         "Analyze the uploaded image only for explicit business facts, operating rules, service details, schedules, product details, or tone direction that can safely train a voice agent. Do not infer private information or create facts that are not visibly supported.",
       input: [
@@ -250,12 +249,12 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
   });
   if (!response.ok) throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
   const payload = (await response.json()) as Record<string, unknown>;
-  // This path calls the Responses API through raw fetch rather than
-  // runStructured, so it never passes through ai-structured's recordUsage.
+  // This multimodal path calls Gateway directly rather than the text-only
+  // structured adapter, so record its measured usage explicitly.
   // Without this the vision spend is invisible to the audit ledger and the
   // route's withAudit wrapper captures nothing.
   recordUsage(
-    OPENAI_STRUCTURED_PRIMARY_MODEL,
+    String(payload.model || visionModel),
     payload as { model?: string; usage?: unknown },
     Date.now() - startedAt,
   );
