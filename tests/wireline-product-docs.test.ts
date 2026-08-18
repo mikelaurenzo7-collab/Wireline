@@ -123,19 +123,23 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline | Voice agents that get the work done");
-    expect(head).toContain("Build one for your business or your life.");
-    expect(head).toContain("call, answer, text, email, book, and follow through");
-    expect(head).toContain("personal voice agent");
-    expect(head).toContain("business voice agent");
+    expect(head).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
+    expect(head).toContain("Build a voice-first Bot");
+    expect(head).toContain("answers and makes calls");
+    expect(head).toContain("live conversations, text, and email");
+    expect(head).toContain("one workspace");
+    expect(head).toContain("Voice Bots");
+    expect(head).toContain("Conversation Bots");
+    expect(head).toContain("Human Bots");
     expect(head).not.toContain("AI employee");
     expect(head).not.toContain("multichannel AI employee");
     expect(head).not.toContain("—");
-    expect(ogImage).toMatch(/Voice agents that[\s\S]*get the work done\./);
-    // The channel strip that used to sit here rendered at ~5px in a link
-    // preview. The offer line carries the card instead; legibility floors are
-    // enforced in static-metadata-contract.
-    expect(ogImage).toContain("Build free. Go live from $19/mo.");
+    expect(ogImage).toContain("BOTS THAT GET");
+    expect(ogImage).toContain("THE WORK DONE");
+    expect(ogImage).toContain("VOICE-FIRST / CALLS / LIVE CONVERSATIONS / TEXT / EMAIL");
+    expect(ogImage).toContain("ONE WORKSPACE / TRYWIRELINE.COM");
+    expect(ogImage).not.toContain("Voice agents that");
+    expect(ogImage).not.toContain("Build free. Go live from $19/mo.");
     expect(ogImage).not.toContain("·");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
