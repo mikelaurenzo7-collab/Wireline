@@ -1,14 +1,15 @@
-/* ════════════════════════════════════════════════════════════════════════
-   Agent presence — authenticated product slot for "put a face to your agent".
-
-   Distinct from the public .vr marketing stage: quieter, task-first, still
-   unmistakably Wireline (copper cap, ink frame, deterministic face fallback).
-   ════════════════════════════════════════════════════════════════════════ */
+/*
+ * Wireline Bot presence -----------------------------------------------------
+ * Active product presence is a compact, role-agnostic Bot Mark plus optional
+ * name/role metadata. Human faces, catalog thumbnails, video stages, presenter
+ * session chrome, and talking-head waveform overlays are intentionally absent.
+ */
 
 .wl-presence {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
 }
 
 .wl-presence__frame {
@@ -16,350 +17,70 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: var(--wireline-radius-lg);
   border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
   background:
     radial-gradient(
-      120% 80% at 50% 0%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 16%, transparent),
-      transparent 62%
+      circle at 30% 18%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 10%, transparent),
+      transparent 52%
     ),
-    color-mix(in srgb, var(--wireline-color-canvas-default) 72%, #000);
-  box-shadow: var(--wireline-elevation-sm);
+    color-mix(
+      in srgb,
+      var(--wireline-color-surface-default) 92%,
+      var(--wireline-color-canvas-default)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent),
+    var(--wireline-elevation-sm);
 }
 
 .wl-presence__frame::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 1rem;
-  right: 1rem;
-  height: 2px;
-  border-radius: 999px;
-  z-index: 1;
+  right: 0.8rem;
+  left: 0.8rem;
+  height: 1px;
+  pointer-events: none;
   background: linear-gradient(
     90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 70%, transparent) 55%,
+    transparent,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 48%, transparent),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 56%, transparent),
     transparent
   );
-}
-
-.wl-presence--inline .wl-presence__frame {
-  width: 3.25rem;
-  height: 3.25rem;
-  flex: none;
-  border-radius: 12px;
 }
 
 .wl-presence--stage .wl-presence__frame {
-  aspect-ratio: 4 / 5;
-  width: 100%;
-  max-width: 220px;
-  padding-bottom: 12%;
+  width: min(100%, 12rem);
+  aspect-ratio: 1;
+  padding: 1.35rem;
 }
 
-.wl-presence--stage .wl-presence__face .wl-agent-face {
-  width: 58%;
-  max-width: 140px;
-  height: auto;
-  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
-}
-
-.wl-presence__face {
-  display: grid;
-  place-items: center;
-  padding: 0.35rem;
-}
-
-.wl-presence__live {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 80%, transparent);
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 88%, #000);
-  font-family: var(--wireline-font-mono);
-  /* 11px is the product's smallest legible tier. At 9px with positive tracking
-     this chip — which carries the session's actual state — was roughly a 6px
-     x-height. */
-  font-size: var(--wireline-typography-overline-size);
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--wireline-color-text-secondary);
-  backdrop-filter: blur(10px);
-}
-
-.wl-presence__live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--wireline-color-status-success);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-success) 28%, transparent);
-}
-
-/* An ended or failed session must not keep flying a success-green dot. */
-.wl-presence-live--ended .wl-presence__live-dot {
-  background: var(--wireline-color-status-neutral);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-neutral) 24%, transparent);
-}
-
-.wl-presence-live--offline .wl-presence__live-dot {
-  background: var(--wireline-color-status-error);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wireline-color-status-error) 24%, transparent);
-}
-
-/**
- * End-of-session panel. Anchored to the bottom of the frame behind a scrim
- * rather than floated over the presenter's face, so the explanation and its
- * action read as stage furniture instead of an overlay on the person.
- */
-.wl-presence-live__ending,
-.wl-presence-live__actions {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.25rem 1rem 1rem;
-  text-align: center;
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--wireline-color-canvas-default) 92%, #000),
-    transparent
-  );
-}
-
-.wl-presence-live__ending-title {
-  margin: 0;
-  font-size: var(--wireline-typography-body-size, 14px);
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-presence-live__ending-detail {
-  margin: 0;
-  max-width: 34ch;
-  font-size: 12px;
-  line-height: 1.45;
-  /* text-tertiary, not a diluted secondary: this sits on a dark scrim and has
-     to stay above 4.5:1 in both themes. */
-  color: var(--wireline-color-text-tertiary);
-}
-
-.wl-presence-live__action {
-  min-height: 44px;
-  padding: 0.5rem 1rem;
-  border-radius: var(--wireline-radius-md);
-  border: 1px solid var(--wireline-color-border-default);
-  background: var(--wireline-color-surface-default);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--wireline-color-text-primary);
-  box-shadow: var(--wireline-elevation-card, 0 1px 2px rgb(0 0 0 / 0.2));
-}
-
-.wl-presence-live__action:hover {
-  border-color: var(--wireline-color-action-primary-default);
-}
-
-.wl-presence-live__action:focus-visible {
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
-}
-
-.wl-presence__strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid var(--wireline-color-border-soft);
-  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 88%, transparent);
-  padding: 0.55rem 0.75rem;
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-presence__strip strong {
-  font-weight: 600;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-presence__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 999px;
-  border: 1px solid var(--wireline-color-border-soft);
-  background: var(--wireline-color-surface-default);
-  padding: 0.15rem 0.5rem;
-  font-family: var(--wireline-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wireline-color-text-tertiary);
-}
-
-.wl-presence__wave {
-  position: absolute;
-  bottom: 10%;
-  left: 50%;
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 18px;
-  transform: translateX(-50%);
-}
-
-.wl-presence__wave span {
-  display: block;
-  width: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 75%, transparent);
-  animation: wl-presence-wave 1.1s ease-in-out infinite;
-}
-
-.wl-presence__wave span:nth-child(1) {
-  height: 35%;
-  animation-delay: 0ms;
-}
-.wl-presence__wave span:nth-child(2) {
-  height: 70%;
-  animation-delay: 120ms;
-}
-.wl-presence__wave span:nth-child(3) {
-  height: 100%;
-  animation-delay: 240ms;
-}
-.wl-presence__wave span:nth-child(4) {
-  height: 55%;
-  animation-delay: 360ms;
-}
-.wl-presence__wave span:nth-child(5) {
-  height: 80%;
-  animation-delay: 480ms;
-}
-
-@keyframes wl-presence-wave {
-  0%,
-  100% {
-    transform: scaleY(0.45);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-.wl-presence-live {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  width: 100%;
-  max-width: 220px;
-  overflow: hidden;
-}
-
-/* Dedicated product-stage geometry. The portrait constraint above is correct
-   for compact identity slots but made the mounted Live Video Studio render a
-   220px thumbnail even when the page requested a widescreen canvas. */
-.wl-presence-live--stage {
-  aspect-ratio: 16 / 9;
-  max-width: none;
-  width: 100%;
-  min-height: 260px;
-  border-radius: var(--wireline-radius-xl);
-  box-shadow: var(--wireline-elevation-md);
-}
-
-.wl-presence-live--stage .wl-presence__face {
-  width: 100%;
-  height: 100%;
-}
-
-.wl-presence-live--stage .wl-presence__face .wl-agent-face {
-  width: clamp(7rem, 20%, 11rem);
-  height: auto;
-  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.42));
-}
-
-.wl-presence-live__video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 80%, #000);
-}
-
-.wl-presence-live--stage .wl-presence-live__video {
-  object-position: center 18%;
-}
-
-.wl-presence-live__loading {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  text-align: center;
-  font-size: 11px;
-  color: var(--wireline-color-text-secondary);
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 10%, transparent),
-      transparent 38%
-    ),
-    color-mix(in srgb, var(--wireline-color-canvas-default) 72%, #000);
-}
-
-@media (max-width: 767px) {
-  .wl-presence-live--stage {
-    min-height: 210px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wl-presence__wave span {
-    animation: none;
-    opacity: 0.65;
-    transform: scaleY(0.7);
-  }
-}
-
-/* ── Ink frame — copper corner marks on stage surfaces (Wireline signature) ── */
-.wl-presence--ink .wl-presence__frame--ink,
+/* Ink frame: the larger identity slot gets the same platinum/violet wire
+ * treatment as the authenticated rail, without implying operational state. */
 .wl-presence__frame--ink {
-  border-width: 1px;
-  border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, #000);
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-secondary-default) 18%,
+    var(--wireline-color-border-default)
+  );
   background:
     radial-gradient(
-      140% 90% at 12% 0%,
-      color-mix(in srgb, var(--wireline-color-action-primary-container) 22%, transparent),
+      120% 90% at 14% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
       transparent 58%
     ),
     radial-gradient(
-      90% 70% at 100% 100%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-container) 18%, transparent),
-      transparent 52%
+      90% 75% at 100% 100%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 7%, transparent),
+      transparent 58%
     ),
-    color-mix(in srgb, var(--wireline-color-canvas-default) 68%, #000);
+    var(--wireline-color-surface-default);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--wireline-color-action-secondary-default) 12%, transparent),
-    var(--wireline-elevation-sm);
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 6%, transparent),
+    0 20px 42px -34px rgba(0, 0, 0, 0.78);
 }
 
 .wl-presence__frame--ink::after {
@@ -367,30 +88,70 @@
   position: absolute;
   inset: 7px;
   pointer-events: none;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--wireline-color-text-primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent);
+  border-radius: calc(var(--wireline-radius-xl) - 6px);
 }
 
-.wl-presence--ink .wl-presence__frame--ink::before {
-  left: 0.65rem;
-  right: 0.65rem;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 65%, transparent) 48%,
-    transparent 100%
+.wl-presence__strip {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--wireline-color-border-soft);
+  border-radius: var(--wireline-radius-md);
+  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 86%, transparent);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.wl-presence__strip strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wireline-color-text-primary);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-presence__chip {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--wireline-color-action-secondary-default) 16%,
+    var(--wireline-color-border-soft)
   );
+  border-radius: var(--wireline-radius-pill);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-tertiary);
+  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.065em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-/* Catalog face thumbnail — peeks from identity slot when a face is saved */
-.wl-presence__catalog-thumb {
-  width: 1.65rem;
-  height: 1.65rem;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 2px solid var(--wireline-color-canvas-default);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--wireline-color-action-secondary-default) 55%, transparent),
-    var(--wireline-elevation-sm);
+@media (max-width: 639px) {
+  .wl-presence--stage .wl-presence__frame {
+    width: min(100%, 10rem);
+    padding: 1.1rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .wl-presence__frame,
+  .wl-presence__strip,
+  .wl-presence__chip {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
 }
