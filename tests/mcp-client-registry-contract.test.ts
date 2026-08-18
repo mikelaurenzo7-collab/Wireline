@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   isAnthropicRedirectUri,
+  isClaudeCodeClientMetadataUrl,
   isCursorRedirectUri,
+  isLoopbackCallbackUri,
   isTrustedDynamicRedirectUri,
   MCP_DYNAMIC_CLIENT_ID_PREFIX,
   newDynamicClientId,
+  redirectUriMatches,
 } from "../src/lib/mcp-client-registry";
 
 describe("mcp client registry contract", () => {
@@ -22,6 +25,8 @@ describe("mcp client registry contract", () => {
     expect(isCursorRedirectUri("https://www.cursor.com/agents/mcp/oauth/callback")).toBe(true);
     expect(isCursorRedirectUri("http://localhost:8787/callback")).toBe(true);
     expect(isCursorRedirectUri("https://evil.example/agents/mcp/oauth/callback")).toBe(false);
+    expect(isCursorRedirectUri("https://trywireline.com/mcp/oauth/callback")).toBe(false);
+    expect(isCursorRedirectUri("https://trywireline.com/oauth/callback")).toBe(false);
   });
 
   it("rejects unknown dynamic registration redirect URIs", () => {
@@ -33,5 +38,18 @@ describe("mcp client registry contract", () => {
     const id = newDynamicClientId();
     expect(id.startsWith(MCP_DYNAMIC_CLIENT_ID_PREFIX)).toBe(true);
     expect(id.length).toBeLessThanOrEqual(128);
+  });
+
+  it("accepts Claude Code CIMD loopback redirects with the port ignored", () => {
+    expect(
+      isClaudeCodeClientMetadataUrl("https://claude.ai/oauth/claude-code-client-metadata"),
+    ).not.toBeNull();
+    expect(isLoopbackCallbackUri("http://127.0.0.1:8787/callback")).toBe(true);
+    expect(redirectUriMatches("http://127.0.0.1/callback", "http://127.0.0.1:8787/callback")).toBe(
+      true,
+    );
+    expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:4444/callback"),
+    ).toBe(false);
   });
 });

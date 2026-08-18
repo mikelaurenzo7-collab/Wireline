@@ -1,5 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 
+import {
+  isAnthropicRedirectUri,
+  isChatGptRedirectUri,
+  isCursorRedirectUri,
+  isLoopbackCallbackUri,
+} from "../lib/mcp-client-registry";
 import { mcpIssuer } from "../lib/mcp-oauth-security";
 
 const METADATA_PATHS = new Set([
@@ -7,14 +13,23 @@ const METADATA_PATHS = new Set([
   "/.well-known/oauth-authorization-server/mcp",
 ]);
 
+function callbackWithoutQuery(location: string): string {
+  const url = new URL(location);
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
 function isAuthorizationCallback(location: string): boolean {
   try {
     const url = new URL(location);
+    if (!url.searchParams.has("code") && !url.searchParams.has("error")) return false;
+    const clean = callbackWithoutQuery(location);
     return (
-      url.protocol === "https:" &&
-      url.hostname === "chatgpt.com" &&
-      url.pathname.startsWith("/connector/oauth/") &&
-      (url.searchParams.has("code") || url.searchParams.has("error"))
+      isChatGptRedirectUri(clean) ||
+      isAnthropicRedirectUri(clean) ||
+      isCursorRedirectUri(clean) ||
+      isLoopbackCallbackUri(clean)
     );
   } catch {
     return false;
@@ -26,8 +41,8 @@ function isAuthorizationCallback(location: string): boolean {
  *
  * CIMD clients can use one redirect URI with multiple authorization servers,
  * so the authorization response should bind itself to the issuer to prevent
- * mix-up attacks. ChatGPT validates the callback before exchanging the code;
- * without this binding the flow can stop after code issuance with no token call.
+ * mix-up attacks. ChatGPT, Claude hosted connectors, Claude Code, and Cursor
+ * all receive `iss` on the callback when they complete authorization.
  */
 export function mcpOAuthIssuerBinding(req: Request, res: Response, next: NextFunction): void {
   if (req.method === "GET" && METADATA_PATHS.has(req.path)) {

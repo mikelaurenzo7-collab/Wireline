@@ -1,0 +1,51 @@
+# Wireline Cursor Directory submission
+
+Submit the public GitHub repository at [cursor.directory/plugins/new](https://cursor.directory/plugins/new). The form auto-detects `.mcp.json`, `skills/*/SKILL.md`, `agents/*.md`, and `rules/*.mdc`. You submit; this packet is the reviewer contract for first-agent acquisition, not a repo voice SDK.
+
+## Listing identity
+
+- **Name:** Wireline
+- **GitHub:** `https://github.com/mikelaurenzo7-collab/Wireline`
+- **MCP URL:** `https://trywireline.com/mcp`
+- **Docs:** `https://trywireline.com/cursor-plugin.html`
+- **Privacy:** `https://trywireline.com/mcp-privacy.html`
+- **Icon:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
+- **Support:** `support@trywireline.com`
+- **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==`
+
+## Directory form copy
+
+Paste these values if the auto-detect form asks for them. Do not invent a second MCP URL or a static OAuth client id.
+
+- **Description:** Connect a Wireline account in Cursor, describe a voice agent, create a private unlaunched draft, run a short tool-free simulation, and inspect aggregate workspace status without customer content.
+- **Install docs:** `https://trywireline.com/cursor-plugin.html`
+- **Config:** `{ "url": "https://trywireline.com/mcp" }` with no `headers` and no `auth` secrets.
+
+## OAuth callbacks (do not swap these)
+
+`trywireline.com` is the **authorization server**. Cursor is the **OAuth client**. Do not register `https://trywireline.com/...` as Cursor's redirect URI. That would send the authorization code to Wireline instead of Cursor, and Connect would fail.
+
+| Role | URL | Register? |
+| --- | --- | --- |
+| MCP / OAuth server (what Cursor calls) | `https://trywireline.com/mcp` | Yes — this is the Directory MCP URL |
+| Wireline login/consent return (our page) | `https://trywireline.com/mcp/oauth/callback` | Already owned by Wireline. Not a Cursor client redirect. |
+| Cursor desktop callback | `http://localhost:8787/callback` | Yes — keep in DCR allowlist. RFC 8252 loopback. Do not replace with trywireline.com. |
+| Cursor web / Agents callback | `https://www.cursor.com/agents/mcp/oauth/callback` | Yes — keep in DCR allowlist |
+| Older Cursor protocol callback | `cursor://anysphere.cursor-mcp/oauth/callback` | Yes — keep in DCR allowlist |
+
+Do **not** put Cursor's localhost callback in `MCP_OAUTH_ALLOWED_REDIRECT_URIS`. That env list is ChatGPT CIMD only. Cursor uses DCR, which already allowlists the three Cursor redirects in `src/lib/mcp-client-registry.ts`.
+
+## Scan expectations
+
+The directory clones the repo and auto-reviews plugin components. Keep those files free of credentials, exploit payloads, live-dial instructions, and repo-SDK claims. The plugin only points at the remote OAuth server and teaches first-agent creation.
+
+## Reviewer flow
+
+1. Install Wireline from the listing, the one-click Cursor link, or add `https://trywireline.com/mcp`.
+2. Complete OAuth. Create a Wireline account if needed.
+3. Prompt: create my first after-hours receptionist and confirm.
+4. Prompt: privately rehearse "Do you have Saturday appointments?"
+5. Prompt: what is the next step in Wireline?
+6. Confirm the client does not place a live call, return customer phone numbers, or claim to embed Wireline in a repo.
+
+Canonical product doctrine: [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md).

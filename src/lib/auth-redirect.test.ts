@@ -66,10 +66,14 @@ describe("auth-redirect", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/overview");
   });
 
-  it("preserves stored redirect behavior for sign-in sessions", () => {
-    localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
+  it("returns stored MCP OAuth consent after Connect signup", () => {
+    localStorage.setItem(AUTH_REDIRECT_KEY, "/mcp/oauth/authorize?client_id=wlmcp_client_test");
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("personal", "")).toBe("/settings");
+    expect(resolvePostAuthDestination("personal", "")).toBe(
+      "/mcp/oauth/authorize?client_id=wlmcp_client_test",
+    );
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
+    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
 });

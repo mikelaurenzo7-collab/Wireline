@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <title>Wireline MCP Connector Privacy Notice</title>
+  <link rel="stylesheet" href="/static-legal.css" />
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Wireline</div>
+    <h1>MCP Connector Privacy Notice</h1>
+    <p>This notice explains the data practices for the Wireline remote MCP server used inside Claude, ChatGPT, Cursor, and other MCP clients. It supplements the <a href="/privacy">Wireline Privacy Policy</a>. The ChatGPT-specific notice remains at <a href="/chatgpt-app-privacy.html">ChatGPT App Privacy Notice</a>. Cursor plugin documentation is at <a href="/cursor-plugin.html">Wireline for Cursor</a>.</p>
+
+    <section class="card">
+      <strong>Account-bound product:</strong> the Wireline MCP connector requires a Wireline account. New users create that account during OAuth so they can build their first voice agent in Cursor, ChatGPT, or Claude. It creates and refines private, unlaunched agent drafts in the connected workspace, can run a short private voice simulation or a private text rehearsal of those agents, can return a privacy-minimized aggregate workspace summary and per-agent next-step status, and can return owner-authored Training facts and rules. Confirmed Training writes land in Wireline only after the account holder enables that permission in Apps. It does not place live calls, send messages, purchase or connect phone numbers, access call recordings or transcripts, or launch an agent from the connecting client.
+    </section>
+
+    <h2>Information used to create an agent</h2>
+    <p>When a connected user creates or updates an agent draft, Wireline processes the agent name, business or brand, intended role, goal, voice and tone preferences, operating rules, knowledge summary, intended actions, prohibited topics, and escalation preferences supplied in the conversation. This information becomes part of the user’s private Wireline workspace draft and may be edited or deleted in Wireline.</p>
+
+    <h2>Information returned to the connecting client</h2>
+    <p>To fulfill a user’s request, Wireline may return the connected user’s agent draft identifier, agent name, role, business name, primary goal, tone, operating rules, prohibited topics, allowed actions, escalation policy, knowledge summary, draft lifecycle, and a link to open the draft in Wireline. Agent-list results may include agent identifiers, names, roles, and channels. Agent-status results may include whether the agent is on the phone network, a next-step sentence, and Wireline links. They do not include the phone number itself. A coaching brief may include owner-authored Training facts and operating rules, never customer communications. An aggregate workspace summary may include counts of agents and assigned numbers, recent call/text/email thread counts, unread counts, channel connection state, activation state, subscription status, last-activity time, and a Wireline link. The summary does not include customer identities, phone numbers, email addresses, message bodies, transcripts, recordings, provider credentials, or secrets. A private simulation credential is provided only to the host widget in protected metadata and is not included in the model-visible conversation. A private text rehearsal returns the agent’s rehearsal reply and an explicit <code>live_call: false</code> flag.</p>
+
+    <h2>Private voice simulation</h2>
+    <p>If a connected user selects <strong>Try private voice</strong>, the app requests microphone access through the host widget surface and creates a short-lived, tool-free realtime simulation for that saved draft. The simulation cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the simulation to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
+
+    <h2>Account connection and permissions</h2>
+    <p>Wireline uses OAuth 2.0 with PKCE to connect the user’s MCP client to their private Wireline account. Claude.ai connectors register dynamically. Claude Code identifies itself with Anthropic’s published Client ID Metadata Document and a loopback callback. ChatGPT uses a Client ID Metadata Document hosted on chatgpt.com. Cursor registers dynamically against Cursor-operated callbacks. Wireline uses the connection only for the scopes shown during consent. The consent screen shows the connecting app name and the relying-party hostname. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the Wireline MCP resource.</p>
+
+    <h2>How data is used</h2>
+    <p>We use connector data to provide requested first-agent drafting, private simulation, owner-authored Training reads and confirmed Training writes, aggregate workspace visibility, account-linking, security, and abuse prevention. We do not sell or share personal information for cross-context behavioral advertising. We do not use account-bound agent-draft inputs or private simulation audio to train Wireline models.</p>
+
+    <h2>Retention and controls</h2>
+    <p>Agent drafts become part of the connected Wireline account and may be edited or deleted in Wireline. Aggregate workspace summaries are generated from current account state when requested and are not stored as a separate MCP record by Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or privacy requests: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
+
+    <p><small>Last updated: August 17, 2026</small></p>
+  </main>
+</body>
+</html>

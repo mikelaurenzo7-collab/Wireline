@@ -5,11 +5,16 @@ import { AppError } from "../lib/api-error";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { mcpCatalog, mcpServerCard } from "../lib/mcp-app-metadata";
 import {
   clientDisplayName,
   isDynamicClientId,
+  isTrustedCimdClientId,
+  isTrustedCimdRedirectUri,
   newDynamicClientId,
   oauthErrorCode,
+  redirectUriAllowed,
+  relyingPartyHost,
   validateDynamicClientRegistration,
 } from "../lib/mcp-client-registry";
 import {
@@ -92,34 +97,10 @@ function escapeHtml(value: string): string {
   );
 }
 
-function isChatGptClientMetadataUrl(clientId: string): URL | null {
-  try {
-    const url = new URL(clientId);
-    if (url.protocol !== "https:" || url.hostname !== "chatgpt.com") return null;
-    if (!/^\/oauth\/.+\/client\.json$/.test(url.pathname)) return null;
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-function isChatGptRedirectUri(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return (
-      url.protocol === "https:" &&
-      url.hostname === "chatgpt.com" &&
-      url.pathname.startsWith("/connector/oauth/")
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function fetchChatGptClientMetadata(clientId: string): Promise<ClientMetadata | null> {
+async function fetchCimdClient(clientId: string): Promise<ClientMetadata | null> {
   const cached = clientMetadataCache.get(clientId);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
-  const url = isChatGptClientMetadataUrl(clientId);
+  const url = isTrustedCimdClientId(clientId);
   if (!url) return null;
   try {
     const response = await fetchWithTimeout(
@@ -129,10 +110,15 @@ async function fetchChatGptClientMetadata(clientId: string): Promise<ClientMetad
     );
     if (!response.ok || !response.headers.get("content-type")?.includes("application/json"))
       return null;
-    const payload = (await response.json()) as { redirect_uris?: unknown };
+    const payload = (await response.json()) as {
+      client_id?: unknown;
+      redirect_uris?: unknown;
+    };
+    if (typeof payload.client_id === "string" && payload.client_id !== clientId) return null;
     const redirectUris = Array.isArray(payload.redirect_uris)
       ? payload.redirect_uris.filter(
-          (value): value is string => typeof value === "string" && isChatGptRedirectUri(value),
+          (value): value is string =>
+            typeof value === "string" && isTrustedCimdRedirectUri(url, value),
         )
       : [];
     if (!redirectUris.length) return null;
@@ -143,7 +129,7 @@ async function fetchChatGptClientMetadata(clientId: string): Promise<ClientMetad
     });
     return value;
   } catch (error) {
-    log.warn("ChatGPT OAuth client metadata lookup failed", {
+    log.warn("MCP OAuth client metadata lookup failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;
@@ -177,12 +163,12 @@ async function validateOAuthClient(clientId: string, redirectUri: string): Promi
   // Claude connectors register through RFC 7591 dynamic client registration,
   // which pins their callback set to Anthropic-operated hosts at registration.
   const dynamicClient = await fetchDynamicClient(clientId);
-  if (dynamicClient) return dynamicClient.redirectUris.includes(redirectUri);
+  if (dynamicClient) return redirectUriAllowed(dynamicClient.redirectUris, redirectUri);
 
-  // ChatGPT's standard Apps SDK path uses a Client ID Metadata Document (CIMD).
-  // The metadata URL is the client_id and declares the exact callback URI.
-  const metadata = await fetchChatGptClientMetadata(clientId);
-  return Boolean(metadata?.redirectUris.includes(redirectUri));
+  // ChatGPT and Claude Code identify themselves with a Client ID Metadata
+  // Document. The metadata URL is the client_id and declares the callbacks.
+  const metadata = await fetchCimdClient(clientId);
+  return Boolean(metadata && redirectUriAllowed(metadata.redirectUris, redirectUri));
 }
 
 async function validateAuthorizationRequest(
@@ -223,6 +209,10 @@ async function validateAuthorizationRequest(
   return { clientId, redirectUri, state, codeChallenge, scopes, resource };
 }
 
+function mcpAccountConnectPath(authorizeUrl: string): string {
+  return `/signup?redirect=${encodeURIComponent(authorizeUrl)}`;
+}
+
 function oauthConsentPage(request: AuthorizationRequest, user: { email: string }): string {
   const hidden = Object.entries({
     response_type: "code",
@@ -242,8 +232,15 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
   const scopeList = request.scopes
     .map((scope) => `<li>${escapeHtml(scope.replace(".", " "))}</li>`)
     .join("");
-  const client = escapeHtml(clientDisplayName(request.redirectUri));
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Connect Wireline</title><link rel="stylesheet" href="/static-legal.css" /></head><body class="oauth-consent"><main class="card"><div class="eyebrow">Wireline account connection</div><h1>Connect Wireline to ${client}</h1><p>Signed in as <strong>${escapeHtml(user.email)}</strong>. ${client} will be able to:</p><ul>${scopeList}</ul><p class="muted">Wireline will not place calls, send messages, connect phone numbers, or launch an agent without a separate explicit confirmation.</p><form method="post" action="/mcp/oauth/authorize">${hidden}<button type="submit">Allow ${client} to use Wireline</button></form></main></body></html>`;
+  const client = escapeHtml(clientDisplayName(request.redirectUri, request.clientId));
+  const partyHost = escapeHtml(relyingPartyHost(request.clientId, request.redirectUri));
+  const callback = escapeHtml(request.redirectUri);
+  const loopbackWarning =
+    request.redirectUri.startsWith("http://localhost") ||
+    request.redirectUri.startsWith("http://127.0.0.1")
+      ? `<p class="muted">This callback returns to a local address (<code>${callback}</code>). Only continue if you started this connection from Claude Code or another app on this computer.</p>`
+      : `<p class="muted">After you allow, you will return to <code>${callback}</code>.</p>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Connect Wireline</title><link rel="stylesheet" href="/static-legal.css" /></head><body class="oauth-consent"><main class="card"><div class="eyebrow">Wireline account connection</div><h1>Connect Wireline to ${client}</h1><p>Signed in as <strong>${escapeHtml(user.email)}</strong>. ${client} (<strong>${partyHost}</strong>) will be able to:</p><ul>${scopeList}</ul>${loopbackWarning}<p class="muted">New users create a Wireline account before this screen. Connecting does not place calls, send messages, connect phone numbers, or launch an agent. Draft changes, private rehearsals, and Training writes each need a separate confirmation. Training facts and rules land in Wireline only after you enable connected-app Training writes in Apps.</p><form method="post" action="/mcp/oauth/authorize">${hidden}<button type="submit">Allow ${client} to use Wireline</button></form></main></body></html>`;
 }
 
 async function ensureMcpSchema(): Promise<void> {
@@ -499,7 +496,7 @@ router.get("/mcp/oauth/authorize", async (req, res, next) => {
     const request = await validateAuthorizationRequest(req.query as Record<string, unknown>, req);
     const principal = await sessionPrincipal(req);
     if (!principal)
-      return res.redirect(`/signin?redirect=${encodeURIComponent(req.originalUrl || req.url)}`);
+      return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
     res.setHeader("Cache-Control", "no-store");
     return res.type("html").send(oauthConsentPage(request, { email: principal.email }));
   } catch (error) {
@@ -515,7 +512,7 @@ router.post(
       const request = await validateAuthorizationRequest(req.body as Record<string, unknown>, req);
       const principal = await sessionPrincipal(req);
       if (!principal)
-        return res.redirect(`/signin?redirect=${encodeURIComponent(req.originalUrl || req.url)}`);
+        return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
       await ensureMcpSchema();
       const code = publicId();
       await drizzle.execute(
@@ -628,6 +625,16 @@ router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (
   } catch (error) {
     next(error);
   }
+});
+
+router.get(["/mcp/server-card", "/server-card"], (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json(mcpServerCard(req));
+});
+
+router.get("/.well-known/mcp/catalog.json", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json(mcpCatalog(req));
 });
 
 // session-termination requests with 405 rather than an opaque 404.

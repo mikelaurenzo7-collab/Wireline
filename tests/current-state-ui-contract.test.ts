@@ -83,9 +83,12 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");
-    expect(developers).toContain("Private-by-default boundary");
+    expect(developers).toContain("Add to Cursor");
+    expect(developers).toContain(
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==",
+    );
     expect(developers.replace(/\s+/g, " ")).toContain(
-      "this connector cannot place calls, send messages, provision numbers, or launch a live voice agent",
+      "This connector cannot place calls, send messages, provision numbers, or launch a live voice agent",
     );
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");

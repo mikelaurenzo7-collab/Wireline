@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import { AppError } from "./api-error";
 import {
   clientDisplayName,
+  connectedAppLabel,
   isAnthropicRedirectUri,
+  isClaudeCodeClientMetadataUrl,
   isCursorRedirectUri,
   isDynamicClientId,
+  isLoopbackCallbackUri,
   mcpDraftSourceForClient,
   newDynamicClientId,
   oauthErrorCode,
+  redirectUriMatches,
+  relyingPartyHost,
   validateDynamicClientRegistration,
 } from "./mcp-client-registry";
 
@@ -30,6 +35,7 @@ describe("mcp dynamic client registration", () => {
     expect(isAnthropicRedirectUri("https://claude.ai/other/path")).toBe(false);
     expect(isAnthropicRedirectUri(42)).toBe(false);
     expect(isCursorRedirectUri("https://evil.cursor.com/agents/mcp/oauth/callback")).toBe(false);
+    expect(isCursorRedirectUri("https://trywireline.com/mcp/oauth/callback")).toBe(false);
   });
 
   it("registers a bounded public client from a Claude registration document", () => {
@@ -72,6 +78,14 @@ describe("mcp dynamic client registration", () => {
     }
   });
 
+  it("rejects trywireline.com as a Cursor client redirect", () => {
+    expect(() =>
+      validateDynamicClientRegistration({
+        redirect_uris: ["https://trywireline.com/mcp/oauth/callback"],
+      }),
+    ).toThrowError(AppError);
+  });
+
   it("rejects confidential clients and unsupported grants", () => {
     expect(() =>
       validateDynamicClientRegistration({
@@ -100,7 +114,63 @@ describe("mcp dynamic client registration", () => {
     expect(clientDisplayName("https://claude.com/api/mcp/auth_callback")).toBe("Claude");
     expect(clientDisplayName("cursor://anysphere.cursor-mcp/oauth/callback")).toBe("Cursor");
     expect(clientDisplayName("https://chatgpt.com/connector/oauth/callback")).toBe("ChatGPT");
+    expect(
+      clientDisplayName(
+        "http://localhost:3118/callback",
+        "https://claude.ai/oauth/claude-code-client-metadata",
+      ),
+    ).toBe("Claude Code");
     expect(clientDisplayName("not-a-url")).toBe("your MCP client");
+  });
+
+  it("labels stored MCP grants from callback metadata, not DCR ids", () => {
+    const dynamicId = newDynamicClientId();
+    expect(
+      connectedAppLabel(dynamicId, "Claude", ["cursor://anysphere.cursor-mcp/oauth/callback"]),
+    ).toBe("Cursor");
+    expect(
+      connectedAppLabel(dynamicId, null, ["https://claude.ai/api/mcp/auth_callback"]),
+    ).toBe("Claude");
+    expect(
+      connectedAppLabel(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        null,
+        ["http://127.0.0.1:3118/callback"],
+      ),
+    ).toBe("Claude Code");
+    expect(
+      connectedAppLabel("https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json", null, [
+        "https://chatgpt.com/connector/oauth/7i4vMCsl-J2L",
+      ]),
+    ).toBe("ChatGPT");
+    expect(connectedAppLabel(dynamicId, null, [])).toBe("Connected app");
+  });
+
+  it("accepts Claude Code CIMD and port-agnostic loopback callbacks", () => {
+    expect(
+      isClaudeCodeClientMetadataUrl("https://claude.ai/oauth/claude-code-client-metadata"),
+    ).not.toBeNull();
+    expect(
+      isClaudeCodeClientMetadataUrl("https://claude.com/oauth/claude-code-client-metadata"),
+    ).not.toBeNull();
+    expect(isLoopbackCallbackUri("http://localhost/callback")).toBe(true);
+    expect(isLoopbackCallbackUri("http://127.0.0.1:3118/callback")).toBe(true);
+    expect(isLoopbackCallbackUri("https://localhost/callback")).toBe(false);
+    expect(redirectUriMatches("http://localhost/callback", "http://localhost:3118/callback")).toBe(
+      true,
+    );
+    expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:4444/callback"),
+    ).toBe(false);
+    expect(
+      redirectUriMatches("http://localhost:8787/callback", "http://localhost:8787/callback"),
+    ).toBe(true);
+    expect(
+      relyingPartyHost(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        "http://localhost:1/callback",
+      ),
+    ).toBe("claude.ai");
   });
 
   it("maps draft source from client and redirect metadata", () => {
@@ -118,6 +188,12 @@ describe("mcp dynamic client registration", () => {
       ]),
     ).toBe("cursor_mcp");
     expect(mcpDraftSourceForClient("https://chatgpt.com/oauth/x/client.json")).toBe("chatgpt_mcp");
+    expect(
+      mcpDraftSourceForClient(
+        "https://claude.ai/oauth/claude-code-client-metadata",
+        "http://localhost:3118/callback",
+      ),
+    ).toBe("claude_mcp");
   });
 });
 

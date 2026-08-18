@@ -12,8 +12,9 @@ const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
 const privacyNotice = read("public/chatgpt-app-privacy.html");
 const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
-  app_info: { logo_url: string };
+  app_info: { logo_url: string; subtitle?: string };
   oauth: { client_url: string };
+  test_cases?: unknown;
   tools: Record<
     string,
     {
@@ -44,11 +45,13 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(registry).toContain("isCursorRedirectUri");
     expect(registry).toContain("cursor://anysphere.cursor-mcp/oauth/callback");
     expect(registry).toContain("https://www.cursor.com/agents/mcp/oauth/callback");
+    expect(registry).toContain("http://localhost:8787/callback");
     expect(registry).toContain("isAnthropicRedirectUri");
   });
 
   it("requires OAuth for every production agent operation", () => {
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
+    expect(accountRouteSource).toContain('title: "Create a Wireline agent draft"');
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
@@ -127,6 +130,10 @@ describe("Wireline ChatGPT App production contract", () => {
       "start_private_voice_simulation",
       "list_wireline_agents",
       "get_wireline_workspace_summary",
+      "get_wireline_agent_status",
+      "run_private_agent_turn",
+      "get_agent_coaching_brief",
+      "train_wireline_agent",
     ]);
     for (const tool of Object.values(submission.tools)) {
       expect(typeof tool.annotations.readOnlyHint).toBe("boolean");
@@ -147,6 +154,11 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(submissionPacket).toContain("No agent launch.");
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
     expect(submissionPacket).toContain("OAuth authorization code flow with PKCE `S256`.");
+    expect(submissionPacket).toContain("Build your first voice agent");
+    expect(submission.app_info.subtitle).toBe("Build your first voice agent");
+    expect(JSON.stringify(submission.test_cases)).toContain("create_agent_draft");
+    expect(JSON.stringify(submission.test_cases)).toContain("get_agent_coaching_brief");
+    expect(JSON.stringify(submission.test_cases)).toContain("train_wireline_agent");
   });
 
   it("does not expose MCP tools that provision numbers, dial, or launch agents", () => {
@@ -161,6 +173,8 @@ describe("Wireline ChatGPT App production contract", () => {
       expect(accountRouteSource).not.toContain(`name: "${name}"`);
     }
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
-    expect(accountRouteSource).toContain("unlaunched Wireline agent draft");
+    expect(accountRouteSource).toContain("unlaunched Wireline voice agent");
+    expect(accountRouteSource).toContain('name: "train_wireline_agent"');
+    expect(accountRouteSource).toContain("readMcpCoachingWritesEnabled");
   });
 });

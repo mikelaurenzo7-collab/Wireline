@@ -7,11 +7,14 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  * occurs through the OAuth-protected tool so every resulting draft belongs to
  * the connected Wireline workspace.
  *
- * Private voice in this ChatGPT-hosted widget uses OpenAI Realtime WebRTC
- * because the iframe may only connect to `https://api.openai.com`. That is not
+ * Private voice in this hosted widget uses OpenAI Realtime WebRTC because
+ * ChatGPT iframes may only connect to `https://api.openai.com`. That is not
  * the Studio or PSTN brain. Tenant tests and phone calls use xAI
- * Speech-to-Speech (`grok-voice-think-fast-2.0`) with a server-minted ephemeral
- * client secret.
+ * Speech-to-Speech (`grok-voice-think-fast-2.0`).
+ *
+ * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
+ * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling
+ * `@modelcontextprotocol/ext-apps`.
  */
 export function buildAccountBoundWidgetHtml(): string {
   return `<!doctype html>
@@ -19,10 +22,11 @@ export function buildAccountBoundWidgetHtml(): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
 <style>${buildWirelineMcpWidgetCss()}</style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Create a Wireline account, then describe the first voice agent you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create your first voice-agent draft.</div><p class="note">The first draft is saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch stay in Wireline.</p></div></div>
 <script>
 (() => {
   const state = {
@@ -77,15 +81,89 @@ export function buildAccountBoundWidgetHtml(): string {
     $("live").classList.remove("show");
   }
 
-  const callTool = (name, args) => new Promise((resolve, reject) => {
-    const id = "wireline-" + (++state.sequence);
-    const timer = setTimeout(() => {
-      state.pending.delete(id);
-      reject(new Error("The request timed out."));
-    }, 30000);
-    state.pending.set(id, { resolve, reject, timer });
-    window.parent.postMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } }, "*");
-  });
+  const isValidOrigin = (origin) => {
+    if (origin === "null") return true;
+    try {
+      const host = new URL(origin).hostname;
+      return (
+        host === "chatgpt.com" ||
+        host.endsWith(".chatgpt.com") ||
+        host === "claude.ai" ||
+        host === "claude.com" ||
+        host.endsWith(".claude.ai") ||
+        host.endsWith(".claude.com") ||
+        host.endsWith(".claudemcpcontent.com") ||
+        host === "cursor.com" ||
+        host.endsWith(".cursor.com") ||
+        host === "localhost" ||
+        host === "127.0.0.1"
+      );
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const applyHostContext = (ctx) => {
+    if (!ctx || typeof ctx !== "object") return;
+    if (ctx.theme === "light" || ctx.theme === "dark") {
+      document.documentElement.dataset.theme = ctx.theme;
+      document.documentElement.style.colorScheme = ctx.theme;
+    }
+    const vars = ctx.styles && ctx.styles.variables;
+    if (vars && typeof vars === "object") {
+      Object.keys(vars).forEach((key) => {
+        const name = key.indexOf("--") === 0 ? key : "--" + key;
+        document.documentElement.style.setProperty(name, String(vars[key]));
+      });
+    }
+    const fonts = ctx.styles && ctx.styles.css && ctx.styles.css.fonts;
+    if (typeof fonts === "string" && fonts && !document.getElementById("wl-host-fonts")) {
+      const style = document.createElement("style");
+      style.id = "wl-host-fonts";
+      style.textContent = fonts;
+      document.head.appendChild(style);
+    }
+    const insets = ctx.safeAreaInsets;
+    if (insets && typeof insets === "object") {
+      const root = $("app");
+      if (root) {
+        root.style.paddingTop = Math.max(14, Number(insets.top) || 0) + "px";
+        root.style.paddingRight = Math.max(14, Number(insets.right) || 0) + "px";
+        root.style.paddingBottom = Math.max(14, Number(insets.bottom) || 0) + "px";
+        root.style.paddingLeft = Math.max(14, Number(insets.left) || 0) + "px";
+      }
+    }
+  };
+
+  const callTool = (name, args) => {
+    const openai = window.openai;
+    if (openai && typeof openai.callTool === "function") {
+      return Promise.resolve(openai.callTool(name, args));
+    }
+    return new Promise((resolve, reject) => {
+      const id = "wireline-" + (++state.sequence);
+      const timer = setTimeout(() => {
+        state.pending.delete(id);
+        reject(new Error("The request timed out."));
+      }, 30000);
+      state.pending.set(id, { resolve, reject, timer });
+      window.parent.postMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } }, "*");
+    });
+  };
+
+  const openExternal = (href) => {
+    const openai = window.openai;
+    if (openai && typeof openai.openExternal === "function") {
+      return Promise.resolve(openai.openExternal({ href: href }));
+    }
+    window.parent.postMessage({
+      jsonrpc: "2.0",
+      id: "wireline-open-" + (++state.sequence),
+      method: "ui/open-link",
+      params: { url: href },
+    }, "*");
+    return Promise.resolve();
+  };
 
   const readResult = (data) => {
     const result = data && data.result ? data.result : data;
@@ -113,9 +191,6 @@ export function buildAccountBoundWidgetHtml(): string {
     }
   };
 
-  const isValidOrigin = (origin) =>
-    origin === "https://chatgpt.com" || origin.endsWith(".chatgpt.com") || origin === "null";
-
   window.addEventListener(
     "message",
     (event) => {
@@ -129,10 +204,56 @@ export function buildAccountBoundWidgetHtml(): string {
         else pending.resolve(msg.result);
         return;
       }
+      if (msg.id === "wireline-ui-init" && msg.result) {
+        applyHostContext(msg.result.hostContext || msg.result);
+        return;
+      }
       if (msg.method === "ui/notifications/tool-result") update(msg.params || {});
+      if (msg.method === "ui/notifications/host-context-changed") applyHostContext(msg.params || {});
     },
     { passive: true },
   );
+
+  if (window.openai) {
+    applyHostContext({
+      theme: window.openai.theme,
+      styles: window.openai.styles,
+      safeAreaInsets: window.openai.safeArea,
+    });
+    if (window.openai.toolOutput) {
+      update({ result: { structuredContent: window.openai.toolOutput, _meta: window.openai.toolResponseMetadata || {} } });
+    }
+  }
+  window.addEventListener("openai:set_globals", (event) => {
+    const globals = event.detail && event.detail.globals ? event.detail.globals : event.detail;
+    if (!globals) return;
+    applyHostContext(globals);
+    if (globals.toolOutput) {
+      update({ result: { structuredContent: globals.toolOutput, _meta: globals.toolResponseMetadata || {} } });
+    }
+  });
+  window.parent.postMessage({
+    jsonrpc: "2.0",
+    id: "wireline-ui-init",
+    method: "ui/initialize",
+    params: {
+      appInfo: { name: "wireline", version: "2.4.0" },
+      appCapabilities: {
+        availableDisplayModes: ["inline"],
+        openLinks: true,
+        serverTools: true,
+      },
+    },
+  }, "*");
+
+  $("open").addEventListener("click", (event) => {
+    const href = $("open").getAttribute("href");
+    if (!href) return;
+    event.preventDefault();
+    openExternal(href).catch(() => {
+      window.open(href, "_blank", "noopener,noreferrer");
+    });
+  });
 
   $("voice").addEventListener("click", async () => {
     if (state.peer) {
@@ -225,7 +346,7 @@ export function buildAccountBoundWidgetHtml(): string {
       status(
         error && error.message
           ? error.message
-          : "Microphone simulation is unavailable in this ChatGPT surface. Continue configuration in Wireline.",
+          : "Microphone simulation is unavailable in this MCP surface. Continue configuration in Wireline.",
       );
     } finally {
       $("voice").disabled = false;

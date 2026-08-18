@@ -123,7 +123,7 @@ describe("ChatGPT private voice simulation routing", () => {
 
   it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {
     const widget = read("src/lib/chatgpt-mcp-account.ts");
-    const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
+    const widgetMeta = read("src/lib/mcp-app-metadata.ts");
 
     expect(widget).toContain("new RTCPeerConnection()");
     expect(widget).toContain("https://api.openai.com/v1/realtime/calls");
@@ -132,7 +132,7 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(widget).not.toContain("api.x.ai");
     expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
-    expect(accountRoutes).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
+    expect(widgetMeta).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(widgetMeta).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
   });
 });

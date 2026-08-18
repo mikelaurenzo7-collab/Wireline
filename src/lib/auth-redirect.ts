@@ -52,6 +52,14 @@ export function readRedirectFromSearch(search: string): string | null {
   return isSafeInternalPath(value) ? value : null;
 }
 
+export function isMcpOAuthPath(value: string | null): value is string {
+  return Boolean(value && isSafeInternalPath(value) && value.startsWith("/mcp/oauth/"));
+}
+
+export function isMcpOAuthRedirect(search: string): boolean {
+  return isMcpOAuthPath(readRedirectFromSearch(search));
+}
+
 export function persistAuthRedirect(value: string | null) {
   if (typeof window === "undefined") return;
   if (isSafeInternalPath(value)) window.localStorage.setItem(AUTH_REDIRECT_KEY, value);
@@ -102,7 +110,17 @@ export function resolvePostAuthDestination(
 
   if (freshSignup) {
     // A redirect persisted by an earlier sign-in must never override a direct
-    // signup. Only a safe redirect on the current signup URL may beat Fast Start.
+    // signup. Only a safe redirect on the current signup URL, or a stored MCP
+    // OAuth return from Connect, may beat Fast Start. Google/Microsoft signup
+    // comes back through OAuthComplete with an empty search string, so the
+    // persisted MCP path is the only way a new user can finish consent.
+    const storedMcpRedirect =
+      typeof window !== "undefined" ? window.localStorage.getItem(AUTH_REDIRECT_KEY) : null;
+    if (isMcpOAuthPath(storedMcpRedirect)) {
+      persistAuthRedirect(null);
+      clearFreshSignupSession();
+      return storedMcpRedirect;
+    }
     persistAuthRedirect(null);
     clearFreshSignupSession();
     return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";

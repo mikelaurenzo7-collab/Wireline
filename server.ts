@@ -20,6 +20,7 @@ import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { PRERENDERED_MARKETING_ROUTES } from "./src/lib/marketing-route-meta";
 import { registerApiRoutes } from "./src/server/register-api-routes";
+import { registerMcpRoutes } from "./src/server/register-mcp-routes";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
@@ -140,6 +141,7 @@ app.use((_req, res, next) => {
 startMemoryCleanup();
 installStripeCheckoutBrandingInvariant();
 registerApiRoutes(app);
+registerMcpRoutes(app);
 
 app.get("/api/live-ops/stream", authenticateLiveOpsStream, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");

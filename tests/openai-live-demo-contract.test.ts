@@ -26,9 +26,10 @@ describe("native xAI + OpenAI widget voice architecture", () => {
 
   it("keeps ChatGPT private simulation on OpenAI Realtime WebRTC", () => {
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
+    const widgetMeta = read("src/lib/mcp-app-metadata.ts");
     const widget = read("src/lib/chatgpt-mcp-account.ts");
     expect(accountRoutes).toContain("createOpenAIRealtimeClientSecret");
-    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(widgetMeta).toContain('connectDomains: ["https://api.openai.com"]');
     expect(widget).toContain("new RTCPeerConnection()");
     expect(widget).not.toContain("xai-client-secret.");
   });

@@ -20,11 +20,16 @@ const webhookInstaller = server.indexOf("installWebhookBodyParsers(app);");
 const sameOriginGate = server.indexOf("app.use(assertSameOrigin);");
 const globalJson = server.indexOf('app.use(express.json({ limit: "6mb" }));');
 const routeRegistration = server.indexOf("registerApiRoutes(app);");
+const mcpRegistration = server.indexOf("registerMcpRoutes(app);");
 const apiFallback = server.indexOf('app.use("/api", (req, res) => {');
 
 assert(
   server.includes('import { registerApiRoutes } from "./src/server/register-api-routes";'),
   "canonical server must import the route registry",
+);
+assert(
+  server.includes('import { registerMcpRoutes } from "./src/server/register-mcp-routes";'),
+  "canonical server must import the shared MCP stack",
 );
 assert(requestIdBinding >= 0, "canonical server must bind request IDs into structured logs");
 assert(requestIdMiddleware >= 0, "canonical server must install request ID middleware");
@@ -57,8 +62,12 @@ assert(
   "webhook parsers must mount before global JSON parsing",
 );
 assert(
-  routeRegistration >= 0 && apiFallback >= 0 && routeRegistration < apiFallback,
-  "feature routes must mount before the /api fallback",
+  routeRegistration >= 0 && mcpRegistration >= 0 && routeRegistration < mcpRegistration,
+  "feature API routes must mount before the shared MCP stack",
+);
+assert(
+  mcpRegistration >= 0 && apiFallback >= 0 && mcpRegistration < apiFallback,
+  "MCP routes must mount before the /api fallback",
 );
 assert(
   !existsSync(resolvePath("server-v2.ts")),

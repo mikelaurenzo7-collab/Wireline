@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wireline",
+  "version": "1.0.0",
+  "description": "Create a Wireline account from Cursor and build your first voice agent. Privately rehearse it, then continue in Wireline. Not a repo voice SDK. Live calls, numbers, and launch stay in Wireline.",
+  "author": {
+    "name": "Wireline",
+    "email": "support@trywireline.com",
+    "url": "https://trywireline.com"
+  },
+  "homepage": "https://trywireline.com/cursor-plugin.html",
+  "repository": "https://github.com/mikelaurenzo7-collab/Wireline",
+  "license": "UNLICENSED",
+  "keywords": ["mcp", "voice", "oauth", "wireline", "cursor"]
+}

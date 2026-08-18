@@ -17,6 +17,8 @@ const requiredCanonicalLinks = [
   "docs/CUSTOMER_TERMINOLOGY.md",
   "docs/CLIENT_SURFACES.md",
   "docs/CHATGPT_APP.md",
+  "docs/CLAUDE_CONNECTOR.md",
+  "docs/CURSOR_PLUGIN.md",
   "docs/business-usage-pricing-decision.md",
   "docs/BILLING_RUNBOOK.md",
   "docs/PRODUCT_SHOWCASE_MATRIX.md",

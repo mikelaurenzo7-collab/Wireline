@@ -33,6 +33,7 @@ Use the narrowest sufficient checks while developing, then run the full gate for
 | Browser extension | Root checks plus `node apps/browser-extension/scripts/build.mjs --check` |
 | Native clients | Root contract checks plus the platform build and device/simulator acceptance defined in `docs/CLIENT_SURFACES.md` |
 | ChatGPT App | Root checks plus the MCP discovery/OAuth/release checks in `docs/CHATGPT_APP.md` |
+| Cursor Directory | Root checks plus the Open Plugins package and reviewer packet in `docs/CURSOR_PLUGIN.md` |
 
 GitHub Actions may be unavailable because of account billing. That does not lower the release standard: the exact-head Vercel gate, CodeRabbit review, targeted provider checks, and production verification remain required.
 

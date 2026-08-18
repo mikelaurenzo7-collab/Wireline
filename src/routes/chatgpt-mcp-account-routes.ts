@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { type AgentCustomizationInput, assertDraftConfirmation } from "../lib/agent-customization";
 import {
@@ -13,6 +13,12 @@ import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
 } from "../lib/chatgpt-mcp-account";
+import {
+  MCP_SERVER_NAME,
+  MCP_SERVER_TITLE,
+  MCP_SERVER_VERSION,
+  mcpUiResourceMeta,
+} from "../lib/mcp-app-metadata";
 import { mcpDraftSourceForClient } from "../lib/mcp-client-registry";
 import {
   assertMcpDraftWriteRateLimit,
@@ -23,6 +29,7 @@ import {
 import {
   applyMcpTransportHeaders,
   isMcpNotificationMethod,
+  mcpOAuthChallenge,
   mcpToolErrorResult,
 } from "../lib/mcp-transport";
 import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
@@ -36,6 +43,11 @@ import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-conf
 import { rateLimit } from "../lib/rate-limit";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import { isLaunchHardBlocked } from "../lib/launch-readiness";
+import { isRuntimeAvailable } from "../lib/ai-client";
+import { addAgentTrainingItem, getAgentCoachingBrief } from "../lib/mcp-agent-coaching";
+import { readMcpCoachingWritesEnabled } from "../lib/mcp-coaching-preferences";
+import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
+import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -46,7 +58,10 @@ type McpPrincipal = AgentDraftPrincipal & {
 };
 
 class McpAuthorizationError extends Error {
-  constructor(readonly requiredScope: McpScope) {
+  constructor(
+    readonly requiredScope: McpScope,
+    readonly oauthError: "invalid_token" | "insufficient_scope" = "invalid_token",
+  ) {
     super("Connect a Wireline account to continue.");
   }
 }
@@ -122,8 +137,27 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
 }
 
 function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {
-  if (!principal || !principal.scopes.includes(scope)) throw new McpAuthorizationError(scope);
+  if (!principal) throw new McpAuthorizationError(scope, "invalid_token");
+  if (!principal.scopes.includes(scope)) throw new McpAuthorizationError(scope, "insufficient_scope");
   return principal;
+}
+
+function assertRehearsalConfirmation(value: unknown) {
+  if (value !== true) {
+    throw AppError.fromHttpStatus(
+      400,
+      "Confirm that you want to trigger this private Wireline rehearsal before continuing.",
+    );
+  }
+}
+
+function assertTrainingConfirmation(value: unknown) {
+  if (value !== true) {
+    throw AppError.fromHttpStatus(
+      400,
+      "Confirm that you want this Training fact or rule to land in the Wireline workspace.",
+    );
+  }
 }
 
 function jsonRpc(res: Response, id: unknown, result: unknown, status = 200) {
@@ -211,6 +245,110 @@ const workspaceSummaryOutputSchema = {
   additionalProperties: false,
 };
 
+const agentStatusOutputSchema = {
+  type: "object",
+  properties: {
+    agent_id: { type: "string" },
+    agent_name: { type: "string" },
+    role: { type: "string" },
+    channel: { type: "string" },
+    on_phone_network: { type: "boolean" },
+    next_step: { type: "string" },
+    open_in_wireline_url: { type: "string" },
+    training_url: { type: "string" },
+    wire_url: { type: "string" },
+  },
+  required: [
+    "agent_id",
+    "agent_name",
+    "role",
+    "channel",
+    "on_phone_network",
+    "next_step",
+    "open_in_wireline_url",
+    "training_url",
+    "wire_url",
+  ],
+  additionalProperties: false,
+};
+
+const coachingBriefOutputSchema = {
+  type: "object",
+  properties: {
+    agent_id: { type: "string" },
+    agent_name: { type: "string" },
+    role: { type: "string" },
+    channel: { type: "string" },
+    on_phone_network: { type: "boolean" },
+    training_fact_count: { type: "integer" },
+    operating_rule_count: { type: "integer" },
+    training_facts: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { id: { type: "string" }, content: { type: "string" } },
+        required: ["id", "content"],
+        additionalProperties: false,
+      },
+    },
+    operating_rules: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          content: { type: "string" },
+          priority: { type: "integer" },
+        },
+        required: ["id", "content", "priority"],
+        additionalProperties: false,
+      },
+    },
+    next_step: { type: "string" },
+    open_in_wireline_url: { type: "string" },
+  },
+  required: [
+    "agent_id",
+    "agent_name",
+    "role",
+    "channel",
+    "on_phone_network",
+    "training_fact_count",
+    "operating_rule_count",
+    "training_facts",
+    "operating_rules",
+    "next_step",
+    "open_in_wireline_url",
+  ],
+  additionalProperties: false,
+};
+
+const trainingWriteOutputSchema = {
+  type: "object",
+  properties: {
+    agent_id: { type: "string" },
+    kind: { type: "string", enum: ["fact", "rule"] },
+    item_id: { type: "string" },
+    content: { type: "string" },
+    landed_in_wireline: { const: true },
+    open_in_wireline_url: { type: "string" },
+  },
+  required: ["agent_id", "kind", "item_id", "content", "landed_in_wireline", "open_in_wireline_url"],
+  additionalProperties: false,
+};
+
+const privateTurnOutputSchema = {
+  type: "object",
+  properties: {
+    agent_id: { type: "string" },
+    agent_name: { type: "string" },
+    reply: { type: "string" },
+    live_call: { const: false },
+  },
+  required: ["agent_id", "agent_name", "reply", "live_call"],
+  additionalProperties: false,
+};
+
 function toStructuredDraft(view: Awaited<ReturnType<typeof getAgentDraft>>["view"], req: Request) {
   return {
     agent_id: view.id,
@@ -240,7 +378,12 @@ function toolDefinitions() {
     visibility?: string[],
   ) => ({
     ...widgetMeta,
-    ...(visibility ? { ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility } } : {}),
+    ...(visibility
+      ? {
+          ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility },
+          "openai/visibility": visibility.includes("model") ? "public" : "private",
+        }
+      : { ui: { resourceUri: CHATGPT_ACCOUNT_WIDGET_URI, visibility: ["app", "model"] } }),
     securitySchemes,
   });
   const customizationProperties = {
@@ -289,7 +432,7 @@ function toolDefinitions() {
       name: "create_agent_draft",
       title: "Create a Wireline agent draft",
       description:
-        "Creates a persistent, private, unlaunched Wireline agent draft in the connected user’s workspace. Before calling, summarize the proposed identity, goal, rules, and action boundaries, then obtain explicit confirmation. This does not attach a phone number, send a message, place a call, or launch the agent.",
+        "Creates a persistent, private, unlaunched Wireline voice agent in the connected user’s workspace. Use this to help a new user build their first agent after they create a Wireline account. Before calling, summarize the proposed identity, goal, rules, and action boundaries, then obtain explicit confirmation. This does not attach a phone number, send a message, place a call, or launch the agent.",
       inputSchema: {
         type: "object",
         properties: {
@@ -409,20 +552,164 @@ function toolDefinitions() {
       securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
     },
+    {
+      name: "get_wireline_agent_status",
+      title: "Get Wireline agent status",
+      description:
+        "Returns one connected user’s agent: whether it is on the phone network, the next Wireline step, and deep links into Studio, Training, and Wire. It never returns phone numbers, customer identities, transcripts, or message bodies.",
+      inputSchema: {
+        type: "object",
+        properties: { agent_id: { type: "string" } },
+        required: ["agent_id"],
+        additionalProperties: false,
+      },
+      outputSchema: agentStatusOutputSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
+      _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
+    },
+    {
+      name: "run_private_agent_turn",
+      title: "Run a private agent rehearsal",
+      description:
+        "Triggers one connected user’s Wireline agent in a private, tool-free text rehearsal. Use this to hear how the agent would answer a hypothetical customer line from Cursor, ChatGPT, or Claude. It does not place a live call, send a message, book anything, or launch the agent.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          agent_id: { type: "string" },
+          customer_message: {
+            type: "string",
+            description: "Hypothetical customer line for the private rehearsal.",
+          },
+          confirmed: {
+            type: "boolean",
+            description: "True only after the user explicitly asks to trigger this private rehearsal.",
+          },
+        },
+        required: ["agent_id", "customer_message", "confirmed"],
+        additionalProperties: false,
+      },
+      outputSchema: privateTurnOutputSchema,
+      annotations: { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["demo.voice"] }],
+      _meta: toolMeta([{ type: "oauth2", scopes: ["demo.voice"] }]),
+    },
+    {
+      name: "get_agent_coaching_brief",
+      title: "Get a Wireline coaching brief",
+      description:
+        "Returns owner-authored Training facts and operating rules for one connected user’s agent, plus the next coaching step. Use this to gameplan. It never returns customer identities, transcripts, recordings, or phone numbers.",
+      inputSchema: {
+        type: "object",
+        properties: { agent_id: { type: "string" } },
+        required: ["agent_id"],
+        additionalProperties: false,
+      },
+      outputSchema: coachingBriefOutputSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
+      _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
+    },
+    {
+      name: "train_wireline_agent",
+      title: "Train a Wireline agent",
+      description:
+        "Saves a confirmed Training fact or operating rule into the connected user’s Wireline workspace so it is live in Training. The account holder must enable connected-app Training writes in Wireline Apps first. This does not launch the agent, attach a number, or contact a customer.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          agent_id: { type: "string" },
+          kind: {
+            type: "string",
+            enum: ["fact", "rule"],
+            description: "fact lands in Training knowledge. rule lands as an operating directive.",
+          },
+          content: { type: "string", description: "The fact or rule to persist in Wireline." },
+          confirmed: {
+            type: "boolean",
+            description: "True only after the user explicitly confirms this should land in Wireline.",
+          },
+        },
+        required: ["agent_id", "kind", "content", "confirmed"],
+        additionalProperties: false,
+      },
+      outputSchema: trainingWriteOutputSchema,
+      annotations: { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }],
+      _meta: toolMeta([{ type: "oauth2", scopes: ["agents.write"] }]),
+    },
   ];
 }
 
 function resourceMeta(req: Request) {
-  return {
-    ui: {
-      prefersBorder: true,
-      domain: issuer(req),
-      csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
-    },
-    "openai/widgetDescription":
-      "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
-  };
+  return mcpUiResourceMeta(`${issuer(req)}/mcp`);
 }
+
+const MCP_PROMPTS = [
+  {
+    name: "create_first_voice_agent",
+    title: "Create your first Wireline voice agent",
+    description:
+      "Help a new Wireline user create their first confirmed private draft from a conversation, then privately rehearse it. Do not place a live call.",
+  },
+  {
+    name: "create_after_hours_receptionist",
+    title: "Create an after-hours receptionist",
+    description:
+      "Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.",
+  },
+  {
+    name: "refine_draft_boundaries",
+    title: "Refine draft boundaries",
+    description:
+      "Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+  },
+  {
+    name: "inspect_workspace_status",
+    title: "Inspect workspace status",
+    description:
+      "Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.",
+  },
+  {
+    name: "rehearse_agent_reply",
+    title: "Rehearse an agent reply",
+    description:
+      "Trigger a private text rehearsal of a saved Wireline agent with a hypothetical customer line. Do not place a live call.",
+  },
+  {
+    name: "coach_agent_training",
+    title: "Coach agent training",
+    description:
+      "Read the coaching brief for a Wireline agent, then add a confirmed Training fact or operating rule that lands in Wireline.",
+  },
+] as const;
+
+const MCP_PROMPT_MESSAGES: Record<(typeof MCP_PROMPTS)[number]["name"], string> = {
+  create_first_voice_agent: `Help me create a Wireline account if I do not have one, then build my first voice agent in this chat.
+
+Workflow:
+1. If tools require Connect, wait for me to finish OAuth. New users sign up and return to consent.
+2. Call list_wireline_agents once. If the workspace is empty, this is a first-agent session.
+3. Ask what the agent should handle: receptionist, scheduler, sales, or support.
+4. Summarize identity, goal, rules, prohibited topics, and escalation. Call create_agent_draft only after I explicitly confirm.
+5. Privately rehearse with run_private_agent_turn or start_private_voice_simulation.
+6. Point me to open_in_wireline_url for a number and launch. Do not place a live call or claim a customer was contacted.`,
+  create_after_hours_receptionist: `Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.
+
+Summarize the proposed identity, goal, rules, and boundaries first. Call create_agent_draft only after I confirm. Then offer a private rehearsal. Do not place a live call.`,
+  refine_draft_boundaries: `Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.
+
+Summarize the changes, then call update_agent_draft only after I confirm. Do not launch the agent.`,
+  inspect_workspace_status: `Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.
+
+Use get_wireline_workspace_summary. Never ask for or repeat customer identities, transcripts, recordings, or phone numbers.`,
+  rehearse_agent_reply: `Trigger a private text rehearsal of a saved Wireline agent with a hypothetical customer line.
+
+Ask me for the line if I have not given one. Call run_private_agent_turn only after I confirm. State that this is not a live call.`,
+  coach_agent_training: `Read the coaching brief for a Wireline agent, then add a confirmed Training fact or operating rule that lands in Wireline.
+
+Use get_agent_coaching_brief first. If train_wireline_agent says the Apps toggle is off, send me to Wireline Apps. Do not invent a workaround or claim a live call happened.`,
+};
 
 function inputFromArgs(args: Record<string, unknown>): AgentCustomizationInput {
   return {
@@ -462,15 +749,31 @@ router.post("/mcp", async (req, res) => {
         capabilities: {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
+          prompts: { listChanged: false },
         },
-        serverInfo: { name: "wireline-chatgpt", version: "2.2.0" },
+        serverInfo: { name: MCP_SERVER_NAME, title: MCP_SERVER_TITLE, version: MCP_SERVER_VERSION },
         instructions:
-          "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft, list agents, and inspect aggregate operational status in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
+          "Wireline is the system of record. Cursor, ChatGPT, and Claude help a new user create a Wireline account and build their first voice agent here. They are not a voice SDK for a git repo. Confirm every create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Never claim a live call, SMS, email, number attachment, or launch happened here. After the first draft, point the user to open_in_wireline_url for numbers and launch.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
     if (isMcpNotificationMethod(method)) return res.status(202).end();
     if (method === "tools/list") return jsonRpc(res, id, { tools: toolDefinitions() });
+    if (method === "prompts/list") return jsonRpc(res, id, { prompts: MCP_PROMPTS });
+    if (method === "prompts/get") {
+      const name = text(params.name, 128);
+      const prompt = MCP_PROMPTS.find((item) => item.name === name);
+      if (!prompt) return jsonRpcError(res, id, -32602, "Unknown prompt.");
+      return jsonRpc(res, id, {
+        description: prompt.description,
+        messages: [
+          {
+            role: "user",
+            content: { type: "text", text: MCP_PROMPT_MESSAGES[prompt.name] },
+          },
+        ],
+      });
+    }
     if (method === "resources/list")
       return jsonRpc(res, id, {
         resources: [
@@ -507,8 +810,8 @@ router.post("/mcp", async (req, res) => {
         : {};
 
     if (name === "create_agent_draft") {
-      assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      assertDraftConfirmation(args.confirmed);
       await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await createAgentDraft(authed, inputFromArgs(args), authed.draftSource);
       const structured = toStructuredDraft(
@@ -538,8 +841,8 @@ router.post("/mcp", async (req, res) => {
     }
 
     if (name === "update_agent_draft") {
-      assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      assertDraftConfirmation(args.confirmed);
       await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await updateAgentDraft(authed, text(args.agent_id, 256), inputFromArgs(args));
       const structured = toStructuredDraft(
@@ -817,13 +1120,209 @@ router.post("/mcp", async (req, res) => {
       });
     }
 
+    if (name === "get_wireline_agent_status") {
+      const authed = requireScope(principal, "agents.read");
+      const agentId = text(args.agent_id, 256);
+      const status = await tenantStore.run(authed.userId, async () => {
+        const [agent] = await drizzle
+          .select({
+            id: schema.agents.id,
+            name: schema.agents.name,
+            role: schema.agents.role,
+            channel: schema.agents.channel,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, authed.userId)))
+          .limit(1);
+        if (!agent) throw AppError.notFound("Wireline agent not found.");
+        const [line] = await drizzle
+          .select({ id: schema.phoneNumbers.id })
+          .from(schema.phoneNumbers)
+          .where(
+            and(
+              eq(schema.phoneNumbers.agentId, agent.id),
+              eq(schema.phoneNumbers.userId, authed.userId),
+            ),
+          )
+          .limit(1);
+        const onPhoneNetwork = Boolean(line);
+        const origin = issuer(req);
+        const encoded = encodeURIComponent(agent.id);
+        return {
+          agent_id: agent.id,
+          agent_name: agent.name,
+          role: agent.role || "assistant",
+          channel: agent.channel || "voice",
+          on_phone_network: onPhoneNetwork,
+          next_step: onPhoneNetwork
+            ? "This agent is on the phone network. Open Wireline Studio to operate live work. You can still run a private rehearsal from this client."
+            : "This agent is still a private draft. Open Wireline Wire to attach a number and launch. You can privately rehearse it from this client.",
+          open_in_wireline_url: `${origin}/studio?agent=${encoded}`,
+          training_url: `${origin}/knowledge?agent=${encoded}`,
+          wire_url: `${origin}/connections?agent=${encoded}`,
+        };
+      });
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `${status.agent_name}: ${status.next_step}`,
+          },
+        ],
+        structuredContent: status,
+        _meta: { agent_id: status.agent_id, open_in_wireline_url: status.open_in_wireline_url },
+      });
+    }
+
+    if (name === "run_private_agent_turn") {
+      const authed = requireScope(principal, "demo.voice");
+      assertRehearsalConfirmation(args.confirmed);
+      const customerMessage = text(args.customer_message, 4000);
+      if (!customerMessage) {
+        throw AppError.fromHttpStatus(
+          400,
+          "Provide a hypothetical customer line for this private rehearsal.",
+        );
+      }
+      if (isLaunchHardBlocked()) {
+        throw new AppError(
+          503,
+          "LAUNCH_NOT_READY",
+          "Private rehearsal is temporarily paused while Wireline restores launch readiness.",
+        );
+      }
+      if (!isRuntimeAvailable()) {
+        throw AppError.fromHttpStatus(
+          503,
+          "Private rehearsal is briefly unavailable. Try again shortly.",
+        );
+      }
+      const limit = await rateLimit(`mcp-private-rehearsal:${authed.userId}`, {
+        bucket: "mcp-private-rehearsal",
+        windowMs: 60 * 60 * 1000,
+        max: 20,
+        failClosedOnError: true,
+      });
+      if (!limit.allowed) {
+        throw AppError.tooManyRequests(
+          "The private rehearsal limit has been reached. Continue testing from Wireline.",
+        );
+      }
+      let capExceeded = false;
+      try {
+        capExceeded = await tenantStore.run(authed.userId, () =>
+          isHardSpendCapExceeded(authed.userId),
+        );
+      } catch (error) {
+        log.error("mcp private rehearsal spend guard unavailable", {
+          userId: authed.userId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw new AppError(
+          503,
+          "SPEND_GUARD_UNAVAILABLE",
+          "Private rehearsal is briefly unavailable. Try again shortly.",
+        );
+      }
+      if (capExceeded) {
+        throw new AppError(
+          402,
+          "SPEND_CAP_REACHED",
+          "The plan-funded rehearsal allowance is used for this period. Continue from Wireline billing.",
+        );
+      }
+      const turn = await tenantStore.run(authed.userId, () =>
+        runPrivateAgentTestTurn({
+          userId: authed.userId,
+          agentId: text(args.agent_id, 256),
+          customerMessage,
+        }),
+      );
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `${turn.agent_name} (private rehearsal, not a live call): ${turn.reply}`,
+          },
+        ],
+        structuredContent: { ...turn, live_call: false as const },
+        _meta: { agent_id: turn.agent_id, live_call: false },
+      });
+    }
+
+    if (name === "get_agent_coaching_brief") {
+      const authed = requireScope(principal, "agents.read");
+      const brief = await tenantStore.run(authed.userId, () =>
+        getAgentCoachingBrief(authed.userId, text(args.agent_id, 256)),
+      );
+      const openInWirelineUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(brief.agent_id)}`;
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `${brief.agent_name}: ${brief.training_fact_count} Training fact${brief.training_fact_count === 1 ? "" : "s"}, ${brief.operating_rule_count} operating rule${brief.operating_rule_count === 1 ? "" : "s"}. ${brief.next_step}`,
+          },
+        ],
+        structuredContent: { ...brief, open_in_wireline_url: openInWirelineUrl },
+        _meta: { agent_id: brief.agent_id, open_in_wireline_url: openInWirelineUrl },
+      });
+    }
+
+    if (name === "train_wireline_agent") {
+      const authed = requireScope(principal, "agents.write");
+      assertTrainingConfirmation(args.confirmed);
+      const kind = text(args.kind, 16);
+      if (kind !== "fact" && kind !== "rule") {
+        throw AppError.fromHttpStatus(400, "kind must be fact or rule.");
+      }
+      await assertMcpDraftWriteRateLimit(authed.userId);
+      const allowed = await tenantStore.run(authed.userId, () =>
+        readMcpCoachingWritesEnabled(authed.userId),
+      );
+      if (!allowed) {
+        throw AppError.fromHttpStatus(
+          403,
+          "Enable connected-app Training writes in Wireline Apps before a fact or rule can land in Training.",
+        );
+      }
+      const saved = await tenantStore.run(authed.userId, () =>
+        addAgentTrainingItem({
+          userId: authed.userId,
+          agentId: text(args.agent_id, 256),
+          kind,
+          content: text(args.content, kind === "fact" ? 4000 : 2000),
+        }),
+      );
+      const openInWirelineUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(saved.agent_id)}`;
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text:
+              kind === "fact"
+                ? `Saved a Training fact for this agent in Wireline.`
+                : `Saved an operating rule for this agent in Wireline.`,
+          },
+        ],
+        structuredContent: { ...saved, landed_in_wireline: true as const, open_in_wireline_url: openInWirelineUrl },
+        _meta: { agent_id: saved.agent_id, open_in_wireline_url: openInWirelineUrl },
+      });
+    }
+
     return jsonRpcError(res, id, -32601, "Tool not found.");
   } catch (error) {
     if (error instanceof McpAuthorizationError) {
-      const challenge = `Bearer resource_metadata="${issuer(req)}/.well-known/oauth-protected-resource", error="insufficient_scope", scope="${error.requiredScope}"`;
+      const status = error.oauthError === "insufficient_scope" ? 403 : 401;
+      const challenge = mcpOAuthChallenge(
+        `${issuer(req)}/.well-known/oauth-protected-resource`,
+        error.requiredScope,
+        "Connect a Wireline account to continue.",
+        error.oauthError,
+      );
       res.setHeader("WWW-Authenticate", challenge);
-      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", 401, {
+      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", status, {
         required_scope: error.requiredScope,
+        oauth_error: error.oauthError,
         _meta: { "mcp/www_authenticate": [challenge] },
       });
     }
