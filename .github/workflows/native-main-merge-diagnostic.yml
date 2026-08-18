@@ -1,5 +1,5 @@
 name: native-main-merge-integration
-# Rerun after the final 360px header and Playwright architecture corrections.
+# Final isolated exact-head integration gate for source, migrations, tests, and docs.
 
 on:
   push:
@@ -7,6 +7,13 @@ on:
       - audit/native-xai-main-integration-final-20260818
     paths:
       - .github/workflows/native-main-merge-diagnostic.yml
+      - drizzle/migrations/**
+      - src/**
+      - tests/**
+      - scripts/**
+      - docs/**
+      - package.json
+      - package-lock.json
 
 permissions:
   contents: write
