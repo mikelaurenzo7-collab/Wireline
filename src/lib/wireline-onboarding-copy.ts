@@ -1,5 +1,5 @@
 /**
- * Post-signup onboarding copy — Account Holder-facing, Wireline-native.
+ * Post-signup onboarding copy — Account Holder-facing, WIRELINE-native.
  */
 
 /** Shown after Fast Start — agent exists but activation (first useful call) pending. */
@@ -22,7 +22,7 @@ export const ACTIVATION_PENDING_COPY = {
 
 export const ACTIVATION_NUDGE_COPY = {
   eyebrow: "Activation",
-  body: "Dial your line for a real conversation. That's when Wireline counts you as live.",
+  body: "Dial your line for a real conversation. That's when WIRELINE counts you as live.",
   cta: "Call to activate",
 } as const;
 
@@ -38,9 +38,6 @@ export const POST_CREATE_WIZARD_COPY = {
         "Your greeting and job description are saved. Add a site, document, or policy now if it matters for the first call, or train more later.",
       salesHint:
         "Recommended first path: teach the outcomes that matter on day one, then connect the live number when you're ready to dial.",
-      // The step title already carries "Optional:", which the activation-path
-      // contract pins as the honesty signal. Repeating it on the button said it
-      // twice in one card; "Open X" also matches the rest of the app.
       primary: "Open training",
       secondary: "Continue to number",
     },
@@ -63,9 +60,6 @@ export const POST_CREATE_WIZARD_COPY = {
         "Provision a US number so callers reach this agent. A paid plan is required for live number provisioning.",
       primary: "Provision number",
       skip: "Connect later",
-      // The highest-intent moment in the product: the customer has built,
-      // trained, and voice-tested an agent and just asked for its number.
-      // Plain language + a direct path to plans — never internal jargon.
       activationRequired: "Your agent is trained and ready. Its live number just needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
         `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
