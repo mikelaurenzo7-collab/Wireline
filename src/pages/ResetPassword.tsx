@@ -8,7 +8,7 @@ import { getPasswordPolicyError } from "../lib/password-policy";
 import { Button, Input } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import MarketingChrome from "../components/marketing/MarketingChrome";
-import WirelineMark from "../components/brand/WirelineMark";
+import { WirelineLockup, WirelineWordmark } from "../components/brand/WirelineBrand";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 
 function readResetTokenFromLocation(): string {
@@ -105,23 +105,21 @@ export default function ResetPassword() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Reset Password"
-        description="Reset your Wireline account password."
+        title="Reset Password | WIRELINE"
+        description="Reset your WIRELINE account password."
         path="/reset-password"
         noIndex
       />
       <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
         <div className="w-full max-w-[420px] wl-auth-card rounded-md p-6 sm:p-8">
           <div className="wl-auth-card-header mb-6">
-            <div className="wl-auth-brand-chip" aria-hidden="true">
-              <WirelineMark className="size-8 text-white" />
-            </div>
+            <WirelineLockup size="compact" surface="tile" />
             <div>
               <h1 className="font-display text-2xl sm:text-3xl text-foreground leading-tight">
                 Reset password
               </h1>
               <p className="text-caption mt-1.5">
-                Choose a new password for your Wireline account.
+                Choose a new password for your <WirelineWordmark inline /> account.
               </p>
             </div>
           </div>
@@ -141,8 +139,8 @@ export default function ResetPassword() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted/80 mb-6 leading-relaxed">
-                Pick a new password to finish resetting your Wireline account. Use at least 8
-                characters with uppercase, lowercase, and a number.
+                Pick a new password to finish resetting your <WirelineWordmark inline /> account. Use
+                at least 8 characters with uppercase, lowercase, and a number.
               </p>
 
               <FormField label="New password" htmlFor="reset-password" required>
@@ -183,10 +181,6 @@ export default function ResetPassword() {
                 type="submit"
                 disableAnimations
                 variant="editorial"
-                // Enabled on mismatch/empty on purpose: handleSubmit surfaces
-                // the policy error or "Passwords don't match." inline. Gating
-                // the button made those branches dead code — a typo in the
-                // confirm field showed only a greyed button with no reason.
                 disabled={loading}
                 className="w-full px-5 py-3.5 min-h-[48px] rounded-md text-sm font-medium"
               >
