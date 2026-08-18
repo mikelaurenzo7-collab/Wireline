@@ -316,7 +316,9 @@ export default function CampaignsPanel() {
               title={OPS_CHANNEL_EMPTY.campaigns.title}
               actions={[
                 { label: "Create Campaign", onClick: () => setShowCreate(true), primary: true },
-                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create Campaign"),
+                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter(
+                  (a) => a.label.toLowerCase() !== "create campaign",
+                ),
               ]}
             />
           </div>
