@@ -810,8 +810,8 @@ router.post("/mcp", async (req, res) => {
         : {};
 
     if (name === "create_agent_draft") {
-      assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      assertDraftConfirmation(args.confirmed);
       await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await createAgentDraft(authed, inputFromArgs(args), authed.draftSource);
       const structured = toStructuredDraft(
@@ -841,8 +841,8 @@ router.post("/mcp", async (req, res) => {
     }
 
     if (name === "update_agent_draft") {
-      assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      assertDraftConfirmation(args.confirmed);
       await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await updateAgentDraft(authed, text(args.agent_id, 256), inputFromArgs(args));
       const structured = toStructuredDraft(
@@ -1175,8 +1175,8 @@ router.post("/mcp", async (req, res) => {
     }
 
     if (name === "run_private_agent_turn") {
-      assertRehearsalConfirmation(args.confirmed);
       const authed = requireScope(principal, "demo.voice");
+      assertRehearsalConfirmation(args.confirmed);
       const customerMessage = text(args.customer_message, 4000);
       if (!customerMessage) {
         throw AppError.fromHttpStatus(
@@ -1269,8 +1269,8 @@ router.post("/mcp", async (req, res) => {
     }
 
     if (name === "train_wireline_agent") {
-      assertTrainingConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      assertTrainingConfirmation(args.confirmed);
       const kind = text(args.kind, 16);
       if (kind !== "fact" && kind !== "rule") {
         throw AppError.fromHttpStatus(400, "kind must be fact or rule.");

@@ -38,6 +38,29 @@ describe("Claude Connector Directory contract", () => {
     expect(stack).toContain("res.status(oauthError === \"insufficient_scope\" ? 403 : 401)");
     expect(stack).not.toContain("mcpToolErrorResult(message");
     expect(stack).toContain('WWW-Authenticate');
+    const confirmationGated = [
+      ["create_agent_draft", "get_agent_draft", "assertDraftConfirmation", "agents.write"],
+      [
+        "update_agent_draft",
+        "start_private_voice_simulation",
+        "assertDraftConfirmation",
+        "agents.write",
+      ],
+      [
+        "run_private_agent_turn",
+        "get_agent_coaching_brief",
+        "assertRehearsalConfirmation",
+        "demo.voice",
+      ],
+      ["train_wireline_agent", "return jsonRpcError", "assertTrainingConfirmation", "agents.write"],
+    ] as const;
+    for (const [name, next, confirm, scope] of confirmationGated) {
+      const start = account.indexOf(`if (name === "${name}")`);
+      const end = account.indexOf(next === "return jsonRpcError" ? "return jsonRpcError" : `if (name === "${next}")`, start + 1);
+      const slice = account.slice(start, end);
+      expect(slice.indexOf(`requireScope(principal, "${scope}")`)).toBeGreaterThan(-1);
+      expect(slice.indexOf(`requireScope(principal, "${scope}")`)).toBeLessThan(slice.indexOf(confirm));
+    }
   });
 
   it("publishes Claude Code CIMD, DCR, consent hostname, and RFC 9207 iss", () => {

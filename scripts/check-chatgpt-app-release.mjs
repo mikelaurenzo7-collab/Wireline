@@ -215,6 +215,38 @@ for (const tool of liveTools) {
   }
 }
 
+const lazyAuthCalls = [
+  ["create_agent_draft", { business_name: "Acme", primary_goal: "Answer after hours" }],
+  ["update_agent_draft", { agent_id: "draft" }],
+  ["run_private_agent_turn", { agent_id: "draft", customer_message: "Do you have Saturday appointments?" }],
+  ["train_wireline_agent", { agent_id: "draft", kind: "fact", content: "We serve residential HVAC." }],
+  ["list_wireline_agents", {}],
+];
+for (const [name, args] of lazyAuthCalls) {
+  const { response, body } = await request("/mcp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: name,
+      method: "tools/call",
+      params: { name, arguments: args },
+    }),
+  });
+  assert(
+    response.status === 401,
+    `${name}: unauthenticated tools/call must be HTTP 401 so the host can show Connect, received ${response.status}.`,
+  );
+  assert(
+    (response.headers.get("www-authenticate") || "").includes("invalid_token"),
+    `${name}: WWW-Authenticate must challenge with invalid_token.`,
+  );
+  assert(
+    body && typeof body === "object" && body.error?.code === -32001,
+    `${name}: unauthenticated tools/call must be a JSON-RPC auth error, not a 200 isError result.`,
+  );
+}
+
 const resources = await jsonRpc("resources/list");
 assert(
   (resources.result.resources || []).some((resource) => resource?.uri === accountWidgetUri),

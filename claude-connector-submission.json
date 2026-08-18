@@ -66,6 +66,11 @@
       "prompt": "Privately rehearse this Wireline agent answering: Do you have Saturday appointments?",
       "tools": ["run_private_agent_turn"],
       "screenshot_subject": "Private rehearsal reply with live_call false"
+    },
+    {
+      "prompt": "Show me the coaching brief for this Wireline agent, then save a confirmed Training fact if Apps writes are on.",
+      "tools": ["get_agent_coaching_brief", "train_wireline_agent"],
+      "screenshot_subject": "Coaching brief and fail-closed Training write guidance"
     }
   ],
   "negative_prompts": [
