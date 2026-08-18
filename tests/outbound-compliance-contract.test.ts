@@ -25,28 +25,29 @@ describe("outbound compliance contract", () => {
     expect(mobile).toContain("lastCalledAt: new Date()");
     expect(read("src/lib/voice/xai-outbound-placement.ts")).toContain("lastCalledAt:");
 
-    expect(gate).toContain("assertFederalDncForMarketing()");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("is_marketing_call: isMarketingCall");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain('reason: "outside_permitted_calling_hours"');
+    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
   });
 
-  it("fails closed when federal DNC vendor is unconfigured for marketing dials on web and mobile", () => {
-    const web = read("src/routes/outbound-routes.ts");
-    const mobile = read("src/routes/mobile-routes.ts");
+  it("defers missing Federal DNC credentials without disabling outbound globally", () => {
+    const federal = read("src/lib/federal-dnc-service.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
+    const readiness = read("src/lib/launch-readiness.ts");
 
-    for (const source of [web, mobile]) {
-      expect(source).toContain("isMarketingCall: marketing");
-      expect(source).toContain('gate.reason === "federal_dnc_unconfigured"');
-      expect(source).toContain("status(503)");
-    }
-
-    expect(gate).toContain("if (isMarketingCall)");
-    expect(gate).toContain("assertFederalDncForMarketing()");
-    expect(gate).toContain('reason: "federal_dnc_unconfigured"');
+    expect(federal).toContain('advisory: "FEDERAL_DNC_DEFERRED"');
+    expect(federal).toContain("allowed: true");
+    expect(federal).toContain('source: "unconfigured"');
+    expect(federal).toContain("return { listed: false, source: \"unconfigured\", checked_at }");
+    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("isFederalDncListed(opts.phone)");
+    expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
+    expect(gate).toContain("evaluateOutboundConsent");
+    expect(readiness).toContain("deferred_checklist");
+    expect(readiness).toContain("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
   });
 
   it("keeps consent metadata durable and source-specific", () => {
