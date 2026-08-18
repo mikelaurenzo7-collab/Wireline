@@ -370,6 +370,12 @@ function SceneView({ scene, p }: { scene: Scene; p: number }) {
           <span className="spot-livechip spot-up-3">
             <span className="pulse" /> Live call · handling it
           </span>
+          <div className="spot-caption spot-up-3" aria-hidden="true">
+            <span className="spot-caption-dot" />
+            {p < 0.5
+              ? "\u201CThanks for calling \u2014 I can book that for Thursday at 9.\u201D"
+              : "\u201CYou\u2019re all set. I\u2019ve texted you the confirmation.\u201D"}
+          </div>
         </div>
       );
 
@@ -517,6 +523,8 @@ export default function CommercialSpot() {
     return clamp01((elapsed - activeScene.start) / (activeScene.end - activeScene.start));
   }, [elapsed, activeScene]);
 
+  const sceneIndex = useMemo(() => SCENES.indexOf(activeScene), [activeScene]);
+
   // Animation clock
   useEffect(() => {
     if (!playing) {
@@ -638,6 +646,43 @@ export default function CommercialSpot() {
     setElapsed(ratio * DURATION);
   }, []);
 
+  // Keyboard controls: space = play/pause, R = replay, M = mute, arrows = seek
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!started) {
+        if (e.code === "Space" || e.code === "Enter") {
+          e.preventDefault();
+          void start(true);
+        }
+        return;
+      }
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          void togglePlay();
+          break;
+        case "KeyR":
+          replay();
+          break;
+        case "KeyM":
+          void toggleSound();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          setElapsed((p) => Math.min(DURATION, p + 5));
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          setElapsed((p) => Math.max(0, p - 5));
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [started, start, togglePlay, replay, toggleSound]);
+
   const fillPct = (elapsed / DURATION) * 100;
   const ended = elapsed >= DURATION;
 
@@ -649,7 +694,12 @@ export default function CommercialSpot() {
             <span className="dot" /> REC · Spot 001
           </div>
           <div className="spot-hud spot-hud--tr">Wireline // :60</div>
-          <div className="spot-hud spot-hud--bl">{activeScene.chapter}</div>
+          <div className="spot-hud spot-hud--bl">
+            <span className="spot-hud-idx">
+              {String(sceneIndex + 1).padStart(2, "0")}/{String(SCENES.length).padStart(2, "0")}
+            </span>{" "}
+            {activeScene.chapter}
+          </div>
 
           {started && flashKey > 0 && <div key={flashKey} className="spot-flash" />}
 
@@ -684,6 +734,9 @@ export default function CommercialSpot() {
                   >
                     or play muted
                   </button>
+                  <div className="spot-keyhint" aria-hidden="true">
+                    Space play/pause · R replay · M mute · &larr; &rarr; seek
+                  </div>
                 </>
               ) : (
                 <>

@@ -132,6 +132,7 @@
 .spot-hud--tl { top: 7.5%; left: 3.2%; }
 .spot-hud--tr { top: 7.5%; right: 3.2%; color: var(--wire); }
 .spot-hud--bl { bottom: 7.5%; left: 3.2%; }
+.spot-hud-idx { color: var(--purple); }
 .spot-hud .dot {
   display: inline-block;
   width: 0.9cqw;
@@ -344,6 +345,35 @@
   0% { box-shadow: 0 0 0 0 rgba(74, 222, 154, 0.6); }
   70% { box-shadow: 0 0 0 2cqw rgba(74, 222, 154, 0); }
   100% { box-shadow: 0 0 0 0 rgba(74, 222, 154, 0); }
+}
+
+.spot-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  margin-top: 2.4cqw;
+  font-family: var(--body);
+  font-size: 2cqw;
+  color: var(--wire);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1cqw 2cqw;
+  max-width: 74%;
+  line-height: 1.3;
+}
+.spot-caption-dot {
+  flex: 0 0 auto;
+  width: 0.9cqw;
+  height: 0.9cqw;
+  border-radius: 999px;
+  background: var(--purple);
+  box-shadow: 0 0 10px var(--glow);
+  animation: spot-pulse-sm 1s ease-in-out infinite;
+}
+@keyframes spot-pulse-sm {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
 }
 
 /* ---------- Loop: Build / Train / Launch / Improve ---------- */
@@ -653,6 +683,14 @@
 }
 .spot-play-big:hover { transform: scale(1.05); background: var(--purple-hover); }
 .spot-play-big svg { width: 5cqw; height: 5cqw; }
+.spot-keyhint {
+  margin-top: 1cqw;
+  font-family: var(--mono);
+  font-size: 1.5cqw;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
 
 @media (max-width: 640px) {
   .spot-chapter { display: none; }
@@ -665,6 +703,7 @@
   .spot-ripple,
   .spot-wave span,
   .spot-livechip .pulse,
+  .spot-caption-dot,
   .spot-hud .dot { animation: none !important; }
   .spot-up, .spot-up-2, .spot-up-3, .spot-pop,
   .spot-missed-row.on, .spot-joke.on { animation-duration: 1ms !important; }
