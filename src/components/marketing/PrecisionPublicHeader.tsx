@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import WirelineMark from "../brand/WirelineMark";
+import { WirelineLockup } from "../brand/WirelineBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
 export default function PrecisionPublicHeader() {
@@ -10,11 +10,13 @@ export default function PrecisionPublicHeader() {
       <div className="wl-measure mx-auto flex h-16 min-w-0 items-center gap-2 px-2.5 sm:gap-5 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="flex min-w-0 shrink items-center gap-2 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          aria-label="Wireline home"
+          className="min-w-0 shrink rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
+          aria-label="WIRELINE home"
         >
-          <WirelineMark className="size-8 shrink-0 text-primary" signal />
-          <span className="truncate max-[379px]:hidden">Wireline</span>
+          <WirelineLockup
+            size="standard"
+            wordmarkClassName="max-[379px]:hidden"
+          />
         </Link>
 
         <nav
