@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { WirelineWordmark } from "./brand/WirelineBrand";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
@@ -29,8 +30,6 @@ function noticeAcknowledged(): boolean {
   try {
     return localStorage.getItem(NOTICE_STORAGE_KEY) !== null;
   } catch {
-    // Hardened/private contexts may block storage entirely. Keep the notice
-    // available while the measurement loader independently defaults to off.
     return false;
   }
 }
@@ -53,28 +52,15 @@ export default function CookieConsent() {
       try {
         const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
         if (cancelled) return;
-        // Anonymous visitors now get 200 `{ user: null }` — only a real user
-        // counts as a session for suppressing the public consent auto-open.
         if (sessionRes.ok) {
           const body = (await sessionRes.json().catch(() => null)) as { user?: unknown } | null;
           sessionPresent = Boolean(body?.user);
         }
         setHasSession(sessionPresent);
       } catch {
-        /* Session probe failed — treat as signed out so EU/UK visitors still
-           get a consent choice. */
+        /* Session probe failed — treat as signed out so EU/UK visitors still get a consent choice. */
       }
 
-      // A signed-in visitor reached the app through the public site, where the
-      // notice already had its chance. Auto-opening it again inside the
-      // workspace is both late and intrusive: it is bottom-anchored, so it
-      // lands on top of the Overview onboarding card and the Billing
-      // subscription panel, and on phone it covers the primary next action.
-      //
-      // Suppressing the AUTO-open is not a bypass. Optional measurement stays
-      // off until an explicit grant, so silence is the privacy-preserving
-      // state, and "Privacy choices" in the footer still opens this card on
-      // demand from anywhere (the listener below is unconditional).
       if (sessionPresent) return;
 
       if (!cancelled) {
@@ -91,10 +77,6 @@ export default function CookieConsent() {
   }, []);
 
   useEffect(() => {
-    // Deliberately session- and route-agnostic: "Privacy choices" must work
-    // everywhere, including inside the workspace where the auto-open is
-    // suppressed. explicitlyOpened is what lets the render guard below know
-    // the card was asked for rather than volunteered.
     const openPrivacyChoices = () => {
       setExplicitlyOpened(true);
       setVisible(true);
@@ -135,7 +117,6 @@ export default function CookieConsent() {
     onEscape: dismiss,
   });
 
-  // Escape chooses the privacy-preserving default and dismisses the notice.
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
@@ -145,41 +126,14 @@ export default function CookieConsent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismiss, visible]);
 
-  // Never render over the auth portal: at phone/tablet widths the 283px card
-  // physically cannot fit beside the auth form, and wherever it sits it
-  // intercepts taps on either the OAuth buttons (top) or the submit button
-  // (bottom) — a first-visit mobile user literally could not tap "Sign in".
-  // Consent stays reachable on every marketing/app surface and via /privacy,
-  // and no optional measurement fires without an explicit grant, so skipping
-  // the notice here is the privacy-preserving default, not a bypass.
-  //
-  // Same rule for Fast Start (?create=1): the create CTA sits at the bottom of
-  // a full-viewport dialog; the consent card covered the primary create action and
-  // made first-agent creation untappable on phone.
-  // (After all hooks — rules-of-hooks.)
   const createFlowOpen =
     new URLSearchParams(location.search).get("create") === "1" ||
     new URLSearchParams(location.search).get("create") === "true";
   if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
 
-  // The session probe above only runs once, at mount. The most common real
-  // path defeats it: land on marketing signed out, leave the notice sitting
-  // there, sign in — and the card rides into the workspace, where it is
-  // bottom-anchored on top of the Overview onboarding card. Caught by watching
-  // the walkthrough recording, where exactly that happened.
-  //
-  // Gate on the ROUTE as well, so placement never depends on probe timing.
-  // Auto-opening belongs to the public site; inside the app the notice is
-  // reachable only through the explicit "Privacy choices" control, which is
-  // why that path stays session-agnostic.
   const onPublicSurface = isMarketingPublicPath(location.pathname);
   if (!onPublicSurface && !explicitlyOpened) return null;
 
-  // Portal to <body>: rendered inside the app tree, the fixed box stretched
-  // to the full viewport height (an app-shell ancestor perturbs fixed-child
-  // sizing), painting the card at the TOP of the screen over the sign-in
-  // brand header and OAuth buttons. Portaling out of the tree — the same
-  // pattern the toast stack uses — restores true viewport anchoring.
   return createPortal(
     <AnimatePresence>
       {visible && (
@@ -190,9 +144,6 @@ export default function CookieConsent() {
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
             "fixed z-[9999] left-3 right-3 sm:right-4 sm:left-auto sm:max-w-[420px]",
-            // Bottom placement everywhere. Authenticated app shell has a
-            // mobile bottom nav (~4.25rem); clear it so Overview CTAs stay
-            // tappable. Marketing sticky CTAs need a taller offset.
             clearMarketingSticky
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
               : hasSession
@@ -204,9 +155,6 @@ export default function CookieConsent() {
           aria-label="Privacy choices"
           ref={dialogRef}
         >
-          {/* bg-background/95 is load-bearing: the legacy class
-              has no CSS definition, so without an explicit background the card
-              was transparent-with-blur and page text ghosted through it. */}
           <div
             className={cn(
               "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5",
@@ -226,17 +174,8 @@ export default function CookieConsent() {
                     : "text-[length:var(--wireline-typography-caption-size)]",
                 )}
               >
-                {hasSession ? (
-                  <>
-                    Essential storage keeps Wireline working. Optional ad measurement stays off
-                    unless you allow it.{" "}
-                  </>
-                ) : (
-                  <>
-                    Essential storage keeps Wireline working. Optional ad measurement stays off
-                    unless you allow it.{" "}
-                  </>
-                )}
+                Essential storage keeps <WirelineWordmark inline /> working. Optional ad measurement
+                stays off unless you allow it.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
