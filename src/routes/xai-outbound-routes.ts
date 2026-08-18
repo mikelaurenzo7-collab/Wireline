@@ -132,9 +132,12 @@ function neverBridgedNativeVoice(nativeVoice: Record<string, unknown>): boolean 
   const amdAction = String(nativeVoice.amd_action || "");
   const state = String(nativeVoice.state || "");
   return (
+    !nativeVoice.xai_call_id &&
+    amdAction !== "bridge" &&
     amdAction !== "voicemail" &&
     state !== "bridging" &&
-    state !== "connected"
+    state !== "connected" &&
+    state !== "transferred"
   );
 }
 
@@ -472,12 +475,20 @@ router.post(
           nextNativeVoice.state = "customer_answered";
         }
       } else if (isMonotonic && TERMINAL_CARRIER_FAILURES.has(carrierStatus)) {
-        const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
-        patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
-        patch.lastContactSummary = `Carrier outcome: ${carrierStatus}.`;
-        nextNativeVoice.state = "carrier_failed";
         nextNativeVoice.carrier_completed_at = now.toISOString();
-        meterUnanswered = true;
+        if (lead.status === LEAD_STATUS.CONNECTED || !neverBridgedNativeVoice(nativeVoice)) {
+          // Twilio may emit a terminal customer-leg status after the call was
+          // already bridged into xAI SIP. That callback closes the carrier leg;
+          // it must not demote the live/finished conversation or create a second
+          // `twilio:CallSid` usage entry beside the authoritative `xai:call_id`.
+          nextNativeVoice.carrier_terminal_after_bridge = carrierStatus;
+        } else {
+          const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
+          patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+          patch.lastContactSummary = `Carrier outcome: ${carrierStatus}.`;
+          nextNativeVoice.state = "carrier_failed";
+          meterUnanswered = true;
+        }
       } else if (isMonotonic && carrierStatus === "completed") {
         nextNativeVoice.carrier_completed_at = now.toISOString();
         if (!nativeVoice.xai_call_id) {
