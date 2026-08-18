@@ -1,10 +1,11 @@
 // Renders canonical SVG sources to PNGs in public/ and native asset catalogs.
 // Runs as a prebuild step so favicons, social cards, install icons, native icons,
-// and billing lockups always stay in sync with the folded Wireline W.
+// billing lockups, and downloadable browser extensions stay in sync.
 //
 // Why @resvg/resvg-js: pure-WASM, no native compile, no system deps, and
 // deterministic output from the SVG source of truth.
 
+import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,7 +63,11 @@ const targets = [
   { src: "public/wireline-icon.svg", out: "public/wireline-icon-192.png", width: 192 },
   { src: "public/wireline-icon.svg", out: "public/wireline-icon-512.png", width: 512 },
   { src: "public/wireline-icon.svg", out: "public/wireline-stripe-icon.png", width: 512 },
-  { src: "scripts/ios-app-icon.svg", out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 },
+  {
+    src: "scripts/ios-app-icon.svg",
+    out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png",
+    width: 1024,
+  },
   { src: "public/wireline-stripe-logo.svg", out: "public/wireline-stripe-logo.png", width: 1200 },
 ];
 
@@ -78,4 +83,17 @@ for (const target of targets) {
   if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
   writeFileSync(outputPath, png);
   console.log(`✔ rendered ${target.out} (${png.length} bytes)`);
+}
+
+// Browser-extension archives are public release artifacts. Rebuild them after
+// the canonical logo and panel sources so the deployed downloads can never lag
+// behind the UI committed in the same revision.
+const extensionBuild = spawnSync(
+  process.execPath,
+  [resolve(root, "apps/browser-extension/scripts/build.mjs")],
+  { cwd: root, encoding: "utf8", stdio: "inherit" },
+);
+if (extensionBuild.error) throw extensionBuild.error;
+if (extensionBuild.status !== 0) {
+  throw new Error(`Browser-extension packaging failed with status ${extensionBuild.status}.`);
 }
