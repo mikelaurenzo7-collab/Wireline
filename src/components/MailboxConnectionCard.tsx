@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Mail, RefreshCw, Trash2 } from "lucide-react";
+import { Building2, Loader2, Mail, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
 import { Badge, Button, Skeleton } from "./atoms";
@@ -11,7 +11,10 @@ type MailboxAccount = {
   id: string;
   emailAddress: string;
   provider: MailboxProvider;
+  agentId: string | null;
 };
+
+type Agent = { id: string; name: string };
 
 const PROVIDERS: Array<{
   id: MailboxProvider;
@@ -34,8 +37,8 @@ const PROVIDERS: Array<{
   },
   {
     id: "agentmail",
-    label: "AgentMail",
-    detail: "API-key inbox",
+    label: "Wireline Email",
+    detail: "Dedicated AI inbox",
     logo: "agentmail",
   },
   // Yahoo OAuth stores tokens today, but inbox fetch/send is not wired
@@ -45,6 +48,9 @@ const PROVIDERS: Array<{
 
 export default function MailboxConnectionCard() {
   const [accounts, setAccounts] = useState<MailboxAccount[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+  const [agentsUnavailable, setAgentsUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [busy, setBusy] = useState<MailboxProvider | string | null>(null);
@@ -81,6 +87,15 @@ export default function MailboxConnectionCard() {
 
   useEffect(() => {
     void loadAccounts();
+    void authFetch("/api/agents")
+      .then(async (response) => {
+        const body = (await safeJson(response)) as { agents?: Agent[] } | null;
+        if (!response.ok || !Array.isArray(body?.agents)) throw new Error("Agent roster unavailable");
+        setAgents(body.agents);
+        setAgentsUnavailable(false);
+      })
+      .catch(() => setAgentsUnavailable(true))
+      .finally(() => setAgentsLoading(false));
   }, [loadAccounts]);
 
   // The popup-close poll is started from a click handler, so nothing else tears
@@ -196,6 +211,26 @@ export default function MailboxConnectionCard() {
     }
   }
 
+  async function assignAgent(account: MailboxAccount, agentId: string) {
+    if (busy) return;
+    setBusy(account.id);
+    setError(null);
+    try {
+      const response = await authFetch(`/api/emails/accounts/${encodeURIComponent(account.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId || null }),
+      });
+      const body = (await safeJson(response)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Could not update the agent owner.");
+      await loadAccounts();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not update the agent owner.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function disconnect(account: MailboxAccount) {
     if (!window.confirm(`Disconnect ${account.emailAddress}? New messages will stop syncing.`))
       return;
@@ -223,10 +258,28 @@ export default function MailboxConnectionCard() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
-            Inbox connections
+            Wireline Email
           </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Give each agent an email identity, keep conversations in one operator inbox, and decide when a person needs to approve the next step.
+          </p>
         </div>
         <Mail className="size-5 text-primary" aria-hidden="true" />
+      </div>
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-3" aria-label="Wireline Email setup paths">
+        <article className="rounded-xl border border-primary/25 bg-primary/[.045] p-4">
+          <div className="flex items-center gap-2 text-primary"><Mail className="size-4" aria-hidden="true" /><p className="text-sm font-semibold">Wireline address</p></div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Create or attach a dedicated agent inbox, then assign it to the agent that owns the conversation.</p>
+        </article>
+        <article className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 text-foreground"><Building2 className="size-4" aria-hidden="true" /><p className="text-sm font-semibold">Company domain</p></div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Use an address on your company domain after its mail service has completed domain verification.</p>
+        </article>
+        <article className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 text-foreground"><ShieldCheck className="size-4" aria-hidden="true" /><p className="text-sm font-semibold">Connect existing mail</p></div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Bring Gmail, Outlook, or iCloud into the same governed inbox and agent workflow.</p>
+        </article>
       </div>
 
       {loading ? (
@@ -278,7 +331,7 @@ export default function MailboxConnectionCard() {
                 >
                   <div className="flex items-start gap-3">
                     <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
-                      {getIntegrationLogo(provider.logo)}
+                      {provider.id === "agentmail" ? <Mail className="size-4 text-primary" aria-hidden="true" /> : getIntegrationLogo(provider.logo)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
@@ -301,8 +354,25 @@ export default function MailboxConnectionCard() {
                           key={account.id}
                           className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2"
                         >
-                          <span className="min-w-0 flex-1 truncate text-xs text-foreground">
-                            {account.emailAddress}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs text-foreground">{account.emailAddress}</span>
+                            <label className="mt-1.5 block text-[11px] text-muted-foreground">
+                              <span className="sr-only">Agent owner for {account.emailAddress}</span>
+                              <select
+                                value={account.agentId || ""}
+                                disabled={busy === account.id || agentsLoading || agentsUnavailable || agents.length === 0}
+                                onChange={(event) => void assignAgent(account, event.target.value)}
+                                className="h-7 max-w-full rounded-md border border-border bg-card px-2 text-[11px] text-foreground disabled:opacity-60"
+                              >
+                                <option value="">No agent assigned</option>
+                                {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
+                              </select>
+                            </label>
+                            {agentsUnavailable ? (
+                              <p className="mt-1 text-[11px] text-destructive">Agent owner is temporarily unavailable.</p>
+                            ) : !agentsLoading && agents.length === 0 ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground">Create an agent to assign this inbox.</p>
+                            ) : null}
                           </span>
                           <button
                             type="button"
@@ -378,8 +448,8 @@ export default function MailboxConnectionCard() {
                         autoComplete="email"
                         value={agentmailEmail}
                         onChange={(event) => setAgentmailEmail(event.target.value)}
-                        placeholder="trywireline@agentmail.to"
-                        aria-label="AgentMail inbox address"
+                        placeholder="agent@agentmail.to"
+                        aria-label="Wireline Email address"
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <input
@@ -388,13 +458,12 @@ export default function MailboxConnectionCard() {
                         autoComplete="off"
                         value={agentmailApiKey}
                         onChange={(event) => setAgentmailApiKey(event.target.value)}
-                        placeholder="AgentMail API key"
-                        aria-label="AgentMail API key"
+                        placeholder="Email workspace key"
+                        aria-label="Wireline Email workspace key"
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Paste the inbox address and an org API key from the AgentMail console. Free
-                        inboxes are @agentmail.to. A custom domain needs AgentMail Developer.
+                        Paste the email workspace key once. Wireline creates or attaches the requested inbox and keeps agent routing, approvals, and inbox operations here. Company-domain addresses must already be verified in your email workspace.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button type="submit" size="sm" disabled={isBusy}>
@@ -425,7 +494,7 @@ export default function MailboxConnectionCard() {
                         {isBusy ? (
                           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                         ) : null}
-                        {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
+                        {providerAccounts.length ? "Add another identity" : provider.id === "agentmail" ? "Set up Wireline Email" : `Connect ${provider.label}`}
                       </Button>
                     </div>
                   )}

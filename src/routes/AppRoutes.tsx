@@ -4,27 +4,51 @@ import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
 
-const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
-const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
-const LiveVideoStudioPage = lazy(() => import("../pages/LiveVideoStudioPage"));
-const SettingsPage = lazy(() => import("../pages/SettingsPage"));
-const AdminSettings = lazy(() => import("../components/AdminSettings"));
-const OverviewPage = lazy(() => import("../pages/OverviewPage"));
-const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
-const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
-const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
-const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
-const PhonePage = lazy(() => import("../pages/PhonePage"));
-const InsightsPage = lazy(() => import("../pages/InsightsPage"));
-const EmailPage = lazy(() => import("../pages/EmailPage"));
-const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
-const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
-const BrowserCommandInstallPage = lazy(() => import("../pages/BrowserCommandInstallPage"));
-const BillingSettings = lazy(() => import("../pages/BillingSettings"));
-const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
-const TeamSettings = lazy(() => import("../pages/TeamSettings"));
-const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
-const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
+import {
+  loadAdminSettings,
+  loadAgentStudioHome,
+  loadApprovalsPage,
+  loadBillingSettings,
+  loadBrowserCommandInstallPage,
+  loadBrowserHandoffBridge,
+  loadClientAppsPage,
+  loadComplianceCenterPage,
+  loadConnectionsPage,
+  loadCustomizationSettings,
+  loadEmailPage,
+  loadInsightsPage,
+  loadKnowledgePage,
+  loadLiveVideoStudioPage,
+  loadOverviewPage,
+  loadPhonePage,
+  loadPhoneSettings,
+  loadSalesforceIntegrationPage,
+  loadSettingsPage,
+  loadTeamSettings,
+  loadTemplatesPage,
+} from "./workspace-route-preload";
+
+const AgentStudioHome = lazy(loadAgentStudioHome);
+const BrowserHandoffBridge = lazy(loadBrowserHandoffBridge);
+const LiveVideoStudioPage = lazy(loadLiveVideoStudioPage);
+const SettingsPage = lazy(loadSettingsPage);
+const AdminSettings = lazy(loadAdminSettings);
+const OverviewPage = lazy(loadOverviewPage);
+const TemplatesPage = lazy(loadTemplatesPage);
+const KnowledgePage = lazy(loadKnowledgePage);
+const ConnectionsPage = lazy(loadConnectionsPage);
+const SalesforceIntegrationPage = lazy(loadSalesforceIntegrationPage);
+const PhonePage = lazy(loadPhonePage);
+const InsightsPage = lazy(loadInsightsPage);
+const EmailPage = lazy(loadEmailPage);
+const ApprovalsPage = lazy(loadApprovalsPage);
+const ClientAppsPage = lazy(loadClientAppsPage);
+const BrowserCommandInstallPage = lazy(loadBrowserCommandInstallPage);
+const BillingSettings = lazy(loadBillingSettings);
+const PhoneSettings = lazy(loadPhoneSettings);
+const TeamSettings = lazy(loadTeamSettings);
+const ComplianceCenterPage = lazy(loadComplianceCenterPage);
+const CustomizationSettings = lazy(loadCustomizationSettings);
 
 const loading = <RouteFallback />;
 

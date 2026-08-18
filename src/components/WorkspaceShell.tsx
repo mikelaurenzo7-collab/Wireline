@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Link, useLocation } from "react-router";
+import { startTransition, useEffect, useState, type ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Search } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
@@ -13,6 +13,7 @@ import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useAgents } from "../contexts/AgentsContext";
 import { agentReadinessLabel } from "../lib/agent-readiness";
 import { customerAgentLanguage } from "../lib/product-copy";
+import { preloadWorkspaceRoute } from "../routes/workspace-route-preload";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -47,6 +48,14 @@ function isNativeAppShell() {
     params.get("wireline_native") === "1" ||
     /WirelineNative|WirelineiOS|WirelineAndroid/i.test(userAgent)
   );
+}
+
+function preloadAnchorRoute(target: EventTarget | null) {
+  if (!(target instanceof Element)) return;
+  const anchor = target.closest<HTMLAnchorElement>("a[href]");
+  if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
+  const url = new URL(anchor.href, window.location.href);
+  if (url.origin === window.location.origin) preloadWorkspaceRoute(url.pathname);
 }
 
 function userInitial(name?: string | null, email?: string | null) {
@@ -390,6 +399,36 @@ export default function WorkspaceShell({
   fullBleed?: boolean;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const preload = (event: Event) => preloadAnchorRoute(event.target);
+    const navigateWithoutFallback = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest<HTMLAnchorElement>("a[data-wireline-nav-href]");
+      if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      preloadWorkspaceRoute(url.pathname);
+      startTransition(() => navigate(`${url.pathname}${url.search}${url.hash}`));
+    };
+
+    document.addEventListener("pointerover", preload, true);
+    document.addEventListener("focusin", preload, true);
+    document.addEventListener("touchstart", preload, true);
+    document.addEventListener("click", navigateWithoutFallback, true);
+    return () => {
+      document.removeEventListener("pointerover", preload, true);
+      document.removeEventListener("focusin", preload, true);
+      document.removeEventListener("touchstart", preload, true);
+      document.removeEventListener("click", navigateWithoutFallback, true);
+    };
+  }, [navigate]);
   const [moreOpen, setMoreOpen] = useState(false);
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);

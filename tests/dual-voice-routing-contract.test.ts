@@ -48,7 +48,7 @@ describe("dual-voice PSTN routing contracts", () => {
   it("routes Studio phone picks through the managed voice PATCH", () => {
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(picker).toContain("/voice");
-    expect(picker).toContain('provider: "vapi"');
+    expect(picker).toContain('provider: "xai"');
     expect(picker).not.toContain('provider: "presenter"');
   });
 });

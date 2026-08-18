@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { isXaiPstnVoiceId } from "../../data/voice-roster";
 import { AppError } from "../api-error";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { buildRoleToolDefsForTenant } from "../vapi-helpers";
@@ -38,6 +39,10 @@ type AgentRow = {
   userId: string;
   name: string;
   role: string | null;
+  voiceId: string | null;
+  voiceProvider: string | null;
+  phoneVoiceId: string | null;
+  phoneVoiceProvider: string | null;
   firstMessage: string | null;
   personalityVibe: string | null;
   systemPromptOverride: string | null;
@@ -107,6 +112,30 @@ function storedProfile(value: unknown): unknown {
   );
 }
 
+function selectedXaiVoice(agent: AgentRow): string | undefined {
+  const provider = trimLine(agent.voiceProvider, 32).toLowerCase();
+  const voiceId = trimLine(agent.voiceId, 160).toLowerCase();
+  if (provider === "xai" && isXaiPstnVoiceId(voiceId)) return voiceId;
+
+  const phoneProvider = trimLine(agent.phoneVoiceProvider, 32).toLowerCase();
+  const phoneVoiceId = trimLine(agent.phoneVoiceId, 160).toLowerCase();
+  if (
+    provider === "presenter" &&
+    phoneProvider === "xai" &&
+    isXaiPstnVoiceId(phoneVoiceId)
+  ) {
+    return phoneVoiceId;
+  }
+
+  return undefined;
+}
+
+function profileForXaiVoice(voiceId: string): WirelineVoiceProfile | undefined {
+  return WIRELINE_LIVE_VOICE_PROFILES.find(
+    (profile) => resolveWirelineGrokVoice(undefined, profile.id) === voiceId,
+  )?.id;
+}
+
 function buildInstructions(input: {
   agent: AgentRow;
   tenant: TenantRuntimeSettings;
@@ -171,6 +200,10 @@ async function loadRuntime(agentId: string, userId: string) {
           userId: schema.agents.userId,
           name: schema.agents.name,
           role: schema.agents.role,
+          voiceId: schema.agents.voiceId,
+          voiceProvider: schema.agents.voiceProvider,
+          phoneVoiceId: schema.agents.phoneVoiceId,
+          phoneVoiceProvider: schema.agents.phoneVoiceProvider,
           firstMessage: schema.agents.firstMessage,
           personalityVibe: schema.agents.personalityVibe,
           systemPromptOverride: schema.agents.systemPromptOverride,
@@ -281,11 +314,14 @@ export async function buildXAIRealtimeAgentRuntime(input: {
   surface: XAIRealtimeSurface;
 }) {
   const runtime = await loadRuntime(input.agentId, input.userId);
-  const profile = resolveWirelineVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
-  const voice = resolveWirelineGrokVoice(runtime.agent.role, profile);
+  const selectedVoice = selectedXaiVoice(runtime.agent);
+  const profile =
+    (selectedVoice && profileForXaiVoice(selectedVoice)) ||
+    resolveWirelineVoiceProfile(
+      runtime.agent.role,
+      storedProfile(runtime.agent.businessVariables),
+    );
+  const voice = selectedVoice || resolveWirelineGrokVoice(runtime.agent.role, profile);
   const tools = await resolveTools(input.surface, runtime);
   const instructions = buildInstructions({
     ...runtime,
@@ -409,14 +445,17 @@ export async function searchApprovedAgentKnowledge(input: {
 
 export async function getXAIRealtimeVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadRuntime(agentId, userId);
-  const profile = resolveWirelineVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
+  const selectedVoice = selectedXaiVoice(runtime.agent);
+  const profile =
+    (selectedVoice && profileForXaiVoice(selectedVoice)) ||
+    resolveWirelineVoiceProfile(
+      runtime.agent.role,
+      storedProfile(runtime.agent.businessVariables),
+    );
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineGrokVoice(runtime.agent.role, profile),
+    voice: selectedVoice || resolveWirelineGrokVoice(runtime.agent.role, profile),
     customVoiceConfigured: false,
   };
 }
@@ -434,15 +473,22 @@ export async function setXAIRealtimeVoiceProfile(
   delete variables.grok_voice_id;
   delete variables.wirelineLiveCustomVoice;
   variables.wirelineLiveVoiceProfile = normalized;
+  const voice = resolveWirelineGrokVoice(runtime.agent.role, normalized);
   await drizzle
     .update(schema.agents)
-    .set({ businessVariables: variables })
+    .set({
+      businessVariables: variables,
+      voiceId: voice,
+      voiceProvider: "xai",
+      phoneVoiceId: null,
+      phoneVoiceProvider: null,
+    })
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
 
   return {
     profile: normalized,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: resolveWirelineGrokVoice(runtime.agent.role, normalized),
+    voice,
     customVoiceConfigured: false,
   };
 }

@@ -89,19 +89,24 @@ describe("managed phone voice runtime policy", () => {
     expect(draftService).toMatch(/voiceProvider: isXaiPstnVoiceId\(voiceId\) \? "xai" : "vapi"/);
   });
 
-  it("does not let presenter or ElevenLabs selections cross the native phone boundary", () => {
+  it("allows only validated xAI selections across the native phone boundary", () => {
     expect(rollbackFactory).toMatch(
       /configured\.voiceProvider === "11labs"[\s\S]*\? directionalVoice[\s\S]*: resolvePstnVoiceCandidate/,
     );
     expect(nativeRuntime).toContain("resolveWirelineVoiceProfile");
     expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
     expect(nativeRuntime).not.toContain("resolvePstnVoiceCandidate");
-    expect(nativeRuntime).not.toContain("voiceProvider");
+    expect(nativeRuntime).toContain("selectedXaiVoice");
+    expect(nativeRuntime).toContain("isXaiPstnVoiceId");
+    expect(nativeRuntime).toContain('provider === "xai"');
+    expect(nativeRuntime).toContain('provider === "presenter"');
+    expect(nativeRuntime).toContain('phoneProvider === "xai"');
+    expect(nativeRuntime).not.toContain('provider === "11labs"');
     expect(nativeOutbound).not.toContain("voiceProvider");
   });
 
   it("gates private voices on authorization, human proof review, and revocation", () => {
-    expect(voiceRoutes).toMatch(/requirePlatformAdmin/);
+    expect(voiceRoutes).toMatch(/authenticateUser,[\s\S]*voiceMutationRateLimit/);
     expect(voiceRoutes).toMatch(/ELEVENLABS_VOICE_CONSENT_VERSION/);
     expect(voiceRoutes).toMatch(/sourceAudioRetained: false/);
     expect(voiceRoutes).toMatch(/createHash\("sha256"\)/);

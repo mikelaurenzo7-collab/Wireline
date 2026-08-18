@@ -44,7 +44,7 @@ describe("agentmail mailbox contract", () => {
     expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
     expect(agentmailRoutes).toContain("deleteAgentMailWebhooksForAccount");
     expect(mailboxCard.toLowerCase()).not.toContain("webhook");
-    expect(mailboxCard).toContain("trywireline@agentmail.to");
+    expect(mailboxCard).toContain("agent@agentmail.to");
     expect(mailboxCard).toContain("/api/emails/accounts/");
     expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
     expect(registry).toContain("app.use(agentmailWebhookRouter)");

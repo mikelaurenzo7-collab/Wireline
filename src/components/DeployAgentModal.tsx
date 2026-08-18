@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES, providerLabel } from "../lib/voice-catalog";
+import { LIVE_VOICE_BY_GENDER, WIRELINE_LIVE_VOICES, providerLabel } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Input } from "./ui/shadcn/Input";
@@ -61,7 +61,7 @@ export default function DeployAgentModal({
 }: DeployAgentModalProps) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<Gender>("female");
-  const [voiceId, setVoiceId] = useState<string>(MANAGED_VOICE_BY_GENDER.female);
+  const [voiceId, setVoiceId] = useState<string>(LIVE_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -81,7 +81,7 @@ export default function DeployAgentModal({
     setName(template.name);
     const initialGender: Gender = template.defaultGender ?? "female";
     setGender(initialGender);
-    setVoiceId(MANAGED_VOICE_BY_GENDER[initialGender]);
+    setVoiceId(LIVE_VOICE_BY_GENDER[initialGender]);
     setShowVoiceList(false);
     // Defer focus until the modal animation is past the initial frame. Clear it
     // if the template changes or the dialog closes so focus cannot jump back
@@ -95,7 +95,7 @@ export default function DeployAgentModal({
   // user doesn't have to also click into the voice picker.
   const handleGenderChange = (g: Gender) => {
     setGender(g);
-    setVoiceId(MANAGED_VOICE_BY_GENDER[g]);
+    setVoiceId(LIVE_VOICE_BY_GENDER[g]);
     setShowVoiceList(false);
   };
 
@@ -105,7 +105,7 @@ export default function DeployAgentModal({
 
   // Curated managed voices only — every deploy lands on the phone runtime
   // Wireline actually operates, so the picked voice is the live voice.
-  const allVoices = VAPI_CURATED_VOICES;
+  const allVoices = WIRELINE_LIVE_VOICES;
   const voicesForGender = allVoices.filter((v) => v.gender === gender);
   const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
@@ -232,7 +232,7 @@ export default function DeployAgentModal({
                         label="Female"
                         sublabel={
                           allVoices
-                            .find((v) => v.id === MANAGED_VOICE_BY_GENDER.female)
+                            .find((v) => v.id === LIVE_VOICE_BY_GENDER.female)
                             ?.name.split(" · ")[0] || "Female default"
                         }
                         icon={User2}
@@ -243,7 +243,7 @@ export default function DeployAgentModal({
                         label="Male"
                         sublabel={
                           allVoices
-                            .find((v) => v.id === MANAGED_VOICE_BY_GENDER.male)
+                            .find((v) => v.id === LIVE_VOICE_BY_GENDER.male)
                             ?.name.split(" · ")[0] || "Male default"
                         }
                         icon={Users2}

@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import { CheckSquare } from "lucide-react";
+import { CheckSquare, MailCheck } from "lucide-react";
 
 import EmailInbox from "../components/EmailInbox";
 import SmsThreads from "../components/SmsThreads";
@@ -42,13 +42,22 @@ export default function EmailPage() {
         <WorkspacePageIntro
           title="Inbox"
           titleHidden
+          description="Wireline Email keeps agent-owned conversations, human approvals, and next steps in one place."
           action={
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/approvals">
-                <CheckSquare className="size-3.5" aria-hidden="true" />
-                Approvals
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/connections">
+                  <MailCheck className="size-3.5" aria-hidden="true" />
+                  Set up email
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/approvals">
+                  <CheckSquare className="size-3.5" aria-hidden="true" />
+                  Approvals
+                </Link>
+              </Button>
+            </div>
           }
         />
         <WorkspaceTabStrip

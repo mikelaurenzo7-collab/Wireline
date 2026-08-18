@@ -15,6 +15,9 @@ export interface ElevenLabsVoice {
   description?: string | null;
 }
 
+const VOICE_ROSTER_TTL_MS = 60 * 60 * 1000;
+let voiceRosterCache: { at: number; voices: ElevenLabsVoice[] } | null = null;
+
 export class ElevenLabsProviderError extends Error {
   constructor(
     readonly operation: string,
@@ -66,6 +69,52 @@ export async function getElevenLabsVoice(voiceId: string): Promise<ElevenLabsVoi
   return (await response.json()) as ElevenLabsVoice;
 }
 
+/**
+ * The complete ElevenLabs roster accessible to Wireline's configured account.
+ * Provider-side catalog additions become available without a deploy. The cache
+ * keeps picker loads and live-call assembly from repeatedly spending a catalog
+ * request while preserving a bounded refresh window for account changes.
+ */
+export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
+  if (!elevenLabsConfigured()) return [];
+  if (voiceRosterCache && Date.now() - voiceRosterCache.at < VOICE_ROSTER_TTL_MS) {
+    return voiceRosterCache.voices;
+  }
+  const response = await providerFetch("voice roster", "/voices", {}, 10_000);
+  const body = (await response.json()) as { voices?: ElevenLabsVoice[] };
+  const voices = Array.isArray(body.voices)
+    ? body.voices.filter((voice): voice is ElevenLabsVoice =>
+        Boolean(voice?.voice_id?.trim() && voice?.name?.trim()),
+      )
+    : [];
+  voiceRosterCache = { at: Date.now(), voices };
+  return voices;
+}
+
+/**
+ * Only shared library voices are selectable by every Wireline workspace.
+ * Account-owned clones remain ownership- and review-gated through
+ * `wireline_cloned_voices` rather than becoming visible to other tenants.
+ */
+export async function isElevenLabsLibraryVoiceAvailable(voiceId: string): Promise<boolean> {
+  const normalized = voiceId.trim();
+  if (!normalized) return false;
+  try {
+    return (await listElevenLabsVoices()).some(
+      (voice) => voice.voice_id === normalized && voice.category !== "cloned",
+    );
+  } catch {
+    // A live call must degrade to its configured Vapi fallback if the library
+    // lookup is unavailable after selection; it must not fail the call setup.
+    return false;
+  }
+}
+
+/** Test seam for the process-wide provider roster cache. */
+export function resetElevenLabsVoiceRosterCache(): void {
+  voiceRosterCache = null;
+}
+
 export async function createInstantVoiceClone(args: {
   name: string;
   audioBytes: Buffer;
@@ -109,6 +158,44 @@ export async function createInstantVoiceClone(args: {
     voiceId: created.voice_id,
     requiresVerification: created.requires_verification === true,
     previewUrl,
+  };
+}
+
+export type ElevenLabsDubbingRequest = {
+  sourceUrl: string;
+  targetLanguage: string;
+};
+
+/**
+ * Start a server-owned dubbing job. The browser sends only a public HTTPS media
+ * URL and language target; the ElevenLabs credential remains server-side.
+ */
+export async function startElevenLabsDubbing(
+  request: ElevenLabsDubbingRequest,
+): Promise<{ dubbingId: string; expectedDurationSeconds?: number }> {
+  const response = await providerFetch(
+    "dubbing",
+    "/dubbing",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_url: request.sourceUrl,
+        target_lang: request.targetLanguage,
+      }),
+    },
+    45_000,
+  );
+  const created = (await response.json()) as {
+    dubbing_id?: string;
+    expected_duration_sec?: number;
+  };
+  if (!created.dubbing_id) throw new ElevenLabsProviderError("dubbing", 502);
+  return {
+    dubbingId: created.dubbing_id,
+    ...(typeof created.expected_duration_sec === "number"
+      ? { expectedDurationSeconds: created.expected_duration_sec }
+      : {}),
   };
 }
 

@@ -9,6 +9,8 @@ import {
   deleteElevenLabsVoice,
   elevenLabsConfigured,
   generateElevenLabsProof,
+  listElevenLabsVoices,
+  startElevenLabsDubbing,
 } from "../lib/elevenlabs-client";
 import {
   ELEVENLABS_REALTIME_MODEL,
@@ -22,7 +24,6 @@ import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
-import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -74,6 +75,36 @@ const voiceMutationRateLimit = createRateLimiter({
   max: 30,
   failClosedOnError: true,
 });
+
+const dubbingRateLimit = createRateLimiter({
+  bucket: "api:voice-dubbing",
+  windowMs: 60 * 60_000,
+  max: 3,
+  failClosedOnError: true,
+});
+
+function dubbingSourceUrl(value: unknown): string {
+  if (typeof value !== "string") throw AppError.badRequest("A public HTTPS media URL is required.");
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw AppError.badRequest("A public HTTPS media URL is required.");
+  }
+  const host = url.hostname.toLowerCase();
+  const privateIpv4 = /^(?:127|0|10)\.|^192\.168\.|^172\.(?:1[6-9]|2\d|3[01])\./.test(host);
+  const privateIpv6 = host === "::1" || host.startsWith("fc") || host.startsWith("fd");
+  if (url.protocol !== "https:" || !host || host === "localhost" || privateIpv4 || privateIpv6) {
+    throw AppError.badRequest("Use a public HTTPS media URL.");
+  }
+  return url.toString();
+}
+
+function dubbingLanguage(value: unknown): string {
+  const language = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (!/^[a-z]{2,3}$/.test(language)) throw AppError.badRequest("Use a supported language code.");
+  return language;
+}
 
 function normalizeMimeType(value: unknown): string {
   const normalized =
@@ -298,12 +329,9 @@ router.get(
   "/api/voices",
   authenticateUser,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
-    const canManageVoices = await isPlatformAdmin(req.user).catch((error) => {
-      log.warn("voice library admin lookup failed", {
-        error: getErrorMessage(error),
-      });
-      return false;
-    });
+    // Clone rows are always constrained to the authenticated owner, so any
+    // customer can create, review, and revoke only their own consented voice.
+    const canManageVoices = true;
     const privateRows = await drizzle
       .select({
         voiceId: schema.clonedVoices.voiceId,
@@ -334,22 +362,43 @@ router.get(
         owned_by_user: true,
       }));
 
-    res.json({
-      configured: elevenLabsConfigured(),
-      canManageVoices,
-      voices: [
-        ...ELEVENLABS_CURATED_VOICES.map((voice) => ({
+    const accountVoices = elevenLabsConfigured()
+      ? await listElevenLabsVoices().catch((error) => {
+          log.warn("ElevenLabs voice roster unavailable; using the bundled fallback", {
+            error: getErrorMessage(error),
+          });
+          return [];
+        })
+      : [];
+    const providerVoices = (accountVoices.length
+      ? accountVoices.map((voice) => ({
+          voice_id: voice.voice_id,
+          id: voice.voice_id,
+          // Provider identities remain visible, but every selectable option is
+          // branded as a Wireline voice in the product catalog.
+          name: `Wireline ${voice.name}`,
+          provider: "11labs",
+          category: voice.category || "premade",
+          preview_url: `/api/voices/${encodeURIComponent(voice.voice_id)}/preview`,
+          owned_by_user: false,
+        }))
+      : ELEVENLABS_CURATED_VOICES.map((voice) => ({
           voice_id: voice.id,
           id: voice.id,
-          name: voice.name,
+          name: `Wireline ${voice.name}`,
           provider: voice.provider,
           category: "premade",
           preview_url: `/api/voices/${encodeURIComponent(voice.id)}/preview`,
           owned_by_user: false,
           gender: voice.gender,
-        })),
-        ...approvedPrivateVoices,
-      ],
+        })))
+      .filter((voice) => voice.category !== "cloned")
+      .filter((voice) => !approvedPrivateVoices.some((privateVoice) => privateVoice.id === voice.id));
+
+    res.json({
+      configured: elevenLabsConfigured(),
+      canManageVoices,
+      voices: [...providerVoices, ...approvedPrivateVoices],
       privateVoices: canManageVoices
         ? privateRows.map((voice) => ({
             voice_id: voice.voiceId,
@@ -373,9 +422,6 @@ router.get(
     const voiceId = req.params.id.trim();
     const curated = isCuratedElevenLabsVoiceId(voiceId);
     if (!curated) {
-      if (!(await isPlatformAdmin(req.user))) {
-        throw AppError.notFound("Voice not found.");
-      }
       const [owned] = await drizzle
         .select({ status: schema.clonedVoices.status })
         .from(schema.clonedVoices)
@@ -409,9 +455,43 @@ router.get(
 );
 
 router.post(
+  "/api/voices/dub",
+  authenticateUser,
+  dubbingRateLimit,
+  enforceLaunchHardGate,
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    if (!elevenLabsConfigured()) {
+      throw AppError.serviceUnavailable("Dubbing is not configured.");
+    }
+    if (req.body?.rightsAccepted !== true) {
+      throw AppError.badRequest("Confirm that you have rights to dub this media.");
+    }
+    const sourceUrl = dubbingSourceUrl(req.body?.sourceUrl);
+    const targetLanguage = dubbingLanguage(req.body?.targetLanguage);
+    try {
+      const job = await startElevenLabsDubbing({ sourceUrl, targetLanguage });
+      await recordOutcome({
+        userId: req.user.id,
+        action: "voice.dubbing.requested",
+        voiceId: job.dubbingId,
+        severity: "info",
+        metadata: { targetLanguage },
+      });
+      res.status(202).json({ ok: true, dubbingId: job.dubbingId, ...job });
+    } catch (error) {
+      log.warn("dubbing request failed", {
+        userId: req.user.id,
+        targetLanguage,
+        error: getErrorMessage(error),
+      });
+      throw AppError.serviceUnavailable("Dubbing could not be started. Try again shortly.");
+    }
+  }),
+);
+
+router.post(
   "/api/voices/clone",
   authenticateUser,
-  requirePlatformAdmin,
   voiceMutationRateLimit,
   cloneIpRateLimit,
   enforceLaunchHardGate,
@@ -559,7 +639,6 @@ router.post(
 router.post(
   "/api/voices/:id/approve",
   authenticateUser,
-  requirePlatformAdmin,
   voiceMutationRateLimit,
   enforceLaunchHardGate,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
@@ -648,7 +727,6 @@ router.post(
 router.delete(
   "/api/voices/:id",
   authenticateUser,
-  requirePlatformAdmin,
   voiceMutationRateLimit,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const voiceId = req.params.id.trim();
