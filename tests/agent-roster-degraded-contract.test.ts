@@ -67,8 +67,10 @@ describe("Bot roster: empty versus unreachable", () => {
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     const dialGuard = dial.indexOf("voiceAgents.length === 0 && (degraded || phoneLookupDegraded)");
+    const dialEmptyState = dial.indexOf(": voiceAgents.length === 0 ? (");
     expect(dialGuard).toBeGreaterThan(-1);
-    expect(dialGuard).toBeLessThan(dial.indexOf("No voice agents with a phone line yet"));
+    expect(dialEmptyState).toBeGreaterThan(-1);
+    expect(dialGuard).toBeLessThan(dialEmptyState);
 
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("degraded && !hasBots");
