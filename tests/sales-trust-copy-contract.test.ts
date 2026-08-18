@@ -14,28 +14,13 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
     pattern: /Never call the same number twice in 24h/i,
     reason: "unimplemented 24h duplicate-dial claim",
   },
-  {
-    pattern: /pass naturally as human/i,
-    reason: "stealth AI / human-passing claim",
-  },
+  { pattern: /pass naturally as human/i, reason: "stealth AI / human-passing claim" },
   { pattern: /80%\+ of calls/i, reason: "unsourced human-passing statistic" },
-  {
-    pattern: /Disclosure is your call/i,
-    reason: "blanket disclosure opt-out claim",
-  },
-  {
-    pattern: /200 cold leads a day/i,
-    reason: "unsourced cold-call volume claim",
-  },
+  { pattern: /Disclosure is your call/i, reason: "blanket disclosure opt-out claim" },
+  { pattern: /200 cold leads a day/i, reason: "unsourced cold-call volume claim" },
   { pattern: /1,000 dials/i, reason: "unsourced dial-volume claim" },
-  {
-    pattern: /guarantee(?:d|s)?\s+TCPA/i,
-    reason: "guaranteed TCPA compliance claim",
-  },
-  {
-    pattern: /guarantee(?:d|s)?\s+HIPAA/i,
-    reason: "guaranteed HIPAA compliance claim",
-  },
+  { pattern: /guarantee(?:d|s)?\s+TCPA/i, reason: "guaranteed TCPA compliance claim" },
+  { pattern: /guarantee(?:d|s)?\s+HIPAA/i, reason: "guaranteed HIPAA compliance claim" },
   { pattern: /jumps 4-7x/i, reason: "unsourced ROI multiplier" },
   {
     pattern: /logged to your CRM in real time/i,
@@ -46,10 +31,7 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
     pattern: /homepage now leads with/i,
     reason: "internal design meta leaked to customer UI",
   },
-  {
-    pattern: /AI SDR for Outbound/i,
-    reason: "spammy AI SDR positioning in meta title",
-  },
+  { pattern: /AI SDR for Outbound/i, reason: "retired spammy positioning" },
 ];
 
 const SCANNED_FILES = [
@@ -59,37 +41,37 @@ const SCANNED_FILES = [
 ] as const;
 
 describe("sales trust copy contract", () => {
-  it("exports canonical trust disclosure FAQ in product-copy", () => {
+  it("exports canonical trust disclosure guidance", () => {
     expect(TRUST_DISCLOSURE_FAQ).toContain("disclosure policy");
     expect(TRUST_DISCLOSURE_FAQ).toContain("logs it automatically");
     expect(TRUST_DISCLOSURE_FAQ).toContain("consent rules");
   });
 
-  it("forbids prohibited trust and performance claims in public marketing surfaces", () => {
+  it("forbids unsafe trust and performance claims in public marketing", () => {
     const violations: string[] = [];
-
     for (const file of SCANNED_FILES) {
       const source = read(file);
       for (const { pattern, reason } of PROHIBITED_PATTERNS) {
-        if (pattern.test(source)) {
-          violations.push(`${file}: ${reason} (${pattern})`);
-        }
+        if (pattern.test(source)) violations.push(`${file}: ${reason}`);
       }
     }
-
     expect(violations).toEqual([]);
   });
 
-  it("keeps sales wedge copy aligned with profit-recovery positioning", () => {
+  it("keeps the sales wedge governed, Bot-native, and tied to canonical disclosure guidance", () => {
     const wedges = read("src/data/vertical-wedges.ts");
-    expect(wedges).toContain("Profit Recovery Phone Agents");
-    expect(wedges).toContain("speed to lead");
+    const product = read("src/lib/bot-product.ts");
+    expect(wedges).toContain('metaTitle: "WIRELINE FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"');
+    expect(wedges).toContain('headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"');
+    expect(wedges).toContain("Fast, Governed Speed to Lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
+    expect(product).toContain('name: "Sales Rep"');
+    expect(product).toContain('category: "Business" as const');
   });
 
-  it("keeps WireAgentLanding customer-facing without internal meta", () => {
+  it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("MARKETING_VOICE.headline");
     expect(landing).not.toMatch(/homepage now leads/i);
@@ -99,27 +81,29 @@ describe("sales trust copy contract", () => {
 
   it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
     const compare = read("src/pages/Compare.tsx");
-
     const checked = compare.match(
       /Public prices were checked on the linked official pages on\s+([A-Z][a-z]+ \d{1,2},\s+20\d{2})/,
     );
     if (!checked) throw new Error("Market comparison verification date is missing.");
+
     expect(compare).not.toMatch(/Verified [A-Z][a-z]+ \d{1,2}, 20\d{2}/);
-    const checkedAt = checked[1].replace(/\s+/g, " ");
-    const verifiedAt = Date.parse(`${checkedAt} 00:00:00 UTC`);
+    const verifiedAt = Date.parse(`${checked[1].replace(/\s+/g, " ")} 00:00:00 UTC`);
     expect(Number.isFinite(verifiedAt)).toBe(true);
     const ageMs = Date.now() - verifiedAt;
     expect(ageMs).toBeGreaterThanOrEqual(-86_400_000);
     expect(ageMs).toBeLessThanOrEqual(45 * 86_400_000);
-    expect(compare).toContain("https://www.goodcall.com/pricing");
-    expect(compare).toContain("https://smith.ai/pricing/ai-receptionist");
-    expect(compare).toContain("https://www.bland.ai/pricing");
-    expect(compare).toContain("https://www.retellai.com/pricing");
+
+    for (const url of [
+      "https://www.goodcall.com/pricing",
+      "https://smith.ai/pricing/ai-receptionist",
+      "https://www.bland.ai/pricing",
+      "https://www.retellai.com/pricing",
+    ]) {
+      expect(compare).toContain(url);
+    }
     expect(compare).toContain(
-      "not a claim that unlike products are feature for feature equivalents",
+      "not a claim that unlike products are feature-for-feature equivalents",
     );
-    // The hero and the closing CTA band both went; the free-start path now
-    // sits inline at the point of comparison, under the before-and-after list.
     expect(compare).toContain('to="/signup?plan=personal"');
   });
 });

@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { WEDGES } from "../src/data/vertical-wedges";
 import {
-  HOME_TITLE,
   HOME_DESCRIPTION,
+  HOME_TITLE,
   PRERENDERED_MARKETING_ROUTES,
   resolveRouteMeta,
 } from "../src/lib/marketing-route-meta";
@@ -13,18 +13,12 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * Marketing copy carries no hyphens. Slugs, hrefs, tel: links, CSS classes,
- * and code identifiers keep theirs — the ban is on customer-facing prose.
- * SERP-visible meta fields (titles/descriptions) additionally carry no en/em
- * dashes; the "|" separator is the house convention there.
- *
- * "add-on" is intentionally not part of the retired-phrase list: Live Video is
- * a distinct optional recurring product, and the precise billing noun is less
- * ambiguous than forcing a house-style rewrite of that commercial term.
+ * Wireline avoids en and em dashes in customer-facing prose. Standard hyphens
+ * remain available for precise compounds such as voice-first and
+ * feature-for-feature. Slugs, links, classes, and identifiers are not copy and
+ * are excluded from the recursive copy scan.
  */
-const HYPHEN = /[-‐‑]/;
-const ANY_DASH = /[-‐‑–—]/;
-
+const LONG_DASH = /[–—]/;
 const SKIP_KEYS = new Set(["href", "slug", "key", "id", "icon", "image"]);
 const isNonCopy = (value: string) =>
   value.startsWith("tel:") ||
@@ -32,58 +26,58 @@ const isNonCopy = (value: string) =>
   value.startsWith("http") ||
   value.startsWith("mailto:");
 
-function collectHyphenated(node: unknown, path: string, hits: string[]): void {
+function collectLongDashes(node: unknown, path: string, hits: string[]): void {
   if (typeof node === "string") {
-    if (!isNonCopy(node) && HYPHEN.test(node)) hits.push(`${path}: ${node}`);
+    if (!isNonCopy(node) && LONG_DASH.test(node)) hits.push(`${path}: ${node}`);
     return;
   }
   if (Array.isArray(node)) {
-    node.forEach((item, index) => collectHyphenated(item, `${path}[${index}]`, hits));
+    node.forEach((item, index) => collectLongDashes(item, `${path}[${index}]`, hits));
     return;
   }
   if (node && typeof node === "object") {
     for (const [key, value] of Object.entries(node)) {
       if (SKIP_KEYS.has(key)) continue;
-      collectHyphenated(value, `${path}.${key}`, hits);
+      collectLongDashes(value, `${path}.${key}`, hits);
     }
   }
 }
 
-describe("marketing copy hyphen ban", () => {
-  it("keeps every wedge copy string hyphen-free", () => {
+describe("marketing copy punctuation and retired-positioning contract", () => {
+  it("keeps every wedge copy string free of en and em dashes", () => {
     const hits: string[] = [];
-    collectHyphenated(WEDGES, "WEDGES", hits);
+    collectLongDashes(WEDGES, "WEDGES", hits);
     expect(hits).toEqual([]);
   });
 
-  it("keeps wedge meta fields free of every dash form", () => {
+  it("keeps wedge meta fields free of en and em dashes", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
-      expect(wedge.metaTitle, `${slug}.metaTitle`).not.toMatch(ANY_DASH);
-      expect(wedge.metaDescription, `${slug}.metaDescription`).not.toMatch(ANY_DASH);
+      expect(wedge.metaTitle, `${slug}.metaTitle`).not.toMatch(LONG_DASH);
+      expect(wedge.metaDescription, `${slug}.metaDescription`).not.toMatch(LONG_DASH);
     }
   });
 
-  it("keeps every prerendered route's title and description free of every dash form", () => {
+  it("keeps every prerendered route title and description free of long dashes", () => {
     for (const route of PRERENDERED_MARKETING_ROUTES) {
       const meta = resolveRouteMeta(route);
       expect(meta, route).not.toBeNull();
-      expect(meta!.title, `${route} title`).not.toMatch(ANY_DASH);
-      expect(meta!.description, `${route} description`).not.toMatch(ANY_DASH);
+      expect(meta!.title, `${route} title`).not.toMatch(LONG_DASH);
+      expect(meta!.description, `${route} description`).not.toMatch(LONG_DASH);
     }
-    expect(HOME_TITLE).not.toMatch(ANY_DASH);
-    expect(HOME_DESCRIPTION).not.toMatch(ANY_DASH);
+    expect(HOME_TITLE).not.toMatch(LONG_DASH);
+    expect(HOME_DESCRIPTION).not.toMatch(LONG_DASH);
   });
 
-  it("keeps the installable manifest identity hyphen-free", () => {
+  it("keeps the installable manifest identity free of long dashes", () => {
     const manifest = JSON.parse(read("public/site.webmanifest")) as {
       name: string;
       description: string;
     };
-    expect(manifest.name).not.toMatch(ANY_DASH);
-    expect(manifest.description).not.toMatch(ANY_DASH);
+    expect(manifest.name).not.toMatch(LONG_DASH);
+    expect(manifest.description).not.toMatch(LONG_DASH);
   });
 
-  it("keeps retired hyphenated phrasing out of the commercial funnel pages", () => {
+  it("keeps retired Agent-era positioning out of the commercial funnel", () => {
     const sources = [
       "src/pages/Pricing.tsx",
       "src/pages/Features.tsx",
@@ -93,45 +87,25 @@ describe("marketing copy hyphen ban", () => {
     ].map((path) => [path, read(path)] as const);
 
     const retired = [
-      "follow-up",
-      "Follow-up",
-      "Follow-Up",
-      "after-hours",
-      "After-hours",
-      "owner-ready",
-      "per-agent",
-      "per-call",
-      "voice-infrastructure",
-      "month-to-month",
-      "Month-to-month",
-      "long-term",
-      "lock-in",
-      "Lowest-cost",
-      "Multi-agent",
-      "purpose-built",
-      "hard-cap",
-      "mid-call",
-      "mid-conversation",
-      "committed-usage",
-      "lowest-risk",
-      "phone-number cost",
-      "Pay-as-you-go",
-      "feature-for-feature",
-      "live-voice",
-      "double-booking",
-      "timezone-aware",
-      "customer-count",
-      "service-backed",
-      "Flat-rate",
-      "Post-call",
-      "Calendar-aware",
-      "speed-to-lead",
+      "AI profit agent",
+      "AI Profit Agent",
+      "phone employee",
+      "Phone Employee",
+      "AI VOICE AGENTS",
+      "Voice agents that get the work done",
+      "AI conversation workforce",
     ];
 
     for (const [path, source] of sources) {
       for (const phrase of retired) {
-        expect(source, `${path} must not contain "${phrase}"`).not.toContain(phrase);
+        expect(source, `${path} must not contain retired phrase "${phrase}"`).not.toContain(phrase);
       }
     }
+  });
+
+  it("preserves useful hyphenated compounds in the approved voice-first system", () => {
+    expect(HOME_DESCRIPTION).toContain("voice-first");
+    expect(read("src/lib/bot-product.ts")).toMatch(/voice-first/i);
+    expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });

@@ -7,7 +7,20 @@ import { Resvg } from "@resvg/resvg-js";
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const extensionRoot = resolve(currentDirectory, "..");
 const repoRoot = resolve(extensionRoot, "../..");
-const isCheck = process.argv.includes("--check");
+const args = process.argv.slice(2);
+const isCheck = args.includes("--check");
+const noPublish = args.includes("--no-publish");
+
+function argumentValue(name) {
+  const index = args.indexOf(name);
+  if (index < 0) return null;
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${name} requires a path.`);
+  return value;
+}
+
+const outputRoot = resolve(argumentValue("--output-root") || resolve(extensionRoot, "dist"));
+const publishRoot = resolve(argumentValue("--publish-dir") || resolve(repoRoot, "public/downloads"));
 
 function mergeManifest(base, overlay) {
   const output = { ...base };
@@ -71,7 +84,7 @@ async function renderIcons(outputDirectory) {
 
 function zipTarget(target, outputDirectory) {
   const zipName = `wireline-command-${target}.zip`;
-  const zipPath = resolve(extensionRoot, "dist", zipName);
+  const zipPath = resolve(outputRoot, zipName);
   const result = spawnSync("zip", ["-r", "-q", zipPath, "."], {
     cwd: outputDirectory,
     encoding: "utf8",
@@ -83,9 +96,9 @@ function zipTarget(target, outputDirectory) {
 }
 
 async function publishDownload(zipPath, target) {
-  const downloadsDir = resolve(repoRoot, "public/downloads");
-  await mkdir(downloadsDir, { recursive: true });
-  await cp(zipPath, resolve(downloadsDir, `wireline-command-${target}.zip`));
+  if (noPublish) return;
+  await mkdir(publishRoot, { recursive: true });
+  await cp(zipPath, resolve(publishRoot, `wireline-command-${target}.zip`));
 }
 
 async function buildTarget(target) {
@@ -95,7 +108,7 @@ async function buildTarget(target) {
   assertExtensionPolicy(manifest, target);
   if (isCheck) return;
 
-  const outputDirectory = resolve(extensionRoot, "dist", target);
+  const outputDirectory = resolve(outputRoot, target);
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all([
@@ -110,9 +123,16 @@ async function buildTarget(target) {
   await publishDownload(zipPath, target);
 }
 
+if (!isCheck) {
+  await rm(outputRoot, { recursive: true, force: true });
+  await mkdir(outputRoot, { recursive: true });
+}
+
 await Promise.all([buildTarget("chromium"), buildTarget("firefox")]);
 console.log(
   isCheck
     ? "Wireline browser-extension policy checks passed."
-    : "Wireline browser-extension builds + public/downloads zips created.",
+    : noPublish
+      ? `Wireline browser-extension test packages created in ${outputRoot}.`
+      : `Wireline browser-extension builds created in ${outputRoot} and published to ${publishRoot}.`,
 );

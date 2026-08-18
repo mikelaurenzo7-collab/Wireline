@@ -1,48 +1,36 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { readRedirectFromSearch } from "../src/lib/auth-redirect";
 
-import { resolvePostAuthDestination } from "../src/lib/auth-redirect";
-import { FRESH_SIGNUP_SESSION_KEY } from "../src/lib/post-signup-onboarding";
+const source = () => readFileSync(resolve(process.cwd(), "src/lib/auth-redirect.ts"), "utf8");
 
-function memoryStorage() {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value),
-    removeItem: (key: string) => values.delete(key),
-    clear: () => values.clear(),
-    key: (index: number) => Array.from(values.keys())[index] ?? null,
-    get length() {
-      return values.size;
-    },
-  };
-}
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
-describe("returning paid-plan intent", () => {
-  it("routes a signed-in paid-plan selection directly to Billing", () => {
-    expect(resolvePostAuthDestination("business", "?plan=starter")).toBe(
-      "/settings/billing?plan=starter",
-    );
-    expect(resolvePostAuthDestination("business", "?plan=business&interval=year")).toBe(
-      "/settings/billing?plan=business&interval=year",
+describe("post-auth destination contract", () => {
+  it("preserves an explicit safe internal return target", () => {
+    expect(readRedirectFromSearch("?redirect=%2Fsettings%3Ftab%3Dbilling")).toBe(
+      "/settings?tab=billing",
     );
   });
 
-  it("does not turn the free-builder CTA into a billing redirect", () => {
-    expect(resolvePostAuthDestination("personal", "?plan=personal")).toBe("/overview");
+  it("rejects external and protocol-relative return targets", () => {
+    expect(readRedirectFromSearch("?redirect=https%3A%2F%2Fevil.example")).toBeNull();
+    expect(readRedirectFromSearch("?redirect=%2F%2Fevil.example")).toBeNull();
   });
 
-  it("preserves Fast Start for a genuinely fresh signup", () => {
-    const storage = memoryStorage();
-    storage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
-    vi.stubGlobal("sessionStorage", storage);
+  it("sends every fresh signup into the same one-workspace Bot Studio", () => {
+    const authRedirect = source();
+    expect(authRedirect).toContain('return "/studio?create=1"');
+    expect(authRedirect).not.toContain('posture=business');
+  });
 
-    expect(resolvePostAuthDestination("business", "?plan=business&interval=year")).toBe(
-      "/studio?create=1&posture=business",
-    );
-    expect(storage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  it("keeps returning paid intent routing on billing without changing workspace identity", () => {
+    const authRedirect = source();
+    expect(authRedirect).toContain('return `/settings/billing?${params.toString()}`');
+    expect(authRedirect).toContain('if (plan && plan !== "personal") return "business"');
+    expect(authRedirect).not.toContain('return "/studio?create=1&posture=business"');
+  });
+
+  it("defaults returning users to Overview", () => {
+    expect(source()).toMatch(/return "\/overview";\s*\n}\s*$/);
   });
 });

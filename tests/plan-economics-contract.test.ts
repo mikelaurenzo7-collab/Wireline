@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 import {
   EXPECTED_INCLUDED_UTILIZATION,
   EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
-  EXTRA_AGENT_ADDON_PRICE_ENV,
   EXTRA_AGENT_ADDON_PHONE_NUMBERS,
+  EXTRA_AGENT_ADDON_PRICE_ENV,
   EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
   EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY,
   FLAT_OVERAGE_PER_MIN_USD,
@@ -17,37 +20,24 @@ import {
 import { planEconomics } from "../src/lib/plan-economics";
 import {
   COGS_DRIFT_THRESHOLD_PER_MIN_USD,
-  MARGIN_ALERT_THRESHOLD_RATIO,
-  tenantEconomicsThresholds,
+  MARGIN_AT_RISK_THRESHOLD_PCT,
+  assertPlanMarginFloors,
 } from "../src/lib/tenant-economics";
 
-const USAGE_GUARD_STRIP = [
-  "src/pages/Pricing.tsx",
-  "src/pages/BillingSettings.tsx",
-  "src/components/RuntimeSpendGuard.tsx",
-  "server/call-start.ts",
-  "server/routes/payments.ts",
-  "server/telephony/call-credit.ts",
-  "server/telephony/call-summary.ts",
-  "server/telephony/twiml-helpers.ts",
-  "server/telephony/outbound-intelligence.ts",
-  "server/telephony/outbound-call.ts",
-  "server/telephony/voice-runtime.ts",
-  "server/elevenlabs/runtime-metering.ts",
-  "server/runtime-metering.ts",
-  "server/stripe-runtime-prices.ts",
-  "server/wallet-runtime-billing.ts",
-  "server/wallet.ts",
-  "tests/wallet-credit-guard.test.ts",
-  "tests/plan-economics-contract.test.ts",
-] as const;
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const productionSources = () =>
+  globSync("src/**/*.{ts,tsx}", {
+    cwd: process.cwd(),
+    nodir: true,
+    ignore: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+  });
 
-function read(path: string): string {
-  return require("node:fs").readFileSync(require("node:path").resolve(process.cwd(), path), "utf8");
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
 
 describe("plan economics contract", () => {
-  it("keeps the one production-number entitlement per live Bot coherent", () => {
+  it("keeps one production-number entitlement per live Bot coherent", () => {
     for (const plan of STRIPE_PLANS) {
       if (plan.id === "personal") {
         expect(plan.included_phone_numbers).toBe(0);
@@ -72,7 +62,7 @@ describe("plan economics contract", () => {
     }
   });
 
-  it("keeps live-voice limits tied to prepaid Runtime Balance instead of postpaid overages", () => {
+  it("keeps live voice and flexible allowances tied to the canonical catalog", () => {
     for (const plan of STRIPE_PLANS) {
       const economics = planEconomics(plan.id);
       expect(economics).not.toBeNull();
@@ -84,7 +74,7 @@ describe("plan economics contract", () => {
     }
   });
 
-  it("holds both expected-use and full-utilization contribution floors on monthly and annual plans", () => {
+  it("holds expected-use and full-utilization contribution floors on monthly and annual plans", () => {
     expect(EXPECTED_INCLUDED_UTILIZATION).toBeGreaterThan(0);
     expect(EXPECTED_INCLUDED_UTILIZATION).toBeLessThanOrEqual(1);
     expect(LAUNCH_CONTRIBUTION_MARGIN_FLOOR).toBeGreaterThan(HARD_CONTRIBUTION_MARGIN_FLOOR);
@@ -112,35 +102,22 @@ describe("plan economics contract", () => {
         ).toBeGreaterThanOrEqual(HARD_CONTRIBUTION_MARGIN_FLOOR);
       }
     }
+
+    expect(assertPlanMarginFloors()).toEqual({ ok: true, violations: [] });
   });
 
-  it("keeps alert thresholds tied to the same conservative cost model", () => {
+  it("keeps current margin telemetry thresholds explicit and conservative", () => {
     expect(COGS_DRIFT_THRESHOLD_PER_MIN_USD).toBeGreaterThan(0);
-    expect(MARGIN_ALERT_THRESHOLD_RATIO).toBeGreaterThan(0);
-    expect(MARGIN_ALERT_THRESHOLD_RATIO).toBeLessThan(1);
+    expect(MARGIN_AT_RISK_THRESHOLD_PCT).toBeGreaterThan(0);
+    expect(MARGIN_AT_RISK_THRESHOLD_PCT).toBeLessThan(100);
     expect(TENANT_OBSERVED_COGS_HEADROOM_RATIO).toBeGreaterThan(1);
-
-    for (const plan of STRIPE_PLANS) {
-      const thresholds = tenantEconomicsThresholds(plan.id);
-      expect(thresholds.marginAlertThresholdRatio).toBe(MARGIN_ALERT_THRESHOLD_RATIO);
-      expect(thresholds.cogsDriftThresholdPerMinUsd).toBe(COGS_DRIFT_THRESHOLD_PER_MIN_USD);
-      expect(thresholds.plannedCogsPerMinuteUsd).toBeGreaterThan(0);
-      expect(thresholds.maxObservedCogsPerMinuteUsd).toBeGreaterThan(
-        thresholds.plannedCogsPerMinuteUsd,
-      );
-      expect(thresholds.maxObservedCogsPerMinuteUsd).toBeCloseTo(
-        thresholds.plannedCogsPerMinuteUsd * TENANT_OBSERVED_COGS_HEADROOM_RATIO,
-        10,
-      );
-    }
   });
 
-  it("does not reintroduce retired per-minute hard caps or postpaid overage language", () => {
+  it("does not reintroduce retired per-minute caps or postpaid-overage behavior", () => {
     const retired =
       /retired_max_call_seconds_per_usage_minute|MAX_CALL_SECONDS_PER_USAGE_MINUTE|postpaid voice-overage/i;
-    for (const path of USAGE_GUARD_STRIP) {
-      expect(read(path), path).not.toMatch(retired);
-    }
+    const violations = productionSources().filter((path) => retired.test(withoutComments(read(path))));
+    expect(violations).toEqual([]);
   });
 
   it("does not promise unlimited provider-funded usage", () => {

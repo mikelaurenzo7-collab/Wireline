@@ -128,14 +128,22 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(consent).toContain("sessionPresent = Boolean(body?.user)");
   });
 
-  it("aligns broad public/onboarding copy to voice agent", () => {
-    expect(read("src/lib/email-service.ts")).toContain("first voice agent");
-    expect(read("src/lib/email-service.ts")).not.toContain("first AI employee");
-    expect(read("src/pages/Compare.tsx")).toContain("owner ready voice agent");
-    expect(read("src/pages/ClientAppsPage.tsx")).toContain("simulate a voice agent");
-    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("voice agent platform");
-    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("your voice agents");
-    expect(read("src/components/StudioWorkroom.tsx")).toContain('"Voice agent"');
-    expect(read("src/components/CallLogsClaude.tsx")).toContain('"Voice agent"');
+  it("uses Bot on customer-facing onboarding while retaining agent in technical and legal domains", () => {
+    const email = read("src/lib/email-service.ts");
+    const compare = read("src/pages/Compare.tsx");
+    const apps = read("src/pages/ClientAppsPage.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const productCopy = read("src/lib/product-copy.ts");
+
+    expect(email).not.toContain("first AI employee");
+    expect(compare).not.toContain("AI call agent");
+    expect(apps).toContain("simulate a Voice Bot");
+    expect(apps).toContain("first Voice Bot");
+    expect(apps).not.toContain("first voice agent");
+    expect(privacy).toContain("voice agent platform");
+    expect(productCopy).toContain(
+      "Technical routes, schemas, events, and APIs retain `agent` for compatibility",
+    );
+    expect(productCopy).toContain('productNoun: "Bot"');
   });
 });

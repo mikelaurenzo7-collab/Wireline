@@ -75,12 +75,17 @@ describe("marketing centering contract", () => {
     expect(hero).toContain("w-full min-w-0 max-w-[70rem]");
   });
 
-  it("keeps the public signal mark violet from the first terminal", () => {
+  it("keeps the public folded mark violet-to-platinum from first ribbon to finish", () => {
     const mark = read("src/components/brand/WirelineMark.tsx");
 
-    expect(mark).not.toContain("#C7CCD6");
-    expect(mark).not.toContain("action-secondary-default");
-    expect(mark).toContain('<stop offset="0" stopColor="#8B5CF6" />');
+    expect(mark).toContain('viewBox="0 0 180 120"');
+    expect(mark).toContain('<stop offset="0" stopColor="#C8B5FF" />');
+    expect(mark).toContain('<stop offset="0.38" stopColor="#8B5CF6" />');
+    expect(mark).toContain('<stop offset="0.48" stopColor="#E4E6ED" />');
+    expect(mark).toContain('<stop offset="1" stopColor="#FFFFFF" />');
+    expect(mark).toContain('d="M14 14H40L68 106H42Z"');
+    expect(mark).toContain('d="M108 106H134L166 14H140Z"');
+    expect(mark).not.toContain("M4 16H11L19 32L24 21L29 32L37 16H44");
   });
 
   it("gives every public route one browser-document scroll owner", () => {
@@ -120,10 +125,6 @@ describe("marketing centering contract", () => {
     );
     expect(solutionsPage).not.toContain("HeroCallPreview");
     expect(solutionsPage).not.toContain("Sarah");
-    // The two `wl-marketing-center` blocks were the wrappers around two display
-    // headings that have since become eyebrow labels — one screen carries one
-    // headline. The page still declares its alignment explicitly, which is what
-    // the blanket centering rule in clarity-system.css requires.
     expect(solutionsPage).toContain("text-center");
     expect(solutionsPage).toContain("BrowserCallWidget");
   });
@@ -147,9 +148,6 @@ describe("marketing centering contract", () => {
       "src/pages/SolutionsPage.tsx",
       "src/pages/VerticalLanding.tsx",
     ]) {
-      // `!text-left` is the deliberate opt-out: /about is built to be
-      // identifiable at a glance as *not* the landing page, and the blanket
-      // centering rule in clarity-system.css would otherwise re-centre it.
       expect(
         /text-center|wl-marketing-center|!text-left/.test(read(path)),
         `${path} should explicitly declare its copy alignment`,
