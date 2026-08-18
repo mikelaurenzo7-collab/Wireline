@@ -1,0 +1,144 @@
+/* Wireline Bot Mark --------------------------------------------------------
+ * Proprietary identity primitive for Bots. Identity is intentionally separate
+ * from operational status: no success/warning/error color enters this system.
+ * The mark remains legible at 24px, gains a micro-monogram at 28px+, and uses
+ * motion only when the caller explicitly marks it active/speaking.
+ */
+
+.wl-bot-mark {
+  isolation: isolate;
+  border-radius: 999px;
+  filter: saturate(1.04);
+  transform: translateZ(0);
+}
+
+.wl-bot-mark__core {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+    inset 0 -5px 12px color-mix(in srgb, black 24%, transparent);
+}
+
+.wl-bot-mark__core::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 72% 74%, color-mix(in srgb, var(--wl-bot-mark-accent) 18%, transparent), transparent 38%),
+    linear-gradient(135deg, color-mix(in srgb, white 6%, transparent), transparent 45%);
+  mix-blend-mode: screen;
+}
+
+.wl-bot-mark__sheen {
+  position: absolute;
+  inset: 1px 1px 52% 1px;
+  pointer-events: none;
+  border-radius: 999px 999px 58% 58%;
+  background: linear-gradient(180deg, color-mix(in srgb, white 12%, transparent), transparent);
+  opacity: 0.72;
+}
+
+.wl-bot-mark__glyph {
+  position: absolute;
+  inset: 11%;
+  width: 78%;
+  height: 78%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--wl-bot-mark-wire);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--wl-bot-mark-wire) 34%, transparent));
+}
+
+.wl-bot-mark__anchor {
+  fill: var(--wl-bot-mark-accent);
+  stroke: color-mix(in srgb, var(--wl-bot-mark-wire) 78%, transparent);
+  stroke-width: 0.55;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--wl-bot-mark-accent) 58%, transparent));
+}
+
+.wl-bot-mark__monogram {
+  position: absolute;
+  right: 12%;
+  bottom: 9%;
+  z-index: 2;
+  display: grid;
+  min-width: 0.9em;
+  place-items: center;
+  color: var(--wl-bot-mark-ink);
+  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  opacity: 0.66;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+.wl-bot-mark__rim {
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--wl-bot-mark-wire) 22%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 4%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.34),
+    0 6px 16px -10px var(--wl-bot-mark-halo);
+}
+
+.wl-bot-mark__pulse {
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--wl-bot-mark-accent) 44%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wl-bot-mark-accent) 10%, transparent);
+  animation: wl-bot-mark-signal 1.8s var(--wireline-motion-easing-wireline) infinite;
+  animation-delay: var(--wl-bot-mark-phase);
+}
+
+.wl-bot-mark[data-active="true"] .wl-bot-mark__glyph {
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 2px color-mix(in srgb, var(--wl-bot-mark-wire) 46%, transparent))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--wl-bot-mark-accent) 22%, transparent));
+}
+
+@keyframes wl-bot-mark-signal {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+  52% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-bot-mark__pulse {
+    animation: none;
+    opacity: 0.55;
+    transform: scale(1.08);
+  }
+}
+
+@media (forced-colors: active) {
+  .wl-bot-mark__core {
+    background: Canvas !important;
+  }
+
+  .wl-bot-mark__glyph,
+  .wl-bot-mark__anchor,
+  .wl-bot-mark__rim,
+  .wl-bot-mark__pulse {
+    stroke: CanvasText;
+    border-color: CanvasText;
+    filter: none;
+  }
+
+  .wl-bot-mark__monogram {
+    color: CanvasText;
+  }
+}
