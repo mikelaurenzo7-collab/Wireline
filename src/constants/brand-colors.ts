@@ -89,12 +89,13 @@ export const BRAND = {
     contrastStandard:
       "WCAG 2.2 AA minimum; target AAA where content and product constraints permit.",
     dynamicApproach: "Static high-contrast baseline with room for future perceptual tooling.",
-    targetSize: "Minimum 24×24px for compact controls; 44px target for primary touch actions.",
+    targetSize:
+      "40px minimum interaction floor; 44px comfortable touch target; 48px primary mobile action target.",
     reducedMotion: "Respect prefers-reduced-motion globally",
   },
 
   theming: {
-    current: "Wireline Letterpress light operating baseline",
+    current: "Dark-by-default Wireline Letterpress with an optional token-equivalent light appearance",
     planned: "High-contrast mode plus density variants via semantic token sets",
   },
 
