@@ -70,7 +70,7 @@ const required = [
   ],
   [
     "XAI_API_KEY",
-    "Native Twilio SIP Speech-to-Speech and Grok 4.6 structured primary",
+    "Managed xAI credential for Grok 4.6 structured primary and native Twilio SIP Speech-to-Speech",
     process.env.XAI_API_KEY,
   ],
   [
