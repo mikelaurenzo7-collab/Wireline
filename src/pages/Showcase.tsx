@@ -19,29 +19,29 @@ export default function Showcase() {
   return (
     <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
-        title="Try Wireline"
-        description="Hear the voice agent your customers will meet first, then build one for voice, SMS, and email."
+        title="TRY WIRELINE | HEAR A VOICE BOT"
+        description="Hear the Voice Bot your customers will meet first, then build one that handles calls, live conversations, text, and email from one workspace."
         path="/showcase"
       />
 
       <section className="marketing-section marketing-section--screen">
         <MarketingHero
-          title="Hear what your customer hears"
-          primaryAction={{ label: "Build Your Voice Agent", to: PERSONAL_SIGNUP }}
+          title="HEAR WHAT YOUR CUSTOMER HEARS"
+          primaryAction={{ label: "BUILD YOUR BOT", to: PERSONAL_SIGNUP }}
           visual={
             <div className="flex flex-col gap-3 text-center">
-              <div className="text-sm font-semibold text-foreground">Live Browser Preview</div>
+              <div className="text-sm font-semibold text-foreground">LIVE VOICE PREVIEW</div>
               <div className="rounded-[16px] border border-border bg-background/70 p-3">
                 <BrowserCallWidget
                   agentName={primaryDemo.name}
-                  buttonLabel="Start Live Demo"
+                  buttonLabel="START LIVE DEMO"
                   fallback={
                     <div className="text-center">
                       <a
                         href="#demo-lines"
                         className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
                       >
-                        Call a Demo Line
+                        CALL A DEMO LINE
                       </a>
                     </div>
                   }
@@ -73,7 +73,7 @@ export default function Showcase() {
                     {agent.display}
                   </span>
                   <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                    Call Now
+                    CALL NOW
                     <ArrowRight
                       className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
                       aria-hidden="true"
