@@ -1,5 +1,4 @@
 name: native-main-merge-integration
-# Single authoritative merge, verification, and branch-cleanup gate.
 
 on:
   push:
@@ -21,17 +20,17 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Check out native runtime branch
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Use Node 22
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Merge current main, apply verified repairs, and verify
+      - name: Merge latest main, repair combined contracts, and verify
         shell: bash
         env:
           HUSKY: "0"
@@ -42,7 +41,7 @@ jobs:
           git config user.email "audit-bot@users.noreply.github.com"
           git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
 
-          run_integration() {
+          integrate() {
             set -euo pipefail
             git fetch --no-tags origin main
 
@@ -66,52 +65,18 @@ jobs:
               diff -u /tmp/expected-conflicts.txt /tmp/actual-conflicts.txt
             fi
 
-            git checkout --ours docs/AUTHZ_MATRIX.md
-            git checkout --theirs docs/business-usage-pricing-decision.md
-            git checkout --ours src/data/wireline-knowledge.ts
-            git checkout --ours src/lib/marketing-route-meta.ts
-            git checkout --theirs src/pages/CustomizationSettings.tsx
-            git checkout --theirs src/pages/Pricing.tsx
-
-            python <<'PY'
-          from pathlib import Path
-
-          def replace_conflict(path: str, replacement: str) -> None:
-              file = Path(path)
-              text = file.read_text(encoding="utf-8")
-              start = text.find("<<<<<<< HEAD")
-              separator = text.find("=======", start)
-              end_marker = ">>>>>>> origin/main"
-              end = text.find(end_marker, separator)
-              if start < 0 or separator < 0 or end < 0:
-                  raise SystemExit(f"expected one merge conflict in {path}")
-              file.write_text(
-                  text[:start] + replacement + text[end + len(end_marker):],
-                  encoding="utf-8",
-              )
-
-          replace_conflict(
-              "src/lib/chatgpt-mcp-account.ts",
-              """ * Private voice in this ChatGPT-hosted widget uses OpenAI Realtime WebRTC
-           * because the iframe may only connect to `https://api.openai.com`. It is not
-           * the Studio or PSTN brain. Studio live tests use a server-minted xAI
-           * ephemeral client secret; tenant PSTN calls use the same xAI Speech-to-Speech
-           * model (`grok-voice-think-fast-2.0`) through Direct SIP.
-           *
-           * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
-           * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling
-           * `@modelcontextprotocol/ext-apps`.""",
-          )
-
-          replace_conflict(
-              "src/server/register-api-routes.ts",
-              """  app.use(mcpCoachingSettingsRouter);
-            // Phone normalization/validation is pure and must precede the identity
-            // guard, whose branding commit would otherwise land before a malformed
-            // phone value 400s the request (silent half-write).""",
-          )
-          PY
-
+            # Latest main owns current product, pricing, privacy, MCP, and route
+            # truth. The deterministic post-merge script then restores only the
+            # reviewed native Twilio + xAI owners and combined-head contracts.
+            git checkout --theirs \
+              docs/AUTHZ_MATRIX.md \
+              docs/business-usage-pricing-decision.md \
+              src/data/wireline-knowledge.ts \
+              src/lib/chatgpt-mcp-account.ts \
+              src/lib/marketing-route-meta.ts \
+              src/pages/CustomizationSettings.tsx \
+              src/pages/Pricing.tsx \
+              src/server/register-api-routes.ts
             git add \
               docs/AUTHZ_MATRIX.md \
               docs/business-usage-pricing-decision.md \
@@ -122,57 +87,76 @@ jobs:
               src/pages/Pricing.tsx \
               src/server/register-api-routes.ts
 
-            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
-              echo "Unresolved merge paths remain:" >&2
-              git diff --name-only --diff-filter=U >&2
-              return 1
-            fi
+            test -z "$(git diff --name-only --diff-filter=U)"
             if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . ':!package-lock.json'; then
               echo "Conflict markers remain in the merged tree." >&2
               return 1
             fi
 
-            node .audit/postmerge/apply.mjs
-
-            grep -Fq 'app.use(mcpCoachingSettingsRouter);' src/server/register-api-routes.ts
-            grep -Fq 'app.use(nativePhoneRoutingRouter);' src/server/register-api-routes.ts
-            grep -Fq 'app.use(nativePhoneReleaseRouter);' src/server/register-api-routes.ts
-            grep -Fq 'app.use(nativeMobileVoiceRouter);' src/server/register-api-routes.ts
+            python -m py_compile .audit/postmerge/apply.py
+            python .audit/postmerge/apply.py
+            git add -A
 
             npm ci --no-audit --no-fund
 
+            # The first authorization pass may regenerate its committed matrix;
+            # the second must prove exact route coverage and zero violations.
             set +e
             npm run authz:check
             authz_first=$?
             set -e
             if [ "$authz_first" -ne 0 ]; then
-              echo "Authorization matrix changed; verifying regenerated output."
+              echo "Authorization matrix regenerated; verifying exact output."
             fi
             npm run authz:check
 
-            npm run lint:server
-            npm run lint:audit-modules
-            npm run test:run
-            npm run build
-
-            git rm -rf .audit/postmerge
-            git rm -f .audit/native-main-conflicts.txt 2>/dev/null || true
-            git rm -f .audit/native-main-integration-failure.txt 2>/dev/null || true
+            # Remove all one-shot audit machinery before validating the exact
+            # product tree that will remain on the branch and deploy to Vercel.
+            rm -rf .audit
             git rm -f .github/workflows/native-main-merge-diagnostic.yml
             git add -A
 
+            npm run lint
+            npm run lint:server
+            npm run lint:audit-modules
+            npm run lint:eslint
+            npm run test:run
+
+            npm run design:check
+            npm run route-registry:check
+            npm run security:routes:check
+            npm run docs:check
+            npm run openapi:check
+            npm run design:tokens:check
+            npm run stripe:catalog:check
+            npm run csp:check
+            npm run runtime:policy:check
+            npm run api-error:check
+            npm run tenant-insert:check
+            npm run server:bootstrap:check
+            npm run tsconfig:excludes:check
+            npm run security:audit
+
+            npm run build
+            npm run smoke:server
+
+            npx playwright install --with-deps chromium
+            npx playwright test \
+              tests/e2e/marketing-viewport-lock.spec.ts \
+              tests/e2e/marketing-a11y.spec.ts \
+              tests/e2e/public-demo-fallback.spec.ts
+
             npm run source-control:check
             npm run workflow:syntax:check
-            npm run docs:check
             git diff --check
 
             git status --short
-            git commit -m "Merge main and complete native Twilio xAI launch audit"
+            git commit -m "Merge latest main and complete native Twilio xAI audit"
             git push origin HEAD:"$GITHUB_REF_NAME"
           }
 
           set +e
-          run_integration 2>&1 | tee /tmp/native-main-integration.log
+          integrate 2>&1 | tee /tmp/native-main-integration.log
           integration_status=${PIPESTATUS[0]}
           set -e
 
@@ -191,7 +175,7 @@ jobs:
             echo "RUN=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
             echo '```text'
-            tail -n 2600 /tmp/native-main-integration.log
+            tail -n 3600 /tmp/native-main-integration.log
             echo '```'
           } > .audit/native-main-integration-failure.txt
           git add .audit/native-main-integration-failure.txt
