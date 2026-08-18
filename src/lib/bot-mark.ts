@@ -6,7 +6,7 @@
  * role never affects the mark: identity and capability stay separate.
  *
  * The mark is intentionally a tiny Wireline signal system rather than a colored
- * initial. A stable seed selects a restrained obsidian/violet/platinum surface,
+ * initial. A stable seed selects a restrained obsidian/violet/platinum gradient,
  * one of several wire geometries, an orientation, and an anchor point. This
  * gives customers fast recognition without creating another configuration
  * product or confusing identity color with operational status.
@@ -23,10 +23,52 @@ export type BotMarkPaletteEntry = {
 
 export type BotMarkMotif = "orbit" | "relay" | "split" | "loop" | "pulse" | "weave";
 
+type BotMarkGradientFamily = {
+  hue: number;
+  hueSpan: number;
+  saturation: number;
+  saturationSpan: number;
+  surfaceLight: number;
+  surfaceLightSpan: number;
+};
+
 /**
- * Deliberately stays inside Wireline's violet / indigo / graphite / platinum
- * identity family. Status colors are excluded so a Bot Mark can never be
- * mistaken for success, warning, or error state.
+ * Twenty deterministic gradient bits yield 1,048,576 brand-safe gradient
+ * signatures before motif, rotation, mirror, anchor, glow position, or
+ * monogram are considered. This deliberately dwarfs the commercial Bot-count
+ * ceiling so a large workspace does not exhaust the visual identity system.
+ */
+export const BOT_MARK_GRADIENT_CAPACITY = 1_048_576;
+const BOT_MARK_GRADIENT_MASK = BOT_MARK_GRADIENT_CAPACITY - 1;
+
+/**
+ * Sixteen narrow families define the only hue territory the generator may use:
+ * deep indigo through electric violet, plus cool graphite/platinum lanes. No
+ * red, green, amber, cyan, or other status-like hue is available here.
+ */
+const BOT_MARK_GRADIENT_FAMILIES: readonly BotMarkGradientFamily[] = [
+  { hue: 258, hueSpan: 10, saturation: 42, saturationSpan: 12, surfaceLight: 20, surfaceLightSpan: 7 },
+  { hue: 266, hueSpan: 12, saturation: 46, saturationSpan: 12, surfaceLight: 19, surfaceLightSpan: 8 },
+  { hue: 246, hueSpan: 11, saturation: 40, saturationSpan: 12, surfaceLight: 18, surfaceLightSpan: 8 },
+  { hue: 274, hueSpan: 11, saturation: 38, saturationSpan: 13, surfaceLight: 20, surfaceLightSpan: 7 },
+  { hue: 252, hueSpan: 13, saturation: 34, saturationSpan: 14, surfaceLight: 19, surfaceLightSpan: 8 },
+  { hue: 263, hueSpan: 13, saturation: 25, saturationSpan: 12, surfaceLight: 18, surfaceLightSpan: 7 },
+  { hue: 246, hueSpan: 12, saturation: 14, saturationSpan: 10, surfaceLight: 17, surfaceLightSpan: 7 },
+  { hue: 271, hueSpan: 12, saturation: 18, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 8 },
+  { hue: 279, hueSpan: 9, saturation: 38, saturationSpan: 12, surfaceLight: 19, surfaceLightSpan: 8 },
+  { hue: 240, hueSpan: 10, saturation: 34, saturationSpan: 12, surfaceLight: 17, surfaceLightSpan: 8 },
+  { hue: 266, hueSpan: 12, saturation: 12, saturationSpan: 10, surfaceLight: 20, surfaceLightSpan: 7 },
+  { hue: 255, hueSpan: 12, saturation: 30, saturationSpan: 13, surfaceLight: 17, surfaceLightSpan: 8 },
+  { hue: 272, hueSpan: 12, saturation: 31, saturationSpan: 13, surfaceLight: 20, surfaceLightSpan: 7 },
+  { hue: 238, hueSpan: 10, saturation: 22, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 7 },
+  { hue: 252, hueSpan: 14, saturation: 8, saturationSpan: 9, surfaceLight: 19, surfaceLightSpan: 7 },
+  { hue: 276, hueSpan: 11, saturation: 42, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 8 },
+] as const;
+
+/**
+ * Curated anchor gradients kept as a readable design reference and compatibility
+ * export. Runtime marks are generated continuously around these same families
+ * instead of being limited to these ten swatches.
  */
 export const BOT_MARK_PALETTE: readonly BotMarkPaletteEntry[] = [
   {
@@ -153,6 +195,47 @@ function mixedHash(seed: string, salt: string): number {
   return stableBotMarkHash(`${salt}:${seed}`);
 }
 
+function unit(value: number, maximum: number): number {
+  return maximum <= 0 ? 0 : value / maximum;
+}
+
+function hsl(hue: number, saturation: number, lightness: number): string {
+  return `hsl(${hue.toFixed(1)}, ${saturation.toFixed(1)}%, ${lightness.toFixed(1)}%)`;
+}
+
+function hsla(hue: number, saturation: number, lightness: number, alpha: number): string {
+  return `hsla(${hue.toFixed(1)}, ${saturation.toFixed(1)}%, ${lightness.toFixed(1)}%, ${alpha.toFixed(2)})`;
+}
+
+function generatedGradient(hash: number): BotMarkPaletteEntry {
+  const signature = hash & BOT_MARK_GRADIENT_MASK;
+  const hueStep = signature & 0x3f;
+  const saturationStep = (signature >>> 6) & 0x1f;
+  const lightStep = (signature >>> 11) & 0x1f;
+  const family = BOT_MARK_GRADIENT_FAMILIES[(signature >>> 16) & 0x0f];
+
+  const hue = family.hue + unit(hueStep, 0x3f) * family.hueSpan;
+  const saturation =
+    family.saturation + unit(saturationStep, 0x1f) * family.saturationSpan;
+  const surfaceLight =
+    family.surfaceLight + unit(lightStep, 0x1f) * family.surfaceLightSpan;
+  const depthLight = 5.2 + unit((signature >>> 3) & 0x1f, 0x1f) * 4.2;
+  const accentSaturation = Math.min(78, saturation + 24);
+  const accentLight = 67 + unit((signature >>> 8) & 0x0f, 0x0f) * 9;
+  const wireSaturation = Math.max(10, Math.min(38, saturation - 4));
+  const wireLight = 87 + unit((signature >>> 13) & 0x07, 0x07) * 7;
+  const haloAlpha = 0.23 + unit((signature >>> 5) & 0x07, 0x07) * 0.11;
+
+  return {
+    surfaceFrom: hsl(hue, saturation, surfaceLight),
+    surfaceTo: hsl(hue + 2.5, Math.max(8, saturation - 8), depthLight),
+    wire: hsl(hue - 2, wireSaturation, wireLight),
+    accent: hsl(hue, accentSaturation, accentLight),
+    ink: "#F5F4F8",
+    halo: hsla(hue, accentSaturation, accentLight, haloAlpha),
+  };
+}
+
 export function botMarkFor(input: {
   id?: string | null;
   name?: string | null;
@@ -162,12 +245,13 @@ export function botMarkFor(input: {
   const hash = stableBotMarkHash(seed);
   const geometryHash = mixedHash(seed, "wire");
   const lightHash = mixedHash(seed, "light");
-  const palette = BOT_MARK_PALETTE[hash % BOT_MARK_PALETTE.length];
+  const palette = generatedGradient(hash);
   const motif = BOT_MARK_MOTIFS[geometryHash % BOT_MARK_MOTIFS.length];
   const anchor = BOT_MARK_ANCHORS[(geometryHash >>> 5) % BOT_MARK_ANCHORS.length];
 
   return {
     seed,
+    gradientSignature: hash & BOT_MARK_GRADIENT_MASK,
     initial: botMarkInitial(input.name || input.seed || input.id || "Bot"),
     palette,
     motif,
