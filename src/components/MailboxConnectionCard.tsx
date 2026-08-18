@@ -49,6 +49,8 @@ const PROVIDERS: Array<{
 export default function MailboxConnectionCard() {
   const [accounts, setAccounts] = useState<MailboxAccount[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+  const [agentsUnavailable, setAgentsUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [busy, setBusy] = useState<MailboxProvider | string | null>(null);
@@ -88,9 +90,12 @@ export default function MailboxConnectionCard() {
     void authFetch("/api/agents")
       .then(async (response) => {
         const body = (await safeJson(response)) as { agents?: Agent[] } | null;
-        if (response.ok && Array.isArray(body?.agents)) setAgents(body.agents);
+        if (!response.ok || !Array.isArray(body?.agents)) throw new Error("Agent roster unavailable");
+        setAgents(body.agents);
+        setAgentsUnavailable(false);
       })
-      .catch(() => undefined);
+      .catch(() => setAgentsUnavailable(true))
+      .finally(() => setAgentsLoading(false));
   }, [loadAccounts]);
 
   // The popup-close poll is started from a click handler, so nothing else tears
@@ -355,7 +360,7 @@ export default function MailboxConnectionCard() {
                               <span className="sr-only">Agent owner for {account.emailAddress}</span>
                               <select
                                 value={account.agentId || ""}
-                                disabled={busy === account.id || agents.length === 0}
+                                disabled={busy === account.id || agentsLoading || agentsUnavailable || agents.length === 0}
                                 onChange={(event) => void assignAgent(account, event.target.value)}
                                 className="h-7 max-w-full rounded-md border border-border bg-card px-2 text-[11px] text-foreground disabled:opacity-60"
                               >
@@ -363,6 +368,11 @@ export default function MailboxConnectionCard() {
                                 {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
                               </select>
                             </label>
+                            {agentsUnavailable ? (
+                              <p className="mt-1 text-[11px] text-destructive">Agent owner is temporarily unavailable.</p>
+                            ) : !agentsLoading && agents.length === 0 ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground">Create an agent to assign this inbox.</p>
+                            ) : null}
                           </span>
                           <button
                             type="button"
