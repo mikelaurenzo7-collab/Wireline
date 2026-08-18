@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -16,27 +16,21 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 /**
- * Live Video is a metered paid add-on whose allowance is drawn in full before
- * the browser has proven it can play a frame. These contracts pin the three
- * things that made that safe-on-paper design unsafe in practice: minutes that
- * never came back, a completed session presented as a failure, and a stage that
- * said nothing to anyone who could not see it.
+ * Live Video is retired from the active product. These historical settlement
+ * contracts remain because old reservations, reversals, and webhook records
+ * still need safe reconciliation; they must not imply that a presenter UI or
+ * new-session surface is available.
  */
 
-describe("unused reserved minutes come back", () => {
-  it("refunds whole minutes the session did not occupy", () => {
-    // 5 reserved, nothing watched (blocked network) -> all 5 back.
+describe("unused historical reservations come back", () => {
+  it("refunds whole minutes the historical session did not occupy", () => {
     expect(liveVideoRefundMinutes(5, 0)).toBe(5);
-    // 90 seconds watched rounds UP to 2 charged minutes -> 3 back.
     expect(liveVideoRefundMinutes(5, 90)).toBe(3);
-    // A full session refunds nothing.
     expect(liveVideoRefundMinutes(5, 300)).toBe(0);
-    // Over-reporting can never mint allowance.
     expect(liveVideoRefundMinutes(5, 100_000)).toBe(0);
   });
 
   it("scales the refund by the engine credit rate exactly as the reservation did", () => {
-    // A FULL engine reserves 10 for a 5-minute session and burns 2 per minute.
     expect(liveVideoRefundMinutes(10, 0, 2)).toBe(10);
     expect(liveVideoRefundMinutes(10, 60, 2)).toBe(8);
     expect(liveVideoRefundMinutes(10, 300, 2)).toBe(0);
@@ -51,13 +45,10 @@ describe("unused reserved minutes come back", () => {
   });
 });
 
-describe("the charged duration cannot be talked down by the client", () => {
+describe("the historical charged duration cannot be talked down by the client", () => {
   const issuedAtMs = 1_000_000_000_000;
 
   it("bills wall-clock time since the mint when the client under-reports", () => {
-    // The attack: settle immediately with 0 watched while the provider session
-    // keeps running, take the whole reservation back, repeat per receipt.
-    // Four minutes have really elapsed, so four minutes are charged.
     const charged = liveVideoChargeableSeconds({
       clientWatchedSeconds: 0,
       issuedAtMs,
@@ -68,9 +59,7 @@ describe("the charged duration cannot be talked down by the client", () => {
     expect(liveVideoRefundMinutes(5, charged)).toBe(1);
   });
 
-  it("still refunds a session that genuinely never connected", () => {
-    // Settled promptly after a blocked connection: almost no time has passed,
-    // so the honest full refund survives the server-side floor.
+  it("still refunds a historical session that genuinely never connected", () => {
     const charged = liveVideoChargeableSeconds({
       clientWatchedSeconds: 0,
       issuedAtMs,
@@ -103,7 +92,7 @@ describe("the charged duration cannot be talked down by the client", () => {
   });
 });
 
-describe("settlement receipts are signed, bound, and single-use", () => {
+describe("historical settlement receipts are signed, bound, and single-use", () => {
   beforeEach(() => {
     resetLiveVideoSettlementClaimsForTests();
   });
@@ -156,8 +145,6 @@ describe("settlement receipts are signed, bound, and single-use", () => {
   it("short-circuits a fully-consumed session before it reaches the claim store", async () => {
     const verified = verifyLiveVideoSettlementReceipt(signLiveVideoSettlementReceipt(claim));
     expect(verified).not.toBeNull();
-    // Nothing to refund means no ledger write and no nonce spent, so a client
-    // that retries a complete session is inert rather than "already settled".
     const consumed = await settleLiveVideoSession({ claim: verified!, watchedSeconds: 300 });
     expect(consumed).toEqual({ settled: true, refundedMinutes: 0, reason: "nothing_to_refund" });
     expect(await claimLiveVideoSettlementOnce(claim.nonce)).toBe("claimed");
@@ -169,17 +156,12 @@ describe("settlement receipts are signed, bound, and single-use", () => {
     expect(settle.indexOf("claimLiveVideoSettlementOnce")).toBeLessThan(
       settle.indexOf("releaseLiveVideoSessionReservation"),
     );
-    // An unavailable claim store declines the refund rather than risking a
-    // double credit — the conservative direction.
     expect(settle).toContain('reason: "claim_unavailable"');
   });
 
   it("hands the claim back when the ledger write it guarded did not land", () => {
     const source = read("src/lib/video-presenter/live-video-settlement.ts");
     const settle = source.slice(source.indexOf("export async function settleLiveVideoSession"));
-    // Redis and Postgres cannot share a transaction. Without this the nonce
-    // stays burned for a day and every retry answers "already settled", so the
-    // tenant can never recover minutes they did not use.
     expect(settle).toContain("await releaseLiveVideoSettlementClaim(input.claim.nonce)");
     expect(settle).toContain("throw error;");
   });
@@ -190,8 +172,6 @@ describe("settlement receipts are signed, bound, and single-use", () => {
       source.indexOf("function receiptKey()"),
       source.indexOf("export type LiveVideoSettlementClaim"),
     );
-    // A publicly known signing constant would let any authenticated tenant
-    // forge receipts and refund itself without minting reservations.
     expect(key).toContain("isProductionRuntime()");
     expect(key).toContain("WIRELINE_DATA_KEY is required");
   });
@@ -211,8 +191,12 @@ describe("retired talking-head routes do not mint sessions", () => {
     expect(routes).not.toContain("upgrade to Starter Plus to stream photoreal presenters");
   });
 
-  it("renders an identity badge instead of a LiveAvatar stage", () => {
-    expect(presenter).toContain("AgentFace");
+  it("renders only the universal Bot Mark in the compatibility shell", () => {
+    expect(presenter).toContain('import BotMark from "./BotMark"');
+    expect(presenter).toContain("<BotMark");
+    expect(presenter).toContain('data-retired-live-video="true"');
+    expect(presenter).not.toContain("AgentFace");
+    expect(presenter).not.toContain("wl-presence-live");
     expect(presenter).not.toContain("@heygen/liveavatar-web-sdk");
     expect(presenter).not.toContain("abandonedAfterDeadline");
     expect(page).not.toContain("Draft clip script");
@@ -222,29 +206,31 @@ describe("retired talking-head routes do not mint sessions", () => {
   });
 });
 
-describe("presenter state is legible", () => {
-  it("raises the live/ended chip off the 9px floor and stops flying green when offline", () => {
-    const css = read("src/styles/agent-presence.css");
-    const chip = css.slice(css.indexOf(".wl-presence__live {"), css.indexOf(".wl-presence__strip"));
-    expect(chip).not.toContain("font-size: 9px");
-    expect(chip).toContain("font-size: var(--wireline-typography-overline-size)");
-    expect(css).toContain(".wl-presence-live--offline .wl-presence__live-dot");
-    expect(css).toContain(".wl-presence-live--ended .wl-presence__live-dot");
-  });
+describe("retired presenter CSS stays out of the launch cascade", () => {
+  it("deletes face/video sheets and keeps only compact Bot presence", () => {
+    const barrel = read("src/styles/wireline-marketing-surfaces.css");
+    const presence = read("src/styles/agent-presence.css");
 
-  it("keeps the end-of-session action at the 44px target with a visible focus ring", () => {
-    const css = read("src/styles/agent-presence.css");
-    const action = css.slice(css.indexOf(".wl-presence-live__action {"));
-    expect(action).toContain("min-height: 44px");
-    expect(css).toContain(".wl-presence-live__action:focus-visible");
+    expect(existsSync(resolve(process.cwd(), "src/styles/agent-face.css"))).toBe(false);
+    expect(existsSync(resolve(process.cwd(), "src/styles/video-receptionist.css"))).toBe(false);
+    expect(barrel).not.toContain("agent-face.css");
+    expect(barrel).not.toContain("video-receptionist.css");
+    expect(barrel).toContain('import "./agent-presence.css"');
+
+    expect(presence).toContain("Wireline Bot presence");
+    expect(presence).toContain(".wl-presence__frame");
+    expect(presence).toContain(".wl-presence__strip");
+    expect(presence).toContain(".wl-presence__chip");
+    expect(presence).not.toContain(".wl-presence-live");
+    expect(presence).not.toContain(".wl-agent-face");
+    expect(presence).not.toContain("catalog-thumb");
+    expect(presence).not.toContain("__video");
   });
 });
 
 describe("review-hardening: the fixes Codex found in the first pass", () => {
   it("binds the SMS post-send refresh to the thread that was replied to", () => {
     const sms = read("src/components/SmsThreads.tsx");
-    // Reading the ref AFTER the await hands this refresh whichever thread the
-    // reader has since opened — a live signal belonging to another conversation.
     expect(sms).toContain("const sentThreadController = activeThreadFetchRef.current;");
     expect(sms).toContain("fetchMessages(threadId, sentThreadController?.signal)");
     expect(sms).not.toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
@@ -256,10 +242,7 @@ describe("review-hardening: the fixes Codex found in the first pass", () => {
       engine.indexOf("async function executeStep"),
       engine.indexOf("const CADENCE_STEP_LEASE_MS"),
     );
-    // Vapi call creation has no idempotency key, so a failed response may still
-    // have produced a dial. Retrying it is a second marketing call.
     expect(step).not.toContain("retryable: !res.ok");
-    // Only failures that provably precede any provider contact stay retryable.
     expect(step).toContain('result: "compliance gate failed (fail-closed)", retryable: true');
     expect(step).toContain("voice control rejected");
   });
@@ -272,7 +255,6 @@ describe("review-hardening: the fixes Codex found in the first pass", () => {
     );
     expect(arm).toContain("anyToolTimedOut");
     expect(arm).toContain("LATE_TOOL_AUDIT_GRACE_MS");
-    // The snapshot must be taken after the grace window, not before it.
     expect(arm.indexOf("LATE_TOOL_AUDIT_GRACE_MS")).toBeLessThan(
       arm.indexOf("toolAuditContext.records.slice()"),
     );
