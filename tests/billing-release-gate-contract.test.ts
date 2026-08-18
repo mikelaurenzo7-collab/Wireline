@@ -158,9 +158,9 @@ describe("self-serve billing release gate", () => {
     expect(status).not.toHaveBeenCalled();
   });
 
-  it("mounts the release middleware explicitly before every Stripe session route", () => {
+  it("mounts the release middleware before every active Stripe session route and terminally fences retired checkout", () => {
     const source = readFileSync(resolve(process.cwd(), "src/server/register-api-routes.ts"), "utf8");
-    const routeContracts = [
+    const activeRouteContracts = [
       [
         'app.post("/api/conversation-balance/checkout", enforceSelfServeBillingRelease);',
         "app.use(conversationBalanceRouter);",
@@ -169,16 +169,25 @@ describe("self-serve billing release gate", () => {
         'app.post("/api/billing/checkout", enforceSelfServeBillingRelease);',
         "app.use(launchBillingCheckoutAtomicRouter);",
       ],
-      [
-        'app.post("/api/billing/live-video-checkout", enforceSelfServeBillingRelease);',
-        'app.use("/api", billingRouter);',
-      ],
     ] as const;
 
-    for (const [guard, router] of routeContracts) {
+    for (const [guard, router] of activeRouteContracts) {
       expect(source).toContain(guard);
       expect(source.indexOf(guard)).toBeLessThan(source.indexOf(router));
     }
+
+    const retiredFence = 'app.all("/api/billing/live-video-checkout"';
+    const legacyBillingMount = 'app.use("/api", billingRouter);';
+    expect(source).toContain(retiredFence);
+    expect(source.indexOf(retiredFence)).toBeLessThan(source.indexOf(legacyBillingMount));
+
+    const retiredBlock = source.slice(
+      source.indexOf(retiredFence),
+      source.indexOf(legacyBillingMount),
+    );
+    expect(retiredBlock).toContain("res.status(410)");
+    expect(retiredBlock).toContain('error: "FEATURE_RETIRED"');
+    expect(retiredBlock).not.toContain("enforceSelfServeBillingRelease");
   });
 
   it("gates only extra-agent increases so decreases and reconciliation remain available", () => {
