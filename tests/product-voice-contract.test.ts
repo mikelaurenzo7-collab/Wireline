@@ -10,6 +10,11 @@ import {
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
+import {
+  BOT_CHANNELS,
+  BOT_ROLE_TEMPLATES,
+  BOT_WORKSPACE_PROMISE,
+} from "../src/lib/bot-product";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
@@ -18,6 +23,7 @@ const withoutComments = (value: string) => value.replace(/\/\*[\s\S]*?\*\//g, ""
 
 const CORE_BUYING_SURFACES = [
   "src/lib/product-copy.ts",
+  "src/lib/bot-product.ts",
   "src/pages/LandingPage.tsx",
   "src/pages/Pricing.tsx",
   "src/components/marketing/MarketingHero.tsx",
@@ -143,7 +149,7 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("keeps public landing copy broad, agent first, action oriented, and visibly navigable", () => {
+  it("keeps public landing copy broad, Bot first, action oriented, and visibly navigable", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const executableLanding = withoutComments(landing);
     const about = read("src/pages/About.tsx");
@@ -152,11 +158,13 @@ describe("product voice cohesion", () => {
     const contactAgents = read("src/data/contact-agents.ts");
 
     expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
-    expect(executableLanding).toContain('aria-label="Core agent channels"');
-    expect(executableLanding).toContain('const CORE_CHANNELS = ["Voice", "Text", "Email"]');
-    expect(executableLanding).not.toContain("{ label: \"Voice\", icon: PhoneCall }");
-    expect(executableLanding).not.toContain("{ label: \"Text\", icon: MessageSquareText }");
-    expect(executableLanding).not.toContain("{ label: \"Email\", icon: Mail }");
+    expect(executableLanding).toContain('aria-label="Bot channels"');
+    expect(executableLanding).toContain(
+      "const CORE_CHANNELS = BOT_CHANNELS.map(({ label }) => label)",
+    );
+    expect(executableLanding).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(executableLanding).toContain("BOT_WORKSPACE_PROMISE.title");
+    expect(executableLanding).toContain("Create Your Bot");
     expect(executableLanding).not.toContain("Live Video");
     expect(executableLanding).toContain("MARKETING_VOICE.primaryCta");
     expect(executableLanding).toContain("MARKETING_VOICE.subline");
@@ -231,14 +239,16 @@ describe("product voice cohesion", () => {
     );
   });
 
-  it("wires landing, workroom, and extension surfaces to shared voice constants", () => {
+  it("wires landing, workroom, and extension surfaces to shared product constants", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
-    expect(landing).toContain("AGENT_DIRECTION_MODES");
+    expect(landing).toContain("BOT_CHANNELS");
+    expect(landing).toContain("BOT_ROLE_TEMPLATES");
+    expect(landing).toContain("BOT_WORKSPACE_PROMISE");
     expect(landing).toContain("HERO_LOOP");
     expect(landing).toContain("MARKETING_VOICE.spine");
     expect(landing).not.toContain("HERO_LOOP = MARKETING_VOICE.proof");
@@ -249,22 +259,35 @@ describe("product voice cohesion", () => {
     expect(extension).toContain(">Email</button>");
   });
 
-  it("keeps landing examples broad across profit, inbound, and hybrid buyers", () => {
+  it("keeps role templates broad across business, personal, and custom use cases", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    for (const phrase of [
-      "Lead Response",
-      "Quote Follow Up",
-      "Appointment Setting",
+    const botProduct = read("src/lib/bot-product.ts");
+    const names = BOT_ROLE_TEMPLATES.map((template) => template.name);
+    const categories = [...new Set(BOT_ROLE_TEMPLATES.map((template) => template.category))].sort();
+    const directions = [...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction))].sort();
+
+    expect(categories).toEqual(["Business", "Custom", "Personal"]);
+    expect(directions).toEqual(["hybrid", "inbound", "outbound"]);
+    for (const role of [
       "Front Desk",
+      "Sales Rep",
+      "Appointment Setter",
+      "Customer Support",
       "Lead Qualifier",
-      "Support Triage",
-      "Sales Desk",
-      "Collections Desk",
-      "Appointment Desk",
-      "AGENT_DIRECTION_MODES",
+      "Recruiter",
+      "Collections",
+      "Property Manager",
+      "Personal Assistant",
+      "Family Concierge",
+      "Create Your Own",
     ]) {
-      expect(landing).toContain(phrase);
+      expect(names).toContain(role);
+      expect(botProduct).toContain(`name: "${role}"`);
     }
+    expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Voice", "Text", "Email"]);
+    expect(BOT_WORKSPACE_PROMISE.title).toBe("One Workspace. Every Bot.");
+    expect(landing).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(landing).toContain("STARTER_TEMPLATES.map");
     expect(landing).not.toContain("service estimate");
     expect(landing).not.toContain("Start booking them");
     expect(landing).not.toContain("Wireline CEO");
