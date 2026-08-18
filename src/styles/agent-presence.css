@@ -1,5 +1,5 @@
 /*
- * Wireline Bot presence -----------------------------------------------------
+ * WIRELINE Bot presence ----------------------------------------------------
  * Active product presence is a compact, role-agnostic Bot Mark plus optional
  * name/role metadata. Human faces, catalog thumbnails, video stages, presenter
  * session chrome, and talking-head waveform overlays are intentionally absent.
@@ -50,6 +50,24 @@
     color-mix(in srgb, var(--wireline-color-action-primary-default) 56%, transparent),
     transparent
   );
+}
+
+/* Compact live-voice sandboxes still use the presence frame as a carrier for
+ * the same Bot Mark primitive. These are identity slots, not face/avatar slots. */
+.wl-presence--inline {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 3.25rem;
+  padding: 0.25rem;
+  border-radius: var(--wireline-radius-lg);
+}
+
+.wl-presence__face {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  place-items: center;
 }
 
 .wl-presence--stage .wl-presence__frame {
