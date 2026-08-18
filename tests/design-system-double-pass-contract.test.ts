@@ -46,6 +46,21 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(existsSync(resolve(root, "src/styles/video-receptionist.css"))).toBe(false);
   });
 
+  it("keeps retired face and presenter layers out of active launch identity", () => {
+    const retiredPage = read("src/pages/LiveVideoStudioPage.tsx");
+    const presenter = read("src/components/LiveVideoPresenter.tsx");
+    const compatibilityFace = read("src/components/AgentFace.tsx");
+
+    expect(retiredPage).toContain('<Navigate to="/studio" replace />');
+    expect(retiredPage).not.toContain('import AgentFace from');
+    expect(retiredPage).not.toContain("<AgentFace");
+    expect(presenter).toContain('import BotMark from "./BotMark"');
+    expect(presenter).toContain("<BotMark");
+    expect(presenter).not.toContain("AgentFace");
+    expect(presenter).not.toContain("wl-presence-live");
+    expect(compatibilityFace).toContain('import BotMark from "./BotMark"');
+  });
+
   it("keeps workspace layout in component source and signature CSS decorative", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const signature = read("src/styles/wireline-app-signature.css");
