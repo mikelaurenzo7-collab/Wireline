@@ -117,7 +117,10 @@ function phoneFromSipValue(value: string): string | null {
 }
 
 function outboundPurpose(value: unknown): OutboundCallPurpose {
-  return isOutboundCallPurpose(value) ? value : "service_or_requested";
+  // The carrier AMD gate already fails a missing class closed to marketing.
+  // Preserve that stricter classification after xAI attaches so disclosure,
+  // opt-out, and voicemail instructions cannot silently weaken mid-call.
+  return isOutboundCallPurpose(value) ? value : "marketing_or_sales";
 }
 
 async function resolveAgentContext(binding: XAIPhoneBinding): Promise<AgentContext> {
