@@ -3,6 +3,8 @@
  *
  * Keep customer-facing plan ids aligned with src/lib/plan-catalog.ts:
  * personal is the free builder and intentionally has no Stripe product.
+ * Retired products do not belong in this active reconciliation manifest; their
+ * historical ids remain runtime-compatible through dedicated legacy code.
  */
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
@@ -16,7 +18,7 @@ export const FOUNDER_PRODUCTS = [
     key: "starter",
     name: "Wireline Starter",
     description:
-      "1 live voice agent, 1 production number, 50 voice minutes/month, email + SMS, and no automatic overages.",
+      "1 live Voice Bot, 1 production number, 50 voice minutes/month, email + SMS, and no automatic overages.",
     defaultPriceKey: "starter_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "starter",
@@ -35,7 +37,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "2 live agents, 2 production numbers, 100 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
+      "2 live Bots, 2 production numbers, 100 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
@@ -54,7 +56,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Up to 5 live voice agents, 190 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
+      "Up to 5 live Bots, 190 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "business_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "business",
@@ -73,7 +75,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "Up to 15 live voice agents, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
+      "Up to 15 live Bots, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "enterprise",
@@ -92,7 +94,7 @@ export const FOUNDER_PRODUCTS = [
     key: "scale",
     name: "Wireline Scale & Enterprise",
     description:
-      "Custom plan for 25+ agents with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
+      "Custom plan for 25+ Bots with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
     defaultPriceKey: null,
     metadata: {
       wireline_offer: "enterprise_contact",
@@ -101,30 +103,14 @@ export const FOUNDER_PRODUCTS = [
   },
   {
     key: "extra_agent",
-    name: "Wireline Extra Agent + 50 Minutes",
-    description:
-      "+1 live voice agent, +1 production-number slot, and +50 guaranteed voice minutes/month.",
+    name: "Wireline Extra Bot + 50 Minutes",
+    description: "+1 live Bot, +1 production-number slot, and +50 guaranteed voice minutes/month.",
     defaultPriceKey: "extra_agent_monthly_founder_2026_07_v3",
     metadata: {
       wireline_addon_id: "extra_agent",
       wireline_catalog_state: "launch_active",
       included_phone_numbers: "1",
       included_voice_minutes: "50",
-    },
-  },
-  {
-    key: "live_video",
-    name: "Wireline Live Video",
-    description:
-      "Live Video for a paid business agent: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
-    defaultPriceKey: "live_video_monthly",
-    metadata: {
-      wireline_product: "live_video_addon",
-      wireline_billing_model: "addon_subscription",
-      wireline_catalog_state: "launch_active",
-      included_live_video_minutes: "60",
-      session_reservation_minutes: "5",
-      overage_policy: "none_pause_at_limit",
     },
   },
   {
@@ -258,7 +244,7 @@ export const FOUNDER_PRICES = [
   {
     key: "extra_agent_monthly_founder_2026_07_v3",
     productKey: "extra_agent",
-    nickname: "Wireline Extra Agent + 50 Minutes — Founder Monthly",
+    nickname: "Wireline Extra Bot + 50 Minutes — Founder Monthly",
     lookupKey: "extra_agent_monthly_founder_2026_07_v3",
     unitAmount: 1500,
     recurring: { interval: "month", usage_type: "licensed" },
@@ -267,23 +253,6 @@ export const FOUNDER_PRICES = [
       wireline_addon_id: "extra_agent",
       included_voice_minutes: "50",
       included_phone_numbers: "1",
-    },
-  },
-  {
-    key: "live_video_monthly",
-    productKey: "live_video",
-    nickname: "Live Video Add-on - Monthly",
-    lookupKey: "live_video_monthly",
-    unitAmount: 1900,
-    recurring: { interval: "month", usage_type: "licensed" },
-    envTarget: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
-    metadata: {
-      wireline_product: "live_video_addon",
-      wireline_price_type: "live_video_addon",
-      wireline_catalog_state: "launch_active",
-      included_live_video_minutes: "60",
-      session_reservation_minutes: "5",
-      overage_policy: "none_pause_at_limit",
     },
   },
   // Keep in lockstep with src/lib/conversation-balance.ts presets ($10 minimum).
