@@ -152,7 +152,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/AuthPortal.tsx",
     authPortal,
     /WirelineMark/,
-    "account entry must use the canonical Wireline mark",
+    "account entry must use the canonical WIRELINE mark",
   );
   mustInclude(
     "src/components/AuthPortal.tsx",
@@ -257,8 +257,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /Present one Wireline workspace/,
-    "shared product copy must document the one-workspace rule",
+    /Present one WIRELINE workspace/,
+    "shared product copy must document the one-workspace rule with canonical brand casing",
   );
   mustInclude(
     "src/lib/wireline-design-vision.ts",
@@ -276,7 +276,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/lib/wireline-mcp-widget-styles.ts",
     mcpWidgetStyles,
     /canvas: "#0A0A0E"/,
-    "MCP widgets must use the Wireline dark canvas",
+    "MCP widgets must use the WIRELINE dark canvas",
   );
   mustInclude(
     "src/lib/wireline-mcp-widget-styles.ts",
