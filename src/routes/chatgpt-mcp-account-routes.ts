@@ -46,6 +46,7 @@ import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import { isRuntimeAvailable } from "../lib/ai-client";
 import { addAgentTrainingItem, getAgentCoachingBrief } from "../lib/mcp-agent-coaching";
 import { readMcpCoachingWritesEnabled } from "../lib/mcp-coaching-preferences";
+import { mcpVoiceSimulationMeta } from "../lib/mcp-voice-simulation-meta";
 import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
 import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import * as schema from "../db/schema";
@@ -493,11 +494,18 @@ function toolDefinitions() {
       name: "start_private_voice_simulation",
       title: "Start a private voice simulation",
       description:
-        "Creates a short-lived, tool-free voice simulation for one connected user’s Wireline draft. The simulation cannot make calls, send messages, access business systems, or complete an external action.",
+        "Creates a short-lived, tool-free voice simulation for one connected user’s Wireline draft. Before calling, obtain explicit confirmation. The simulation cannot make calls, send messages, access business systems, or complete an external action. Cursor and Claude receive a ready status only; the ChatGPT widget receives the short-lived session in client metadata.",
       inputSchema: {
         type: "object",
-        properties: { agent_id: { type: "string" } },
-        required: ["agent_id"],
+        properties: {
+          agent_id: { type: "string" },
+          confirmed: {
+            type: "boolean",
+            description:
+              "True only after the user explicitly asks to start this private voice simulation.",
+          },
+        },
+        required: ["agent_id", "confirmed"],
         additionalProperties: false,
       },
       outputSchema: {
@@ -860,6 +868,7 @@ router.post("/mcp", async (req, res) => {
 
     if (name === "start_private_voice_simulation") {
       const authed = requireScope(principal, "demo.voice");
+      assertRehearsalConfirmation(args.confirmed);
       const draft = await getAgentDraft(authed, text(args.agent_id, 256));
       if (isLaunchHardBlocked()) {
         throw new AppError(
@@ -998,16 +1007,16 @@ router.post("/mcp", async (req, res) => {
         throw error;
       }
       await commitPlatformCostReservation(spendDecision.reservation);
+      const greeting = `Hi, this is ${draft.view.name}. How can I help?`;
       return jsonRpc(res, id, {
         content: [{ type: "text", text: "Private voice simulation ready." }],
         structuredContent: { status: "ready", agent_id: draft.view.id },
-        _meta: {
-          realtime_session: {
-            ...session,
-            greeting: `Hi, this is ${draft.view.name}. How can I help?`,
-          },
-          agent_id: draft.view.id,
-        },
+        _meta: mcpVoiceSimulationMeta({
+          draftSource: authed.draftSource,
+          session: session as Record<string, unknown>,
+          agentId: draft.view.id,
+          greeting,
+        }),
       });
     }
 

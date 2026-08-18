@@ -91,6 +91,9 @@ describe("Cursor Directory plugin contract", () => {
     expect(packet).toContain("Do not register `https://trywireline.com/...` as Cursor's redirect URI");
     expect(docs).toContain("Cursor-operated callbacks");
     expect(docs).toContain("http://localhost:8787/callback");
+    expect(read("src/routes/chatgpt-mcp-routes.ts")).toContain(
+      "`/signin?redirect=${encodeURIComponent(authorizeUrl)}`",
+    );
   });
 
   it("requires the Apps Training toggle before writes land", () => {

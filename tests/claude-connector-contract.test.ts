@@ -47,6 +47,12 @@ describe("Claude Connector Directory contract", () => {
         "agents.write",
       ],
       [
+        "start_private_voice_simulation",
+        "list_wireline_agents",
+        "assertRehearsalConfirmation",
+        "demo.voice",
+      ],
+      [
         "run_private_agent_turn",
         "get_agent_coaching_brief",
         "assertRehearsalConfirmation",

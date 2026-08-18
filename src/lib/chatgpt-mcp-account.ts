@@ -268,7 +268,10 @@ export function buildAccountBoundWidgetHtml(): string {
     $("voice").disabled = true;
     status("Preparing a private voice simulation…");
     try {
-      const sessionResult = await callTool("start_private_voice_simulation", { agent_id: state.agentId });
+      const sessionResult = await callTool("start_private_voice_simulation", {
+        agent_id: state.agentId,
+        confirmed: true,
+      });
       const parsed = readResult(sessionResult);
       const session =
         parsed.meta.realtime_session ||

@@ -11,6 +11,7 @@ import {
   isDynamicClientId,
   isTrustedCimdClientId,
   isTrustedCimdRedirectUri,
+  isTrustedDynamicRedirectUri,
   newDynamicClientId,
   oauthErrorCode,
   redirectUriAllowed,
@@ -146,7 +147,7 @@ async function fetchDynamicClient(clientId: string): Promise<ClientMetadata | nu
   )) as unknown as { rows?: Array<{ redirect_uris: unknown }> };
   const raw = result.rows?.[0]?.redirect_uris;
   const redirectUris = Array.isArray(raw)
-    ? raw.filter((value): value is string => typeof value === "string")
+    ? raw.filter((value): value is string => isTrustedDynamicRedirectUri(value))
     : [];
   if (!redirectUris.length) return null;
   const value = { clientId, redirectUris };
@@ -210,7 +211,7 @@ async function validateAuthorizationRequest(
 }
 
 function mcpAccountConnectPath(authorizeUrl: string): string {
-  return `/signup?redirect=${encodeURIComponent(authorizeUrl)}`;
+  return `/signin?redirect=${encodeURIComponent(authorizeUrl)}`;
 }
 
 function oauthConsentPage(request: AuthorizationRequest, user: { email: string }): string {

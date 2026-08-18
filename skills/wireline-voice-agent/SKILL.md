@@ -12,7 +12,7 @@ This plugin is not a software development kit for embedding Wireline voice agent
 ## Connect
 
 1. Enable the Wireline MCP server from this plugin (`https://trywireline.com/mcp`).
-2. Complete OAuth. If the user has no account, they sign up at Wireline first. The `redirect` query on `/signup` returns them to the authorization screen.
+2. Complete OAuth. If the user has no account, they create one from the sign-in screen. The `redirect` query returns them to the authorization screen.
 3. After Connect succeeds, call tools. Unauthenticated `tools/call` returns HTTP 401 so the host can show Connect.
 
 ## First-agent workflow

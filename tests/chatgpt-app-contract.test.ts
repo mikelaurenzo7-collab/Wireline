@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 const oauthRouteSource = read("src/routes/chatgpt-mcp-routes.ts");
 const accountRouteSource = read("src/routes/chatgpt-mcp-account-routes.ts");
+const widgetSource = read("src/lib/chatgpt-mcp-account.ts");
 const profileSource = read("src/lib/agent-customization.ts");
 const draftServiceSource = read("src/lib/agent-draft-service.ts");
 const rolloutDocs = read("docs/CHATGPT_APP.md");
@@ -47,6 +48,7 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(registry).toContain("https://www.cursor.com/agents/mcp/oauth/callback");
     expect(registry).toContain("http://localhost:8787/callback");
     expect(registry).toContain("isAnthropicRedirectUri");
+    expect(oauthRouteSource).toContain("isTrustedDynamicRedirectUri(value)");
   });
 
   it("requires OAuth for every production agent operation", () => {
@@ -74,6 +76,10 @@ describe("Wireline ChatGPT App production contract", () => {
     );
     expect(simulationDescriptor).toContain("readOnlyHint: false");
     expect(simulationDescriptor).not.toContain("readOnlyHint: true");
+    expect(simulationDescriptor).toContain("confirmed");
+    expect(accountRouteSource).toContain("assertRehearsalConfirmation(args.confirmed)");
+    expect(accountRouteSource).toContain("mcpVoiceSimulationMeta");
+    expect(widgetSource).toContain("confirmed: true");
     expect(submission.tools.start_private_voice_simulation.annotations).toEqual({
       readOnlyHint: false,
       openWorldHint: false,

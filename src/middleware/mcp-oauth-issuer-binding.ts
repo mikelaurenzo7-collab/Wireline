@@ -36,6 +36,13 @@ function isAuthorizationCallback(location: string): boolean {
   }
 }
 
+export function authorizationCallbackWithIssuer(location: string, issuer: string): string | null {
+  if (!isAuthorizationCallback(location)) return null;
+  const destination = new URL(location);
+  destination.searchParams.set("iss", issuer);
+  return destination.toString();
+}
+
 /**
  * RFC 9207 / MCP issuer binding.
  *
@@ -63,15 +70,9 @@ export function mcpOAuthIssuerBinding(req: Request, res: Response, next: NextFun
     res.redirect = ((statusOrUrl: number | string, maybeUrl?: string) => {
       const status = typeof statusOrUrl === "number" ? statusOrUrl : undefined;
       const location = typeof statusOrUrl === "string" ? statusOrUrl : maybeUrl || "";
-      if (!isAuthorizationCallback(location)) {
-        return status === undefined ? redirect(location) : redirect(status, location);
-      }
-
-      const destination = new URL(location);
-      destination.searchParams.set("iss", mcpIssuer(req));
-      return status === undefined
-        ? redirect(destination.toString())
-        : redirect(status, destination.toString());
+      const bound = authorizationCallbackWithIssuer(location, mcpIssuer(req));
+      const destination = bound || location;
+      return status === undefined ? redirect(destination) : redirect(status, destination);
     }) as typeof res.redirect;
   }
 

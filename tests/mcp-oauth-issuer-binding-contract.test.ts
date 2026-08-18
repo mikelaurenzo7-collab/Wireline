@@ -20,7 +20,8 @@ describe("MCP OAuth issuer binding", () => {
     expect(middleware).toContain("isAnthropicRedirectUri");
     expect(middleware).toContain("isCursorRedirectUri");
     expect(middleware).toContain("isLoopbackCallbackUri");
-    expect(middleware).toContain('destination.searchParams.set("iss", mcpIssuer(req))');
+    expect(middleware).toContain("authorizationCallbackWithIssuer");
+    expect(middleware).toContain('destination.searchParams.set("iss", issuer)');
     expect(read("src/lib/mcp-oauth-security.ts")).toContain("resolveCanonicalAppUrl");
     expect(read("src/lib/mcp-oauth-security.ts")).not.toContain("req?.get(\"host\")");
   });

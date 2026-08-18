@@ -83,7 +83,7 @@ Triggering an agent from Cursor means a private rehearsal of an agent the user o
 
 Unauthenticated clients may `initialize`, `tools/list`, `prompts/list`, and `resources/list`. Protected `tools/call` returns HTTP `401` with `WWW-Authenticate: Bearer error="invalid_token"` so Cursor can show Connect.
 
-Users without a session are sent to `/signup?redirect=/mcp/oauth/authorize...`. Existing users switch to Sign in on that screen. After account creation, the same redirect returns them to consent.
+Users without a session are sent to `/signin?redirect=/mcp/oauth/authorize...`. New users switch to Create account on that screen. After sign-in or account creation, the same redirect returns them to consent.
 
 ## Verification
 
