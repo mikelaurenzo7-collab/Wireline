@@ -142,6 +142,8 @@ describe("authenticated Bot flow", () => {
 
   it("keeps Fast Start broad across business roles, personal starters, and custom workflows", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const botProduct = read("src/lib/bot-product.ts");
+
     for (const phrase of [
       "Front Desk",
       "Sales Rep",
@@ -155,8 +157,10 @@ describe("authenticated Bot flow", () => {
       "Family Concierge",
       "Create Your Own",
     ]) {
-      expect(createDialog).toContain(phrase);
+      expect(botProduct).toContain(`name: "${phrase}"`);
     }
+    expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(createDialog).toContain("BOT_CHANNELS.map");
     expect(createDialog).toContain("Employee roles, personal starters, and Create Your Own");
     expect(createDialog).not.toContain("Choose one personal job");
   });
