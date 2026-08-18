@@ -6,12 +6,17 @@ on:
       - cursor/native-xai-twilio-runtime-review-5789
     paths:
       - .github/workflows/native-main-merge-diagnostic.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/native-main-merge-diagnostic.yml
 
 permissions:
   contents: read
 
 concurrency:
-  group: native-main-merge-diagnostic
+  group: native-main-merge-diagnostic-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
