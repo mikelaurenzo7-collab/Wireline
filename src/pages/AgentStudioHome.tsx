@@ -5,7 +5,6 @@ import StudioContextChrome from "../components/studio/StudioContextChrome";
 import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { useAgents } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
 import { useToast } from "../contexts/ToastContext";
 import {
   browserCommandBrief,
@@ -21,12 +20,7 @@ import { authFetch } from "../lib/api";
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
   const { loading } = useAgents();
-  const { accountType } = useAccount();
   const { toast } = useToast();
-  const requestedPosture = params.get("posture");
-  const wantsBusinessAgent =
-    requestedPosture === "business" ||
-    (requestedPosture !== "personal" && accountType === "business");
   const [browserContext, setBrowserContext] = useState<BrowserCommandContext | null>(() =>
     readBrowserCommandContext(),
   );
@@ -50,10 +44,6 @@ export default function AgentStudioHome() {
     if (!handoffId || loading) return;
 
     let cancelled = false;
-    // Clear the handoff_id from the URL on success AND every failure mode so a
-    // page refresh doesn't re-fire the redemption (expired handoffs would
-    // otherwise re-toast on every reload until the user manually edits the
-    // URL).
     const clearHandoffParam = () =>
       setParams(
         (current) => {
@@ -67,9 +57,6 @@ export default function AgentStudioHome() {
       const response = await authFetch(
         `/api/browser/handoff/redeem?handoff_id=${encodeURIComponent(handoffId)}`,
       );
-      // .catch(null-body): a proxy HTML 502 or gateway page is a non-JSON body,
-      // and an uncaught parse throw here left the rejection unhandled with the
-      // stale handoff_id still in the URL — silently re-failing every refresh.
       const body = (await response.json().catch(() => null)) as {
         context?: BrowserCommandContext;
         error?: string;
@@ -92,7 +79,6 @@ export default function AgentStudioHome() {
       setShowCreate(true);
       clearHandoffParam();
     })().catch(() => {
-      // Network failure/timeout from authFetch itself.
       if (cancelled) return;
       toast({
         type: "warning",
@@ -109,20 +95,12 @@ export default function AgentStudioHome() {
     };
   }, [loading, handoffId, setParams, toast]);
 
-  // Re-checked whenever the search params change, not only on mount. Fast Start
-  // opens from `/studio?create=1`, so this page is already mounted when the
-  // dialog stashes its warning; a mount-only effect never ran again and the
-  // message — "…the starting brief didn't fully apply" — sat unread in session
-  // storage, leaving the one case the warning exists for completely silent.
-  // The post-create redirect swaps `create=1` for `agent=<id>`, which is the
-  // signal. `consumeCreateWarning` clears as it reads, so re-running is a no-op
-  // when there is nothing stashed.
   useEffect(() => {
     const warning = consumeCreateWarning();
     if (warning) {
       toast({
         type: "warning",
-        title: "Agent created",
+        title: "Bot created",
         message: warning,
         duration: 12_000,
       });
@@ -135,6 +113,7 @@ export default function AgentStudioHome() {
   }, [toast]);
 
   const initialBrief = signedBrief || browserBrief || params.get("brief") || "";
+  const initialTemplateKey = params.get("template");
 
   return (
     <>
@@ -151,7 +130,7 @@ export default function AgentStudioHome() {
         onClose={() => setShowCreate(false)}
         onCreated={setPostCreateWizard}
         initialBrief={initialBrief}
-        business={wantsBusinessAgent}
+        initialTemplateKey={initialTemplateKey}
       />
       {postCreateWizard ? (
         <PostCreateActivationWizard
