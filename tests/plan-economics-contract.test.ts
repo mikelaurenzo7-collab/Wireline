@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 import {
   EXPECTED_INCLUDED_UTILIZATION,
@@ -24,23 +25,16 @@ import {
 } from "../src/lib/tenant-economics";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const USAGE_GUARD_STRIP = [
-  "src/pages/Pricing.tsx",
-  "src/pages/BillingSettings.tsx",
-  "server/call-start.ts",
-  "server/routes/payments.ts",
-  "server/telephony/call-credit.ts",
-  "server/telephony/call-summary.ts",
-  "server/telephony/twiml-helpers.ts",
-  "server/telephony/outbound-intelligence.ts",
-  "server/telephony/outbound-call.ts",
-  "server/telephony/voice-runtime.ts",
-  "server/elevenlabs/runtime-metering.ts",
-  "server/runtime-metering.ts",
-  "server/stripe-runtime-prices.ts",
-  "server/wallet-runtime-billing.ts",
-  "server/wallet.ts",
-] as const;
+const productionSources = () =>
+  globSync("src/**/*.{ts,tsx}", {
+    cwd: process.cwd(),
+    nodir: true,
+    ignore: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+  });
+
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
 
 describe("plan economics contract", () => {
   it("keeps one production-number entitlement per live Bot coherent", () => {
@@ -119,12 +113,11 @@ describe("plan economics contract", () => {
     expect(TENANT_OBSERVED_COGS_HEADROOM_RATIO).toBeGreaterThan(1);
   });
 
-  it("does not reintroduce retired per-minute caps or postpaid-overage language", () => {
+  it("does not reintroduce retired per-minute caps or postpaid-overage behavior", () => {
     const retired =
       /retired_max_call_seconds_per_usage_minute|MAX_CALL_SECONDS_PER_USAGE_MINUTE|postpaid voice-overage/i;
-    for (const path of USAGE_GUARD_STRIP) {
-      expect(read(path), path).not.toMatch(retired);
-    }
+    const violations = productionSources().filter((path) => retired.test(withoutComments(read(path))));
+    expect(violations).toEqual([]);
   });
 
   it("does not promise unlimited provider-funded usage", () => {

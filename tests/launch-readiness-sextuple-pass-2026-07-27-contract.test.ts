@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("launch readiness cross-surface contract", () => {
   it("pins Runtime Balance billing continuity and canonical Stripe catalog checks", () => {
@@ -18,9 +19,13 @@ describe("launch readiness cross-surface contract", () => {
   it("keeps Knowledge upload honesty and public compliance copy", () => {
     const kb = read("src/components/KnowledgeBaseClaude.tsx");
     const security = read("src/components/Security.tsx");
-    expect(kb).toContain('accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"');
+    expect(kb).toContain(
+      'accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"',
+    );
     expect(kb).toContain("is not supported yet");
-    expect(security).toMatch(/Marketing and campaign outbound[^.]*fail closed[^.]*stay blocked[^.]*federal DNC setup/i);
+    expect(security).toMatch(
+      /Marketing and campaign outbound[^.]*fail closed[^.]*stay blocked[^.]*federal DNC setup/i,
+    );
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });
 
@@ -34,14 +39,17 @@ describe("launch readiness cross-surface contract", () => {
     expect(aiErrors).toContain("OpenAI, Gemini, or AI Gateway");
   });
 
-  it("keeps transport fallbacks and current marketing CSS free of retired hero mandates", () => {
+  it("keeps transport fallbacks and executable marketing surfaces free of retired hero mandates", () => {
     const contact = read("src/components/ContactPage.tsx");
     const support = read("src/components/SupportPage.tsx");
     const css = read("src/styles/public-marketing-polish.css");
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
     for (const source of [contact, support]) {
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
       expect(source).toContain("mailto:support@trywireline.com");
     }
-    expect(css).not.toMatch(/keep ["']AI VOICE AGENTS["']/i);
+    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(cssWithoutComments).not.toMatch(/AI VOICE AGENTS/i);
+    expect(landing).not.toContain("AI VOICE AGENTS");
   });
 });
