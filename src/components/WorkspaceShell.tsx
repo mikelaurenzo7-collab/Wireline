@@ -12,7 +12,6 @@ import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useAgents } from "../contexts/AgentsContext";
 import { agentReadinessLabel } from "../lib/agent-readiness";
-import { customerAgentLanguage } from "../lib/product-copy";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -30,6 +29,13 @@ import { isRouteAvailableForAccount } from "../lib/account-type";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import WirelineMark from "./brand/WirelineMark";
+
+const BOT_LANGUAGE = {
+  singular: "Bot",
+  plural: "Bots",
+  navLabel: "Bot Studio",
+  navShort: "Studio",
+} as const;
 
 type NativeWindow = Window & {
   WirelineNative?: unknown;
@@ -54,10 +60,9 @@ function userInitial(name?: string | null, email?: string | null) {
   return source.charAt(0).toUpperCase() || "W";
 }
 
-function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
+function contextualNavItem(item: ShellNavItem): ShellNavItem {
   if (item.href !== "/studio") return item;
-  const language = customerAgentLanguage(posture);
-  return { ...item, label: language.navLabel, shortLabel: language.navShort };
+  return { ...item, label: BOT_LANGUAGE.navLabel, shortLabel: BOT_LANGUAGE.navShort };
 }
 
 function RailLink({
@@ -134,10 +139,6 @@ function MobileDockLink({
   return (
     <Link
       to={item.href}
-      // WCAG 2.5.3 Label in Name: the accessible name must contain the visible
-      // one. The Overview tab renders "Home" and was named "Overview", so
-      // "tap Home" — the literal words on screen — did nothing for anyone
-      // driving the app by voice, on the first tab of the primary navigation.
       aria-label={
         item.shortLabel && item.shortLabel !== item.label
           ? `${item.shortLabel}, ${item.label}`
@@ -165,21 +166,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const { phoneLookupDegraded } = useAgents();
-  const language = customerAgentLanguage(accountType);
+  const language = BOT_LANGUAGE;
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  const matchesPosture = (agent: (typeof agents)[number]) =>
-    accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
-  // The agent the workspace is currently on always belongs in its own roster.
-  // Scoping the rail to the account posture otherwise dropped the open agent
-  // out of the list whenever its posture differed — the sidebar showed "no
-  // agents" (or someone else) on the very page that agent owns.
   const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
-  const postureAgents = agents.filter(
-    (agent) => matchesPosture(agent) || agent.id === activeAgent?.id,
-  );
   const orderedAgents = activeAgent
-    ? [activeAgent, ...postureAgents.filter((agent) => agent.id !== activeAgent.id)]
-    : postureAgents;
+    ? [activeAgent, ...agents.filter((agent) => agent.id !== activeAgent.id)]
+    : agents;
   const visibleAgents = orderedAgents.slice(0, 3);
   const hiddenAgentCount = Math.max(orderedAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
@@ -217,7 +209,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <nav className="mt-2 flex flex-col gap-0.5" aria-label="Workspace">
         {WORKSPACE_NAV.map((rawItem) => {
-          const item = contextualNavItem(rawItem, accountType);
+          const item = contextualNavItem(rawItem);
           return (
             <RailLink
               key={item.href}
@@ -229,16 +221,10 @@ function DesktopRail({ pathname }: { pathname: string }) {
         })}
       </nav>
 
-      {postureAgents.length ? (
+      {agents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
-            {/* Short kicker on purpose. The rail leaves this row 145px once the
-                "New" link is placed, and the wired strands take 64px of that —
-                `language.plural` measures 222px, so it wrapped to three lines and
-                crushed the trailing strand. The rail's other visible labels are
-                already posture-agnostic (navLabel is "Voice Agent" for both
-                postures); the posture-aware name stays on the nav's aria-label. */}
-            <WiredEyebrow>Agents</WiredEyebrow>
+            <WiredEyebrow>Bots</WiredEyebrow>
             <Link
               to="/studio?create=1"
               aria-label={`New ${language.singular}`}
@@ -247,13 +233,6 @@ function DesktopRail({ pathname }: { pathname: string }) {
               New
             </Link>
           </div>
-          {/*
-           * The column is pinned to minmax(0,1fr) because a grid item's default
-           * `min-width: auto` refuses to shrink below max-content: each row sized
-           * to its full name and role (203px) and overflowed this 189px rail,
-           * getting hard-clipped by the sidebar instead of ellipsizing. The
-           * `truncate` on the labels below only works once the track is bounded.
-           */}
           <nav className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5" aria-label={language.plural}>
             {visibleAgents.map((agent) => {
               const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
@@ -292,7 +271,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
               >
                 <span>All {language.plural}</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                  {postureAgents.length}
+                  {agents.length}
                 </span>
               </Link>
             ) : null}
@@ -345,7 +324,6 @@ function MobileDock({
   moreOpen: boolean;
   onMoreOpen: (open: boolean) => void;
 }) {
-  const { accountType } = useAccount();
   return (
     <>
       <nav
@@ -354,7 +332,7 @@ function MobileDock({
       >
         <div className="mx-auto flex max-w-lg items-center justify-between gap-0.5">
           {MOBILE_PRIMARY_NAV.map((rawItem) => {
-            const item = contextualNavItem(rawItem, accountType);
+            const item = contextualNavItem(rawItem);
             return (
               <MobileDockLink
                 key={item.href}
@@ -435,14 +413,6 @@ export default function WorkspaceShell({
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
-          {/* Banners live INSIDE the scroller. html/body/#root are all
-              `overflow: hidden`, so this is the only scrollable region on the
-              page — a banner mounted as its sibling permanently subtracts its
-              height from the workspace with no document scroll to recover it.
-              At 200% zoom an unverified-email account could be left with a
-              sliver of content and no way to reach the rest. Scrolling them
-              with the content also means a dismissible notice stops competing
-              with the work once the reader moves past it. */}
           <div
             className={`wl-workspace-content flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain ${contentClassName}`}
           >
