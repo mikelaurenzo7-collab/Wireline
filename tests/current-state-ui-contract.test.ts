@@ -69,11 +69,12 @@ describe("current-state UI contract", () => {
     expect(developers).not.toContain("wl_YOUR_API_KEY");
   });
 
-  it("ships an in-product Wireline Command install path", () => {
+  it("ships an in-product WIRELINE Command install path", () => {
     const install = read("src/pages/BrowserCommandInstallPage.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
     expect(routes).toContain("BrowserCommandInstallPage");
     expect(routes).toContain('path="/settings/apps/command"');
+    expect(install).toContain("Install WIRELINE Command");
     expect(install).toContain("/downloads/wireline-command-chromium.zip");
     expect(install).toContain("/downloads/wireline-command-firefox.zip");
     expect(install).toContain("Load unpacked");
@@ -109,7 +110,7 @@ describe("current-state UI contract", () => {
     expect(copy).toContain("guardrails");
     expect(copy).toContain("approvals");
     expect(copy).toContain("consent rules");
-    expect(copy).toContain("Present one Wireline workspace");
+    expect(copy).toContain("Present one WIRELINE workspace");
   });
 
   it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {
