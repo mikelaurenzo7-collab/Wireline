@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
+import { BOT_MARK_GRADIENT_CAPACITY, botMarkFor } from "../src/lib/bot-mark";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -69,6 +70,20 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(botMark).not.toContain("status-success");
     expect(botMark).not.toContain("status-warning");
     expect(botMark).not.toContain("status-error");
+  });
+
+  it("keeps Bot Mark gradient capacity beyond the maximum standard purchasable roster", () => {
+    // Retained Business has 15 base Bots and the self-serve add-on route permits
+    // up to 100 additional Bots, so 115 is the largest standard catalog roster.
+    const standardCommercialCeiling = 115;
+    const signatures = new Set(
+      Array.from({ length: standardCommercialCeiling }, (_, index) =>
+        botMarkFor({ seed: `commercial-slot:${index + 1}` }).gradientSignature,
+      ),
+    );
+
+    expect(BOT_MARK_GRADIENT_CAPACITY).toBeGreaterThan(standardCommercialCeiling);
+    expect(signatures.size).toBe(standardCommercialCeiling);
   });
 
   it("keeps active customer-facing brand surfaces on Bot language", () => {
