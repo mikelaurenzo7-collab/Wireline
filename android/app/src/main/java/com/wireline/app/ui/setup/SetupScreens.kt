@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -70,7 +67,10 @@ fun KnowledgeScreen(padding: PaddingValues) {
     var error by remember { mutableStateOf<String?>(null) }
 
     suspend fun loadSetup() {
-        if (selectedId.isBlank()) { setup = null; return }
+        if (selectedId.isBlank()) {
+            setup = null
+            return
+        }
         runCatching { api.agentSetup(selectedId) }
             .onSuccess { setup = it; error = null }
             .onFailure { error = it.message }
@@ -86,18 +86,20 @@ fun KnowledgeScreen(padding: PaddingValues) {
 
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding)) {
         TopAppBar(
-            title = { Text("Training", fontWeight = FontWeight.SemiBold) },
+            title = { Text("KNOWLEDGE", fontWeight = FontWeight.SemiBold) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
         } else if (agents.isEmpty()) {
-            Text("Create an agent first, then add the facts, rules, and sources that make it useful.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            Text("Create a Bot first, then add the facts, rules, and sources that make it useful.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (agents.size > 1) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        agents.forEach { agent -> FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) }) }
+                        agents.forEach { agent ->
+                            FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) })
+                        }
                     }
                 }
                 item {
@@ -110,7 +112,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
                 }
                 item {
                     SectionCard {
-                        Text("BEHAVIOR", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                        Text("GUARDRAILS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         val rules = setup?.directives.orEmpty()
                         if (rules.isEmpty()) Text("No saved rules yet.", color = Brand.Text2)
                         rules.forEach { Text(it.content, color = Brand.Text) }
@@ -120,13 +122,13 @@ fun KnowledgeScreen(padding: PaddingValues) {
                     SectionCard {
                         Text("ADD A DETAIL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(selected = kind == "knowledge", onClick = { kind = "knowledge" }, label = { Text("Detail") })
-                            FilterChip(selected = kind == "directive", onClick = { kind = "directive" }, label = { Text("Rule") })
+                            FilterChip(selected = kind == "knowledge", onClick = { kind = "knowledge" }, label = { Text("DETAIL") })
+                            FilterChip(selected = kind == "directive", onClick = { kind = "directive" }, label = { Text("RULE") })
                         }
                         OutlinedTextField(
                             value = draft,
                             onValueChange = { draft = it },
-                            label = { Text(if (kind == "knowledge") "A fact, preference, routine, or policy" else "What the agent should do or avoid") },
+                            label = { Text(if (kind == "knowledge") "FACT, PREFERENCE, ROUTINE, OR POLICY" else "WHAT SHOULD YOUR BOT DO OR AVOID?") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3,
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
@@ -146,8 +148,8 @@ fun KnowledgeScreen(padding: PaddingValues) {
                             enabled = draft.isNotBlank() && !saving,
                             modifier = Modifier.fillMaxWidth(),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Brand.Accent)
-                        ) { Text(if (saving) "Saving..." else if (kind == "knowledge") "Save detail" else "Save rule") }
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Brand.Accent),
+                        ) { Text(if (saving) "SAVING…" else if (kind == "knowledge") "SAVE DETAIL" else "SAVE RULE") }
                     }
                 }
                 error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -170,7 +172,10 @@ fun ActionsScreen(padding: PaddingValues) {
     var error by remember { mutableStateOf<String?>(null) }
 
     suspend fun loadSetup() {
-        if (selectedId.isBlank()) { enabled = emptySet(); return }
+        if (selectedId.isBlank()) {
+            enabled = emptySet()
+            return
+        }
         runCatching { api.agentSetup(selectedId) }
             .onSuccess { enabled = it.enabledTools.toSet(); error = null }
             .onFailure { error = it.message }
@@ -186,27 +191,29 @@ fun ActionsScreen(padding: PaddingValues) {
 
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding)) {
         TopAppBar(
-            title = { Text("Wire", fontWeight = FontWeight.SemiBold) },
+            title = { Text("CONNECTIONS", fontWeight = FontWeight.SemiBold) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
         } else if (agents.isEmpty()) {
-            Text("Create an agent first, then choose what it is allowed to do.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            Text("Create a Bot first, then choose what it is allowed to do.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (agents.size > 1) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        agents.forEach { agent -> FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) }) }
+                        agents.forEach { agent ->
+                            FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) })
+                        }
                     }
                 }
                 item {
                     SectionCard {
-                        Text("WAYS YOUR AGENT CAN HELP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                        Text("WHAT YOUR BOT CAN DO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         agentActions.forEach { action ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(action.title, color = Brand.Text)
+                                    Text(action.title.uppercase(), color = Brand.Text)
                                     Text(action.detail, style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
                                 }
                                 Switch(
@@ -227,7 +234,13 @@ fun ActionsScreen(padding: PaddingValues) {
                         }
                     }
                 }
-                item { Text("Use mobile for fast approvals and core call workflows. Configure deeper CRM, calendar, and billing connections on the web console.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
+                item {
+                    Text(
+                        "Use mobile for fast approvals and core call workflows. Configure deeper CRM, calendar, email, text, and billing connections in the web workspace.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Brand.Text2,
+                    )
+                }
                 error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
             }
         }
