@@ -91,6 +91,12 @@ router.get(
     }
 
     try {
+      if (call.vapiCallId?.startsWith("xai:")) {
+        return res.status(404).json({
+          code: "RECORDING_UNAVAILABLE",
+          error: "Native voice calls are transcript-only.",
+        });
+      }
       if (call.vapiCallId?.startsWith("twilio-voicemail:")) {
         const mediaUrl = twilioMediaUrl(call.recordingUrl);
         const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();

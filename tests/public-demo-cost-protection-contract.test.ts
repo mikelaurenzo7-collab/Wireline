@@ -14,11 +14,12 @@ describe("public browser demo cost protection", () => {
   const server = read("server.ts");
 
   it("keeps platform authorization and assistant construction on the server", () => {
-    expect(routes).toContain('fetch("https://api.vapi.ai/call/web"');
-    expect(routes).toContain("process.env.VAPI_PRIVATE_KEY");
-    expect(routes).toContain('router.post("/api/public/demo-vapi/call/web"');
+    expect(routes).toContain('"/api/public/demo-xai-session"');
+    expect(routes).toContain("createPublicXAILiveDemoSession");
+    expect(routes).toContain("publicXAIDemoConfigured");
+    expect(routes).not.toContain('fetch("https://api.vapi.ai/call/web"');
     expect(hook).toContain('fetch("/api/public/demo-session"');
-    expect(hook).toContain("new VapiSDK(token, absoluteProxyUrl)");
+    expect(hook).toContain("new WebSocket(session.websocketUrl");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
     expect(widget).not.toContain("/api/public/assistant/");
@@ -26,12 +27,9 @@ describe("public browser demo cost protection", () => {
 
   it("keeps the compatibility route metadata-only", () => {
     const compatibilityStart = routes.indexOf('router.get("/api/public/assistant/:agentName"');
-    const compatibilityEnd = routes.indexOf(
-      'router.post("/api/public/demo-session"',
-      compatibilityStart,
-    );
+    const compatibilityEnd = routes.indexOf("Cheap availability preflight", compatibilityStart);
     const compatibilityBlock = routes.slice(compatibilityStart, compatibilityEnd);
-    expect(compatibilityBlock).toContain('mode: "protected_browser_preview"');
+    expect(compatibilityBlock).toContain('mode: "protected_native_browser_preview"');
     expect(compatibilityBlock).toContain('sessionEndpoint: "/api/public/demo-session"');
     expect(compatibilityBlock).not.toContain("buildPublicBrowserAssistant(agent)");
     expect(compatibilityBlock).not.toContain("systemPrompt");
@@ -42,14 +40,11 @@ describe("public browser demo cost protection", () => {
   it("checks the real protected-demo runtime before asking for microphone access", () => {
     const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
     const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
-    const sessionRouteStart = routes.indexOf('router.post("/api/public/demo-session"');
-    const sessionRouteEnd = routes.indexOf(
-      'router.post("/api/public/demo-vapi/call/web"',
-      sessionRouteStart,
-    );
+    const sessionRouteStart = routes.indexOf('"/api/public/demo-session"');
+    const sessionRouteEnd = routes.indexOf('"/api/public/demo-xai-session"', sessionRouteStart);
     const sessionRoute = routes.slice(sessionRouteStart, sessionRouteEnd);
     const providerReadiness = sessionRoute.indexOf(
-      "!publicDemoTicketingReady() || !privateVapiKey()",
+      "!publicDemoTicketingReady() || !publicXAIDemoConfigured()",
     );
     const ticketIssue = sessionRoute.indexOf("issuePublicDemoTicket({");
 
@@ -68,7 +63,7 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("if (attempt !== attemptRef.current) return");
     expect(hook).toContain("attemptRef.current += 1");
     expect(hook).toContain("The live connection took too long");
-    expect(hook).toContain("vapiRef.current?.stop()");
+    expect(hook).toContain("socket.current?.close(1000, \"Wireline protected demo ended\")");
     expect(hook, "provider exceptions must not be dumped raw").not.toContain(
       "voice bridge error:",
     );
@@ -99,16 +94,17 @@ describe("public browser demo cost protection", () => {
 
   it("caps duration, disables retained artifacts, and exposes no real tools", () => {
     const policy = read("src/lib/public-browser-demo.ts");
+    const demoSession = read("src/lib/voice/xai-public-demo-session.ts");
     expect(policy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
     expect(routes).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
-    expect(routes).toContain("buildPublicBrowserDemoArtifactPlan()");
+    expect(demoSession).toContain("tools: []");
+    expect(demoSession).toContain('tool_choice: "none"');
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("videoRecordingEnabled: false");
     expect(policy).toContain("pcapEnabled: false");
     expect(policy).toContain("loggingEnabled: false");
     expect(policy).toContain("transcriptPlan: { enabled: false }");
-    expect(routes).toContain("serverMessages: []");
-    expect(routes).not.toContain("tools:");
+    expect(demoSession).not.toContain("create_followup_task");
   });
 
   it("binds one-use tickets to the browser and fails closed on budget infrastructure", () => {

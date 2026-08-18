@@ -59,6 +59,9 @@ describe("vendor readiness contract", () => {
     const actualRecordIdx = probe.indexOf('"federal_dnc"');
     expect(actualRecordIdx).toBeGreaterThanOrEqual(0);
     expect(probe.slice(actualRecordIdx - 15, actualRecordIdx + 280)).toContain("false");
+    const vapiRecordIdx = probe.lastIndexOf('"vapi"');
+    expect(vapiRecordIdx).toBeGreaterThanOrEqual(0);
+    expect(probe.slice(vapiRecordIdx - 15, vapiRecordIdx + 80)).toContain("false");
   });
 
   it("is exposed as an explicit owner command rather than a default local test", () => {

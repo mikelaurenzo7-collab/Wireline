@@ -3,25 +3,27 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getHealthModelTiering } from "../src/lib/health-model-policy";
-import { probeOpenAIModelDiagnostic } from "../src/lib/health-model-probe";
 import {
-  STRUCTURED_PRIMARY_MODEL,
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
-  VAPI_VOICE_FALLBACK_MODEL,
-  VAPI_VOICE_FALLBACK_PROVIDER,
-} from "../src/lib/ai-models";
+  probeOpenAIModelDiagnostic,
+  probeXAIControlPlaneDiagnostic,
+} from "../src/lib/health-model-probe";
+import { STRUCTURED_PRIMARY_MODEL } from "../src/lib/ai-models";
+import { GROK_VOICE_DEFAULT_MODEL } from "../src/lib/voice/grok-voice-config";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../src/lib/voice/openai-realtime-config";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const originalOpenAiKey = process.env.OPENAI_API_KEY;
+const originalXaiKey = process.env.XAI_API_KEY;
 
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   if (originalOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
   else process.env.OPENAI_API_KEY = originalOpenAiKey;
+  if (originalXaiKey === undefined) delete process.env.XAI_API_KEY;
+  else process.env.XAI_API_KEY = originalXaiKey;
 });
 
 describe("health surfaces contract", () => {
@@ -93,13 +95,14 @@ describe("health surfaces contract", () => {
     expect(routeSource).not.toContain('router.get("/public"');
     expect(routeSource).not.toContain("PUBLIC_PROBE_TTL_MS");
     expect(routeSource).not.toContain("computePublicHealth");
-    expect(routeSource).toContain(
-      'import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";',
-    );
-    // /models drives two live platform-key OpenAI probes per request, so it
-    // must never be reachable by an arbitrary authenticated tenant: monitor
-    // token for ops, platform admin for humans (same posture as /slos). The
-    // composite is a NAMED middleware so the authz matrix sees it in-chain.
+    expect(routeSource).toContain("probeOpenAIModelDiagnostic");
+    expect(routeSource).toContain("probeXAIControlPlaneDiagnostic");
+    expect(routeSource).toContain("GROK_VOICE_DEFAULT_MODEL");
+    // /models drives a live xAI control-plane GET plus one OpenAI Responses
+    // probe per request, so it must never be reachable by an arbitrary
+    // authenticated tenant: monitor token for ops, platform admin for humans
+    // (same posture as /slos). The composite is a NAMED middleware so the
+    // authz matrix sees it in-chain.
     const gateStart = routeSource.indexOf("function requireMonitorTokenOrPlatformAdmin");
     expect(gateStart).toBeGreaterThan(-1);
     const gate = routeSource.slice(gateStart, routeSource.indexOf("router.get(", gateStart));
@@ -118,12 +121,12 @@ describe("health surfaces contract", () => {
   it("derives authenticated model/provider health from canonical runtime policy", () => {
     const tiering = getHealthModelTiering();
     expect(tiering.voice_runtime).toMatchObject({
-      provider: VAPI_TENANT_DEFAULT_PROVIDER,
-      model: VAPI_TENANT_DEFAULT_MODEL,
+      provider: "xai",
+      model: GROK_VOICE_DEFAULT_MODEL,
     });
     expect(tiering.voice_fallback).toMatchObject({
-      provider: VAPI_VOICE_FALLBACK_PROVIDER,
-      model: VAPI_VOICE_FALLBACK_MODEL,
+      provider: "openai",
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
     });
     expect(tiering.reasoning_layer).toMatchObject({
       provider: "xai",
@@ -136,6 +139,8 @@ describe("health surfaces contract", () => {
 
     const routeSource = read("src/routes/health-routes.ts");
     expect(routeSource).toContain("llm_tiering: getHealthModelTiering()");
+    expect(routeSource).toContain("voice_agent_model: GROK_VOICE_DEFAULT_MODEL");
+    expect(routeSource).toContain("probeXAIControlPlaneDiagnostic(GROK_VOICE_DEFAULT_MODEL)");
     expect(routeSource).not.toMatch(/voice_fallback:\s*\{\s*provider:\s*"google"/);
   });
 
@@ -178,6 +183,43 @@ describe("health surfaces contract", () => {
     }) as unknown as typeof fetch;
 
     const pending = probeOpenAIModelDiagnostic("test-model", 50, fetchImpl);
+    await vi.advanceTimersByTimeAsync(50);
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      model: "test-model",
+      error: "model probe timed out",
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("does not call xAI when the diagnostic key is absent", async () => {
+    delete process.env.XAI_API_KEY;
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+
+    await expect(probeXAIControlPlaneDiagnostic("test-model", 25, fetchImpl)).resolves.toMatchObject(
+      {
+        ok: false,
+        model: "test-model",
+        error: "XAI_API_KEY not configured",
+      },
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("aborts the xAI control-plane diagnostic at the hard deadline", async () => {
+    process.env.XAI_API_KEY = "test-xai-key";
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      signal = init?.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener("abort", () => reject(signal?.reason), { once: true });
+      });
+    }) as unknown as typeof fetch;
+
+    const pending = probeXAIControlPlaneDiagnostic("test-model", 50, fetchImpl);
     await vi.advanceTimersByTimeAsync(50);
 
     await expect(pending).resolves.toMatchObject({

@@ -39,6 +39,8 @@ import companyIdentitySettingsGuardRouter from "../routes/company-identity-setti
 import settingsPhoneGuardRouter from "../routes/settings-phone-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
+import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
+import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";
 import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
 import carrierRouter from "../routes/carrier-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
@@ -74,6 +76,7 @@ import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
 import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes";
 import jobRouter from "../routes/job-routes";
+import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";
 import mobileRouter from "../routes/mobile-routes";
 import videoPresenterRouter from "../routes/video-presenter-routes";
 import activationRouter from "../routes/activation-routes";
@@ -147,6 +150,11 @@ export function registerApiRoutes(app: Express): void {
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
+  // Native Twilio+xAI owns all self-serve number reads/writes and release before
+  // the historical carrier routers. Legacy paths remain mounted only for
+  // rollback inventory that carries an old provider id.
+  app.use(nativePhoneRoutingRouter);
+  app.use(nativePhoneReleaseRouter);
   app.use(phoneNumberReleaseRouter);
   app.use(carrierRouter);
   app.use(companyIdentityRouter);
@@ -211,6 +219,7 @@ export function registerApiRoutes(app: Express): void {
   // a permanent migration response instead of the historical 503.
   app.use(legacyKnowledgeCrawlRouter);
   app.use("/api/jobs", jobRouter);
+  app.use(nativeMobileVoiceRouter);
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
   app.use(activationRouter);

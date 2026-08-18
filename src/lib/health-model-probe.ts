@@ -54,3 +54,49 @@ export async function probeOpenAIModelDiagnostic(
     clearTimeout(timeout);
   }
 }
+
+/**
+ * Authenticated xAI control-plane GET used by `/api/health/models` voice_runtime.
+ * Same catalog surface as public health and SIP registration. Does not mint a
+ * session or create inference. Chat and voice share `XAI_API_KEY`; this probe
+ * is not a second credential.
+ */
+export async function probeXAIControlPlaneDiagnostic(
+  model: string,
+  timeoutMs = 8000,
+  fetchImpl: typeof fetch = fetch,
+): Promise<HealthModelProbeResult> {
+  const started = Date.now();
+  const key = process.env.XAI_API_KEY?.trim();
+  if (!key) {
+    return { ok: false, latency_ms: 0, model, error: "XAI_API_KEY not configured" };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(new Error("model probe timed out")),
+    timeoutMs,
+  );
+
+  try {
+    const response = await fetchImpl("https://api.x.ai/v1/models", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${key}` },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`xAI control-plane probe failed (${response.status})`);
+    return { ok: true, latency_ms: Date.now() - started, model };
+  } catch (error) {
+    return {
+      ok: false,
+      latency_ms: Date.now() - started,
+      model,
+      error: (controller.signal.aborted ? "model probe timed out" : getErrorMessage(error)).slice(
+        0,
+        240,
+      ),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}

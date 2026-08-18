@@ -33,6 +33,7 @@ type TwilioTranscriptionList = {
 const VAPI_BASE_URL = "https://api.vapi.ai";
 const TWILIO_API_ORIGIN = "https://api.twilio.com";
 const TWILIO_VOICEMAIL_PREFIX = "twilio-voicemail:";
+const NATIVE_XAI_CALL_PREFIX = "xai:";
 const TWILIO_ACCOUNT_SID_RE = /^AC[0-9a-fA-F]{32}$/;
 const TWILIO_CALL_SID_RE = /^CA[0-9a-fA-F]{32}$/;
 const TWILIO_TRANSCRIPTION_SID_RE = /^TR[0-9a-fA-F]{32}$/;
@@ -107,7 +108,10 @@ async function eraseVapiCalls(
       .map(({ vapiCallId }) => vapiCallId?.trim() || "")
       .filter(
         (callId) =>
-          callId.length > 0 && callId !== "unknown" && !callId.startsWith(TWILIO_VOICEMAIL_PREFIX),
+          callId.length > 0 &&
+          callId !== "unknown" &&
+          !callId.startsWith(TWILIO_VOICEMAIL_PREFIX) &&
+          !callId.startsWith(NATIVE_XAI_CALL_PREFIX),
       ),
   );
   if (!callIds.size) return 0;

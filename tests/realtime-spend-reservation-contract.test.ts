@@ -42,6 +42,8 @@ describe("realtime spend reservation contract", () => {
       "${schema.quotaUsage.used} + ${BigInt(units)} <= ${BigInt(limit)}",
     );
     expect(reserve).toContain("if (limit <= 0 || units > limit)");
+    expect(reserve).toContain("if (units === 0)");
+    expect(reserve).toContain("allowed: current < limit");
     expect(reserve).toContain("if (row)");
     expect(reserve).toContain("allowed: false");
     expect(reserve).toContain("authoritativeDecision({");

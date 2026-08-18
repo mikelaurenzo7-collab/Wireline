@@ -48,6 +48,12 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Aug 17, 2026",
+    tag: "infra",
+    title: "Production phone calls run on Twilio plus xAI Direct SIP",
+    body: "Live inbound and outbound PSTN use Twilio as the carrier and xAI Speech-to-Speech over Direct SIP. Marketing answering machines hang up without a message, unreachable campaign dials retry until the attempt budget, and a spoken stop-calling request ends the call immediately. Vapi remains optional rollback and public-showcase PSTN only.",
+  },
+  {
     date: "Aug 11, 2026",
     tag: "launch",
     title: "Deeper release checks before anything ships",

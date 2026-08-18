@@ -66,7 +66,10 @@ describe("production environment launch policy", () => {
     expect(recommendedStart).toBeGreaterThanOrEqual(0);
     expect(optionalStart).toBeGreaterThan(recommendedStart);
     expect(recommendedBlock).not.toContain('"LIVEAVATAR_API_KEY"');
-    expect(recommendedBlock).toContain('"XAI_API_KEY"');
+    expect(recommendedBlock).not.toContain('"XAI_API_KEY"');
+    expect(prodCheck.slice(prodCheck.indexOf("const required = ["), recommendedStart)).toContain(
+      '"XAI_API_KEY"',
+    );
     expect(optionalBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(optionalBlock).not.toContain('"LIVEAVATAR_DEFAULT_AVATAR_ID"');
   });
@@ -120,9 +123,21 @@ describe("production environment launch policy", () => {
 
     const cleanPreview = runPreviewBoundary();
     expect(cleanPreview.status).toBe(0);
+
+    const xaiSandboxPreview = runPreviewBoundary({ XAI_API_KEY: "sandbox-xai-key" });
+    expect(xaiSandboxPreview.status).toBe(0);
+    expect(`${xaiSandboxPreview.stdout}${xaiSandboxPreview.stderr}`).toContain(
+      "Deployment-boundary check passed for preview",
+    );
+
+    const openaiPreview = runPreviewBoundary({ OPENAI_API_KEY: "sk-live-configured" });
+    expect(openaiPreview.status).toBe(1);
+    expect(`${openaiPreview.stdout}${openaiPreview.stderr}`).toContain("OPENAI_API_KEY");
+
     expect(deploymentBoundary).toContain("production-only configuration");
     expect(deploymentBoundary).toContain("credential-like project configuration");
     expect(deploymentBoundary).toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
+    expect(deploymentBoundary).toContain('"XAI_API_KEY"');
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");

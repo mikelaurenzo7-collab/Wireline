@@ -34,10 +34,12 @@ describe("outbound engine hardening", () => {
     expect(dial).toContain("if (claimed.length === 0)");
     // Whitespace-tolerant: prettier wraps the ternary across lines.
     expect(dial).toMatch(/LEAD_STATUS\.MAX_ATTEMPTS\s*:\s*LEAD_STATUS\.RETRYING/);
-    expect(dial).not.toContain("status: LEAD_STATUS.ERROR");
+    expect(dial).toContain("result.doNotRetry === true || result.providerOutcomeAmbiguous === true");
+    expect(dial).toContain("? LEAD_STATUS.ERROR");
     // A failed placement must not stamp lastCalledAt (no call happened) —
-    // the 24h window would otherwise suppress the retry for a day.
-    expect(dial).toContain("if (placed) return;");
+    // the 24h window would otherwise suppress the retry for a day. After the
+    // provider accepts, catch must not retire the lead on a later blip.
+    expect(dial).toContain("if (providerAccepted) return;");
   });
 
   it("launch transition is guarded and retry-failed reaches Error leads", () => {

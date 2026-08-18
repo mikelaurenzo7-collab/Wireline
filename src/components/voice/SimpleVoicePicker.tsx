@@ -259,8 +259,9 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Browser tests the words. Place a real call to verify the selected audio. Live voice tests
-        use this same intelligence and voice.
+        Browser tests the words. Place a real call to verify the selected audio. Live phone calls
+        use Speech-to-Speech from the agent's role. Savannah and Elliot apply only on the optional
+        Vapi rollback path. Studio clones are Studio TTS, not live PSTN.
       </p>
 
       {notice ? (

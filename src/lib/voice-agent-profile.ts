@@ -119,7 +119,7 @@ export function resolveOutboundStartSpeakingPlan(
   };
 }
 
-/** Production default — Deepgram Flux EOT (English showcase + tenant voice). */
+/** Rollback Vapi default — Deepgram Flux EOT (English showcase + tenant voice). Native PSTN uses xAI Speech-to-Speech, not this transcriber. */
 export const VAPI_DEFAULT_TRANSCRIBER_MODE: VapiTranscriberMode = "flux-eot";
 
 export function resolveVapiSpeechPipeline(

@@ -30,6 +30,10 @@ type AccountDeletionTarget = {
  * - wireline_demo_call_events (public showcase telemetry)
  * - wireline_orphan_carrier_resources (platform cleanup ledger that must
  *   outlive the deleted tenant until carrier teardown completes)
+ * - wireline_xai_phone_bindings (retained Twilio/xAI Direct SIP registration
+ *   ledger; one-time webhook secrets must survive tenant purge so a still-live
+ *   provider registration can be verified, retired, or reused. Purge retires
+ *   rows through releaseNativeTenantNumber and the orphan carrier ledger.)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_audit_log", userColumns: ["user_id"] },
@@ -429,9 +433,9 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2. Release provisioned numbers at the carrier (Vapi/Twilio). A carrier
-  //    failure does not block GDPR erasure by itself, but the platform must
-  //    durably retain the ownership/provider identifiers before hard-delete.
+  // 2. Release provisioned numbers at the carrier (Twilio + native xAI). A
+  //    carrier failure does not block GDPR erasure by itself, but the platform
+  //    must durably retain the ownership/provider identifiers before hard-delete.
   const numbers = await db
     .select({
       phoneNumber: schema.phoneNumbers.phoneNumber,
@@ -441,9 +445,9 @@ async function releaseExternalResourcesOutsideTenantContext(
     .where(eq(schema.phoneNumbers.userId, userId));
 
   if (numbers.length) {
-    const { releaseTenantNumber } = await import("./phone-provisioning");
+    const { releaseNativeTenantNumber } = await import("./voice/native-phone-release");
     for (const { phoneNumber, vapiNumberId } of numbers) {
-      const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
+      const res = await releaseNativeTenantNumber(userId, phoneNumber).catch((err) => ({
         ok: false as const,
         error: getErrorMessage(err),
       }));

@@ -11,7 +11,7 @@ describe("cadence engine outbound compliance gate", () => {
   it("routes call/sms steps through the shared federal DNC + TCPA gate, not a DNC-only check", () => {
     // Cadence marketing outbound must clear the same gate as campaign-dialer.ts
     // and intake-routes.ts — internal DNC alone is not federal DNC + consent.
-    expect(engine).toContain('import { evaluateOutboundDialGate } from "./outbound-dial-gate"');
+    expect(engine).toContain('import { evaluateOutboundDialGate, mergeLeadMetadata } from "./outbound-dial-gate"');
     expect(engine).toContain("await evaluateOutboundDialGate({");
     expect(engine).not.toContain('import { isDncBlocked } from "./compliance"');
 
@@ -38,6 +38,9 @@ describe("cadence engine outbound compliance gate", () => {
 
   it("selects lastCalledAt and metadata for cadence leads so the gate has what it needs", () => {
     expect(engine).toContain("lastCalledAt: schema.outboundLeads.lastCalledAt");
+    expect(engine).toContain("mergeLeadMetadata");
+    expect(engine).toContain("stampCadenceComplianceDenial");
+    expect(engine).toContain("failRun: true");
     expect(engine).toContain("metadata: schema.outboundLeads.metadata");
   });
 });

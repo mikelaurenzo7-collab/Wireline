@@ -178,31 +178,8 @@ export default function AdminSettings() {
   useEffect(() => {
     fetchData();
     fetchIntegrationHealth();
-    fetchTeam();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
   }, []);
-
-  const fetchTeam = async () => {
-    try {
-      const r = await authFetch("/api/team");
-      if (!r.ok) {
-        // Shared workspaces are gated behind tenant data-plane certification —
-        // that deliberate 503 is not a failure, so the roster renders its
-        // empty state instead of an alarmed toast (same truth as TeamSettings).
-        const payload = await r.json().catch(() => null);
-        if (r.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
-          setTeamMembers([]);
-          return;
-        }
-        toastError("Team unavailable", "Could not load team members. Please refresh.");
-        return;
-      }
-      const d = await r.json();
-      setTeamMembers(d.members || []);
-    } catch {
-      toastError("Team unavailable", "Could not load team members. Please refresh.");
-    }
-  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -257,17 +234,23 @@ export default function AdminSettings() {
       setAgents(agentsJson?.agents || []);
       setPhoneNumbers(Array.isArray(numbersJson?.numbers) ? numbersJson.numbers : []);
 
-      // Fetch team members
       const teamRes = await authFetch("/api/team");
+      const teamJson = await teamRes.json().catch(() => null);
       if (teamRes.ok) {
-        const teamData = await teamRes.json();
-        setTeamMembers(teamData.members || []);
+        setTeamMembers(teamJson?.members || []);
+      } else if (teamRes.status === 503 && teamJson?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
+        // Shared workspaces stay gated. Treat that 503 as an empty roster, not a
+        // load failure, matching TeamSettings.
+        setTeamMembers([]);
+      } else {
+        toastError("Team unavailable", "Could not load team members. Please refresh.");
       }
     } catch (e) {
       clientLog.error("admin-settings:load", e);
       toastError("Settings unavailable", "Could not load settings. Please refresh.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const syncCarrierNumbers = async () => {
@@ -344,12 +327,12 @@ export default function AdminSettings() {
     }
   };
 
-  const addPhoneNumber = async (phone_number: string, vapi_number_id: string) => {
+  const addPhoneNumber = async (phone_number: string) => {
     try {
-      await authFetch("/api/phone-numbers", {
+      await authFetch("/api/phone-numbers/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number, vapi_number_id }),
+        body: JSON.stringify({ phone_number }),
       });
       fetchData();
       toastSuccess("Number added", phone_number);

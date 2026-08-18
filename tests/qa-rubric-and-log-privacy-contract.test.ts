@@ -161,7 +161,7 @@ describe("customer conversation content and identifiers stay out of logs", () =>
     expect(read("src/routes/auth-oauth-routes.ts")).toContain("emailMaskForLog(normalized)");
     for (const path of [
       "src/lib/csat-service.ts",
-      "src/lib/vapi-client.ts",
+      "src/routes/xai-voice-routes.ts",
       "src/routes/compliance-routes.ts",
       "src/routes/vapi/tool-handlers-core.ts",
     ]) {

@@ -179,7 +179,7 @@ const Agent: JsonSchema = {
 
 const CallLog: JsonSchema = {
   type: "object",
-  description: "A completed call (Vapi) with enrichment fields populated by Wireline.",
+  description: "A completed call with enrichment fields populated by Wireline.",
   required: ["id", "user_id"],
   properties: {
     id: { type: "string" },

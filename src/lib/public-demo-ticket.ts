@@ -27,10 +27,7 @@ export type PublicDemoTicketVerification =
 
 function signingSecret(): string | null {
   const secret =
-    process.env.WIRELINE_PUBLIC_DEMO_SIGNING_SECRET ||
-    process.env.INTERNAL_JWT_SECRET ||
-    process.env.VAPI_WEBHOOK_SECRET ||
-    "";
+    process.env.WIRELINE_PUBLIC_DEMO_SIGNING_SECRET || process.env.INTERNAL_JWT_SECRET || "";
   return secret.trim().length >= 32 ? secret.trim() : null;
 }
 

@@ -1,6 +1,12 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+execFileSync(process.execPath, ["scripts/materialize-drizzle-meta.mjs"], {
+  cwd: process.cwd(),
+  stdio: "inherit",
+});
 
 const MIGRATIONS_DIR = resolve(process.cwd(), "drizzle/migrations");
 

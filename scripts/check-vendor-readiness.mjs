@@ -304,15 +304,15 @@ record(
 
 record(
   "xai",
-  false,
-  xai?.ok ? "ready" : "degraded",
+  true,
+  xai?.ok ? "ready" : "blocked",
   xai?.ok
-    ? "xAI key accepted; Grok 4.6 structured and Vapi Grok 4.3 PSTN defaults are reachable."
-    : "xAI key missing or rejected; launch degrades to OpenAI → Gemini → AI Gateway.",
-  "Fund Grok 4.6 as the structured default and Grok 4.3 as the Vapi PSTN default. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt out.",
+    ? "xAI key accepted; Grok 4.6 structured and native grok-voice-think-fast-2.0 SIP are reachable."
+    : "xAI key missing or rejected; native PSTN and the structured primary cannot launch.",
+  "Fund Grok 4.6 as the structured default and grok-voice-think-fast-2.0 as native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the structured lane out.",
   {
     structured_primary_model: "grok-4.6",
-    vapi_pstn_model: "grok-4.3",
+    native_sip_model: "grok-voice-think-fast-2.0",
     xai_role: "managed_primary",
   },
 );
@@ -374,17 +374,16 @@ const vapiAssistantInventory = arrayAt(vapiAssistants?.body, "data");
 const vapiReady = Boolean(vapiPhones?.ok && vapiAssistants?.ok && vapiPhoneInventory.length > 0);
 record(
   "vapi",
-  true,
-  vapiReady ? "ready" : "blocked",
+  false,
+  vapiReady ? "ready" : "degraded",
   vapiPhones?.ok && vapiAssistants?.ok
-    ? `Vapi key accepted; ${vapiPhoneInventory.length} phone number(s) reachable and assistant API accepted.`
-    : "Vapi key missing, rejected, or inventory APIs unavailable.",
-  vapiPhoneInventory.length > 0
-    ? "Keep Vapi billing funded and auto-reload enabled."
-    : "Provision or import at least one production phone number before launch.",
+    ? `Rollback Vapi key accepted; ${vapiPhoneInventory.length} phone number(s) reachable and assistant API accepted.`
+    : "Vapi rollback credentials missing or inventory APIs unavailable — not a launch GO blocker.",
+  "Native PSTN uses Twilio + xAI Direct SIP. Keep Vapi only if a certified rollback window is still required.",
   {
     phone_number_count: vapiPhoneInventory.length,
     assistant_sample_count: vapiAssistantInventory.length,
+    role: "rollback_only",
   },
 );
 

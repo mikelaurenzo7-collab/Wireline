@@ -64,8 +64,26 @@ describe("inbound concurrency wiring contract", () => {
     expect(overflowBranch).toContain("buildDurableTakeMessageAssistant(");
   });
 
-  it("only counts fresh presence so a lost end-webhook cannot wedge the line", () => {
+  it("applies the same inbound cost gates on native xAI SIP", () => {
+    const admission = read("src/lib/voice/native-inbound-admission.ts");
+    const routes = read("src/routes/xai-voice-routes.ts");
+    const session = read("src/lib/voice/xai-sip-session.ts");
+    expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD = 5");
+    expect(admission).toContain("inboundConcurrencyExceeded");
+    expect(admission).toContain("voice_minutes_daily");
+    expect(admission).toContain("after_hours");
+    expect(admission).toContain("isWithinBusinessHours");
+    expect(routes).toContain("resolveNativeInboundAdmission");
+    expect(routes).toContain("tenantStore.run(binding.userId");
+    expect(admission).toContain("Native inbound subscription check failed, continuing remaining gates");
+    expect(session).toContain("applyInboundAdmission");
+    expect(session).toContain("create_followup_task");
+    expect(session).toContain("line-suspended");
+  });
+
+  it("only counts fresh inbound presence so a lost end-webhook cannot wedge the line", () => {
     expect(lib).toContain("PRESENCE_STALENESS_MS");
     expect(lib).toContain("gte(schema.signalPresence.startedAt, freshSince)");
+    expect(lib).toContain('not like ${"% · Outbound"}');
   });
 });

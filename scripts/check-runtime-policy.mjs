@@ -84,8 +84,8 @@ if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS"))
   fail("managed voice does not carry fallback models");
 if (!schema.includes('voiceLlmProvider: text("voice_llm_provider").default("xai")'))
   fail("Drizzle settings schema does not default managed voice to xAI");
-if (!schema.includes('voiceLlmModel: text("voice_llm_model").default("grok-4.3")'))
-  fail("Drizzle settings schema does not default managed voice model to Grok 4.3");
+if (!schema.includes('voiceLlmModel: text("voice_llm_model").default("grok-4.6")'))
+  fail("Drizzle settings schema does not default managed voice model to Grok 4.6");
 if (
   !adminSettings.includes("VAPI_TENANT_DEFAULT_PROVIDER") ||
   !adminSettings.includes("VAPI_TENANT_DEFAULT_MODEL")
@@ -183,6 +183,8 @@ if (!migrationCorpus.includes("claude-haiku-4-5"))
   fail("tenant migration does not cover the legacy Claude Haiku managed default");
 if (!migrationJournal.includes("0151_xai_grok_46_runtime_defaults"))
   fail("xAI runtime-default migration is not journaled for production deploys");
+if (!migrationJournal.includes("0154_xai_grok_46_persisted_defaults"))
+  fail("Grok 4.6 persisted-default reconciliation is not journaled for production deploys");
 
 if (existsSync(resolve(root, "src/routes/admin-migrate")))
   fail("unmounted admin migration route tree remains");

@@ -39,12 +39,11 @@ if (isProduction) {
     "OPENAI_API_KEY",
     "the continuity structured runtime and OpenAI Realtime sessions are missing",
   );
-  // XAI_API_KEY is the managed Grok 4.6 structured primary when configured;
-  // Vapi PSTN uses Grok 4.3. OpenAI remains required in production for
-  // continuity and Realtime. Never treat xAI as a hard production launch
-  // requirement so a missing key degrades to OpenAI.
-  requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
-  requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
+  requireValue("XAI_API_KEY", "the native Twilio + xAI Speech-to-Speech runtime is missing");
+  requireValue(
+    "XAI_SIP_ALLOWED_ADDRESSES",
+    "native xAI SIP origination allowlist is missing",
+  );
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
@@ -62,7 +61,7 @@ if (isProduction) {
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(
-      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and the server-only VAPI_PRIVATE_KEY proxy",
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and native xAI ephemeral sessions",
     );
   }
 
@@ -133,15 +132,27 @@ const credentialLikeName =
 const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
 
 /**
- * Narrow, reviewed preview policy for Perplexity only:
+ * Narrow, reviewed preview credential policies. This is not a generic
+ * provider-key bypass.
+ *
+ * Perplexity:
  * - PERPLEXITY_API_KEY may be inherited from Vercel project configuration, but
  *   src/lib/perplexity-platform.ts deliberately ignores it when VERCEL_ENV=preview.
  * - PERPLEXITY_PREVIEW_API_KEY is the only Perplexity credential preview runtime
  *   may use; when configured it must be a dedicated budget-capped preview key.
  *
- * This is intentionally not a generic provider-key bypass.
+ * xAI:
+ * - XAI_API_KEY may be present on Preview when it is a dedicated sandbox key
+ *   provisioned by the operator. Preview runtime uses that same env var for
+ *   structured chat, TTS, and ephemeral browser sessions.
+ * - Native PSTN still requires Twilio production-only credentials, so preview
+ *   xAI spend cannot place carrier calls.
  */
-const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
+const reviewedPreviewCredentialKeys = new Set([
+  "PERPLEXITY_API_KEY",
+  "PERPLEXITY_PREVIEW_API_KEY",
+  "XAI_API_KEY",
+]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);

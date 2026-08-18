@@ -10,6 +10,14 @@ import { jsonSafeId } from "./server-utils";
 
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/** Merge gate diagnostics onto the current lead document without replacing it. */
+export function mergeLeadMetadata(
+  current: Record<string, unknown>,
+  patch?: Record<string, unknown> | null,
+): Record<string, unknown> {
+  return patch ? { ...current, ...patch } : current;
+}
+
 export type OutboundDialDenyReason =
   | "federal_dnc_unconfigured"
   | "blocked_internal_dnc"
@@ -88,7 +96,6 @@ export async function evaluateOutboundDialGate(opts: {
         status: "AutoDialFailed",
         reason: "outside_permitted_calling_hours",
         metadataPatch: {
-          ...metadata,
           auto_dial_error: "Outside TCPA permitted calling hours (8am to 9pm local).",
           calling_hours: callingHours,
         },
@@ -106,7 +113,6 @@ export async function evaluateOutboundDialGate(opts: {
         federalDncCode: federalGate.code,
         federalDncMessage: federalGate.message,
         metadataPatch: {
-          ...metadata,
           auto_dial_error: federalGate.message,
           federal_dnc_code: federalGate.code,
         },
@@ -123,7 +129,6 @@ export async function evaluateOutboundDialGate(opts: {
         status: LEAD_STATUS.CALLBACK_SCHEDULED,
         reason: "self_recent_call_scheduled",
         metadataPatch: {
-          ...metadata,
           next_eligible_at: nextEligible.toISOString(),
           duplicate_guard: "self_within_24h",
         },
@@ -154,7 +159,6 @@ export async function evaluateOutboundDialGate(opts: {
         status: LEAD_STATUS.SKIPPED_DUPLICATE,
         reason: "skipped_duplicate",
         metadataPatch: {
-          ...metadata,
           // jsonb cannot store raw JS BigInt — always stringify lead IDs
           duplicate_of_lead_id: jsonSafeId(otherRecent.id),
           duplicate_guard: "other_within_24h",
@@ -186,7 +190,7 @@ export async function evaluateOutboundDialGate(opts: {
       allowed: false,
       status: LEAD_STATUS.BLOCKED_TCPA,
       reason: "blocked_tcpa",
-      metadataPatch: { ...metadata, federal_dnc_blocked: true },
+      metadataPatch: { federal_dnc_blocked: true },
       consentLogEvent: "outbound_blocked_tcpa",
     };
   }
@@ -205,7 +209,7 @@ export async function evaluateOutboundDialGate(opts: {
       status: LEAD_STATUS.BLOCKED_TCPA,
       reason: "blocked_tcpa",
       tcpaDecision,
-      metadataPatch: { ...metadata, tcpa: tcpaDecision },
+      metadataPatch: { tcpa: tcpaDecision },
       consentLogEvent: "outbound_blocked_tcpa",
     };
   }

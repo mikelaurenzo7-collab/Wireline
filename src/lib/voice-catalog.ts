@@ -12,11 +12,11 @@ export type VoiceOption = {
 };
 
 /**
- * Built-in xAI voices for live PSTN through Vapi `voice.provider: "xai"`.
- * Browser previews still render through direct xAI TTS (`xai-tts-service.ts`),
- * which is not the live-call engine.
+ * Built-in xAI voices for live PSTN through native Speech-to-Speech
+ * (`grok-voice-think-fast-2.0`). Browser previews still render through direct
+ * xAI TTS (`xai-tts-service.ts`), which is not the live-call engine.
  *
- * Browser/mobile live conversations use OpenAI Realtime voice profiles.
+ * Studio and public browser live conversations use the same native xAI voices.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
   { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },

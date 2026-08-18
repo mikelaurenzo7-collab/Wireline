@@ -68,12 +68,12 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
-  - Production PSTN calls: Twilio carrier numbers imported into Vapi with SMS ownership disabled in Vapi.
-  - Vapi orchestrates the call; xAI Grok 4.3 is the managed Vapi language model. Vapi's XaiModel DTO does not accept `fallbackModels`; OpenAI application-layer retry is the continuity path. Live phone voices default to Vapi `voice.provider: "xai"` (Eve/Ara/Rex/Sal/Leo) with a curated Vapi fallback. Grok 4.6 is the structured-reasoning model, not a Vapi live-call id. xAI Speech-to-Speech (`grok-voice-latest`) is a different product and is not the PSTN or Studio test brain.
+  - Production PSTN calls: Twilio buys and owns the number, then registers it with xAI Direct SIP (`sip.voice.x.ai`). Inbound `realtime.call.incoming` webhooks and outbound Twilio `<Sip>` bridges join `wss://api.x.ai/v1/realtime?call_id=…`.
+  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live call brain. Grok 4.6 is the structured-reasoning model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
   - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - OpenAI Realtime remains automatic backup for Studio live tests when Vapi is unavailable, and still powers ChatGPT private simulation through server-minted ephemeral client secrets (and an isolated ChatGPT spend credential when configured).
-  - xAI Speech-to-Speech (`grok-voice-latest`) is a separate native audio product. It is not mounted as a customer Studio or PSTN default because it is not the Vapi Grok 4.3 brain that ships on phone calls.
-  - Neither realtime test surface is automatic failover for customer PSTN calls.
+  - Studio live tests use the same native xAI Speech-to-Speech model family as PSTN, via server-minted ephemeral client secrets. OpenAI Realtime still powers ChatGPT private simulation (and an isolated ChatGPT spend credential when configured).
+  - Direct `/v1/tts` is preview and marketing-audio only. It is not the PSTN engine.
+  - Neither OpenAI Realtime nor Vapi is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct xAI Responses API using Grok 4.6 by default (`WIRELINE_XAI_STRUCTURED_MODEL` overrides).

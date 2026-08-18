@@ -6,15 +6,15 @@ Status: **Active launch policy**
 
 | Surface              | Production path                                                                                        | Policy                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Phone calls          | Twilio carrier → Vapi orchestration → Deepgram STT → xAI Grok 4.3 call model → xAI or ElevenLabs TTS | xAI voices use Vapi `voice.provider: "xai"`. ElevenLabs uses `eleven_flash_v2_5` through Vapi. Every ElevenLabs and xAI voice has a curated Vapi fallback. Grok 4.6 is structured-only. |
-| Browser/mobile voice | Vapi web using the same xAI Grok 4.3 + xAI voices as PSTN | OpenAI Realtime is automatic backup only. No separate test brain. |
+| Phone calls          | Twilio carrier → xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) | Native Eve/Ara/Rex/Sal/Leo voices. Direct `/v1/tts` is not the PSTN engine. Grok 4.6 is structured-only. Vapi is rollback-only. |
+| Browser/mobile voice | Native xAI Speech-to-Speech using the same model as PSTN | ChatGPT widget stays OpenAI Realtime. No separate test brain. |
 | Video presenter      | LiveAvatar/HeyGen catalog                                                                              | Presenter identity does not silently become the phone voice.                                          |
 | Marketing audio      | Approved generation tools                                                                              | Rendered assets are not a live-call runtime.                                                          |
 
 ## Available phone voices
 
-- Included Wireline Phone voices use Vapi's xAI roster (Eve, Ara, Rex, Sal, Leo) with a curated Vapi fallback.
-- Wireline Studio exposes only three curated ElevenLabs voices plus private clones owned by the authenticated founder account.
+- Included Wireline Phone voices use native xAI Speech-to-Speech (Eve, Ara, Rex, Sal, Leo).
+- Wireline Studio exposes only three curated ElevenLabs voices (`eleven_flash_v2_5`) plus private clones owned by the authenticated founder account.
 - Private voice creation, review, approval, and deletion are platform-admin only.
 - A private voice cannot enter an agent configuration or call payload until Postgres records `approved` status.
 - If provider access, ownership, approval, or voice identity cannot be proven, the runtime falls back to Savannah.
@@ -33,6 +33,8 @@ Status: **Active launch policy**
 ## Call and legal guardrails
 
 - AI and cloned voices are artificial voices. Calling consent, DNC, calling-hours, recording, identification, and disclosure rules still apply.
+- Outbound native SIP speaks identity, a grouped callback number, and — for marketing — the voice-activated opt-out. Twilio AMD drops marketing answering machines, fax, and unclassified answers without a message; service voicemail is identity and callback only. Busy and no-answer campaign dials retry until the attempt budget. A spoken stop-calling request hangs up the native SIP session immediately.
+- After-hours inbound PSTN degrades to take-a-message instead of running the full agent.
 - Do not clone minors, political candidates or officials, celebrities, public figures, or other high-risk voices.
 - Do not use synthetic voices for impersonation, deception, fraud, harassment, voter influence, unauthorized transactions, or harm.
 - Never expose the founder provider key, private provider inventory, provider errors, or internal tenant identifiers to the client.
@@ -42,14 +44,14 @@ Status: **Active launch policy**
 
 Before general availability, prove all of the following on the exact release commit:
 
-1. ElevenLabs production key and curated inventory pass the read-only readiness probe.
-2. The same ElevenLabs key is configured in Vapi Integrations.
-3. One inbound and one outbound call use a curated Studio voice with acceptable first-audio latency, interruption, voicemail, tool use, and transfer.
-4. A controlled provider-failure test switches to the Vapi fallback without ending the call.
+1. Native xAI SIP (`XAI_API_KEY`, `XAI_SIP_ALLOWED_ADDRESSES`) and Twilio credentials pass the read-only readiness probe.
+2. One inbound and one outbound native SIP call prove disclosure, interruption, voicemail, tool use, DNC, and transfer.
+3. Inbound overflow and insolvency degrade to take-a-message instead of hanging up or running the full agent.
+4. ElevenLabs production key and curated inventory pass the read-only readiness probe for Studio TTS / cloning.
 5. A founder-owned sample completes create → proof → approve → assign → call → revoke → provider-delete.
 6. Database RLS, grants, approval constraints, revocation trigger, and tenant ownership are verified after migration.
 7. Terms, Privacy Policy, consent UI, audit records, usage limits, provider training controls, and deletion behavior receive final review.
 
 Do not market custom cloning as generally available while the control remains founder-only. The accurate product promise is:
 
-> Polished live voices with managed fallback. Authorized private voices are reviewed before they can answer a call.
+> Polished live voices on native xAI Speech-to-Speech. Authorized private Studio voices are reviewed before they can be used for generated audio.

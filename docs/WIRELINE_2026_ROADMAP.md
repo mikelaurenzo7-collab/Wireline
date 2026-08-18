@@ -10,7 +10,7 @@
 
 Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** design system (Aurora palette: cool obsidian canvas, electric-violet action, platinum-silver wire accent). The product loop is **Create → Train → Wire → Run**; activation is measured when a customer reaches a trained agent on a live line.
 
-**Differentiation:** Wireline's core moat is the full **Create → Train → Wire → Run** AI-employee operating loop — one console where a business creates, trains, numbers/integrates, and runs an agent that calls, texts, and emails on its behalf, self-serve end to end with transparent usage pricing. Retell/Vapi/Synthflow compete narrowly on live conversational voice API access; none offer the full trained-employee lifecycle (train → wire numbers/integrations → run outbound, inbound, and hybrid → review outcomes) in one self-serve product. A live **on-screen presenter** is an optional, secondary, later-stage add-on layered on top of this core loop for business agents that want a visual presence — it is not the primary differentiator or launch story.
+**Differentiation:** Wireline's core moat is the full **Create → Train → Wire → Run** AI-employee operating loop — one console where a business creates, trains, numbers/integrates, and runs an agent that calls, texts, and emails on its behalf, self-serve end to end with transparent usage pricing. Retell/Vapi/Synthflow compete narrowly on live conversational voice API access; none offer the full trained-employee lifecycle (train → wire numbers/integrations → run outbound, inbound, and hybrid → review outcomes) in one self-serve product. Live **on-screen presenter** video is retired and is not a launch differentiator.
 
 **This quarter (0–30 days):** Repo hygiene (done baseline), **appearance system** (Ink default + optional Paper), **post-create wizard** (Train → Channels → Wire → Test), **pricing positioning**, presenter PSTN honesty, verification discipline.
 
@@ -44,8 +44,8 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 
 - **Frontend/API:** Vercel.
 - **Data:** Supabase Postgres. **Auth:** Wireline-owned email/password + internal JWT sessions.
-- **Voice:** WebRTC/Twilio/Vapi paths — audio does not traverse Supabase Realtime.
-- **Presenter:** HeyGen/LiveAvatar behind Wireline-owned copy (no vendor names in customer UI).
+- **Voice:** Twilio Elastic SIP → xAI Direct SIP Speech-to-Speech. Vapi is rollback-only. OpenAI Realtime is the ChatGPT-widget surface. Audio does not traverse Supabase Realtime.
+- **Presenter:** Live talking-head video is retired. Identity badges remain.
 
 ### Billing
 
@@ -60,11 +60,11 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 
 ### Positioning matrix (summary)
 
-The primary axis Wireline competes on is the **voice + chat AI-employee operating loop** (Create → Train → Wire → Run: an agent that calls, texts, and emails, self-serve from draft to live line) versus point-solution voice APIs. The **Live presenter** column below is a secondary, later-stage bonus capability — not the basis of the comparison.
+The primary axis Wireline competes on is the **voice + chat AI-employee operating loop** (Create → Train → Wire → Run: an agent that calls, texts, and emails, self-serve from draft to live line) versus point-solution voice APIs. The **Live presenter** column below is historical context — Live Video is retired.
 
-| Platform           | Live voice | Live presenter (secondary add-on) | Self-serve | Transparent pricing |
-| ------------------ | ---------- | ---------------------------------- | ---------- | ------------------- |
-| **Wireline**       | ✅         | ✅ (Studio / preview)              | ✅         | ✅ Balance + tiers  |
+| Platform           | Live voice | Live presenter (retired add-on) | Self-serve | Transparent pricing |
+| ------------------ | ---------- | -------------------------------- | ---------- | ------------------- |
+| **Wireline**       | ✅ native Twilio + xAI Direct SIP | Retired                          | ✅         | ✅ Balance + tiers  |
 | Retell             | ✅         | ❌                                 | ✅         | ✅ ~$0.07/min       |
 | Vapi               | ✅         | ❌                                 | Dev-led    | ✅ ~$0.05/min       |
 | Synthflow          | ✅         | ❌                                 | ✅         | ✅ ~$0.08/min       |
@@ -111,7 +111,7 @@ Wireline **does not** use generic Material-style dark SaaS palettes (pure black 
 ### 3.2 Chat & call UI patterns
 
 - Typing / processing feedback in Studio and simulator.
-- Presenter circular avatar in preview; enlarged video window when live presenter enabled.
+- Identity badge in Studio; live talking-head video is retired.
 - Transcript/history in call logs and Studio review surfaces.
 - Quick actions and starter prompts in Studio empty states.
 
@@ -137,11 +137,11 @@ flowchart TD
 
 | Layer                | Choice                                                      |
 | -------------------- | ----------------------------------------------------------- |
-| Real-time audio      | WebRTC / Twilio / Vapi — not Supabase Realtime              |
+| Real-time audio      | Twilio Elastic SIP → xAI Direct SIP; Vapi rollback; OpenAI Realtime widget |
 | Signaling / state    | Supabase + API                                              |
-| STT / LLM / TTS      | Provider abstraction; streaming inference                   |
-| Presenter lip-sync   | MP3 decode path + browser PCM for preview                   |
-| PSTN presenter voice | Falls back to voice library — **disclosed in voice picker** |
+| STT / LLM / TTS      | Native Speech-to-Speech on PSTN; structured Grok 4.6 chat   |
+| Presenter lip-sync   | Retired live talking-head; identity badges remain           |
+| PSTN presenter voice | Native xAI Eve/Ara/Rex/Sal/Leo; Vapi voice library is rollback only |
 | Billing events       | Stripe webhooks → usage records                             |
 | Target latency       | &lt;250ms perceived turn-taking; monitor jitter             |
 

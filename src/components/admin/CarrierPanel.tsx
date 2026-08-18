@@ -31,7 +31,7 @@ interface CarrierPanelProps {
   onUpdateSettings: (s: CarrierSettings) => void;
   onSaveSettings: () => void;
   onSyncNumbers: () => void;
-  onAddNumber: (number: string, vapiId: string) => void;
+  onAddNumber: (number: string) => void;
   onDeleteNumber: (id: string | number) => void;
   onUpdateNumberAgent: (id: string | number, agent_id: string) => void;
 }
@@ -185,8 +185,12 @@ export function CarrierPanel({
 
           <div className="space-y-1.5">
             <label htmlFor="vapi-inbound-agent-id" className="wl-label text-foreground/55">
-              Default voice agent for unassigned inbound calls
+              Default voice agent for unassigned Vapi rollback inbound
             </label>
+            <p className="text-xs text-muted-foreground">
+              Native Twilio + xAI SIP lines route from Phone number routing. This default applies
+              only to leftover Vapi rollback or public-showcase numbers.
+            </p>
             <Select
               value={settings.vapi_phone_inbound_agent_id || CARRIER_AGENT_UNSET}
               onValueChange={(value) =>

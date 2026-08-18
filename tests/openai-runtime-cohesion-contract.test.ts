@@ -19,7 +19,7 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(defaults).not.toContain("createGrokVoiceClientSession");
   });
 
-  it("keeps Vapi phone runtime xAI-default for every agent posture", () => {
+  it("keeps rollback Vapi phone payloads xAI-default while native SIP owns production", () => {
     const models = read("src/lib/ai-models.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const managedRuntime = read("src/lib/managed-voice-runtime.ts");
@@ -34,20 +34,19 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(factory).not.toContain("grok-4.5");
   });
 
-  it("routes hybrid marketing direction through Studio Vapi tests with OpenAI backup", () => {
+  it("routes hybrid marketing direction through native Studio tests", () => {
     const product = read("src/lib/product-copy.ts");
     const liveRoutes = read("src/routes/grok-voice-routes.ts");
     const sandbox = read("src/components/LiveVoiceSandbox.tsx");
 
     expect(product).toContain("hybrid:");
-    expect(liveRoutes).toContain("createStudioVapiWebSession");
-    expect(liveRoutes).toContain("createOpenAILiveVoiceCall");
+    expect(liveRoutes).toContain("createXAILiveVoiceSession");
+    expect(liveRoutes).toContain("createOpenAIProtocolXAILiveVoiceSession");
     expect(liveRoutes).not.toContain("createGrokVoiceClientSession");
-    expect(sandbox).toContain("VapiLiveVoiceSandbox");
-    expect(sandbox).toContain("OpenAILiveVoiceSandbox");
+    expect(sandbox).toContain('from "./XAILiveVoiceSandbox"');
   });
 
-  it("keeps active architecture docs on the managed xAI Grok 4.6 primary", () => {
+  it("keeps active architecture docs on the managed xAI Grok 4.6 primary and native SIP PSTN", () => {
     const architecture = read("ARCHITECTURE.md");
     const grokDoc = read("docs/GROK_LIVE_VOICE.md");
     const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
@@ -56,9 +55,13 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(architecture).toContain(
       "Personal agents, business agents, and hybrid direction all share this same managed chain",
     );
-    expect(architecture).toContain("xAI Grok 4.3 is the managed Vapi language model");
+    expect(architecture).toContain("xAI Direct SIP");
     expect(grokDoc).toContain("it is not a Vapi live-call model id");
     expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
+    expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
+    expect(grokDoc).toContain("xAI rate limits are per team and per model");
+    expect(grokDoc).toContain("ChatGPT Apps iframes may only connect");
+    expect(grokDoc).toContain("Studio has no OpenAI fallback");
     expect(vendor).toContain("Structured reasoning | xAI Grok 4.6 managed structured runtime");
     expect(vendor).toContain("OpenAI, then Gemini, then Vercel AI Gateway");
   });

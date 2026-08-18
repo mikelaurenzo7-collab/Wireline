@@ -69,11 +69,15 @@ const required = [
     process.env.OPENAI_API_KEY,
   ],
   [
-    "VAPI_PRIVATE_KEY",
-    "Vapi managed inbound, outbound, and protected browser voice runtime",
-    process.env.VAPI_PRIVATE_KEY,
+    "XAI_API_KEY",
+    "Managed xAI credential for Grok 4.6 structured primary and native Twilio SIP Speech-to-Speech",
+    process.env.XAI_API_KEY,
   ],
-  ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
+  [
+    "XAI_SIP_ALLOWED_ADDRESSES",
+    "IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32)",
+    process.env.XAI_SIP_ALLOWED_ADDRESSES,
+  ],
   [
     "ELEVENLABS_API_KEY",
     "Server-only managed Studio TTS and authorized private voice cloning",
@@ -122,10 +126,6 @@ const recommended = [
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
-  [
-    "XAI_API_KEY",
-    "Managed xAI credential — Grok 4.6 structured primary and Vapi Grok 4.3 PSTN default; OpenAI remains continuity and Realtime",
-  ],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
@@ -167,6 +167,11 @@ const optional = [
     "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
     "Operator opt-out for the xAI structured lane — unset means active with a key; set false to disable",
   ],
+  [
+    "VAPI_PRIVATE_KEY",
+    "Rollback-only Vapi control plane. Native PSTN uses Twilio and xAI Direct SIP",
+  ],
+  ["VAPI_WEBHOOK_SECRET", "Rollback-only Vapi webhook verification"],
   [
     "WIRELINE_LAUNCH_DEMO_MODE",
     "Mark launch telemetry as demo-only until real customers are admitted",

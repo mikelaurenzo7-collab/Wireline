@@ -1,8 +1,35 @@
-export const GROK_VOICE_DEFAULT_MODEL =
-  process.env.XAI_GROK_VOICE_MODEL?.trim() || "grok-voice-think-fast-1.0";
+export const GROK_VOICE_PINNED_MODEL = "grok-voice-think-fast-2.0";
 
+/**
+ * xAI recommends versioned model names for production stability. Preserve an
+ * operator override only when it is itself a versioned Think Fast release;
+ * moving aliases or unrelated text models silently fall back to the certified
+ * Wireline pin instead of changing phone behavior at runtime.
+ */
+export function resolveGrokVoiceModel(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const configured = String(env.XAI_GROK_VOICE_MODEL || "").trim();
+  return /^grok-voice-think-fast-\d+(?:\.\d+)+$/.test(configured)
+    ? configured
+    : GROK_VOICE_PINNED_MODEL;
+}
+
+export const GROK_VOICE_DEFAULT_MODEL = resolveGrokVoiceModel();
+
+export const GROK_VOICE_REALTIME_URL = "wss://api.x.ai/v1/realtime";
+export const GROK_VOICE_CLIENT_SECRETS_URL =
+  "https://api.x.ai/v1/realtime/client_secrets";
 export const GROK_VOICE_EPHEMERAL_TOKEN_TTL_SECONDS = 300;
 export const GROK_VOICE_SAMPLE_RATE = 24_000;
+
+export function buildGrokVoiceRealtimeUrl(
+  model: string = GROK_VOICE_DEFAULT_MODEL,
+): string {
+  const url = new URL(GROK_VOICE_REALTIME_URL);
+  url.searchParams.set("model", model);
+  return url.toString();
+}
 
 export type WirelineVoiceProfile = "bright" | "warm" | "clear" | "balanced" | "direct";
 
@@ -17,14 +44,6 @@ export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
   { id: "balanced", label: "Balanced", description: "Neutral, composed, and versatile." },
   { id: "direct", label: "Direct", description: "Decisive, focused, and authoritative." },
 ] as const;
-
-/**
- * World-class live voice personality mapping.
- * Role-tuned profiles + Grok realtime reasoning deliver distinctive,
- * context-aware voices while keeping all vendor details and hype
- * out of the customer experience. Profiles are resolved server-side
- * and paired with safe knowledge tools only.
- */
 
 const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
   bright: "eve",
@@ -45,7 +64,7 @@ const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
   collections: "direct",
 };
 
-const SUPPORTED_LANGUAGE_HINTS = new Set([
+const LANGUAGE_HINTS = [
   "en",
   "ar-EG",
   "ar-SA",
@@ -66,7 +85,11 @@ const SUPPORTED_LANGUAGE_HINTS = new Set([
   "es-ES",
   "tr",
   "vi",
-]);
+] as const;
+
+const SUPPORTED_LANGUAGE_HINTS = new Map(
+  LANGUAGE_HINTS.map((language) => [language.toLowerCase(), language] as const),
+);
 
 export type GrokRealtimeFunction = {
   type: "function";
@@ -125,8 +148,8 @@ export function resolveWirelineGrokVoice(role?: string | null, requestedProfile?
 }
 
 export function normalizeGrokLanguageHint(value: unknown): string | undefined {
-  const candidate = typeof value === "string" ? value.trim() : "";
-  return SUPPORTED_LANGUAGE_HINTS.has(candidate) ? candidate : undefined;
+  const candidate = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return SUPPORTED_LANGUAGE_HINTS.get(candidate);
 }
 
 export function resolveGrokReasoningEffort(): "high" | "none" {

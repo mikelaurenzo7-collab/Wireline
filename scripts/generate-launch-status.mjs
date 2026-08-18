@@ -839,7 +839,7 @@ const record = {
     managed_structured_chain: ["xAI", "OpenAI", "Gemini", "Vercel AI Gateway"],
     openai:
       "continuity structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT/guest demos",
-    xai: "managed primary; Grok 4.6 structured and Vapi Grok 4.3 PSTN default whenever XAI_API_KEY is configured",
+    xai: "managed primary; Grok 4.6 structured chat and native Twilio + xAI Direct SIP Speech-to-Speech whenever XAI_API_KEY is configured",
   },
   surface_posture: {
     web: "public self-serve candidate",
@@ -847,7 +847,7 @@ const record = {
     native: "internal_or_planned",
     mcp: "account-bound early access",
     whatsapp: "unavailable",
-    live_video: "gated_add_on",
+    live_video: "retired",
   },
 };
 

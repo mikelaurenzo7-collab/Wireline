@@ -13,15 +13,19 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  * mechanism that records the number on the seller's do-not-call list. Each
  * assertion here pins one link in that chain; a broken link is a per-call
  * statutory-damages exposure, not a style regression.
+ *
+ * Production PSTN is native Twilio + xAI SIP. The Vapi client is a placement
+ * facade and must not be the home of these duties.
  */
 describe("64.1200(b) runtime wiring", () => {
-  const client = read("src/lib/vapi-client.ts");
+  const placement = read("src/lib/voice/outbound-call-service.ts");
+  const session = read("src/lib/voice/xai-sip-session.ts");
 
   it("(b)(3) every dial site states its regulatory call purpose explicitly", () => {
     // placeOutboundCall requires callPurpose, so a new caller cannot compile
     // without deciding whether the telemarketing announcement applies.
-    expect(client).toMatch(/callPurpose: OutboundCallPurpose;/);
-    expect(client).toContain("const telemarketing = isMarketingCallPurpose(callPurpose)");
+    expect(placement).toMatch(/callPurpose: OutboundCallPurpose;/);
+    expect(placement).toContain("const telemarketing = isMarketingCallPurpose(input.callPurpose)");
 
     const sites: Array<[string, RegExp]> = [
       ["src/services/campaign-dialer.ts", /callPurpose: "marketing_or_sales"/],
@@ -40,6 +44,7 @@ describe("64.1200(b) runtime wiring", () => {
         /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/,
       ],
       ["src/routes/mobile-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
+      ["src/routes/native-mobile-voice-routes.ts", /placeOutboundCall\(\{[\s\S]{0,280}callPurpose,/],
     ];
     for (const [file, pattern] of sites) {
       expect(read(file), `${file} must state a call purpose`).toMatch(pattern);
@@ -47,19 +52,20 @@ describe("64.1200(b) runtime wiring", () => {
   });
 
   it("(b)(3) the telemarketing flag reaches the spoken opening disclosure", () => {
-    expect(client).toMatch(
-      /complianceFirstMessagePrefix\(\s*agentConfig\.complianceMode,[\s\S]{0,200}telemarketing\s*\}/,
+    const opening = session.slice(session.indexOf("function buildOutboundOpening"));
+    expect(opening).toMatch(
+      /complianceFirstMessagePrefix\(\s*input\.complianceMode,[\s\S]{0,250}telemarketing/,
     );
   });
 
   it("(b)(2) the outbound prompt carries the business callback number when a line is mapped", () => {
-    expect(client).toContain("findAgentPhoneLine");
-    expect(client).toContain("formatCallbackNumberForSpeech");
+    expect(session).toContain("formatCallbackNumberForSpeech");
+    expect(session).toContain("input.calledNumber");
     // The number appears in both the standing compliance block and the
     // voicemail protocol — voicemail is where (b)(2) bites hardest, because
     // the called party cannot ask.
-    expect(client).toMatch(/OUTBOUND COMPLIANCE \(FEDERAL/);
-    expect(client).toMatch(/leave the callback number \$\{callbackNumberSpoken\}/);
+    expect(session).toMatch(/OUTBOUND COMPLIANCE \(FEDERAL/);
+    expect(session).toMatch(/leave the callback number \$\{callbackNumberSpoken\}/);
   });
 
   it("(b)(3) the opt-out mechanism records the number and the prompt orders immediate honor", () => {
@@ -68,7 +74,10 @@ describe("64.1200(b) runtime wiring", () => {
     const handler = read("src/routes/vapi/tool-handlers-core.ts");
     expect(handler).toMatch(/fn === "add_to_dnc"[\s\S]{0,900}insert\(schema\.dncList\)/);
     expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
-    expect(client).toMatch(/add_to_dnc tool immediately/);
+    expect(session).toContain("persistTranscriptDncSuppression");
+    expect(session).toMatch(/add_to_dnc tool immediately/);
+    expect(session).toContain('optOut.kind === "dnc"');
+    expect(session).toContain('endedReason = "caller-dnc"');
   });
 
   it("keeps a per-recipient record of the verbal SMS opt-in captured on a live call", () => {
@@ -99,13 +108,16 @@ describe("64.1200(b) runtime wiring", () => {
  * to an automated opt-out mechanism — identity and a callback number satisfy
  * (b)(1) and (b)(2) only. Wireline operates no opt-out line, so there is no
  * compliant marketing voicemail to compose and the only fail-closed answer is
- * to leave none: the provider ends the call on detection, and the model is told
+ * to leave none: Twilio AMD ends the call on detection, and the model is told
  * the same thing so it cannot narrate one instead. Non-marketing voicemail is
  * unchanged. Building the opt-out line is what re-enables marketing drops.
  */
 describe("(b)(3) applies to answering machines", () => {
-  const profile = readFileSync(resolve(process.cwd(), "src/lib/voice-agent-profile.ts"), "utf8");
-  const client = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
+  const profile = read("src/lib/voice-agent-profile.ts");
+  const placement = read("src/lib/voice/outbound-call-service.ts");
+  const bridge = read("src/routes/xai-outbound-routes.ts");
+  const session = read("src/lib/voice/xai-sip-session.ts");
+  const amd = read("src/lib/voice/native-outbound-amd.ts");
 
   it("leaves no prerecorded message on a marketing call", () => {
     expect(profile).toContain("telemarketing = false,");
@@ -113,12 +125,20 @@ describe("(b)(3) applies to answering machines", () => {
   });
 
   it("passes the call's own marketing classification into the builder", () => {
-    const call = client.slice(client.indexOf("voicemailMessage: buildOutboundVoicemailMessage("));
+    expect(placement).toContain("machineDetection");
+    expect(amd).toContain('machineDetection: telemarketing ? "Enable" : "DetectMessageEnd"');
+    expect(amd).toContain('return telemarketing ? "drop" : "bridge"');
+    const call = bridge.slice(bridge.indexOf("buildOutboundVoicemailMessage("));
     expect(call.slice(0, 300)).toContain("telemarketing,");
+    expect(bridge).toContain("AnsweredBy");
+    expect(bridge).toContain("emptyTwiml()");
+    expect(bridge).toContain("resolveRetryableLeadStatus");
+    expect(bridge).toContain("IN_FLIGHT_LEAD_STATUSES");
+    expect(read("src/lib/outbound-status.ts")).toContain("export function resolveRetryableLeadStatus");
   });
 
   it("tells the model the same rule, so it cannot speak one anyway", () => {
-    const protocol = client.slice(client.indexOf("## VOICEMAIL PROTOCOL"));
+    const protocol = session.slice(session.indexOf("## VOICEMAIL PROTOCOL"));
     expect(protocol.slice(0, 900)).toContain("Do NOT speak a message");
     expect(protocol.slice(0, 900)).toContain("64.1200(b)(3)");
   });
