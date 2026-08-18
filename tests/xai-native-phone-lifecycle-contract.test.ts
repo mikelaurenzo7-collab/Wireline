@@ -82,6 +82,10 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(activation).toContain("trunk.phoneNumbers(associationSid).remove()");
     expect(activation).toContain("settleDeactivation");
     expect(activation).toContain("XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS");
+    expect(activation).toContain(
+      "attached.find((row) => row.sid === claim.twilioPhoneNumberSid)",
+    );
+    expect(activation).not.toContain("row.phoneNumberSid");
   });
 
   it("serializes activation, routing repair, reassignment, and release on one E.164 lease", () => {
