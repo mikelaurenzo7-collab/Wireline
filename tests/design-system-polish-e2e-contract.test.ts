@@ -54,13 +54,14 @@ describe("design system polish e2e verified wins", () => {
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
-  it("keeps one-workspace Bot labels in Title Case at source without terminal periods", () => {
+  it("keeps one-workspace Bot labels in Title Case while WIRELINE stays the brand wordmark", () => {
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain('createHeadline: "Build Your Bot"');
     expect(copy).toContain('runHeadline: "Your Bot Is Live"');
     expect(copy).toContain('createCta: "Create Bot"');
     expect(copy).toContain('emptyTitle: "Your Bot"');
     expect(copy).not.toContain('emptyTitle: "Your Bot."');
-    expect(copy).toContain("Present one Wireline workspace");
+    expect(copy).toContain("Present one WIRELINE workspace");
+    expect(copy).toContain("Render the WIRELINE brand name in uppercase everywhere it is customer-visible");
   });
 });
