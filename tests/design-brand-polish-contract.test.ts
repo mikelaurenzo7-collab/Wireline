@@ -154,7 +154,8 @@ describe("E2E design and brand polish", () => {
     const executableStage = withoutComments(`${stage}\n${layout}\n${consoleCss}`);
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
 
-    expect(executableLanding).toContain('aria-label="Agent work lane"');
+    expect(executableLanding).toContain('aria-label="Bot template lane"');
+    expect(executableLanding).toContain("BOT_ROLE_TEMPLATES.map");
     expect(executableLanding).toContain("<PrecisionPublicHeader />");
     expect(executableLanding).toContain('variant="stage"');
     expect(executableLanding).toContain("landing-stage__rail");
