@@ -27,6 +27,22 @@ function validHttpsUrl(name, required = false) {
   }
 }
 
+function validXaiSipAllowlist() {
+  const raw = value("XAI_SIP_ALLOWED_ADDRESSES");
+  if (!raw) return;
+  const entries = [...new Set(raw.split(/[\s,]+/).map((entry) => entry.trim()).filter(Boolean))];
+  const ipv4Cidr = /^(?:\d{1,3}\.){3}\d{1,3}(?:\/(?:[8-9]|[12]\d|3[0-2]))?$/;
+  const invalid = entries.some((entry) => {
+    if (!ipv4Cidr.test(entry)) return true;
+    return entry.split("/")[0].split(".").some((octet) => Number(octet) > 255);
+  });
+  if (!entries.length || invalid) {
+    failures.push(
+      "XAI_SIP_ALLOWED_ADDRESSES: optional override must be IPv4 CIDRs with prefix length 8-32",
+    );
+  }
+}
+
 if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
   requireValue("DATABASE_POOL_URL", "the serverless transaction pool is missing");
@@ -57,6 +73,7 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   validHttpsUrl("APP_URL", true);
   validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
+  validXaiSipAllowlist();
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(

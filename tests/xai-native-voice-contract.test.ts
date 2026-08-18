@@ -106,6 +106,10 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(read("scripts/check-deployment-boundaries.mjs")).not.toContain(
       "native xAI SIP origination allowlist is missing",
     );
+    expect(read("scripts/check-deployment-boundaries.mjs")).toContain("validXaiSipAllowlist");
+    expect(read("scripts/check-deployment-boundaries.mjs")).toContain(
+      "optional override must be IPv4 CIDRs with prefix length 8-32",
+    );
   });
 
   it("pins production voice to a versioned Think Fast release", () => {
@@ -256,15 +260,16 @@ describe("native Twilio + xAI voice contracts", () => {
   });
 
   it("reconciles stale agent assignment and mutable Twilio origination state", () => {
-    const activation = read("src/lib/voice/xai-phone-activation-service.ts");
+    const assignment = read("src/lib/voice/native-phone-assignment.ts");
+    const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
     const route = read("src/routes/xai-voice-routes.ts");
 
     expect(route).toContain('from "../lib/voice/xai-phone-activation-service"');
-    expect(activation).toContain("binding.agentId === input.agentId");
-    expect(activation).toContain("agentId: input.agentId");
-    expect(activation).toContain("await collection(sid).update(payload)");
-    expect(activation).toContain("enabled: true");
-    expect(activation).toContain("xaiSharedTwilioOriginationUri()");
+    expect(assignment).toContain("input.agentId !== current.agentId");
+    expect(assignment).toContain("agentId: input.agentId");
+    expect(provisioning).toContain("originationUrls(primarySid).update");
+    expect(provisioning).toContain("enabled: true");
+    expect(provisioning).toContain("xaiSharedTwilioOriginationUri()");
   });
 
   it("verifies a valid Standard Webhooks signature over the exact raw body", () => {
