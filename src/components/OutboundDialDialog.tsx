@@ -58,10 +58,6 @@ export default function OutboundDialDialog({
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
-  // Reset the form when the dialog opens or its seed values change — but NOT
-  // when the agents list refreshes in the background. Keeping `voiceAgents` in
-  // the deps here wiped whatever the user had typed the moment AgentsContext
-  // refetched (or finished its initial load) while the dialog was open.
   useEffect(() => {
     if (!open) return;
     setAgentId(initialAgentId);
@@ -71,10 +67,6 @@ export default function OutboundDialDialog({
     setConsentConfirmed(false);
   }, [open, initialAgentId, initialNumber, initialContext]);
 
-  // Keep the selected agent valid without disturbing typed fields: seed a
-  // fallback when nothing is chosen yet, and drop a selection that no longer
-  // exists in the roster (agent deleted or lost its phone line on a background
-  // refresh) so placeCall can't submit a stale id the <select> no longer shows.
   useEffect(() => {
     if (!open || voiceAgents.length === 0) return;
     if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
@@ -115,7 +107,7 @@ export default function OutboundDialDialog({
       if (!response.ok) {
         toast({
           type: "error",
-          title: "Call not placed",
+          title: "Call Not Placed",
           message: body.error || "Outbound dial was blocked.",
           duration: 10_000,
         });
@@ -123,8 +115,8 @@ export default function OutboundDialDialog({
       }
       toast({
         type: "success",
-        title: "Call started",
-        message: "Your agent is dialing now.",
+        title: "Call Started",
+        message: "Your Voice Bot is dialing now.",
       });
       emitProductEvent({
         event: "outbound_call_started",
@@ -135,7 +127,7 @@ export default function OutboundDialDialog({
     } catch {
       toast({
         type: "error",
-        title: "Call not placed",
+        title: "Call Not Placed",
         message: "Something went wrong. Try again in a moment.",
       });
     } finally {
@@ -164,40 +156,36 @@ export default function OutboundDialDialog({
         <DialogHeader className="border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
-            New outbound call
+            New Outbound Call
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            Pick an agent with a live line, enter a number, and classify the call before dialing.
+            Pick a Voice Bot with a live line, enter a number, and classify the call before dialing.
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center gap-2 px-6 py-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Loading agents…
+            Loading Voice Bots…
           </div>
         ) : voiceAgents.length === 0 && (degraded || phoneLookupDegraded) ? (
-          // "None with a phone line yet" is a claim about the roster and about
-          // which numbers are attached. When either lookup is what failed, it
-          // is not a claim we can make — `voiceAgents` is empty because we
-          // could not ask, not because the answer is none.
           <p className="px-6 py-8 text-sm text-muted-foreground" role="status">
             {degraded
-              ? "Your agent list could not be loaded. Close this and try again in a moment."
+              ? "Your Voice Bot list could not be loaded. Close this and try again in a moment."
               : "We could not check which numbers are attached. Close this and try again in a moment."}
           </p>
         ) : voiceAgents.length === 0 ? (
           <p className="px-6 py-8 text-sm text-muted-foreground">
-            No voice agents with a phone line yet.{" "}
+            No Voice Bots have a phone line yet.{" "}
             <Link to="/studio?create=1" className="text-brand underline underline-offset-2">
-              Create and activate one in Studio
+              Create and Activate One in Studio
             </Link>
             .
           </p>
         ) : (
           <div className="space-y-4 px-6 py-5">
             <label className="block space-y-1.5">
-              <span className="block text-sm font-semibold text-foreground">Agent</span>
+              <span className="block text-sm font-semibold text-foreground">Voice Bot</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={agentId}
@@ -212,7 +200,7 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="block text-sm font-semibold text-foreground">Phone number</span>
+              <span className="block text-sm font-semibold text-foreground">Phone Number</span>
               <input
                 type="tel"
                 inputMode="tel"
@@ -226,19 +214,19 @@ export default function OutboundDialDialog({
 
             <label className="block space-y-1.5">
               <span className="block text-sm font-semibold text-foreground">
-                Instruction (optional)
+                Instruction (Optional)
               </span>
               <textarea
                 rows={3}
                 className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={context}
                 onChange={(event) => setContext(event.target.value)}
-                placeholder="What should the agent accomplish on this call?"
+                placeholder="What should the Voice Bot accomplish on this call?"
               />
             </label>
 
             <label className="block space-y-1.5">
-              <span className="block text-sm font-semibold text-foreground">Call type</span>
+              <span className="block text-sm font-semibold text-foreground">Call Type</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={callPurpose}
@@ -247,9 +235,9 @@ export default function OutboundDialDialog({
                   setConsentConfirmed(false);
                 }}
               >
-                <option value="service_or_requested">Service or requested call</option>
+                <option value="service_or_requested">Service or Requested Call</option>
                 <option value="callback">Callback</option>
-                <option value="marketing_or_sales">Marketing or sales</option>
+                <option value="marketing_or_sales">Marketing or Sales</option>
               </select>
             </label>
 
@@ -262,7 +250,7 @@ export default function OutboundDialDialog({
                 />
                 <span className="space-y-1 text-sm">
                   <span className="block text-foreground">{OUTBOUND_CONSENT_LABEL}</span>
-                  <span className="block text-muted-foreground text-xs">
+                  <span className="block text-xs text-muted-foreground">
                     {OUTBOUND_CONSENT_HELP}
                   </span>
                   <Link
@@ -288,7 +276,7 @@ export default function OutboundDialDialog({
                 Placing…
               </>
             ) : (
-              "Place call"
+              "Place Call"
             )}
           </Button>
         </DialogFooter>

@@ -49,47 +49,45 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
   return [
     {
       id: "job",
-      label: "Job and greeting defined",
-      actionLabel: "Define job and greeting",
-      detail: "Give the voice agent one clear customer-facing responsibility.",
+      label: "Job and Greeting Defined",
+      actionLabel: "Define Job and Greeting",
+      detail: "Give the Voice Bot one clear customer-facing responsibility.",
       done: p.agents > 0,
       href: "/studio?section=setup",
       icon: Sparkles,
     },
     {
       id: "facts",
-      label: "Business facts added",
-      actionLabel: "Add business facts",
-      detail:
-        "Add pricing, hours, policies, FAQs, or other answers customers need.",
+      label: "Knowledge Added",
+      actionLabel: "Add Knowledge",
+      detail: "Add pricing, hours, policies, FAQs, preferences, or other answers it may use.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
       icon: GraduationCap,
     },
     {
       id: "line",
-      label: "Phone number connected",
-      actionLabel: "Connect phone number",
+      label: "Phone Number Connected",
+      actionLabel: "Connect Phone Number",
       detail:
-        "Activate a paid plan, then claim an included Wireline number so customers can call or text.",
+        "Activate a paid plan, then claim an included Wireline number so people can call or text.",
       done: p.numbers > 0,
       href: "/settings/phone",
       icon: Cable,
     },
     {
       id: "live",
-      label: "First live customer handled",
-      actionLabel: "Handle first live customer",
-      detail:
-        "Confirm the line received a real conversation and logged the outcome.",
+      label: "First Live Conversation Handled",
+      actionLabel: "Handle First Live Conversation",
+      detail: "Confirm the line received a real conversation and logged the outcome.",
       done: p.activated,
       href: "/phone?tab=logs",
       icon: Phone,
     },
     {
       id: "review",
-      label: "First follow-up reviewed",
-      actionLabel: "Review first follow-up",
+      label: "First Follow-Up Reviewed",
+      actionLabel: "Review First Follow-Up",
       detail: "Approve, edit, or decline the next action before it goes out.",
       done: p.approvedAction,
       href: "/approvals",
@@ -106,9 +104,7 @@ export default function ActivationChecklist({
   const { user } = useAuth();
   const { activeAccount } = useAccount();
   const activationScope = activeAccount?.id ?? user?.id ?? null;
-  const dismissKey = activationScope
-    ? `${DISMISS_KEY}:${activationScope}`
-    : null;
+  const dismissKey = activationScope ? `${DISMISS_KEY}:${activationScope}` : null;
   const [progress, setProgress] = useState<AssistantSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
@@ -151,7 +147,7 @@ export default function ActivationChecklist({
           "wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6",
           className,
         )}
-        aria-label="Your voice agent is live"
+        aria-label="Your Voice Bot Is Live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -160,7 +156,7 @@ export default function ActivationChecklist({
             </span>
             <div>
               <h2 className="text-base font-semibold text-foreground sm:text-lg">
-                Ready for customers
+                Ready for Customers
               </h2>
             </div>
           </div>
@@ -173,7 +169,7 @@ export default function ActivationChecklist({
                 setCelebrationDismissed(true);
               }}
             >
-              Review the first outcome
+              Review First Outcome
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <button
@@ -197,11 +193,11 @@ export default function ActivationChecklist({
   return (
     <section
       className={cn("wl-paper wl-paper-elevated p-5 sm:p-6", className)}
-      aria-label="Customer readiness checklist"
+      aria-label="Customer Readiness Checklist"
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h2 className="text-base font-semibold text-foreground">
-          {completed} of {steps.length} ready
+          {completed} of {steps.length} Ready
         </h2>
         <button
           type="button"
@@ -215,7 +211,7 @@ export default function ActivationChecklist({
             setDismissed(true);
           }}
         >
-          Hide checklist
+          Hide Checklist
         </button>
       </div>
 
@@ -244,9 +240,7 @@ export default function ActivationChecklist({
                   <Icon className="size-3.5 opacity-70" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold text-foreground">
-                    {step.label}
-                  </span>
+                  <span className="block text-xs font-semibold text-foreground">{step.label}</span>
                 </span>
               </Link>
             </li>
