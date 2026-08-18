@@ -150,12 +150,10 @@ export async function deactivateNativeXAIPhoneLine(input: {
       if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
       const trunk = client.trunking.v1.trunks(claim.twilioSipTrunkSid);
       const attached = await trunk.phoneNumbers.list({ limit: 1_000 });
-      const association = attached.find(
-        (row) =>
-          row.sid === claim.twilioPhoneNumberSid ||
-          row.phoneNumberSid === claim.twilioPhoneNumberSid,
-      );
-      const associationSid = String(association?.sid || claim.twilioPhoneNumberSid).trim();
+      // Twilio's Elastic SIP Trunk PhoneNumber resource is identified by its
+      // PN `sid`; `phoneNumberSid` is a create parameter, not an instance field.
+      const association = attached.find((row) => row.sid === claim.twilioPhoneNumberSid);
+      const associationSid = String(association?.sid || "").trim();
       if (association && associationSid) {
         providerMutationAttempted = true;
         try {
