@@ -12,9 +12,9 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " | Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline | Voice agents that get the work done";
+const DEFAULT_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE";
 const DEFAULT_DESCRIPTION =
-  "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
+  "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
