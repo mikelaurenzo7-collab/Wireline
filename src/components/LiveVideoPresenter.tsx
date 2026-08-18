@@ -1,11 +1,11 @@
 /**
- * LiveVideoPresenter — identity badge only.
+ * LiveVideoPresenter — retired compatibility shell.
  *
- * LiveAvatar / HeyGen WebRTC lip-sync is retired. This surface renders the
- * deterministic Wireline identity badge. Video files and clip scripts are not
- * offered.
+ * LiveAvatar / HeyGen WebRTC lip-sync is retired. Historical imports resolve
+ * to the same role-agnostic Bot Mark used by the active product; there is no
+ * video stage, presenter chrome, metered-session UI, or provider asset here.
  */
-import AgentFace from "./AgentFace";
+import BotMark from "./BotMark";
 
 export type LiveVideoPresenterHandle = {
   feedPcmDelta: (base64Pcm: string) => void;
@@ -26,15 +26,19 @@ export default function LiveVideoPresenter({
   className,
   layout = "stage",
 }: Props) {
+  const size = layout === "stage" ? 96 : 64;
   return (
     <div
-      className={
-        layout === "stage"
-          ? `wl-presence-live wl-presence-live--stage ${className ?? ""}`.trim()
-          : `wl-presence-live ${className ?? ""}`.trim()
-      }
+      className={`grid place-items-center rounded-[var(--wireline-radius-xl)] border border-border bg-card p-4 ${className ?? ""}`.trim()}
+      data-retired-live-video="true"
     >
-      <AgentFace seed={seed || "agent"} speaking={speaking} size={160} />
+      <BotMark
+        seed={seed || "bot"}
+        name="Bot"
+        active={speaking}
+        size={size}
+        title="Bot mark"
+      />
     </div>
   );
 }
