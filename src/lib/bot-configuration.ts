@@ -47,12 +47,16 @@ const DEFAULT_CHANNELS: BotChannelConfiguration = {
   },
 };
 
-function cloneDefaultChannels(): BotChannelConfiguration {
+function cloneChannels(channels: BotChannelConfiguration): BotChannelConfiguration {
   return {
-    voice: { ...DEFAULT_CHANNELS.voice },
-    text: { ...DEFAULT_CHANNELS.text },
-    email: { ...DEFAULT_CHANNELS.email },
+    voice: { ...channels.voice },
+    text: { ...channels.text },
+    email: { ...channels.email },
   };
+}
+
+function cloneDefaultChannels(): BotChannelConfiguration {
+  return cloneChannels(DEFAULT_CHANNELS);
 }
 
 export function getBotTemplate(templateKey: string) {
@@ -68,6 +72,9 @@ export function createBotConfiguration(
 ): BotConfigurationDraft {
   const template = getBotTemplate(templateKey);
   const role = template.key === "custom" ? "Custom Role" : template.name;
+  const channels = overrides.channels
+    ? cloneChannels(overrides.channels)
+    : cloneDefaultChannels();
 
   return {
     workspaceKind: UNIFIED_WORKSPACE_KIND,
@@ -76,7 +83,6 @@ export function createBotConfiguration(
     role,
     objective: template.summary,
     direction: template.direction,
-    channels: cloneDefaultChannels(),
     knowledgeBrief: "Use only the knowledge and policies approved in this workspace.",
     toolsBrief: "Connect the tools this role needs to complete its job.",
     approvalBrief:
@@ -84,7 +90,7 @@ export function createBotConfiguration(
     handoffBrief:
       "Escalate with the conversation context, requested next step, and urgency intact.",
     ...overrides,
-    channels: overrides.channels ?? cloneDefaultChannels(),
+    channels,
   };
 }
 
