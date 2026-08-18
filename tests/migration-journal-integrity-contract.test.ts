@@ -145,7 +145,7 @@ describe("migration journal integrity contract", () => {
     );
     expect(materializer).toContain("TARGET_0052_PATH");
     expect(materializer).toContain("buildGrok46DefaultsSnapshot");
-    expect(materializer).toContain('voice_llm_model").default = "\'grok-4.6\'"');
+    expect(materializer).toContain(".columns.voice_llm_model.default = \"'grok-4.6'\"");
     expect(materializer).not.toContain('TARGET_0052_SHA256 = "PENDING_COMPUTE"');
   });
 
