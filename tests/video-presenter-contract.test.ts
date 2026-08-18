@@ -6,19 +6,42 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("bot visual identity", () => {
-  it("uses a compact role-agnostic Bot Mark as the active identity primitive", () => {
+  it("uses a proprietary role-agnostic Bot Mark rather than a generic avatar token", () => {
     const mark = source("src/components/BotMark.tsx");
     const policy = source("src/lib/bot-mark.ts");
+    const optics = source("src/styles/bot-mark.css");
+    const index = source("src/index.css");
 
     expect(mark).toContain("botMarkFor");
-    expect(mark).toContain("rounded-full");
+    expect(mark).toContain("MOTIF_PATHS");
+    expect(mark).toContain("WireGlyph");
+    expect(mark).toContain("wl-bot-mark__anchor");
+    expect(mark).toContain("wl-bot-mark__monogram");
     expect(mark).toContain("imageUrl");
     expect(mark).toContain("mark.initial");
+    expect(mark).toContain("Math.min(14");
+    expect(mark).toContain('data-active={active ? "true" : "false"}');
+    expect(mark).toContain("wl-bot-mark__pulse");
+
     expect(policy).toContain("role never affects the mark");
     expect(policy).toContain("BOT_MARK_PALETTE");
+    expect(policy).toContain("BOT_MARK_MOTIFS");
+    for (const motif of ["orbit", "relay", "split", "loop", "pulse", "weave"]) {
+      expect(policy).toContain(`"${motif}"`);
+    }
     expect(policy).not.toContain("status-success");
     expect(policy).not.toContain("status-warning");
     expect(policy).not.toContain("status-error");
+
+    expect(optics).toContain(".wl-bot-mark__glyph");
+    expect(optics).toContain(".wl-bot-mark__rim");
+    expect(optics).toContain("@keyframes wl-bot-mark-signal");
+    expect(optics).toContain("prefers-reduced-motion: reduce");
+    expect(optics).toContain("forced-colors: active");
+    expect(optics).not.toContain("--wireline-color-status-success");
+    expect(optics).not.toContain("--wireline-color-status-warning");
+    expect(optics).not.toContain("--wireline-color-status-error");
+    expect(index).toContain('@import "./styles/bot-mark.css";');
   });
 
   it("retires human/cartoon face rendering without forcing an unsafe all-at-once import rename", () => {
