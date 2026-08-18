@@ -6,7 +6,6 @@ import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import { customerAgentLanguage } from "../lib/product-copy";
@@ -17,12 +16,14 @@ import WorkspaceRecovery from "./WorkspaceRecovery";
 
 type WorkspaceSection = "setup" | "test" | "review";
 
+const BOT_LANGUAGE = customerAgentLanguage("personal");
+
 const SECTIONS: Array<{
   id: WorkspaceSection;
   label: string;
   icon: typeof Settings2;
 }> = [
-  { id: "setup", label: "Set up", icon: Settings2 },
+  { id: "setup", label: "Set Up", icon: Settings2 },
   { id: "test", label: "Test", icon: MessageCircle },
   { id: "review", label: "Review", icon: CheckCircle2 },
 ];
@@ -47,9 +48,8 @@ function StudioLoadingState() {
   );
 }
 
-function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
+function StudioEmptyState() {
   const [brief, setBrief] = useState("");
-  const language = customerAgentLanguage(posture);
 
   function createHref() {
     const params = new URLSearchParams({ create: "1" });
@@ -62,44 +62,29 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
     <EmptyState
       fill
       icon={Sparkles}
-      title="Start with one job"
-      description={
-        posture === "business"
-          ? "Give it one customer job. You can change everything later."
-          : "Give it one call, appointment, or personal task."
-      }
+      title="Start With One Job"
+      description="Describe the work. Your Bot can call, text, email, use tools, and change as the workflow changes."
       className="wl-composer-dock"
     >
       <div className="mx-auto mt-2 w-full max-w-xl text-left">
         <label className="mb-2 block text-sm font-semibold text-foreground" htmlFor="studio-brief">
-          {language.setupPrompt}
+          {BOT_LANGUAGE.setupPrompt}
         </label>
         <textarea
           id="studio-brief"
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          // Matches the shared Input/Textarea primitives: a full-opacity focus
-          // border plus a 2px ring. The previous hand-rolled 1px ring at 40%
-          // primary computed to 2.10:1 against the card — under the 3:1 floor
-          // for a UI boundary, on the highest-intent input in the activation
-          // funnel — and keyed off `focus:` rather than `focus-visible:`.
           className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
-          placeholder={
-            posture === "business"
-              ? "Answer missed calls, qualify leads, book appointments, and follow up by text…"
-              : "Screen unknown callers, book appointments, and text me what happened…"
-          }
+          placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups…"
         />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <Button asChild>
             <Link to={createHref()}>
               <Plus size={15} aria-hidden="true" />
-              Start setup
+              Create Bot
             </Link>
           </Button>
-          {posture === "personal" ? (
-            <span className="text-xs text-muted-foreground">You can change everything later.</span>
-          ) : null}
+          <span className="text-xs text-muted-foreground">Choose a role starter or make it entirely custom.</span>
         </div>
       </div>
     </EmptyState>
@@ -114,7 +99,6 @@ function normalizeSection(value: string | null): WorkspaceSection {
 
 export default function StudioWorkspaceV2() {
   const { loading, degraded, refresh } = useAgents();
-  const { accountType } = useAccount();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -195,36 +179,29 @@ export default function StudioWorkspaceV2() {
 
   const startCustomerTest = useCallback(() => {
     setSection("test");
-    const personal = active?.is_business_agent === false;
     window.setTimeout(() => {
       workroomRef.current?.focusComposer(
-        personal
-          ? "Hi, can you help me book something and text me what happened?"
-          : "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
+        "Hi, can you explain what you can do and help me take the next step?",
       );
     }, 120);
-  }, [active?.is_business_agent, setSection]);
+  }, [setSection]);
 
   if (loading) return <StudioLoadingState />;
-  // Studio is where agents live, so this was the most emphatic version of the
-  // mistake: a roster that failed to load produced "Create your first voice
-  // agent" for a customer whose agents were merely unreachable.
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
-  if (agents.length === 0) return <StudioEmptyState posture={accountType} />;
+  if (agents.length === 0) return <StudioEmptyState />;
 
   if (!active) {
-    const emptyLanguage = customerAgentLanguage(accountType);
     return (
       <EmptyState
         fill
         icon={Users}
-        title={`Choose ${emptyLanguage.indefiniteSingular}`}
-        description="Select one, or create a new one."
+        title="Choose a Bot"
+        description="Select one, or create a new role in this workspace."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
               <Plus size={15} aria-hidden="true" />
-              {emptyLanguage.createCta.replace(/^Create /, "New ")}
+              New Bot
             </Link>
           </Button>
         }
@@ -232,21 +209,12 @@ export default function StudioWorkspaceV2() {
     );
   }
 
-  const activePosture = active.is_business_agent ? "business" : "personal";
-  const activeLanguage = customerAgentLanguage(activePosture);
-
-  // Full ARIA tablist contract — id/aria-controls pairing plus roving
-  // tabindex with arrow-key movement, matching the pattern the marketing
-  // mode switcher already implements. Without it a screen reader hears
-  // "tab 1 of 3" with no panel relationship and arrow keys do nothing.
   const studioTabId = (id: WorkspaceSection) => `studio-tab-${id}`;
   const studioPanelId = (id: WorkspaceSection) => `studio-panel-${id}`;
   const handleSectionKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const currentIndex = SECTIONS.findIndex((item) => item.id === section);
     const lastIndex = SECTIONS.length - 1;
     let nextIndex = currentIndex;
-    // Horizontal tablist: Left/Right/Home/End only. Capturing Up/Down here
-    // would hijack page scroll while a tab is focused.
     if (event.key === "ArrowRight") {
       nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
     } else if (event.key === "ArrowLeft") {
@@ -273,7 +241,7 @@ export default function StudioWorkspaceV2() {
         <div
           className="mx-auto grid w-full max-w-2xl grid-cols-3 gap-1.5 sm:gap-2"
           role="tablist"
-          aria-label={`${activeLanguage.singular} setup steps`}
+          aria-label="Bot setup steps"
           onKeyDown={handleSectionKeyDown}
         >
           {SECTIONS.map((item, index) => {
@@ -310,10 +278,6 @@ export default function StudioWorkspaceV2() {
                     className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`}
                     aria-hidden="true"
                   />
-                  {/* A step label that ellipsizes ("REVI…") looks broken; on a
-                      phone, inactive steps show their number and the active
-                      step keeps its full name. aria-label preserves every
-                      step's accessible name at all widths. */}
                   <span
                     className={`truncate text-xs font-semibold sm:text-sm ${
                       selected ? "" : "hidden sm:block"
