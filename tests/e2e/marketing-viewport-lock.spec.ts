@@ -7,7 +7,6 @@ const PUBLIC_ROUTES = [
   { path: "/features", name: "features" },
   { path: "/pricing", name: "pricing" },
   { path: "/showcase", name: "demos" },
-  { path: "/signin", name: "sign in" },
 ] as const;
 
 async function openPublicRoute(page: Page, path: string) {
@@ -115,6 +114,37 @@ for (const { path, name } of PUBLIC_ROUTES) {
   });
 }
 
+test("sign in uses the document auth shell without horizontal escape", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await openPublicRoute(page, "/signin");
+  await expect(page.locator(".wl-stitch-auth-shell")).toBeVisible();
+
+  const metrics = await page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const shell = document.querySelector<HTMLElement>(".wl-stitch-auth-shell");
+    const shellRect = shell?.getBoundingClientRect();
+    return {
+      viewportMode: root.dataset.wirelineViewport || body.dataset.wirelineViewport || "",
+      rootHorizontalOverflow: root.scrollWidth - root.clientWidth,
+      bodyHorizontalOverflow: body.scrollWidth - body.clientWidth,
+      shellLeft: shellRect?.left ?? Number.NEGATIVE_INFINITY,
+      shellRight: shellRect?.right ?? Number.POSITIVE_INFINITY,
+      rootOverflowY: getComputedStyle(root).overflowY,
+      bodyOverflowY: getComputedStyle(body).overflowY,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.viewportMode).toBe("document");
+  expect(metrics.rootHorizontalOverflow).toBeLessThanOrEqual(2);
+  expect(metrics.bodyHorizontalOverflow).toBeLessThanOrEqual(2);
+  expect(metrics.shellLeft).toBeGreaterThanOrEqual(-2);
+  expect(metrics.shellRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
+  expect(metrics.rootOverflowY).toMatch(/auto|visible/);
+  expect(metrics.bodyOverflowY).toMatch(/auto|visible/);
+});
+
 test("home presents a professional desktop buying frame", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openPublicRoute(page, "/");
@@ -124,10 +154,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Agent work lane" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Account" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Build Your Voice Agent" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Hear It Live", exact: true })).toBeVisible();
   await expect(
-    page
-      .getByRole("button", { name: /Hear It Live/i })
-      .or(page.getByRole("link", { name: /Hear It Live/i })),
+    page.locator(".landing-demo").getByRole("button", { name: "Hear It Live", exact: true }),
   ).toBeVisible();
 
   const metrics = await publicMetrics(page);
