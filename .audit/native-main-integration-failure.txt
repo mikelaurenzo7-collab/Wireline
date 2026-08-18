@@ -1,8 +1,8 @@
 # Native/main integration failure
 
-HEAD=4a7620889b775bf3faa934e92141cc1afe99e3b7
+HEAD=0a2dc3484f1c23ca26bb9312b09a0bc428119bc0
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32089177271
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32089612737
 
 ```text
 From https://github.com/mikelaurenzo7-collab/Wireline
@@ -36,15 +36,7 @@ Updated 1 path from the index
 Updated 1 path from the index
 Updated 1 path from the index
 Updated 1 path from the index
-Traceback (most recent call last):
-  File "<stdin>", line 340, in <module>
-  File "<stdin>", line 10, in replace
-  File "<stdin>", line 4, in read
-  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
-    with self.open(mode='r', encoding=encoding, errors=errors) as f:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'tests/public-demo-fallback.spec.ts'
+  File "<stdin>", line 9
+    "cadence.indexOf(\\\"\\n  return { ok: false\\\", cadence.indexOf('if (step.type === \\\"email\\\")')),") ,
+IndentationError: unexpected indent
 ```
