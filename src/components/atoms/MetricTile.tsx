@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 /**
  * MetricTile — the letterpress KPI/stat tile. Wraps `wl-metric-tile` so the
  * four hand-rolled KPI rows (Overview, CallLogs, Knowledge, StudioCanvas)
- * stop re-implementing the same surface. Uses the display serif for the
- * value, the mono caption for the label, and the copper top wireline glow.
- * Optionally stagger the mount with `reveal` (1–5).
+ * stop re-implementing the same surface. Uses the display face for the value,
+ * the mono caption for the label, and the restrained platinum/violet wireline
+ * accent from the shared Letterpress layer. Optionally stagger the mount with
+ * `reveal` (1–5).
  */
 export interface MetricTileProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
