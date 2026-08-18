@@ -12,6 +12,7 @@ export const WIRELINE_DESIGN_VISION = {
   principles: [
     "Electric violet is action. Ink is structure. Cool obsidian is calm.",
     "Silver is the wire, it carries the signal, never decorates.",
+    "Bot identity is a role-agnostic Wireline signal signature; status colors communicate state only.",
     "One voice module, one composer dock, one elevation language.",
     "Centered marketing storytelling; left/task-first authenticated work.",
     "Inter Tight carries big ideas; Inter carries work; IBM Plex Mono carries labels.",
