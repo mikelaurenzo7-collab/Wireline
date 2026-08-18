@@ -78,14 +78,49 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(release).toContain("releaseTwilioLine");
     expect(release).toContain("releaseLegacyTenantNumber");
     expect(release).toContain('status: "retired"');
+    expect(activation).toContain("wireline_claim_xai_phone_deactivation");
     expect(activation).toContain("trunk.phoneNumbers(associationSid).remove()");
+    expect(activation).toContain("settleDeactivation");
+    expect(activation).toContain("XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS");
   });
 
-  it("retains one-time xAI secrets outside cascades behind a tenant-bound claim function", () => {
+  it("serializes activation, routing repair, reassignment, and release on one E.164 lease", () => {
+    const migration = read("drizzle/migrations/0153_preserve_xai_registration_ledger.sql");
+    const activation = read("src/lib/voice/xai-phone-activation-service.ts");
+    const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
+
+    expect(migration.match(/pg_advisory_xact_lock\(hashtext\('xai-phone:'/g)).toHaveLength(2);
+    expect(migration).toContain("wireline_claim_xai_phone_deactivation");
+    expect(migration).toContain("XAI_PHONE_DEACTIVATING");
+    expect(migration).toContain("XAI_PHONE_DEACTIVATION_UNRESOLVED");
+    expect(migration).toContain("XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS");
+    expect(migration).toContain("RETURN QUERY SELECT v_binding.id, p_claim_token, false");
+    expect(migration).not.toContain("NULL::uuid, true");
+
+    const claim = provisioning.indexOf("const claim = await claimProvisioning");
+    const attach = provisioning.indexOf("await attachPhoneToTrunk", claim);
+    const xaiRegistration = provisioning.indexOf("await registerPhoneWithXAI", attach);
+    const active = provisioning.indexOf('status: "active"', xaiRegistration);
+    expect(claim).toBeGreaterThan(-1);
+    expect(attach).toBeGreaterThan(claim);
+    expect(xaiRegistration).toBeGreaterThan(attach);
+    expect(active).toBeGreaterThan(xaiRegistration);
+
+    const deactivationClaim = activation.indexOf("const claim = await claimDeactivation");
+    const detach = activation.indexOf("phoneNumbers(associationSid).remove()", deactivationClaim);
+    const retired = activation.indexOf('status: "retired"', detach);
+    expect(deactivationClaim).toBeGreaterThan(-1);
+    expect(detach).toBeGreaterThan(deactivationClaim);
+    expect(retired).toBeGreaterThan(detach);
+    expect(activation).not.toContain("repairTwilioRouting");
+  });
+
+  it("retains one-time xAI secrets outside cascades behind tenant-bound claim functions", () => {
     const schema = read("src/db/xai-voice-schema.ts");
     const baseMigration = read("drizzle/migrations/0152_native_xai_phone_bindings.sql");
     const migration = read("drizzle/migrations/0153_preserve_xai_registration_ledger.sql");
     const provisioning = read("src/lib/voice/xai-sip-provisioning.ts");
+    const activation = read("src/lib/voice/xai-phone-activation-service.ts");
 
     expect(schema).not.toContain(".references(() => users.id");
     expect(schema).not.toContain(".references(() => agents.id");
@@ -98,11 +133,10 @@ describe("native Twilio + xAI phone lifecycle", () => {
     expect(migration).toContain("wireline_current_user_id() IS DISTINCT FROM p_user_id");
     expect(migration).toContain("XAI_PHONE_TENANT_MISMATCH");
     expect(migration).toContain("wireline_phone_numbers AS phone");
-    expect(migration).toContain("pg_advisory_xact_lock");
-    expect(migration).toContain("v_binding.status <> 'retired'");
     expect(migration).toContain("FROM PUBLIC, anon, authenticated, service_role");
     expect(migration).toContain("TO wireline_server");
     expect(provisioning).toContain("wireline_claim_xai_phone_binding");
+    expect(activation).toContain("wireline_claim_xai_phone_deactivation");
 
     const tenantCheck = migration.indexOf(
       "public.wireline_current_user_id() IS DISTINCT FROM p_user_id",
