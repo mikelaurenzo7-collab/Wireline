@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import MarketingChrome from "../components/marketing/MarketingChrome";
-import WirelineMark from "../components/brand/WirelineMark";
+import { WirelineLockup } from "../components/brand/WirelineBrand";
 import { PageMeta } from "../lib/page-meta";
 
 const PENDING_INVITE_KEY = "wireline_pending_invitation";
@@ -67,9 +67,6 @@ export default function AcceptInvite() {
         sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
-        // The acceptance endpoint rotates the session into the shared tenant.
-        // Reload the app so every provider hydrates against that new workspace
-        // instead of retaining personal-workspace caches in memory.
         window.setTimeout(() => window.location.assign("/overview"), 900);
       })
       .catch((error: unknown) => {
@@ -86,8 +83,8 @@ export default function AcceptInvite() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Accept workspace invitation | Wireline"
-        description="Join a shared Wireline workspace."
+        title="Accept workspace invitation | WIRELINE"
+        description="Join a shared WIRELINE workspace."
         path="/accept-invite"
         noIndex
       />
@@ -101,9 +98,7 @@ export default function AcceptInvite() {
           aria-busy={working}
         >
           <div className="flex justify-center">
-            <div className="wl-auth-brand-chip" aria-hidden="true">
-              <WirelineMark className="size-8 text-white" />
-            </div>
+            <WirelineLockup size="compact" surface="tile" />
           </div>
 
           <div className="mt-7 flex justify-center" aria-hidden="true">
