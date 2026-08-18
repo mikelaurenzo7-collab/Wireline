@@ -1,5 +1,5 @@
 name: native-main-merge-integration
-# Exact-head gate retriggered after the mobile CTA contract repair.
+# Exact-head gate includes final Twilio client typing and contract-syntax repair.
 
 on:
   push:
@@ -67,7 +67,7 @@ jobs:
             fi
 
             # Latest main owns current product, pricing, privacy, MCP, and route
-            # truth. The deterministic post-merge script then restores only the
+            # truth. The deterministic post-merge scripts then restore only the
             # reviewed native Twilio + xAI owners and combined-head contracts.
             git checkout --theirs \
               docs/AUTHZ_MATRIX.md \
@@ -94,8 +94,9 @@ jobs:
               return 1
             fi
 
-            python -m py_compile .audit/postmerge/apply.py
+            python -m py_compile .audit/postmerge/apply.py .audit/postmerge/finalize.py
             python .audit/postmerge/apply.py
+            python .audit/postmerge/finalize.py
             git add -A
 
             npm ci --no-audit --no-fund
