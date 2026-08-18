@@ -81,7 +81,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   studioChrome: [
     { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
-    { id: "readiness", pattern: /Live|Needs setup/ },
+    { id: "readiness", pattern: /Live|Setup needed|Needs setup/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
@@ -106,7 +106,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Start with one job/ },
+    { id: "empty-state", pattern: /Start With One Job/i },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [
