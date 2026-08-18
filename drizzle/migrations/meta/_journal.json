@@ -365,6 +365,13 @@
       "when": 1786995000000,
       "tag": "0153_preserve_xai_registration_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1787025047294,
+      "tag": "0154_xai_grok_46_persisted_defaults",
+      "breakpoints": true
     }
   ]
 }

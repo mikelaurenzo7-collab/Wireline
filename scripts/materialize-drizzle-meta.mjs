@@ -7,10 +7,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = resolve(ROOT, "drizzle/migrations/meta/0049_snapshot.json");
 const TARGET = resolve(ROOT, "drizzle/migrations/meta/0050_snapshot.json");
 const TARGET_0051_PATH = resolve(ROOT, "drizzle/migrations/meta/0051_snapshot.json");
+const TARGET_0052_PATH = resolve(ROOT, "drizzle/migrations/meta/0052_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
 const TARGET_0051_SHA256 = "ca35f3a7f91759ff9600900fef8d8633b58c34bebcaf17707d080d756d121068";
+const TARGET_0052_ID = "96da4f2e-8d80-46e0-834f-ac2d20306fb5";
+const TARGET_0052_SHA256 = "2057ac0cd45cd55bcb39e2edb27615bb6c571dbd6ed9d754cf4af4d0eadd9713";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -172,6 +175,21 @@ export function buildPreservedRegistrationSnapshot(nativeSnapshot) {
   return snapshot;
 }
 
+export function buildGrok46DefaultsSnapshot(preservedSnapshot) {
+  if (
+    !preservedSnapshot ||
+    preservedSnapshot.id !== TARGET_0051_ID ||
+    preservedSnapshot.version !== "7"
+  ) {
+    throw new Error("0051 snapshot identity changed; refusing to synthesize 0052.");
+  }
+  const snapshot = structuredClone(preservedSnapshot);
+  snapshot.id = TARGET_0052_ID;
+  snapshot.prevId = preservedSnapshot.id;
+  snapshot.tables["public.wireline_settings"].columns.voice_llm_model.default = "'grok-4.6'";
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -189,11 +207,14 @@ function writeSnapshot(path, serialized, expectedHash) {
 export function materializeDrizzleMeta() {
   const previous = JSON.parse(readFileSync(SOURCE, "utf8"));
   const nativeSnapshot = buildNativeXAISnapshot(previous);
+  const preservedSnapshot = buildPreservedRegistrationSnapshot(nativeSnapshot);
   const nativeSerialized = `${JSON.stringify(nativeSnapshot, null, 2)}\n`;
-  const preservedSerialized = `${JSON.stringify(buildPreservedRegistrationSnapshot(nativeSnapshot), null, 2)}\n`;
+  const preservedSerialized = `${JSON.stringify(preservedSnapshot, null, 2)}\n`;
+  const grok46Serialized = `${JSON.stringify(buildGrok46DefaultsSnapshot(preservedSnapshot), null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
-  return { native, preserved };
+  const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
+  return { native, preserved, grok46 };
 }
 
 const result = materializeDrizzleMeta();
@@ -202,4 +223,7 @@ if (result.native.changed) {
 }
 if (result.preserved.changed) {
   console.log(`Materialized Drizzle snapshot 0051 (${result.preserved.sha256.slice(0, 12)}…).`);
+}
+if (result.grok46.changed) {
+  console.log(`Materialized Drizzle snapshot 0052 (${result.grok46.sha256.slice(0, 12)}…).`);
 }
