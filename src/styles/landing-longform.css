@@ -110,7 +110,7 @@
 }
 
 .landing-home__solution-card .wl-eyebrow {
-  margin: 1.2rem 0 0;
+  margin: 0;
   color: var(--wireline-color-action-primary-default);
 }
 
@@ -189,7 +189,8 @@
   display: flex;
   min-width: 0;
   align-items: flex-start;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0;
   padding: 1.25rem;
   border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--wireline-radius-lg);
@@ -198,6 +199,11 @@
     var(--wireline-color-surface-default) 82%,
     var(--wireline-color-canvas-default)
   );
+  text-align: center;
+}
+
+.landing-home__compact-card > div {
+  width: 100%;
 }
 
 .landing-home__compact-card h3 {

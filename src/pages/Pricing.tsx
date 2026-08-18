@@ -1,17 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import {
-  ArrowRight,
-  Check,
-  Crosshair,
-  Mail,
-  MessageSquareText,
-  PhoneCall,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  WalletCards,
-} from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
@@ -37,42 +26,39 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put your voice agent live",
-    tagline: "Your Voice Agent from $19/month.",
+    eyebrow: "Put Your Voice Agent Live",
+    tagline: "Your Voice Agent from $19/month",
     detail:
       "One focused voice agent for inbound, outbound, or scheduling, with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
-    icon: Sparkles,
     featured: false,
-    badge: "Lowest cost live plan",
+    badge: "Lowest Cost Live Plan",
   },
   {
     plan: planById.team,
     publicName: "Starter Plus",
-    eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business voice agent from $39/month.",
+    eyebrow: "Founder Hybrid",
+    tagline: "Personal Concierge + Business Voice Agent from $39/month",
     detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
-    ctaAnnual: "Choose annual Starter Plus",
+    ctaAnnual: "Choose Annual Starter Plus",
     ctaPath: "/signup?plan=team",
-    icon: Crosshair,
     featured: true,
-    badge: "Best founder value",
+    badge: "Best Founder Value",
   },
   {
     plan: planById.business,
     publicName: "Pro",
-    eyebrow: "For a growing operation",
-    tagline: "Five specialized agents. One supervised workspace.",
+    eyebrow: "For a Growing Operation",
+    tagline: "Five Specialized Agents. One Supervised Workspace",
     detail: "Up to five specialized agents with shared routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
-    ctaAnnual: "Go Pro annually",
+    ctaAnnual: "Go Pro Annually",
     ctaPath: "/signup?plan=business",
-    icon: Users,
     featured: false,
-    badge: "Multi agent",
+    badge: "Multi Agent",
   },
 ] as const;
 
@@ -98,22 +84,18 @@ const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(f
 
 const CHANNEL_RULES = [
   {
-    icon: PhoneCall,
-    title: "Voice + included number",
+    title: "Voice + Included Number",
     body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid conversation.`,
   },
   {
-    icon: MessageSquareText,
     title: "Text / SMS",
     body: "The same agent continues by text. Consent and spend stay visible, billed by segment.",
   },
   {
-    icon: Mail,
     title: "Email",
     body: "Connect Gmail, Outlook, iCloud, or your own stack. Your provider's limits stay authoritative.",
   },
   {
-    icon: Crosshair,
     title: "Lead Hunt",
     body: "Research a niche, enrich targets, and hand them to the same agent. On every paid plan.",
   },
@@ -275,10 +257,7 @@ export default function Pricing() {
 
             <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <WalletCards className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title">Free Builder</h3>
-                </div>
+                <h3 className="wl-card-title">Free Builder</h3>
                 <div className="mt-3 flex items-end justify-center gap-1.5">
                   <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                     $0
@@ -300,12 +279,12 @@ export default function Pricing() {
                   to="/signup?plan=personal"
                   className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
                 >
-                  Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  Build Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </article>
 
               {PAID_TIERS.map(
-                ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, icon: Icon, featured }) => {
+                ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, featured }) => {
                   const showAnnual = annual && plan.price_usd_annual > 0;
                   const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
                   const priceSuffix = showAnnual ? "/year" : "/month";
@@ -328,10 +307,7 @@ export default function Pricing() {
                           Most Popular
                         </span>
                       ) : null}
-                      <div className="flex items-center justify-center gap-2">
-                        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                        <h3 className="wl-card-title">{publicName}</h3>
-                      </div>
+                      <h3 className="wl-card-title">{publicName}</h3>
                       <div className="mt-3 flex items-end justify-center gap-1.5">
                         <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                           ${price}
@@ -380,7 +356,6 @@ export default function Pricing() {
               className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
             >
               <div className="flex items-center gap-2.5">
-                <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 <h3 className="wl-card-title">Scale &amp; Enterprise</h3>
                 <span className="text-sm text-muted-foreground">Custom</span>
               </div>
@@ -409,13 +384,12 @@ export default function Pricing() {
                   One voice agent, no seat tax, clear costs
                 </h2>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
+                  {CHANNEL_RULES.map(({ title, body }) => (
                     <article
                       key={title}
                       className="rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center"
                     >
-                      <Icon className="mx-auto h-5 w-5 text-primary" aria-hidden="true" />
-                      <h3 className="wl-card-title mt-2">{title}</h3>
+                      <h3 className="wl-card-title">{title}</h3>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
                     </article>
                   ))}

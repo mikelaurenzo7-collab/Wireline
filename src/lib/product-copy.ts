@@ -41,12 +41,12 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     plural: "personal voice agents",
     navLabel: "Voice Agent",
     navShort: "Agent",
-    createCta: "Create personal voice agent",
-    createCtaShort: "Create voice agent",
-    setupLabel: "Personal voice agent in about a minute",
+    createCta: "Create Personal Voice Agent",
+    createCtaShort: "Create Voice Agent",
+    setupLabel: "Personal Voice Agent in About a Minute",
     setupPrompt: "What should your personal voice agent handle?",
     setupDescription: "Start with one call, appointment, or personal task.",
-    nameLabel: "Agent name",
+    nameLabel: "Agent Name",
   },
   business: {
     singular: "business voice agent",
@@ -54,12 +54,12 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     plural: "business voice agents",
     navLabel: "Voice Agent",
     navShort: "Agent",
-    createCta: "Create business voice agent",
-    createCtaShort: "Create voice agent",
-    setupLabel: "Business voice agent in about a minute",
+    createCta: "Create Business Voice Agent",
+    createCtaShort: "Create Voice Agent",
+    setupLabel: "Business Voice Agent in About a Minute",
     setupPrompt: "What job should this voice agent own?",
     setupDescription: "Start with one customer-facing job.",
-    nameLabel: "Agent name",
+    nameLabel: "Agent Name",
   },
 } as const satisfies Record<
   CustomerAgentPosture,
@@ -199,8 +199,8 @@ export const BUSINESS_MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build your next voice agent.",
-  runHeadline: "Your voice agent is live.",
+  createHeadline: "Build Your Next Voice Agent",
+  runHeadline: "Your Voice Agent Is Live",
   emptyCue: "Brief it. Train it once. Connect calls, texts, and email.",
   configurePrompts: ["Adjust the greeting", "Change the tone", "Add a business rule"],
   testPrompts: [
@@ -221,17 +221,17 @@ export const PRODUCT_VERSATILITY = {
 
 export const PRODUCT_POSTURE = {
   personal: {
-    badge: "Personal voice agent",
+    badge: "Personal Voice Agent",
     badgeShort: "Personal",
-    createCta: "Build personal voice agent",
-    emptyTitle: "Your personal voice agent.",
+    createCta: "Build Personal Voice Agent",
+    emptyTitle: "Your Personal Voice Agent",
     emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
   },
   business: {
-    badge: "Business voice agent",
+    badge: "Business Voice Agent",
     badgeShort: "Business",
-    createCta: "Build business voice agent",
-    emptyTitle: "Your business voice agent.",
+    createCta: "Build Business Voice Agent",
+    emptyTitle: "Your Business Voice Agent",
     emptyBody: "Calls, texts, and email handled. Outcomes logged.",
   },
 } as const;

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowRight, Phone, Volume2 } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -30,14 +30,11 @@ export default function Showcase() {
           primaryAction={{ label: "Build Your Voice Agent", to: PERSONAL_SIGNUP }}
           visual={
             <div className="flex flex-col gap-3 text-center">
-              <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
-                <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
-                Live browser preview
-              </div>
+              <div className="text-sm font-semibold text-foreground">Live Browser Preview</div>
               <div className="rounded-[16px] border border-border bg-background/70 p-3">
                 <BrowserCallWidget
                   agentName={primaryDemo.name}
-                  buttonLabel="Start live demo"
+                  buttonLabel="Start Live Demo"
                   fallback={
                     <div className="text-center">
                       <a

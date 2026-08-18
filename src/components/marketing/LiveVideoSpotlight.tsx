@@ -1,15 +1,10 @@
-import { ArrowRight, Mail, MessageSquareText, PhoneCall, Video } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 
 import LiveVideoStage from "./LiveVideoStage";
 import { LIVE_VIDEO_ADDON_PRICE_USD } from "../../lib/video-presenter/live-video-policy";
 
-const CHANNELS = [
-  { label: "Voice", icon: PhoneCall },
-  { label: "Text", icon: MessageSquareText },
-  { label: "Email", icon: Mail },
-  { label: "Live Video", icon: Video },
-] as const;
+const CHANNELS = ["Voice", "Text", "Email", "Live Video"] as const;
 
 type LiveVideoSpotlightProps = {
   eyebrow: string;
@@ -37,28 +32,23 @@ export default function LiveVideoSpotlight({ eyebrow }: LiveVideoSpotlightProps)
                 is explicit that "one agent" is an onboarding posture, not the
                 product promise, and that broad surfaces lead with voice agents. */}
             <h2 className="wl-display-2 mx-auto mt-5 max-w-[24ch] lg:mx-0">
-              Your voice agent, now on screen.
+              Your Voice Agent, Now on Screen
             </h2>
             <p className="mx-auto mt-4 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">
               {`Bring the voice agent that answers your calls on screen using the same Training, operating rules, and approved knowledge. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
-            </p>
-            <p className="mx-auto mt-3 max-w-[46ch] text-xs leading-5 text-muted-foreground/80 lg:mx-0">
-              Optional presenter-managed voice modes use their own workspace profile and can reserve
-              more of the same allowance.
             </p>
 
             <div
               className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start"
               role="list"
-              aria-label="Agent channels"
+              aria-label="Agent Channels"
             >
-              {CHANNELS.map(({ label, icon: Icon }) => (
+              {CHANNELS.map((label) => (
                 <span
                   key={label}
                   role="listitem"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm"
+                  className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm"
                 >
-                  <Icon className="size-3.5 text-primary" aria-hidden="true" />
                   {label}
                 </span>
               ))}
@@ -68,7 +58,7 @@ export default function LiveVideoSpotlight({ eyebrow }: LiveVideoSpotlightProps)
               to="/signup?plan=starter"
               className="marketing-btn-primary mx-auto mt-7 min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit lg:mx-0"
             >
-              Build a business agent
+              Build a Business Agent
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>

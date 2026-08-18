@@ -2,9 +2,6 @@ import {
   BarChart3,
   CalendarClock,
   CheckCircle2,
-  Mail,
-  MessageSquareText,
-  PhoneCall,
   ShieldCheck,
   SlidersHorizontal,
   Workflow,
@@ -16,23 +13,7 @@ import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader
 import { PageMeta } from "../lib/page-meta";
 import { MARKETING_VOICE } from "../lib/product-copy";
 
-const CHANNEL_CAPABILITIES = [
-  {
-    icon: PhoneCall,
-    title: "Voice",
-    body: "Answer or place calls, qualify, book, transfer, and recap.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "Text / SMS",
-    body: "Confirm, nurture, remind, and recover under consent and spend rules.",
-  },
-  {
-    icon: Mail,
-    title: "Email",
-    body: "Draft or send approved replies, follow up, and record the result.",
-  },
-] as const;
+const CHANNEL_CAPABILITIES = ["Voice", "Text / SMS", "Email"] as const;
 
 const CORE_FEATURES = [
   {
@@ -79,22 +60,12 @@ export default function Features() {
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
         {/*
-          One screen: what it runs on, why it can be trusted with the work, and
-          what it plugs into.
-
-          This page was four screens and twenty-four cards. Cut: the four-step
-          loop (the landing page tells it in full, and it arrived here under a
-          headline that used a different four words for the same four steps);
-          the six use-case cards, which were links to /solutions pages the header
-          already links to by name; and the "Every channel. One voice agent."
-          headline, whose claim the channel row makes without it. The three
-          channel cards became chips — a card with an icon, a title and a body
-          line spent 200px to say "Voice", "Text / SMS" and "Email", which is a
-          capability list. The six controls are the argument, so they keep cards.
+          One screen: channels as text chips (icons restated the labels), then
+          the six control cards that carry the argument.
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
-            title="Voice agents for every customer conversation"
+            title="Voice Agents for Every Customer Conversation"
             primaryAction={{ label: "Build Your Voice Agent", to: "/signup?plan=personal" }}
             secondaryAction={{
               label: "Hear a Demo",
@@ -119,19 +90,18 @@ export default function Features() {
             </ol>
 
             <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              {CHANNEL_CAPABILITIES.map(({ icon: Icon, title }) => (
+              {CHANNEL_CAPABILITIES.map((title) => (
                 <li
                   key={title}
-                  className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+                  className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
                 >
-                  <Icon size={14} className="text-primary" aria-hidden="true" />
                   {title}
                 </li>
               ))}
             </ul>
 
             <p className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
-              The controls that make it reliable
+              The Controls That Make It Reliable
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (

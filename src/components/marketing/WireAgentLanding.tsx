@@ -4,18 +4,9 @@ import {
   BadgeCheck,
   CalendarCheck2,
   Check,
-  ClipboardCheck,
-  Headphones,
-  Mail,
   MessageSquareText,
-  Phone,
   PhoneCall,
   ShieldCheck,
-  Sparkles,
-  Users,
-  WalletCards,
-  Workflow,
-  type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -38,53 +29,46 @@ const AUDIENCES = [
   {
     key: "outbound" as const,
     label: AGENT_DIRECTION_MODES.outbound.label,
-    detail: "Lead response and follow through",
+    detail: "Lead Response and Follow Through",
     uses: ["Lead Response", "Quote Follow Up", "Appointment Setting"],
     href: "/signup?plan=starter&mode=outbound",
-    icon: PhoneCall,
   },
   {
     key: "inbound" as const,
     label: AGENT_DIRECTION_MODES.inbound.label,
-    detail: "Front desk and support triage",
+    detail: "Front Desk and Support Triage",
     uses: ["Front Desk", "Lead Qualifier", "Support Triage"],
     href: "/signup?plan=starter&mode=inbound",
-    icon: Headphones,
   },
   {
     key: "hybrid" as const,
     label: AGENT_DIRECTION_MODES.hybrid.label,
-    detail: "Daily calls, booking, and handoffs",
+    detail: "Daily Calls, Booking, and Handoffs",
     uses: ["Sales Desk", "Collections Desk", "Appointment Desk"],
     href: "/signup?plan=starter&mode=hybrid",
-    icon: Sparkles,
   },
 ] as const;
 
-const CORE_CHANNELS = [
-  { label: "Voice", icon: PhoneCall },
-  { label: "Text", icon: MessageSquareText },
-  { label: "Email", icon: Mail },
-] as const;
+const CORE_CHANNELS = ["Voice", "Text", "Email"] as const;
 
 const EXAMPLE_RUN = [
   {
-    label: "Call answered",
+    label: "Call Answered",
     detail: "Need captured",
     icon: PhoneCall,
   },
   {
-    label: "Lead qualified",
+    label: "Lead Qualified",
     detail: "Right service matched",
     icon: BadgeCheck,
   },
   {
-    label: "Appointment booked",
+    label: "Appointment Booked",
     detail: "Tuesday at 2:30 PM",
     icon: CalendarCheck2,
   },
   {
-    label: "Confirmation sent",
+    label: "Confirmation Sent",
     detail: "Text and email",
     icon: MessageSquareText,
   },
@@ -94,32 +78,26 @@ const CAPABILITIES = [
   {
     title: "Voice",
     body: "Answer, call, qualify, book, transfer, and recap.",
-    icon: PhoneCall,
   },
   {
     title: "Text",
     body: "Confirm, remind, nurture, and recover under consent rules.",
-    icon: MessageSquareText,
   },
   {
     title: "Email",
     body: "Follow up, reply, and preserve the conversation record.",
-    icon: Mail,
   },
   {
     title: "Shared Memory",
     body: "One identity, knowledge base, history, and rule set.",
-    icon: Workflow,
   },
   {
     title: "Approvals",
     body: "Keep sensitive actions behind explicit owner control.",
-    icon: ClipboardCheck,
   },
   {
     title: "Outcomes",
     body: "Log what happened, what changed, and what comes next.",
-    icon: BadgeCheck,
   },
 ] as const;
 
@@ -127,22 +105,18 @@ const CONTROL_POINTS = [
   {
     title: "Approvals",
     body: "Require a person before sensitive actions.",
-    icon: ClipboardCheck,
   },
   {
     title: "Spend",
     body: "Set prepaid limits with no automatic overages.",
-    icon: WalletCards,
   },
   {
     title: "Handoffs",
     body: "Escalate with context, not a cold transfer.",
-    icon: Users,
   },
   {
     title: "Proof",
     body: "Keep transcripts, outcomes, and audit history.",
-    icon: ShieldCheck,
   },
 ] as const;
 
@@ -195,20 +169,9 @@ function SectionHeading({
   );
 }
 
-function CompactCard({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-}) {
+function CompactCard({ title, body }: { title: string; body: string }) {
   return (
     <article className="landing-home__compact-card">
-      <span className="landing-home__compact-icon">
-        <Icon aria-hidden="true" />
-      </span>
       <div>
         <h3>{title}</h3>
         <p>{body}</p>
@@ -279,9 +242,9 @@ export default function WireAgentLanding() {
               </div>
 
               <div className="landing-stage__economics" aria-label="Plan summary">
-                <span>Build free</span>
+                <span>Build Free</span>
                 <span>Launch from ${STARTER_PRICE}/mo</span>
-                <span>Number included</span>
+                <span>Number Included</span>
                 <a href="#pricing">View Pricing</a>
                 <span className="sr-only">
                   Channels unlock at activation. Paid plans include a Wireline number. Extra usage
@@ -302,24 +265,20 @@ export default function WireAgentLanding() {
               <div className="landing-stage__lane-group">
                 <p className="landing-stage__lanes-label">Start With</p>
                 <nav className="landing-stage__lanes" aria-label="Agent work lane">
-                  {AUDIENCES.map((audience) => {
-                    const Icon = audience.icon;
-                    return (
-                      <a
-                        key={audience.key}
-                        href="#solutions"
-                        className="landing-stage__lane"
-                        onClick={() => selectAudience(audience.key)}
-                      >
-                        <Icon className="landing-stage__lane-icon" aria-hidden="true" />
-                        <strong>{audience.label}</strong>
-                        <span className="sr-only">
-                          {audience.detail}. {audience.uses.join(", ")}.
-                        </span>
-                        <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
-                      </a>
-                    );
-                  })}
+                  {AUDIENCES.map((audience) => (
+                    <a
+                      key={audience.key}
+                      href="#solutions"
+                      className="landing-stage__lane"
+                      onClick={() => selectAudience(audience.key)}
+                    >
+                      <strong>{audience.label}</strong>
+                      <span className="sr-only">
+                        {audience.detail}. {audience.uses.join(", ")}.
+                      </span>
+                      <ArrowRight className="landing-stage__lane-arrow" aria-hidden="true" />
+                    </a>
+                  ))}
                 </nav>
               </div>
             </div>
@@ -410,15 +369,9 @@ export default function WireAgentLanding() {
                     <span>You set the rules, approvals, spend, and handoffs.</span>
                   </div>
                   <ul className="landing-console__channels" aria-label="Core agent channels">
-                    {CORE_CHANNELS.map((channel) => {
-                      const Icon = channel.icon;
-                      return (
-                        <li key={channel.label}>
-                          <Icon aria-hidden="true" />
-                          {channel.label}
-                        </li>
-                      );
-                    })}
+                    {CORE_CHANNELS.map((label) => (
+                      <li key={label}>{label}</li>
+                    ))}
                   </ul>
                 </footer>
               </div>
@@ -430,35 +383,29 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <SectionHeading
               eyebrow="Solutions"
-              title="Start with one job"
+              title="Start with One Job"
               body="Choose the work. Wireline keeps every channel, rule, and outcome together."
             />
 
             <div className="landing-home__solution-grid">
-              {AUDIENCES.map((audience) => {
-                const Icon = audience.icon;
-                return (
-                  <article key={audience.key} className="landing-home__solution-card">
-                    <span className="landing-home__solution-icon">
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <p className="wl-eyebrow">{audience.label}</p>
-                    <h3>{audience.detail}</h3>
-                    <ul>
-                      {audience.uses.map((use) => (
-                        <li key={use}>
-                          <Check aria-hidden="true" />
-                          {use}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link to={audience.href} onClick={() => selectAudience(audience.key)}>
-                      Start Here
-                      <ArrowRight aria-hidden="true" />
-                    </Link>
-                  </article>
-                );
-              })}
+              {AUDIENCES.map((audience) => (
+                <article key={audience.key} className="landing-home__solution-card">
+                  <p className="wl-eyebrow">{audience.label}</p>
+                  <h3>{audience.detail}</h3>
+                  <ul>
+                    {audience.uses.map((use) => (
+                      <li key={use}>
+                        <Check aria-hidden="true" />
+                        {use}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to={audience.href} onClick={() => selectAudience(audience.key)}>
+                    Start Here
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </article>
+              ))}
             </div>
           </div>
         </section>
@@ -467,7 +414,7 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <SectionHeading
               eyebrow="Product"
-              title="One agent across every conversation"
+              title="One Agent Across Every Conversation"
               body="Voice, text, email, memory, approvals, and proof stay in one operating system."
             />
 
@@ -483,7 +430,7 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <SectionHeading
               eyebrow="Pricing"
-              title="Build free. Launch when ready"
+              title="Build Free. Launch When Ready"
               body="Every paid plan includes a Wireline number. No automatic overages."
             />
 
@@ -548,7 +495,7 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail landing-home__trust-layout">
             <SectionHeading
               eyebrow="Trust"
-              title="Control stays with you"
+              title="Control Stays with You"
               body="Wireline can act. You decide where it stops, asks, escalates, and records proof."
             />
 
@@ -569,7 +516,7 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail landing-home__final-card">
             <WirelineMark signal className="landing-home__final-mark" />
             <p className="wl-eyebrow text-primary">Wireline</p>
-            <h2>Build your voice agent</h2>
+            <h2>Build Your Voice Agent</h2>
             <p>Start free. Go live when the work is ready.</p>
             <div>
               <Link to={PERSONAL_SIGNUP} className="marketing-btn-primary">

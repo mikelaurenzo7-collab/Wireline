@@ -169,7 +169,7 @@ describe("E2E design and brand polish", () => {
     expect(executableLanding).toContain("MARKETING_VOICE.subline");
     expect(executableLanding).toContain("MARKETING_VOICE.spine");
     expect(executableLanding).toContain("View Pricing");
-    expect(executableLanding).toContain("Build free");
+    expect(executableLanding).toContain("Build Free");
     expect(executableLanding).toContain("rules, approvals, spend, and handoffs");
     expect(executableLanding).not.toContain("00:42");
     expect(executableLanding).not.toContain("landing-console__duration");

@@ -19,9 +19,9 @@ describe("home landing launch clarity", () => {
   });
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
-    expect(landing).toContain("Build free");
+    expect(landing).toContain("Build Free");
     expect(landing).toContain("Launch from $");
-    expect(landing).toContain("Number included");
+    expect(landing).toContain("Number Included");
     expect(landing).toContain("Channels unlock at activation");
     expect(landing).toContain("Runtime Balance");
   });

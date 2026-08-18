@@ -170,7 +170,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Not now");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build your next voice agent."');
+    expect(productCopy).toContain('createHeadline: "Build Your Next Voice Agent"');
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
     );

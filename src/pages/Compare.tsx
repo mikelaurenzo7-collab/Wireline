@@ -1,64 +1,42 @@
 import { Link } from "react-router";
-import {
-  ArrowRight,
-  BarChart3,
-  Brain,
-  CalendarCheck,
-  Check,
-  Clock3,
-  ExternalLink,
-  Globe,
-  MessageSquare,
-  PhoneCall,
-  Sparkles,
-  Workflow,
-} from "lucide-react";
+import { ArrowRight, Check, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
   {
-    icon: PhoneCall,
     title: "Makes the Call",
     copy: "Handles the conversation on voice, email, or text.",
   },
   {
-    icon: MessageSquare,
     title: "Plain Instructions",
     copy: "Your voice, playbook, and training. No scripts, no flowcharts.",
   },
   {
-    icon: Clock3,
     title: "A Clear Next Step",
     copy: "Booked, handed off, or logged.",
   },
   {
-    icon: Brain,
     title: "Persistent Memory",
     copy: "Every lesson, objection, and preference stays in the agent's memory.",
   },
   {
-    icon: CalendarCheck,
     title: "Real Calendar Booking",
     copy: "Availability checks, timezone aware, no double booking.",
   },
   {
-    icon: Workflow,
     title: "Across Channels",
     copy: "Starts on voice, follows up by email or text. Connected and coherent.",
   },
   {
-    icon: Globe,
     title: "After Hours Coverage",
     copy: "24/7 without overtime, burnout, or missed calls.",
   },
   {
-    icon: BarChart3,
     title: "Every Outcome Visible",
     copy: "Transcripts, summaries, and analytics for every conversation.",
   },
   {
-    icon: Sparkles,
     title: "Improves With Use",
     copy: "Post call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
   },
@@ -147,12 +125,9 @@ export default function Compare() {
           </h1>
         </div>
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
-          {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
+          {DIFFERENCES.map(({ title, copy }) => (
             <article className="bg-card px-5 py-6 text-center sm:px-6" key={title}>
-              <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              <h2 className="wl-card-title mt-4">{title}</h2>
+              <h2 className="wl-card-title">{title}</h2>
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
                 {copy}
               </p>
@@ -283,7 +258,7 @@ export default function Compare() {
               up to the chrome to use it. A band is not the fix; a link is. */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             <Link to="/signup?plan=personal" className="font-semibold text-primary hover:underline">
-              Start free
+              Start Free
             </Link>{" "}
             and build one before you compare another.
           </p>

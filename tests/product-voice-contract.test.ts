@@ -98,14 +98,14 @@ describe("product voice cohesion", () => {
     expect(customerAgentLanguage("personal")).toMatchObject({
       singular: "personal voice agent",
       plural: "personal voice agents",
-      createCta: "Create personal voice agent",
-      createCtaShort: "Create voice agent",
+      createCta: "Create Personal Voice Agent",
+      createCtaShort: "Create Voice Agent",
     });
     expect(customerAgentLanguage("business")).toMatchObject({
       singular: "business voice agent",
       plural: "business voice agents",
-      createCta: "Create business voice agent",
-      createCtaShort: "Create voice agent",
+      createCta: "Create Business Voice Agent",
+      createCtaShort: "Create Voice Agent",
     });
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
 
@@ -135,7 +135,7 @@ describe("product voice cohesion", () => {
     expect(features).toContain("MARKETING_VOICE.proof");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
-    expect(features).toContain("Voice agents for every customer conversation");
+    expect(features).toContain("Voice Agents for Every Customer Conversation");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -153,9 +153,10 @@ describe("product voice cohesion", () => {
 
     expect(read("src/pages/Features.tsx")).toContain("Text / SMS");
     expect(executableLanding).toContain('aria-label="Core agent channels"');
-    expect(executableLanding).toContain('{ label: "Voice", icon: PhoneCall }');
-    expect(executableLanding).toContain('{ label: "Text", icon: MessageSquareText }');
-    expect(executableLanding).toContain('{ label: "Email", icon: Mail }');
+    expect(executableLanding).toContain('const CORE_CHANNELS = ["Voice", "Text", "Email"]');
+    expect(executableLanding).not.toContain("{ label: \"Voice\", icon: PhoneCall }");
+    expect(executableLanding).not.toContain("{ label: \"Text\", icon: MessageSquareText }");
+    expect(executableLanding).not.toContain("{ label: \"Email\", icon: Mail }");
     expect(executableLanding).not.toContain("Live Video");
     expect(executableLanding).toContain("MARKETING_VOICE.primaryCta");
     expect(executableLanding).toContain("MARKETING_VOICE.subline");

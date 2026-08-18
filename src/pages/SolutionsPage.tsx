@@ -1,12 +1,4 @@
 import { useParams } from "react-router";
-import {
-  CalendarClock,
-  Headphones,
-  MessageSquareText,
-  PhoneOutgoing,
-  ShieldCheck,
-  type LucideIcon,
-} from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
@@ -15,32 +7,30 @@ import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const SOLUTIONS = {
   sales: {
-    eyebrow: "Sales conversations",
-    title: "Every good lead gets a next step",
+    title: "Every Good Lead Gets a Next Step",
     description:
       "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
-    icon: PhoneOutgoing,
-    primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
+    primary: { href: "/signup?wedge=sales", label: "Create Sales Agent" },
     secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
-      ["A lead reaches out", "A voice agent responds on the channel the lead already chose."],
+      ["A Lead Reaches Out", "A voice agent responds on the channel the lead already chose."],
       [
-        "It qualifies by your rules",
+        "It Qualifies by Your Rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",
       ],
-      ["The next step is clear", "Booked, handed off, or logged with the full context attached."],
+      ["The Next Step Is Clear", "Booked, handed off, or logged with the full context attached."],
     ],
     capabilities: [
       [
-        "Your offer in every call",
+        "Your Offer in Every Call",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
       [
-        "Follow up across channels",
+        "Follow Up Across Channels",
         "Continue by SMS or email without restarting the conversation.",
       ],
       [
-        "Calendar aware booking",
+        "Calendar Aware Booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
@@ -48,44 +38,42 @@ const SOLUTIONS = {
       "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
   },
   support: {
-    eyebrow: "Customer coverage",
-    title: "A front desk that answers before demand goes cold",
+    title: "A Front Desk That Answers Before Demand Goes Cold",
     description:
       "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
-    icon: Headphones,
     // Wedge intent only — preselecting the $79 5-agent Pro plan for a
     // one-agent front-desk buyer mis-tuned the later "Matched from visit"
     // badge in billing; the sales wedge passes intent the same way.
     primary: {
       href: "/signup?wedge=support",
-      label: "Create a front desk agent",
+      label: "Create Front Desk Agent",
     },
     secondary: { href: "/showcase", label: "Hear a Demo" },
     sequence: [
       [
-        "A customer reaches out",
+        "A Customer Reaches Out",
         "A voice agent answers on call, text, or email with the same identity.",
       ],
       [
-        "It uses your business truth",
+        "It Uses Your Business Truth",
         "Policies, services, availability, and escalation rules stay consistent.",
       ],
       [
-        "It resolves or hands off cleanly",
+        "It Resolves or Hands Off Cleanly",
         "The right person receives the request with context already attached.",
       ],
     ],
     capabilities: [
       [
-        "Your voice and playbook",
+        "Your Voice and Playbook",
         "Carry your tone, policies, service knowledge, and approved answers.",
       ],
       [
-        "Booking that closes the loop",
+        "Booking That Closes the Loop",
         "Schedule, confirm, and continue the conversation across email and text.",
       ],
       [
-        "Escalation with context",
+        "Escalation with Context",
         "Route exceptions with the customer, history, and requested outcome intact.",
       ],
     ],
@@ -130,7 +118,7 @@ export default function SolutionsPage() {
                         href={`tel:${demoAgent.tel}`}
                         className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
                       >
-                        Call the {key === "sales" ? "sales" : "support"} demo
+                        Call the {key === "sales" ? "Sales" : "Support"} Demo
                       </a>
                       <p className="mt-2 font-mono text-xs text-muted-foreground">
                         {demoAgent.tel}
@@ -162,21 +150,15 @@ export default function SolutionsPage() {
         </ol>
 
         <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
-          {page.capabilities.map(([title, copy], index) => {
-            const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
-              index
-            ] as LucideIcon;
-            return (
-              <li
-                key={title}
-                className="wl-channel-chip inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-              >
-                <CapabilityIcon size={14} className="text-primary" aria-hidden="true" />
-                {title}
-                <span className="sr-only">{copy}</span>
-              </li>
-            );
-          })}
+          {page.capabilities.map(([title, copy]) => (
+            <li
+              key={title}
+              className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+            >
+              {title}
+              <span className="sr-only">{copy}</span>
+            </li>
+          ))}
         </ul>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-6 text-muted-foreground">

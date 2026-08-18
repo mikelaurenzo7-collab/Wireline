@@ -187,7 +187,7 @@ describe("agent navigation contract", () => {
       expect(pricingPage).toContain(tier);
     }
     expect(pricingPage).toMatch(/Runtime Balance/);
-    expect(pricingPage).toMatch(/Founder hybrid/);
+    expect(pricingPage).toMatch(/Founder Hybrid/);
     expect(pricingPage).not.toMatch(/Founder Early Access/);
     expect(pricingPage).not.toMatch(/Try 7 days free/);
   });

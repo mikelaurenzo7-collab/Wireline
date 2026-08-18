@@ -48,7 +48,7 @@ function WaveBars({
 export default function BrowserCallWidget({
   agentName,
   tintColor: _tintColor,
-  buttonLabel = "Talk in browser",
+  buttonLabel = "Talk In Browser",
   variant = "compact",
   fallback,
 }: BrowserCallWidgetProps) {
