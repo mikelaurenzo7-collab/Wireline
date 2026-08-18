@@ -7,7 +7,6 @@ import { log } from "./server-logger";
 import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   OPENAI_STRUCTURED_PRIMARY_MODEL,
-  STRUCTURED_PRIMARY_MODEL,
   XAI_STRUCTURED_PRIMARY_MODEL,
 } from "./ai-models";
 import {
@@ -418,12 +417,20 @@ async function callGateway(
   if (!isAIGatewayConfigured()) throw new Error("AI Gateway is not configured");
   const requested = String(body.model || "").trim();
   const primary = gatewayModelId(
-    requested || process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() || `xai/${XAI_STRUCTURED_PRIMARY_MODEL}`,
+    requested ||
+      process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() ||
+      `xai/${XAI_STRUCTURED_PRIMARY_MODEL}`,
   );
   const models = [
     primary,
-    gatewayModelId(process.env.WIRELINE_GATEWAY_OPENAI_MODEL?.trim() || `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`),
-    gatewayModelId(process.env.WIRELINE_GATEWAY_GEMINI_MODEL?.trim() || `google/${GEMINI_STRUCTURED_FALLBACK_MODEL}`),
+    gatewayModelId(
+      process.env.WIRELINE_GATEWAY_OPENAI_MODEL?.trim() ||
+        `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`,
+    ),
+    gatewayModelId(
+      process.env.WIRELINE_GATEWAY_GEMINI_MODEL?.trim() ||
+        `google/${GEMINI_STRUCTURED_FALLBACK_MODEL}`,
+    ),
   ].filter((model, index, entries) => model && entries.indexOf(model) === index);
   return callResponsesEndpoint({
     endpoint: `${AI_GATEWAY_BASE_URL}/responses`,
@@ -632,9 +639,10 @@ function configuredProviders(): RuntimeProvider[] {
   // provider credentials, budgets, and observability govern the entire turn.
   // Direct vendor lanes remain only as a safe degraded-mode path if Gateway
   // authentication is unavailable, and xAI direct remains required for voice.
-  if (RUNTIME_PROVIDER_REGISTRY.gateway.available()) return [RUNTIME_PROVIDER_REGISTRY.gateway.provider];
-  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter((id) =>
-    id !== "gateway" && RUNTIME_PROVIDER_REGISTRY[id].available(),
+  if (RUNTIME_PROVIDER_REGISTRY.gateway.available())
+    return [RUNTIME_PROVIDER_REGISTRY.gateway.provider];
+  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter(
+    (id) => id !== "gateway" && RUNTIME_PROVIDER_REGISTRY[id].available(),
   );
   return orderReasoningProviders(available, resolveReasoningPreference()).map(
     (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,
