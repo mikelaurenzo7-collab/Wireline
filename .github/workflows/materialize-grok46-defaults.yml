@@ -49,6 +49,27 @@ jobs:
             # before cloning 0051 into the new 0052 default-only snapshot.
             node scripts/materialize-drizzle-meta.mjs
 
+            # Python's default JSON encoder escapes non-ASCII while the permanent
+            # Node materializer writes UTF-8 JSON. Normalize the temporary script
+            # so both serializers hash the same canonical snapshot bytes.
+            python <<'PY'
+          from pathlib import Path
+
+          path = Path(".audit/postmerge/apply-grok46-schema.py")
+          text = path.read_text(encoding="utf-8")
+          old = 'serialized_snapshot = f"{json.dumps(snapshot, indent=2)}\\n"'
+          new = 'serialized_snapshot = f"{json.dumps(snapshot, indent=2, ensure_ascii=False)}\\n"'
+          if text.count(old) != 1:
+              raise SystemExit("snapshot serializer marker was not found exactly once")
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '    \'\'\'import { readFileSync } from "node:fs";',
+              '    r\'\'\'import { readFileSync } from "node:fs";',
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+
             python -m py_compile .audit/postmerge/apply-grok46-schema.py
             python .audit/postmerge/apply-grok46-schema.py
 
