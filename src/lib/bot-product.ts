@@ -114,7 +114,7 @@ export const BOT_ROLE_TEMPLATES = [
 export const BOT_MARKETING_VOICE = {
   headline: "Build a Bot for Any Job",
   subline:
-    "Configure one Bot to call, text, and email with your knowledge, tools, rules, approvals, and handoffs.",
+    "Configure one Bot for voice, text, and email with your knowledge, tools, rules, approvals, and handoffs.",
   primaryCta: "Build Your Bot",
   spine: ["Choose a Role", "Connect Channels", "Train Your Bot", "Go Live"],
 } as const;
@@ -122,5 +122,5 @@ export const BOT_MARKETING_VOICE = {
 export const BOT_WORKSPACE_PROMISE = {
   title: "One Workspace. Every Bot.",
   description:
-    "Business roles, personal help, and custom use cases all live in the same workspace. The role changes. The operating system does not.",
+    "Business roles, personal help, and custom use cases live in the same workspace, never separate workspaces. The role changes. The operating system does not.",
 } as const;
