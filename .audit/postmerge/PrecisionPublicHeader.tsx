@@ -30,7 +30,7 @@ export default function PrecisionPublicHeader() {
           <Link
             to="/signup?plan=personal"
             data-testid="header-cta"
-            className="marketing-btn-primary min-h-11 shrink-0 whitespace-nowrap px-3 text-sm font-semibold max-[379px]:!px-2.5 max-[379px]:text-[13px] sm:px-4"
+            className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[379px]:!px-2.5 max-[379px]:text-[13px]"
           >
             Start Free
           </Link>
