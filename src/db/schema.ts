@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0152_native_xai_phone_bindings.sql`.
+ * Latest committed migration: `drizzle/migrations/0154_xai_grok_46_persisted_defaults.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,
@@ -78,7 +78,7 @@ export const settings = pgTable("wireline_settings", {
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   voiceLlmProvider: text("voice_llm_provider").default("xai"),
-  voiceLlmModel: text("voice_llm_model").default("grok-4.3"),
+  voiceLlmModel: text("voice_llm_model").default("grok-4.6"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
