@@ -1,7 +1,6 @@
 package com.wireline.app.widget
 
 import android.content.Context
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -54,7 +53,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
-                text = "Wireline Agents",
+                text = "Wireline Bots",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize,
@@ -64,7 +63,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Follow-ups: ",
+                    text = "FOLLOW-UPS  ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
@@ -79,7 +78,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Active: ",
+                    text = "ACTIVE  ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
