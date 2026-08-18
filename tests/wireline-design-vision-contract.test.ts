@@ -24,11 +24,17 @@ const AUTHENTICATED_SURFACE_GLOBS = [
 
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
 
-describe("Wireline Letterpress design vision", () => {
+describe("WIRELINE Letterpress design vision", () => {
   it("exports a single canonical vision manifest", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
-    expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Letterpress");
+    expect(WIRELINE_DESIGN_VISION.system).toBe("WIRELINE Letterpress");
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
+    );
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
+    );
     expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
       expect.objectContaining({
         surface: expect.arrayContaining(["wl-paper", "wl-paper-elevated"]),
@@ -68,11 +74,14 @@ describe("Wireline Letterpress design vision", () => {
     expect(WIRELINE_DESIGN_VISION.motion.pressScale).toBe(0.985);
   });
 
-  it("defines authenticated Letterpress signature utilities", () => {
+  it("defines authenticated Letterpress signature utilities without duplicating selection ownership", () => {
     const appSignature = read("src/styles/wireline-app-signature.css");
-    expect(appSignature).toContain(".wl-rail-agent-link");
-    expect(appSignature).toContain(".wl-operate-surface .studio-card");
+    expect(appSignature).toContain(".wl-workspace-shell::before");
+    expect(appSignature).toContain(".wl-workspace-content .wl-paper::before");
+    expect(appSignature).toContain(".wl-eyebrow.wl-eyebrow--wired--app");
+    expect(appSignature).toContain(".wl-overview-greeting::after");
     expect(appSignature).toContain("--wireline-color-action-secondary-default");
+    expect(appSignature).not.toContain('.wl-rail-agent-link[aria-current="page"]::before');
     expect(read("apps/browser-extension/panel/app-signature.css")).toContain(".wordmark::before");
     expect(read("ios/WirelineShared/WirelineBrand.swift")).toContain("static let wire");
   });
@@ -81,8 +90,6 @@ describe("Wireline Letterpress design vision", () => {
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
-    // useLivePresence was removed 2026-08-13: an unimported one-line bridge
-    // over usePresenceSignals, which remains the canonical presence hook.
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
     expect(read("src/components/CallLogsClaude.tsx")).toContain("usePresenceSignals");
   });
