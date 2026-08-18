@@ -1,11 +1,12 @@
 # Native/main integration repair v3 failure
 
-HEAD=81cc9232ad30dfb527852743b2d4cd73fe9e6448
+HEAD=b21055ea9e83341b93c44c52978b1601b2449296
 STATUS=1
-RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32092348725
+RUN=https://github.com/mikelaurenzo7-collab/Wireline/actions/runs/32092529151
 
 ```text
 Reset branch 'cursor/native-xai-twilio-runtime-review-5789'
+M	scripts/native-main-integrate-v3.sh
 Your branch is up to date with 'origin/cursor/native-xai-twilio-runtime-review-5789'.
 From https://github.com/mikelaurenzo7-collab/Wireline
  * branch                main       -> FETCH_HEAD
