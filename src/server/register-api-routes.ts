@@ -78,7 +78,6 @@ import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes"
 import jobRouter from "../routes/job-routes";
 import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";
 import mobileRouter from "../routes/mobile-routes";
-import videoPresenterRouter from "../routes/video-presenter-routes";
 import activationRouter from "../routes/activation-routes";
 import outboundDialAtomicRouter from "../routes/outbound-dial-atomic-routes";
 import outboundRouter from "../routes/outbound-routes";
@@ -111,7 +110,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
   app.use(voicesRouter);
-  app.use(videoPresenterRouter);
 
   app.use(authOAuthExchangeAtomicRouter);
   app.use(authOAuthBrowserBindingRouter);
@@ -159,7 +157,14 @@ export function registerApiRoutes(app: Express): void {
   app.use(billingPortalReadinessRouter);
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
-  app.post("/api/billing/live-video-checkout", enforceSelfServeBillingRelease);
+  // Live Video is retired. Keep the old checkout path terminal so stale clients
+  // cannot fall through to legacy billing code and reactivate the product.
+  app.all("/api/billing/live-video-checkout", (_req, res) => {
+    res.status(410).json({
+      error: "FEATURE_RETIRED",
+      message: "Live Video is not currently available.",
+    });
+  });
   app.use("/api", billingRouter);
 
   app.use(emailRouter);

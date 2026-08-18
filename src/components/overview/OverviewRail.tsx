@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import { agentReadinessLabel } from "../../lib/agent-readiness";
 import { formatAgentRoleLabel } from "../../lib/product-copy";
-import AgentFace from "../AgentFace";
+import BotMark from "../BotMark";
 import { Button } from "../atoms";
 
 export function BotRoster({
@@ -40,10 +40,11 @@ export function BotRoster({
               to={`/studio?agent=${encodeURIComponent(bot.id)}&section=setup`}
               className="group flex min-h-[56px] min-w-0 items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-muted/30 wl-focus-ring-halo"
             >
-              <AgentFace
-                seed={bot.name || bot.id}
+              <BotMark
+                seed={bot.id}
+                name={bot.name}
                 size={32}
-                title={`${bot.name} face`}
+                title={`${bot.name} mark`}
                 className="shrink-0"
               />
               <span className="min-w-0 flex-1">

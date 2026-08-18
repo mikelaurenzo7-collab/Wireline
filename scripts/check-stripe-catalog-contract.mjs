@@ -142,38 +142,34 @@ for (const [label, metadata] of [
   }
 }
 
-const liveVideoProduct = FOUNDER_PRODUCTS.find((product) => product.key === "live_video");
-const liveVideoPrice = FOUNDER_PRICES.find((price) => price.key === "live_video_monthly");
-for (const [label, metadata] of [
-  ["product", liveVideoProduct?.metadata],
-  ["price", liveVideoPrice?.metadata],
-]) {
-  const expectedMetadata = {
-    wireline_catalog_state: "launch_active",
-    included_live_video_minutes: "60",
-    session_reservation_minutes: "5",
-    overage_policy: "none_pause_at_limit",
-  };
-  for (const [key, value] of Object.entries(expectedMetadata)) {
-    if (metadata?.[key] !== value) {
-      errors.push(`Live Video ${label} metadata drift for ${key}: expected ${value}.`);
-    }
-  }
-}
-if (!liveVideoProduct?.description?.includes("up-to-5-minute sessions")) {
-  errors.push("Live Video product description must publish the five-minute session ceiling.");
-}
-if (liveVideoPrice?.unitAmount !== 1900 || liveVideoPrice?.recurring?.interval !== "month") {
-  errors.push("Live Video must remain a $19 monthly licensed add-on.");
+// Live Video was retired on 2026-08-17. Keeping it in this active manifest
+// would cause stripe:setup to reactivate the archived product and price.
+if (
+  FOUNDER_PRODUCTS.some((product) => product.key === "live_video") ||
+  FOUNDER_PRICES.some((price) => price.key === "live_video_monthly")
+) {
+  errors.push("Retired Live Video must stay out of the active Founder Stripe manifest.");
 }
 
-if (FOUNDER_PRODUCTS.length !== 8) {
+// Commercial Stripe copy follows the same Bot taxonomy as the application.
+for (const product of FOUNDER_PRODUCTS) {
+  if (/\bvoice agents?\b|\blive agents?\b|\b\d+\+ agents\b/i.test(`${product.name} ${product.description}`)) {
+    errors.push(`Founder Stripe product still exposes retired Agent taxonomy: ${product.key}.`);
+  }
+}
+for (const price of FOUNDER_PRICES) {
+  if (/\bExtra Agent\b/i.test(price.nickname || "")) {
+    errors.push(`Founder Stripe price still exposes retired Agent taxonomy: ${price.key}.`);
+  }
+}
+
+if (FOUNDER_PRODUCTS.length !== 7) {
   errors.push(
-    `Founder manifest must define 8 active paid/add-on products; found ${FOUNDER_PRODUCTS.length}.`,
+    `Founder manifest must define 7 active paid/add-on/contact products; found ${FOUNDER_PRODUCTS.length}.`,
   );
 }
-if (FOUNDER_PRICES.length !== 14) {
-  errors.push(`Founder manifest must define 14 active prices; found ${FOUNDER_PRICES.length}.`);
+if (FOUNDER_PRICES.length !== 13) {
+  errors.push(`Founder manifest must define 13 active prices; found ${FOUNDER_PRICES.length}.`);
 }
 
 for (const [source, label] of [
