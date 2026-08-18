@@ -66,6 +66,12 @@ CREATE POLICY tenant_isolation ON public.wireline_xai_phone_bindings
   USING (user_id = (SELECT public.wireline_current_user_id()))
   WITH CHECK (user_id = (SELECT public.wireline_current_user_id()));
 
+-- This ledger stores encrypted one-time provider verification credentials.
+-- RLS is defense in depth; browser-facing and Supabase bypass roles must not
+-- receive direct table privileges at all.
+REVOKE ALL ON TABLE public.wireline_xai_phone_bindings
+  FROM PUBLIC, anon, authenticated, service_role;
+
 GRANT SELECT, INSERT, UPDATE, DELETE
   ON public.wireline_xai_phone_bindings
   TO wireline_server;
