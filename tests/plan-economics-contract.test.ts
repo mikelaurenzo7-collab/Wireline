@@ -25,7 +25,6 @@ const USAGE_GUARD_STRIP = [
   "src/pages/Pricing.tsx",
   "src/pages/BillingSettings.tsx",
   "src/lib/spend-guards.ts",
-  "server/call-start.ts",
   "server/routes/payments.ts",
   "server/telephony/call-credit.ts",
   "server/telephony/call-summary.ts",
