@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { WirelineWordmark } from "../components/brand/WirelineBrand";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const DOWNLOADS = [
@@ -15,7 +16,7 @@ const DOWNLOADS = [
       "Unzip the package on your computer.",
       "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
       "Click Load unpacked and select the unzipped folder (the one that contains manifest.json).",
-      "Pin Wireline Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
+      "Pin WIRELINE Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
     ],
   },
   {
@@ -43,7 +44,7 @@ export default function BrowserCommandInstallPage() {
           </Button>
         </div>
         <WorkspacePageIntro
-          title="Install Wireline Command"
+          title="Install WIRELINE Command"
           description={`${CLIENT_SURFACE_POSTURE.browser.status}. Explicit page context only. No background browsing, no token storage, no outbound from the extension.`}
         />
 
@@ -59,13 +60,14 @@ export default function BrowserCommandInstallPage() {
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Send the active tab (title, URL, selection, tel: links) into Studio as reference
-                  context. Wireline still owns dialing, texts, Training, billing, and launch.
+                  context. <WirelineWordmark inline /> still owns dialing, texts, Knowledge, billing,
+                  and launch.
                 </p>
               </div>
             </div>
             <ul className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
               <li>No host permissions and no silent page harvesting.</li>
-              <li>You must be signed in to Wireline for Studio handoff to complete.</li>
+              <li>You must be signed in to WIRELINE for Studio handoff to complete.</li>
               <li>Store listings stay deferred until this in-product path is the default.</li>
             </ul>
           </article>
@@ -75,7 +77,7 @@ export default function BrowserCommandInstallPage() {
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               The extension reads the active page only after you click a command. Context rides in
               the Studio URL fragment, then is stripped and labeled reference-only before anything
-              reaches your agent.
+              reaches your Bot.
             </p>
           </article>
         </section>
