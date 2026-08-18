@@ -81,7 +81,7 @@ export default function MarketingFooter({
               <span>Wireline</span>
             </Link>
             <p className="mt-3 max-w-sm text-[15px] leading-6 text-muted-foreground">
-              Voice agents that handle the conversation and finish the work.
+              Voice Bots that handle the conversation and finish the work.
             </p>
           </div>
 
