@@ -6,9 +6,10 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("activation path contract", () => {
-  it("routes fresh signups into studio create flow", () => {
+  it("routes every fresh signup into the same Studio create flow", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
-    expect(authRedirect).toContain("/studio?create=1");
+    expect(authRedirect).toContain('return "/studio?create=1"');
+    expect(authRedirect).not.toContain('"/studio?create=1&posture=business"');
   });
 
   it("documents ops activation checklist", () => {
@@ -17,36 +18,30 @@ describe("activation path contract", () => {
     expect(doc).toContain("SENTRY_DSN");
   });
 
-  it("mounts activation checklist on overview", () => {
+  it("mounts a unified Bot activation path on Overview and Studio", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("ActivationChecklist");
-    expect(overview).toContain("FirstRunLaunchpad");
-    expect(overview).toContain("Start with one job");
+    expect(overview).toContain("FirstRunWorkspace");
+    expect(overview).toContain("Build Your Bot");
+    expect(overview).toContain("Create Your Own");
+    expect(overview).toContain("Browse Templates");
+    expect(overview).toContain('to="/studio?create=1"');
+    expect(overview).toContain('to="/templates"');
+    expect(overview).toContain("degraded && !hasBots");
+    expect(overview).toContain("WorkspaceRecovery");
+    expect(overview).not.toContain("posture=");
+    expect(overview).not.toContain("personalAgents");
+    expect(overview).not.toContain("businessAgents");
+    expect(overview).not.toContain("dayGreeting");
+
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     expect(studio).toContain("Start with one job");
-    expect(studio).toContain("Give it one customer job. You can change everything later.");
-    expect(studio).not.toContain("Start with one customer-facing job.");
-    expect(studio).toContain('{posture === "personal" ? (');
-    expect(overview).toContain("{language.createCta}");
-    expect(overview).toContain("{language.createCtaShort}");
-    expect(overview).toContain("hasAgents ? (");
-    expect(overview).toContain('className="relative wl-overview-greeting text-left"');
-    // The time-of-day greeting is gone: it was the largest type on the most
-    // important screen in activation, carrying the least information on it, and
-    // it changed three times a day for no decision a visitor makes. On first
-    // run the activation panel's own heading is the page's title.
-    expect(overview).not.toContain("dayGreeting");
-    expect(overview).toContain('id="first-run-title" className="wl-app-page-title');
-    expect(overview).not.toContain("Let's put your first");
-    expect(overview).not.toContain("text-center");
-    expect(overview).toContain('className="relative wl-overview-greeting text-left"');
-    expect(overview).not.toContain("Reliable voice and behavior defaults are already selected.");
-    expect(overview).not.toContain("start the founder pair with personal + business");
-    expect(overview).toContain("degraded && !hasAgents");
-    expect(overview).toContain("WorkspaceRecovery");
+    expect(studio).toContain("Choose a role starter or make it entirely custom");
+    expect(studio).toContain('to={createHref()}');
+    expect(studio).not.toContain("posture=");
   });
 
-  it("aligns activation checklist with fleet setup progress (live call gate)", () => {
+  it("aligns activation checklist with fleet setup progress and the live call gate", () => {
     const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
     expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
