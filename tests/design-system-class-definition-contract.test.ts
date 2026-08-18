@@ -13,9 +13,7 @@ import { describe, expect, it } from "vitest";
  * design system CSS". The 176 call sites across 80 components stayed. Nothing
  * declared them any more, so every one of them silently fell back to inherited
  * body type — 16px, weight 400, Inter, no tracking, no caps — where an 11px
- * mono uppercase micro-label was intended. A `.wl-label` chip on /templates
- * rendered the word "voice" at full body size inside a pill built for a
- * micro-label.
+ * mono uppercase micro-label was intended.
  *
  * Every case audit before this one read stylesheets and came back clean,
  * because a stylesheet cannot show you the absence of a rule. Only measuring
@@ -33,10 +31,15 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 /**
  * Class names assembled at runtime (`wl-reveal-${i}`, `wl-chip--${tone}`) leave
  * only their prefix in the source, so a trailing `-` marks a fragment rather
- * than a class. `wl-caps-*` and `wl-font-*` are custom-property names, not
- * classes — they appear in `var(--wl-caps-…)`, never in a `className`.
+ * than a class. `wl-caps-*` and `wl-font-*` are legacy known variable families.
+ *
+ * Generic CSS custom properties are filtered structurally below by checking the
+ * two characters immediately before a `wl-*` token. This matters for typed
+ * React style objects such as `"--wl-bot-mark-wire"`: those are design tokens,
+ * not DOM classes, and a class-definition audit must not misclassify them.
  */
-const isFragmentOrVariable = (name: string) => name.endsWith("-") || /^wl-(caps|font)-/.test(name);
+const isFragmentOrKnownVariableFamily = (name: string) =>
+  name.endsWith("-") || /^wl-(caps|font)-/.test(name);
 
 describe("design system class definition contract", () => {
   const declared = (() => {
@@ -71,7 +74,9 @@ describe("design system class definition contract", () => {
       const text = source(file);
       for (const match of text.matchAll(/\b(wl-[a-zA-Z0-9_-]+)/g)) {
         const name = match[1];
-        if (isFragmentOrVariable(name) || isDeclared(name)) continue;
+        const at = match.index ?? 0;
+        const isCssCustomProperty = text.slice(Math.max(0, at - 2), at) === "--";
+        if (isCssCustomProperty || isFragmentOrKnownVariableFamily(name) || isDeclared(name)) continue;
         const seen = orphans.get(name) ?? [];
         if (!seen.includes(file)) seen.push(file);
         orphans.set(name, seen);
@@ -90,16 +95,11 @@ describe("design system class definition contract", () => {
   });
 
   it("declares the label tier the workspace and marketing surfaces both read", () => {
-    // Named explicitly because these four carry the most call sites in the
-    // product, and because their absence was invisible to every stylesheet-only
-    // audit that ran before it was measured in the browser.
     const caps = source("src/styles/uppercase-system.css");
     for (const name of ["wl-label", "wl-label-muted", "wl-micro-badge", "wl-insight-label"]) {
       expect(declared.has(name), `${name} must be declared by the design system`).toBe(true);
     }
 
-    // The tier reads the overline token like every other member of it, rather
-    // than restating a value.
     expect(caps).toMatch(
       /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?letter-spacing: var\(--wl-caps-label-tracking\);/,
     );
@@ -107,12 +107,6 @@ describe("design system class definition contract", () => {
       /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?text-transform: uppercase;/,
     );
 
-    // Declared inside `@layer components` on purpose. Unlayered rules beat
-    // Tailwind utilities in this build, and these call sites carry their own
-    // colors and weights (`wl-label text-brand`, `wl-label-muted
-    // hover:text-brand`). Unlayered, the tier would silently flatten 176
-    // intentional choices; layered, it supplies the floor and the call site
-    // keeps what it asked for.
     const layerBody = caps.match(/@layer components\s*\{([\s\S]*)\}/)?.[1] ?? "";
     expect(layerBody, "the label tier must sit in @layer components").toContain(".wl-label,");
   });
