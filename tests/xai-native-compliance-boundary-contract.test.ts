@@ -22,4 +22,23 @@ describe("native xAI compliance boundary", () => {
     expect(sentinel).toContain("eq(schema.signalPresence.userId, userId)");
     expect(sentinel).toContain("inArray(schema.signalPresence.customerNumber, candidates)");
   });
+
+  it("preserves fail-closed marketing classification after xAI attaches", () => {
+    const routes = read("src/routes/xai-voice-routes.ts");
+    const start = routes.indexOf("function outboundPurpose");
+    const end = routes.indexOf("async function resolveAgentContext", start);
+    const classifier = routes.slice(start, end);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    expect(classifier).toContain("isOutboundCallPurpose(value)");
+    expect(classifier).toContain('return isOutboundCallPurpose(value) ? value : "marketing_or_sales"');
+    expect(classifier).not.toContain('"service_or_requested"');
+
+    const attachment = routes.slice(
+      routes.indexOf("async function resolveOutboundSession"),
+      routes.indexOf('router.post(\n  "/api/webhooks/xai/voice"'),
+    );
+    expect(attachment).toContain("callPurpose: outboundPurpose(nativeVoice.call_purpose)");
+  });
 });
