@@ -1,0 +1,87 @@
+name: native-main-integration-repair-v5
+
+on:
+  push:
+    branches:
+      - cursor/native-xai-twilio-runtime-review-5789
+    paths:
+      - .github/workflows/native-main-integration-repair-v5.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-main-integration-repair-v2
+  cancel-in-progress: true
+
+jobs:
+  integrate:
+    if: github.actor != 'audit-bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply robust post-repair contracts and run the complete integration gate
+        shell: bash
+        env:
+          HUSKY: "0"
+          NODE_OPTIONS: "--max-old-space-size=6144"
+          CI: "true"
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/native-main-integrate-v3.sh")
+          text = path.read_text(encoding="utf-8")
+
+          repair = "python scripts/repair-native-main-integration.py\n"
+          postrepair = repair + "python scripts/native-main-postrepair-v5.py\n"
+          if "python scripts/native-main-postrepair-v5.py" not in text:
+              if repair not in text:
+                  raise SystemExit("base repair invocation not found")
+              text = text.replace(repair, postrepair, 1)
+
+          browser_gate = "npx playwright test \\\n"
+          if "npx playwright install --with-deps chromium" not in text:
+              if browser_gate not in text:
+                  raise SystemExit("targeted Playwright gate not found")
+              text = text.replace(
+                  browser_gate,
+                  "npx playwright install --with-deps chromium\n" + browser_gate,
+                  1,
+              )
+
+          cleanup_anchor = "rm -f .github/workflows/native-main-integration-repair-v4.yml\n"
+          if cleanup_anchor not in text:
+              prior = "rm -f .github/workflows/native-main-integration-repair-v3.yml\n"
+              if prior not in text:
+                  raise SystemExit("workflow cleanup anchor not found")
+              text = text.replace(prior, prior + cleanup_anchor, 1)
+
+          for cleanup in [
+              "rm -f .github/workflows/native-main-integration-repair-v5.yml\n",
+              "rm -f scripts/native-main-postrepair-v5.py\n",
+              "rm -f .audit/native-main-integration-repair-v4-failure.txt\n",
+              "rm -f .audit/native-main-integration-repair-v5-failure.txt\n",
+          ]:
+              if cleanup not in text:
+                  anchor = "rm -f scripts/native-main-integrate-v3.sh\n" if "scripts/" in cleanup else "rm -f .audit/native-main-integration-repair-v3-failure.txt\n"
+                  if cleanup.startswith("rm -f .github/"):
+                      anchor = cleanup_anchor
+                  if anchor not in text:
+                      raise SystemExit(f"cleanup anchor missing for {cleanup.strip()}")
+                  text = text.replace(anchor, anchor + cleanup, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          bash scripts/native-main-integrate-v3.sh
