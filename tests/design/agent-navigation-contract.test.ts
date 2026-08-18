@@ -42,6 +42,7 @@ describe("agent navigation contract", () => {
   const simpleVoicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
   const studioTestRoute = read("src/routes/agent-test-routes.ts");
+  const privateAgentTest = read("src/lib/private-agent-test.ts");
   const appRoutes = read("src/routes/AppRoutes.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const productCopy = read("src/lib/product-copy.ts");
@@ -140,8 +141,9 @@ describe("agent navigation contract", () => {
     expect(productCopy).toMatch(/What services do you offer/);
     expect(productCopy).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
-    expect(studioTestRoute).toMatch(/Reply only as the customer-facing voice agent/);
-    expect(studioTestRoute).toMatch(
+    expect(studioTestRoute).toMatch(/loadPrivateAgentTestContext/);
+    expect(privateAgentTest).toMatch(/Reply only as the customer-facing voice agent/);
+    expect(privateAgentTest).toMatch(
       /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
     );
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);

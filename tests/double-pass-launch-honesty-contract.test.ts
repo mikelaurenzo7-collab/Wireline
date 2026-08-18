@@ -307,7 +307,7 @@ describe("double-pass launch honesty", () => {
       ["src/routes/agent-routes-v2.ts", 1],
       ["src/routes/mobile-routes.ts", 1],
       ["src/routes/agent-workspace-routes.ts", 1],
-      ["src/routes/agent-test-routes.ts", 1],
+      ["src/lib/private-agent-test.ts", 1],
     ]);
 
     for (const [path, expectedBatches] of expectedTransactionBatches) {

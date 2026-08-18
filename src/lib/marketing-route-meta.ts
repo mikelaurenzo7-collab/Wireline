@@ -136,7 +136,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "Developer Portal | Wireline",
     description:
-      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys.",
+      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Create an account, build your first voice agent in the chat you already use, then continue in Studio. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | Wireline",
