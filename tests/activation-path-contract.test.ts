@@ -9,39 +9,38 @@ describe("activation path contract", () => {
   it("routes every fresh signup into the same Studio create flow", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
     expect(authRedirect).toContain('return "/studio?create=1"');
-    expect(authRedirect).not.toContain('"/studio?create=1&posture=business"');
+    expect(authRedirect).not.toContain("create=1&posture=");
   });
 
-  it("documents ops activation checklist", () => {
+  it("documents the deferred operations checklist", () => {
     const doc = read("docs/OPS_CREDENTIALS_CHECKLIST_2026-07-07.md");
     expect(doc).toContain("FEDERAL_DNC");
     expect(doc).toContain("SENTRY_DSN");
   });
 
-  it("mounts a unified Bot activation path on Overview and Studio", () => {
+  it("mounts one Bot activation path across Overview and Studio", () => {
     const overview = read("src/pages/OverviewPage.tsx");
+    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunWorkspace");
-    expect(overview).toContain("Build Your Bot");
-    expect(overview).toContain("Create Your Own");
-    expect(overview).toContain("Browse Templates");
-    expect(overview).toContain('to="/studio?create=1"');
-    expect(overview).toContain('to="/templates"');
     expect(overview).toContain("degraded && !hasBots");
     expect(overview).toContain("WorkspaceRecovery");
-    expect(overview).not.toContain("posture=");
-    expect(overview).not.toContain("personalAgents");
-    expect(overview).not.toContain("businessAgents");
-    expect(overview).not.toContain("dayGreeting");
-
-    const studio = read("src/components/StudioWorkspaceV2.tsx");
-    expect(studio).toContain("Start with one job");
+    expect(firstRun).toContain("Build Your Bot");
+    expect(firstRun).toContain("Create Your Own");
+    expect(firstRun).toContain("Browse Templates");
+    expect(firstRun).toContain('to="/studio?create=1"');
+    expect(firstRun).toContain('to="/templates"');
+    expect(studio).toContain("Start With One Job");
     expect(studio).toContain("Choose a role starter or make it entirely custom");
     expect(studio).toContain('to={createHref()}');
-    expect(studio).not.toContain("posture=");
+    expect(`${overview}\n${firstRun}\n${studio}`).not.toMatch(
+      /posture=|personalAgents|businessAgents|dayGreeting/,
+    );
   });
 
-  it("aligns activation checklist with fleet setup progress and the live call gate", () => {
+  it("aligns the activation checklist with verifiable live-work progress", () => {
     const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
     expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
@@ -68,14 +67,16 @@ describe("activation path contract", () => {
     expect(nudge).toContain("scope: activationScope");
   });
 
-  it("keeps post-create setup honest and focused", () => {
+  it("keeps post-create setup resumable, honest, and focused", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
-    expect(wizard).toContain('["train", "wire", "test"]');
+    expect(wizard).toContain('value === "train"');
+    expect(wizard).toContain('value === "wire"');
+    expect(wizard).toContain('value === "test"');
+    expect(wizard).toContain('const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]');
     expect(wizard).toContain("onTestCompleted");
     expect(wizard).toContain('event: "test_call_completed"');
     expect(wizard).toContain('result: "assistant_response_completed"');
-    expect(wizard).toContain("testStarted ?");
     expect(wizard).toContain("Finish without a test");
     expect(copy).toContain("Optional: review what your agent learned");
     expect(copy).toContain('label: "Number"');

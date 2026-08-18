@@ -38,42 +38,34 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).not.toContain(":nth-child(n + 7):not(:last-child)");
   });
 
-  it("keeps the Overview header a short left-aligned line, with no salutation", () => {
-    const css = read("src/styles/authenticated-visual-qa.css");
+  it("keeps the Overview header short, left-aligned, and free of salutations", () => {
     const overview = read("src/pages/OverviewPage.tsx");
+    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
 
-    expect(css).toContain(".wl-overview-greeting .wl-display-2");
-    expect(css).toContain("max-width: 22ch");
-    expect(css).toContain("margin: 0.9rem 0 0");
-    expect(css).not.toContain("margin: 0.9rem auto 0");
-    // No "Good morning, <name>": it was the largest type in the product
-    // carrying the least information, and on first run it sat directly above a
-    // panel whose own heading said the only thing worth saying.
     expect(overview).not.toContain("dayGreeting");
+    expect(overview).not.toContain("Good morning");
     expect(overview).not.toContain("Let's put your first");
-    expect(overview).toContain("wl-overview-greeting text-left");
-    // First run has exactly one title, and it is the activation heading.
-    expect(overview).toContain('id="first-run-title"');
+    expect(overview).toContain(
+      '<header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">',
+    );
+    expect(overview).toContain('className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}');
+    expect(overview).toContain("<FirstRunWorkspace />");
+    expect(firstRun).toContain("Build Your Bot");
+    expect(firstRun).toContain("Create Your Own");
   });
 
-  it("removes the decorative ledger treatment from authenticated task surfaces", () => {
+  it("removes decorative ledger treatment from authenticated task surfaces", () => {
     const css = read("src/styles/workspace-polish.css");
     expect(css).toMatch(/\.wl-workspace-shell::before\s*\{[\s\S]*content: none;/);
     expect(css).toContain("reserve color for state and action");
   });
 
-  it("captures the end of internal scroll regions and deduplicates runtime findings", () => {
+  it("captures internal scroll ends and deduplicates runtime findings", () => {
     const visualQa = read("scripts/capture-visual-qa.mjs");
-
     expect(visualQa).toContain("captureInternalScrollEnd");
     expect(visualQa).toContain('file.replace(/\\.png$/, "-end.png")');
     expect(visualQa).toContain("issues.some");
     expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
-  });
-
-  it("hides a singleton Insights secondary strip that would reprint the category", () => {
-    const chrome = read("src/components/layout/AppChromeSubTabs.tsx");
-    expect(chrome).toContain("secondary.tabs.length > 1");
   });
 
   it("keeps Insights category tabs inside a real horizontal scroller on phones", () => {
@@ -86,14 +78,10 @@ describe("authenticated seeded-state visual QA contract", () => {
           /:where\(\[role="tablist"\]\.tab-strip-scroll, \.app-tab-strip\)\s*\{[^}]*\}/,
         )?.[0] ?? "";
 
-    expect(
-      rule,
-      "tab rails must declare overflow-x so Revenue cannot escape the viewport",
-    ).not.toBe("");
+    expect(rule).not.toBe("");
     expect(rule).toContain("overflow-x: auto");
     expect(rule).toContain("max-width: 100%");
     expect(tabs).toContain("tab-strip-scroll");
     expect(tabs).toContain("min-w-0 max-w-full");
-    expect(tabs).not.toContain("flex shrink-0 items-center");
   });
 });

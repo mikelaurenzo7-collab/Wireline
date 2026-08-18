@@ -3,10 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
-
-function read(path: string) {
-  return readFileSync(resolve(root, path), "utf8");
-}
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("Fast Start native voice contract", () => {
   const createDialog = read("src/components/CreateAgentDialog.tsx");
@@ -18,16 +15,14 @@ describe("Fast Start native voice contract", () => {
     expect(createDialog).not.toMatch(/authFetch\("\/api\/voices"\)/);
     expect(createDialog).not.toMatch(/playVoicePreview|ElevenLabs|xAI/);
     expect(createDialog).not.toMatch(/VoicePickerField|VoiceGallery/);
-    expect(createDialog).toContain("Not now");
+    expect(createDialog).toContain("Not Now");
   });
 
-  it("resolves every new employee to a managed phone voice", () => {
-    // Studio's managed picker writes curated Vapi voices; the live factory
-    // clamps anything else to the managed default before a call is placed.
-    expect(voicePicker).toMatch(/VAPI_CURATED_VOICES/);
-    expect(voicePicker).toMatch(/provider: "vapi"/);
-    expect(factory).toMatch(/buildManagedVoiceRuntime/);
-    expect(managedRuntime).toMatch(/isManagedVapiVoiceId/);
-    expect(managedRuntime).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
+  it("resolves every new Bot to a managed phone voice", () => {
+    expect(voicePicker).toContain("VAPI_CURATED_VOICES");
+    expect(voicePicker).toContain('provider: "vapi"');
+    expect(factory).toContain("buildManagedVoiceRuntime");
+    expect(managedRuntime).toContain("isManagedVapiVoiceId");
+    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
   });
 });

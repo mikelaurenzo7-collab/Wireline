@@ -17,7 +17,6 @@ function tsxFiles(dir: string): string[] {
   return out;
 }
 
-/** Surfaces that branch on an empty Bot/agent roster and offer creation. */
 function rosterEmptyStateSurfaces(): string[] {
   const emptyBranch = /\b\w*[Aa]gents\.length === 0\b|!\w*agents\.length\b/;
   return tsxFiles(SRC)
@@ -59,7 +58,7 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(redefinitions).toEqual([]);
   });
 
-  it("checks degraded before falling through to the first-run state", () => {
+  it("checks degraded before falling through to first run", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const recovery = studio.indexOf("agents.length === 0 && degraded");
     const emptyState = studio.indexOf("return <StudioEmptyState");
@@ -71,16 +70,13 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(dialGuard).toBeGreaterThan(-1);
     expect(dialGuard).toBeLessThan(dial.indexOf("No voice agents with a phone line yet"));
 
-    const knowledge = read("src/pages/KnowledgePage.tsx");
-    expect(knowledge).toContain(
-      "degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />",
-    );
+    const overview = read("src/pages/OverviewPage.tsx");
+    expect(overview).toContain("degraded && !hasBots");
+    expect(overview).toContain("<WorkspaceRecovery onRetry={refresh} />");
   });
 
   it("still offers the unified create path when the roster is genuinely empty", () => {
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
-      "return <StudioEmptyState />",
-    );
+    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("return <StudioEmptyState />");
     expect(read("src/components/PhoneSetupPanel.tsx")).toContain(
       "agents.length === 0 && !agentsDegraded",
     );
@@ -88,9 +84,11 @@ describe("Bot roster: empty versus unreachable", () => {
       "Create and activate one in Studio",
     );
     const overview = read("src/pages/OverviewPage.tsx");
-    expect(overview).toContain("Create Your Own");
-    expect(overview).toContain('to="/studio?create=1"');
-    expect(overview).not.toContain("posture=");
+    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
+    expect(overview).toContain("<FirstRunWorkspace />");
+    expect(firstRun).toContain("Create Your Own");
+    expect(firstRun).toContain('to="/studio?create=1"');
+    expect(`${overview}\n${firstRun}`).not.toContain("posture=");
   });
 });
 
@@ -110,8 +108,11 @@ describe("Bot line readiness: attached, absent, or unknown", () => {
     expect(agentReadinessLabel(withoutLine, true)).not.toBe("Needs setup");
   });
 
-  it("keeps both label surfaces on the shared helper", () => {
-    for (const file of ["src/pages/OverviewPage.tsx", "src/components/WorkspaceShell.tsx"]) {
+  it("keeps both visible roster surfaces on the shared helper", () => {
+    for (const file of [
+      "src/components/overview/OverviewRail.tsx",
+      "src/components/WorkspaceShell.tsx",
+    ]) {
       const source = read(file);
       expect(source).toContain("agentReadinessLabel(");
       expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
@@ -120,9 +121,10 @@ describe("Bot line readiness: attached, absent, or unknown", () => {
 
   it("says on screen when the line lookup is what failed", () => {
     const overview = read("src/pages/OverviewPage.tsx");
+    const rail = read("src/components/overview/OverviewRail.tsx");
     expect(overview).toContain("phoneLookupDegraded ? (");
-    expect(overview).toContain("Line status unavailable");
-    expect(overview).toContain("agentReadinessLabel(bot, phoneLookupDegraded)");
+    expect(overview).toContain("Line Status Unavailable");
+    expect(rail).toContain("agentReadinessLabel(bot, phoneLookupDegraded)");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     expect(dial).toContain("(degraded || phoneLookupDegraded)");

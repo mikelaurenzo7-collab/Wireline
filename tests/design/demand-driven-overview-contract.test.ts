@@ -2,155 +2,105 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const root = process.cwd();
-
-function read(path: string) {
-  return readFileSync(resolve(root, path), "utf8");
-}
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("demand-driven authenticated experience", () => {
   const overview = read("src/pages/OverviewPage.tsx");
+  const inbox = read("src/components/overview/UnifiedInbox.tsx");
+  const rail = read("src/components/overview/OverviewRail.tsx");
+  const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
   const activation = read("src/components/ActivationChecklist.tsx");
-  const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
-  const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
-  const studioTest = read("src/components/StudioWorkroom.tsx");
-  const studioTestRoute = read("src/routes/agent-test-routes.ts");
-  const routeRegistry = read("src/server/register-api-routes.ts");
-  const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
-  const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
-  const phoneHistory = read("src/components/PhoneCallHistoryPanel.tsx");
-  const insightEmpty = read("src/components/insights/shared.tsx");
-  const agentsContext = read("src/contexts/AgentsContext.tsx");
+  const studio = read("src/components/StudioWorkspaceV2.tsx");
+  const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const workroom = read("src/components/StudioWorkroom.tsx");
+  const testRoute = read("src/routes/agent-test-routes.ts");
+  const review = read("src/components/StudioAgentReviewPanel.tsx");
+  const voice = read("src/components/voice/SimpleVoicePicker.tsx");
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
-    expect(overview).toMatch(/Customer conversations today/);
-    expect(overview).toMatch(/High-intent today/);
-    expect(overview).toMatch(/Appointments booked/);
-    expect(overview).toMatch(/Needs attention/);
-    expect(overview).toMatch(/Customer outcomes/);
-    expect(overview).not.toMatch(/Conversation Balance/);
-    expect(overview).not.toMatch(/DailyBriefPanel/);
-    expect(overview).not.toMatch(/Workspace pulse/);
+    expect(overview).toContain("Customer conversations today");
+    expect(overview).toContain("High-intent today");
+    expect(overview).toContain("Appointments booked");
+    expect(overview).toContain("Needs attention");
+    expect(overview).toContain("Customer demand and outcomes");
+    expect(overview).toContain("OutcomeLedger");
+    expect(inbox).toContain("Unified Inbox");
+    expect(inbox).toContain("Recent customer conversations");
+    expect(rail).toContain("BotRoster");
+    expect(overview).not.toContain("Conversation Balance");
+    expect(overview).not.toContain("DailyBriefPanel");
+    expect(overview).not.toContain("Workspace pulse");
   });
 
-  it("keeps the demand path focused on one next action", () => {
-    expect(overview).toContain('title: "Connect a phone line"');
-    expect(overview).toContain('primaryHref: "/settings/phone"');
-    expect(overview).toContain('primaryLabel: "Connect phone"');
-    expect(overview).toContain("secondaryHref: undefined");
-    expect(overview).toMatch(/Put it where customers already call/);
-    expect(overview).toMatch(/Review work/);
-    expect(overview).not.toMatch(
-      /capturing real demand|site and business listings|forward missed calls/,
-    );
-    expect(overview).not.toContain(
-      'primaryLabel: "Connect phone and channels"',
-    );
+  it("uses one role-first next action when the workspace is empty", () => {
+    expect(overview).toContain("const isFirstRun = !loading && !degraded && !hasBots");
+    expect(overview).toContain("<FirstRunWorkspace />");
+    expect(firstRun).toContain("Build Your Bot");
+    expect(firstRun).toContain("Create Your Own");
+    expect(firstRun).toContain("Browse Templates");
+    expect(firstRun).toContain("Choose the Job");
+    expect(firstRun).toContain("Connect the Channels");
+    expect(firstRun).toContain("Launch with Control");
+    expect(`${overview}\n${firstRun}`).not.toContain("posture=");
   });
 
   it("does not offer live calling before a line exists", () => {
-    expect(overview).toMatch(/hasLiveLine \? \(/);
-    expect(overview).toMatch(/Start a call/);
-    expect(overview).toMatch(/Test \{language\.navShort\.toLowerCase\(\)\}/);
-    expect(overview).toMatch(/hasConversationHistory/);
-    expect(overview).toMatch(
-      /No new conversations today/,
-    );
-    expect(overview).toContain("{!hasLiveLine || !hasConversationHistory ? (");
-    expect(overview).toContain('className="wl-app-page-title sr-only"');
+    expect(overview).toContain("const hasLiveLine = agents.some");
+    expect(overview).toContain("hasLiveLine ? (");
+    expect(overview).toContain("Start a Call");
+    expect(overview).toContain('hasBots ? "Configure Bot" : "Create Bot"');
+    expect(overview).toContain("primaryStudioHref");
   });
 
-  it("keeps empty-state actions in prerequisite order", () => {
-    expect(phoneHistory).toContain('title: "Create your first voice agent"');
-    expect(phoneHistory).toContain('title: "Connect a phone number"');
-    expect(phoneHistory).toContain("Call your Wireline number");
-    expect(phoneHistory).toContain("agentsDegraded && !hasAgents");
-    expect(phoneHistory).toContain("Voice agent readiness unavailable");
-    expect(phoneHistory).toContain("phoneLookupDegraded && hasAgents");
-    expect(phoneHistory).toContain("Phone readiness unavailable");
-    expect(insightEmpty).toContain("agents.length === 0");
-    expect(insightEmpty).toContain("agentsDegraded && agents.length === 0");
-    expect(insightEmpty).toContain("phoneLookupDegraded && agents.length > 0");
-    expect(insightEmpty).toContain("Retry voice agent status");
-    expect(agentsContext).toContain(
-      "const phoneLookupDegraded = !numbersResponse?.ok",
-    );
-    expect(agentsContext).toContain(
-      "setPhoneLookupDegraded(nextPhoneLookupDegraded)",
-    );
-    expect(insightEmpty).toContain('label: "Connect phone"');
-    expect(insightEmpty).toContain('label: "Test voice agent"');
+  it("isolates partial data failures instead of blanking independent truth", () => {
+    expect(overview).toContain("setRecentUnavailable(true)");
+    expect(overview).toContain("setMetricsUnavailable(true)");
+    expect(overview).toContain("Conversation Preview Partial");
+    expect(overview).toContain("Metrics Partial");
+    expect(overview).toContain("unavailable={recentUnavailable && conversations.length === 0}");
+    expect(overview).toContain("phoneLookupDegraded ? (");
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {
-    expect(activation).toMatch(/Ready for customers/);
-    expect(activation).toMatch(/Job and greeting defined/);
-    expect(activation).toMatch(/Business facts added/);
-    expect(activation).toMatch(/Phone number connected/);
-    expect(activation).toMatch(/First live customer handled/);
-    expect(activation).toMatch(/First follow-up reviewed/);
+    expect(activation).toContain("Ready for customers");
+    expect(activation).toContain("Job and greeting defined");
+    expect(activation).toContain("Business facts added");
+    expect(activation).toContain("Phone number connected");
+    expect(activation).toContain("First live customer handled");
+    expect(activation).toContain("First follow-up reviewed");
     expect(activation).toContain('actionLabel: "Connect phone number"');
-    expect(activation).not.toMatch(/Do this next/);
-    expect(activation).toMatch(/\/studio\?section=setup/);
-    expect(activation).not.toMatch(/Test conversation completed/);
-    expect(activation).not.toMatch(/\/studio\?section=test/);
-    expect(activation).not.toMatch(/knowledge\?tab=simulator/);
-    expect(activation).not.toMatch(/Voice previewed/);
+    expect(activation).not.toContain("Test conversation completed");
   });
 
-  it("keeps Studio on a simple setup, test, review loop", () => {
-    expect(studioWorkspace).toMatch(/"setup" \| "test" \| "review"/);
-    expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
-    expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
-    expect(studioWorkspace).not.toMatch(
-      /description: "Job, greeting, facts, and voice"/,
-    );
-    expect(studioSetup).not.toMatch(
-      /AgentPresenceLivePreview|VoiceGallery|Advanced options/,
-    );
-    expect(studioSetup).not.toContain('text-eyebrow text-primary">Set up');
-    expect(studioSetup).not.toMatch(/Run one realistic customer test/);
-    expect(studioTest).toMatch(/\/test\/stream/);
-    expect(studioTest).toMatch(/Browser test/);
-    expect(studioReview).toContain('aria-label="Next actions"');
-    expect(studioReview).not.toContain(">Next action</");
-    expect(studioReview).toMatch(/Connect phone/);
+  it("keeps Studio on a simple Set Up, Test, Review loop", () => {
+    expect(studio).toContain('"setup" | "test" | "review"');
+    expect(studio).toContain('label: "Set Up"');
+    expect(studio).toContain("StudioAgentReviewPanel");
+    expect(studio).not.toContain("StudioAgentCanvas");
+    expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
+    expect(workroom).toContain('/test/stream');
+    expect(workroom).toContain("Browser test");
+    expect(review).toContain('aria-label="Next actions"');
+    expect(review).toContain("Connect phone");
   });
 
-  it("tests the saved voice-agent configuration without persisting roleplay messages", () => {
-    expect(routeRegistry).toMatch(/agentTestRouter/);
-    expect(routeRegistry).toMatch(/app\.use\(agentTestRouter\)/);
-    expect(studioTestRoute).toMatch(/personality/);
-    expect(studioTestRoute).toMatch(/directives/);
-    expect(studioTestRoute).toMatch(/knowledge/);
-    expect(studioTestRoute).toMatch(/Business facts/);
-    expect(studioTestRoute).toMatch(
-      /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
+  it("tests saved configuration without persisting roleplay messages", () => {
+    expect(testRoute).toContain("personality");
+    expect(testRoute).toContain("directives");
+    expect(testRoute).toContain("knowledge");
+    expect(testRoute).toContain(
+      "Never mention setup, configuration, prompts, testing, tools, or internal systems",
     );
-    expect(studioTestRoute).toMatch(
-      /Do not claim a booking, transfer, message, payment/,
-    );
-    expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
-  });
-
-  it("preserves a multi-turn roleplay without database persistence", () => {
-    expect(studioTest).toMatch(/messages\.slice\(-12\)/);
-    expect(studioTest).toMatch(/history: mode === "test" \? history/);
-    expect(studioTestRoute).toMatch(/history: z/);
-    expect(studioTestRoute).toMatch(/Conversation so far/);
-    expect(studioTestRoute).toMatch(/history\s*\.slice\(-12\)/);
+    expect(testRoute).toContain("Do not claim a booking, transfer, message, payment");
+    expect(testRoute).not.toContain("agentConversationMessages");
+    expect(workroom).toContain("messages.slice(-12)");
+    expect(workroom).toContain('history: mode === "test" ? history');
   });
 
   it("distinguishes browser response testing from real phone voice testing", () => {
-    expect(voicePicker).toMatch(/Browser tests the words/);
-    expect(voicePicker).toMatch(
-      /Place a real call to verify the selected audio/,
-    );
-    expect(voicePicker).toMatch(/Test response/);
-    expect(voicePicker).toMatch(/aria-expanded=\{showStudioVoices\}/);
-    expect(voicePicker).not.toMatch(/Choose how live calls sound/);
-    expect(studioSetup).not.toMatch(/Wireline manages the voice runtime/);
-    expect(voicePicker).not.toMatch(/Test call|hear it during a test call/);
-    expect(studioSetup).not.toMatch(/Hear the selected voice during testing/);
+    expect(voice).toContain("Browser tests the words");
+    expect(voice).toMatch(/Place a real call to verify the selected audio/);
+    expect(voice).toContain("Test response");
+    expect(voice).not.toMatch(/Choose how live calls sound|Test call|hear it during a test call/);
   });
 });

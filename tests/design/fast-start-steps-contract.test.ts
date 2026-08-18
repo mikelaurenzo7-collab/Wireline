@@ -2,59 +2,50 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("Fast Start step flow contract", () => {
-  const createDialog = read("src/components/CreateAgentDialog.tsx");
+describe("Fast Start role-first flow contract", () => {
+  const create = read("src/components/CreateAgentDialog.tsx");
 
-  it("keeps create on a single brief-first screen", () => {
-    expect(createDialog).toContain("{language.setupPrompt}");
-    expect(createDialog).toContain("placeholder={briefPlaceholder}");
-    expect(createDialog).toContain('aria-label="Use case"');
-    expect(createDialog).toContain('aria-label="Quick briefs"');
-    expect(createDialog).toContain("language.createCta");
-    expect(createDialog).toContain("Not now");
-    expect(createDialog).not.toContain("useState<1 | 2>(1)");
-    expect(createDialog).not.toMatch(/Step [12] ·/);
-    expect(createDialog).not.toContain("continueToVoice");
+  it("keeps creation on one role-first screen", () => {
+    expect(create).toContain("{language.setupPrompt}");
+    expect(create).toContain("{language.setupDescription}");
+    expect(create).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(create).toContain("BOT_CHANNELS.map");
+    expect(create).toContain('aria-label="Bot role starters"');
+    expect(create).toContain('aria-label="Available Bot channels"');
+    expect(create).toContain("Describe the Job");
+    expect(create).toContain("language.createCta");
+    expect(create).toContain("Not Now");
+    expect(create).not.toContain("useState<1 | 2>(1)");
+    expect(create).not.toMatch(/Step [12] ·/);
+    expect(create).not.toContain("continueToVoice");
   });
 
-  it("opens every composer empty and leaves the writing to the customer", () => {
-    // A composer seeded with a real value — not a placeholder — hands the
-    // customer a box that already contains our sentence. The first thing they
-    // have to do is delete it, and if they do not, we create an agent trained on
-    // words they never wrote. Suggested starting points belong in the chips
-    // under the field and in the placeholder, both of which survive here.
-    expect(createDialog).toMatch(/setBrief\(\s*initialBrief\s*\)/);
-    expect(createDialog).not.toMatch(/setBrief\(\s*initialBrief\s*\|\|/);
-    // The house sentences are gone rather than merely unreferenced, so no later
-    // edit can quietly reintroduce them as a "sensible default".
-    expect(createDialog).not.toContain("defaultBrief");
-    expect(createDialog).toContain("placeholder={briefPlaceholder}");
-
-    // Submitting an empty composer must not substitute a brief either: with
-    // nothing to apply we skip training entirely instead of inventing copy.
-    expect(createDialog).toContain("const finalBrief = brief.trim();");
-    expect(createDialog).toMatch(/if \(finalBrief\) \{/);
-
-    // Same rule in Studio: the generated greeting is a placeholder, and the
-    // field only carries text once a saved greeting loads.
-    const studioPanel = read("src/components/StudioAgentWorkspacePanel.tsx");
-    expect(studioPanel).toMatch(
-      /const \[setupGreeting, setSetupGreeting\] = useState\(\s*""\s*\)/,
-    );
-    expect(studioPanel).toContain("placeholder={defaultGreeting}");
-    expect(studioPanel).not.toMatch(
-      /setSetupGreeting\([^)]*\|\|\s*defaultGreeting\)/,
-    );
+  it("starts custom creation empty while preserving explicit template intent", () => {
+    expect(create).toContain('BOT_ROLE_TEMPLATES.find((template) => template.key === "custom")');
+    expect(create).toContain('setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))');
+    expect(create).toContain("briefIsTemplateTextRef.current");
+    expect(create).toContain('template.key === "custom" ? "" : template.summary');
+    expect(create).toContain("const finalBrief = brief.trim() || selectedTemplate.summary");
+    expect(create).toContain("if (finalBrief) {");
+    expect(create).not.toContain("defaultBrief");
   });
 
-  it("hands off into Studio with the post-create wizard payload", () => {
-    expect(createDialog).toContain("stashPostCreateWizard(wizardPayload)");
-    expect(createDialog).toContain("onCreated?.(wizardPayload)");
-    expect(createDialog).toMatch(
-      /navigate\(`\/studio\?agent=\$\{encodeURIComponent\(body\.id\)\}`/,
+  it("creates a technical agent record but emits one-workspace Bot product semantics", () => {
+    expect(create).toContain('authFetch("/api/agents"');
+    expect(create).toContain("TECHNICAL_ROLE_BY_TEMPLATE");
+    expect(create).toContain('workspace_model: "one_workspace"');
+    expect(create).toContain('object: "bot"');
+    expect(create).not.toMatch(/setPosture|rolesForPosture/);
+  });
+
+  it("hands off into Studio with the resumable post-create wizard", () => {
+    expect(create).toContain("stashPostCreateWizard(wizardPayload)");
+    expect(create).toContain("onCreated?.(wizardPayload)");
+    expect(create).toContain("phoneProvisionRequested: false");
+    expect(create).toMatch(
+      /navigate\(`\/studio\?agent=\$\{encodeURIComponent\(body\.id\)\}&section=setup`/,
     );
   });
 });

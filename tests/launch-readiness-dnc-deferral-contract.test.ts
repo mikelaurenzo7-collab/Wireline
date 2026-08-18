@@ -34,12 +34,19 @@ describe("launch readiness DNC deferral", () => {
   it("does not make missing Federal DNC credentials a global runtime kill switch", () => {
     const federal = read("src/lib/federal-dnc-service.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
+    const startup = read("src/lib/startup.ts");
+
     expect(federal).toContain("assertFederalDncForMarketing");
     expect(federal).toContain("FEDERAL_DNC_DEFERRED");
+    expect(federal).toContain("allowed: true");
+    expect(federal).toContain('source: "unconfigured"');
     expect(federal).not.toContain('code?: "FEDERAL_DNC_NOT_CONFIGURED"');
-    expect(gate).toContain("assertFederalDncForMarketing");
+
+    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain("evaluateOutboundConsent");
+    expect(startup).toContain("deferred operations checklist item");
   });
 });

@@ -21,7 +21,7 @@ function loadSurfaces() {
 }
 
 describe("Studio Canvas vision contract", () => {
-  it("keeps the manifest as the single source of truth", () => {
+  it("keeps the design vision as the single source of truth", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
     expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
     expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
@@ -31,45 +31,41 @@ describe("Studio Canvas vision contract", () => {
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
   });
 
-  it("guards against old Studio patterns", () => {
+  it("guards against retired Studio and posture-split patterns", () => {
     const sources = loadSurfaces();
-
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN) as Array<
       [
         keyof typeof STUDIO_CANVAS_FORBIDDEN,
         (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN],
       ]
     >) {
-      const text = sources[surface];
       for (const rule of rules) {
-        expect(text, `${surface}:${rule.id}`).not.toMatch(rule.pattern);
+        expect(sources[surface], `${surface}:${rule.id}`).not.toMatch(rule.pattern);
       }
     }
   });
 
-  it("requires the Claude Studio shell, context chrome, chat, and spatial Agent Canvas", () => {
+  it("requires the neutral Studio shell, context chrome, setup, test, review, and unified Overview", () => {
     const sources = loadSurfaces();
-
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_REQUIRED) as Array<
       [
         keyof typeof STUDIO_CANVAS_REQUIRED,
         (typeof STUDIO_CANVAS_REQUIRED)[keyof typeof STUDIO_CANVAS_REQUIRED],
       ]
     >) {
-      const text = sources[surface];
       for (const rule of rules) {
-        expect(text, `${surface}:${rule.id}`).toMatch(rule.pattern);
+        expect(sources[surface], `${surface}:${rule.id}`).toMatch(rule.pattern);
       }
     }
   });
 
-  it("removes legacy workroom links from studio navigation surfaces", () => {
+  it("removes legacy workroom links from Studio navigation surfaces", () => {
     for (const path of STUDIO_CANVAS_LINK_SURFACES) {
       expect(read(path), path).not.toMatch(STUDIO_CANVAS_LEGACY_LINK_PATTERN);
     }
   });
 
-  it("composes studio home from the dedicated shell and canvas orchestrator", () => {
+  it("composes Studio home from the dedicated shell and workspace orchestrator", () => {
     const studioHome = read(STUDIO_CANVAS_SURFACES.studioHome);
     expect(studioHome).toContain("StudioPageShell");
     expect(studioHome).toContain("StudioContextChrome");
@@ -77,18 +73,26 @@ describe("Studio Canvas vision contract", () => {
     expect(studioHome).not.toContain("StudioAgentBar");
   });
 
-  it("keeps deploy-time Overview behavior in lockstep with the TypeScript manifest", () => {
+  it("keeps deploy-time Overview rules in lockstep with the TypeScript manifest", () => {
     const tsManifest = read("src/lib/studio-canvas-contract.ts");
     const deployManifest = read("scripts/lib/studio-canvas-contract.mjs");
-    const previewPattern = String.raw`/OVERVIEW_AGENT_PREVIEW\s*=\s*6/`;
-    const overflowPattern = String.raw`/overflowCount[\s\S]*more in Studio/`;
-    for (const manifest of [tsManifest, deployManifest]) {
-      expect(manifest).toContain(
-        `{ id: "agent-preview-cap", pattern: ${previewPattern} }`,
-      );
-      expect(manifest).toContain(
-        `{ id: "agent-overflow-link", pattern: ${overflowPattern} }`,
-      );
+
+    for (const id of [
+      "overview-title",
+      "unified-inbox",
+      "bot-roster",
+      "configuration-surface",
+      "create-entry",
+      "template-entry",
+      "operating-metrics",
+      "recent-conversations",
+    ]) {
+      expect(tsManifest, id).toContain(`id: "${id}"`);
+      expect(deployManifest, id).toContain(`id: "${id}"`);
+    }
+    for (const retired of ["agent-preview-cap", "agent-overflow-link"]) {
+      expect(tsManifest).not.toContain(retired);
+      expect(deployManifest).not.toContain(retired);
     }
   });
 });
