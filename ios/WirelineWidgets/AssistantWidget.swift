@@ -12,8 +12,8 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "wireline://agents"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Wireline Bots")
-        .description("Open your Wireline Bots for coverage, handoff, and live work.")
+        .configurationDisplayName("WIRELINE Bots")
+        .description("Open your WIRELINE Bots for coverage, handoff, and live work.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 
@@ -97,7 +97,7 @@ private struct AssistantWidgetView: View {
             .padding(16)
             .background(WidgetColors.panel)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Wireline Bots. All active calls screened.")
+            .accessibilityLabel("WIRELINE Bots. All active calls screened.")
         }
     }
 }
