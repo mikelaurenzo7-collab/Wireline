@@ -1,5 +1,5 @@
 name: native-main-merge-integration
-# Sole authoritative exact-head gate after removing competing repair workflows.
+# Exact-head gate retriggered after final contract corrections and v3 cleanup.
 
 on:
   push:
