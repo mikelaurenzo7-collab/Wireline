@@ -1,7 +1,8 @@
 import WidgetKit
 import SwiftUI
 
-/// Deep-link launcher for agent handoff.
+/// Deep-link launcher for Bot coverage and handoff. The `agents` URL remains a
+/// compatibility route while every visible surface uses the Bot product name.
 struct AssistantWidget: Widget {
     let kind = "AssistantWidget"
 
@@ -11,8 +12,8 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "wireline://agents"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Wireline Agents")
-        .description("Open Wireline agents for coverage, handoff, and live work.")
+        .configurationDisplayName("Wireline Bots")
+        .description("Open your Wireline Bots for coverage, handoff, and live work.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 
@@ -37,30 +38,30 @@ private struct AssistantWidgetView: View {
         case .accessoryCircular:
             ZStack {
                 AccessoryWidgetBackground()
-                Image(systemName: "sparkles")
+                Image(systemName: "waveform.and.person.filled")
                     .font(Brand.displayLarge)
             }
         case .accessoryRectangular:
             HStack(spacing: 8) {
-                Image(systemName: "sparkles")
+                Image(systemName: "waveform.and.person.filled")
                     .font(Brand.h1)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Agents")
+                    Text("BOTS")
                         .font(Brand.h1)
-                    Text("Tap to route call")
+                    Text("TAP TO ROUTE CALL")
                         .font(Brand.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         case .systemMedium:
             HStack(spacing: 14) {
-                Image(systemName: "sparkles")
+                Image(systemName: "waveform.and.person.filled")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                     .frame(width: 44, height: 44)
                     .background(WidgetColors.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Wireline Agents").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
+                    Text("WIRELINE BOTS").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
                     Text("Coverage, handoff, and live work.")
                         .font(Brand.caption)
                         .foregroundStyle(WidgetColors.text2)
@@ -77,18 +78,18 @@ private struct AssistantWidgetView: View {
         default:
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "waveform.and.person.filled")
                         .font(Brand.bodyStrong)
                         .foregroundStyle(WidgetColors.accent)
                     Spacer()
                 }
                 Spacer()
-                Text("100% Coverage")
+                Text("100% COVERAGE")
                     .font(Brand.h1)
                     .foregroundStyle(WidgetColors.accent)
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)
-                Text("All active calls screened")
+                Text("All active calls screened.")
                     .font(.caption)
                     .foregroundStyle(WidgetColors.text2)
             }
@@ -96,7 +97,7 @@ private struct AssistantWidgetView: View {
             .padding(16)
             .background(WidgetColors.panel)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Wireline agents, all active calls screened")
+            .accessibilityLabel("Wireline Bots. All active calls screened.")
         }
     }
 }
