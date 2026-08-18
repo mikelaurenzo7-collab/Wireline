@@ -18,9 +18,9 @@ COMMENT ON TABLE public.wireline_xai_phone_bindings IS
 
 -- RLS must not expose retired provider credentials to another tenant. This
 -- SECURITY DEFINER claim boundary performs the only permitted cross-owner
--- transition after proving the requesting tenant currently owns and assigns the
--- exact Wireline phone line. The advisory lock and row lock make claim/reuse
--- serializable across serverless workers.
+-- transition after proving the transaction tenant currently owns and assigns
+-- the exact Wireline phone line. The advisory lock and row locks make claim/
+-- reuse serializable across serverless workers.
 CREATE OR REPLACE FUNCTION public.wireline_claim_xai_phone_binding(
   p_user_id uuid,
   p_agent_id text,
@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION public.wireline_claim_xai_phone_binding(
 RETURNS TABLE(binding_id uuid, claim_token uuid, reused boolean)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public, pg_temp
+SET search_path = ''
 AS $$
 DECLARE
   v_binding public.wireline_xai_phone_bindings%ROWTYPE;
@@ -40,17 +40,28 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_INVALID_CLAIM';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-      FROM public.wireline_phone_numbers AS phone
-     WHERE phone.user_id = p_user_id
-       AND phone.agent_id = p_agent_id
-       AND phone.phone_number = p_phone_number
-  ) THEN
-    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_OWNERSHIP_MISMATCH';
+  -- A SECURITY DEFINER function may bypass table RLS. Bind the supplied owner
+  -- to Wireline's transaction-local authenticated tenant before touching any
+  -- retained provider credential or taking a caller-selected lock.
+  IF public.wireline_current_user_id() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'XAI_PHONE_TENANT_MISMATCH';
   END IF;
 
   PERFORM pg_advisory_xact_lock(hashtext('xai-phone:' || p_phone_number));
+
+  -- Lock the exact Wireline ownership row under the same serialization
+  -- boundary as the retained registration. Reassignment or release cannot pass
+  -- the proof and then change ownership before this claim completes.
+  PERFORM 1
+    FROM public.wireline_phone_numbers AS phone
+   WHERE phone.user_id = p_user_id
+     AND phone.agent_id = p_agent_id
+     AND phone.phone_number = p_phone_number
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_OWNERSHIP_MISMATCH';
+  END IF;
 
   SELECT *
     INTO v_binding
@@ -124,7 +135,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.wireline_claim_xai_phone_binding(uuid, text, text, uuid)
-  FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.wireline_claim_xai_phone_binding(uuid, text, text, uuid)
+  FROM PUBLIC, anon, authenticated, service_role;
+
 GRANT EXECUTE ON FUNCTION public.wireline_claim_xai_phone_binding(uuid, text, text, uuid)
   TO wireline_server;
