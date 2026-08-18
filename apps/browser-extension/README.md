@@ -1,10 +1,10 @@
-# Wireline Command
+# WIRELINE Command
 
-Wireline Command is a privacy-minimal browser command surface for Wireline Studio.
+WIRELINE Command is a privacy-minimal browser command surface for WIRELINE Studio.
 
-The website remains the full operating system for setup, billing, training, Wire (connections), Phone, Inbox, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants Wireline to act with that page as context.
+The website remains the full operating system for setup, billing, Knowledge, Connections, Phone, Inbox, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants WIRELINE to act with that page as context.
 
-It lets a signed-in Wireline customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all agent configuration, authorization, consent, billing, and launch controls remain server-owned.
+It lets a signed-in WIRELINE customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all Bot configuration, authorization, consent, billing, and launch controls remain server-owned.
 
 ## What it supports
 
@@ -17,8 +17,8 @@ It lets a signed-in Wireline customer deliberately bring the active page, text t
 - Prepare a call from the current page or a `tel:` link.
 - Draft a text from page context.
 - Create a follow-up from selected text.
-- Send an agent task into Studio.
-- Jump to Agents, Integrations, Usage, or Studio.
+- Send a Bot task into Studio.
+- Jump to Bots, Connections, Phone, Inbox, Knowledge, or Studio.
 
 ## Privacy contract
 
@@ -27,19 +27,19 @@ The baseline package intentionally has:
 - no `host_permissions`
 - no `<all_urls>` access
 - no persistent content script
-- no Wireline session-token storage
+- no WIRELINE session-token storage
 - no background sync or page harvesting
 
 The extension reads the active page only after a user action. It captures a constrained title, URL, meta description, and explicit selection; it opens Studio with that context inside the URL fragment so the browser does not send it as part of the initial HTTP request. Studio immediately removes the fragment and presents the material as reference-only text for the user to review.
 
 ## Explicit context workflows
 
-Wireline Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
+WIRELINE Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
 
 1. **Prepare call from this page** — send the active page title/URL/selection only after the user clicks the command, then ask for call confirmation in Studio before any live call.
-2. **Extract facts into Training** — turn selected page context into proposed knowledge or directives that the Account Holder can review.
+2. **Extract facts into Knowledge** — turn selected page context into proposed knowledge or directives that the customer can review.
 3. **Draft follow-up** — use the current page or selection to draft a text/email/call recap without sending it automatically.
-4. **Send to Studio** — hand the context to the selected agent workroom for review, simulation, or next action.
+4. **Send to Studio** — hand the context to the selected Bot workroom for review, simulation, or next action.
 
 Non-negotiables: no broad host permissions, no silent page harvesting, no browser token storage, and no background CRM mirror.
 
@@ -63,7 +63,7 @@ The build generates the browser-required PNG icon sizes from `assets/icon.svg` a
 
 ## In-product install (preferred)
 
-Signed-in customers install from **Apps → Wireline Command** (`/settings/apps/command`).
+Signed-in customers install from **Apps → WIRELINE Command** (`/settings/apps/command`).
 That page serves the same zips the build copies into `public/downloads/`:
 
 ```text
@@ -79,7 +79,7 @@ Rebuild with `node apps/browser-extension/scripts/build.mjs` whenever shipping a
 2. Prefer the in-product download page, or load `dist/chromium` as an unpacked extension in Chrome, Edge, or Opera.
 3. Load `dist/firefox` as a temporary add-on in Firefox.
 4. Test the toolbar action, selected-text context menu, page context menu, `tel:` link context menu, and `Ctrl/Command+Shift+Y` shortcut.
-5. Confirm quick commands exist for Call, Text, Follow-up, and Agent task.
+5. Confirm quick commands exist for Call, Text, Email, and Bot task.
 6. Confirm Studio opens with the prefilled brief, the context is visibly labeled as reference, and the URL fragment is removed.
 7. Confirm restricted pages do not break the extension and cannot be silently inspected.
 
