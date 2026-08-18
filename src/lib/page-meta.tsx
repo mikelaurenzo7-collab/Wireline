@@ -9,12 +9,16 @@ interface PageMetaProps {
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const BRAND_SUFFIX = " | Wireline";
+const BRAND_SUFFIX = " | WIRELINE";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE";
 const DEFAULT_DESCRIPTION =
   "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.";
+
+function brandTitle(value: string): string {
+  return value.replace(/\bWireline\b/gi, "WIRELINE");
+}
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
@@ -69,10 +73,11 @@ export function PageMeta({
   noIndex,
   structuredData,
 }: PageMetaProps) {
-  const fullTitle = title
-    ? /\bWireline\b/i.test(title)
-      ? title
-      : `${title}${BRAND_SUFFIX}`
+  const normalizedTitle = brandTitle(title || "");
+  const fullTitle = normalizedTitle
+    ? /\bWIRELINE\b/.test(normalizedTitle)
+      ? normalizedTitle
+      : `${normalizedTitle}${BRAND_SUFFIX}`
     : DEFAULT_TITLE;
   const resolvedDescription = description || DEFAULT_DESCRIPTION;
   const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
