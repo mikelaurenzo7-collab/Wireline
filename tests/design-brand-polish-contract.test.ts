@@ -36,6 +36,32 @@ describe("E2E design and brand polish", () => {
     expect(dialog).toContain("overflow-y-auto overscroll-contain");
   });
 
+  it("keeps authenticated hierarchy task-first and separates Bot selection from status", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const refinement = read("src/styles/system-aesthetic-refinement.css");
+    const selectedRule =
+      withoutComments(refinement).match(
+        /\.wl-rail-agent-link\[aria-current="page"\]\s*\{[\s\S]*?\}/,
+      )?.[0] ?? "";
+
+    expect(shell).toContain("wl-task-header");
+    expect(shell).toContain("md:grid-cols-[minmax(0,1fr)_auto]");
+    expect(shell).toContain("items-start text-left");
+    expect(shell).not.toContain("wl-centered-header");
+    expect(shell).not.toContain("wireline-color-feedback-success-border");
+    expect(shell).not.toContain("wireline-color-feedback-success-surface");
+    expect(shell).toContain('import BotMark from "./BotMark"');
+    expect(shell).toContain("seed={agent.id}");
+    expect(shell).toContain("name={agent.name}");
+    expect(shell).toContain("data-wireline-bot-selected");
+
+    expect(selectedRule).not.toBe("");
+    expect(selectedRule).toContain("--wireline-color-action-primary-default");
+    expect(selectedRule).not.toContain("status-success");
+    expect(selectedRule).not.toContain("status-warning");
+    expect(selectedRule).not.toContain("status-error");
+  });
+
   it("casts public headings in the uppercase title tier and keeps supporting copy in sentence case", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polish = read("src/styles/e2e-design-polish.css");
@@ -89,12 +115,23 @@ describe("E2E design and brand polish", () => {
     expect(polish).toContain("line-height: 1");
   });
 
-  it("loads the terminal design contract after responsive and modal overrides", () => {
+  it("loads terminal design refinements after responsive/modal layers in deliberate order", () => {
     const index = read("src/index.css");
     const modalAt = index.indexOf('@import "./styles/modal-hierarchy.css";');
     const polishAt = index.indexOf('@import "./styles/e2e-design-polish.css";');
+    const prestigeAt = index.indexOf('@import "./styles/prestige-polish.css";');
+    const aestheticAt = index.indexOf('@import "./styles/system-aesthetic-refinement.css";');
+    const safeAreaAt = index.indexOf('@import "./styles/safe-area-ownership.css";');
+    const botMarkAt = index.indexOf('@import "./styles/bot-mark.css";');
+    const designSystemAt = index.indexOf('@import "./styles/design-system.css";');
+
     expect(modalAt).toBeGreaterThan(-1);
     expect(polishAt).toBeGreaterThan(modalAt);
+    expect(prestigeAt).toBeGreaterThan(polishAt);
+    expect(aestheticAt).toBeGreaterThan(prestigeAt);
+    expect(safeAreaAt).toBeGreaterThan(aestheticAt);
+    expect(botMarkAt).toBeGreaterThan(designSystemAt);
+    expect(botMarkAt).toBeLessThan(modalAt);
   });
 
   it("keeps public navigation and mobile conversion targets clear", () => {
@@ -110,12 +147,16 @@ describe("E2E design and brand polish", () => {
     expect(footer).toContain("min-h-11 items-center");
   });
 
-  it("keeps status and CTA foregrounds on their accessible design tokens", () => {
+  it("keeps status and CTA foregrounds on accessible tokens while demos use Bot Marks directly", () => {
     const demo = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(demo).toContain('import AgentFace from "../AgentFace"');
+    expect(demo).toContain('import BotMark from "../BotMark"');
     expect(demo).toContain("<SignalOrbFrame");
-    expect(demo).toContain("<AgentFace");
+    expect(demo).toContain("<BotMark");
     expect(demo).toContain("seed={`public-demo:${agentName}`}");
+    expect(demo).toContain("name={agentName}");
+    expect(demo).toContain("Bot mark");
+    expect(demo).not.toContain("AgentFace");
+    expect(demo).not.toContain("Bot avatar");
     expect(demo).not.toContain("WirelineMark");
     expect(demo).not.toContain("<Medallion");
     expect(demo).toContain(
