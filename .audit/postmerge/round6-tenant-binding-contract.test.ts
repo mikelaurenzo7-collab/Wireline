@@ -62,8 +62,13 @@ describe("round-6 native phone-line tenant binding", () => {
     expect(legacyMigration).toContain("idx_phone_numbers_user_id");
 
     const nativeMigration = read("drizzle/migrations/0152_native_xai_phone_bindings.sql");
-    expect(nativeMigration).toContain("UNIQUE (tenant_id, agent_id)");
-    expect(nativeMigration).toContain("UNIQUE (phone_number)");
+    expect(nativeMigration).toContain("uq_xai_phone_bindings_phone");
+    expect(nativeMigration).toContain("uq_xai_phone_bindings_twilio_phone");
+    expect(nativeMigration).toContain("uq_xai_phone_bindings_xai_phone");
+    expect(nativeMigration).toContain("uq_xai_phone_bindings_xai_webhook");
+    expect(nativeMigration).toContain(
+      "USING (user_id = (SELECT public.wireline_current_user_id()))",
+    );
   });
 });
 
