@@ -73,16 +73,18 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     expect(compliance).not.toContain("DNCScrub");
   });
 
-  it("aligns Blog, Pricing, Messaging playbook, and AI error copy with launch voice", () => {
+  it("aligns Blog, Pricing, messaging playbook, and AI error copy with launch voice", () => {
     const blog = read("src/pages/Blog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const playbooks = read("src/lib/integration-playbooks.ts");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
     const browser = read("src/pages/BrowserCommandInstallPage.tsx");
-    expect(blog).toContain("Voice agent");
+
+    expect(blog).toContain("Voice Bots");
     expect(blog).not.toContain("AI call agent");
-    expect(pricing).toContain("Five Specialized Agents. One Supervised Workspace");
-    expect(pricing).not.toContain('publicName: "Business"');
+    expect(pricing).toContain("Build Your Bot");
+    expect(pricing).toContain("Every Paid Bot Includes a Wireline Number");
+    expect(pricing).not.toContain("Five Specialized Agents");
     expect(pricing).not.toContain("AI conversation workforce");
     expect(playbooks).toContain("WhatsApp in private beta");
     expect(aiErrors).toContain("OpenAI, Gemini, or AI Gateway");
@@ -104,11 +106,13 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     expect(support).toContain("isTransport");
   });
 
-  it("retunes home hero CSS for AI VOICE AGENTS and surfaces team fetch failures", () => {
+  it("retunes the home hero for the compact uppercase identity and surfaces team fetch failures", () => {
     const css = read("src/styles/public-marketing-polish.css");
     const admin = read("src/components/AdminSettings.tsx");
-    expect(css).toContain('keep "AI VOICE AGENTS"');
+
+    expect(css).toContain(".wireline-home-hero .marketing-hero__title");
     expect(css).toContain("max-width: min(100%, 16ch)");
+    expect(css).not.toContain('keep "AI VOICE AGENTS"');
     expect(admin).toContain('toastError("Team unavailable"');
   });
 });
