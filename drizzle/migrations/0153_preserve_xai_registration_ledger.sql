@@ -19,8 +19,10 @@ COMMENT ON TABLE public.wireline_xai_phone_bindings IS
 -- RLS must not expose retired provider credentials to another tenant. This
 -- SECURITY DEFINER claim boundary performs the only permitted cross-owner
 -- transition after proving the requesting tenant currently owns and assigns the
--- exact Wireline phone line. The advisory lock and row lock make claim/reuse
--- serializable across serverless workers.
+-- exact Wireline phone line. The number advisory lock is acquired before the
+-- ownership read, and the phone row is locked through the claim transaction, so
+-- a concurrent reassignment cannot validate stale ownership and reclaim the
+-- retained provider secret for the previous agent.
 CREATE OR REPLACE FUNCTION public.wireline_claim_xai_phone_binding(
   p_user_id uuid,
   p_agent_id text,
@@ -34,23 +36,28 @@ SET search_path = pg_catalog, public, pg_temp
 AS $$
 DECLARE
   v_binding public.wireline_xai_phone_bindings%ROWTYPE;
+  v_phone_id bigint;
   v_now timestamptz := clock_timestamp();
 BEGIN
   IF p_user_id IS NULL OR p_agent_id IS NULL OR p_phone_number IS NULL OR p_claim_token IS NULL THEN
     RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_INVALID_CLAIM';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-      FROM public.wireline_phone_numbers AS phone
-     WHERE phone.user_id = p_user_id
-       AND phone.agent_id = p_agent_id
-       AND phone.phone_number = p_phone_number
-  ) THEN
+  -- Serialize every ownership proof and binding transition for this E.164
+  -- number before reading mutable tenant/agent assignment state.
+  PERFORM pg_advisory_xact_lock(hashtext('xai-phone:' || p_phone_number));
+
+  SELECT phone.id
+    INTO v_phone_id
+    FROM public.wireline_phone_numbers AS phone
+   WHERE phone.user_id = p_user_id
+     AND phone.agent_id = p_agent_id
+     AND phone.phone_number = p_phone_number
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
     RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'XAI_PHONE_OWNERSHIP_MISMATCH';
   END IF;
-
-  PERFORM pg_advisory_xact_lock(hashtext('xai-phone:' || p_phone_number));
 
   SELECT *
     INTO v_binding
