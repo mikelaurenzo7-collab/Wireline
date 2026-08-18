@@ -6,17 +6,12 @@ on:
       - cursor/native-xai-twilio-runtime-review-5789
     paths:
       - .github/workflows/native-main-merge-diagnostic.yml
-  pull_request:
-    branches:
-      - main
-    paths:
-      - .github/workflows/native-main-merge-diagnostic.yml
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: native-main-merge-diagnostic-${{ github.event_name }}
+  group: native-main-merge-diagnostic
   cancel-in-progress: true
 
 jobs:
@@ -29,29 +24,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Report exact merge conflicts against origin/main
+      - name: Commit exact merge-conflict report
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
+          git config user.name "Wireline Audit Bot"
+          git config user.email "audit-bot@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
           git fetch --no-tags origin main
+
           set +e
           git merge --no-commit --no-ff origin/main
           merge_status=$?
           set -e
 
-          echo "MERGE_STATUS=${merge_status}"
-          echo "NATIVE_HEAD=$(git rev-parse HEAD)"
-          echo "MAIN_HEAD=$(git rev-parse origin/main)"
-          echo "CONFLICTS_BEGIN"
-          git diff --name-only --diff-filter=U || true
-          echo "CONFLICTS_END"
+          report="/tmp/native-main-conflicts.txt"
+          {
+            echo "# Native runtime merge diagnostic"
+            echo
+            echo "MERGE_STATUS=${merge_status}"
+            echo "NATIVE_HEAD=${GITHUB_SHA}"
+            echo "MAIN_HEAD=$(git rev-parse origin/main)"
+            echo
+            echo "## Unmerged paths"
+            git diff --name-only --diff-filter=U || true
+            echo
 
-          while IFS= read -r file; do
-            [ -n "$file" ] || continue
-            echo "===== CONFLICT: ${file} ====="
-            git diff --cc -- "$file" | sed -n '1,320p'
-            echo "===== END CONFLICT: ${file} ====="
-          done < <(git diff --name-only --diff-filter=U)
+            while IFS= read -r file; do
+              [ -n "$file" ] || continue
+              echo "## Conflict: ${file}"
+              echo '```diff'
+              git diff --cc -- "$file" | sed -n '1,500p'
+              echo '```'
+              echo
+            done < <(git diff --name-only --diff-filter=U)
+          } > "$report"
 
-          git merge --abort || true
-          exit 0
+          git merge --abort || git reset --hard "$GITHUB_SHA"
+          mkdir -p .audit
+          cp "$report" .audit/native-main-conflicts.txt
+          git add .audit/native-main-conflicts.txt
+          git commit -m "chore(audit): record exact native-main merge conflicts"
+          git push origin HEAD:"$GITHUB_REF_NAME"
