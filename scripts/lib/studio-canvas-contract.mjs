@@ -84,7 +84,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   studioChrome: [
     { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
-    { id: "readiness", pattern: /Live|Setup needed/ },
+    { id: "readiness", pattern: /Live|Setup needed|Needs setup/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
   ],
   overview: [
@@ -106,7 +106,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Start with one job/ },
+    { id: "empty-state", pattern: /Start With One Job/i },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [
