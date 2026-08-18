@@ -26,10 +26,10 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put Your Voice Agent Live",
-    tagline: "Your Voice Agent from $19/month",
+    eyebrow: "Put Your Voice Bot Live",
+    tagline: "Your Voice Bot from $19/month",
     detail:
-      "One focused voice agent for inbound, outbound, or scheduling, with an included Wireline number.",
+      "One focused Voice Bot for inbound calls, outbound calls, or scheduling, with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -39,9 +39,9 @@ const PAID_TIERS = [
   {
     plan: planById.team,
     publicName: "Starter Plus",
-    eyebrow: "Founder Hybrid",
-    tagline: "Personal Concierge + Business Voice Agent from $39/month",
-    detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
+    eyebrow: "Two Roles, One Workspace",
+    tagline: "Two Live Bots from $39/month",
+    detail: `Two live Bots, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, text, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose Annual Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -52,13 +52,13 @@ const PAID_TIERS = [
     plan: planById.business,
     publicName: "Pro",
     eyebrow: "For a Growing Operation",
-    tagline: "Five Specialized Agents. One Supervised Workspace",
-    detail: "Up to five specialized agents with shared routing, approvals, and analytics.",
+    tagline: "Five Specialized Bots. One Workspace",
+    detail: "Up to five specialized Bots with shared context, routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
     ctaAnnual: "Go Pro Annually",
     ctaPath: "/signup?plan=business",
     featured: false,
-    badge: "Multi Agent",
+    badge: "Multi-Bot",
   },
 ] as const;
 
@@ -85,11 +85,11 @@ const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(f
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid conversation.`,
+    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     title: "Text / SMS",
-    body: "The same agent continues by text. Consent and spend stay visible, billed by segment.",
+    body: "The same Bot continues by text. Consent and spend stay visible, billed by segment.",
   },
   {
     title: "Email",
@@ -97,14 +97,14 @@ const CHANNEL_RULES = [
   },
   {
     title: "Lead Hunt",
-    body: "Research a niche, enrich targets, and hand them to the same agent. On every paid plan.",
+    body: "Research a niche, enrich targets, and hand them to the same Bot. Available on every paid plan.",
   },
 ] as const;
 
 const FAQ = [
   [
-    "Does one agent handle voice, SMS, and email?",
-    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents add concurrency or specialized roles, not basic channels.",
+    "Does one Bot handle voice, text, and email?",
+    "Yes. A single Wireline Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -112,11 +112,11 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest risk way to put one Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second number slot, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
   ],
   [
-    "Does every agent automatically create a phone number cost?",
-    "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused agent capacity does not create unnecessary carrier spend.",
+    "Does every Bot automatically create a phone number cost?",
+    "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused Bot capacity does not create unnecessary carrier spend.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -124,7 +124,7 @@ const FAQ = [
   ],
   [
     "Are live calls limited to a few seconds?",
-    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard cap for profitability. Separate mid call web research tools use a short network timeout so callers are not left waiting in silence.",
+    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard cap for profitability. Separate mid-call web research tools use a short network timeout so callers are not left waiting in silence.",
   ],
   [
     "Why keep live usage prepaid?",
@@ -132,11 +132,11 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan wasn't the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
   ],
   [
     "What is the Scale plan?",
-    "Scale is a custom committed usage agreement for organizations needing 25 or more agents, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
+    "Scale is a custom committed-usage agreement for organizations needing 25 or more Bots, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
   ],
 ] as const;
 
@@ -145,7 +145,7 @@ const pricingJsonLd = {
   "@graph": [
     {
       "@type": "OfferCatalog",
-      name: "Wireline Voice Agents pricing",
+      name: "Wireline Voice Bots pricing",
       url: "https://trywireline.com/pricing",
       itemListElement: [
         {
@@ -153,7 +153,7 @@ const pricingJsonLd = {
           name: "Wireline Free Builder",
           price: 0,
           priceCurrency: "USD",
-          description: "Build, train, and privately simulate one Voice Agent.",
+          description: "Build, configure, and privately simulate one Voice Bot.",
         },
         ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
           "@type": "Offer",
@@ -182,8 +182,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline Voice Agents from $19/month"
-        description="Build a voice agent free and launch from $19/month. Included numbers, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls stay clear."
+        title="PRICING | WIRELINE VOICE BOTS FROM $19/MONTH"
+        description="Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />
       <script
@@ -360,7 +360,7 @@ export default function Pricing() {
                 <span className="text-sm text-muted-foreground">Custom</span>
               </div>
               <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
-                25+ live agent capacity, committed voice, SMS, email, and data economics, custom
+                25+ live Bot capacity, committed voice, text, email, and data economics, custom
                 telephony and integrations, security, rollout, and support plan
               </p>
               <Link
@@ -381,7 +381,7 @@ export default function Pricing() {
                   {SHARED_PAID_FEATURES.join(". ")}
                 </p>
                 <h2 className="wl-public-section-heading mx-auto text-center">
-                  One voice agent, no seat tax, clear costs
+                  One Bot. No seat tax. Clear costs.
                 </h2>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   {CHANNEL_RULES.map(({ title, body }) => (
