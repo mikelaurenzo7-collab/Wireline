@@ -81,16 +81,16 @@ function requestForAction(action, context = {}) {
   const link = typeof context.link === "string" ? context.link.replace(/^tel:/iu, "").trim() : "";
   if (action === "call") {
     return link
-      ? `Have a Wireline agent prepare a call to ${link}. Use this page as context, then ask me to confirm before any live call.`
-      : "Have a Wireline agent prepare a call using this page as context. Ask me for the number and confirmation before any live call.";
+      ? `Have a BotBound Bot prepare a call to ${link}. Use this page as context, then ask me to confirm before any live call.`
+      : "Have a BotBound Bot prepare a call using this page as context. Ask me for the number and confirmation before any live call.";
   }
   if (action === "text") {
-    return "Have a Wireline agent draft a text message using this page as context. Ask me to review before sending.";
+    return "Have a BotBound Bot draft a text message using this page as context. Ask me to review before sending.";
   }
   if (action === "followup") {
-    return "Have a Wireline agent create a concise follow-up from this page and selected text. Include next step, owner, and timing.";
+    return "Have a BotBound Bot create a concise follow-up from this page and selected text. Include next step, owner, and timing.";
   }
-  return "Use this page and selected text as context for a Wireline agent task.";
+  return "Use this page and selected text as context for a BotBound Bot task.";
 }
 
 async function openCompanion(tab) {
@@ -109,32 +109,32 @@ async function registerMenus() {
   await api.contextMenus.removeAll();
   api.contextMenus.create({
     id: "wireline-agent-task",
-    title: "Ask Wireline about this page",
+    title: "Ask BotBound about this page",
     contexts: ["page"],
   });
   api.contextMenus.create({
     id: "wireline-capture-selection",
-    title: "Send selection to Wireline",
+    title: "Send selection to BotBound",
     contexts: ["selection"],
   });
   api.contextMenus.create({
     id: "wireline-call-from-page",
-    title: "Prepare a Wireline call from this page",
+    title: "Prepare a BotBound call from this page",
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-text-from-page",
-    title: "Draft a Wireline text from this page",
+    title: "Draft a BotBound text from this page",
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-followup-from-page",
-    title: "Create Wireline follow-up",
+    title: "Create BotBound follow-up",
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-call-number",
-    title: "Prepare a Wireline call to this number",
+    title: "Prepare a BotBound call to this number",
     contexts: ["link"],
     targetUrlPatterns: ["tel:*"],
   });
@@ -188,11 +188,11 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
     if (message?.type === "wireline:open-route") {
       const url = ROUTES.get(message.route || "studio");
-      if (!url) throw new Error("Unsupported Wireline route.");
+      if (!url) throw new Error("Unsupported BotBound route.");
       await api.tabs.create({ url });
       return { opened: true };
     }
-    throw new Error("Unsupported Wireline Command request.");
+    throw new Error("Unsupported BotBound Command request.");
   };
 
   void run().then(
