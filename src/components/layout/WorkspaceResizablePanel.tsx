@@ -93,6 +93,7 @@ export default function WorkspaceResizablePanel({
   useEffect(
     () => () => {
       cleanupRef.current?.();
+      cleanupRef.current = null;
     },
     [],
   );
@@ -115,8 +116,9 @@ export default function WorkspaceResizablePanel({
   );
 
   const stopResize = useCallback(() => {
-    cleanupRef.current?.();
+    const cleanup = cleanupRef.current;
     cleanupRef.current = null;
+    cleanup?.();
   }, []);
 
   const startResize = useCallback(
@@ -145,6 +147,7 @@ export default function WorkspaceResizablePanel({
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", cleanup);
         window.removeEventListener("pointercancel", cleanup);
+        if (cleanupRef.current === cleanup) cleanupRef.current = null;
         document.body.style.userSelect = previousUserSelect;
         document.body.style.cursor = previousCursor;
         setResizing(false);
