@@ -29,9 +29,10 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    const query = new URLSearchParams({ limit: "1" });
-    if (agentId) query.set("agent_id", agentId);
-    authFetch(`/api/calls?${query.toString()}`)
+    const endpoint = agentId
+      ? `/api/agents/${encodeURIComponent(agentId)}/calls?limit=1`
+      : "/api/calls?limit=1";
+    authFetch(endpoint)
       .then((response) => {
         if (!response.ok) throw new Error(`Call history request failed (${response.status})`);
         return response.json();
