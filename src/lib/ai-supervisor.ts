@@ -44,9 +44,9 @@ function validateRecipient(channel: "email" | "sms" | "whatsapp", recipient?: st
 /** Never expose UUIDs, database keys, or internal agent IDs in customer copy. */
 export function clientFacingAgentName(value?: string | null): string {
   const candidate = String(value || "").trim();
-  if (!candidate) return "Wireline";
-  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(candidate)) return "Wireline";
-  if (/^(?:agent|director|tool)-[a-z0-9_-]{6,}$/i.test(candidate)) return "Wireline";
+  if (!candidate) return "BotBound";
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(candidate)) return "BotBound";
+  if (/^(?:agent|director|tool)-[a-z0-9_-]{6,}$/i.test(candidate)) return "BotBound";
   return candidate.slice(0, 80);
 }
 
@@ -71,7 +71,7 @@ export async function superviseClientCommunication(input: {
   const senderName = clientFacingAgentName(input.agentName);
   const reviewed = await runStructured<ClientCommunicationReview>({
     system:
-      "You are Wireline's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true whenever the SUBJECT AND BODY YOU RETURN are safe and ready to send, including when you revised the original. Return approved=false only when the communication must be blocked because it cannot be safely repaired without inventing facts, authority, consent, or commitments.",
+      "You are BotBound's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true whenever the SUBJECT AND BODY YOU RETURN are safe and ready to send, including when you revised the original. Return approved=false only when the communication must be blocked because it cannot be safely repaired without inventing facts, authority, consent, or commitments.",
     user: `Channel: ${input.channel}\nAgent: ${senderName}\nSource: ${input.source}\nPurpose: ${input.purpose}\nRecipient: ${input.recipient || "Unknown"}\nContext: ${input.context || "None"}\nSubject: ${originalSubject}\nBody:\n${originalBody}`,
     tool: reviewTool,
     complexity: "simple",
