@@ -5,7 +5,7 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
 /**
  * Account-bound widget. It intentionally has no create/save action: creation
  * occurs through the OAuth-protected tool so every resulting draft belongs to
- * the connected Wireline workspace.
+ * the connected BotBound workspace.
  *
  * Private voice in this hosted widget uses OpenAI Realtime WebRTC because
  * ChatGPT iframes may only connect to `https://api.openai.com`. That is not
@@ -26,7 +26,7 @@ export function buildAccountBoundWidgetHtml(): string {
 <style>${buildWirelineMcpWidgetCss()}</style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Create a Wireline account, then describe the first voice agent you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create your first voice-agent draft.</div><p class="note">The first draft is saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch stay in Wireline.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">BotBound Bot draft</div><h2 id="name">Your private phone Bot</h2><p id="summary">Create a BotBound account, then describe the first voice Bot you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">BotBound workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://botbound.me/studio" target="_blank" rel="noreferrer">Open in BotBound</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect BotBound to create your first voice-Bot draft.</div><p class="note">The first draft is saved to your BotBound account. Phone numbers, real calls, messaging, integrations, and launch stay in BotBound.</p></div></div>
 <script>
 (() => {
   const state = {
@@ -187,7 +187,7 @@ export function buildAccountBoundWidgetHtml(): string {
     if (content.business_name) $("business").textContent = content.business_name;
     if (content.open_in_wireline_url) $("open").href = content.open_in_wireline_url;
     if (content.agent_id) {
-      status("Draft saved to your Wireline workspace. You can safely simulate it here or continue configuration in Wireline.");
+      status("Draft saved to your BotBound workspace. You can safely simulate it here or continue configuration in BotBound.");
     }
   };
 
@@ -200,7 +200,7 @@ export function buildAccountBoundWidgetHtml(): string {
         const pending = state.pending.get(msg.id);
         clearTimeout(pending.timer);
         state.pending.delete(msg.id);
-        if (msg.error) pending.reject(new Error(msg.error.message || "Wireline could not complete that request."));
+        if (msg.error) pending.reject(new Error(msg.error.message || "BotBound could not complete that request."));
         else pending.resolve(msg.result);
         return;
       }
@@ -262,7 +262,7 @@ export function buildAccountBoundWidgetHtml(): string {
       return;
     }
     if (!state.agentId) {
-      status("Create or open a Wireline agent draft first.");
+      status("Create or open a BotBound Bot draft first.");
       return;
     }
     $("voice").disabled = true;
@@ -343,13 +343,13 @@ export function buildAccountBoundWidgetHtml(): string {
 
       $("voice").textContent = "End private voice";
       $("live").classList.add("show");
-      status("Private simulation is on. Speak to your agent.");
+      status("Private simulation is on. Speak to your Bot.");
     } catch (error) {
       stopVoice();
       status(
         error && error.message
           ? error.message
-          : "Microphone simulation is unavailable in this MCP surface. Continue configuration in Wireline.",
+          : "Microphone simulation is unavailable in this MCP surface. Continue configuration in BotBound.",
       );
     } finally {
       $("voice").disabled = false;
