@@ -187,7 +187,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">
-            Live-call guards (Wireline defaults)
+            Live-call guards (BotBound defaults)
           </p>
           <ul className="space-y-3">
             {guards.map((g) => (
