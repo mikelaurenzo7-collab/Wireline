@@ -1,9 +1,7 @@
 /* ============================================
-   WIRELINE TYPOGRAPHY + PROSE SYSTEM
-   Extracted for reusability and maintainability
+   BOTBOUND TYPOGRAPHY + PROSE SYSTEM
    ============================================ */
 
-/* Base typography tokens — canonical scale from design tokens */
 :root {
   --wireline-font-display:
     var(--wireline-font-family-display), Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
@@ -15,7 +13,6 @@
     var(--wireline-font-family-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     monospace;
 
-  /* Semantic sizes/line/weight from tokens */
   --wireline-font-size-display: var(--wireline-typography-display-size);
   --wireline-font-weight-display: var(--wireline-typography-display-weight);
   --wireline-line-height-display: var(--wireline-typography-display-lineHeight);
@@ -34,11 +31,8 @@
   --wireline-letter-spacing-overline: var(--wireline-typography-overline-letterSpacing);
 }
 
-/* ============================================
-   OPERATIONAL UI TYPOGRAPHY
-   Used for titles, metrics, and labels in the product
-   ============================================ */
-
+/* Operational hierarchy. Inter Tight is shipped at 500/600/700/800; never ask
+   the browser to synthesize a lighter display face. */
 .wl-page-title,
 .wl-app-page-title,
 .wl-section-title,
@@ -47,7 +41,7 @@
 .wl-workspace-title {
   text-transform: none;
   font-family: var(--wireline-font-display);
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.06;
   color: var(--wireline-color-text-primary);
@@ -55,12 +49,14 @@
 
 .wl-page-title {
   font-size: var(--wireline-typography-display-size);
+  font-weight: 700;
   line-height: var(--wireline-typography-display-lineHeight);
   letter-spacing: var(--wireline-typography-display-letterSpacing);
 }
 
 .wl-app-page-title {
   font-size: var(--wireline-typography-h1-size);
+  font-weight: 700;
   line-height: var(--wireline-typography-h1-lineHeight);
   letter-spacing: var(--wireline-typography-h1-letterSpacing);
 }
@@ -77,11 +73,10 @@
   font-family: var(--wireline-font-display);
   text-transform: none;
   font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.03em;
 }
 
-/* Mobile refinements */
 @media (max-width: 640px) {
   .wl-page-title {
     font-size: clamp(1.75rem, 6vw, 2.8rem);
@@ -91,7 +86,7 @@
   }
 }
 
-/* Eyebrow / micro labels — IBM Plex Mono is the canonical metadata face. */
+/* IBM Plex Mono is reserved for compact metadata, never running copy. */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta {
@@ -103,20 +98,11 @@
   color: var(--wireline-color-text-secondary);
 }
 
-/* Referenced as a standalone modifier across insights and connection cards;
-   it only quiets the color — the base micro-meta scale is not implied.
-   Lives in @layer components so state utilities (hover:text-brand on the
-   area-code chips) still win over it. */
 @layer components {
   .wl-micro-meta--muted {
     color: var(--wireline-color-text-tertiary);
   }
 }
-
-/* ============================================
-   PROSE SYSTEM (Long-form content)
-   Powered by @tailwindcss/typography + custom overrides
-   ============================================ */
 
 @plugin "@tailwindcss/typography" {
   --tw-prose-body: var(--wireline-color-text-primary);
@@ -136,16 +122,12 @@
   --tw-prose-th-borders: var(--wireline-color-border-strong);
   --tw-prose-td-borders: var(--wireline-color-border-default);
 
-  /* Fluid heading sizes */
   --tw-prose-h1-size: clamp(2rem, 4.5vw + 0.5rem, 3rem);
   --tw-prose-h2-size: clamp(1.65rem, 3.8vw + 0.4rem, 2.25rem);
   --tw-prose-h3-size: clamp(1.4rem, 3vw + 0.3rem, 1.875rem);
   --tw-prose-h4-size: clamp(1.25rem, 2.5vw + 0.25rem, 1.5rem);
 }
 
-/* Ink canvas is the default — pin prose tokens on .prose itself.
-   Tailwind typography's built-in slate bold is near-black and fails on Ink
-   when the @plugin theme map does not land on the element. */
 .prose {
   --tw-prose-body: var(--wireline-color-text-secondary);
   --tw-prose-headings: var(--wireline-color-text-primary);
@@ -164,16 +146,8 @@
   --tw-prose-td-borders: var(--wireline-color-border-default);
 }
 
-/* Light appearance prose — scoped to the app theme class, not OS preference.
-   Marketing/legal pages stay on the Ink canvas even when the OS is light;
-   prefers-color-scheme would paint near-black bold text onto black. */
 :root.light .prose,
 html.light .prose {
-  /* Body and quotes sit between the Paper text-primary and text-secondary
-     tokens on purpose: long-form reading wants more contrast than metadata
-     secondary but less weight than headings. Bullets are likewise a glyph
-     tint with no semantic token. Everything else maps to the Paper theme
-     tokens in theme-light.css so a palette change cannot strand prose. */
   --tw-prose-body: #383650;
   --tw-prose-headings: var(--wireline-color-text-primary);
   --tw-prose-links: var(--wireline-color-action-primary-default);
@@ -191,7 +165,6 @@ html.light .prose {
   --tw-prose-captions: var(--wireline-color-text-secondary);
 }
 
-/* Custom prose modifiers */
 .prose-compact {
   --tw-prose-h1-size: 1.875rem;
   --tw-prose-h2-size: 1.5rem;
@@ -204,60 +177,43 @@ html.light .prose {
   font-feature-settings: "tnum";
 }
 
-/* ==========================================================================
-   Wireline canonical typography scale — the single source of truth for
-   display headlines, eyebrows, leads, and body across marketing + app.
-   Replaces scattered one-off text sizes with five steps that scale fluidly
-   from the smallest phone to ultra-wide desktops.
-
-   Defaults live in @layer base so any Tailwind utility wins automatically
-   (utilities are in their own higher layer; unlayered CSS would have beaten
-   them regardless of :where() specificity gymnastics). The class itself
-   stays unlayered for the font/size/line-height side — those *should* win,
-   since they're what makes the class identifiable.
-   ========================================================================== */
-
-/* Display 1 — landing hero headlines (the biggest type on the site). */
+/* Canonical display scale. Large display text uses a real 500 weight for a
+   restrained editorial feel; smaller headings step up to 600 for UI clarity. */
 .wl-display-1 {
   font-family: var(--wireline-font-display);
-  font-weight: 400;
+  font-weight: 500;
   font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
   line-height: 0.98;
   letter-spacing: -0.035em;
   text-wrap: balance;
 }
 
-/* Display 2 — section headlines on marketing, pricing tiers, dashboards. */
 .wl-display-2 {
   font-family: var(--wireline-font-display);
-  font-weight: 400;
+  font-weight: 500;
   font-size: clamp(2rem, 1.3rem + 2.8vw, 3.5rem);
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
-/* Display 3 — page titles (Account, Billing, Phone, Team, Connections). */
 .wl-display-3 {
   font-family: var(--wireline-font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
   line-height: 1.05;
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
-/* Display 4 — card titles and hero number callouts. */
 .wl-display-4 {
   font-family: var(--wireline-font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: clamp(1.125rem, 1rem + 0.6vw, 1.625rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
-/* Eyebrow — mono section/category labels. The fixed 11px stays as a
-   visual rest point; everything around it scales. */
 .wl-eyebrow {
   font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -266,26 +222,22 @@ html.light .prose {
   text-transform: uppercase;
 }
 
-/* Lead — large body that sits under hero headlines / page titles. */
 .wl-lead {
   font-size: clamp(0.9375rem, 0.875rem + 0.3vw, 1.125rem);
   line-height: 1.6;
   text-wrap: pretty;
 }
 
-/* Body — default running copy. */
 .wl-body {
   font-size: 0.9375rem;
   line-height: 1.65;
 }
 
-/* Body small — captions, meta lines, secondary copy under cards. */
 .wl-body-sm {
   font-size: 0.8125rem;
   line-height: 1.55;
 }
 
-/* Default colors — in @layer base so any Tailwind text-* utility wins. */
 @layer base {
   .wl-display-1,
   .wl-display-2,
@@ -303,7 +255,6 @@ html.light .prose {
   }
 }
 
-/* Section vertical rhythm — one constant across marketing. */
 .wl-section-y {
   padding-block: clamp(3rem, 2rem + 4vw, 5.5rem);
 }
@@ -311,9 +262,6 @@ html.light .prose {
   padding-block: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
 }
 
-/* Card primitives — one shared shell for authenticated panels + marketing
-   cards. Surfaces that hand-roll radius/border/background should migrate here
-   so geometry and surface tone remain consistent across the product. */
 .wl-card {
   border-radius: var(--wireline-radius-lg);
   border: 1px solid var(--wireline-color-border-default);
