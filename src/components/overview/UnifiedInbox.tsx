@@ -1,7 +1,14 @@
-import { Inbox, MessageSquare } from "lucide-react";
+import { Inbox } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button, EmptyState, Skeleton } from "../atoms";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../atoms/Dialog";
 import { StatusNotice } from "../molecules";
 import {
   conversationChannelHref,
@@ -12,6 +19,13 @@ import {
   type RecentConversation,
 } from "./overview-types";
 
+/**
+ * Compact omnichannel conversation index.
+ *
+ * Rows never render generated summaries. The report is progressive disclosure:
+ * select a row, then read the summary in a focused dialog. This keeps the
+ * high-frequency list scannable and prevents model prose from becoming UI chrome.
+ */
 export default function UnifiedInbox({
   conversations,
   selectedId,
@@ -21,197 +35,119 @@ export default function UnifiedInbox({
 }: {
   conversations: RecentConversation[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   loading: boolean;
   unavailable: boolean;
 }) {
-  const selected =
-    conversations.find((conversation) => conversation.id === selectedId) ?? conversations[0];
-  const SelectedIcon = selected ? conversationChannelIcon(selected.channel) : Inbox;
+  const selected = conversations.find((conversation) => conversation.id === selectedId) ?? null;
 
   return (
-    <section className="wl-paper wl-paper-elevated overflow-hidden" aria-labelledby="unified-inbox-title">
-      <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-            Voice · Text · Email
-          </p>
-          <h2 id="unified-inbox-title" className="mt-1 text-lg font-semibold text-foreground">
-            Unified Inbox
-          </h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {[
-            ["All", "/inbox"],
-            ["Calls", "/inbox?tab=voice"],
-            ["Texts", "/inbox?tab=sms"],
-            ["Email", "/inbox?tab=email"],
-          ].map(([label, href], index) => (
-            <Link
-              key={label}
-              to={href}
-              className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
-                index === 0
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {label}
-            </Link>
+    <section className="wl-paper wl-paper-elevated overflow-hidden" aria-label="Conversations">
+      {loading ? (
+        <div className="grid gap-1 p-2" aria-busy="true" aria-label="Loading conversations">
+          {Array.from({ length: 7 }, (_, index) => (
+            <div key={index} className="flex min-h-[68px] items-center gap-3 px-3 py-2">
+              <Skeleton shape="surface" className="size-9 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1">
+                <Skeleton shape="text" className="h-4 w-36" />
+                <Skeleton shape="text" className="mt-2 h-3 w-44" />
+              </div>
+            </div>
           ))}
         </div>
-      </div>
-
-      <div className="grid min-h-[430px] lg:grid-cols-[minmax(17rem,0.82fr)_minmax(0,1.18fr)]">
-        <div className="border-b border-border p-3 lg:border-b-0 lg:border-r">
-          {loading ? (
-            <div className="grid gap-2" aria-busy="true" aria-label="Loading conversations">
-              {Array.from({ length: 5 }, (_, index) => (
-                <div key={index} className="rounded-xl border border-border p-3">
-                  <Skeleton shape="text" className="h-4 w-32" />
-                  <Skeleton shape="text" className="mt-2 h-3 w-full" />
-                </div>
-              ))}
-            </div>
-          ) : unavailable ? (
-            <StatusNotice tone="warning" title="Inbox Preview Unavailable">
-              Open Inbox or refresh to try again. Your conversation history is unchanged.
-            </StatusNotice>
-          ) : conversations.length === 0 ? (
-            <EmptyState
-              density="compact"
-              titleTone="ui"
-              icon={<Inbox aria-hidden="true" />}
-              title="No Conversations Yet"
-              action={
-                <Button asChild size="sm">
-                  <Link to="/studio">Test a Bot</Link>
-                </Button>
-              }
-            />
-          ) : (
-            <ul className="grid gap-1.5" aria-label="Recent customer conversations">
-              {conversations.map((conversation) => {
-                const Icon = conversationChannelIcon(conversation.channel);
-                const active = selected?.id === conversation.id;
-                return (
-                  <li key={`${conversation.channel}-${conversation.id}`}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(conversation.id)}
-                      aria-pressed={active}
-                      className={`flex min-h-[72px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors wl-focus-ring-halo ${
-                        active
-                          ? "border-primary/30 bg-primary/5"
-                          : "border-transparent hover:border-border hover:bg-muted/35"
-                      }`}
-                    >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                        <Icon size={16} aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-3">
-                          <strong className="truncate text-sm font-semibold text-foreground">
-                            {conversation.contact || "Unknown contact"}
-                          </strong>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
-                            {formatConversationTime(conversation.occurred_at)}
-                          </span>
-                        </span>
-                        <span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
-                          {conversationPreview(conversation)}
-                        </span>
-                        <span className="mt-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
-                          {conversationChannelLabel(conversation.channel)}
-                          {conversation.agent_name ? ` · ${conversation.agent_name}` : ""}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <Button asChild variant="secondary" size="sm" className="mt-3 w-full justify-center">
-            <Link to="/inbox">Open Inbox</Link>
-          </Button>
+      ) : unavailable ? (
+        <div className="p-4">
+          <StatusNotice tone="warning" title="Inbox unavailable">
+            Your conversation history is unchanged. Refresh to try again.
+          </StatusNotice>
         </div>
-
-        <div className="min-w-0 p-5 sm:p-6">
-          {selected ? (
-            <div className="flex h-full min-h-[300px] flex-col">
-              <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                    <SelectedIcon size={20} aria-hidden="true" />
+      ) : conversations.length === 0 ? (
+        <EmptyState
+          density="compact"
+          titleTone="ui"
+          icon={<Inbox aria-hidden="true" />}
+          title="No conversations yet"
+          action={
+            <Button asChild size="sm">
+              <Link to="/studio">Test a Bot</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <ul className="divide-y divide-border/70" aria-label="Recent conversations">
+          {conversations.map((conversation) => {
+            const Icon = conversationChannelIcon(conversation.channel);
+            const channel = conversationChannelLabel(conversation.channel);
+            const meta = [
+              channel,
+              conversation.agent_name?.trim() || null,
+              formatConversationTime(conversation.occurred_at, conversation.duration_seconds),
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <li key={`${conversation.channel}:${conversation.id}`}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(conversation.id)}
+                  className="group flex min-h-[70px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary/60 sm:px-5"
+                  aria-label={`Open ${channel.toLowerCase()} report for ${conversation.contact}`}
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Icon className="size-4" aria-hidden="true" />
                   </span>
-                  <div className="min-w-0">
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                      {conversationChannelLabel(selected.channel)} Conversation
-                    </p>
-                    <h3 className="mt-1 truncate text-xl font-semibold text-foreground">
-                      {selected.contact || "Unknown contact"}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {[
-                        selected.agent_name,
-                        formatConversationTime(selected.occurred_at, selected.duration_seconds),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                </div>
-                <Button asChild variant="secondary" size="sm" className="shrink-0 justify-center">
-                  <Link to={conversationChannelHref(selected.channel)}>Open Thread</Link>
+                  <span className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm font-semibold text-foreground">
+                      {conversation.contact || "Unknown contact"}
+                    </strong>
+                    <span className="mt-1 block truncate text-xs text-muted-foreground">{meta}</span>
+                  </span>
+                  <span className="text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                    View
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && onSelect(null)}>
+        {selected ? (
+          <DialogContent presentation="drawer" className="sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-5">
+            <div className="p-5 sm:p-0">
+              <DialogHeader>
+                <DialogTitle>{selected.contact || "Conversation"}</DialogTitle>
+                <DialogDescription>
+                  {[
+                    conversationChannelLabel(selected.channel),
+                    selected.agent_name?.trim() || null,
+                    formatConversationTime(selected.occurred_at, selected.duration_seconds),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-5 border-t border-border pt-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Report
+                </p>
+                <p className="mt-3 text-sm leading-6 text-foreground">{conversationPreview(selected)}</p>
+                {selected.headline && selected.summary && selected.headline !== selected.summary ? (
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{selected.summary}</p>
+                ) : null}
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <Button asChild size="sm" variant="secondary">
+                  <Link to={conversationChannelHref(selected.channel)}>Open channel</Link>
                 </Button>
               </div>
-
-              <div className="flex flex-1 flex-col justify-between gap-6 py-6">
-                <div>
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Conversation Summary
-                  </p>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-foreground">
-                    {conversationPreview(selected)}
-                  </p>
-                  {selected.headline &&
-                  selected.summary &&
-                  selected.headline !== selected.summary ? (
-                    <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                      {selected.summary}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {[
-                    ["Channel", conversationChannelLabel(selected.channel)],
-                    ["Handled By", selected.agent_name || "Wireline Bot"],
-                    ["Status", "Recorded"],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-xl border border-border bg-muted/25 p-3">
-                      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                        {label}
-                      </span>
-                      <strong className="mt-1.5 block truncate text-sm font-semibold text-foreground">
-                        {value}
-                      </strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
-          ) : (
-            <EmptyState
-              density="compact"
-              titleTone="ui"
-              icon={<MessageSquare aria-hidden="true" />}
-              title="Select a Conversation"
-            />
-          )}
-        </div>
-      </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </section>
   );
 }
