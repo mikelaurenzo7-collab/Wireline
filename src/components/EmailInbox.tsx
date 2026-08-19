@@ -122,7 +122,13 @@ function InboxLoadingState({ frameClass }: { frameClass: string }) {
   );
 }
 
-export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
+export default function EmailInbox({
+  embedded = false,
+  agentId,
+}: {
+  embedded?: boolean;
+  agentId?: string | null;
+}) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ThreadDetail | null>(null);
@@ -139,7 +145,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch("/api/emails/threads");
+      const threadUrl = agentId
+        ? `/api/emails/threads?agent_id=${encodeURIComponent(agentId)}`
+        : "/api/emails/threads";
+      const response = await authFetch(threadUrl);
       const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
       if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
       const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
@@ -148,19 +157,12 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         current && nextThreads.some((thread) => thread.id === current) ? current : null,
       );
     } catch (cause) {
-      // A failed list read says nothing about whether a mailbox is connected.
-      // Keep the state explicitly unavailable so the product never converts a
-      // transient API failure into a misleading setup CTA.
       setError(cause instanceof Error ? cause.message : "Could not load email conversations.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [agentId]);
 
-  // The signal is what keeps the pane honest. Selecting thread A and then B
-  // fires two overlapping requests, and if A resolves last it wins the state
-  // write — rendering one conversation's messages under another conversation's
-  // header. Abort makes the stale response drop its result instead of racing.
   const loadThreadDetail = useCallback(async (threadId: string, signal?: AbortSignal) => {
     setDetailLoading(true);
     setDetailError(null);
@@ -181,18 +183,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         handoff: body.handoff || null,
       });
     } catch (cause) {
-      // A superseded request rejects with AbortError. Surfacing that would put a
-      // failure banner over the conversation the reader actually asked for.
       if (signal?.aborted) return;
       setDetailError(cause instanceof Error ? cause.message : "Could not load this conversation.");
     } finally {
-      // The newer request already set this true; clearing it here would flash
-      // the loaded pane over a fetch that is still running.
       if (!signal?.aborted) setDetailLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    setSelectedId(null);
+    setDetail(null);
     void loadThreads();
   }, [loadThreads]);
 
@@ -218,447 +218,255 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         message?: string;
       } | null;
       if (!response.ok) throw new Error(body?.error || "Try again in a moment.");
+      setNotice(body?.message || "Inbox refreshed.");
       await loadThreads();
-      setNotice(
-        body?.message ||
-          (body?.fetched
-            ? `Inbox refreshed. ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`
-            : "Inbox refresh started."),
-      );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Try again in a moment.");
+      setError(cause instanceof Error ? cause.message : "Could not refresh email.");
     } finally {
       setSyncing(false);
     }
   };
 
-  const setOutcome = async (status: OutcomeStatus, handoff = false) => {
-    if (!selectedId) return;
-    setOutcomeBusy(handoff ? "handoff" : status);
+  const updateOutcome = async (status: OutcomeStatus) => {
+    if (!selectedId || outcomeBusy) return;
+    setOutcomeBusy(status);
     setDetailError(null);
-    setNotice(null);
     try {
       const response = await authFetch(`/api/emails/threads/${selectedId}/outcome`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, handoff }),
+        body: JSON.stringify({ status }),
       });
       const body = (await response.json().catch(() => null)) as {
         thread?: Record<string, unknown>;
-        handoff_task_id?: string | null;
         error?: string;
       } | null;
       if (!response.ok || !body?.thread)
-        throw new Error(body?.error || "Could not update the outcome.");
+        throw new Error(body?.error || "Could not update this conversation.");
       const updated = normalizeThread(body.thread);
-      setThreads((current) =>
-        current.map((thread) => (thread.id === updated.id ? { ...thread, ...updated } : thread)),
-      );
-      setDetail((current) =>
-        current
-          ? {
-              ...current,
-              thread: updated,
-              handoff: body.handoff_task_id
-                ? { id: body.handoff_task_id, status: "pending" }
-                : updated.status === "escalated"
-                  ? current.handoff
-                  : null,
-            }
-          : current,
-      );
-      setNotice(
-        handoff
-          ? "A human follow-up task is now in the queue."
-          : `Conversation marked ${OUTCOME_META[updated.status].label.toLowerCase()}.`,
-      );
+      setThreads((current) => current.map((thread) => (thread.id === updated.id ? updated : thread)));
+      setDetail((current) => (current ? { ...current, thread: updated } : current));
     } catch (cause) {
-      setDetailError(cause instanceof Error ? cause.message : "Could not update the outcome.");
+      setDetailError(cause instanceof Error ? cause.message : "Could not update this conversation.");
     } finally {
       setOutcomeBusy(null);
     }
   };
 
-  const selectedThread = useMemo(
-    () =>
-      selectedId
-        ? threads.find((thread) => thread.id === selectedId) || detail?.thread || null
-        : null,
-    [detail?.thread, selectedId, threads],
-  );
+  const requestHandoff = async () => {
+    if (!selectedId || outcomeBusy) return;
+    setOutcomeBusy("handoff");
+    setDetailError(null);
+    try {
+      const response = await authFetch(`/api/emails/threads/${selectedId}/handoff`, { method: "POST" });
+      const body = (await response.json().catch(() => null)) as {
+        handoff?: { id: string; status: string };
+        error?: string;
+      } | null;
+      if (!response.ok || !body?.handoff)
+        throw new Error(body?.error || "Could not request a handoff.");
+      setDetail((current) => (current ? { ...current, handoff: body.handoff || null } : current));
+      await updateOutcome("escalated");
+    } catch (cause) {
+      setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
+    } finally {
+      setOutcomeBusy(null);
+    }
+  };
 
   const visibleThreads = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    if (!term) return threads;
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return threads;
     return threads.filter((thread) =>
-      [thread.subject, thread.sender, thread.summary, OUTCOME_META[thread.status].label]
+      [thread.subject, thread.sender, thread.summary, thread.status]
         .join(" ")
-        .toLocaleLowerCase()
-        .includes(term),
+        .toLowerCase()
+        .includes(normalized),
     );
   }, [query, threads]);
 
+  const selected = detail?.thread ?? threads.find((thread) => thread.id === selectedId) ?? null;
   const frameClass = embedded
-    ? "flex h-full min-h-0 flex-col bg-background"
-    : "h-full min-h-0 bg-background px-5 py-8 sm:px-6";
-  if (loading) return <InboxLoadingState frameClass={frameClass} />;
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+    : "wl-paper flex min-h-[620px] flex-1 flex-col overflow-hidden";
 
-  if (threads.length === 0 && error) {
-    return (
-      <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
-        <EmptyState
-          fill
-          framed
-          density="compact"
-          titleTone="ui"
-          withHalo={false}
-          icon={<Mail className="size-5" />}
-          title="Inbox unavailable"
-          description="Wireline couldn't verify your email conversations. Your mailbox connection was not changed."
-          action={
-            <Button type="button" onClick={() => void loadThreads()}>
-              <RefreshCw aria-hidden="true" className="size-4" />
-              Try again
-            </Button>
-          }
-        />
-        <StatusNotice tone="destructive" className="mx-auto mt-3 max-w-lg text-left">
-          {error}
-        </StatusNotice>
-      </section>
-    );
-  }
-
-  if (threads.length === 0) {
-    return (
-      <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
-        <EmptyState
-          fill
-          framed
-          density="compact"
-          titleTone="ui"
-          withHalo={false}
-          icon={<Mail className="size-5" />}
-          title="No email conversations yet"
-          description="Refresh for new mail, or open Connections if you still need to add a mailbox."
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" disabled={syncing} onClick={() => void syncInbox()}>
-                {syncing ? (
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                ) : (
-                  <RefreshCw aria-hidden="true" className="size-4" />
-                )}
-                {syncing ? "Refreshing" : "Refresh inbox"}
-              </Button>
-              <Button asChild variant="secondary">
-                <Link to="/connections">Connections</Link>
-              </Button>
-            </div>
-          }
-        />
-      </section>
-    );
-  }
+  if (loading && !threads.length) return <InboxLoadingState frameClass={frameClass} />;
 
   return (
-    <section className={`${frameClass} min-h-0`}>
-      {/* Embedded in the Inbox page the tab strip above already draws a divider,
-          so a second bordered band holding one button reads as a dead zone —
-          keep the band borderless and tight there; standalone keeps its header. */}
-      <header
-        className={`flex shrink-0 flex-wrap items-center justify-end gap-3 px-5 sm:px-6 ${
-          embedded ? "py-2" : "border-b border-[var(--wireline-color-border-default)] py-3"
-        }`}
-      >
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={syncing}
-          onClick={() => void syncInbox()}
-        >
-          {syncing ? (
-            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          ) : (
-            <RefreshCw aria-hidden="true" className="size-4" />
-          )}
-          {syncing ? "Refreshing" : "Refresh"}
+    <section className={frameClass} aria-label="Email inbox">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="Search email"
+          aria-label="Search email conversations"
+          className="min-w-0 flex-1"
+        />
+        <Button type="button" variant="secondary" size="sm" onClick={() => void syncInbox()} disabled={syncing}>
+          {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+          <span className="hidden sm:inline">Refresh</span>
         </Button>
-      </header>
-
-      <div className="space-y-3 px-5 pt-4 sm:px-6">
-        {error ? (
-          <StatusNotice tone="destructive" title="Inbox refresh failed">
-            {error}
-          </StatusNotice>
-        ) : null}
-        {notice ? (
-          <ConversationActivity state="complete" title="Inbox updated" detail={notice} />
-        ) : null}
       </div>
 
-      <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(340px,1fr)_minmax(0,1.4fr)]">
-        <div className="wl-scroll min-h-0 overflow-y-auto border-b border-border p-3 xl:border-b-0 xl:border-r sm:p-4">
-          <div className="mb-3 flex items-center gap-3">
-            <SearchField
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onClear={() => setQuery("")}
-              aria-label="Search conversations"
-              placeholder="Search conversations"
-              className="min-w-0 flex-1"
+      {notice ? (
+        <StatusNotice tone="success" title="Updated" className="mx-3 mt-3 sm:mx-4">
+          {notice}
+        </StatusNotice>
+      ) : null}
+      {error ? (
+        <StatusNotice tone="destructive" title="Inbox unavailable" className="mx-3 mt-3 sm:mx-4">
+          {error}
+        </StatusNotice>
+      ) : null}
+
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
+        <div className={`min-h-0 overflow-y-auto ${selectedId ? "hidden lg:block" : "block"} border-r border-border`}>
+          {!visibleThreads.length ? (
+            <EmptyState
+              icon={<Mail className="size-5" />}
+              title={agentId ? "No email for this Bot" : "No email yet"}
+              description={agentId ? undefined : "Connected mailbox conversations will appear here."}
+              density="compact"
+              action={
+                !agentId ? (
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to="/connections">Connect email</Link>
+                  </Button>
+                ) : undefined
+              }
             />
-            <span className="shrink-0 text-xs text-muted-foreground" aria-live="polite">
-              {visibleThreads.length}/{threads.length}
-            </span>
-          </div>
-          <ul className="space-y-2" aria-label="Email conversations">
-            {visibleThreads.length ? (
-              visibleThreads.map((thread) => {
-                const outcome = OUTCOME_META[thread.status];
-                const selected = selectedId === thread.id;
+          ) : (
+            <ul className="divide-y divide-border">
+              {visibleThreads.map((thread) => {
+                const active = thread.id === selectedId;
                 return (
                   <li key={thread.id}>
                     <button
                       type="button"
-                      aria-pressed={selected}
-                      onClick={() => {
-                        setSelectedId(thread.id);
-                        setNotice(null);
-                      }}
-                      className={`w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors ${selected ? "border-primary/35 bg-primary/[.055]" : "border-border bg-card hover:bg-muted/70"}`}
+                      onClick={() => setSelectedId(thread.id)}
+                      aria-pressed={active}
+                      className={`w-full px-4 py-3 text-left transition-colors ${
+                        active ? "bg-primary/7" : "hover:bg-muted/45"
+                      }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <span
-                          className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-sm font-semibold text-primary"
-                          aria-hidden="true"
-                        >
-                          {senderInitial(thread.sender)}
-                        </span>
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-foreground">
-                                {thread.subject}
-                              </p>
-                              <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
-                                {thread.sender}
-                              </p>
-                            </div>
-                            <Badge
-                              variant={outcome.variant}
-                              className="shrink-0 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
-                            >
-                              {outcome.label}
-                            </Badge>
-                          </div>
-                          <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                            {thread.summary}
-                          </p>
-                          {thread.lastMessageAt ? (
-                            <p className="mt-2 text-xs text-muted-foreground">
-                              {formatTimestamp(thread.lastMessageAt)}
-                            </p>
-                          ) : null}
+                          <strong className="block truncate text-sm font-semibold text-foreground">
+                            {thread.sender}
+                          </strong>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {thread.subject}
+                          </span>
                         </div>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {formatTimestamp(thread.lastMessageAt)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant={OUTCOME_META[thread.status].variant}>{OUTCOME_META[thread.status].label}</Badge>
                       </div>
                     </button>
                   </li>
                 );
-              })
-            ) : (
-              <li>
-                <EmptyState
-                  density="compact"
-                  icon={<Sparkles className="size-5" />}
-                  title="No matches"
-                />
-              </li>
-            )}
-          </ul>
+              })}
+            </ul>
+          )}
         </div>
 
-        <aside className="wl-scroll min-h-0 overflow-y-auto bg-secondary/30 p-4 sm:p-6">
-          {!selectedThread ? (
+        <div className={`min-h-0 ${selectedId ? "block" : "hidden lg:block"}`}>
+          {!selectedId ? (
             <EmptyState
-              density="default"
-              className="min-h-[360px] border-dashed border-border bg-card p-8"
-              icon={<Sparkles className="size-5" />}
+              icon={<Mail className="size-5" />}
               title="Select a conversation"
+              density="compact"
             />
           ) : detailLoading ? (
-            <div
-              className="space-y-4 rounded-[var(--radius-xl)] border border-border bg-card p-6"
-              aria-busy="true"
-              aria-live="polite"
-            >
-              <Skeleton shape="text" className="h-4 w-28" />
-              <Skeleton shape="text" className="h-7 w-4/5" />
-              <Skeleton shape="text" className="h-4 w-1/3" />
-              <Skeleton shape="surface" className="h-28 w-full" />
+            <div className="grid h-full place-items-center text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" /> Loading…
+              </span>
             </div>
           ) : detailError ? (
-            <StatusNotice
-              tone="destructive"
-              title="Could not open this conversation."
-              action={undefined}
-            >
-              <div>{detailError}</div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="mt-4"
-                onClick={() => void loadThreadDetail(selectedThread.id)}
-              >
-                Try again
-              </Button>
+            <StatusNotice tone="destructive" title="Conversation unavailable" className="m-4">
+              {detailError}
             </StatusNotice>
-          ) : (
-            <div className="space-y-5">
-              <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+          ) : selected ? (
+            <div className="flex h-full min-h-0 flex-col">
+              <header className="border-b border-border px-4 py-3 sm:px-5">
+                <button
+                  type="button"
+                  className="mb-2 text-xs font-semibold text-primary lg:hidden"
+                  onClick={() => setSelectedId(null)}
+                >
+                  Back
+                </button>
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Outcome
-                    </p>
-                    <h2 className="wl-preserve-case mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">
-                      {selectedThread.subject}
-                    </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">{selectedThread.sender}</p>
+                    <h2 className="truncate text-base font-semibold text-foreground">{selected.subject}</h2>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{selected.sender}</p>
                   </div>
-                  <Badge
-                    variant={OUTCOME_META[selectedThread.status].variant}
-                    className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
-                  >
-                    {OUTCOME_META[selectedThread.status].label}
-                  </Badge>
+                  <Badge variant={OUTCOME_META[selected.status].variant}>{OUTCOME_META[selected.status].label}</Badge>
                 </div>
-                <p className="mt-5 rounded-[var(--radius-lg)] border border-border bg-secondary p-4 text-sm leading-6 text-muted-foreground">
-                  {selectedThread.summary}
-                </p>
-              </section>
-              <section className="wl-paper wl-paper-elevated overflow-hidden">
-                <div className="border-b border-border px-5 py-4 sm:px-6">
-                  <p className="wl-card-title">Conversation record</p>
-                </div>
-                <div className="space-y-3 p-4 sm:p-5">
-                  {detail?.messages.length ? (
-                    detail.messages.map((message) => (
+              </header>
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                {detail?.messages.length ? (
+                  <div className="space-y-3">
+                    {detail.messages.map((message) => (
                       <ConversationMessage
                         key={message.id}
-                        author={isAssistantMessage(message.role) ? "assistant" : "customer"}
-                        channel="email"
-                        timestamp={
-                          message.createdAt ? formatTimestamp(message.createdAt) : undefined
-                        }
+                        direction={isAssistantMessage(message.role) ? "out" : "in"}
+                        avatar={isAssistantMessage(message.role) ? <Sparkles className="size-4" /> : senderInitial(selected.sender)}
+                        timestamp={formatTimestamp(message.createdAt)}
                       >
                         {message.content}
                       </ConversationMessage>
-                    ))
-                  ) : (
-                    <EmptyState
-                      density="compact"
-                      title="No stored message bodies"
-                    />
-                  )}
-                </div>
-              </section>
-              <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
-                    <Route className="size-4" />
-                  </span>
-                  <div>
-                    <p className="wl-card-title">Set next state</p>
+                    ))}
                   </div>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-2.5">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={outcomeBusy !== null}
-                    onClick={() => void setOutcome("waiting")}
-                  >
-                    {outcomeBusy === "waiting" ? (
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                    ) : (
-                      <Clock3 aria-hidden="true" className="size-4" />
-                    )}
-                    Mark waiting
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={outcomeBusy !== null}
-                    onClick={() => void setOutcome("booked")}
-                  >
-                    {outcomeBusy === "booked" ? (
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 aria-hidden="true" className="size-4" />
-                    )}
-                    Mark booked
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={outcomeBusy !== null}
-                    onClick={() => void setOutcome("escalated", true)}
-                  >
-                    {outcomeBusy === "handoff" ? (
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                    ) : (
-                      <UserRoundCheck aria-hidden="true" className="size-4" />
-                    )}
-                    Handoff to team
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={outcomeBusy !== null}
-                    onClick={() => void setOutcome("resolved")}
-                  >
-                    {outcomeBusy === "resolved" ? (
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 aria-hidden="true" className="size-4" />
-                    )}
-                    Resolve
-                  </Button>
-                  {selectedThread.status !== "open" ? (
+                ) : (
+                  <p className="text-sm text-muted-foreground">No message body is available yet.</p>
+                )}
+              </div>
+
+              <footer className="border-t border-border p-3 sm:p-4">
+                <ConversationActivity
+                  items={[
+                    { icon: Clock3, label: "Last activity", value: formatTimestamp(selected.lastMessageAt) },
+                    { icon: UserRoundCheck, label: "Status", value: OUTCOME_META[selected.status].label },
+                    ...(detail?.handoff
+                      ? [{ icon: Route, label: "Handoff", value: detail.handoff.status }]
+                      : []),
+                  ]}
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(["waiting", "booked", "resolved"] as OutcomeStatus[]).map((status) => (
                     <Button
+                      key={status}
                       type="button"
-                      variant="link"
-                      className="h-auto px-0 text-sm"
-                      disabled={outcomeBusy !== null}
-                      onClick={() => void setOutcome("open")}
+                      size="sm"
+                      variant="secondary"
+                      disabled={Boolean(outcomeBusy) || selected.status === status}
+                      onClick={() => void updateOutcome(status)}
                     >
-                      Reopen
+                      {outcomeBusy === status ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+                      {OUTCOME_META[status].label}
                     </Button>
-                  ) : null}
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={Boolean(outcomeBusy) || Boolean(detail?.handoff)}
+                    onClick={() => void requestHandoff()}
+                  >
+                    {outcomeBusy === "handoff" ? <Loader2 className="size-3.5 animate-spin" /> : <Route className="size-3.5" />}
+                    Handoff
+                  </Button>
                 </div>
-                {detail?.handoff && selectedThread.status === "escalated" ? (
-                  <ConversationActivity
-                    className="mt-4"
-                    state="active"
-                    title="Follow-up task is active"
-                    detail="A team member owns the next step for this conversation."
-                  />
-                ) : null}
-                {detailError ? (
-                  <StatusNotice tone="destructive" className="mt-4">
-                    {detailError}
-                  </StatusNotice>
-                ) : null}
-              </section>
+              </footer>
             </div>
-          )}
-        </aside>
+          ) : null}
+        </div>
       </div>
     </section>
   );
