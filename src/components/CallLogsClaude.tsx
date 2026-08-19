@@ -63,8 +63,12 @@ function humanize(value: string | null | undefined, fallback = "Completed") {
 
 function statusTone(value: string | null | undefined) {
   const normalized = String(value || "").toLowerCase();
-  if (/booked|qualified|success|completed/.test(normalized)) return "text-[var(--wireline-color-status-success)]";
-  if (/failed|busy|unreachable|voicemail|escalat|handoff|transfer/.test(normalized)) return "text-[var(--wireline-color-status-warning)]";
+  if (/booked|qualified|success|completed/.test(normalized)) {
+    return "text-[var(--wireline-color-status-success)]";
+  }
+  if (/failed|busy|unreachable|voicemail|escalat|handoff|transfer/.test(normalized)) {
+    return "text-[var(--wireline-color-status-warning)]";
+  }
   return "text-muted-foreground";
 }
 
@@ -80,8 +84,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     setError(null);
     try {
       const query = new URLSearchParams({ limit: "100", offset: "0" });
-      if (agentId) query.set("agent_id", agentId);
-      const response = await authFetch(`/api/calls?${query.toString()}`);
+      const endpoint = agentId
+        ? `/api/agents/${encodeURIComponent(agentId)}/calls?${query.toString()}`
+        : `/api/calls?${query.toString()}`;
+      const response = await authFetch(endpoint);
       if (!response.ok) throw new Error("Could not load calls.");
       const body = (await response.json()) as CallsResponse;
       const nextCalls = Array.isArray(body.calls) ? body.calls : [];
@@ -117,17 +123,26 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <Button type="button" variant="ghost" size="sm" onClick={() => void loadCalls()} disabled={loading} aria-label="Refresh calls">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void loadCalls()}
+            disabled={loading}
+            aria-label="Refresh calls"
+          >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
           </Button>
-          <a
-            href="/api/export/calls.csv"
-            download
-            aria-label="Export calls as CSV"
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Download className="size-4" aria-hidden="true" />
-          </a>
+          {!agentId ? (
+            <a
+              href="/api/export/calls.csv"
+              download
+              aria-label="Export calls as CSV"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Download className="size-4" aria-hidden="true" />
+            </a>
+          ) : null}
           <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
             <Phone className="size-4" aria-hidden="true" />
             Dial
@@ -207,7 +222,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           )}
         </section>
 
-        <section className={`${selected ? "block" : "hidden lg:block"} min-h-0 overflow-y-auto`} aria-label="Call report">
+        <section
+          className={`${selected ? "block" : "hidden lg:block"} min-h-0 overflow-y-auto`}
+          aria-label="Call report"
+        >
           {!selected ? (
             <EmptyState title="Select a call" density="compact" />
           ) : (
@@ -227,7 +245,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                   {formatPhone(selected.customer_number, "Unknown caller")}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {[selected.agent_name, formatTime(selected.created_at), formatDuration(selected.duration_seconds)]
+                  {[
+                    selected.agent_name,
+                    formatTime(selected.created_at),
+                    formatDuration(selected.duration_seconds),
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
@@ -235,7 +257,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
               <div className="space-y-5 py-5">
                 <section>
-                  <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Summary</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Summary
+                  </h4>
                   <p className="mt-2 text-sm leading-6 text-foreground">
                     {selected.summary || "No summary is available for this call yet."}
                   </p>
@@ -249,23 +273,31 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                     ["Quality", typeof selected.qa_score === "number" ? String(selected.qa_score) : "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl border border-border bg-card p-3">
-                      <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
-                      <strong className="mt-1.5 block truncate text-sm font-semibold text-foreground">{value}</strong>
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                        {label}
+                      </span>
+                      <strong className="mt-1.5 block truncate text-sm font-semibold text-foreground">
+                        {value}
+                      </strong>
                     </div>
                   ))}
                 </div>
 
                 {selected.coaching_note ? (
                   <section>
-                    <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Follow-up</h4>
+                    <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      Follow-up
+                    </h4>
                     <p className="mt-2 text-sm leading-6 text-foreground">{selected.coaching_note}</p>
                   </section>
                 ) : null}
 
                 {selected.transcript ? (
                   <details className="rounded-xl border border-border bg-card">
-                    <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">Transcript</summary>
-                    <div className="border-t border-border px-4 py-4 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">
+                    <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
+                      Transcript
+                    </summary>
+                    <div className="whitespace-pre-wrap border-t border-border px-4 py-4 text-sm leading-6 text-muted-foreground">
                       {selected.transcript}
                     </div>
                   </details>
@@ -273,7 +305,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
                 {selected.recording_url ? (
                   <Button asChild variant="secondary" size="sm">
-                    <a href={selected.recording_url} target="_blank" rel="noreferrer">Recording</a>
+                    <a href={selected.recording_url} target="_blank" rel="noreferrer">
+                      Recording
+                    </a>
                   </Button>
                 ) : null}
               </div>
