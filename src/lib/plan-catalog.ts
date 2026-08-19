@@ -221,7 +221,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "team_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "2 live agents, personal Concierge + business voice agent",
+      "2 live agents, two number slots, Lead Hunt and automation",
       "2 production-number slots, provisioned when needed",
       "100 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -457,7 +457,7 @@ export function planById(id: string | null | undefined): StripePlan | null {
   return STRIPE_PLANS.find((plan) => plan.id === canonical) || null;
 }
 
-/** Paid plans that include room for a personal agent + a business voice agent. */
+/** Paid plans that include room for two live voice agents. */
 export function supportsFounderAgentPair(planId: string | null | undefined): boolean {
   const plan = planById(planId);
   return Boolean(plan && plan.price_usd_monthly > 0 && plan.max_agents >= 2);

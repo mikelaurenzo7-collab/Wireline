@@ -2,7 +2,7 @@
 
 Wireline's public operating loop is **Build -> Train -> Launch -> Improve**. The repository still uses technical surface names such as Create, Training, Connections / Wire, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
-Broad public copy uses **voice agents** for personal and business conversations. Personal workspaces create **personal agents**. Business workspaces may describe role-specific **sales agents** or **support agents** when the context is explicit. Never pair "AI" with "agent" in copy: see `CUSTOMER_TERMINOLOGY.md`. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
+Broad public copy uses **voice agents**. Customers configure each agent by role in one workspace. Never pair "AI" with "agent" in copy: see `CUSTOMER_TERMINOLOGY.md`. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 
@@ -42,7 +42,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Branch, review, migration, validation, and release workflow. |
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md) | Source-control boundaries, deletion policy, and maintainability standards. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Runtime boundaries, data flow, provider posture, and security invariants. |
-| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md) | Customer-language contract for personal, business, and technical contexts. |
+| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md) | Customer-language contract for voice agents, roles, and technical `agent` identifiers. |
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md) | Agent-first positioning and roster-compatible launch framing. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Web, browser, native, ChatGPT, and presenter ownership and release boundaries. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App behavior, OAuth, tool boundaries, and release verification. |

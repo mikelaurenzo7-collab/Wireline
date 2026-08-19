@@ -39,7 +39,7 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
     expect(BRAND_SYSTEM.toneRules).toContain("Lead with outcomes before AI mechanics.");
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Welcome both personal and business use without making either audience feel secondary.",
+      "Welcome every use case without splitting the product into personal and business workspaces.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Present calling, texting, and email as channels each trained voice agent can use, not separate products customers must assemble.",
@@ -55,7 +55,7 @@ describe("product voice cohesion", () => {
     expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done");
     expect(MARKETING_VOICE.primaryCta).toBe("Build Your Voice Agent");
     expect(MARKETING_VOICE.subline).toBe(
-      "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
+      "Configure one for any role. It can call, answer, text, email, book, and follow through while you stay in control.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Calls and answers",
@@ -96,16 +96,16 @@ describe("product voice cohesion", () => {
 
   it("uses contextual customer nouns without renaming the technical agent domain", () => {
     expect(customerAgentLanguage("personal")).toMatchObject({
-      singular: "personal voice agent",
-      plural: "personal voice agents",
-      createCta: "Create personal voice agent",
-      createCtaShort: "Create voice agent",
+      singular: "voice agent",
+      plural: "voice agents",
+      createCta: "Create Voice Agent",
+      createCtaShort: "Create Voice Agent",
     });
     expect(customerAgentLanguage("business")).toMatchObject({
-      singular: "business voice agent",
-      plural: "business voice agents",
-      createCta: "Create business voice agent",
-      createCtaShort: "Create voice agent",
+      singular: "voice agent",
+      plural: "voice agents",
+      createCta: "Create Voice Agent",
+      createCtaShort: "Create Voice Agent",
     });
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
 

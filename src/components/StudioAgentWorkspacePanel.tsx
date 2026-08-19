@@ -4,6 +4,7 @@ import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
+import { isPrincipalVoiceRole } from "../lib/agent-role-definitions";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
@@ -14,6 +15,7 @@ const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
+  role?: string | null;
   isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
@@ -62,16 +64,14 @@ async function extractionPersistedSomething(response: Response): Promise<boolean
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
-  isBusinessAgent = true,
+  role,
+  isBusinessAgent: _isBusinessAgent = true,
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
-    () =>
-      isBusinessAgent
-        ? `Hello, this is ${agentName || "your voice agent"}. How can I help?`
-        : `Hi, this is ${agentName || "your personal agent"}. How can I help?`,
-    [agentName, isBusinessAgent],
+    () => `Hello, this is ${agentName || "your voice agent"}. How can I help?`,
+    [agentName],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
@@ -154,7 +154,7 @@ export default function StudioAgentWorkspacePanel({
       const personalityText = composeSetupPersonality(
         loadedPersonality,
         setupPersonality,
-        isBusinessAgent,
+        !isPrincipalVoiceRole(role),
       );
       const greetingTrimmed = setupGreeting.trim();
       const knowledgeTrimmed = setupKnowledge.trim();
@@ -178,11 +178,7 @@ export default function StudioAgentWorkspacePanel({
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
         if (!knowledgeResponse.ok) {
-          throw new Error(
-            isBusinessAgent
-              ? "Business information could not be saved."
-              : "Personal preferences could not be saved.",
-          );
+          throw new Error("Those facts could not be saved.");
         }
         // /api/train/extract answers 200 even when the extractor decided the
         // text was too unclear to store anything — its prompt tells it to
@@ -197,17 +193,11 @@ export default function StudioAgentWorkspacePanel({
         if (!knowledgeCaptured) {
           setSetupNotice(null);
           setSetupError(
-            isBusinessAgent
-              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts (hours, pricing, service area, what to do with a lead) and apply again."
-              : "Tone and greeting were saved, but nothing concrete could be pulled out of your preferences. Rewrite them as short, specific statements and apply again.",
+            "Tone and greeting were saved, but nothing concrete could be pulled out of those details. Rewrite them as short, specific facts and apply again.",
           );
           return;
         }
-        setSetupNotice(
-          isBusinessAgent
-            ? "Run a customer test before connecting live traffic."
-            : "Run a private test before connecting a live line.",
-        );
+        setSetupNotice("Run a test conversation before connecting live traffic.");
       }
     } catch (reason) {
       if (isCurrentAgent()) {
@@ -311,7 +301,7 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                    Essential facts{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
@@ -326,11 +316,7 @@ export default function StudioAgentWorkspacePanel({
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
-                  placeholder={
-                    isBusinessAgent
-                      ? "Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
-                      : "Preferences, hard rules, calendar constraints, and when to text or interrupt you…"
-                  }
+                  placeholder="Hours, services, pricing, preferences, policies, and when to hand off to a person…"
                 />
               </div>
 
@@ -365,7 +351,6 @@ export default function StudioAgentWorkspacePanel({
             <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
-            {isBusinessAgent ? (
               <Link
                 to={`/studio/live-video?agent=${encodeURIComponent(agentId)}`}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
@@ -373,7 +358,6 @@ export default function StudioAgentWorkspacePanel({
                 <Video className="size-3.5" aria-hidden="true" />
                 Live video
               </Link>
-            ) : null}
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>

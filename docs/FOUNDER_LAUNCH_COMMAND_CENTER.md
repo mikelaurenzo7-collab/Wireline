@@ -21,11 +21,11 @@ Never keep an old audit finding alive simply because it once appeared here.
 
 ## Product decision
 
-Wireline keeps Personal and Business workspaces because they change defaults and customer intent.
+Wireline is one workspace of **voice agents**. Customers configure each agent by role.
 
-- Personal creates a **personal agent**.
-- Business creates a **business voice agent**.
-- Broad public copy uses **voice agent**.
+- Create a **voice agent**.
+- Specialize with a role such as Lead Agent, Sales, Receptionist, Support, Scheduler, Collections, or Concierge.
+- Broad public copy uses **Voice Agent**.
 - Technical APIs, routes, events, and database fields keep `agent`.
 
 Do not use `AI employee` as the launch noun. Do not pair `AI` with `agent` in customer-facing copy.

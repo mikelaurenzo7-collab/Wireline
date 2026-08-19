@@ -4,11 +4,8 @@ import type { AgentVideoPresenterConfig, VideoPresenterConsentStatus } from "./t
 export function videoPresenterStatusMessage(
   presenter: AgentVideoPresenterConfig,
   _platformConfigured: boolean,
-  isBusinessAgent: boolean,
+  _isBusinessAgent: boolean,
 ): string {
-  if (!isBusinessAgent) {
-    return "Personal agents use a private in-app identity badge.";
-  }
   if (presenter.chosenAvatarId) {
     return "This agent keeps its identity badge. Live talking-head video is retired.";
   }

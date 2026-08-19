@@ -128,13 +128,9 @@ describe("current-state UI contract", () => {
     expect(auth).toContain("plan.price_usd_annual");
     expect(auth).toContain("plan.price_usd_monthly");
     expect(auth).not.toContain('starter: "Starter · $9/month"');
-    // A Business workspace with no stated plan still lands on Starter.
-    expect(auth).toContain('?? "starter"');
-    // And a plan the visitor explicitly asked for (?plan=…) survives the
-    // workspace-shape question. Choosing "Personal" used to overwrite it with
-    // the free tier, discarding the purchase intent that brought them here.
-    expect(auth).toContain("statedPaidPlan");
-    expect(auth).toContain('nextMode === "personal" ? (statedPaidPlan ?? "personal")');
+    expect(auth).not.toContain("WorkspaceSelector");
+    expect(auth).not.toContain("statedPaidPlan");
+    expect(auth).not.toContain('nextMode === "personal" ? (statedPaidPlan ?? "personal")');
     expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
   });
 
@@ -146,11 +142,10 @@ describe("current-state UI contract", () => {
     const features = read("src/pages/Features.tsx");
 
     expect(auth).toContain("max-w-[520px]");
-    expect(auth).toContain('title: "Personal"');
-    expect(auth).toContain('title: "Business"');
+    expect(auth).not.toContain("WorkspaceSelector");
+    expect(auth).not.toContain('title: "Personal"');
+    expect(auth).not.toContain('title: "Business"');
     expect(auth).not.toContain("shortText:");
-    expect(auth).not.toContain("description:");
-    expect(auth).toContain("sm:grid-cols-2");
     expect(auth).toContain('const nextPath = value ? "/signup" : "/signin"');
     expect(auth).toContain("location.search");
     expect(auth).not.toContain("AuthBrandPanel");
@@ -218,7 +213,7 @@ describe("current-state UI contract", () => {
     expect(copy).toContain("under the owner's direction");
     expect(copy).toContain("under your direction");
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Your calls. Your texts. Your email. Your outcomes.",
+      "Calls, texts, and email handled. Outcomes logged.",
     );
     expect(copy).toContain("guardrails, approvals, spend, handoffs, and escalation");
     expect(copy).not.toContain("under the owner's rules");

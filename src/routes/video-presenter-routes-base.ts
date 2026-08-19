@@ -132,12 +132,6 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await ownedAgent(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    if (!agent.isBusinessAgent) {
-      throw AppError.fromHttpStatus(
-        400,
-        "Presenter customization is available for business agents only.",
-      );
-    }
 
     if (req.body.provider !== undefined) {
       if (isLiveVideoProvider(req.body.provider) || req.body.provider !== "synthetic") {

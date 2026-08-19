@@ -1,8 +1,4 @@
-import {
-  parseSignupIntent,
-  recommendedPlanFromIntent,
-  type SignupIntent,
-} from "./signup-intent";
+import { parseSignupIntent, type SignupIntent } from "./signup-intent";
 import { clearFreshSignupSession, isFreshSignupSession } from "./post-signup-onboarding";
 
 export type WorkspaceMode = "personal" | "business";
@@ -10,17 +6,12 @@ export type WorkspaceMode = "personal" | "business";
 export const WORKSPACE_MODE_KEY = "wireline.mode";
 export const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 
-export function workspaceFromIntent(intent: SignupIntent | null | undefined): WorkspaceMode {
-  const plan = intent ? recommendedPlanFromIntent(intent) : null;
-  if (plan && plan !== "personal") return "business";
-  if (intent?.signupWedge && intent.signupWedge !== "personal") return "business";
-  return "personal";
+export function workspaceFromIntent(_intent: SignupIntent | null | undefined): WorkspaceMode {
+  return "business";
 }
 
 export function readStoredWorkspaceMode(): WorkspaceMode {
-  if (typeof window === "undefined") return "personal";
-  const stored = window.localStorage.getItem(WORKSPACE_MODE_KEY);
-  return stored === "personal" || stored === "business" ? stored : "personal";
+  return "business";
 }
 
 export function persistWorkspaceMode(mode: WorkspaceMode) {
@@ -123,7 +114,7 @@ export function resolvePostAuthDestination(
     }
     persistAuthRedirect(null);
     clearFreshSignupSession();
-    return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
+    return "/studio?create=1";
   }
 
   if (typeof window !== "undefined") {

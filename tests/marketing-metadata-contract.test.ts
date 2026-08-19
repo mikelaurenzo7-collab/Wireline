@@ -19,10 +19,11 @@ describe("marketing metadata contract", () => {
       'const DEFAULT_TITLE = "Wireline | Voice agents that get the work done"',
     );
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("Build one for your business or your life.");
       expect(source).toContain("call, answer, text, email, book, and follow through");
       expect(source).not.toContain("—");
     }
+    expect(staticHead).toContain("Configure one for any role.");
+    expect(runtimeMeta).toContain("MARKETING_VOICE.subline");
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });

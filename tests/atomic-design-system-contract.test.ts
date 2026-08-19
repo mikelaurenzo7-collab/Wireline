@@ -31,9 +31,7 @@ describe("Atomic Design completion contract", () => {
     expect(resetPassword).not.toContain("components/ui/shadcn");
 
     expect(onboarding).toContain('from "../lib/auth-redirect"');
-    expect(onboarding).toContain(
-      'workspaceMode === "business" ? "/studio?create=1&posture=business"',
-    );
+    expect(onboarding).toContain('const target = "/studio?create=1"');
     expect(onboarding).toContain('from "../components/TransitionSurface"');
     expect(onboarding).toContain("language.createCta");
     expect(onboarding).not.toContain("components/ui/shadcn");

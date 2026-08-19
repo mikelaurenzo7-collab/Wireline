@@ -9,7 +9,7 @@ describe("static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain("Wireline | Voice agents that get the work done");
-    expect(index).toContain("Build one for your business or your life.");
+    expect(index).toContain("Configure one for any role.");
     expect(index).toContain("call, answer, text, email, book, and follow through");
     expect(index).toContain('"slogan": "Build. Train. Launch."');
     expect(index).not.toContain("—");
@@ -91,7 +91,7 @@ describe("static marketing metadata", () => {
     };
 
     expect(manifest.name).toBe("Wireline | Voice Agents");
-    expect(manifest.description).toContain("Build one for your business or your life.");
+    expect(manifest.description).toContain("Configure one for any role.");
     expect(manifest.description).toContain("call, answer, text, email, book");
     expect(manifest.description).toContain("follow through while you stay in control");
     expect(manifest.description).not.toContain("included numbers");

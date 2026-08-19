@@ -98,16 +98,14 @@ describe("authenticated agent flow", () => {
     expect(authPortal).toContain("plan.price_usd_annual");
     expect(authPortal).toContain("plan.price_usd_monthly");
     expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
-    expect(authPortal).toContain('nextMode === "personal"');
+    expect(authPortal).not.toContain("WorkspaceSelector");
     expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
     // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
     expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
     expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
-    expect(authRedirect).toContain(
-      'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
-    );
+    expect(authRedirect).toContain('return "/studio?create=1"');
     expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("language.createCta");
     expect(onboardingFlow).not.toContain("Link your phone");
@@ -180,8 +178,8 @@ describe("authenticated agent flow", () => {
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
 
     expect(studioHome).toContain('params.get("brief")');
-    expect(studioHome).toContain('params.get("posture")');
-    expect(studioHome).toContain('requestedPosture !== "personal" && accountType === "business"');
+    expect(studioHome).not.toContain('params.get("posture")');
+    expect(studioHome).not.toContain('requestedPosture !== "personal" && accountType === "business"');
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
     expect(studioHome).not.toContain("mode=workroom");
@@ -199,7 +197,7 @@ describe("authenticated agent flow", () => {
     // their own job — so the same promise is checked where it still lives: the
     // placeholder, which suggests the range without occupying the field.
     expect(createDialog).toContain("Qualify inbound demos, answer support questions");
-    expect(createDialog).toContain("route urgent calls");
+    expect(createDialog).toContain("book appointments");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 

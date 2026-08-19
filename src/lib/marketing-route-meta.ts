@@ -19,14 +19,14 @@
  * `PageMeta` call by `tests/marketing-route-meta-contract.test.ts`.
  */
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
+import { MARKETING_VOICE } from "./product-copy";
 
 const SITE_URL = "https://trywireline.com";
 const BRAND_SUFFIX = " | Wireline";
 
 /** Exact static strings in `index.html` that carry the homepage defaults. */
 export const HOME_TITLE = "Wireline | Voice agents that get the work done";
-export const HOME_DESCRIPTION =
-  "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
+export const HOME_DESCRIPTION = MARKETING_VOICE.subline;
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
 const HOME_OG_URL_TAG = '<meta property="og:url" content="https://trywireline.com/" />';
 const HOME_ROBOTS_TAG =

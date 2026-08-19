@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { MARKETING_VOICE } from "./product-copy";
 
 interface PageMetaProps {
   title: string;
@@ -13,8 +14,7 @@ const BRAND_SUFFIX = " | Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "Wireline | Voice agents that get the work done";
-const DEFAULT_DESCRIPTION =
-  "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
+const DEFAULT_DESCRIPTION = MARKETING_VOICE.subline;
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;

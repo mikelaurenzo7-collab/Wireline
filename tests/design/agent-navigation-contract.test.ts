@@ -93,7 +93,7 @@ describe("agent navigation contract", () => {
     expect(overviewPage).toMatch(/Appointments booked/);
     expect(overviewPage).toMatch(/Needs attention/);
     expect(overviewPage).toMatch(/Customer outcomes/);
-    expect(overviewPage).toMatch(/customerAgentLanguage\(kind\)/);
+    expect(overviewPage).toMatch(/customerAgentLanguage\("business"\)/);
     expect(overviewPage).toMatch(/language\.plural\.replace/);
     expect(overviewPage).toMatch(/Recent customer conversations/);
     expect(overviewPage).not.toMatch(/Workspace metrics|Conversation Balance|Workspace pulse/);
@@ -187,7 +187,7 @@ describe("agent navigation contract", () => {
       expect(pricingPage).toContain(tier);
     }
     expect(pricingPage).toMatch(/Runtime Balance/);
-    expect(pricingPage).toMatch(/Founder hybrid/);
+    expect(pricingPage).toMatch(/Two Live Agents/);
     expect(pricingPage).not.toMatch(/Founder Early Access/);
     expect(pricingPage).not.toMatch(/Try 7 days free/);
   });

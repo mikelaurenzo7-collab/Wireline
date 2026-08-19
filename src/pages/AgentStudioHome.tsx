@@ -5,7 +5,6 @@ import StudioContextChrome from "../components/studio/StudioContextChrome";
 import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { useAgents } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
 import { useToast } from "../contexts/ToastContext";
 import {
   browserCommandBrief,
@@ -21,12 +20,7 @@ import { authFetch } from "../lib/api";
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
   const { loading } = useAgents();
-  const { accountType } = useAccount();
   const { toast } = useToast();
-  const requestedPosture = params.get("posture");
-  const wantsBusinessAgent =
-    requestedPosture === "business" ||
-    (requestedPosture !== "personal" && accountType === "business");
   const [browserContext, setBrowserContext] = useState<BrowserCommandContext | null>(() =>
     readBrowserCommandContext(),
   );
@@ -151,7 +145,6 @@ export default function AgentStudioHome() {
         onClose={() => setShowCreate(false)}
         onCreated={setPostCreateWizard}
         initialBrief={initialBrief}
-        business={wantsBusinessAgent}
       />
       {postCreateWizard ? (
         <PostCreateActivationWizard

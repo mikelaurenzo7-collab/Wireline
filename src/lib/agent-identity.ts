@@ -214,10 +214,10 @@ export function faceConfigFor(seed: string): AgentFaceConfig {
 
 export function personaForRole(
   role: string | null | undefined,
-  isBusinessAgent = false,
+  _isBusinessAgent = false,
 ): AgentIdentityPersona {
   const normalized = (role || "").trim().toLowerCase();
-  if (!isBusinessAgent) return AGENT_IDENTITY_PERSONAS.private_operator;
+  if (normalized === "personal_assistant") return AGENT_IDENTITY_PERSONAS.private_operator;
   if (normalized === "sales" || normalized === "sdr")
     return AGENT_IDENTITY_PERSONAS.revenue_operator;
   if (normalized === "scheduler" || normalized === "appointment_scheduler")

@@ -26,7 +26,6 @@ import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
 import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
@@ -36,7 +35,6 @@ function metricRows(
   highIntentToday: number,
   totalAppointments: number,
   activeWork: number,
-  accountType: "personal" | "business",
 ) {
   return [
     {
@@ -50,10 +48,7 @@ function metricRows(
       label: "High-intent today",
       value: String(highIntentToday),
       tone: highIntentToday > 0 ? ("primary" as const) : ("neutral" as const),
-      // Insights is a business surface (account-type.ts): a personal account
-      // landing there finds no nav entry and no way back. Their high-intent
-      // conversations live in the inbox.
-      href: accountType === "personal" ? "/inbox" : "/insights",
+      href: "/insights",
       icon: Flame,
     },
     {
@@ -101,13 +96,9 @@ function AgentLoadingRows() {
   );
 }
 
-function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
-  const language = customerAgentLanguage(posture);
-  const steps = [
-    posture === "personal" ? "Choose one personal job" : "Choose one customer job",
-    "Connect your line",
-    "Review outcomes",
-  ];
+function FirstRunLaunchpad() {
+  const language = customerAgentLanguage("business");
+  const steps = ["Choose one job", "Connect your line", "Review outcomes"];
 
   return (
     <section
@@ -120,19 +111,11 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
             Start with one job
           </h1>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-            {posture === "personal"
-              ? "Give it one personal task. Wireline handles the call, the follow-up, and the record."
-              : "Give it one customer job. Wireline handles the call, the follow-up, and the record."}
+            Give it one job. Wireline handles the call, the follow-up, and the record.
           </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
-              <Link
-                to={
-                  posture === "personal"
-                    ? "/studio?create=1&posture=personal"
-                    : "/studio?create=1&posture=business"
-                }
-              >
+              <Link to="/studio?create=1">
                 <span className="sm:hidden">{language.createCtaShort}</span>
                 <span className="hidden sm:inline">{language.createCta}</span>
                 <ArrowRight size={15} aria-hidden="true" />
@@ -282,7 +265,7 @@ function CompactAgentRow({
   const live = Boolean(agent.phone_number);
   const readiness = agentReadinessLabel(agent, phoneLookupDegraded);
   const enc = encodeURIComponent(agent.id);
-  const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
+  const language = customerAgentLanguage("business");
   return (
     <Link
       to={`/studio?agent=${enc}`}
@@ -319,8 +302,6 @@ function CompactAgentRow({
   );
 }
 
-type AgentKind = "personal" | "business";
-
 type RecentConversation = {
   id: string;
   channel: "voice" | "email" | "sms";
@@ -335,15 +316,13 @@ type RecentConversation = {
 const OVERVIEW_AGENT_PREVIEW = 6;
 
 function AgentSection({
-  kind,
   agents,
   phoneLookupDegraded,
 }: {
-  kind: AgentKind;
   agents: WorkspaceAgentSummary[];
   phoneLookupDegraded: boolean;
 }) {
-  const language = customerAgentLanguage(kind);
+  const language = customerAgentLanguage("business");
   const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
   const overflowCount = Math.max(0, agents.length - OVERVIEW_AGENT_PREVIEW);
@@ -375,25 +354,22 @@ function AgentSection({
           </Link>
         ) : null}
         <Link
-          to={`/studio?create=1&posture=${kind}`}
+          to="/studio?create=1"
           className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
           + New {language.singular}
         </Link>
-        {kind === "business" ? (
-          // Identity: badge only. Live talking-head and clip substitutes are retired.
-          <Link
-            to="/studio/live-video"
-            className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            <Badge size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate">Identity</span>
-            <ArrowRight
-              className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
-              aria-hidden="true"
-            />
-          </Link>
-        ) : null}
+        <Link
+          to="/studio/live-video"
+          className="group flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-[10px] border border-border bg-background/30 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <Badge size={14} className="shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate">Identity</span>
+          <ArrowRight
+            className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
+            aria-hidden="true"
+          />
+        </Link>
       </div>
     </section>
   );
@@ -428,9 +404,8 @@ function conversationChannelLabel(channel: RecentConversation["channel"]) {
 }
 
 export default function OverviewPage() {
-  const { accountType } = useAccount();
   const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
-  const language = customerAgentLanguage(accountType);
+  const language = customerAgentLanguage("business");
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [conversationsToday, setConversationsToday] = useState(0);
@@ -558,27 +533,12 @@ export default function OverviewPage() {
     };
   }, [hasPhoneLine, dashboardRefreshTick]);
 
-  const personalAgents = agents.filter((agent) => !agent.is_business_agent);
-  const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
   const isFirstRun = !loading && !degraded && agents.length === 0;
-  const missingFounderPairPosture =
-    hasAgents &&
-    ((personalAgents.length === 0 && businessAgents.length > 0) ||
-      (businessAgents.length === 0 && personalAgents.length > 0));
-  const founderPairHref =
-    personalAgents.length === 0
-      ? "/studio?create=1&posture=personal"
-      : "/studio?create=1&posture=business";
-  const founderPairLabel =
-    personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentConversations.length > 0 || conversationsToday > 0;
-  const emptyStudioHref =
-    accountType === "personal"
-      ? "/studio?create=1&posture=personal"
-      : "/studio?create=1&posture=business";
+  const emptyStudioHref = "/studio?create=1";
   const primaryStudioHref = primaryAgent
     ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=setup`
     : emptyStudioHref;
@@ -636,7 +596,7 @@ export default function OverviewPage() {
         ) : null}
 
         {isFirstRun ? (
-          <FirstRunLaunchpad posture={accountType} />
+          <FirstRunLaunchpad />
         ) : degraded && !hasAgents ? (
           <WorkspaceRecovery onRetry={refresh} />
         ) : (
@@ -673,7 +633,6 @@ export default function OverviewPage() {
                     highIntentToday,
                     totalAppointments,
                     activeWork,
-                    accountType,
                   ).map((item, index) => {
                     const Icon = item.icon;
                     return (
@@ -746,24 +705,7 @@ export default function OverviewPage() {
                   <AgentLoadingRows />
                 ) : hasAgents ? (
                   <div className="grid gap-5">
-                    <AgentSection
-                      kind="personal"
-                      agents={personalAgents}
-                      phoneLookupDegraded={phoneLookupDegraded}
-                    />
-                    <AgentSection
-                      kind="business"
-                      agents={businessAgents}
-                      phoneLookupDegraded={phoneLookupDegraded}
-                    />
-                    {missingFounderPairPosture ? (
-                      <Link
-                        to={founderPairHref}
-                        className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                      >
-                        + {founderPairLabel}
-                      </Link>
-                    ) : null}
+                    <AgentSection agents={agents} phoneLookupDegraded={phoneLookupDegraded} />
                   </div>
                 ) : (
                   <EmptyState

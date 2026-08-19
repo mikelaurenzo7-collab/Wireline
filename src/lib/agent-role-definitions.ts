@@ -83,11 +83,8 @@ const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
     description: "Routes calls and creates first impressions",
   },
   personal_assistant: {
-    // Stored role value is a stable technical contract; label/archetype are
-    // customer-visible through the web, API, and mobile role listings and
-    // follow the product-language rule: "personal agent", never "assistant".
-    label: "Personal Agent",
-    archetype: "Personal Agent",
+    label: "Concierge",
+    archetype: "Concierge",
     description: "Protects principal time and handles personal logistics",
   },
   marketing: {
@@ -147,6 +144,11 @@ export function validateAgentRoleForCreate(role: string): string | null {
     return `Agent role "${normalized}" is not configured for personality templates.`;
   }
   return null;
+}
+
+/** Concierge and other principal-facing roles use quiet-hours / principal copy. */
+export function isPrincipalVoiceRole(role: string | undefined | null): boolean {
+  return normalizeAgentRoleId(role) === "personal_assistant";
 }
 
 /** Canonical role id for persistence after validation passes. */

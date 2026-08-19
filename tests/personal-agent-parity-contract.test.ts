@@ -10,7 +10,6 @@ import {
 } from "../src/lib/agent-create-defaults";
 import {
   applyPlanToolUnlocks,
-  BUSINESS_TOOL_NAMES,
   getDefaultAgentTools,
   getRoleToolSet,
   resolveAgentTools,
@@ -35,6 +34,12 @@ describe("personal agent parity — create defaults", () => {
     expect(personality!).toContain("You represent your principal");
     expect(personality!).not.toContain("You represent Sarah");
     expect(personality!).not.toContain("your business — a single individual");
+    const capableConcierge = resolveCreatePersonality({
+      role: PERSONAL_FAST_START_ROLE,
+      isBusinessAgent: true,
+      agentName: "Sarah",
+    });
+    expect(capableConcierge).toContain("TEMPLATE SPECIALTY: Personal Concierge");
   });
 
   it("never substitutes the agent name as the company in business templates", () => {
@@ -54,9 +59,11 @@ describe("personal agent parity — create defaults", () => {
     const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
 
     expect(personalTools.length).toBeGreaterThan(0);
-    for (const tool of personalTools) {
-      expect(BUSINESS_TOOL_NAMES.has(tool)).toBe(false);
-    }
+    const leadTools = resolveCreateEnabledTools("ceo", true);
+    expect(leadTools).toContain("crm_create_opportunity");
+    expect(leadTools).toContain("send_contract");
+    expect(leadTools).toContain("create_support_ticket");
+    expect(leadTools).not.toContain("shopify_cancel_order");
     for (const tool of deviceActions) {
       expect(personalTools).not.toContain(tool);
       expect(businessTools).not.toContain(tool);
@@ -92,8 +99,8 @@ describe("personal agent parity — create defaults", () => {
     expect(resolveAgentTools("sales", null)).toEqual(getDefaultAgentTools());
   });
 
-  it("marks Personal & Lifestyle templates as non-business", () => {
-    expect(isBusinessTemplateCategory("Personal & Lifestyle")).toBe(false);
+  it("deploys every template category as a capable voice agent", () => {
+    expect(isBusinessTemplateCategory("Personal & Lifestyle")).toBe(true);
     expect(isBusinessTemplateCategory("Sales & Revenue")).toBe(true);
     expect(isBusinessTemplateCategory(null)).toBe(true);
   });
@@ -103,8 +110,10 @@ describe("personal agent parity — presentation and runtime", () => {
   it("keeps Fast Start from overwriting server-seeded personality with a thin stub", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     expect(createDialog).toContain('value: "personal_assistant"');
-    expect(createDialog).toContain("personalOnly: true");
-    expect(createDialog).toContain(
+    expect(createDialog).toContain('value: "ceo"');
+    expect(createDialog).toContain('label: "Lead Agent"');
+    expect(createDialog).not.toContain("personalOnly: true");
+    expect(createDialog).not.toContain(
       'return posture === "business" ? "sales" : "personal_assistant"',
     );
     expect(createDialog).not.toContain("Warm. Concise. Useful.");
@@ -129,16 +138,24 @@ describe("personal agent parity — presentation and runtime", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const vapi = read("src/lib/vapi-assistant-factory-v2.ts");
 
-    expect(panel).toContain("Essential personal facts");
+    expect(panel).toContain("Essential facts");
     expect(panel).toContain("composeSetupPersonality");
     expect(toneCompose).toContain("personally discreet");
     expect(studio).not.toContain("Try a private conversation");
     expect(studio).toContain("isBusinessAgent={Boolean(active.is_business_agent)}");
-    expect(overview).toContain("Choose one personal job");
+    expect(overview).toContain("Choose one job");
     expect(overview).not.toContain("First personal-agent workflow");
     expect(vapi).toContain("a personal Wireline agent for your principal");
     expect(vapi).toContain("## QUIET-HOURS MODE");
     expect(vapi).toContain("Never invent personal facts");
+    // Identity polarity: principal-facing roles get principal copy first.
+    const identityStart = vapi.indexOf("const identityBlock = principalFacing");
+    const identitySlice = vapi.slice(identityStart, identityStart + 900);
+    expect(identitySlice).toContain("a personal Wireline agent for your principal");
+    expect(identitySlice.indexOf("a personal Wireline agent for your principal")).toBeLessThan(
+      identitySlice.indexOf("Never invent business facts"),
+    );
+    expect(vapi).toContain("isPrincipalVoiceRole(configured.role)");
   });
 
   it("preserves rich personality when Studio Set up updates delivery tone", () => {
@@ -165,10 +182,10 @@ describe("personal agent parity — presentation and runtime", () => {
 
   it("softens personal posture copy away from business-employee wording", () => {
     expect(PRODUCT_POSTURE.personal).toMatchObject({
-      badge: "Personal voice agent",
-      createCta: "Build personal voice agent",
-      emptyTitle: "Your personal voice agent.",
-      emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
+      badge: "Voice Agent",
+      createCta: "Build Voice Agent",
+      emptyTitle: "Your Voice Agent",
+      emptyBody: "Calls, texts, and email handled. Outcomes logged.",
     });
   });
 });
@@ -263,8 +280,8 @@ describe("founder hybrid pricing — Starter Plus pair capacity", () => {
     expect(supportsFounderAgentPair("team")).toBe(true);
     expect(supportsFounderAgentPair("starter")).toBe(false);
     const catalog = read("src/lib/plan-catalog.ts");
-    expect(catalog).toContain("2 live agents, personal Concierge + business voice agent");
-    expect(read("src/pages/Pricing.tsx")).toContain("Founder hybrid");
+    expect(catalog).toContain("2 live agents, two number slots, Lead Hunt and automation");
+    expect(read("src/pages/Pricing.tsx")).toContain("Two Live Agents");
     expect(read("src/pages/OverviewPage.tsx")).not.toContain("Complete your founder pair");
   });
 });

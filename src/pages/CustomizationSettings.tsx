@@ -57,23 +57,16 @@ const customizationLinks = [
   },
   {
     label: "Identity badge",
-    detail: "In-app face for business agents. Not a live video presenter.",
+    detail: "In-app face for every voice agent. Not a live video presenter.",
     href: "/studio/live-video",
     icon: Video,
-    businessOnly: true,
   },
 ] as const;
 
 export default function CustomizationSettings() {
   const { accountType } = useAccount();
-  // Success targets lives on /insights, a business surface — offering it to a
-  // personal account lands them on a page with no nav entry and no way back.
-  // businessOnly entries (the live video add-on serves business agents) are
-  // likewise offered only in business mode.
-  const visibleLinks = customizationLinks.filter(
-    (link) =>
-      isRouteAvailableForAccount(accountType, link.href.split(/[?#]/)[0]) &&
-      (!("businessOnly" in link && link.businessOnly) || accountType === "business"),
+  const visibleLinks = customizationLinks.filter((link) =>
+    isRouteAvailableForAccount(accountType, link.href.split(/[?#]/)[0]),
   );
   return (
     <WorkspaceShell contentClassName="pt-1 pb-5">

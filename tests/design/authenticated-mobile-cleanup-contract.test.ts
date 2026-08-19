@@ -130,8 +130,8 @@ describe("authenticated mobile cleanup", () => {
     expect(overview).toContain("wl-overview-greeting");
     expect(polish).toContain(".wl-workspace-page.wl-overview--first-run");
     expect(polish).toContain("gap: 0");
-    expect(accounts).toContain("Keep personal and business work separate");
-    expect(accounts).not.toContain("Keep personal and business work separate.");
+    expect(accounts).toContain("One workspace");
+    expect(accounts).not.toContain("Keep personal and business work separate");
     expect(insights).toContain("No conversations yet");
     expect(insights).toContain("Activity appears once a voice agent starts taking calls.");
     expect(insightsPage).toContain("tabs={firstRun ? undefined : <AppChromeSubTabs density=\"compact\" />}");

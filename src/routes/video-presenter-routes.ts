@@ -77,12 +77,11 @@ router.post(
         and(
           eq(schema.agents.id, req.params.id),
           eq(schema.agents.userId, req.user.id),
-          eq(schema.agents.isBusinessAgent, true),
         ),
       )
       .returning({ id: schema.agents.id });
 
-    if (!updated) throw AppError.fromHttpStatus(404, "Business agent not found");
+    if (!updated) throw AppError.fromHttpStatus(404, "Agent not found");
     res.json({ disabled: true });
   },
 );

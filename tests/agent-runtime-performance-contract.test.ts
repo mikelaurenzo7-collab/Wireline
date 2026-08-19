@@ -63,9 +63,9 @@ describe("agent runtime performance and action integrity", () => {
   });
 
   it("starts new agents focused and preserves explicit selections at runtime", () => {
-    expect(createDefaults).toContain("getRoleToolSet(runtimeRole(role, isBusinessAgent))");
+    expect(createDefaults).toContain("getRoleToolSet(role)");
     expect(createDefaults).not.toContain("getDefaultAgentTools()");
-    expect(createDefaults).toContain("BUSINESS_TOOL_NAMES.has(tool)");
+    expect(createDefaults).not.toContain("BUSINESS_TOOL_NAMES.has(tool)");
     expect(capabilities).toContain("return [...tools]");
     expect(capabilities).toContain("explicit enabled_tools array is the");
     expect(capabilities).not.toContain("UNIVERSAL_BONUS_TOOLS");

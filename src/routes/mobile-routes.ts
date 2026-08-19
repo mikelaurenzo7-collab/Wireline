@@ -199,7 +199,7 @@ router.get(
 const mobileCreateAgentSchema = z.object({
   name: z.string().min(1).max(120),
   role: z.string().max(80).optional(),
-  is_business_agent: z.boolean().optional().default(false),
+  is_business_agent: z.boolean().optional().default(true),
 });
 
 router.post(
@@ -216,7 +216,7 @@ router.post(
         return res.status(400).json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
       }
       const role = canonicalizeAgentRoleForCreate(rawRole);
-      const isBusinessAgent = req.body?.is_business_agent === true;
+      const isBusinessAgent = req.body?.is_business_agent !== false;
 
       const id = `agent-${randomUUID()}`;
       const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
@@ -225,7 +225,7 @@ router.post(
         isBusinessAgent,
         agentName: name,
       });
-      const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
+      const videoPresenter = businessAgentVideoPresenterDefaults();
 
       // Count, entitlement, and insert must share one serialized transaction —
       // reading the count outside it let concurrent mobile creates all observe

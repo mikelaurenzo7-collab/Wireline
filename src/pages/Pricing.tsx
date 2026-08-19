@@ -51,15 +51,15 @@ const PAID_TIERS = [
   {
     plan: planById.team,
     publicName: "Starter Plus",
-    eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business voice agent from $39/month.",
+    eyebrow: "Two Live Agents",
+    tagline: "Two live Voice Agents from $39/month.",
     detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
     ctaPath: "/signup?plan=team",
     icon: Crosshair,
     featured: true,
-    badge: "Best founder value",
+    badge: "Best value",
   },
   {
     plan: planById.business,
@@ -122,7 +122,7 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Does one agent handle voice, SMS, and email?",
-    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents add concurrency or specialized roles, not basic channels.",
+    "Yes. A single Wireline agent can call, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional agents add concurrency or specialized roles, not basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -130,7 +130,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest risk way to put one Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest risk way to put one Voice Agent live. Starter Plus is two live agents, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
     "Does every agent automatically create a phone number cost?",

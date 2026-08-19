@@ -1,18 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  Check,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  User,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
 import { StatusNotice } from "./molecules";
@@ -21,7 +10,6 @@ import WirelineMark from "./brand/WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 import {
   captureSignupIntentFromLocation,
-  persistSignupIntent,
   sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
@@ -31,9 +19,7 @@ import {
   persistAuthRedirect,
   persistWorkspaceMode,
   readRedirectFromSearch,
-  readStoredWorkspaceMode,
   resolvePostAuthDestination,
-  workspaceFromIntent,
   type WorkspaceMode,
 } from "../lib/auth-redirect";
 import { getPasswordPolicyError } from "../lib/password-policy";
@@ -372,74 +358,13 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
   );
 }
 
-function WorkspaceSelector({
-  mode,
-  setMode,
-}: {
-  mode: WorkspaceMode;
-  setMode: (mode: WorkspaceMode) => void;
-}) {
-  const options: Array<{
-    id: WorkspaceMode;
-    title: string;
-    icon: ReactNode;
-  }> = [
-    {
-      id: "personal",
-      title: "Personal",
-      icon: <User className="h-4 w-4" />,
-    },
-    {
-      id: "business",
-      title: "Business",
-      icon: <Building2 className="h-4 w-4" />,
-    },
-  ];
-  return (
-    <div className="wl-auth-workspace-selector mb-3 grid gap-2 sm:mb-4 sm:grid-cols-2">
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          aria-pressed={mode === option.id}
-          onClick={() => setMode(option.id)}
-          className={cn(
-            "flex items-center gap-3 rounded-xl border p-3 text-left transition",
-            mode === option.id
-              ? "border-brand bg-brand/10"
-              : "border-border bg-background hover:border-brand/40",
-          )}
-        >
-          <span
-            className={cn(
-              "mt-0.5 flex h-8 w-8 items-center justify-center rounded-full",
-              mode === option.id ? "bg-brand text-paper" : "bg-secondary text-foreground",
-            )}
-          >
-            {option.icon}
-          </span>
-          <span className="flex flex-1 items-center gap-2 text-sm font-semibold text-foreground">
-            {option.title}
-            {mode === option.id && <Check className="h-4 w-4 text-brand" />}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function AuthPortal() {
   const { signIn, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
   const isSignupRoute = pathname === "/signup" || pathname === "/get-started";
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(
-    () =>
-      workspaceFromIntent(captureSignupIntentFromLocation()) ||
-      readStoredWorkspaceMode() ||
-      "personal",
-  );
+  const workspaceMode: WorkspaceMode = "business";
   const initialMode: AuthMode = isSignupRoute ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -462,14 +387,12 @@ export default function AuthPortal() {
   useEffect(() => {
     // Only capture and persist signup intent on the signup route. A visitor
     // hitting /signin?plan=business (e.g. from a marketing email) shouldn't
-    // overwrite their stored plan preference or flip workspaceMode away from
-    // their default.
+    // overwrite their stored plan preference.
     captureDemoSourceFromLocation();
     persistAuthRedirect(readRedirectFromSearch(location.search));
     if (!isSignupRoute) return;
     const intent = captureSignupIntentFromLocation();
     setSignupIntent(intent);
-    if (intent) setWorkspaceMode(workspaceFromIntent(intent));
   }, [location.search, isSignupRoute]);
 
   useEffect(() => {
@@ -489,34 +412,6 @@ export default function AuthPortal() {
     if (isSignupRoute) setMode("signup");
     else setMode((m) => (m === "reset" ? "reset" : "signin"));
   }, [isSignupRoute]);
-
-  const applyWorkspaceMode = (nextMode: WorkspaceMode) => {
-    setWorkspaceMode(nextMode);
-    persistWorkspaceMode(nextMode);
-    setSignupIntent((current) => {
-      // Choosing "Personal" describes the WORKSPACE, not the wallet. A visitor
-      // who arrived from a "Start for $19" CTA carries ?plan=starter, and the
-      // selector defaults to Business — so a solo operator answering
-      // accurately used to have their stated purchase intent overwritten with
-      // the free tier, losing the plan badge, the modal's recommendation, and
-      // the checkout attribution. Keep an explicitly chosen paid plan; only
-      // fall back to the free tier when no plan was ever stated.
-      const statedPaidPlan =
-        current?.preferredPlanId && current.preferredPlanId !== "personal"
-          ? current.preferredPlanId
-          : null;
-      const preferredPlanId =
-        nextMode === "personal" ? (statedPaidPlan ?? "personal") : (statedPaidPlan ?? "starter");
-
-      return persistSignupIntent(
-        sanitizeSignupIntent({
-          ...current,
-          preferredPlanId,
-          capturedAt: current?.capturedAt || new Date().toISOString(),
-        }),
-      );
-    });
-  };
 
   const setIsSignUp = (value: boolean) => {
     setMode(value ? "signup" : "signin");
@@ -687,10 +582,6 @@ export default function AuthPortal() {
             </p>
           ) : null}
         </div>
-
-        {isSignUp && !isReset && (
-          <WorkspaceSelector mode={workspaceMode} setMode={applyWorkspaceMode} />
-        )}
 
         <div>
           {!isReset && (

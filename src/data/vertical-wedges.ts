@@ -289,7 +289,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone | A Voice Agent for Calls You Avoid",
     metaDescription:
-      "A personal voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
+      "A voice agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Hand off the calls you keep avoiding",
     pains: [
@@ -319,7 +319,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your voice agent calls on your behalf. You say what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
+    primaryCta: { label: "Create Voice Agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
       "Your agent follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",

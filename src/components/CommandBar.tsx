@@ -9,7 +9,6 @@ import {
 import {
   BarChart3,
   Bot,
-  BriefcaseBusiness,
   Cable,
   CheckSquare,
   ChevronRight,
@@ -129,19 +128,11 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     category: "Workspace",
   },
   {
-    id: "create-personal",
-    label: "Create a personal agent",
-    keywords: "create personal focused job train",
+    id: "create-agent",
+    label: "Create a voice agent",
+    keywords: "create voice agent role job train sales support scheduler concierge",
     icon: Sparkles,
-    href: "/studio?create=1&posture=personal",
-    category: "Create",
-  },
-  {
-    id: "create-business",
-    label: "Create a business voice agent",
-    keywords: "create business customer job",
-    icon: BriefcaseBusiness,
-    href: "/studio?create=1&posture=business",
+    href: "/studio?create=1",
     category: "Create",
   },
   {

@@ -96,7 +96,7 @@ describe("agent roster: empty versus unreachable", () => {
     // The fix must not swallow the first-run experience, which is the whole
     // point of these surfaces for a new workspace.
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
-      "return <StudioEmptyState posture={accountType} />",
+      "return <StudioEmptyState />",
     );
     expect(read("src/components/PhoneSetupPanel.tsx")).toContain(
       "agents.length === 0 && !agentsDegraded",

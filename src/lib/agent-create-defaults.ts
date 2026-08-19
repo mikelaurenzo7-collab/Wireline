@@ -3,15 +3,18 @@
  * agents with a focused live-runtime tool posture. Every capability remains
  * selectable in Studio; creation activates only the tools relevant to the
  * agent's role so the voice model has fewer ambiguous actions to choose from.
+ *
+ * Personal vs business is not a capability split. Role chooses the tool set.
+ * Concierge overlay applies when the customer picks the Concierge role.
  */
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
-import { BUSINESS_TOOL_NAMES, getRoleToolSet, type AgentToolName } from "./agent-capabilities";
+import { getRoleToolSet, type AgentToolName } from "./agent-capabilities";
 import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "./template-overlays";
 
-/** Default Fast Start role when the Account Holder chooses personal posture. */
+/** Default Fast Start role when the customer picks Concierge. */
 export const PERSONAL_FAST_START_ROLE = "personal_assistant" as const;
 
-/** Concierge overlay applied when personal Fast Start has no explicit template. */
+/** Concierge overlay applied when Fast Start selects the Concierge role. */
 export const PERSONAL_DEFAULT_TEMPLATE_ID = "personal-concierge" as const;
 
 /**
@@ -24,20 +27,10 @@ const CREATE_PATH_DEVICE_ACTIONS = new Set<AgentToolName>([
   "play_music",
 ]);
 
-function runtimeRole(role: string, isBusinessAgent: boolean): string {
-  if (!isBusinessAgent && (role === "ceo" || role === "custom")) {
-    return PERSONAL_FAST_START_ROLE;
-  }
-  return role;
-}
+export function resolveCreateEnabledTools(role: string, _isBusinessAgent: boolean): AgentToolName[] {
+  const candidateTools = getRoleToolSet(role);
 
-export function resolveCreateEnabledTools(role: string, isBusinessAgent: boolean): AgentToolName[] {
-  const candidateTools = getRoleToolSet(runtimeRole(role, isBusinessAgent));
-
-  return candidateTools.filter(
-    (tool) =>
-      !CREATE_PATH_DEVICE_ACTIONS.has(tool) && (isBusinessAgent || !BUSINESS_TOOL_NAMES.has(tool)),
-  );
+  return candidateTools.filter((tool) => !CREATE_PATH_DEVICE_ACTIONS.has(tool));
 }
 
 export function resolveCreatePersonality(opts: {
@@ -51,20 +44,17 @@ export function resolveCreatePersonality(opts: {
   agentName?: string | null;
 }): string | null {
   const rolePersonality =
-    ROLE_PERSONALITY_TEMPLATES[opts.role] ||
-    (!opts.isBusinessAgent ? ROLE_PERSONALITY_TEMPLATES.personal_assistant : "") ||
-    "";
+    ROLE_PERSONALITY_TEMPLATES[opts.role] || ROLE_PERSONALITY_TEMPLATES.ceo || "";
 
   const explicitTemplate =
     opts.templateId && TEMPLATE_OVERLAYS[opts.templateId] ? opts.templateId : null;
-  const personalDefaultOverlay =
-    !opts.isBusinessAgent &&
+  const conciergeOverlay =
     !explicitTemplate &&
     opts.role === PERSONAL_FAST_START_ROLE &&
     TEMPLATE_OVERLAYS[PERSONAL_DEFAULT_TEMPLATE_ID]
       ? PERSONAL_DEFAULT_TEMPLATE_ID
       : null;
-  const templateId = explicitTemplate || personalDefaultOverlay;
+  const templateId = explicitTemplate || conciergeOverlay;
 
   if (!templateId) {
     return rolePersonality.trim() || null;
@@ -75,16 +65,14 @@ export function resolveCreatePersonality(opts: {
     templateId,
   });
 
-  // Personal overlays share the business-template token system. Their safe
-  // generic subject is the principal, never the agent and never "your business."
-  return opts.isBusinessAgent
-    ? composed
-    : composed.replace(/\byour business\b/gi, "your principal");
+  // Concierge overlays share the template token system. Their safe generic
+  // subject is the principal, never the agent and never "your business."
+  return opts.role === PERSONAL_FAST_START_ROLE
+    ? composed.replace(/\byour business\b/gi, "your principal")
+    : composed;
 }
 
-/** Infer is_business_agent when template deploy omits the flag. */
-export function isBusinessTemplateCategory(category: string | null | undefined): boolean {
-  const normalized = (category || "").trim().toLowerCase();
-  if (!normalized) return true;
-  return !normalized.includes("personal");
+/** Templates deploy as capable voice agents. Category is a use-case label only. */
+export function isBusinessTemplateCategory(_category: string | null | undefined): boolean {
+  return true;
 }

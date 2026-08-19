@@ -297,7 +297,7 @@ router.post(
     const roleError = validateAgentRoleForCreate(rawRole);
     if (roleError) throw new AppError(400, "UNKNOWN_AGENT_ROLE", roleError);
     const role = canonicalizeAgentRoleForCreate(rawRole);
-    const isBusinessAgent = req.body?.is_business_agent === true;
+    const isBusinessAgent = req.body?.is_business_agent !== false;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     // Quick Deploy sends a curated pick as voice_id; anything outside the
     // managed roster falls back to rotation so the runtime stays managed.
@@ -320,7 +320,7 @@ router.post(
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
-    const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
+    const videoPresenter = businessAgentVideoPresenterDefaults();
 
     await drizzle.transaction(async (tx) => {
       // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.

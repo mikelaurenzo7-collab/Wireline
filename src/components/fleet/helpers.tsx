@@ -88,10 +88,7 @@ export const AGENT_ROLES = [
   },
   {
     value: "personal_assistant",
-    // The stored role value is a stable technical contract; the label is
-    // customer-visible (Activity leaderboard role pill) and follows the
-    // product-language rule: "personal agent", never "assistant".
-    label: "Personal Agent",
+    label: "Concierge",
     description: "Protects principal time and handles personal logistics",
     color: "brandDeep",
     tw: ROLE_TW.brandDeep,

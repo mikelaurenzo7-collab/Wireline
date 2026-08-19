@@ -5,7 +5,7 @@
  * Video files and clip-script substitutes are not offered. Phone, email, and
  * text stay on the agent.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 
@@ -29,26 +29,23 @@ export default function LiveVideoStudioPage() {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
   const [searchParams] = useSearchParams();
   const requestedAgentId = searchParams.get("agent");
-  const businessAgents = useMemo(
-    () => agents.filter((agent) => agent.is_business_agent),
-    [agents],
-  );
+  const rosterAgents = agents;
   const [agentId, setAgentId] = useState("");
   const [payload, setPayload] = useState<PresenterPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!businessAgents.length) return;
-    if (requestedAgentId && businessAgents.some((agent) => agent.id === requestedAgentId)) {
+    if (!rosterAgents.length) return;
+    if (requestedAgentId && rosterAgents.some((agent) => agent.id === requestedAgentId)) {
       setAgentId(requestedAgentId);
       return;
     }
     setAgentId((current) =>
-      current && businessAgents.some((agent) => agent.id === current)
+      current && rosterAgents.some((agent) => agent.id === current)
         ? current
-        : businessAgents[0].id,
+        : rosterAgents[0].id,
     );
-  }, [businessAgents, requestedAgentId]);
+  }, [rosterAgents, requestedAgentId]);
 
   const loadPresenter = useCallback(async (id: string) => {
     const res = await authFetch(`/api/agents/${encodeURIComponent(id)}/video-presenter`);
@@ -75,7 +72,7 @@ export default function LiveVideoStudioPage() {
     };
   }, [agentId, loadPresenter]);
 
-  if (!agentsLoading && degraded && !businessAgents.length) {
+  if (!agentsLoading && degraded && !rosterAgents.length) {
     return (
       <WorkspaceShell>
         <WorkspaceRecovery onRetry={refresh} />
@@ -92,16 +89,16 @@ export default function LiveVideoStudioPage() {
           <StatusNotice>
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading agents
           </StatusNotice>
-        ) : businessAgents.length ? (
+        ) : rosterAgents.length ? (
           <label className="block space-y-2">
-            <span className="text-sm text-muted-foreground">Business agent</span>
+            <span className="text-sm text-muted-foreground">Voice agent</span>
             <select
               className="w-full rounded-md border border-border bg-background px-3 py-2"
               value={agentId}
               onChange={(event) => setAgentId(event.target.value)}
-              aria-label="Business agent"
+              aria-label="Voice agent"
             >
-              {businessAgents.map((agent) => (
+              {rosterAgents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name}
                 </option>
@@ -110,12 +107,12 @@ export default function LiveVideoStudioPage() {
           </label>
         ) : (
           <StatusNotice>
-            Create a business agent first, then come back for identity.{" "}
+            Create a voice agent first, then come back for identity.{" "}
             <Link
-              to="/studio?create=1&posture=business"
+              to="/studio?create=1"
               className="font-medium text-primary underline underline-offset-4"
             >
-              Create business agent
+              Create voice agent
             </Link>
           </StatusNotice>
         )}

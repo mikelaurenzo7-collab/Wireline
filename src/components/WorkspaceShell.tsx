@@ -167,16 +167,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { phoneLookupDegraded } = useAgents();
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  const matchesPosture = (agent: (typeof agents)[number]) =>
-    accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
-  // The agent the workspace is currently on always belongs in its own roster.
-  // Scoping the rail to the account posture otherwise dropped the open agent
-  // out of the list whenever its posture differed — the sidebar showed "no
-  // agents" (or someone else) on the very page that agent owns.
   const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
-  const postureAgents = agents.filter(
-    (agent) => matchesPosture(agent) || agent.id === activeAgent?.id,
-  );
+  const postureAgents = agents;
   const orderedAgents = activeAgent
     ? [activeAgent, ...postureAgents.filter((agent) => agent.id !== activeAgent.id)]
     : postureAgents;

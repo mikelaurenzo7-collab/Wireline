@@ -161,7 +161,7 @@ const PLAN_PRESENTATION = {
   },
   team: {
     name: "Starter Plus",
-    description: "Run a personal and business agent together.",
+    description: "Run two live voice agents together.",
     cta: "Choose Starter Plus",
   },
   business: {

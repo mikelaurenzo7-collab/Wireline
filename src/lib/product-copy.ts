@@ -3,14 +3,14 @@
 export const BRAND_SYSTEM = {
   northStar: "Voice agents that call, answer, follow up, and finish the work.",
   productNoun: "Voice agent",
-  /** Public buying-surface noun. Business contexts should use "business voice agent". */
+  /** Public buying-surface noun. Specialize by role, never by workspace brand. */
   buyingNoun: "Voice Agent",
   defaultRole: "Your voice agent",
   brandSpine: ["Build", "Train", "Launch"],
   proofLoop: ["Build", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with outcomes before AI mechanics.",
-    "Welcome both personal and business use without making either audience feel secondary.",
+    "Welcome every use case without splitting the product into personal and business workspaces.",
     "Make clear that customers can start with one voice agent and add specialized voice agents as their needs grow.",
     "Keep the owner in control: guardrails, approvals, spend, handoffs, and escalation stay explicit.",
     "Present calling, texting, and email as channels each trained voice agent can use, not separate products customers must assemble.",
@@ -18,7 +18,7 @@ export const BRAND_SYSTEM = {
     "Treat specialists as optional expansion, not setup homework.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the agent.",
-    "On broad and default product surfaces, prefer Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
+    "On every customer surface, use Voice Agent. Specialize by role, not by workspace brand.",
     "Rank by case. Titles, headers, heroes, tabs, and buttons render uppercase; sentences do not.",
     "Write titles, labels, tabs, and buttons of three words or fewer in Title Case at the source, so they read as deliberate labels wherever the uppercase tier does not apply.",
     "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
@@ -30,37 +30,28 @@ export const BRAND_SYSTEM = {
 
 export type CustomerAgentPosture = "personal" | "business";
 
+const VOICE_AGENT_LANGUAGE = {
+  singular: "voice agent",
+  indefiniteSingular: "a voice agent",
+  plural: "voice agents",
+  navLabel: "Voice Agent",
+  navShort: "Agent",
+  createCta: "Create Voice Agent",
+  createCtaShort: "Create Voice Agent",
+  setupLabel: "Voice Agent in About a Minute",
+  setupPrompt: "What should this voice agent handle?",
+  setupDescription: "Start with one job. Change the role anytime.",
+  nameLabel: "Agent Name",
+} as const;
+
 /**
- * Customer terminology is contextual even though the technical domain remains
- * `agent` in routes, schemas, events, and APIs.
+ * One customer noun: Voice Agent. The technical domain remains `agent` in
+ * routes, schemas, events, and APIs. Both posture keys return the same
+ * language so leftover callers keep compiling without a second product.
  */
 export const CUSTOMER_AGENT_LANGUAGE = {
-  personal: {
-    singular: "personal voice agent",
-    indefiniteSingular: "a personal voice agent",
-    plural: "personal voice agents",
-    navLabel: "Voice Agent",
-    navShort: "Agent",
-    createCta: "Create personal voice agent",
-    createCtaShort: "Create voice agent",
-    setupLabel: "Personal voice agent in about a minute",
-    setupPrompt: "What should your personal voice agent handle?",
-    setupDescription: "Start with one call, appointment, or personal task.",
-    nameLabel: "Agent name",
-  },
-  business: {
-    singular: "business voice agent",
-    indefiniteSingular: "a business voice agent",
-    plural: "business voice agents",
-    navLabel: "Voice Agent",
-    navShort: "Agent",
-    createCta: "Create business voice agent",
-    createCtaShort: "Create voice agent",
-    setupLabel: "Business voice agent in about a minute",
-    setupPrompt: "What job should this voice agent own?",
-    setupDescription: "Start with one customer-facing job.",
-    nameLabel: "Agent name",
-  },
+  personal: VOICE_AGENT_LANGUAGE,
+  business: VOICE_AGENT_LANGUAGE,
 } as const satisfies Record<
   CustomerAgentPosture,
   {
@@ -142,10 +133,10 @@ export const MARKETING_VOICE = {
      than as punctuation. Sentence-case copy keeps its periods; cased titles are
      labels and do not take them. */
   headline: "Voice agents that get the work done",
-  /** Public hero CTA broad enough for personal and business buyers. */
+  /** Public hero CTA. One product; the customer configures the role. */
   primaryCta: "Build Your Voice Agent",
   subline:
-    "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
+    "Configure one for any role. It can call, answer, text, email, book, and follow through while you stay in control.",
   channelProof: [
     "Calls and answers",
     "Text messages",
@@ -192,7 +183,7 @@ export const CLIENT_SURFACE_POSTURE = {
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "Business voice agents",
+  eyebrow: "Voice agents",
   proof: ["Calls customers", "Texts follow ups", "Sends email", "Logs outcomes"],
   differentiator: "Wireline keeps valuable conversations moving across voice, SMS, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
@@ -212,28 +203,24 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "Voice agents for life and work",
+  eyebrow: "Voice agents for any role",
   tagline: "Start with one voice agent. Build a team when you need one.",
   short:
     "Voice agents for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow up, inbound conversion, recovery, and personal admin.",
-  hero: "One platform for the voice agents and conversations that keep life and work moving.",
+  hero: "One platform for the voice agents and conversations that keep work moving.",
+} as const;
+
+const VOICE_AGENT_POSTURE = {
+  badge: "Voice Agent",
+  badgeShort: "Agent",
+  createCta: "Build Voice Agent",
+  emptyTitle: "Your Voice Agent",
+  emptyBody: "Calls, texts, and email handled. Outcomes logged.",
 } as const;
 
 export const PRODUCT_POSTURE = {
-  personal: {
-    badge: "Personal voice agent",
-    badgeShort: "Personal",
-    createCta: "Build personal voice agent",
-    emptyTitle: "Your personal voice agent.",
-    emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
-  },
-  business: {
-    badge: "Business voice agent",
-    badgeShort: "Business",
-    createCta: "Build business voice agent",
-    emptyTitle: "Your business voice agent.",
-    emptyBody: "Calls, texts, and email handled. Outcomes logged.",
-  },
+  personal: VOICE_AGENT_POSTURE,
+  business: VOICE_AGENT_POSTURE,
 } as const;
 
 export function formatAgentRoleLabel(role?: string | null): string {
@@ -246,12 +233,7 @@ export const TRUST_DISCLOSURE_FAQ =
   "Wireline agents follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, Wireline logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
-  const parts: string[] = [];
-  if (personalCount > 0) {
-    parts.push(`${personalCount} personal voice agent${personalCount === 1 ? "" : "s"}`);
-  }
-  if (businessCount > 0) {
-    parts.push(`${businessCount} business voice agent${businessCount === 1 ? "" : "s"}`);
-  }
-  return parts.length ? parts.join(" / ") : "No agents yet";
+  const total = personalCount + businessCount;
+  if (!total) return "No agents yet";
+  return `${total} voice agent${total === 1 ? "" : "s"}`;
 }

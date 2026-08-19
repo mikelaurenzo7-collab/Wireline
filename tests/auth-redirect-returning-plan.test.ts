@@ -41,7 +41,7 @@ describe("returning paid-plan intent", () => {
     vi.stubGlobal("sessionStorage", storage);
 
     expect(resolvePostAuthDestination("business", "?plan=business&interval=year")).toBe(
-      "/studio?create=1&posture=business",
+      "/studio?create=1",
     );
     expect(storage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });

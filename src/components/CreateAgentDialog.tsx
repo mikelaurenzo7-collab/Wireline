@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
+import { Loader2, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, Textarea } from "./atoms";
@@ -19,42 +19,44 @@ import { customerAgentLanguage } from "../lib/product-copy";
 
 const ROLE_TEMPLATES = [
   {
-    value: "personal_assistant",
-    label: "Concierge",
-    personalPrompt:
-      "Answer unknown callers, book appointments, take messages, and text me what happened.",
-    businessPrompt: "Handle personal admin for the owner alongside business coverage.",
-    personalOnly: true,
-  },
-  {
-    value: "scheduler",
-    label: "Scheduler",
-    personalPrompt: "Book, confirm, and reschedule my appointments.",
-    businessPrompt: "Book meetings, confirm appointments, and text every update.",
-  },
-  {
-    value: "receptionist",
-    label: "Receptionist",
-    personalPrompt: "Screen unknown callers, take messages, and only interrupt me when needed.",
-    businessPrompt: "Answer the line, capture caller intent, and route each handoff cleanly.",
-  },
-  {
-    value: "customer_service",
-    label: "Support",
-    personalPrompt: "Wait on hold, ask for updates, and send me the resolution.",
-    businessPrompt: "Answer support questions, verify context, and escalate urgent work.",
+    value: "ceo",
+    label: "Lead Agent",
+    prompt: "Own the line. Answer, qualify, book, follow up, and hand off only what needs you.",
   },
   {
     value: "sales",
     label: "Sales",
-    personalPrompt: "Qualify side-hustle inquiries, capture details, and text me the next step.",
-    businessPrompt: "Qualify inbound demand, capture buying context, and route hot opportunities.",
+    prompt: "Qualify inbound demand, capture buying context, and route hot opportunities.",
+  },
+  {
+    value: "receptionist",
+    label: "Receptionist",
+    prompt: "Answer the line, capture caller intent, and route each handoff cleanly.",
+  },
+  {
+    value: "customer_service",
+    label: "Support",
+    prompt: "Answer support questions, verify context, and escalate urgent work.",
+  },
+  {
+    value: "scheduler",
+    label: "Scheduler",
+    prompt: "Book meetings, confirm appointments, and text every update.",
+  },
+  {
+    value: "collections",
+    label: "Collections",
+    prompt: "Follow up on invoices, recover payments, and log every outcome.",
+  },
+  {
+    value: "personal_assistant",
+    label: "Concierge",
+    prompt: "Answer unknown callers, book appointments, take messages, and text what happened.",
   },
   {
     value: "custom",
     label: "Custom",
-    personalPrompt: "Handle a custom personal workflow and text me what happened.",
-    businessPrompt: "Handle a custom business workflow and log every outcome.",
+    prompt: "Handle a custom workflow and log every outcome.",
   },
 ] as const;
 
@@ -64,13 +66,8 @@ const FAST_START_IDLE =
   "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
 
 type Role = (typeof ROLE_TEMPLATES)[number]["value"];
-type Posture = "personal" | "business";
 
-function rolesForPosture(posture: Posture) {
-  return ROLE_TEMPLATES.filter((template) =>
-    posture === "personal" ? true : !("personalOnly" in template && template.personalOnly),
-  );
-}
+const language = customerAgentLanguage("business");
 
 /**
  * Map create-agent server responses to user-safe strings. Raw error strings
@@ -81,9 +78,7 @@ function safeCreateAgentError(
   status: number,
   code: string | null | undefined,
   raw: string | null | undefined,
-  posture: Posture,
 ): string {
-  const language = customerAgentLanguage(posture);
   const noun = language.singular;
   const normalized = code?.toLowerCase();
   if (status === 401 || status === 403) {
@@ -107,38 +102,37 @@ function safeCreateAgentError(
   return `Something got stuck creating this ${noun}. Try again in a moment.`;
 }
 
-function defaultAgentName(posture: Posture, role: Role) {
-  if (posture === "personal") return "Sarah";
+function defaultAgentName(role: Role) {
+  if (role === "ceo") return "Lead Agent";
   if (role === "sales") return "Revenue Desk";
   if (role === "customer_service") return "Support Desk";
   if (role === "scheduler") return "Scheduling Desk";
-  if (role === "custom") return "Wireline Voice Agent";
-  return "Front Desk";
+  if (role === "receptionist") return "Front Desk";
+  if (role === "collections") return "Collections Desk";
+  if (role === "personal_assistant") return "Concierge";
+  return "Voice Agent";
 }
 
-function defaultRole(posture: Posture): Role {
-  return posture === "business" ? "sales" : "personal_assistant";
-}
+const DEFAULT_ROLE: Role = "ceo";
 
 export default function CreateAgentDialog({
   open,
   onClose,
   onCreated,
   initialBrief = "",
-  business = false,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated?: (payload: PostCreateWizardPayload) => void;
   initialBrief?: string;
+  /** @deprecated One workspace. Ignored; kept so older callers compile. */
   business?: boolean;
 }) {
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { refresh } = useAgents();
-  const [posture, setPosture] = useState<Posture>(business ? "business" : "personal");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<Role>(defaultRole(business ? "business" : "personal"));
+  const [role, setRole] = useState<Role>(DEFAULT_ROLE);
   const [brief, setBrief] = useState(initialBrief);
   // True while the brief still holds chip-inserted (or initial) text. The
   // moment the customer types, the brief is theirs — a role chip may then
@@ -150,25 +144,16 @@ export default function CreateAgentDialog({
   const dialogRef = useRef<HTMLFormElement>(null);
   useModalFocusTrap(dialogRef, { active: open, onEscape: close });
   useBodyScrollLock(open);
-  const activePosture: Posture = posture;
-  const language = customerAgentLanguage(activePosture);
 
   useEffect(() => {
     if (!open) return;
-    const nextPosture = business ? "business" : "personal";
-    setPosture(nextPosture);
-    setRole(defaultRole(nextPosture));
+    setRole(DEFAULT_ROLE);
     setName("");
-    // The composer opens empty unless the caller carried a brief in (a deep
-    // link from marketing). Seeding it with our own sentence meant the first
-    // thing a new customer saw in their own text box was words we wrote, and
-    // the fastest path was to delete them. The suggestion chips underneath
-    // offer the same starting points without occupying the field.
     setBrief(initialBrief);
     setError("");
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [business, initialBrief, open]);
+  }, [initialBrief, open]);
 
   function close() {
     if (creating) return;
@@ -186,8 +171,6 @@ export default function CreateAgentDialog({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
-    // Escape is handled globally by useModalFocusTrap so it works regardless of
-    // where focus sits; this handler owns the submit shortcut only.
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !creating) {
       event.preventDefault();
       event.currentTarget.requestSubmit();
@@ -198,9 +181,7 @@ export default function CreateAgentDialog({
     event.preventDefault();
     if (creating) return;
     const finalBrief = brief.trim();
-    const finalName = name.trim() || defaultAgentName(activePosture, role);
-    // Server create already seeds role + template personality. Do not overwrite
-    // that depth with a one-line tone stub from the client.
+    const finalName = name.trim() || defaultAgentName(role);
     setCreating(true);
     setError("");
     try {
@@ -210,7 +191,7 @@ export default function CreateAgentDialog({
         body: JSON.stringify({
           name: finalName,
           role,
-          is_business_agent: activePosture === "business",
+          is_business_agent: true,
         }),
       });
       const body = (await safeJson(response)) as {
@@ -219,16 +200,10 @@ export default function CreateAgentDialog({
         code?: string;
       } | null;
       if (!response.ok || !body?.id) {
-        setError(safeCreateAgentError(response.status, body?.code, body?.error, activePosture));
+        setError(safeCreateAgentError(response.status, body?.code, body?.error));
         return;
       }
 
-      // The agent now exists with server-seeded personality. Applying the first
-      // brief is best-effort: if extract fails, keep the created agent and
-      // surface a truthful warning instead of prompting a duplicate retry.
-      // An empty composer trains nothing — the server already seeded role and
-      // personality, and substituting a house sentence here would teach the
-      // agent words the customer never wrote.
       let trainingApplied = false;
       if (finalBrief) {
         trainingApplied = true;
@@ -238,11 +213,7 @@ export default function CreateAgentDialog({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               agentId: body.id,
-              message: [
-                `Role: ${role}.`,
-                `Posture: ${activePosture}.`,
-                `First brief: ${finalBrief}`,
-              ].join("\n"),
+              message: [`Role: ${role}.`, `First brief: ${finalBrief}`].join("\n"),
             }),
           });
           if (!extractRes.ok) trainingApplied = false;
@@ -260,7 +231,6 @@ export default function CreateAgentDialog({
           metadata: {
             source: "fast_start_brief",
             role,
-            posture: activePosture,
           },
         });
         emitProductEvent({
@@ -276,12 +246,12 @@ export default function CreateAgentDialog({
       emitProductEvent({
         event: "agent_draft_created",
         agentId: body.id,
-        metadata: { role, posture: activePosture, source: "web_fast_start" },
+        metadata: { role, source: "web_fast_start" },
       });
       emitProductEvent({
         event: "agent_created",
         agentId: body.id,
-        metadata: { role, posture: activePosture, phone_provisioned: false },
+        metadata: { role, phone_provisioned: false },
       });
       const salesRoles = new Set(["sales", "sales_sdr", "sdr", "outbound_sales"]);
       if (salesRoles.has(role.toLowerCase()) || role.toLowerCase().includes("sales")) {
@@ -289,7 +259,7 @@ export default function CreateAgentDialog({
           event: "sales_agent_created",
           audience: "sales",
           agentId: body.id,
-          metadata: { role, posture: activePosture },
+          metadata: { role },
         });
       }
       const wizardPayload: PostCreateWizardPayload = {
@@ -313,11 +283,6 @@ export default function CreateAgentDialog({
   }
 
   if (!open) return null;
-
-  const briefPlaceholder =
-    activePosture === "business"
-      ? "e.g. Qualify inbound demos, answer support questions, and route urgent calls"
-      : "e.g. Answer unknown callers and book my appointments";
 
   return (
     <div
@@ -369,50 +334,7 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="Use case">
-            {(
-              [
-                ["personal", "Personal"],
-                ["business", "Business"],
-              ] as const
-            ).map(([value, label]) => {
-              const selected = activePosture === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    // Switching use case re-aims the role and the placeholder.
-                    // It never touches the composer: whatever the customer has
-                    // written is theirs, and an empty field stays empty.
-                    setPosture(value);
-                    setRole(defaultRole(value));
-                  }}
-                  className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${
-                    selected
-                      ? "border-primary bg-[var(--wireline-color-action-primary-container)]"
-                      : "border-border bg-card hover:border-primary/30"
-                  }`}
-                  aria-pressed={selected}
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
-                    <span
-                      className={`grid size-5 place-items-center rounded-full border text-[10px] ${
-                        selected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border text-transparent"
-                      }`}
-                    >
-                      <Check size={12} aria-hidden="true" />
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <label className="mt-5 block">
+          <label className="block">
             <span className="sr-only">{language.singular} brief</span>
             <Textarea
               ref={briefRef}
@@ -421,39 +343,32 @@ export default function CreateAgentDialog({
                 briefIsChipTextRef.current = false;
                 setBrief(event.target.value);
               }}
-              placeholder={briefPlaceholder}
+              placeholder="e.g. Qualify inbound demos, answer support questions, and book appointments"
               className="min-h-[112px] text-[15px]"
               resize="none"
             />
           </label>
 
-          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Quick briefs">
-            {rolesForPosture(activePosture).map((item) => {
-              const prompt =
-                activePosture === "business" ? item.businessPrompt : item.personalPrompt;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => {
-                    setRole(item.value);
-                    // Same principle as the posture toggle above: whatever the
-                    // customer has written is theirs. Chips replace only
-                    // chip-inserted or empty text.
-                    if (briefIsChipTextRef.current || !brief.trim()) {
-                      briefIsChipTextRef.current = true;
-                      setBrief(prompt);
-                    }
-                  }}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                    role === item.value ? FAST_START_SELECTED : FAST_START_IDLE
-                  }`}
-                  aria-pressed={role === item.value}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Role">
+            {ROLE_TEMPLATES.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => {
+                  setRole(item.value);
+                  if (briefIsChipTextRef.current || !brief.trim()) {
+                    briefIsChipTextRef.current = true;
+                    setBrief(item.prompt);
+                  }
+                }}
+                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                  role === item.value ? FAST_START_SELECTED : FAST_START_IDLE
+                }`}
+                aria-pressed={role === item.value}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           <label className="mt-6 grid gap-1.5">
@@ -464,7 +379,7 @@ export default function CreateAgentDialog({
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder={defaultAgentName(activePosture, role)}
+              placeholder={defaultAgentName(role)}
               autoComplete="off"
             />
           </label>
@@ -492,14 +407,7 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? (
-                "Creating…"
-              ) : (
-                <>
-                  <span className="sm:hidden">{language.createCtaShort}</span>
-                  <span className="hidden sm:inline">{language.createCta}</span>
-                </>
-              )}
+              {creating ? "Creating…" : language.createCta}
             </Button>
           </div>
         </div>

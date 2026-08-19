@@ -6,7 +6,6 @@ import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import { customerAgentLanguage } from "../lib/product-copy";
@@ -47,9 +46,9 @@ function StudioLoadingState() {
   );
 }
 
-function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
+function StudioEmptyState() {
   const [brief, setBrief] = useState("");
-  const language = customerAgentLanguage(posture);
+  const language = customerAgentLanguage("business");
 
   function createHref() {
     const params = new URLSearchParams({ create: "1" });
@@ -63,11 +62,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
       fill
       icon={Sparkles}
       title="Start with one job"
-      description={
-        posture === "business"
-          ? "Give it one customer job. You can change everything later."
-          : "Give it one call, appointment, or personal task."
-      }
+      description="Give it one job. You can change everything later."
       className="wl-composer-dock"
     >
       <div className="mx-auto mt-2 w-full max-w-xl text-left">
@@ -84,11 +79,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
           // for a UI boundary, on the highest-intent input in the activation
           // funnel — and keyed off `focus:` rather than `focus-visible:`.
           className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
-          placeholder={
-            posture === "business"
-              ? "Answer missed calls, qualify leads, book appointments, and follow up by text…"
-              : "Screen unknown callers, book appointments, and text me what happened…"
-          }
+          placeholder="Answer missed calls, qualify leads, book appointments, and follow up by text…"
         />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <Button asChild>
@@ -97,9 +88,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
               Start setup
             </Link>
           </Button>
-          {posture === "personal" ? (
-            <span className="text-xs text-muted-foreground">You can change everything later.</span>
-          ) : null}
+          <span className="text-xs text-muted-foreground">You can change everything later.</span>
         </div>
       </div>
     </EmptyState>
@@ -114,7 +103,6 @@ function normalizeSection(value: string | null): WorkspaceSection {
 
 export default function StudioWorkspaceV2() {
   const { loading, degraded, refresh } = useAgents();
-  const { accountType } = useAccount();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -195,25 +183,22 @@ export default function StudioWorkspaceV2() {
 
   const startCustomerTest = useCallback(() => {
     setSection("test");
-    const personal = active?.is_business_agent === false;
     window.setTimeout(() => {
       workroomRef.current?.focusComposer(
-        personal
-          ? "Hi, can you help me book something and text me what happened?"
-          : "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
+        "Hi, can you explain your services and help me choose the next step?",
       );
     }, 120);
-  }, [active?.is_business_agent, setSection]);
+  }, [setSection]);
 
   if (loading) return <StudioLoadingState />;
   // Studio is where agents live, so this was the most emphatic version of the
   // mistake: a roster that failed to load produced "Create your first voice
   // agent" for a customer whose agents were merely unreachable.
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
-  if (agents.length === 0) return <StudioEmptyState posture={accountType} />;
+  if (agents.length === 0) return <StudioEmptyState />;
 
   if (!active) {
-    const emptyLanguage = customerAgentLanguage(accountType);
+    const emptyLanguage = customerAgentLanguage("business");
     return (
       <EmptyState
         fill
@@ -232,8 +217,7 @@ export default function StudioWorkspaceV2() {
     );
   }
 
-  const activePosture = active.is_business_agent ? "business" : "personal";
-  const activeLanguage = customerAgentLanguage(activePosture);
+  const activeLanguage = customerAgentLanguage("business");
 
   // Full ARIA tablist contract — id/aria-controls pairing plus roving
   // tabindex with arrow-key movement, matching the pattern the marketing
@@ -341,6 +325,7 @@ export default function StudioWorkspaceV2() {
               agentId={active.id}
               agentName={active.name}
               isBusinessAgent={Boolean(active.is_business_agent)}
+              role={active.role}
               onTestVoiceInChat={startCustomerTest}
               className="h-full border-t-0"
             />
