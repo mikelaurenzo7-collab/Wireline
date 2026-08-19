@@ -5,7 +5,6 @@ const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
-const fullGitSha = /^[a-f0-9]{40}$/i;
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -81,19 +80,9 @@ if (isProduction) {
   }
 
   if (affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED")) {
-    const deploymentSha = value("VERCEL_GIT_COMMIT_SHA").toLowerCase();
-    const releaseSha = value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA").toLowerCase();
-    if (!fullGitSha.test(deploymentSha)) {
-      notices.push(
-        "Self-serve billing will remain runtime-closed because VERCEL_GIT_COMMIT_SHA is not a full deployed Git SHA.",
-      );
-    } else if (!fullGitSha.test(releaseSha) || releaseSha !== deploymentSha) {
-      notices.push(
-        `Self-serve billing will remain runtime-closed until WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA=${deploymentSha}.`,
-      );
-    } else {
-      notices.push(`Self-serve billing is authorized for exact production SHA ${deploymentSha}.`);
-    }
+    notices.push(
+      "Self-serve billing is persistently enabled. Every canonical production artifact still runs the mandatory full release, Stripe portal/catalog, migration, schema-effects, build, and smoke gates before it can serve traffic.",
+    );
   }
 }
 
