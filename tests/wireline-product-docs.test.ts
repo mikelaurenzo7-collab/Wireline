@@ -48,9 +48,8 @@ describe("Wireline product documentation contract", () => {
     // accident and would have kept passing while the real terminology drifted.
     // Assert the contextual naming rule the index actually states instead.
     expect(readme).toContain("Broad public copy uses **voice agents**");
-    expect(readme).toContain("personal agents");
-    expect(readme).toContain("support agents");
-    expect(readme).toContain("sales agents");
+    expect(readme).toContain("configure each agent by role in one workspace");
+    expect(readme).toContain("CUSTOMER_TERMINOLOGY.md");
     expect(readme).toContain("included number");
     expect(readme).toContain("Training");
     expect(readme).toContain("Wireline Command");

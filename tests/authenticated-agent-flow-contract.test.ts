@@ -242,20 +242,23 @@ describe("authenticated agent flow", () => {
     expect(copy).toContain("channels:");
   });
 
-  it("uses the mounted Wireline Realtime PCM stream for Live Video lip sync", () => {
+  it("keeps Live Video retired to identity-only surfaces", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
     const page = read("src/pages/LiveVideoStudioPage.tsx");
     const presenter = read("src/components/LiveVideoPresenter.tsx");
-    const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
 
     expect(routes).toContain('code: "LIVE_VIDEO_SAMPLE_RETIRED"');
     expect(routes).toContain("res.status(410).json");
-    expect(page).toContain("OpenAILiveVoiceSandbox");
-    expect(page).toContain("presenterRef.current?.feedPcmDelta(base64Pcm)");
-    expect(page).toContain("presenterRef.current?.flushPcm()");
-    expect(presenter).toContain("repeatAudio");
-    expect(sandbox).toContain("const RATE = 24_000");
-    expect(sandbox).toContain("onAgentAudioDelta(floatToBase64Pcm(samples))");
+    expect(page).toContain("Live talking-head lip-sync is retired");
+    expect(page).toContain('title="Identity"');
+    expect(page).toContain("AgentFace");
+    expect(page).toContain("const rosterAgents = agents");
+    expect(page).not.toContain("agent.is_business_agent");
+    expect(page).not.toContain("OpenAILiveVoiceSandbox");
+    expect(page).not.toContain("feedPcmDelta");
+    expect(presenter).toContain("LiveAvatar / HeyGen WebRTC lip-sync is retired");
+    expect(presenter).toContain("AgentFace");
+    expect(presenter).not.toContain("repeatAudio");
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
     expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
   });

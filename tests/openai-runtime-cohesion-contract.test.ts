@@ -11,7 +11,10 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const models = read("src/lib/ai-models.ts");
 
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(routes).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
+    // Create/extract paths use the shared structured runtime (xAI primary),
+    // not a route-local OPENAI_STRUCTURED_PRIMARY_MODEL import.
+    expect(routes).toContain("runStructured");
+    expect(routes).not.toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(routes).toContain("is_business_agent");
     expect(defaults).toContain("resolveCreateEnabledTools");
     expect(defaults).toContain("isBusinessAgent");
