@@ -25,7 +25,9 @@ export default function AuthPortal() {
           className="wl-auth-form-panel flex min-h-[100dvh] items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10"
           tabIndex={-1}
         >
-          <AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />
+          <div className="w-full max-w-[520px]">
+            <AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />
+          </div>
         </main>
       </div>
     </>
