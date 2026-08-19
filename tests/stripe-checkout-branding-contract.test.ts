@@ -6,8 +6,8 @@ import {
 } from "../src/lib/stripe-checkout-branding";
 
 describe("Stripe Checkout branding invariant", () => {
-  it("pins the customer-facing Checkout name to Wireline", () => {
-    expect(STRIPE_CHECKOUT_DISPLAY_NAME).toBe("Wireline");
+  it("pins the customer-facing Checkout name to BotBound", () => {
+    expect(STRIPE_CHECKOUT_DISPLAY_NAME).toBe("BotBound");
 
     expect(
       applyWirelineCheckoutBranding({
@@ -21,7 +21,7 @@ describe("Stripe Checkout branding invariant", () => {
       mode: "payment",
       branding_settings: {
         button_color: "#6D28D9",
-        display_name: "Wireline",
+        display_name: "BotBound",
       },
     });
   });
