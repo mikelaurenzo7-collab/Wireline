@@ -23,10 +23,10 @@ describe("product organization truth contracts", () => {
 
   it("distinguishes an unavailable inbox from a healthy empty inbox", () => {
     const inbox = source("src/components/EmailInbox.tsx");
-    expect(inbox).toContain("threads.length === 0 && error");
+    expect(inbox).toContain("error && !threads.length");
     expect(inbox).toContain('title="Inbox unavailable"');
-    expect(inbox).toContain('title="No email conversations yet"');
-    expect(inbox).toContain("Your mailbox connection was not changed.");
+    expect(inbox).toContain('title={agentId ? "No email for this Bot" : "No email yet"}');
+    expect(inbox).toContain('onClick={() => void loadThreads()}');
     expect(inbox).not.toContain('title="Connect your inbox"');
   });
 
@@ -34,9 +34,6 @@ describe("product organization truth contracts", () => {
     const billing = source("src/pages/BillingSettings.tsx");
     const stripeCard = source("src/components/StripeBillingCard.tsx");
 
-    // Billing also suppresses the card's trust footer and renders one shared
-    // BillingTrustFooter at the true end of the page, so the legal row cannot
-    // appear mid-scroll between plan and balance surfaces.
     expect(billing).toContain(
       "<StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />",
     );
