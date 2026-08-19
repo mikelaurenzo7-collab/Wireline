@@ -2,9 +2,10 @@ import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 function configuredSiteUrl(): string {
-  const configured = typeof process !== "undefined"
-    ? process.env.VITE_PUBLIC_SITE_URL?.trim() || process.env.APP_URL?.trim()
-    : "";
+  const configured =
+    typeof process !== "undefined"
+      ? process.env.VITE_PUBLIC_SITE_URL?.trim() || process.env.APP_URL?.trim()
+      : "";
   return (configured || BOTBOUND_PRODUCTION_ORIGIN).replace(/\/+$/, "");
 }
 
@@ -12,62 +13,217 @@ export const SITE_URL = configuredSiteUrl();
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
 export const HOME_DESCRIPTION = "AI employees for calls, texts, and email.";
-const HOME_ROBOTS_TAG = '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
-const HOME_GOOGLEBOT_TAG = '<meta name="googlebot" content="index, follow, max-image-preview:large" />';
+const HOME_ROBOTS_TAG =
+  '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
+const HOME_GOOGLEBOT_TAG =
+  '<meta name="googlebot" content="index, follow, max-image-preview:large" />';
 
-export interface RouteMeta { title: string; description: string; canonical: string; noIndex?: boolean }
-type StaticRouteMeta = { title: string; description: string; canonicalPath?: string; noIndex?: boolean };
+export interface RouteMeta {
+  title: string;
+  description: string;
+  canonical: string;
+  noIndex?: boolean;
+}
+type StaticRouteMeta = {
+  title: string;
+  description: string;
+  canonicalPath?: string;
+  noIndex?: boolean;
+};
 
 export function withBotBoundBrand(value: string): string {
-  return value.replace(/\bWIRELINE\b/g, BOTBOUND_BRAND_NAME).replace(/\bWireline\b/gi, BOTBOUND_BRAND_NAME);
+  return value
+    .replace(/\bWIRELINE\b/g, BOTBOUND_BRAND_NAME)
+    .replace(/\bWireline\b/gi, BOTBOUND_BRAND_NAME);
 }
 
 function withBrand(title: string): string {
   const branded = withBotBoundBrand(title);
-  return branded.toLowerCase().includes(BOTBOUND_BRAND_NAME.toLowerCase()) ? branded : `${branded}${BRAND_SUFFIX}`;
+  return branded.toLowerCase().includes(BOTBOUND_BRAND_NAME.toLowerCase())
+    ? branded
+    : `${branded}${BRAND_SUFFIX}`;
 }
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
-  "/pricing": { title: "PRICING | BotBound BOTS FROM $19/MONTH", description: "Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear." },
-  "/features": { title: "FEATURES | BotBound BOTS", description: "Build and train a Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory." },
-  "/compare": { title: "WHY BotBound | COMPARE AI EMPLOYEES", description: "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing." },
-  "/about": { title: "ABOUT BotBound | AI EMPLOYEES FOR CONVERSATIONS AND FOLLOW-THROUGH", description: "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots." },
-  "/showcase": { title: "TRY BotBound | HEAR A PHONE BOT", description: "Hear the Phone Bot first. Then build one for calls, text, email, and the work that should happen next." },
-  "/blog": { title: "BotBound NOTES | AI EMPLOYEE GUIDES FOR SMALL BUSINESS", description: "Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoffs, and routine communication work." },
+  "/pricing": {
+    title: "PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH",
+    description:
+      "Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear.",
+  },
+  "/features": {
+    title: "FEATURES | BOTBOUND VOICE BOTS",
+    description:
+      "Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory.",
+  },
+  "/compare": {
+    title: "WHY BOTBOUND | COMPARE BOTS",
+    description:
+      "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
+  },
+  "/about": {
+    title: "ABOUT BotBound | AI EMPLOYEES FOR CONVERSATIONS AND FOLLOW-THROUGH",
+    description:
+      "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots.",
+  },
+  "/showcase": {
+    title: "TRY BotBound | HEAR A PHONE BOT",
+    description:
+      "Hear the Phone Bot first. Then build one for calls, text, email, and the work that should happen next.",
+  },
+  "/blog": {
+    title: "BotBound NOTES | AI EMPLOYEE GUIDES FOR SMALL BUSINESS",
+    description:
+      "Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoffs, and routine communication work.",
+  },
   "/support": { title: "Support | BotBound", description: "Get help with BotBound." },
-  "/contact": { title: "Contact BotBound", description: "Talk to BotBound about rollout, partnerships, or support." },
-  "/status": { title: "Provider Status | BotBound", description: "Live access checks for BotBound's managed voice control plane and reasoning runtime." },
-  "/security": { title: "Security and Compliance | BotBound", description: "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof." },
-  "/trust": { title: "Trust Center | BotBound", description: "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof." },
-  "/trust/medical": { title: "Trust Pack: Healthcare sensitive workflows | BotBound", description: "Controls before credentials. A practical review of safeguards and explicit boundaries for protected health information." },
-  "/trust/legal": { title: "Trust Pack: Legal and professional services | BotBound", description: "Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice." },
-  "/trust/insurance": { title: "Trust Pack: Insurance agencies | BotBound", description: "Operational controls for policyholder communication while regulated advice stays with qualified people." },
-  "/trust/enterprise": { title: "Trust Pack: Enterprise review | BotBound", description: "A concise starting point for security, procurement, and operations teams evaluating BotBound." },
-  "/developers": { title: "DEVELOPER PORTAL | BotBound", description: "Connect BotBound to ChatGPT, Claude, and Cursor, then continue in the same Bot workspace." },
-  "/changelog": { title: "Changelog | BotBound", description: "Every shipped improvement to BotBound: features, infrastructure, polish, and security." },
-  "/privacy": { title: "Privacy Policy", description: "Privacy for BotBound: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026." },
-  "/terms": { title: "Terms of Service", description: "BotBound terms: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law." },
-  "/solutions/sales": { title: "EVERY GOOD LEAD GETS A NEXT STEP | BotBound", description: "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook." },
-  "/solutions/support": { title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD | BotBound", description: "Give a trained Front Desk Bot your policies, calendar, and handoff rules." },
+  "/contact": {
+    title: "Contact BotBound",
+    description: "Talk to BotBound about rollout, partnerships, or support.",
+  },
+  "/status": {
+    title: "Provider Status | BotBound",
+    description:
+      "Live access checks for BotBound's managed voice control plane and reasoning runtime.",
+  },
+  "/security": {
+    title: "Security and Compliance | BotBound",
+    description:
+      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof.",
+  },
+  "/trust": {
+    title: "Trust Center | BotBound",
+    description:
+      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof.",
+  },
+  "/trust/medical": {
+    title: "Trust Pack: Healthcare sensitive workflows | BotBound",
+    description:
+      "Controls before credentials. A practical review of safeguards and explicit boundaries for protected health information.",
+  },
+  "/trust/legal": {
+    title: "Trust Pack: Legal and professional services | BotBound",
+    description:
+      "Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
+  },
+  "/trust/insurance": {
+    title: "Trust Pack: Insurance agencies | BotBound",
+    description:
+      "Operational controls for policyholder communication while regulated advice stays with qualified people.",
+  },
+  "/trust/enterprise": {
+    title: "Trust Pack: Enterprise review | BotBound",
+    description:
+      "A concise starting point for security, procurement, and operations teams evaluating BotBound.",
+  },
+  "/developers": {
+    title: "DEVELOPER PORTAL | BotBound",
+    description:
+      "Connect BotBound to ChatGPT, Claude, and Cursor, then continue in the same Bot workspace.",
+  },
+  "/changelog": {
+    title: "Changelog | BotBound",
+    description: "Every shipped improvement to BotBound: features, infrastructure, polish, and security.",
+  },
+  "/privacy": {
+    title: "Privacy Policy",
+    description:
+      "Privacy for BotBound: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
+  },
+  "/terms": {
+    title: "Terms of Service",
+    description:
+      "BotBound terms: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law.",
+  },
+  "/solutions/sales": {
+    title: "EVERY GOOD LEAD GETS A NEXT STEP | BotBound",
+    description:
+      "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook.",
+  },
+  "/solutions/support": {
+    title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD | BotBound",
+    description: "Give a trained Front Desk Bot your policies, calendar, and handoff rules.",
+  },
 };
 
 const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
-  "/signin": { title: "Sign in", description: "Access your BotBound account.", noIndex: true },
-  "/signup": { title: "Create your account", description: "Create a BotBound account and build your first Bot.", noIndex: true },
-  "/get-started": { title: "Create your account", description: "Create a BotBound account and build your first Bot.", canonicalPath: "/signup", noIndex: true },
-  "/auth": { title: "Sign in", description: "Access your BotBound account.", canonicalPath: "/signin", noIndex: true },
-  "/login": { title: "Sign in", description: "Access your BotBound account.", canonicalPath: "/signin", noIndex: true },
-  "/reset": { title: "Sign in", description: "Access your BotBound account.", canonicalPath: "/signin", noIndex: true },
-  "/reset-password": { title: "Reset your password", description: "Choose a new password for your BotBound account.", noIndex: true },
-  "/accept-invite": { title: "Accept your invitation", description: "Join the BotBound workspace that invited you.", noIndex: true },
-  "/onboarding": { title: "Set up BotBound", description: "Finish configuring your BotBound workspace.", noIndex: true },
-  "/auth/oauth-complete": { title: "Completing sign in", description: "BotBound is completing your secure sign in.", noIndex: true },
-  "/oauth-complete": { title: "Completing sign in", description: "BotBound is completing your secure sign in.", canonicalPath: "/auth/oauth-complete", noIndex: true },
-  "/404": { title: "Page not found", description: "The requested BotBound page could not be found.", noIndex: true },
-  "/not-found": { title: "Page not found", description: "The requested BotBound page could not be found.", canonicalPath: "/404", noIndex: true },
+  "/signin": {
+    title: "Sign in",
+    description: "Access your BotBound account.",
+    noIndex: true,
+  },
+  "/signup": {
+    title: "Create your account",
+    description: "Create a BotBound account and build your first Bot.",
+    noIndex: true,
+  },
+  "/get-started": {
+    title: "Create your account",
+    description: "Create a BotBound account and build your first Bot.",
+    canonicalPath: "/signup",
+    noIndex: true,
+  },
+  "/auth": {
+    title: "Sign in",
+    description: "Access your BotBound account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/login": {
+    title: "Sign in",
+    description: "Access your BotBound account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/reset": {
+    title: "Sign in",
+    description: "Access your BotBound account.",
+    canonicalPath: "/signin",
+    noIndex: true,
+  },
+  "/reset-password": {
+    title: "Reset your password",
+    description: "Choose a new password for your BotBound account.",
+    noIndex: true,
+  },
+  "/accept-invite": {
+    title: "Accept your invitation",
+    description: "Join the BotBound workspace that invited you.",
+    noIndex: true,
+  },
+  "/onboarding": {
+    title: "Set up BotBound",
+    description: "Finish configuring your BotBound workspace.",
+    noIndex: true,
+  },
+  "/auth/oauth-complete": {
+    title: "Completing sign in",
+    description: "BotBound is completing your secure sign in.",
+    noIndex: true,
+  },
+  "/oauth-complete": {
+    title: "Completing sign in",
+    description: "BotBound is completing your secure sign in.",
+    canonicalPath: "/auth/oauth-complete",
+    noIndex: true,
+  },
+  "/404": {
+    title: "Page not found",
+    description: "The requested BotBound page could not be found.",
+    noIndex: true,
+  },
+  "/not-found": {
+    title: "Page not found",
+    description: "The requested BotBound page could not be found.",
+    canonicalPath: "/404",
+    noIndex: true,
+  },
 };
 
-export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [...Object.keys(WEDGES).map((slug) => `/for/${slug}`), ...Object.keys(STATIC_ROUTE_META), ...Object.keys(NON_INDEXED_ROUTE_META)];
+export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [
+  ...Object.keys(WEDGES).map((slug) => `/for/${slug}`),
+  ...Object.keys(STATIC_ROUTE_META),
+  ...Object.keys(NON_INDEXED_ROUTE_META),
+];
 export const PRERENDERED_MARKETING_ROUTES = PRERENDERED_ROUTE_SHELLS;
 
 export function resolveRouteMeta(pathname: string): RouteMeta | null {
@@ -78,31 +234,63 @@ export function resolveRouteMeta(pathname: string): RouteMeta | null {
   if (forMatch) {
     const wedge = WEDGES[forMatch[1] as VerticalKey];
     if (!wedge) return null;
-    return { title: withBrand(wedge.metaTitle), description: withBotBoundBrand(wedge.metaDescription), canonical: `${SITE_URL}${clean}` };
+    return {
+      title: withBrand(wedge.metaTitle),
+      description: withBotBoundBrand(wedge.metaDescription),
+      canonical: `${SITE_URL}${clean}`,
+    };
   }
   const staticMeta = STATIC_ROUTE_META[clean] ?? NON_INDEXED_ROUTE_META[clean];
   if (!staticMeta) return null;
-  return { title: withBrand(staticMeta.title), description: withBotBoundBrand(staticMeta.description), canonical: `${SITE_URL}${staticMeta.canonicalPath ?? clean}`, ...(staticMeta.noIndex ? { noIndex: true } : {}) };
+  return {
+    title: withBrand(staticMeta.title),
+    description: withBotBoundBrand(staticMeta.description),
+    canonical: `${SITE_URL}${staticMeta.canonicalPath ?? clean}`,
+    ...(staticMeta.noIndex ? { noIndex: true } : {}),
+  };
 }
 
 export function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export function injectMarketingMeta(html: string, meta: RouteMeta): string {
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
-  const robots = meta.noIndex ? '<meta name="robots" content="noindex, nofollow" />' : HOME_ROBOTS_TAG;
-  const googlebot = meta.noIndex ? '<meta name="googlebot" content="noindex, nofollow" />' : HOME_GOOGLEBOT_TAG;
+  const robots = meta.noIndex
+    ? '<meta name="robots" content="noindex, nofollow" />'
+    : HOME_ROBOTS_TAG;
+  const googlebot = meta.noIndex
+    ? '<meta name="googlebot" content="noindex, nofollow" />'
+    : HOME_GOOGLEBOT_TAG;
   return html
     .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-    .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/>/, `<meta name="description" content="${description}" />`)
-    .replace(/<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`)
-    .replace(/<meta property="og:url" content="[^"]*" \/>/, `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`)
+    .replace(
+      /<meta\s+name="description"\s+content="[^"]*"\s*\/>/,
+      `<meta name="description" content="${description}" />`,
+    )
+    .replace(
+      /<link rel="canonical" href="[^"]*" \/>/,
+      `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`,
+    )
+    .replace(
+      /<meta property="og:url" content="[^"]*" \/>/,
+      `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`,
+    )
     .replace(/<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`)
-    .replace(/<meta property="og:description" content="[^"]*" \/>/, `<meta property="og:description" content="${description}" />`)
+    .replace(
+      /<meta property="og:description" content="[^"]*" \/>/,
+      `<meta property="og:description" content="${description}" />`,
+    )
     .replace(/<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${title}" />`)
-    .replace(/<meta name="twitter:description" content="[^"]*" \/>/, `<meta name="twitter:description" content="${description}" />`)
+    .replace(
+      /<meta name="twitter:description" content="[^"]*" \/>/,
+      `<meta name="twitter:description" content="${description}" />`,
+    )
     .replace(/<meta name="robots" content="[^"]*" \/>/, robots)
     .replace(/<meta name="googlebot" content="[^"]*" \/>/, googlebot);
 }
