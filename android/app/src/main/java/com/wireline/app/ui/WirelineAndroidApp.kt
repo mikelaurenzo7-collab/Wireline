@@ -99,7 +99,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             containerColor = Brand.Canvas,
             topBar = {
                 WirelineTopBar(
-                    title = "Wireline",
+                    title = "BotBound",
                     onWallet = { navActions.navigateTo(Screen.Wallet) },
                     onSettings = { navActions.navigateTo(Screen.Settings) },
                 )
@@ -114,7 +114,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                         containerColor = Brand.Accent,
                         contentColor = Color.White,
                         shape = RoundedCornerShape(Brand.RadiusMd),
-                    ) { Icon(Icons.Default.Mic, contentDescription = "ASK WIRELINE") }
+                    ) { Icon(Icons.Default.Mic, contentDescription = "ASK BOTBOUND") }
                     Screen.Assistants.route -> FloatingActionButton(
                         onClick = { showCreateAgent = true },
                         containerColor = Brand.Accent,
@@ -250,7 +250,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
     ) {
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
-        Text("Wireline", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
+        Text("BotBound", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
         Text("BOTS THAT GET THE WORK DONE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
         Text("Voice-first Bots for calls, live conversations, text, and email.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
@@ -263,7 +263,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         }
         ErrorText(state.error)
         Spacer(Modifier.height(24.dp))
-        Text("New to Wireline? Create an account on the web.", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, textAlign = TextAlign.Center)
+        Text("New to BotBound? Create an account on the web.", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, textAlign = TextAlign.Center)
     }
 }
 
@@ -435,7 +435,7 @@ private fun RecapsScreen(
         if (activeCalls.isEmpty()) item { Text("No calls in progress.", color = Brand.Text2) }
         items(activeCalls, key = { it.callId }) { call ->
             SectionCard {
-                Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text(call.label ?: call.customerNumber ?: "BotBound call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
                 Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Button(onClick = { onTakeCall(call.callId) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(Brand.RadiusSm)) {
@@ -483,7 +483,7 @@ private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard {
             Text("CALLBACK NUMBER", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-            Text("Where Wireline should send a call when you take over.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+            Text("Where BotBound should send a call when you take over.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
             OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("E.164 PHONE NUMBER") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
             Button(onClick = { model.saveHandoffPhone(phone) }, enabled = !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("SAVE") }
         }
