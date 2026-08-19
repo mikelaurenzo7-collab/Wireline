@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("authenticated mobile cleanup", () => {
-  it("keeps short tab labels visually compact without weakening accessible names", () => {
+  it("keeps short tab labels compact and scrolls rather than forcing multi-row settings chrome", () => {
     const tabStrip = read("src/components/layout/WorkspaceTabStrip.tsx");
     const tabs = read("src/lib/page-sub-tabs.ts");
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
@@ -15,26 +15,24 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain("tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
+    expect(tabStrip).toContain("nav.scrollWidth <= nav.clientWidth");
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
-    expect(settingsTabs).toContain('wrap="always"');
-    expect(settingsTabs).not.toContain("shortLabel:");
+    expect(settingsTabs).toContain("WorkspaceControlBand");
+    expect(settingsTabs).not.toContain('wrap="always"');
   });
 
-  it("keeps metrics glanceable instead of stacking oversized cards", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
+  it("keeps compact metrics and phone-width labels readable", () => {
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
     const phone = read("src/pages/PhonePage.tsx");
 
-    expect(overview).toContain("grid grid-cols-2 gap-2 sm:gap-3");
-    expect(overview).toContain("wl-metric-tile--compact");
-    expect(overview).not.toContain("wl-metric-tile__detail");
     expect(knowledge).toContain("grid grid-cols-3 gap-2");
     expect(knowledge).toContain("wl-metric-tile--compact");
     expect(phone).toContain('shortLabel: "Appts"');
+    expect(phone).toContain("WorkspaceControlBand");
   });
 
-  it("keeps heavy-user controls and phone-width actions in view", () => {
+  it("keeps heavy-user controls reachable without crowding the Bot workspace", () => {
     const activation = read("src/components/ActivationChecklist.tsx");
     const outcomes = read("src/components/OutcomeLedger.tsx");
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
@@ -45,43 +43,38 @@ describe("authenticated mobile cleanup", () => {
     expect(outcomes).toContain("line-clamp-3");
     expect(knowledge).toContain("sm:[&>button]:w-auto");
     expect(knowledge).toContain('"Choose files"');
-    expect(studio).toContain("hidden size-4 shrink-0 sm:block");
+    expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
+    expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(read("src/components/AgentTemplates.tsx")).toContain(
       "sm:grid-cols-2 sm:gap-3 xl:grid-cols-3",
     );
   });
 
-  it("keeps first run on one role-first launchpad with no salutation", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
-
-    expect(overview).toContain("const isFirstRun = !loading && !degraded && !hasBots");
-    expect(overview).toContain('className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}');
-    expect(overview).toContain("<FirstRunWorkspace />");
-    expect(overview).not.toContain("dayGreeting");
-    expect(overview).not.toContain("Good morning");
-    expect(firstRun).toContain("Build Your Bot");
-    expect(firstRun).toContain("Create Your Own");
-    expect(firstRun).toContain("Browse Templates");
-    expect(firstRun).not.toContain("posture=");
+  it("keeps first run on one role-first Studio launchpad", () => {
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+    expect(studio).toContain('title="Start With One Job"');
+    expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
+    expect(studio).toContain("Create Bot");
+    expect(studio).toContain("Choose a role starter or make it entirely custom.");
+    expect(studio).not.toContain("dayGreeting");
+    expect(studio).not.toContain("Good morning");
   });
 
-  it("uses Bot language and compact identity throughout the active workspace", () => {
+  it("uses Bot language and one compact current-Bot identity rather than a sidebar roster", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
-    const rail = read("src/components/overview/OverviewRail.tsx");
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
     const create = read("src/components/CreateAgentDialog.tsx");
 
     expect(shell).toContain('singular: "Bot"');
-    expect(shell).toContain('plural: "Bots"');
     expect(shell).toContain('navLabel: "Bot Studio"');
-    expect(shell).toContain("aria-label={language.plural}");
-    expect(rail).toContain("New Bot");
-    expect(rail).toContain("All Bots");
+    expect(shell).toContain("Current Bot");
+    expect(shell).not.toContain("orderedAgents");
+    expect(chrome).toContain('aria-label="Switch Bot"');
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("Not Now");
   });
 
-  it("keeps guidance once, next to the decision it supports", () => {
+  it("keeps guidance next to decisions and removes provider/runtime narration", () => {
     const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
     const review = read("src/components/StudioAgentReviewPanel.tsx");
     const voice = read("src/components/voice/SimpleVoicePicker.tsx");
@@ -89,10 +82,12 @@ describe("authenticated mobile cleanup", () => {
 
     expect(setup).not.toMatch(/Set the tone, greeting, essential facts/);
     expect(review).not.toMatch(/Keep the loop small/);
-    expect(voice).toMatch(/Browser tests the words\. Place a real call to verify the selected\s+audio\./);
+    expect(voice).not.toContain("Browser tests the words");
+    expect(voice).not.toContain("Speech-to-Speech");
+    expect(voice).not.toContain("live PSTN");
     expect(inbox).toContain("Inbox unavailable");
-    expect(inbox).toContain("No email conversations yet");
-    expect(inbox).toContain("Refresh inbox");
+    expect(inbox).toContain("No email yet");
+    expect(inbox).toContain("Refresh");
   });
 
   it("fails closed on setup-load errors and keeps action feedback in view", () => {
