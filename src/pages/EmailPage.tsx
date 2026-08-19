@@ -1,9 +1,7 @@
-import { Link, useSearchParams } from "react-router";
-import { CheckSquare } from "lucide-react";
+import { useSearchParams } from "react-router";
 
 import EmailInbox from "../components/EmailInbox";
 import SmsThreads from "../components/SmsThreads";
-import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -12,12 +10,10 @@ type InboxTabId = "email" | "sms";
 
 const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
   { id: "email", label: "Email" },
-  { id: "sms", label: "SMS" },
+  { id: "sms", label: "Text" },
 ];
 
-/**
- * Inbox — email + SMS in one workspace surface.
- */
+/** Inbox owns written conversations only. Calls remain in the Calls surface. */
 export default function EmailPage() {
   const [params, setParams] = useSearchParams();
   const requestedTab = params.get("tab") as InboxTabId | null;
@@ -39,18 +35,7 @@ export default function EmailPage() {
   return (
     <WorkspaceShell contentClassName="flex min-h-0 flex-1 flex-col pt-1 pb-4">
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
-        <WorkspacePageIntro
-          title="Inbox"
-          titleHidden
-          action={
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/approvals">
-                <CheckSquare className="size-3.5" aria-hidden="true" />
-                Approvals
-              </Link>
-            </Button>
-          }
-        />
+        <WorkspacePageIntro title="Inbox" titleHidden />
         <WorkspaceTabStrip
           ariaLabel="Inbox channels"
           tabs={inboxTabs}
@@ -58,7 +43,7 @@ export default function EmailPage() {
           onSelect={(id) => setActiveTab(id as InboxTabId)}
           align="start"
           density="compact"
-          className="mb-4 border-b border-border/70 pb-3"
+          className="mb-3 border-b border-border/70 pb-3"
         />
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
           {activeTab === "email" ? <EmailInbox embedded /> : <SmsThreads embedded />}
