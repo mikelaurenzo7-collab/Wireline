@@ -1,5 +1,10 @@
 import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 
+/**
+ * Authenticated product architecture contract: Studio is the workspace root;
+ * Inbox and Calls are canonical global surfaces with optional Bot-scoped lenses;
+ * advanced configuration is progressively disclosed instead of becoming nav.
+ */
 export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 
 export const STUDIO_CANVAS_SURFACES = {
