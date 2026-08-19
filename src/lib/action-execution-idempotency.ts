@@ -207,7 +207,7 @@ export async function runIdempotentActionExecution(input: {
     return {
       success: false,
       error:
-        "Wireline could not safely verify whether this action was already processed, so it did not run it again.",
+        "BotBound could not safely verify whether this action was already processed, so it did not run it again.",
     };
   }
 
