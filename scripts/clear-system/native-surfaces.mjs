@@ -62,8 +62,8 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     [/object Knowledge : Screen\("knowledge", "KNOWLEDGE"\)/, "Android app must use Knowledge"],
     [/object Actions : Screen\("actions", "CONNECTIONS"\)/, "Android app must use Connections"],
     [/object Recaps : Screen\("recaps", "CALLS"\)/, "Android app must use Calls"],
-    [/BOTS THAT GET THE WORK DONE/, "Android sign-in must retain current product slogan until the native IA copy pass"],
-    [/Voice-first Bots for calls, live conversations, text, and email\./, "Android sign-in must state the current channel promise"],
+    [/BOTS THAT GET THE WORK DONE/, "Android sign-in must retain the current native slogan until its next IA copy pass"],
+    [/Voice-first Bots for calls, live conversations, text, and email\./, "Android sign-in must state the current native channel promise"],
     [/MetricStatCard\([^\n]*label = "BOTS"/, "Android overview must report Bots"],
     [/Text\("BOTS"/, "Android Bot library must use the customer-facing noun"],
   ]) {
@@ -140,9 +140,11 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   }
 
   for (const [pattern, description] of [
-    [/BOTS THAT GET THE WORK DONE/, "iOS sign-in must retain current product slogan until the native IA copy pass"],
-    [/Voice-first Bots for calls, live conversations, text, and email\./, "iOS sign-in must state the current channel promise"],
+    [/Text\("BotBound"\)/, "iOS sign-in must use the BotBound brand"],
+    [/PUT YOUR BOT ON THE LINE/, "iOS sign-in must use the BotBound slogan"],
+    [/AI employees for calls, texts, and email\./, "iOS sign-in must use the compact BotBound promise"],
     [/Text\("SIGN IN"\)/, "iOS sign-in action must use uppercase control language"],
+    [/Signs in to your BotBound account/, "iOS accessibility copy must use BotBound"],
   ]) {
     mustInclude("ios/Wireline/Views/SignInView.swift", iosSignIn, pattern, description);
   }
