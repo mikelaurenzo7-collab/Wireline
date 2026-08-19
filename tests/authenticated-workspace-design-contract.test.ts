@@ -42,7 +42,7 @@ describe("authenticated workspace design architecture", () => {
     expect(workspace).not.toContain('href: "/connections"');
   });
 
-  it("uses one shared responsive control band on channel and knowledge pages", () => {
+  it("uses one shared responsive control band on authenticated section pages", () => {
     const controlBand = read("src/components/layout/WorkspaceControlBand.tsx");
     expect(controlBand).toContain("sm:flex-row sm:items-center");
     expect(controlBand).toContain("data-wireline-control-band");
@@ -52,6 +52,7 @@ describe("authenticated workspace design architecture", () => {
       "src/pages/EmailPage.tsx",
       "src/pages/PhonePage.tsx",
       "src/pages/KnowledgePage.tsx",
+      "src/components/settings/SettingsTabs.tsx",
     ]) {
       expect(read(path), path).toContain("WorkspaceControlBand");
     }
@@ -75,11 +76,12 @@ describe("authenticated workspace design architecture", () => {
     expect(review).toContain('data-wireline-studio-review-density={compact ? "inspector" : "page"}');
   });
 
-  it("keeps the Studio composer adaptive instead of permanently suggestion-heavy", () => {
+  it("keeps the Studio composer compact, adaptive, and keyboard-native", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     expect(workroom).toContain("showStarterPrompts");
     expect(workroom).toContain("quickPrompts.slice(0, 3)");
     expect(workroom).toContain('rows={1}');
+    expect(workroom).toContain('textarea.style.minHeight = "52px"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");
     expect(workroom).toContain('window.matchMedia("(pointer: fine)").matches');
     expect(workroom).toContain("Shift+Enter line break");
@@ -94,5 +96,14 @@ describe("authenticated workspace design architecture", () => {
     expect(calls).toContain('aria-label="Open call list"');
     expect(calls).toContain('aria-label="Collapse call list"');
     expect(calls).toContain('className={`${selected ? "hidden" : "block"} h-full');
+  });
+
+  it("keeps phone line management canonical in Calls rather than duplicated in Settings", () => {
+    const routes = read("src/routes/AppRoutes.tsx");
+    const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
+    expect(routes).toContain('path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />}');
+    expect(routes).not.toContain('const PhoneSettings = lazy');
+    expect(settingsTabs).not.toContain('href: "/settings/phone"');
+    expect(settingsTabs).toContain("WorkspaceControlBand");
   });
 });
