@@ -13,7 +13,7 @@ object WirelineTelecom {
     fun ensurePhoneAccount(context: Context) {
         val manager = context.getSystemService(TelecomManager::class.java) ?: return
         val handle = phoneAccountHandle(context)
-        val account = PhoneAccount.builder(handle, "Wireline")
+        val account = PhoneAccount.builder(handle, "BotBound")
             .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED)
             .build()
         runCatching { manager.registerPhoneAccount(account) }
