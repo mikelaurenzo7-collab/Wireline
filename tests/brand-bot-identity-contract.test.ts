@@ -54,29 +54,28 @@ describe("WIRELINE folded W identity", () => {
   });
 });
 
-describe("WIRELINE voice-first Bot language", () => {
+describe("WIRELINE Phone Bot acquisition language", () => {
   it("locks the approved promise, uppercase brand name, and Bot taxonomy", () => {
     const product = read("src/lib/bot-product.ts");
     expect(product).toContain('name: "WIRELINE"');
-    expect(product).toContain('slogan: "BOTS THAT GET THE WORK DONE"');
-    expect(product).toContain(
-      'supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"',
-    );
-    expect(product).toContain('name: "Voice Bot"');
+    expect(product).toContain('slogan: "WIRE YOUR PHONE BOT"');
+    expect(product).toContain('supportingLine: "CALL · EMAIL · TEXT"');
+    expect(product).toContain('name: "Phone Bot"');
     expect(product).toContain('name: "Conversation Bot"');
     expect(product).toContain('name: "Human Bot"');
-    expect(product).toContain('title: "ONE WORKSPACE. EVERY BOT."');
+    expect(product).toContain('title: "YOUR BOT. ALREADY MOVING."');
+    expect(product).not.toContain('title: "ONE WORKSPACE. EVERY BOT."');
   });
 
-  it("keeps public metadata on WIRELINE + Bots while retaining agent as technical compatibility", () => {
+  it("keeps public metadata on WIRELINE + Phone Bot while retaining agent as technical compatibility", () => {
     const html = read("index.html");
     const landing = read("src/pages/LandingPage.tsx");
     const pageMeta = read("src/lib/page-meta.tsx");
     const productCopy = read("src/lib/product-copy.ts");
 
-    expect(html).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
-    expect(html).toContain('"slogan": "BOTS THAT GET THE WORK DONE"');
-    expect(landing).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
+    expect(html).toContain("WIRELINE | WIRE YOUR PHONE BOT");
+    expect(html).toContain('"slogan": "WIRE YOUR PHONE BOT"');
+    expect(landing).toContain("WIRELINE | WIRE YOUR PHONE BOT");
     expect(pageMeta).toContain('const BRAND_SUFFIX = " | WIRELINE"');
     expect(pageMeta).toContain('replace(/\\bWireline\\b/gi, "WIRELINE")');
     expect(productCopy).toContain(
@@ -84,6 +83,9 @@ describe("WIRELINE voice-first Bot language", () => {
     );
     expect(productCopy).toContain(
       "Render the WIRELINE brand name in uppercase everywhere it is customer-visible",
+    );
+    expect(productCopy).toContain(
+      "Use Phone Bot as the public acquisition wedge; Call, Email, and Text are the compact channel proof.",
     );
   });
 
