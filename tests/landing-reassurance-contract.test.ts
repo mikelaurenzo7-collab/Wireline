@@ -6,32 +6,37 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
+  const css = read("src/styles/landing-prestige.css");
 
-  it("keeps one concise product theater instead of a brochure stack", () => {
+  it("keeps a concise product entrance instead of a brochure stack", () => {
     expect(landing).not.toContain("REASSURANCES");
     expect(landing).not.toContain("Live Video");
-    expect(landing).toContain('variant="stage"');
-    expect(landing).toContain("Illustrative Workflow");
-    expect(landing).toContain("From first answer to confirmed next step");
-    expect(landing).not.toContain("From first answer to confirmed next step.");
-    expect(landing).toContain("Booked and logged");
+    expect(landing).not.toContain('variant="stage"');
+    expect(landing).not.toContain("Illustrative Workflow");
+    expect(landing).not.toContain("Booked and logged");
+    expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(landing).toContain("WIRE YOUR");
+    expect(landing).toContain("PHONE BOT");
+    expect(css).toContain(".landing-prestige__entrance");
+    expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");
   });
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
-    expect(landing).toContain("Build Free");
-    expect(landing).toContain("Launch from $");
-    expect(landing).toContain("Number Included");
-    expect(landing).toContain("Channels unlock at activation");
-    expect(landing).toContain("Runtime Balance");
+    expect(landing).toContain("Build free. Put it on a number when it is ready.");
+    expect(landing).toContain('const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]');
+    expect(landing).toContain("plan.voice_minutes_monthly");
+    expect(landing).toContain("plan.included_phone_numbers");
+    expect(landing).toContain("Private simulation");
+    expect(landing).toContain("Activate when ready");
   });
 
   it("keeps conversion explicit and owner control visible", () => {
-    expect(landing).toContain("View Pricing");
-    expect(landing).toContain("MARKETING_VOICE.primaryCta");
-    expect(landing).toContain("rules, approvals, spend, and handoffs");
+    expect(landing).toContain('id="pricing"');
+    expect(landing).toContain('to={`/signup?plan=${id}`}');
+    expect(landing).toContain("YOUR LINE. YOUR RULES.");
+    expect(landing).toContain('to="/security"');
     expect(landing).not.toContain("Put your first voice agent to work");
     expect(landing).not.toContain("—");
-    expect(landing).not.toContain("·");
   });
 });
