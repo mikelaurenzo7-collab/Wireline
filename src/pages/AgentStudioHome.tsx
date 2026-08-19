@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import CreateAgentDialog from "../components/CreateAgentDialog";
 import StudioContextChrome from "../components/studio/StudioContextChrome";
 import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
-import { useAgents } from "../contexts/AgentsContext";
+import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { useToast } from "../contexts/ToastContext";
 import {
   browserCommandBrief,
@@ -12,14 +12,19 @@ import {
   readBrowserCommandContext,
   type BrowserCommandContext,
 } from "../lib/browser-command-context";
-import { consumeCreateWarning, readPostCreateWizard } from "../lib/wireline-create-flow";
+import { bootstrapManagedBotIdentity } from "../lib/bot-identity-bootstrap";
+import {
+  consumeCreateWarning,
+  readPostCreateWizard,
+  stashPostCreateWizard,
+} from "../lib/wireline-create-flow";
 import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 import { authFetch } from "../lib/api";
 
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
-  const { loading } = useAgents();
+  const { loading, refresh } = useAgents();
   const { toast } = useToast();
   const [browserContext, setBrowserContext] = useState<BrowserCommandContext | null>(() =>
     readBrowserCommandContext(),
@@ -28,6 +33,7 @@ export default function AgentStudioHome() {
   const [showCreate, setShowCreate] = useState(false);
   const [postCreateWizard, setPostCreateWizard] = useState<PostCreateWizardPayload | null>(null);
   const [signedBrief, setSignedBrief] = useState("");
+  const identityBootstrapAgentIds = useRef(new Set<string>());
 
   useEffect(() => {
     if (!loading && params.get("create") === "1") setShowCreate(true);
@@ -111,6 +117,46 @@ export default function AgentStudioHome() {
     const wizard = readPostCreateWizard();
     if (wizard) setPostCreateWizard(wizard);
   }, [toast]);
+
+  useEffect(() => {
+    const payload = postCreateWizard;
+    if (!payload || payload.identityBootstrapComplete) return;
+    if (identityBootstrapAgentIds.current.has(payload.agentId)) return;
+    identityBootstrapAgentIds.current.add(payload.agentId);
+
+    const pending: PostCreateWizardPayload = {
+      ...payload,
+      phoneProvisionRequested: true,
+      emailProvisionRequested: true,
+    };
+    // Persist the fact that the managed identity attempt has started so a hard
+    // refresh can safely resume it. The provider routes themselves are idempotent.
+    stashPostCreateWizard(pending);
+
+    let active = true;
+    void bootstrapManagedBotIdentity(payload.agentId).then((result) => {
+      const updated: PostCreateWizardPayload = {
+        ...pending,
+        phoneProvisionRequested: result.phone.requested,
+        phoneProvisioned: result.phone.provisioned,
+        phoneActivationRequired: result.phone.activationRequired,
+        phoneNumber: result.phone.phoneNumber,
+        emailProvisionRequested: result.mailbox.requested,
+        emailProvisioned: result.mailbox.provisioned,
+        emailAddress: result.mailbox.emailAddress,
+        emailCustomDomain: result.mailbox.customDomain,
+        identityBootstrapComplete: true,
+      };
+      stashPostCreateWizard(updated);
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      refresh();
+      if (active) setPostCreateWizard(updated);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [postCreateWizard, refresh]);
 
   const initialBrief = signedBrief || browserBrief || params.get("brief") || "";
   const initialTemplateKey = params.get("template");
