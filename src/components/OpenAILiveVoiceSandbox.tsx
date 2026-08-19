@@ -59,7 +59,7 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "active" as const,
       title: "Checking approved knowledge",
-      detail: "Wireline is using only the agent's approved Training context.",
+      detail: "BotBound is using only the agent's approved Training context.",
     };
   if (state === "speaking")
     return {
