@@ -14,6 +14,8 @@ export interface OwnedEmailAccountInput {
   refreshToken: string | null;
   expiresAt: bigint | null;
   oauthGrantedScopes: string | null;
+  /** Optional Bot ownership for platform-managed mailboxes. */
+  agentId?: string | null;
 }
 
 export async function upsertOwnedEmailAccount(
@@ -37,6 +39,7 @@ export async function upsertOwnedEmailAccount(
         refreshToken: refreshTokenUpdate,
         expiresAt: input.expiresAt,
         oauthGrantedScopes: input.oauthGrantedScopes,
+        ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
       },
       setWhere: eq(emailAccounts.userId, input.userId),
     })
