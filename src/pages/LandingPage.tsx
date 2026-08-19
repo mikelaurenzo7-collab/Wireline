@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { PageMeta } from "../lib/page-meta";
-import { MARKETING_VOICE } from "../lib/product-copy";
+import { BOT_MARKETING_VOICE } from "../lib/bot-product";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
-const PUBLIC_DESCRIPTION = MARKETING_VOICE.subline;
+const PUBLIC_DESCRIPTION = BOT_MARKETING_VOICE.subline;
 
 export default function LandingPage() {
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="WIRELINE | VOICE BOTS THAT GET THE WORK DONE"
+        title="WIRELINE | WIRE YOUR PHONE BOT"
         description={PUBLIC_DESCRIPTION}
         path="/"
       />
