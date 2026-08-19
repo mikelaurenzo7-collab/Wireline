@@ -81,7 +81,13 @@ describe("BotBound product voice", () => {
     const personal = customerAgentLanguage("personal");
     const business = customerAgentLanguage("business");
     expect(personal).toEqual(business);
-    expect(personal).toMatchObject({ singular: "Bot", plural: "Bots", navLabel: "Bot Studio", createCta: "Create Bot", setupPrompt: "What should your Bot do?" });
+    expect(personal).toMatchObject({
+      singular: "Bot",
+      plural: "Bots",
+      navLabel: "Bot Studio",
+      createCta: "Create Bot",
+      setupPrompt: "What should your Bot do?",
+    });
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
   });
@@ -97,17 +103,39 @@ describe("BotBound product voice", () => {
   });
 
   it("keeps Phone Bot, Conversation Bot, and Human Bot as configuration lenses", () => {
-    expect(BOT_PRODUCT_TYPES.map((type) => type.name)).toEqual(["Phone Bot", "Conversation Bot", "Human Bot"]);
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain("inbound and outbound calls");
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description).toContain("calls, text, and email");
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain("real human role");
+    expect(BOT_PRODUCT_TYPES.map((type) => type.name)).toEqual([
+      "Phone Bot",
+      "Conversation Bot",
+      "Human Bot",
+    ]);
+    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain(
+      "inbound and outbound calls",
+    );
+    expect(
+      BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,
+    ).toContain("calls, text, and email");
+    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain(
+      "real human role",
+    );
   });
 
   it("keeps role starters materially differentiated without forcing marketing categories", () => {
     const names = BOT_ROLE_TEMPLATES.map((template) => template.name);
     const directions = [...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction))].sort();
     expect(directions).toEqual(["hybrid", "inbound", "outbound"]);
-    for (const role of ["Front Desk", "Sales Rep", "Appointment Setter", "Customer Support", "Lead Qualifier", "Recruiter", "Collections", "Property Manager", "Personal Assistant", "Family Concierge", "Create Your Own"]) {
+    for (const role of [
+      "Front Desk",
+      "Sales Rep",
+      "Appointment Setter",
+      "Customer Support",
+      "Lead Qualifier",
+      "Recruiter",
+      "Collections",
+      "Property Manager",
+      "Personal Assistant",
+      "Family Concierge",
+      "Create Your Own",
+    ]) {
       expect(names).toContain(role);
     }
     for (const template of BOT_ROLE_TEMPLATES) {
@@ -161,18 +189,36 @@ describe("BotBound product voice", () => {
     expect(BOT_MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
   });
 
-  it("keeps included phone capacity aligned to live Bot capacity", () => {
-    const publicCapacityPlans = STRIPE_PLANS.filter((plan) => plan.id !== "enterprise" && plan.id !== "personal");
-    for (const plan of publicCapacityPlans) expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
+  it("keeps included phone capacity aligned to live Bot capacity and automatic activation", () => {
+    const publicCapacityPlans = STRIPE_PLANS.filter(
+      (plan) => plan.id !== "enterprise" && plan.id !== "personal",
+    );
+    for (const plan of publicCapacityPlans) {
+      expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
+      expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
+      expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
+    }
     const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(catalog).toContain("Every paid tier guarantees live voice capacity and an on-demand number slot");
+    expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
+    expect(catalog).toContain("Paid Bots receive a BotBound-managed email identity");
     expect(billing).toContain("plan.included_phone_numbers");
   });
 
   it("keeps the authenticated route map intentional", () => {
     const routes = read("src/routes/AppRoutes.tsx");
-    for (const path of ["/overview", "/studio", "/templates", "/knowledge", "/connections", "/phone", "/inbox", "/apps", "/settings", "/admin"]) {
+    for (const path of [
+      "/overview",
+      "/studio",
+      "/templates",
+      "/knowledge",
+      "/connections",
+      "/phone",
+      "/inbox",
+      "/apps",
+      "/settings",
+      "/admin",
+    ]) {
       expect(routes).toContain(`path="${path}"`);
     }
     expect(routes).toContain('path="/" element={<Navigate to="/studio" replace />}');
@@ -181,7 +227,31 @@ describe("BotBound product voice", () => {
   });
 
   it("keeps every public top-level surface session optional", () => {
-    const publicPaths = ["/", "/features", "/pricing", "/compare", "/about", "/support", "/contact", "/showcase", "/developers", "/blog", "/status", "/changelog", "/security", "/trust", "/privacy", "/terms", "/for/personal", "/signin", "/signup", "/get-started", "/reset-password", "/oauth-complete", "/auth/oauth-complete"];
+    const publicPaths = [
+      "/",
+      "/features",
+      "/pricing",
+      "/compare",
+      "/about",
+      "/support",
+      "/contact",
+      "/showcase",
+      "/developers",
+      "/blog",
+      "/status",
+      "/changelog",
+      "/security",
+      "/trust",
+      "/privacy",
+      "/terms",
+      "/for/personal",
+      "/signin",
+      "/signup",
+      "/get-started",
+      "/reset-password",
+      "/oauth-complete",
+      "/auth/oauth-complete",
+    ];
     for (const path of publicPaths) expect(isSessionOptionalPublicPath(path), path).toBe(true);
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
   });
