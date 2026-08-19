@@ -38,7 +38,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="Wireline"
+        android:label="BotBound"
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
@@ -75,7 +75,7 @@
         <receiver
             android:name=".widget.AskWirelineWidgetReceiver"
             android:exported="true"
-            android:label="Ask Wireline">
+            android:label="Ask BotBound">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -87,7 +87,7 @@
         <receiver
             android:name=".widget.AssistantWidgetProvider"
             android:exported="true"
-            android:label="Wireline Agents">
+            android:label="BotBound Bots">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
