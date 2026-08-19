@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Loader2, MessageSquare, RefreshCw, Send } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2, MessageSquare, RefreshCw, Send } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
@@ -8,6 +8,7 @@ import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
 import { Button, EmptyState, Input, Skeleton } from "./atoms";
 import { ConversationMessage, SearchField, StatusNotice } from "./molecules";
+import SmsOutcomePanel from "./SmsOutcomePanel";
 
 interface SmsThread {
   id: string;
@@ -363,6 +364,34 @@ export default function SmsThreads({
                   </div>
                 )}
               </div>
+
+              <details className="group shrink-0 border-t border-border bg-card/35">
+                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
+                  <span>Outcome</span>
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <span className="max-w-28 truncate font-normal capitalize">
+                      {activeThread.status || "open"}
+                    </span>
+                    <ChevronDown
+                      className="size-3.5 transition-transform group-open:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </summary>
+                <div className="border-t border-border px-3 pt-3 sm:px-4">
+                  <SmsOutcomePanel
+                    threadId={activeThread.id}
+                    initialStatus={activeThread.status}
+                    onStatusChange={(status) =>
+                      setThreads((current) =>
+                        current.map((thread) =>
+                          thread.id === activeThread.id ? { ...thread, status } : thread,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              </details>
 
               <form
                 className="flex gap-2 border-t border-border p-3 sm:p-4"
