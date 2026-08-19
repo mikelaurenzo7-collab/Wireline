@@ -36,9 +36,11 @@ describe("third-party marketing scripts never block the app", () => {
   });
 
   it("still ships the Plausible queue stub so no event is lost before the script lands", () => {
-    // The stub is what makes async injection safe: calls made before the real
-    // bundle arrives queue on plausible.q and flush when it loads.
-    expect(indexHtml).toContain("window.plausible.q = window.plausible.q || []");
+    // Formatting is intentionally irrelevant; the invariant is that every
+    // early call appends its arguments to a persistent plausible.q array.
+    expect(indexHtml).toMatch(
+      /window\.plausible\s*=\s*window\.plausible\s*\|\|\s*function\s*\(\)\s*\{[^}]*window\.plausible\.q\s*=\s*window\.plausible\.q\s*\|\|\s*\[\][^}]*\.push\(arguments\)/s,
+    );
   });
 
   it("injects Plausible dynamically, skipping localhost", () => {
@@ -58,8 +60,6 @@ describe("third-party marketing scripts never block the app", () => {
   });
 
   it("preloads the Latin faces the shell renders with", () => {
-    // Without these the browser cannot discover a woff2 until fonts.css is
-    // fetched and parsed, which shows brand text in the fallback face first.
     for (const face of [
       "/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2",
       "/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
@@ -69,7 +69,6 @@ describe("third-party marketing scripts never block the app", () => {
     }
     const preloads = indexHtml.match(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/gi) ?? [];
     expect(preloads.length).toBe(3);
-    // A font preload without crossorigin is fetched twice.
     for (const tag of preloads) expect(tag).toMatch(/crossorigin/);
   });
 });
