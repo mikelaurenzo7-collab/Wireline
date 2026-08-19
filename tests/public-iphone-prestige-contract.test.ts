@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+// Final certification anchor for the screenshot-driven public/mobile prestige pass.
+// Runtime source is frozen; this file guards the exact customer-facing decisions.
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
