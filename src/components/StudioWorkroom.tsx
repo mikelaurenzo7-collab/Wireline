@@ -245,6 +245,7 @@ const StudioWorkroom = forwardRef<
   useEffect(() => {
     const textarea = inputRef.current;
     if (!textarea) return;
+    textarea.style.minHeight = "52px";
     textarea.style.height = "0px";
     textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
   }, [draft]);
