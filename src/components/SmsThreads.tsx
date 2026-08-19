@@ -25,7 +25,12 @@ interface SmsMessage {
 }
 
 function formatSmsTime(value: string) {
-  return formatDate(value, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }, "", "en-US");
+  return formatDate(
+    value,
+    { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
+    "",
+    "en-US",
+  );
 }
 
 export default function SmsThreads({
@@ -68,7 +73,9 @@ export default function SmsThreads({
         last_message_at: String(apiField(row, "last_message_at") ?? ""),
       }));
       setThreads(next);
-      setActiveId((current) => (current && next.some((thread) => thread.id === current) ? current : null));
+      setActiveId((current) =>
+        current && next.some((thread) => thread.id === current) ? current : null,
+      );
     } catch (reason: any) {
       const message = reason?.message || "Could not load texts.";
       setFetchErr(message);
@@ -96,25 +103,35 @@ export default function SmsThreads({
             created_at: String(apiField(row, "created_at") ?? ""),
           })),
         );
-        const markRead = await authFetch(`/api/sms/threads/${threadId}/mark-read`, {
+
+        const markReadResponse = await authFetch(`/api/sms/threads/${threadId}/mark-read`, {
           method: "POST",
           signal,
         });
-        if (!signal?.aborted && markRead.ok) {
+        if (signal?.aborted) return;
+        if (markReadResponse.ok) {
           setThreads((current) =>
             current.map((thread) =>
               thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
             ),
           );
+        } else {
+          const markReadBody = await markReadResponse.json().catch(() => ({}));
+          toastError(
+            "Unread status not updated",
+            markReadBody.error || "This thread is open, but its unread badge could not be cleared.",
+          );
         }
       } catch (reason: any) {
         if (signal?.aborted) return;
-        setThreadErr(reason?.message || "Could not load this text thread.");
+        const message = reason?.message || "Could not load this text thread.";
+        setThreadErr(message);
+        toastError("Thread unavailable", message);
       } finally {
         if (!signal?.aborted) setMessagesLoading(false);
       }
     },
-    [],
+    [toastError],
   );
 
   useEffect(() => {
@@ -133,11 +150,15 @@ export default function SmsThreads({
     const controller = new AbortController();
     activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (activeThreadFetchRef.current === controller) activeThreadFetchRef.current = null;
+    };
   }, [activeId, fetchMessages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ block: "end" });
+    if (!messagesEndRef.current || !messages.length) return;
+    messagesEndRef.current.scrollIntoView({ block: "end" });
   }, [messages]);
 
   const visibleThreads = useMemo(() => {
@@ -152,28 +173,57 @@ export default function SmsThreads({
 
   async function sendReply() {
     if (!activeId || !reply.trim() || sending) return;
-    const text = reply.trim();
+    const threadId = activeId;
+    const sentThreadController = activeThreadFetchRef.current;
+    const body = reply.trim();
+    const optimistic: SmsMessage = {
+      id: `optimistic-${Date.now()}`,
+      direction: "out",
+      body,
+      created_at: new Date().toISOString(),
+    };
+
     setSending(true);
     setThreadErr(null);
+    setReply("");
+    setMessages((current) => [...current, optimistic]);
+
     try {
-      const response = await authFetch(`/api/sms/threads/${activeId}/reply`, {
+      const response = await authFetch(`/api/sms/threads/${threadId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text }),
+        body: JSON.stringify({ body }),
       });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok || body.ok === false) {
-        throw new Error(body.reason || body.error || "Text could not be sent.");
+      const result = await response.json().catch(() => ({}));
+
+      if (
+        result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS" ||
+        result.provider_outcome_ambiguous === true
+      ) {
+        const warning =
+          result.reason ||
+          "Delivery status is unknown. The carrier may have accepted this message. Do not resend it; contact support.";
+        setMessages((current) => current.filter((message) => message.id !== optimistic.id));
+        setThreadErr(warning);
+        toastError("SMS status unknown. Do not resend", warning);
+        return;
       }
-      setReply("");
-      success("Sent", "Text accepted by the carrier.");
-      const controller = new AbortController();
-      activeThreadFetchRef.current?.abort();
-      activeThreadFetchRef.current = controller;
-      await fetchMessages(activeId, controller.signal);
-      await fetchThreads();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.reason || result.error || "Text could not be sent.");
+      }
+
+      success("SMS queued", "The carrier accepted the message for delivery.");
+      await Promise.all([
+        fetchMessages(threadId, sentThreadController?.signal),
+        fetchThreads(),
+      ]);
     } catch (reason: any) {
-      setThreadErr(reason?.message || "Text could not be sent.");
+      setMessages((current) => current.filter((message) => message.id !== optimistic.id));
+      setReply(body);
+      const message = reason?.message || "Try again.";
+      setThreadErr(message);
+      toastError("SMS send failed", message);
     } finally {
       setSending(false);
     }
@@ -193,7 +243,14 @@ export default function SmsThreads({
           aria-label="Search text conversations"
           className="min-w-0 flex-1"
         />
-        <Button type="button" variant="ghost" size="sm" onClick={() => void fetchThreads()} disabled={loading} aria-label="Refresh texts">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => void fetchThreads()}
+          disabled={loading}
+          aria-label="Refresh texts"
+        >
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
         </Button>
       </div>
@@ -205,7 +262,9 @@ export default function SmsThreads({
       ) : null}
 
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
-        <div className={`${activeId ? "hidden lg:block" : "block"} min-h-0 overflow-y-auto border-r border-border`}>
+        <div
+          className={`${activeId ? "hidden lg:block" : "block"} min-h-0 overflow-y-auto border-r border-border`}
+        >
           {loading && !threads.length ? (
             <div className="space-y-2 p-3" aria-busy="true">
               {Array.from({ length: 5 }, (_, index) => (
