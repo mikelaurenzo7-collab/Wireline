@@ -251,7 +251,7 @@ router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRe
         customerId: subscription.stripeCustomerId,
       });
       return res.status(409).json({
-        error: "Billing customer ownership could not be verified. Contact Wireline support.",
+        error: "Billing customer ownership could not be verified. Contact BotBound support.",
         code: "STRIPE_CUSTOMER_OWNERSHIP_MISMATCH",
       });
     }
