@@ -121,8 +121,8 @@ export async function resolveVapiWebhookAgent(opts: {
         status: 403,
         body: {
           error:
-            "Production Vapi webhooks must route via a provisioned Wireline phone number. " +
-            "Register the dialed line under Admin → Wireline Phone Numbers.",
+            "Production Vapi webhooks must route via a provisioned BotBound phone number. " +
+            "Register the dialed line under Calls → Lines.",
         },
       };
     }
@@ -140,9 +140,9 @@ export async function resolveVapiWebhookAgent(opts: {
       status: 404,
       body: {
         error:
-          "Cannot route Vapi webhook. Register the dialed Wireline ID under Admin → Wireline Phone Numbers and assign an agent, " +
-          "or pair Default Wireline phone number ID with a Default inbound agent, " +
-          "or call /api/vapi-webhook?agentId=YOUR_WIRELINE_AGENT_ID.",
+          "Cannot route Vapi webhook. Register the dialed phone-number ID under Calls → Lines and assign a Bot, " +
+          "or pair the default phone-number ID with a default inbound Bot, " +
+          "or call /api/vapi-webhook?agentId=YOUR_AGENT_ID.",
       },
     };
   }
@@ -166,7 +166,7 @@ export async function resolveVapiWebhookAgent(opts: {
     return {
       ok: false,
       status: 403,
-      body: { error: "Agent is not authorized for this dialed Wireline number." },
+      body: { error: "Bot is not authorized for this dialed BotBound number." },
     };
   }
 
