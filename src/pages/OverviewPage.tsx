@@ -261,7 +261,7 @@ export default function OverviewPage() {
 
             {degraded ? (
               <StatusNotice tone="warning" title="Bot Roster Partial">
-                Wireline is showing the last safe Bot roster while account data recovers.
+                BotBound is showing the last safe Bot roster while account data recovers.
               </StatusNotice>
             ) : null}
             {phoneLookupDegraded ? (
