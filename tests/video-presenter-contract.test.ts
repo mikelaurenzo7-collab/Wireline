@@ -8,7 +8,7 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("bot visual identity", () => {
-  it("uses a proprietary role-agnostic Bot Mark rather than a generic avatar token", () => {
+  it("uses a proprietary letterless animated Bot signal rather than a generic avatar token", () => {
     const mark = source("src/components/BotMark.tsx");
     const policy = source("src/lib/bot-mark.ts");
     const optics = source("src/styles/bot-mark.css");
@@ -18,17 +18,19 @@ describe("bot visual identity", () => {
     expect(mark).toContain("MOTIF_PATHS");
     expect(mark).toContain("WireGlyph");
     expect(mark).toContain("wl-bot-mark__anchor");
-    expect(mark).toContain("wl-bot-mark__monogram");
     expect(mark).toContain("imageUrl");
-    expect(mark).toContain("mark.initial");
-    expect(mark).toContain("Math.min(14");
     expect(mark).toContain('data-active={active ? "true" : "false"}');
     expect(mark).toContain("wl-bot-mark__pulse");
+    expect(mark).not.toContain("monogram");
+    expect(mark).not.toContain("mark.initial");
 
     expect(policy).toContain("role never affects the mark");
+    expect(policy).toContain("rather than a colored\n * initial");
     expect(policy).toContain("BOT_MARK_PALETTE");
     expect(policy).toContain("BOT_MARK_GRADIENT_CAPACITY");
     expect(policy).toContain("BOT_MARK_MOTIFS");
+    expect(policy).not.toContain("botMarkInitial");
+    expect(policy).not.toContain("initial:");
     for (const motif of ["orbit", "relay", "split", "loop", "pulse", "weave"]) {
       expect(policy).toContain(`"${motif}"`);
     }
@@ -38,9 +40,13 @@ describe("bot visual identity", () => {
 
     expect(optics).toContain(".wl-bot-mark__glyph");
     expect(optics).toContain(".wl-bot-mark__rim");
+    expect(optics).toContain("@keyframes wl-bot-mark-flow");
+    expect(optics).toContain("@keyframes wl-bot-mark-drift");
+    expect(optics).toContain("@keyframes wl-bot-mark-sweep");
     expect(optics).toContain("@keyframes wl-bot-mark-signal");
     expect(optics).toContain("prefers-reduced-motion: reduce");
     expect(optics).toContain("forced-colors: active");
+    expect(optics).not.toContain("wl-bot-mark__monogram");
     expect(optics).not.toContain("--wireline-color-status-success");
     expect(optics).not.toContain("--wireline-color-status-warning");
     expect(optics).not.toContain("--wireline-color-status-error");
