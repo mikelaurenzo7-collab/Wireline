@@ -1,5 +1,5 @@
 /**
- * Cross-platform mobile push orchestration for the native Wireline apps.
+ * Cross-platform mobile push orchestration for the native BotBound apps.
  *
  * One place that, given a user, loads their registered devices and fans a
  * notification out to the right transport per platform:
@@ -31,10 +31,8 @@ export interface CallRecapPush {
 }
 
 export interface DeviceAction {
-  /** "navigate" | "reminder" | "play_music" */
   action: string;
   args: Record<string, unknown>;
-  /** Spoken/notification-friendly label, e.g. "Directions to SFO". */
   title: string;
 }
 
@@ -51,7 +49,6 @@ interface DeviceRow {
   fcmToken: string | null;
 }
 
-/** True when at least one push transport is configured in this environment. */
 function anyPushConfigured(): boolean {
   return isApnsConfigured() || isFcmConfigured();
 }
@@ -69,7 +66,6 @@ async function loadDevices(userId: string): Promise<DeviceRow[]> {
     .where(eq(schema.mobileDevices.userId, userId));
 }
 
-/** Null out one token column for the given device ids in a single query. */
 async function pruneTokens(
   column: "apnsVoipToken" | "apnsAlertToken" | "fcmToken",
   ids: string[],
@@ -81,11 +77,6 @@ async function pruneTokens(
     .where(inArray(schema.mobileDevices.id, ids));
 }
 
-/**
- * Wake every registered device for a user so the app can present a native
- * incoming call (CallKit on iOS, ConnectionService on Android). iOS gets a
- * VoIP push; Android gets a high-priority data message.
- */
 export async function notifyInboundCall(
   userId: string,
   call: InboundCallPush,
@@ -95,7 +86,6 @@ export async function notifyInboundCall(
     const devices = await loadDevices(userId);
     if (devices.length === 0) return { sent: 0, devices: 0 };
 
-    // Shared payload, expressed once and shaped per transport below.
     const apnsPayload = {
       aps: { "content-available": 1 },
       type: "incoming_call",
@@ -146,11 +136,6 @@ export async function notifyInboundCall(
   }
 }
 
-/**
- * Send a tap-to-open recap alert after a call completes. Uses the alert token
- * on iOS and a notification message on Android so it works when the app is
- * backgrounded.
- */
 export async function notifyCallRecap(
   userId: string,
   recap: CallRecapPush,
@@ -208,11 +193,6 @@ export async function notifyCallRecap(
   }
 }
 
-/**
- * Dispatch an in-call device action (navigate / reminder / play music) to a
- * user's phone. The app deep-links Maps / writes a calendar reminder / opens
- * music when the notification is delivered or tapped.
- */
 export async function notifyDeviceAction(
   userId: string,
   deviceAction: DeviceAction,
@@ -223,7 +203,7 @@ export async function notifyDeviceAction(
     if (devices.length === 0) return { sent: 0, devices: 0 };
 
     const apnsPayload = {
-      aps: { alert: { title: "Wireline", body: deviceAction.title }, sound: "default" },
+      aps: { alert: { title: "BotBound", body: deviceAction.title }, sound: "default" },
       type: "device_action",
       action: deviceAction.action,
       args: deviceAction.args,
@@ -246,7 +226,7 @@ export async function notifyDeviceAction(
           targeted += 1;
           const res = await sendFcmPush(d.fcmToken, {
             shape: "notification",
-            notification: { title: "Wireline", body: deviceAction.title },
+            notification: { title: "BotBound", body: deviceAction.title },
             data: fcmData,
           });
           if (res.ok) sent += 1;
