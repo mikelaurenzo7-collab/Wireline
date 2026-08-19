@@ -76,7 +76,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
+        description="Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
         path="/privacy"
       />
 
@@ -170,7 +170,7 @@ export default function PrivacyPolicyPage() {
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           <Section title="1. Who We Are">
             <p>
-              <strong>Wireline</strong> ("we", "our", or "us") operates a voice agent platform for
+              <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for
               business conversations across voice, SMS, and email. Questions about this policy can
               be sent to <strong>support@trywireline.com</strong>.
             </p>
@@ -182,8 +182,8 @@ export default function PrivacyPolicyPage() {
               and account preferences provided during sign-up and use of the platform.
             </p>
             <p>
-              <strong>Agent configuration</strong>: Names, personas, directives, knowledge entries,
-              connected tools, and voice settings you create for your voice agents.
+              <strong>Bot configuration</strong>: Names, personas, directives, knowledge entries,
+              connected tools, and voice settings you create for your Bots.
             </p>
             <p>
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
@@ -211,7 +211,7 @@ export default function PrivacyPolicyPage() {
               analytics such as page, referrer, browser, device, and approximate country information
               without advertising cookies. If you explicitly allow advertising measurement, Meta may
               also receive limited browser/device identifiers, IP address, page and referrer URLs,
-              and conversion events for campaign attribution. We do not send agent content, call
+              and conversion events for campaign attribution. We do not send Bot content, call
               recordings, transcripts, customer contact lists, email or SMS bodies, or payment-card
               data to Meta Pixel.
             </p>
@@ -219,7 +219,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure Wireline; process managed AI requests primarily
+              We use data to provide and secure BotBound; process managed AI requests primarily
               through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel
               AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and
               <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output
@@ -230,11 +230,11 @@ export default function PrivacyPolicyPage() {
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
               marketing campaigns and measure website conversions. It is not required to create an
-              account or use Wireline, and you can turn it off at any time using the controls on
+              account or use BotBound, and you can turn it off at any time using the controls on
               this page.
             </p>
             <p>
-              Wireline does not train its own models on customer agent configurations, recordings,
+              BotBound does not train its own models on customer Bot configurations, recordings,
               transcripts, message content, or custom voice samples. AI and voice providers process
               submitted data under their applicable contracts, privacy terms, account controls, and
               safety obligations.
@@ -244,68 +244,27 @@ export default function PrivacyPolicyPage() {
           <Section title="4. Third-Party Sub-Processors and Measurement Providers">
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li>
-                <strong>Supabase</strong>: Managed Postgres storage and backup
-              </li>
-              <li>
-                <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
-              </li>
-              <li>
-                <strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone
-                conversation over Direct SIP Speech-to-Speech
-              </li>
-              <li>
-                <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the
-                production phone runtime
-              </li>
-              <li>
-                <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model
-                creation, quality proofs, and voice-model deletion
-              </li>
-              <li>
-                <strong>OpenAI</strong>: Continuity inference and realtime voice sessions
-              </li>
-              <li>
-                <strong>Google Gemini</strong>: Managed continuity inference and grounded search
-              </li>
-              <li>
-                <strong>Perplexity</strong>: Optional live public research
-              </li>
-              <li>
-                <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
-                inference observability
-              </li>
-              <li>
-                <strong>Stripe</strong>: Payment processing, billing, and tax calculation
-              </li>
-              <li>
-                <strong>Resend</strong>: Transactional email delivery
-              </li>
-              <li>
-                <strong>Vercel</strong>: Hosting, functions, and edge delivery
-              </li>
-              <li>
-                <strong>Upstash</strong>: Distributed rate limits and spend controls
-              </li>
-              <li>
-                <strong>Plausible</strong>: Privacy-oriented aggregate website analytics
-              </li>
-              <li>
-                <strong>Meta</strong>: Optional advertising measurement and campaign attribution,
-                only after explicit consent and subject to Global Privacy Control
-              </li>
-              <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong>:{" "}
-                {"Compromised-password screening using a k-anonymous partial hash prefix"}
-              </li>
-              <li>
-                <strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce,
-                calendar, or team tools, only when you authorize them
-              </li>
+              <li><strong>Supabase</strong>: Managed Postgres storage and backup</li>
+              <li><strong>Twilio</strong>: PSTN calls, phone numbers, and SMS</li>
+              <li><strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone conversation over Direct SIP Speech-to-Speech</li>
+              <li><strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the production phone runtime</li>
+              <li><strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model creation, quality proofs, and voice-model deletion</li>
+              <li><strong>OpenAI</strong>: Continuity inference and realtime voice sessions</li>
+              <li><strong>Google Gemini</strong>: Managed continuity inference and grounded search</li>
+              <li><strong>Perplexity</strong>: Optional live public research</li>
+              <li><strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and inference observability</li>
+              <li><strong>Stripe</strong>: Payment processing, billing, and tax calculation</li>
+              <li><strong>Resend</strong>: Transactional email delivery</li>
+              <li><strong>Vercel</strong>: Hosting, functions, and edge delivery</li>
+              <li><strong>Upstash</strong>: Distributed rate limits and spend controls</li>
+              <li><strong>Plausible</strong>: Privacy-oriented aggregate website analytics</li>
+              <li><strong>Meta</strong>: Optional advertising measurement and campaign attribution, only after explicit consent and subject to Global Privacy Control</li>
+              <li><strong>Have I Been Pwned Pwned Passwords</strong>: Compromised-password screening using a k-anonymous partial hash prefix</li>
+              <li><strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce, calendar, or team tools, only when you authorize them</li>
             </ul>
             <p>
-              Optional providers receive data only when you enable the related feature or direct an
-              agent to use it.
+              Optional providers receive data only when you enable the related feature or direct a
+              Bot to use it.
             </p>
             <p>
               Mobile contact information and SMS opt-in records are not sold or shared with third
@@ -322,12 +281,12 @@ export default function PrivacyPolicyPage() {
               been de-identified.
             </p>
             <p>
-              Wireline processes a custom-voice upload in memory and does not place the source file
+              BotBound processes a custom-voice upload in memory and does not place the source file
               in its database or object storage. We retain the one-way fingerprint, authorization,
               ownership, review, and audit records needed to prevent duplicate or unauthorized use.
               ElevenLabs receives the sample to create and operate the voice model and retains or
               deletes provider-side data under its terms, privacy controls, and legal obligations.
-              Revoking a voice immediately blocks new Wireline calls and requests provider deletion;
+              Revoking a voice immediately blocks new BotBound calls and requests provider deletion;
               if that request fails, deletion remains pending for an authorized retry.
             </p>
             <p>
@@ -364,7 +323,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="8. Cookies, Local Storage, and Analytics">
             <p>
-              Wireline uses first-party session cookies and local storage necessary for
+              BotBound uses first-party session cookies and local storage necessary for
               authentication, security, preferences, and remembering your privacy choice. Plausible
               aggregate analytics is separate from advertising measurement and does not use
               advertising cookies.
@@ -372,15 +331,15 @@ export default function PrivacyPolicyPage() {
             <p>
               Meta Pixel is optional and remains off until you choose{" "}
               <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.
-              Turning measurement off replaces Wireline's browser-side measurement function with a
-              no-op so future Wireline-triggered Meta events stop;{" "}
+              Turning measurement off replaces BotBound's browser-side measurement function with a
+              no-op so future BotBound-triggered Meta events stop;{" "}
               {"a request already in flight before revocation may still complete"}.
             </p>
           </Section>
 
           <Section title="9. Children's Privacy">
             <p>
-              Wireline is not directed to children under 13, and we do not knowingly collect
+              BotBound is not directed to children under 13, and we do not knowingly collect
               personal information from children. Contact us if you believe a child supplied
               information so we can investigate and delete it.
             </p>
@@ -388,7 +347,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="10. Healthcare Data (HIPAA)">
             <p>
-              <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to
+              <strong>BotBound is not HIPAA-certified at this time.</strong> Do not use BotBound to
               process or transmit Protected Health Information unless and until a written Business
               Associate Agreement and an explicitly supported HIPAA configuration are in place.
             </p>
