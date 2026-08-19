@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -22,6 +22,37 @@ function scheduleLabel(appointment: Appointment): string {
   return parts.length ? parts.join(" · ") : "Time to be confirmed";
 }
 
+function appointmentTimestamp(appointment: Appointment): number | null {
+  if (!appointment.date) return null;
+  const value = appointment.time
+    ? `${appointment.date} ${appointment.time}`
+    : `${appointment.date} 23:59`;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function AppointmentRow({ appointment }: { appointment: Appointment }) {
+  return (
+    <li className="flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <CalendarDays className="size-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-sm font-semibold text-foreground">
+          {appointment.customer_name || "Customer"}
+        </strong>
+        <span className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs text-muted-foreground">
+          <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
+          {scheduleLabel(appointment)}
+        </span>
+      </span>
+      <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
+        {appointment.status || "Scheduled"}
+      </Badge>
+    </li>
+  );
+}
+
 export default function AppointmentsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +71,7 @@ export default function AppointmentsPanel() {
         ]);
         if (cancelled) return;
         if (!apptRes.ok) {
-          setError("Couldn't load appointments. Refresh to try again.");
+          setError("Could not load appointments.");
           return;
         }
         const apptData = (await apptRes.json()) as { appointments?: Appointment[] };
@@ -52,8 +83,7 @@ export default function AppointmentsPanel() {
           setCalendarConnected(Array.isArray(calData?.accounts) && calData.accounts.length > 0);
         }
       } catch {
-        if (!cancelled)
-          setError("Couldn't load appointments. Check your connection and try again.");
+        if (!cancelled) setError("Could not load appointments.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -63,6 +93,20 @@ export default function AppointmentsPanel() {
       cancelled = true;
     };
   }, []);
+
+  const { upcoming, past } = useMemo(() => {
+    const now = Date.now();
+    const future: Appointment[] = [];
+    const history: Appointment[] = [];
+    for (const appointment of appointments) {
+      const timestamp = appointmentTimestamp(appointment);
+      if (timestamp !== null && timestamp < now) history.push(appointment);
+      else future.push(appointment);
+    }
+    future.sort((a, b) => (appointmentTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (appointmentTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
+    history.sort((a, b) => (appointmentTimestamp(b) ?? 0) - (appointmentTimestamp(a) ?? 0));
+    return { upcoming: future, past: history };
+  }, [appointments]);
 
   if (loading) {
     return (
@@ -93,19 +137,12 @@ export default function AppointmentsPanel() {
           titleTone="ui"
           withHalo={false}
           className="w-full max-w-lg"
-          icon={<CalendarDays className="size-5" aria-hidden />}
+          icon={<CalendarDays className="size-5" aria-hidden="true" />}
           title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
-          description={
-            calendarConnected
-              ? "Appointments booked during calls appear here."
-              : "Let your agents book during calls."
-          }
           action={
             <Button asChild>
-              {/* Calendar access is granted with the Google/Microsoft account
-                  connected on /connections, so both states route there. */}
               <Link to="/connections">
-                {calendarConnected ? "Manage calendar" : "Connect a calendar"}
+                {calendarConnected ? "Calendar" : "Connect calendar"}
               </Link>
             </Button>
           }
@@ -115,36 +152,40 @@ export default function AppointmentsPanel() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 px-4 py-6 sm:px-6">
-      <ul className="flex flex-col gap-2">
-        {appointments.map((appointment) => (
-          <li key={appointment.id} className="wl-data-row wl-data-row--framed">
-            <span className="wl-data-row__leading rounded-lg bg-muted p-2">
-              <CalendarDays className="size-4 text-primary" aria-hidden />
-            </span>
-            <span className="wl-data-row__main">
-              <span className="wl-data-row__title">
-                {appointment.customer_name || "Customer"}
-                {appointment.service_type ? (
-                  <span className="ml-2 font-normal text-muted-foreground">
-                    {appointment.service_type}
-                  </span>
-                ) : null}
-              </span>
-              <span className="wl-data-row__detail inline-flex items-center gap-1.5">
-                <Clock3 className="size-3.5" aria-hidden />
-                {scheduleLabel(appointment)}
-              </span>
-            </span>
-            <span className="ml-auto flex shrink-0 items-center gap-2">
-              {appointment.demo ? <Badge variant="outline">Demo</Badge> : null}
-              <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
-                {appointment.status || "Scheduled"}
-              </Badge>
-            </span>
-          </li>
-        ))}
-      </ul>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
+      <section aria-labelledby="upcoming-appointments">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h2 id="upcoming-appointments" className="text-sm font-semibold text-foreground">
+            Upcoming
+          </h2>
+          <span className="text-xs tabular-nums text-muted-foreground">{upcoming.length}</span>
+        </div>
+        {upcoming.length ? (
+          <ul className="flex flex-col gap-2">
+            {upcoming.map((appointment) => (
+              <AppointmentRow key={appointment.id} appointment={appointment} />
+            ))}
+          </ul>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+            No upcoming appointments.
+          </div>
+        )}
+      </section>
+
+      {past.length ? (
+        <details className="rounded-xl border border-border bg-card">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
+            Past
+            <span className="text-xs font-normal tabular-nums text-muted-foreground">{past.length}</span>
+          </summary>
+          <ul className="space-y-2 border-t border-border p-3">
+            {past.map((appointment) => (
+              <AppointmentRow key={appointment.id} appointment={appointment} />
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }
