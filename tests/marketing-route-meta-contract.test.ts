@@ -115,7 +115,8 @@ describe("route meta prerendering", () => {
     for (const [route, path] of Object.entries(routeSources)) {
       const meta = resolveRouteMeta(route)!;
       const source = read(path);
-      expect(source, `${route} title`).toContain(meta.title.replace(" | WIRELINE", ""));
+      const inlineTitle = meta.title.replace(/ \| WIRELINE$/, "");
+      expect(source, `${route} title`).toContain(inlineTitle);
       expect(source, `${route} description`).toContain(meta.description);
       expect(meta.noIndex, route).not.toBe(true);
     }
