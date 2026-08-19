@@ -9,6 +9,7 @@ describe("paid Bot identity reconciliation", () => {
   const phone = read("src/lib/phone-provisioning.ts");
   const mail = read("src/lib/agentmail-mail.ts");
   const ops = read("scripts/reconcile-paid-bot-identities.mts");
+  const endpoint = read("api/reconcile-paid-bot-identities.ts");
   const pricing = read("src/lib/plan-catalog.ts");
 
   it("allocates identity only for active or trialing paid catalog plans", () => {
@@ -38,12 +39,33 @@ describe("paid Bot identity reconciliation", () => {
     expect(mail).toContain('AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"');
   });
 
-  it("reuses existing provider resources before attempting another allocation", () => {
+  it("reuses existing provider resources while reconciling missing delivery state", () => {
     expect(identity).toContain("if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER))");
+    expect(identity).toContain("refreshToken: schema.emailAccounts.refreshToken");
+    expect(identity).toContain("hasStoredSecret: Boolean(existing.refreshToken)");
+    expect(identity).toContain("ensureManagedDeliveryWebhook");
+    expect(identity).toContain("Managed AgentMail inbox is missing from the configured AgentMail organization");
+    expect(identity).toContain("AgentMail webhook registration requires a public APP_URL");
+    expect(identity).toContain("if (!ensured.secret && input.hasStoredSecret) return");
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
     expect(identity).toContain("if (existing) return { ...existing, reused: true }");
     expect(phone).toContain("alreadyAssigned");
     expect(phone).toContain("reused: true");
+  });
+
+  it("narrows ImapFlow search results before using array-only operations", () => {
+    expect(mail).toContain("if (!Array.isArray(uids) || uids.length === 0) return []");
+    expect(mail).toContain("const recentUids = uids.slice(-limit).reverse()");
+  });
+
+  it("pages the protected HTTP reconciler so bounded batches can reach every paid Bot", () => {
+    expect(endpoint).toContain('searchParams.get("cursor")');
+    expect(endpoint).toContain("gt(schema.agents.id, cursor.value)");
+    expect(endpoint).toContain("orderBy(asc(schema.agents.id))");
+    expect(endpoint).toContain(".limit(limit + 1)");
+    expect(endpoint).toContain("const hasMore = candidates.length > limit");
+    expect(endpoint).toContain("next_cursor: nextCursor");
+    expect(endpoint).toContain('code: "INVALID_CURSOR"');
   });
 
   it("keeps the live backfill operator-controlled and dry-run by default", () => {
