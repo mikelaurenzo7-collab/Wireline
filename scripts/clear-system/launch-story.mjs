@@ -31,8 +31,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /Phone Bot[^<]*calls, text, and email/i,
-    "static metadata must make the three customer channels clear",
+    /Phone Bot[^<]*calls, email, and text/i,
+    "static metadata must make the three customer channels clear in the canonical order",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
@@ -43,8 +43,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /Phone Bot[^"`]*calls, text, and email/i,
-    "runtime metadata must make the three customer channels clear",
+    /Phone Bot[^"`]*calls, email, and text/i,
+    "runtime metadata must make the three customer channels clear in the canonical order",
   );
   mustInclude(
     "public/site.webmanifest",
@@ -68,8 +68,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /supportingLine:\s*"CALL · TEXT · EMAIL"/,
-    "shared Bot product model must keep every customer channel explicit",
+    /supportingLine:\s*"CALL · EMAIL · TEXT"/,
+    "shared Bot product model must keep every customer channel explicit in the canonical order",
   );
   for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"]) {
     mustInclude(
@@ -91,7 +91,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /title:\s*"YOUR BOT\. ALREADY MOVING\."/,
     "shared product model must preserve a desire-led operating promise",
   );
-  for (const channel of ["Call", "Text", "Email"]) {
+  for (const channel of ["Call", "Email", "Text"]) {
     mustInclude(
       "src/lib/bot-product.ts",
       botProduct,
