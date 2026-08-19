@@ -238,7 +238,7 @@ export default function ReportingPreferences() {
 
       {noStorageConnected ? (
         <StatusNotice tone="warning" title="Connect a report destination">
-          Connect Google or Microsoft before enabling native files. Wireline writes the finished
+          Connect Google or Microsoft before enabling native files. BotBound writes the finished
           file to your workspace and keeps only the job metadata and external link.{" "}
           <Link to="/connections" className="font-semibold underline underline-offset-4">
             Open Connections
@@ -383,7 +383,7 @@ export default function ReportingPreferences() {
               className="wl-stitch-input h-11 w-full"
             />
             <span className="block text-xs font-normal text-muted-foreground">
-              Your device time; Wireline converts it to UTC when saved.
+              Your device time; BotBound converts it to UTC when saved.
             </span>
           </label>
           {preferences.scheduled_report_frequency === "weekly" ? (
