@@ -7,14 +7,12 @@
         try {
           var stored = localStorage.getItem("wireline-theme");
           var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          // Light is the first-visit WIRELINE appearance. Explicit Dark and
+          // Dark is the first-visit WIRELINE appearance. Explicit Light and
           // System choices still apply before first paint to avoid theme flash.
-          var useLight = stored === "dark" ? false : stored === "system" ? !systemDark : true;
+          var useLight = stored === "light" || (stored === "system" && !systemDark);
           if (useLight) document.documentElement.classList.add("light");
         } catch (e) {
-          // Storage can be unavailable in private browsing. Light remains the
-          // deterministic first-visit appearance.
-          document.documentElement.classList.add("light");
+          /* Storage can be unavailable; dark remains the deterministic default. */
         }
       })();
     </script>
@@ -83,13 +81,13 @@
       name="domain-verification"
       content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
     />
-    <meta name="theme-color" content="#F6F5FA" />
-    <meta name="msapplication-TileColor" content="#F6F5FA" />
+    <meta name="theme-color" content="#0A0A0E" />
+    <meta name="msapplication-TileColor" content="#0A0A0E" />
     <meta name="apple-mobile-web-app-title" content="WIRELINE" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="color-scheme" content="dark light" />
 
     <link rel="canonical" href="https://trywireline.com/" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
