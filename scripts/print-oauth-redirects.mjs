@@ -41,7 +41,8 @@ const integrationCallbacks = [
   ["Apollo", "/api/oauth/apollo/callback"],
   ["Meta", "/api/oauth/meta/callback"],
   ["Shopify", "/api/oauth/shopify/callback"],
-  ["Square", "/api/oauth/square/callback"],
+  // Square's dashboard registration predates the generic OAuth router naming.
+  ["Square", "/api/ecommerce/oauth/callback"],
   ["Microsoft Teams", "/api/oauth/microsoft_teams/callback"],
   ["Microsoft Excel", "/api/oauth/microsoft_excel/callback"],
   ["Slack", "/api/oauth/slack/callback"],
@@ -64,7 +65,7 @@ console.log(`
 
 Set APP_URL="${origin}" in the target Vercel environment before validating OAuth.
 The server derives redirect_uri from that canonical origin. Do not rename the
-/api/auth/* or /api/oauth/* callback paths during the brand/domain cutover.
+existing /api/auth/* or provider callback paths during the brand/domain cutover.
 `);
 
 printGroup("ACCOUNT SIGN-IN CALLBACKS", signInCallbacks);
