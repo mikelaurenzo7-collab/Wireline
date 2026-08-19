@@ -6,6 +6,7 @@ import {
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   agentmailGrantedScopes,
   createAgentMailInbox,
+  deleteAgentMailWebhook,
   ensureAgentMailWebhook,
   listAgentMailInboxes,
   listAgentMailWebhooks,
@@ -146,12 +147,68 @@ async function resolveManagedInbox(input: {
   return { ...inbox, reused: false };
 }
 
+async function ensureManagedDeliveryWebhook(input: {
+  apiKey: string;
+  inboxId: string;
+  accountId: string;
+  userId: string;
+  hasStoredSecret: boolean;
+}): Promise<void> {
+  const ensured = await ensureAgentMailWebhook({
+    apiKey: input.apiKey,
+    inboxId: input.inboxId,
+    accountId: input.accountId,
+    hasStoredSecret: input.hasStoredSecret,
+  });
+  if (!ensured) {
+    throw new Error("AgentMail webhook registration requires a public APP_URL.");
+  }
+
+  // A reused webhook with a stored encrypted secret is already verifiable. AgentMail
+  // does not need to re-expose that secret on every reconciliation pass.
+  if (!ensured.secret && input.hasStoredSecret) return;
+
+  let signingSecret = ensured.secret;
+  if (!signingSecret) {
+    signingSecret =
+      (await listAgentMailWebhooks(input.apiKey)).find(
+        (webhook) => webhook.webhookId === ensured.webhookId,
+      )?.secret ?? null;
+  }
+  if (!signingSecret) {
+    await deleteAgentMailWebhook(input.apiKey, ensured.webhookId).catch((cleanupError) =>
+      log.warn("Unverifiable paid Bot AgentMail webhook cleanup failed", {
+        userId: input.userId,
+        accountId: input.accountId,
+        webhookId: ensured.webhookId,
+        error: getErrorMessage(cleanupError),
+      }),
+    );
+    throw new Error("AgentMail webhook did not expose its signing secret.");
+  }
+
+  const updated = await drizzle
+    .update(schema.emailAccounts)
+    .set({ refreshToken: encryptSecret(signingSecret) })
+    .where(
+      and(
+        eq(schema.emailAccounts.id, input.accountId),
+        eq(schema.emailAccounts.userId, input.userId),
+      ),
+    )
+    .returning({ id: schema.emailAccounts.id });
+  if (updated.length !== 1) {
+    throw new Error("AgentMail signing secret was not stored on the managed mailbox account.");
+  }
+}
+
 async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: string) {
   const [existing] = await drizzle
     .select({
       id: schema.emailAccounts.id,
       emailAddress: schema.emailAccounts.emailAddress,
       oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes,
+      refreshToken: schema.emailAccounts.refreshToken,
     })
     .from(schema.emailAccounts)
     .where(
@@ -162,13 +219,28 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
       ),
     )
     .limit(1);
-  if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
-    return { email: existing.emailAddress, reused: true };
-  }
 
   if (!isVaultConfigured()) throw new Error("Credential vault is not configured for managed email.");
   const apiKey = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is required for managed Bot email.");
+
+  if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
+    const inbox = (await listAgentMailInboxes(apiKey)).find(
+      (candidate) => candidate.email.toLowerCase() === existing.emailAddress.toLowerCase(),
+    );
+    if (!inbox) {
+      throw new Error("Managed AgentMail inbox is missing from the configured AgentMail organization.");
+    }
+    await verifyAgentMailCredentials(inbox.email, apiKey);
+    await ensureManagedDeliveryWebhook({
+      apiKey,
+      inboxId: inbox.inboxId,
+      accountId: existing.id,
+      userId,
+      hasStoredSecret: Boolean(existing.refreshToken),
+    });
+    return { email: existing.emailAddress, reused: true };
+  }
 
   const inbox = await resolveManagedInbox({ apiKey, agentId, agentName });
   await verifyAgentMailCredentials(inbox.email, apiKey);
@@ -184,25 +256,13 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
   });
   if (!connected) throw new Error(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
 
-  const ensured = await ensureAgentMailWebhook({
+  await ensureManagedDeliveryWebhook({
     apiKey,
     inboxId: inbox.inboxId,
     accountId: connected.id,
+    userId,
     hasStoredSecret: false,
   });
-  if (ensured) {
-    let signingSecret = ensured.secret;
-    if (!signingSecret) {
-      signingSecret =
-        (await listAgentMailWebhooks(apiKey)).find((webhook) => webhook.webhookId === ensured.webhookId)
-          ?.secret ?? null;
-    }
-    if (!signingSecret) throw new Error("AgentMail webhook did not expose its signing secret.");
-    await drizzle
-      .update(schema.emailAccounts)
-      .set({ refreshToken: encryptSecret(signingSecret) })
-      .where(and(eq(schema.emailAccounts.id, connected.id), eq(schema.emailAccounts.userId, userId)));
-  }
 
   return { email: inbox.email, reused: inbox.reused };
 }
