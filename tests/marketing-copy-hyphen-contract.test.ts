@@ -13,10 +13,9 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * Wireline avoids en and em dashes in customer-facing prose. Standard hyphens
- * remain available for precise compounds such as voice-first and
- * feature-for-feature. Slugs, links, classes, and identifiers are not copy and
- * are excluded from the recursive copy scan.
+ * WIRELINE avoids en and em dashes in customer-facing prose. Standard hyphens
+ * remain available for precise compounds such as feature-for-feature. Slugs,
+ * links, classes, and identifiers are not copy and are excluded from the scan.
  */
 const LONG_DASH = /[–—]/;
 const SKIP_KEYS = new Set(["href", "slug", "key", "id", "icon", "image"]);
@@ -103,9 +102,10 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("preserves useful hyphenated compounds in the approved voice-first system", () => {
-    expect(HOME_DESCRIPTION).toContain("voice-first");
-    expect(read("src/lib/bot-product.ts")).toMatch(/voice-first/i);
+  it("keeps the Phone Bot wedge explicit while preserving precise hyphenated compounds where useful", () => {
+    expect(HOME_TITLE).toContain("WIRE YOUR PHONE BOT");
+    expect(HOME_DESCRIPTION).toContain("Phone Bot");
+    expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });
