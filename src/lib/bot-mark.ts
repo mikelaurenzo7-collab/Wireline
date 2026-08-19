@@ -6,7 +6,7 @@
  * role never affects the mark: identity and capability stay separate.
  *
  * The mark is intentionally a tiny WIRELINE signal system rather than a colored
- * initial. A stable seed selects a restrained obsidian/violet/platinum gradient,
+ * initial. A stable seed selects a restrained deep-violet/indigo/platinum gradient,
  * one of several wire geometries, an orientation, and an anchor point. This
  * gives customers fast recognition without creating another configuration
  * product or confusing identity color with operational status.
