@@ -42,6 +42,8 @@ describe("phone search does not buy a number", () => {
     expect(read("src/lib/api-validation-base.ts")).toContain(
       'regex(/^\\+1\\d{10}$/, "phone_number must be a US E.164 number")',
     );
-    expect(read("src/components/PhoneSetupPanel.tsx")).toContain("Add another number");
+    const setup = read("src/components/PhoneSetupPanel.tsx");
+    expect(setup).toContain("Add line");
+    expect(setup).toContain('aria-label="Add phone line"');
   });
 });
