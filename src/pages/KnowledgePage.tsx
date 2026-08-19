@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { BookOpen, MessageCircle } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
+import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -39,10 +40,10 @@ function EmptyKnowledge() {
       withHalo={false}
       className="wl-paper wl-paper-elevated mx-auto w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
       icon={<BookOpen size={30} strokeWidth={1.7} />}
-      title="Knowledge starts with a voice agent"
-      description="Create the agent first, then add the business facts, policies, and answers it may use with customers."
+      title="Knowledge starts with a Bot"
+      description="Create the Bot first, then add the facts, policies, and answers it may use with customers."
       actions={[
-        { label: "Create voice agent", to: "/studio?create=1", primary: true },
+        { label: "Create Bot", to: "/studio?create=1", primary: true },
         { label: "Browse templates", to: "/templates" },
       ]}
     />
@@ -82,63 +83,67 @@ export default function KnowledgePage() {
     );
   }
 
+  const secondaryControls = (
+    <>
+      <Button asChild variant="secondary" size="sm" className="shrink-0 justify-center">
+        <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
+          <MessageCircle size={15} aria-hidden="true" />
+          Test in Studio
+        </Link>
+      </Button>
+      {populated && activeTab === "knowledge" ? (
+        <NativeSelect
+          value={agentId}
+          onChange={(event) =>
+            setParams(
+              (current) => {
+                const updated = new URLSearchParams(current);
+                updated.set("agent", event.target.value);
+                updated.set("tab", activeTab);
+                return updated;
+              },
+              { replace: true },
+            )
+          }
+          aria-label="Choose Bot"
+          className="min-w-[160px] max-w-[12rem] sm:w-auto"
+        >
+          {agents.map((agent) => (
+            <option key={agent.id} value={agent.id}>
+              {agent.name}
+            </option>
+          ))}
+        </NativeSelect>
+      ) : null}
+    </>
+  );
+
   return (
     <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
       {!loading && !agents.length ? (
         <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
           <WorkspacePageIntro title="Knowledge" />
-          {/* An empty roster and an unreachable one are the same `agents.length`
-              but opposite facts. Without this check a failed load rendered
-              "Knowledge starts with a voice agent — create the agent
-              first", so a customer whose agents were merely unreachable was
-              told they had none and invited to build a duplicate. */}
           {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
           <WorkspacePageIntro title="Knowledge" titleHidden />
-          <div className="flex flex-wrap items-center gap-2">
-            <WorkspaceTabStrip
-              ariaLabel="Knowledge sections"
-              tabs={knowledgeTabs}
-              activeId={activeTab}
-              onSelect={(id) => setActiveTab(id as KnowledgeTabId)}
-              density="compact"
-              align="start"
-              wrap
-              className="mb-0 border-b-0 pb-0"
-            />
-            <Button asChild variant="secondary" size="sm" className="justify-center">
-              <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-                <MessageCircle size={15} aria-hidden="true" />
-                Test in Studio
-              </Link>
-            </Button>
-            {populated && activeTab === "knowledge" ? (
-              <NativeSelect
-                value={agentId}
-                onChange={(event) =>
-                  setParams(
-                    (current) => {
-                      const updated = new URLSearchParams(current);
-                      updated.set("agent", event.target.value);
-                      updated.set("tab", activeTab);
-                      return updated;
-                    },
-                    { replace: true },
-                  )
-                }
-                aria-label="Choose voice agent"
-                className="min-w-[180px] sm:w-auto"
-              >
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            ) : null}
-          </div>
+          <WorkspaceControlBand
+            ariaLabel="Knowledge controls"
+            primary={
+              <WorkspaceTabStrip
+                ariaLabel="Knowledge sections"
+                tabs={knowledgeTabs}
+                activeId={activeTab}
+                onSelect={(id) => setActiveTab(id as KnowledgeTabId)}
+                density="compact"
+                align="start"
+                wrap
+                className="mb-0 border-b-0 pb-0"
+              />
+            }
+            secondary={secondaryControls}
+          />
 
           {activeTab === "knowledge" ? (
             <div className="space-y-5">
