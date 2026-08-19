@@ -238,7 +238,8 @@ export default function SmsThreads({
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 sm:px-4">
         <SearchField
           value={search}
-          onChange={setSearch}
+          onChange={(event) => setSearch(event.target.value)}
+          onClear={() => setSearch("")}
           placeholder="Search texts"
           aria-label="Search text conversations"
           className="min-w-0 flex-1"
@@ -350,7 +351,9 @@ export default function SmsThreads({
                     {messages.map((message) => (
                       <ConversationMessage
                         key={message.id}
-                        direction={message.direction}
+                        author={message.direction === "out" ? "assistant" : "customer"}
+                        label={message.direction === "out" ? "Agent" : activeThread.customer_number}
+                        channel="text"
                         timestamp={formatSmsTime(message.created_at)}
                       >
                         {message.body}
