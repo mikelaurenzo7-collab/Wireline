@@ -24,19 +24,21 @@ const AUTHENTICATED_SURFACE_GLOBS = [
 
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
 
-describe("WIRELINE Letterpress design vision", () => {
-  it("exports one canonical design system and treats obsidian only as its canvas material", () => {
+describe("WIRELINE design vision", () => {
+  it("exports one canonical design system with semantic visual vocabulary", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
-    expect(WIRELINE_DESIGN_VISION.system).toBe("WIRELINE Letterpress");
+    expect(WIRELINE_DESIGN_VISION.system).toBe("WIRELINE Design System");
     expect(WIRELINE_DESIGN_VISION.naming).toEqual({
-      designSystem: "WIRELINE Letterpress",
-      canvasMaterial: "obsidian",
+      designSystem: "WIRELINE Design System",
       rule:
-        "Letterpress is the design system. obsidian is a lowercase canvas/material descriptor inside Letterpress, never a second design system, UI system, or theme name.",
+        "WIRELINE Design System is the only system name. Describe visual decisions by function: canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "Letterpress is the system; obsidian is the canvas material, never a competing system name.",
+      "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
+    );
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "Visual vocabulary is semantic, not thematic: canvas, surface, elevation, ink, action, wire, signal, and status.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
@@ -46,32 +48,48 @@ describe("WIRELINE Letterpress design vision", () => {
     );
     expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
       expect.objectContaining({
-        surface: expect.arrayContaining(["wl-paper", "wl-paper-elevated"]),
+        surface: expect.arrayContaining(["wl-panel", "wl-panel-elevated"]),
         feedback: expect.arrayContaining(["wl-focus-ring"]),
         layout: expect.arrayContaining(["wl-metric-tile", "wl-empty", "wl-skeleton"]),
         voice: expect.arrayContaining(["wl-eyebrow", "wl-display-mark"]),
         chips: expect.arrayContaining(["wl-chip", "wl-chip--success", "wl-chip--primary"]),
       }),
     );
-    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-panel-elevated");
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-paper");
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-letterpress");
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-composer-dock");
+    expect(WIRELINE_DESIGN_VISION.retiredDesignNames).toEqual(
+      expect.arrayContaining(["Letterpress", "Obsidian", "Aurora"]),
+    );
   });
 
-  it("defines panel and composer primitives in the design system stylesheet", () => {
+  it("keeps old themed names out of canonical system declarations", () => {
+    expect(read("src/lib/wireline-design-vision.ts")).not.toMatch(
+      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+    );
+    expect(read("src/lib/surface-contract.ts")).not.toMatch(
+      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+    );
+    expect(read("src/constants/brand-colors.ts")).not.toMatch(/Wireline Letterpress|obsidian material/i);
+  });
+
+  it("defines shared primitives across the canonical system stylesheets", () => {
     const designSystemCss = read("src/styles/design-system.css");
+    const polishCss = read("src/styles/letterpress-polish.css");
+    const sharedCss = `${designSystemCss}\n${polishCss}`;
+
     for (const utility of WIRELINE_DESIGN_VISION.legacyAliases) {
       if (
         utility.startsWith("wl-composer") ||
         utility.startsWith("wl-panel") ||
         utility.startsWith("wl-chip")
       ) {
-        expect(designSystemCss).toContain(`.${utility}`);
+        expect(sharedCss).toContain(`.${utility}`);
       }
     }
-    const polishCss = read("src/styles/letterpress-polish.css");
     for (const group of Object.values(WIRELINE_DESIGN_VISION.utilities)) {
       for (const utility of group) {
-        expect(polishCss).toContain(`.${utility}`);
+        expect(sharedCss).toContain(`.${utility}`);
       }
     }
   });
@@ -83,7 +101,7 @@ describe("WIRELINE Letterpress design vision", () => {
     expect(WIRELINE_DESIGN_VISION.motion.pressScale).toBe(0.985);
   });
 
-  it("defines authenticated Letterpress signature utilities without duplicating selection ownership", () => {
+  it("defines authenticated WIRELINE signature utilities without duplicating selection ownership", () => {
     const appSignature = read("src/styles/wireline-app-signature.css");
     expect(appSignature).toContain(".wl-workspace-shell::before");
     expect(appSignature).toContain(".wl-workspace-content .wl-paper::before");
