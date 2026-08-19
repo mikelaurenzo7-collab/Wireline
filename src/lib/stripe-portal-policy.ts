@@ -8,7 +8,7 @@ export const MANAGED_PORTAL_METADATA_KEY = "wireline_managed";
 export const PORTAL_PRODUCTS_FINGERPRINT_KEY = "wireline_portal_products_fp";
 export const PORTAL_CATALOG_ATTESTED_AT_KEY = "wireline_portal_catalog_attested_at";
 const PORTAL_ATTESTATION_CLOCK_SKEW_SECONDS = 5;
-const PORTAL_HEADLINE = "Manage your Wireline billing, invoices, and subscription.";
+const PORTAL_HEADLINE = "Manage your BotBound billing, invoices, and subscription.";
 const CANCELLATION_REASONS = [
   "too_expensive",
   "missing_features",
@@ -190,10 +190,6 @@ export function managedPortalConfigurationFindings(
       }
     }
   } else {
-    // Stripe can omit subscription_update.products from a live configuration
-    // read even after accepting the exact catalog on create/update. Bind the
-    // metadata fingerprint to the same write's updated timestamp so a later
-    // Dashboard edit invalidates the attestation instead of silently passing.
     const catalogAttestedAt = Number(configuration.metadata?.[PORTAL_CATALOG_ATTESTED_AT_KEY]);
     if (
       !Number.isInteger(catalogAttestedAt) ||
