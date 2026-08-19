@@ -95,9 +95,27 @@ router.get(
     try {
       const requestedAgentId =
         typeof req.query.agent_id === "string" ? req.query.agent_id.trim() : "";
+      const requestedAccountId =
+        typeof req.query.account_id === "string" ? req.query.account_id.trim() : "";
       let accountIds: string[] | null = null;
 
-      if (requestedAgentId) {
+      if (requestedAccountId) {
+        const [account] = await drizzle
+          .select({ id: schema.emailAccounts.id, agentId: schema.emailAccounts.agentId })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.id, requestedAccountId),
+              eq(schema.emailAccounts.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (!account) return res.json({ threads: [] });
+        if (requestedAgentId && account.agentId !== requestedAgentId) {
+          return res.json({ threads: [] });
+        }
+        accountIds = [account.id];
+      } else if (requestedAgentId) {
         const accounts = await drizzle
           .select({ id: schema.emailAccounts.id })
           .from(schema.emailAccounts)
