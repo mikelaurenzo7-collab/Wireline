@@ -53,9 +53,6 @@ function isInternalLogLine(line: string): boolean {
 
 function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/brand-text.ts") return true;
-  if (path === "src/lib/plan-catalog.ts") {
-    return /name:\s*"Wireline (?:Free Builder|Starter|Starter Plus|Pro|Business)"/.test(line);
-  }
   if (path === "src/lib/google-sheets-service.ts") {
     return /const SHEET_TITLE = "Wireline Call Log"/.test(line);
   }
@@ -170,7 +167,7 @@ describe("BotBound visible-brand sweep", () => {
     ).toEqual([]);
   });
 
-  it("keeps technical compatibility identifiers explicit and unchanged", () => {
+  it("keeps technical compatibility identifiers explicit while requiring customer billing names to be BotBound", () => {
     const brand = read("src/lib/brand.ts");
     const openapi = read("src/lib/openapi-spec.ts");
     const nativeSip = read("src/lib/voice/xai-sip-config.ts");
@@ -188,7 +185,8 @@ describe("BotBound visible-brand sweep", () => {
     expect(nativeSip).toContain('XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP"');
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
-    expect(catalog).toContain('name: "Wireline Starter"');
+    expect(catalog).toContain('name: "BotBound Starter"');
+    expect(catalog).not.toContain('name: "Wireline Starter"');
     expect(sheets).toContain('const SHEET_TITLE = "Wireline Call Log"');
     expect(graph).toContain('const EXCEL_FILE_NAME = "Wireline Call Log.xlsx"');
     expect(androidTheme).toContain('name="Theme.Wireline"');
