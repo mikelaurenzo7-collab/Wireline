@@ -12,9 +12,9 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " | WIRELINE";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE";
+const DEFAULT_TITLE = "WIRELINE | WIRE YOUR PHONE BOT";
 const DEFAULT_DESCRIPTION =
-  "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.";
+  "A Phone Bot for calls, text, and email. Build free, then put it on a number when you're ready.";
 
 function brandTitle(value: string): string {
   return value.replace(/\bWireline\b/gi, "WIRELINE");
@@ -81,7 +81,6 @@ export function PageMeta({
     : DEFAULT_TITLE;
   const resolvedDescription = description || DEFAULT_DESCRIPTION;
   const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
-  // Social scrapers require an absolute og:image, so absolutize relative paths.
   const ogImage = image
     ? /^https?:\/\//i.test(image)
       ? image
