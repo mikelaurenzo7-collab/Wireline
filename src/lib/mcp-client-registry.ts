@@ -3,7 +3,7 @@ import { AppError } from "./api-error";
 
 /**
  * Dynamic OAuth client registration (RFC 7591) plus CIMD allowlists for the
- * Wireline MCP server.
+ * BotBound MCP server.
  *
  * ChatGPT identifies itself with a Client ID Metadata Document hosted on
  * chatgpt.com, so it never registers. Claude.ai and Claude.com connectors
@@ -181,7 +181,7 @@ export function validateDynamicClientRegistration(
   for (const uri of redirectUris) {
     if (!isTrustedDynamicRedirectUri(uri)) {
       throw registrationError(
-        "Wireline only registers Claude or Cursor connector callbacks on their official redirect URIs.",
+        "BotBound only registers Claude or Cursor connector callbacks on their official redirect URIs.",
         "invalid_redirect_uri",
       );
     }
@@ -192,7 +192,7 @@ export function validateDynamicClientRegistration(
     typeof body.token_endpoint_auth_method === "string" ? body.token_endpoint_auth_method : "none";
   if (authMethod !== "none") {
     throw registrationError(
-      'Wireline registers public clients only. Use token_endpoint_auth_method "none" with PKCE.',
+      'BotBound registers public clients only. Use token_endpoint_auth_method "none" with PKCE.',
     );
   }
   if (Array.isArray(body.grant_types)) {
