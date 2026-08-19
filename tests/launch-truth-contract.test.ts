@@ -42,7 +42,7 @@ describe("launch truth contract", () => {
 
     expect(security).toContain("A SOC 2 Type II attestation is not currently available.");
     expect(security).toContain("Do not send, store, or process PHI");
-    expect(trust).toContain("Wireline does not claim HIPAA compliance or certification.");
+    expect(trust).toContain("BotBound does not claim HIPAA compliance or certification.");
     expect(trust).toContain("SSO, residency, DPA, BAA, support, and other enterprise terms");
     expect(trust).toContain("Important boundary");
   });
