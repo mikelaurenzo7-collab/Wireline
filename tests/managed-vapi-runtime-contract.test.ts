@@ -162,9 +162,9 @@ describe("managed phone voice runtime policy", () => {
 
   it("keeps model and carrier complexity managed and provider-neutral", () => {
     expect(carrier).toMatch(
-      /Wireline manages the phone conversation runtime, voice selection, intelligence\s+routing, and continuity/,
+      /BotBound manages the phone conversation runtime, voice selection, intelligence\s+routing, and continuity/,
     );
-    expect(carrier).toMatch(/Phone runtime", "Wireline managed/);
+    expect(carrier).toMatch(/Phone runtime", "BotBound managed/);
     expect(carrier).toMatch(/Call intelligence", "Managed automatically/);
     expect(carrier).toMatch(/Continuity", "Automatic failover/);
     expect(carrier).not.toMatch(
