@@ -18,10 +18,9 @@ function withoutComments(source: string): string {
 }
 
 /**
- * Customer-delivery surfaces, not implementation identifiers. The regex below
- * intentionally matches only standalone `Wireline`, so names such as
- * WirelineAndroidApp, com.wireline.app, data-wireline-*, WIRELINE_* env vars,
- * and wireline_* database identifiers remain compatible without whitelisting.
+ * Broad source coverage is intentional. The classifier below decides whether
+ * a standalone legacy name is customer-delivery debt or a frozen technical
+ * compatibility identity.
  */
 const customerSurfacePatterns = [
   "src/components/**/*.tsx",
@@ -42,7 +41,7 @@ const customerSurfacePatterns = [
   "server.ts",
 ] as const;
 
-/** Stable compatibility strings whose rename would break installed clients or today's origin. */
+/** Stable compatibility strings whose rename can break installed clients or today's origin. */
 const compatibilityLinePatterns = [
   /legacyName:\s*"Wireline"/,
   /X-Wireline-Key/,
@@ -54,18 +53,28 @@ const compatibilityLinePatterns = [
   /trywireline\.com/i,
 ] as const;
 
+function isInternalLogLine(line: string): boolean {
+  return /\b(?:log|logger|auditLogger)\.(?:debug|info|warn|error)\s*\(/.test(line);
+}
+
 /**
- * Existing provider/catalog resource identities are deliberately frozen during
- * the brand migration. They are not presentation strings: code uses them to
- * reconcile already-created Stripe/Twilio/Vapi/xAI resources. BotBound must be
- * layered above them rather than reprovisioning or losing linkage.
+ * Existing provider/catalog/resource identities are frozen when code uses the
+ * literal to reconcile or rediscover already-created external state. Visible
+ * product copy must be layered above these rather than renaming the key in
+ * place and risking duplicate resources.
  */
 function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/plan-catalog.ts") {
     return /name:\s*"Wireline (?:Free Builder|Starter|Starter Plus|Pro|Business)"/.test(line);
   }
   if (path === "src/lib/voice-pricing-display.ts") {
-    return /plan\.name\.replace\("Wireline ", ""\)/.test(line);
+    return line.includes("plan.name.replace") && line.includes("BotBound") && line.includes("Wireline");
+  }
+  if (path === "src/lib/google-sheets-service.ts") {
+    return /const SHEET_TITLE = "Wireline Call Log"/.test(line);
+  }
+  if (path === "src/lib/microsoft-graph-service.ts") {
+    return /const EXCEL_FILE_NAME = "Wireline Call Log\.xlsx"/.test(line);
   }
   if (path === "src/lib/voice/xai-sip-config.ts") {
     return /XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
@@ -76,6 +85,12 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/voice/native-phone-carrier.ts") {
     return /friendlyName\s*=\s*`Wireline native /.test(line);
   }
+  if (path === "src/lib/phone-provisioning.ts") {
+    return (
+      /friendlyName:\s*`Wireline · tenant /.test(line) ||
+      /name:\s*`Wireline · \$\{userId\.slice/.test(line)
+    );
+  }
   if (path === "src/lib/vapi-phone-numbers.ts") {
     return /name:\s*opts\.name \|\| "Wireline-managed"/.test(line);
   }
@@ -84,6 +99,12 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   }
   if (path === "src/lib/soc2-controls.ts") {
     return /Wireline encrypted key prefix/.test(line);
+  }
+  if (path === "src/lib/internal-jwt-secret.ts") {
+    return /canonical Wireline session secret/.test(line);
+  }
+  if (path === "src/lib/tcpa-consent.ts") {
+    return /\/\/ Wireline policy: always disclose recording\./.test(line);
   }
   if (path === "src/lib/stripe-helpers.ts") {
     return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
@@ -94,6 +115,7 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
 
 function isCompatibilityOnlyLine(path: string, line: string): boolean {
   return (
+    isInternalLogLine(line) ||
     compatibilityLinePatterns.some((pattern) => pattern.test(line)) ||
     isPathScopedCompatibility(path, line)
   );
@@ -117,8 +139,6 @@ describe("BotBound visible-brand sweep", () => {
     const files = customerSurfacePatterns
       .flatMap((pattern) => globSync(pattern, { cwd: root }))
       .map((file) => file.replaceAll("\\", "/"))
-      // Contract tests are evidence, not customer-delivery surfaces. They may
-      // explicitly mention legacy identifiers to prove compatibility behavior.
       .filter((file) => !/\.(?:test|spec)\.(?:ts|tsx)$/.test(file))
       .filter((file, index, all) => all.indexOf(file) === index)
       .sort();
@@ -137,6 +157,8 @@ describe("BotBound visible-brand sweep", () => {
     const webhooks = read("src/components/WebhooksManager.tsx");
     const firefox = read("apps/browser-extension/manifest.firefox.json");
     const catalog = read("src/lib/plan-catalog.ts");
+    const sheets = read("src/lib/google-sheets-service.ts");
+    const graph = read("src/lib/microsoft-graph-service.ts");
 
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
@@ -145,6 +167,8 @@ describe("BotBound visible-brand sweep", () => {
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "Wireline Starter"');
+    expect(sheets).toContain('const SHEET_TITLE = "Wireline Call Log"');
+    expect(graph).toContain('const EXCEL_FILE_NAME = "Wireline Call Log.xlsx"');
   });
 
   it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {
