@@ -8,8 +8,10 @@ import EmailVerifyBanner from "./layout/EmailVerifyBanner";
 import SkipToContentLink from "./layout/SkipToContentLink";
 import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
+import BotMark from "./BotMark";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -174,8 +176,10 @@ function DesktopRail({
 }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
+  const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const secondaryRouteParent = desktopNavParentHref(pathname);
+  const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
 
   return (
     <aside
@@ -257,10 +261,33 @@ function DesktopRail({
         })}
       </nav>
 
+      {agent ? (
+        <Link
+          to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+          aria-current={isNavActive(pathname, "/studio") ? "page" : undefined}
+          aria-label={collapsed ? `Current Bot: ${agent.name}` : undefined}
+          title={collapsed ? agent.name : undefined}
+          data-wireline-bot-selected="true"
+          className={`wl-rail-agent-link mt-3 flex min-h-[42px] items-center rounded-[var(--wireline-radius-md)] border border-border/65 bg-muted/20 transition-colors hover:bg-muted/50 ${
+            collapsed ? "justify-center px-0" : "gap-2.5 px-2.5"
+          }`}
+        >
+          <BotMark seed={agent.id} name={agent.name} size={24} title={`${agent.name} Bot mark`} />
+          {!collapsed ? (
+            <span className="min-w-0">
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Current Bot
+              </span>
+              <span className="wl-preserve-case block truncate text-[12px] font-semibold text-foreground">
+                {agent.name}
+              </span>
+            </span>
+          ) : null}
+        </Link>
+      ) : null}
+
       <nav
-        className={`mt-3 flex shrink-0 flex-col gap-0.5 border-t border-border/60 pt-3 ${
-          collapsed ? "" : ""
-        }`}
+        className="mt-3 flex shrink-0 flex-col gap-0.5 border-t border-border/60 pt-3"
         aria-label="Manage"
       >
         {!collapsed ? (
