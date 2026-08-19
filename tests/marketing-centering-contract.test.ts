@@ -22,11 +22,13 @@ describe("marketing centering contract", () => {
     const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
 
     expect(header).toContain(
-      'className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-3"',
+      'className="ml-auto flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-3"',
     );
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to="/signup?plan=personal"');
+    expect(header).toContain('<WirelineLockup size="compact" />');
+    expect(header).toContain('aria-label="Start Free"');
     expect(header).not.toContain("DialogTrigger");
     expect(header).not.toContain("wl-public-nav-overlay");
     expect(stickyCta).toContain('document.querySelector(".marketing-hero__actions")');
