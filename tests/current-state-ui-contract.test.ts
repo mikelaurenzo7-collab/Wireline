@@ -83,34 +83,38 @@ describe("current-state UI contract", () => {
   it("keeps public conversion routes on the explicit selected plan", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const hero = read("src/components/marketing/MarketingHero.tsx");
-    const auth = read("src/components/AuthPortal.tsx");
+    const authPortal = read("src/components/AuthPortal.tsx");
+    const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
 
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("price_usd_monthly");
-    expect(landing).toContain('const PERSONAL_SIGNUP = "/signup?plan=personal"');
-    expect(landing).toContain("PERSONAL_SIGNUP");
+    expect(landing).toContain('to={`/signup?plan=${id}`}');
+    expect(landing).toContain('/signup?plan=personal&template=${template.key}');
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
-    expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
-    expect(auth).toContain("STRIPE_PLANS.find");
-    expect(auth).toContain("plan.price_usd_annual");
-    expect(auth).toContain("plan.price_usd_monthly");
-    expect(auth).toContain("statedPaidPlan");
-    expect(auth).not.toContain('starter: "Starter · $9/month"');
+    expect(authPortal).toContain('location.pathname === "/signup" || location.pathname === "/get-started"');
+    expect(authPortal).toContain("AuthAccessPanel");
+    expect(authAccess).toContain("STRIPE_PLANS.find");
+    expect(authAccess).toContain("plan.price_usd_annual");
+    expect(authAccess).toContain("plan.price_usd_monthly");
+    expect(authAccess).toContain("preferredPlanId");
+    expect(authAccess).not.toContain('starter: "Starter · $9/month"');
   });
 
   it("keeps one Bot language across legacy account modes", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Voice, live conversation, text, email, tools, and outcomes in one workspace.",
+      "Calls, email, text, tools, and outcomes under one Bot.",
     );
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain("under your direction");
     expect(copy).toContain("guardrails");
     expect(copy).toContain("approvals");
     expect(copy).toContain("consent rules");
-    expect(copy).toContain("Present one WIRELINE workspace");
+    expect(copy).toContain(
+      "Treat workspace architecture as product proof, never as a marketing headline.",
+    );
   });
 
   it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {
@@ -137,7 +141,7 @@ describe("current-state UI contract", () => {
     expect(radixSelect).toContain("min-h-11");
   });
 
-  it("keeps optional Paper theme tertiary copy at WCAG AA contrast", () => {
+  it("keeps optional Light appearance tertiary copy at WCAG AA contrast", () => {
     const lightTheme = read("src/styles/theme-light.css");
     const tertiary = lightTheme.match(/--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i)?.[1];
     const canvas = lightTheme.match(/--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i)?.[1];
