@@ -40,11 +40,14 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(brand).toContain('name: "BotBound"');
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
+    expect(brand).toContain('canonicalProductionOrigin: "https://botbound.me"');
     expect(brand).toContain('legacyProductionOrigin: "https://trywireline.com"');
     expect(brand).toContain('customerFacing: "BotBound"');
+    expect(brand).toContain('canonicalOrigin: BOTBOUND_PRODUCTION_ORIGIN');
+    expect(brand).toContain('legacyOrigin: LEGACY_PRODUCTION_ORIGIN');
   });
 
-  it("makes tomorrow's hostname cutover configuration-only", () => {
+  it("makes the purchased hostname cutover configuration-only", () => {
     const appUrl = read("src/lib/app-url.ts");
     const pageMeta = read("src/lib/page-meta.tsx");
     const marketingMeta = read("src/lib/marketing-route-meta.ts");
@@ -52,10 +55,11 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(appUrl).toContain("process.env.APP_URL");
     expect(appUrl).toContain('throw new Error("APP_URL is required in production")');
     expect(pageMeta).toContain("import.meta.env.VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(pageMeta).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(marketingMeta).toContain("process.env.VITE_PUBLIC_SITE_URL");
     expect(marketingMeta).toContain("process.env.APP_URL");
-    expect(marketingMeta).toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(marketingMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
   });
 
   it("keeps customer sign-in callback paths stable while deriving their origin from APP_URL", () => {
@@ -64,6 +68,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(authOAuth).toContain("return getCanonicalAppUrl()");
     for (const path of SIGN_IN_CALLBACKS) expect(authOAuth, path).toContain(path);
     expect(authOAuth).not.toContain("https://trywireline.com/api/auth/");
+    expect(authOAuth).not.toContain("https://botbound.me/api/auth/");
   });
 
   it("keeps every active integration callback hostname-neutral and represented in the operator inventory", () => {
@@ -75,8 +80,8 @@ describe("BotBound domain and OAuth cutover boundary", () => {
       expect(source, `${file} must not pin the retired hostname into its callback`).not.toContain(
         "https://trywireline.com/api/oauth/",
       );
-      expect(source, `${file} must not pin a future BotBound hostname into source`).not.toMatch(
-        /https:\/\/[^\s"'`]*botbound[^\s"'`]*/i,
+      expect(source, `${file} must not pin the canonical BotBound hostname into route source`).not.toMatch(
+        /https:\/\/[^\s"'`]*botbound\.me[^\s"'`]*/i,
       );
       expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);
     }
