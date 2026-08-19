@@ -153,7 +153,7 @@ export function KnowledgeFromUrlForm({
         label="URL"
         hint={
           crawl
-            ? "Root URL. Wireline AI follows nav links from here."
+            ? "Root URL. BotBound AI follows nav links from here."
             : "A homepage, services page, FAQ, pricing page. Anything customer-facing."
         }
       >
@@ -224,7 +224,7 @@ export function KnowledgeFromUrlForm({
 
       <Field
         label="Agent Context (optional)"
-        hint="What's this agent's job? Helps Wireline AI prioritize relevant facts."
+        hint="What's this agent's job? Helps BotBound AI prioritize relevant facts."
       >
         <TextInput
           value={agentContext}
