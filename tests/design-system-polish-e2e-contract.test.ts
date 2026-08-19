@@ -7,7 +7,7 @@ const withoutComments = (value: string) =>
   value.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 describe("design system polish e2e verified wins", () => {
-  it("keeps channel chips text-only and sourced from the voice-first Bot channel catalog", () => {
+  it("keeps channel proof text-only and sourced from the canonical Bot channel catalog", () => {
     const features = withoutComments(read("src/pages/Features.tsx"));
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
@@ -15,7 +15,10 @@ describe("design system polish e2e verified wins", () => {
       'const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"]',
     );
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
-    expect(landing).toContain("const CORE_CHANNELS = BOT_CHANNELS.map(({ label }) => label)");
+    expect(landing).toContain(
+      "const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase())",
+    );
+    expect(landing).toContain("{HERO_CHANNELS.map((label) => (");
     expect(landing).not.toContain("landing-home__solution-icon");
     expect(landing).not.toContain("landing-home__compact-icon");
     expect(landing).not.toContain("landing-stage__lane-icon");
@@ -54,14 +57,16 @@ describe("design system polish e2e verified wins", () => {
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
-  it("keeps one-workspace Bot labels in Title Case while WIRELINE stays the brand wordmark", () => {
+  it("keeps Bot labels in Title Case while WIRELINE stays the brand wordmark", () => {
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain('createHeadline: "Build Your Bot"');
     expect(copy).toContain('runHeadline: "Your Bot Is Live"');
     expect(copy).toContain('createCta: "Create Bot"');
     expect(copy).toContain('emptyTitle: "Your Bot"');
     expect(copy).not.toContain('emptyTitle: "Your Bot."');
-    expect(copy).toContain("Present one WIRELINE workspace");
+    expect(copy).toContain(
+      "Treat workspace architecture as product proof, never as a marketing headline.",
+    );
     expect(copy).toContain("Render the WIRELINE brand name in uppercase everywhere it is customer-visible");
   });
 });
