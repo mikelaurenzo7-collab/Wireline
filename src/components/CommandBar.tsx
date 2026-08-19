@@ -370,7 +370,7 @@ export default function CommandBar() {
               <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <p id="command-palette-title" className="sr-only">
-                  Wireline command palette
+                  BotBound command palette
                 </p>
                 <p id="command-palette-description" className="sr-only">
                   Search destinations and actions.
