@@ -35,13 +35,13 @@ const structuredData = {
         {
           "@type": "ListItem",
           position: 1,
-          name: "Wireline",
+          name: "BotBound",
           item: `${SITE_URL}/`,
         },
         {
           "@type": "ListItem",
           position: 2,
-          name: "Wireline Notes",
+          name: "BotBound Notes",
           item: `${SITE_URL}/blog`,
         },
       ],
@@ -56,9 +56,9 @@ const structuredData = {
     },
     {
       "@type": "CollectionPage",
-      name: "Wireline Notes",
+      name: "BotBound Notes",
       description:
-        "Practical guides for Voice Bots, customer conversations, support queues, handoff boundaries, and getting time back.",
+        "Practical guides for Bots, customer conversations, support queues, handoff boundaries, and getting time back.",
       url: `${SITE_URL}/blog`,
     },
   ],
@@ -68,8 +68,8 @@ export default function Blog() {
   return (
     <MarketingPageFrame longform>
       <PageMeta
-        title="WIRELINE NOTES | VOICE BOT GUIDES FOR SMALL BUSINESS"
-        description="Practical guides for Voice Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
+        title="BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS"
+        description="Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
         path="/blog"
         structuredData={structuredData}
       />
