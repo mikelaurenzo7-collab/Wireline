@@ -12,10 +12,22 @@ export type PostCreateWizardStep = "train" | "channels" | "wire" | "test";
 export type PostCreateWizardPayload = {
   agentId: string;
   agentName: string;
-  /** User checked "Provision number" during Fast Start. */
+  /** BotBound attempted the managed phone identity after the Bot record committed. */
   phoneProvisionRequested: boolean;
-  /** Provision succeeded during create (false when gated or skipped). */
+  /** A managed line is already assigned to this Bot. */
   phoneProvisioned: boolean;
+  /** Paid activation is the only known blocker to automatic phone provisioning. */
+  phoneActivationRequired?: boolean;
+  /** Assigned line when the bootstrap response returned it. */
+  phoneNumber?: string | null;
+  /** BotBound attempted the managed mailbox after the Bot record committed. */
+  emailProvisionRequested?: boolean;
+  /** A managed mailbox is already bound to this Bot. */
+  emailProvisioned?: boolean;
+  /** Assigned managed mailbox address. */
+  emailAddress?: string | null;
+  /** True only when the provider confirmed the configured custom domain was used. */
+  emailCustomDomain?: boolean;
 };
 
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
