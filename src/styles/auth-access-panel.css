@@ -1,4 +1,4 @@
-/* WIRELINE access panel ----------------------------------------------------
+/* BOTBOUND access panel ----------------------------------------------------
  * Shared by dedicated auth routes and the embedded landing entrance.
  * Deliberately calm: one card, one decision, no audience/workspace taxonomy.
  */
@@ -43,6 +43,26 @@
   font-weight: 700;
   letter-spacing: -0.045em;
   line-height: 1;
+}
+
+/* Sign-in and sign-up already expose the active mode through the adjacent
+ * tablist. Keep the h1 for document/accessibility structure without repeating
+ * the same words visually above the tabs. Reset-password has no tabs, so its
+ * heading remains visible. */
+.wl-access-panel__heading:has(+ .wl-access-panel__tabs) h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wl-access-panel__heading:has(+ .wl-access-panel__tabs) + .wl-access-panel__tabs {
+  margin-top: 0;
 }
 
 .wl-access-panel__heading p {
