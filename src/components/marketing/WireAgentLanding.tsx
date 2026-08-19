@@ -10,7 +10,12 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
-const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase());
+const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;
+const HERO_CHANNELS = HERO_CHANNEL_ORDER.map((key) => {
+  const channel = BOT_CHANNELS.find((candidate) => candidate.key === key);
+  if (!channel) throw new Error(`Missing Bot channel: ${key}`);
+  return channel.label.toUpperCase();
+});
 const FEATURED_TEMPLATE_KEYS = [
   "front-desk",
   "sales-rep",
