@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 
 import EmailInbox from "../components/EmailInbox";
 import SmsThreads from "../components/SmsThreads";
+import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import {
   WorkspacePageFrame,
   WorkspacePageIntro,
@@ -119,56 +120,61 @@ export default function EmailPage() {
   const showBotFilter = agents.length > 1 || Boolean(activeAgentId);
   const showMailboxFilter =
     activeTab === "email" && (availableMailboxes.length > 1 || Boolean(activeAccountId));
+  const scopeControls =
+    showBotFilter || showMailboxFilter ? (
+      <>
+        {showBotFilter ? (
+          <select
+            value={activeAgentId}
+            onChange={(event) => setAgentScope(event.target.value)}
+            aria-label="Filter Inbox by Bot"
+            className="h-9 min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+          >
+            <option value="">All Bots</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>
+                {agent.name}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        {showMailboxFilter ? (
+          <select
+            value={activeAccountId}
+            onChange={(event) => setMailboxScope(event.target.value)}
+            aria-label="Filter email by mailbox"
+            className="h-9 min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+          >
+            <option value="">All mailboxes</option>
+            {availableMailboxes.map((mailbox) => (
+              <option key={mailbox.id} value={mailbox.id}>
+                {mailbox.emailAddress}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </>
+    ) : undefined;
 
   return (
     <WorkspaceShell contentClassName="flex min-h-0 flex-1 flex-col pt-1 pb-4">
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
         <WorkspacePageIntro title="Inbox" titleHidden />
-        <div className="mb-3 flex flex-col gap-2 border-b border-border/70 pb-3 sm:flex-row sm:items-center">
-          <WorkspaceTabStrip
-            ariaLabel="Inbox channels"
-            tabs={inboxTabs}
-            activeId={activeTab}
-            onSelect={(id) => setActiveTab(id as InboxTabId)}
-            align="start"
-            density="compact"
-            className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
-          />
-          {showBotFilter || showMailboxFilter ? (
-            <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 sm:shrink-0 sm:justify-end sm:overflow-visible sm:pb-0">
-              {showBotFilter ? (
-                <select
-                  value={activeAgentId}
-                  onChange={(event) => setAgentScope(event.target.value)}
-                  aria-label="Filter Inbox by Bot"
-                  className="h-9 min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
-                >
-                  <option value="">All Bots</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
-              {showMailboxFilter ? (
-                <select
-                  value={activeAccountId}
-                  onChange={(event) => setMailboxScope(event.target.value)}
-                  aria-label="Filter email by mailbox"
-                  className="h-9 min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
-                >
-                  <option value="">All mailboxes</option>
-                  {availableMailboxes.map((mailbox) => (
-                    <option key={mailbox.id} value={mailbox.id}>
-                      {mailbox.emailAddress}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+        <WorkspaceControlBand
+          ariaLabel="Inbox controls"
+          primary={
+            <WorkspaceTabStrip
+              ariaLabel="Inbox channels"
+              tabs={inboxTabs}
+              activeId={activeTab}
+              onSelect={(id) => setActiveTab(id as InboxTabId)}
+              align="start"
+              density="compact"
+              className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
+            />
+          }
+          secondary={scopeControls}
+        />
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
           {activeTab === "email" ? (
             <EmailInbox
