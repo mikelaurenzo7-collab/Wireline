@@ -51,9 +51,9 @@ describe("structured runtime policy", () => {
     expect(adminSettings).not.toContain('"claude-sonnet-4-6"');
     // Whitespace-collapsed so Prettier's JSX reflow cannot break the invariant.
     expect(carrierPanel.replace(/\s+/g, " ")).toContain(
-      "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
+      "BotBound manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
     );
-    expect(carrierPanel).toContain('["Phone runtime", "Wireline managed"]');
+    expect(carrierPanel).toContain('["Phone runtime", "BotBound managed"]');
     expect(carrierPanel).toContain('["Call intelligence", "Managed automatically"]');
     expect(carrierPanel).toContain('["Continuity", "Automatic failover"]');
     expect(carrierPanel).not.toContain("Gemini is the automatic fallback");
