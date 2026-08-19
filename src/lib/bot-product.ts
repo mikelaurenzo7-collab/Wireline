@@ -69,9 +69,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Own the first five minutes of every inbound conversation.",
     outcomes: ["Route Calls", "Capture Intake", "Book Appointments"],
     moves: [
-      "Identify intent, urgency, and the right destination",
-      "Capture caller, service, and intake details",
-      "Book into a connected calendar and confirm the next step",
+      "Intent + urgency + routing",
+      "Caller + service intake",
+      "Calendar booking + confirmations",
     ],
   },
   {
@@ -82,9 +82,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Work new leads while they are hot and keep qualified buyers moving.",
     outcomes: ["Qualify Leads", "Handle Objections", "Advance Deals"],
     moves: [
-      "Respond to fresh leads by call, email, or text",
-      "Qualify against your offer, fit, and buying criteria",
-      "Handle approved objections and run the next follow-up",
+      "Instant lead response",
+      "Fit + timing + objection handling",
+      "CRM handoff + next follow-up",
     ],
   },
   {
@@ -95,9 +95,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Turn outreach into qualified calendar time.",
     outcomes: ["Run Outreach", "Confirm Interest", "Set Meetings"],
     moves: [
-      "Work an outbound contact list through approved call windows",
-      "Confirm interest and answer the obvious questions",
-      "Book the meeting and send confirmations or reminders",
+      "Outbound list + call windows",
+      "Interest + approved FAQ handling",
+      "Calendar booking + reminders",
     ],
   },
   {
@@ -108,9 +108,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Resolve the repeatable work and make every escalation cleaner.",
     outcomes: ["Resolve Requests", "Collect Diagnostics", "Escalate With Context"],
     moves: [
-      "Answer from the knowledge and policies you approve",
-      "Collect account, issue, and troubleshooting context",
-      "Escalate with the transcript, summary, and next action attached",
+      "Knowledge-grounded answers",
+      "Account + issue diagnostics",
+      "Transcript + context escalation",
     ],
   },
   {
@@ -121,9 +121,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Keep human time focused on the opportunities that deserve it.",
     outcomes: ["Discover Needs", "Score Fit", "Route Qualified Leads"],
     moves: [
-      "Ask the qualification questions that matter to your business",
-      "Capture fit signals, disqualifiers, timing, and intent",
-      "Route qualified opportunities with a complete handoff",
+      "Qualification questions",
+      "Fit + disqualifier + timing signals",
+      "Qualified handoff + next action",
     ],
   },
   {
@@ -134,9 +134,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Move candidates from first contact to a scheduled interview faster.",
     outcomes: ["Screen Candidates", "Collect Availability", "Schedule Interviews"],
     moves: [
-      "Screen against role requirements and approved questions",
-      "Answer candidate questions and collect availability",
-      "Coordinate the interview and send confirmations",
+      "Role-screening questions",
+      "Candidate FAQ + availability",
+      "Interview booking + confirmations",
     ],
   },
   {
@@ -144,12 +144,12 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Collections",
     category: "Business" as const,
     direction: "outbound" as const,
-    summary: "Run respectful, controlled follow-up without losing the paper trail.",
+    summary: "Run respectful, controlled follow-up without losing the audit trail.",
     outcomes: ["Run Reminders", "Capture Payment Intent", "Escalate Exceptions"],
     moves: [
-      "Run approved reminder sequences across call, email, and text",
-      "Capture promise-to-pay, dispute, or callback intent",
-      "Escalate exceptions and sensitive commitments for review",
+      "Approved reminder sequences",
+      "Promise-to-pay + dispute capture",
+      "Exception review + audit trail",
     ],
   },
   {
@@ -160,9 +160,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Keep leasing, maintenance, residents, and vendors from stalling out.",
     outcomes: ["Handle Leasing Inquiries", "Open Work Orders", "Coordinate Vendors"],
     moves: [
-      "Triage leasing questions and maintenance intake",
-      "Capture property, unit, issue, access, and urgency details",
-      "Coordinate resident and vendor updates through resolution",
+      "Leasing + maintenance triage",
+      "Unit + access + urgency intake",
+      "Resident + vendor coordination",
     ],
   },
   {
@@ -173,9 +173,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Get the small coordination work out of your head and off your list.",
     outcomes: ["Manage Schedule", "Research & Follow Up", "Coordinate Tasks"],
     moves: [
-      "Coordinate calendar changes, reminders, and routine follow-ups",
-      "Research, summarize, and keep the useful answer attached to the task",
-      "Draft or send routine communications within your rules",
+      "Calendar + reminder coordination",
+      "Research + concise briefs",
+      "Routine email + text follow-through",
     ],
   },
   {
@@ -186,9 +186,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Handle the household logistics that usually live in someone’s memory.",
     outcomes: ["Coordinate Plans", "Book Services", "Track Household Follow-Up"],
     moves: [
-      "Coordinate appointments, reservations, and service windows",
-      "Track recurring household tasks and reminders",
-      "Follow up with providers until the loose end is closed",
+      "Appointments + reservations",
+      "Recurring household reminders",
+      "Provider follow-up to closure",
     ],
   },
   {
@@ -199,9 +199,9 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Wire the exact job you wish somebody would just own.",
     outcomes: ["Define Any Job", "Connect the Right Tools", "Set the Rules"],
     moves: [
-      "Define the trigger, goal, context, and success condition",
-      "Connect only the channels and actions the job requires",
-      "Set approvals, boundaries, handoffs, and outcome logging",
+      "Trigger + goal + success condition",
+      "Channels + actions + connected tools",
+      "Approvals + handoffs + outcome log",
     ],
   },
 ] as const;
