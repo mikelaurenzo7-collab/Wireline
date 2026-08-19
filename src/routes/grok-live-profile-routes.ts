@@ -66,7 +66,7 @@ router.patch(
   async (_req: AuthenticatedRequest, res) => {
     res.status(409).json({
       error:
-        "Custom live voices are not enabled for this deployment. Choose a built-in Wireline voice profile.",
+        "Custom live voices are not enabled for this deployment. Choose a built-in BotBound voice profile.",
       code: "LIVE_CUSTOM_VOICE_UNSUPPORTED",
       customVoiceConfigured: false,
     });
