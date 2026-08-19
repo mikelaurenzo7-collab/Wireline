@@ -2,9 +2,9 @@ import { AppError } from "../lib/api-error";
 /**
  * Public email unsubscribe endpoints (CAN-SPAM + RFC 8058 one-click).
  *
- * Wireline product/billing marketing uses a global recipient suppression.
- * Tenant campaign marketing uses a (tenant, recipient) suppression so an
- * opt-out from one business never silences an unrelated business.
+ * Product/billing marketing uses a global recipient suppression. Tenant
+ * campaign marketing uses a (tenant, recipient) suppression so an opt-out from
+ * one business never silences an unrelated business.
  */
 
 import { Router, type Request, type Response, type NextFunction } from "express";
@@ -39,8 +39,6 @@ async function recordTarget(
     : recordEmailSuppression(target.email, reason);
 }
 
-// Generous IP-keyed limiter: high enough that a mailbox provider batching
-// one-click POSTs is never blocked, low enough to bound abuse. Fails OPEN.
 async function unsubscribeRateLimit(req: Request, res: Response, next: NextFunction) {
   try {
     const ip = req.ip || "anon";
@@ -74,7 +72,6 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
       res.status(503).json({ ok: false, unsubscribed: false });
       return;
     }
-    // Never put the recipient or signed token in logs.
     log.info("Email one-click unsubscribe recorded", { scope: target.scope });
     res.status(200).json({ ok: true, unsubscribed: true });
   } catch (err) {
@@ -115,7 +112,7 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
   const body =
     target.scope === "tenant"
       ? `<strong>${escapeHtml(target.email)}</strong> will no longer receive marketing email from this sender.`
-      : `<strong>${escapeHtml(target.email)}</strong> will no longer receive Wireline product &amp; billing reminders. You'll still get essential account email (security and billing receipts).`;
+      : `<strong>${escapeHtml(target.email)}</strong> will no longer receive BotBound product &amp; billing reminders. You'll still get essential account email such as security notices and billing receipts.`;
   res.status(200).type("html").send(renderPage("You're unsubscribed", body));
 });
 
@@ -124,11 +121,13 @@ function renderPage(title: string, body: string): string {
 <html lang="en"><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>${escapeHtml(title)} · Wireline</title></head>
-<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f6f5fa;color:#1A1A23;">
-  <div style="max-width:480px;margin:80px auto;padding:32px;background:#fff;border-radius:16px;border:1px solid rgba(79,30,123,0.08);">
-    <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">${escapeHtml(title)}</h1>
-    <p style="margin:0;line-height:1.6;color:#2A2A33;font-size:14px;">${body}</p>
+<meta name="color-scheme" content="dark" />
+<title>${escapeHtml(title)} · BotBound</title></head>
+<body style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#0A0A0E;color:#F5F4F8;">
+  <div style="max-width:480px;margin:80px auto;padding:32px;background:#141319;border-radius:16px;border:1px solid #262430;box-shadow:0 18px 60px rgba(0,0,0,.28);">
+    <div style="margin-bottom:22px;font-size:15px;font-weight:700;letter-spacing:-.02em;">Bot<span style="color:#C4B5FD;">Bound</span></div>
+    <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;letter-spacing:-.025em;">${escapeHtml(title)}</h1>
+    <p style="margin:0;line-height:1.65;color:#B6B1C6;font-size:14px;">${body}</p>
   </div>
 </body></html>`;
 }
