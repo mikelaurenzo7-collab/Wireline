@@ -33,7 +33,7 @@ describe("CommandBar g-chord navigation", () => {
   });
 
   it("maps APP_KEYBOARD_SHORTCUTS letters to live routes", () => {
-    expect(resolveGoChord(true, "a").href).toBe("/overview");
+    expect(resolveGoChord(true, "a").href).toBe("/studio");
     expect(resolveGoChord(true, "s").href).toBe("/studio");
     expect(resolveGoChord(true, "t").href).toBe("/knowledge");
     expect(resolveGoChord(true, "w").href).toBe("/connections");
