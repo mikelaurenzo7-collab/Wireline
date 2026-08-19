@@ -119,6 +119,7 @@ export default function StudioWorkspaceV2() {
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
   const section = normalizeSection(params.get("section"));
+  const inspectorSection = section === "review" ? "review" : "setup";
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
   const hasCommand = Boolean(params.get("command") || params.get("commandNonce"));
@@ -268,7 +269,7 @@ export default function StudioWorkspaceV2() {
               role="tab"
               id={studioTabId(item.id)}
               aria-selected={selected}
-              aria-controls={studioPanelId(item.id)}
+              aria-controls={splitWorkspace ? "studio-split-workspace" : studioPanelId(item.id)}
               tabIndex={selected ? 0 : -1}
               onClick={() => setSection(item.id)}
               className={`min-w-0 rounded-lg px-2.5 py-2 text-center transition-colors wl-focus-ring-halo ${
@@ -278,7 +279,10 @@ export default function StudioWorkspaceV2() {
               }`}
             >
               <span className="flex items-center justify-center gap-1.5">
-                <Icon className={`size-3.5 shrink-0 ${selected ? "text-primary" : ""}`} aria-hidden="true" />
+                <Icon
+                  className={`size-3.5 shrink-0 ${selected ? "text-primary" : ""}`}
+                  aria-hidden="true"
+                />
                 <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
               </span>
             </button>
@@ -296,6 +300,7 @@ export default function StudioWorkspaceV2() {
       isBusinessAgent={Boolean(active.is_business_agent)}
       onTestVoiceInChat={startCustomerTest}
       className="h-full border-t-0"
+      compact={splitWorkspace}
     />
   );
 
@@ -309,6 +314,7 @@ export default function StudioWorkspaceV2() {
       onEdit={() => setSection("setup")}
       onTest={startCustomerTest}
       className="h-full"
+      compact={splitWorkspace}
     />
   );
 
@@ -322,7 +328,7 @@ export default function StudioWorkspaceV2() {
       commandNonce={params.get("commandNonce") || undefined}
       onBack={() => setSection("setup")}
       backLabel="Back to setup"
-      layout="split"
+      layout={splitWorkspace ? "split" : "standalone"}
       mode={section === "test" ? "test" : "configure"}
       allowOutbound={Boolean(active.phone_number)}
     />
@@ -333,15 +339,13 @@ export default function StudioWorkspaceV2() {
       {sectionTabs}
 
       {splitWorkspace ? (
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div
-            role="tabpanel"
-            id={studioPanelId("test")}
-            aria-labelledby={studioTabId(section)}
-            className="min-w-0 flex-1"
-          >
-            {workroom}
-          </div>
+        <div
+          id="studio-split-workspace"
+          role="tabpanel"
+          aria-labelledby={studioTabId(section)}
+          className="flex min-h-0 flex-1 overflow-hidden"
+        >
+          <div className="min-w-0 flex-1">{workroom}</div>
 
           <WorkspaceResizablePanel
             storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
@@ -367,7 +371,7 @@ export default function StudioWorkspaceV2() {
                     className="text-[10px] font-semibold uppercase tracking-[0.14em]"
                     style={{ writingMode: "vertical-rl" }}
                   >
-                    {section === "review" ? "Review" : "Setup"}
+                    {inspectorSection === "review" ? "Review" : "Setup"}
                   </span>
                 </button>
               ) : (
@@ -380,7 +384,7 @@ export default function StudioWorkspaceV2() {
                           type="button"
                           onClick={() => setSection(id)}
                           className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                            section === id
+                            inspectorSection === id
                               ? "bg-card text-foreground shadow-sm"
                               : "text-muted-foreground hover:text-foreground"
                           }`}
@@ -400,7 +404,7 @@ export default function StudioWorkspaceV2() {
                     </button>
                   </header>
                   <div className="min-h-0 flex-1 overflow-hidden">
-                    {section === "review" ? reviewPanel : setupPanel}
+                    {inspectorSection === "review" ? reviewPanel : setupPanel}
                   </div>
                 </aside>
               )
