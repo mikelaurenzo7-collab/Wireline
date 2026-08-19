@@ -1,11 +1,11 @@
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
-import { BOTBOUND_BRAND_NAME, LEGACY_PRODUCTION_ORIGIN } from "./brand";
+import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 function configuredSiteUrl(): string {
   const configured = typeof process !== "undefined"
     ? process.env.VITE_PUBLIC_SITE_URL?.trim() || process.env.APP_URL?.trim()
     : "";
-  return (configured || LEGACY_PRODUCTION_ORIGIN).replace(/\/+$/, "");
+  return (configured || BOTBOUND_PRODUCTION_ORIGIN).replace(/\/+$/, "");
 }
 
 export const SITE_URL = configuredSiteUrl();
