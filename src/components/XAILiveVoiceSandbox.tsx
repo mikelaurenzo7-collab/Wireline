@@ -47,7 +47,7 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "active" as const,
       title: "Checking approved knowledge",
-      detail: "Wireline is using only the agent's approved Training context.",
+      detail: "BotBound is using only the agent's approved Training context.",
     };
   if (state === "speaking")
     return {
@@ -228,7 +228,7 @@ export default function XAILiveVoiceSandbox({
     pendingToolCalls.current.clear();
     captureEncoder.current?.reset();
     captureEncoder.current = null;
-    socket.current?.close(1000, "Wireline live test ended");
+    socket.current?.close(1000, "BotBound live test ended");
     microphone.current?.getTracks().forEach((track) => track.stop());
     captureProcessor.current?.disconnect();
     captureSource.current?.disconnect();
