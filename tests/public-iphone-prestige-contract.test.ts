@@ -22,8 +22,9 @@ describe("WIRELINE public iPhone prestige contract", () => {
       /<h1[^>]*>[\s\S]*?<span>WIRE YOUR<\/span>[\s\S]*?<span>PHONE BOT<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain(
-      "const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase());",
+      'const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;',
     );
+    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
     expect(landing).toContain("{HERO_CHANNELS.map((label) => (");
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
