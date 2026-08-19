@@ -28,7 +28,7 @@ router.post(
       timestamp: new Date().toISOString(),
       data: {
         test: true,
-        message: "This is a test ping from Wireline.",
+        message: "This is a test ping from BotBound.",
         webhook_id: hook.id,
         at: new Date().toISOString(),
       },
