@@ -24,7 +24,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     typography:
       "Inter Tight for display and the BotBound wordmark, Inter for body and controls, IBM Plex Mono only for compact metadata and system labels.",
     retired: [
-      "Wireline as a customer-facing name",
+      "the pre-BotBound customer-facing company name",
       "Letterpress as a design-system name",
       "Obsidian as a design-system name",
       "Aurora as a design-system name",
