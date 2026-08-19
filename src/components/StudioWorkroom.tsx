@@ -448,7 +448,7 @@ const StudioWorkroom = forwardRef<
               </h3>
               {mode === "configure" ? (
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                  Use plain language. Wireline will propose the smallest useful update.
+                  Use plain language. BotBound will propose the smallest useful update.
                 </p>
               ) : null}
             </div>
@@ -497,7 +497,7 @@ const StudioWorkroom = forwardRef<
               placeholder={
                 mode === "test"
                   ? "Ask as a customer…"
-                  : `Tell Wireline what ${agentName} should change…`
+                  : `Tell BotBound what ${agentName} should change…`
               }
               className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
             />
