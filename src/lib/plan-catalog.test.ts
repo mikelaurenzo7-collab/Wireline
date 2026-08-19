@@ -31,16 +31,16 @@ afterEach(() => {
 describe("plan-catalog", () => {
   it("keeps Personal as the public $0 Free Builder tier", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Wireline Free Builder");
+    expect(personal?.name).toBe("BotBound Free Builder");
     expect(personal?.public).toBe(true);
     expect(personal?.price_usd_monthly).toBe(0);
   });
 
-  it("maps the Founder Early Access tiers to their public names", () => {
-    expect(planById("starter")?.name).toBe("Wireline Starter");
-    expect(planById("team")?.name).toBe("Wireline Starter Plus");
-    expect(planById("business")?.name).toBe("Wireline Pro");
-    expect(planById("enterprise")?.name).toBe("Wireline Business");
+  it("maps the Founder Early Access tiers to their BotBound public names", () => {
+    expect(planById("starter")?.name).toBe("BotBound Starter");
+    expect(planById("team")?.name).toBe("BotBound Starter Plus");
+    expect(planById("business")?.name).toBe("BotBound Pro");
+    expect(planById("enterprise")?.name).toBe("BotBound Business");
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
@@ -56,7 +56,7 @@ describe("plan-catalog", () => {
 
   it("keeps the legacy Business tier resolvable but out of self-serve launch", () => {
     const enterprise = planById("enterprise");
-    expect(enterprise?.name).toBe("Wireline Business");
+    expect(enterprise?.name).toBe("BotBound Business");
     expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
     expect(enterprise?.public).toBe(false);
@@ -84,11 +84,18 @@ describe("plan-catalog", () => {
     expect(planById("team")?.price_usd_annual).toBe(390);
     expect(planById("business")?.voice_minutes_monthly).toBe(190);
     expect(planById("enterprise")?.voice_minutes_monthly).toBe(350);
-    // Catalog v6: one flat top-up rate on every plan.
     expect(planById("starter")?.overage_per_min_usd).toBe(0.22);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);
     expect(planById("business")?.overage_per_min_usd).toBe(0.22);
     expect(planById("enterprise")?.overage_per_min_usd).toBe(0.22);
+  });
+
+  it("guarantees one number and managed mailbox for every active paid Bot slot", () => {
+    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+      expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
+      expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
+      expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
+    }
   });
 
   it("reserves Payments, Billing, and future Tax transaction fees", () => {
@@ -99,9 +106,6 @@ describe("plan-catalog", () => {
   });
 
   it("keeps price leadership while protecting the two-floor margin policy", () => {
-    // Catalog v6 (docs/PRICING_DECISION_2026-07-25.md): the planning floor is
-    // judged at expected utilization, the hard floor at 100% utilization —
-    // both on both intervals, with annual always the binding side.
     const paid = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0);
     for (const plan of paid) {
       for (const interval of ["month", "year"] as const) {
@@ -115,8 +119,6 @@ describe("plan-catalog", () => {
         ).toBeGreaterThanOrEqual(HARD_CONTRIBUTION_MARGIN_FLOOR);
       }
     }
-
-    // Uniform annual discount: every paid tier gives exactly two months free.
     for (const plan of paid) {
       expect(plan.price_usd_annual, plan.id).toBe(plan.price_usd_monthly * 10);
     }
@@ -133,14 +135,12 @@ describe("plan-catalog", () => {
 
   it("keeps env price id fallback for launch catalog entries", () => {
     process.env.STRIPE_TEAM_PRICE_ID = "price_env_business";
-
     expect(planByPriceId("price_env_business")?.id).toBe("business");
     expect(planByStripePrice({ id: "price_env_business" })?.id).toBe("business");
   });
 
   it("resolves from canonical Stripe price metadata before env ids", () => {
     process.env.STRIPE_TEAM_PRICE_ID = "price_same_id_but_env_business";
-
     expect(
       planByStripePrice({
         id: "price_same_id_but_env_business",
@@ -156,9 +156,6 @@ describe("plan-catalog", () => {
         metadata: { wireline_price_key: "business_monthly_founder_2026_07_v6" },
       })?.id,
     ).toBe("business");
-
-    // Prefix-based resolution keeps retired-generation keys resolving so old
-    // webhook payloads never lose their plan mapping.
     expect(
       planByStripePrice({
         id: "price_not_in_env",
@@ -171,7 +168,7 @@ describe("plan-catalog", () => {
     expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v6" })?.id).toBe("team");
   });
 
-  it("treats Starter Plus and above as founder personal+business pair capacity", async () => {
+  it("treats Starter Plus and above as founder pair capacity", async () => {
     const { supportsFounderAgentPair } = await import("./plan-catalog");
     expect(supportsFounderAgentPair("starter")).toBe(false);
     expect(supportsFounderAgentPair("team")).toBe(true);
@@ -180,9 +177,6 @@ describe("plan-catalog", () => {
   });
 
   it("documents extra-agent prices as add-ons, not standalone base-plan purchases", () => {
-    // The shared add-on price is intentionally present on paid plan objects so
-    // UIs can display it and billing code can match Stripe subscription items.
-    // Subscription sync identifies the base plan from the base price item only.
     expect(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID).toBe("price_1Tv9K58e6If87QKm7rzn3MNS");
     expect(STRIPE_PLANS.filter((plan) => plan.extraAgentFallbackPriceId)).toHaveLength(4);
   });
@@ -194,7 +188,6 @@ describe("plan-catalog", () => {
         metadata: { wireline_price_key: "balance_25" },
       }),
     ).toBeNull();
-
     expect(
       planByStripePrice({
         id: "price_unknown",
