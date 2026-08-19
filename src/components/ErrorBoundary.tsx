@@ -27,6 +27,8 @@ interface State {
  * of the shell — sidebar, command bar, navigation — keeps working.
  */
 export default class ErrorBoundary extends Component<Props, State> {
+  // Re-declare inherited members so the strict TS config recognises them
+  // even when class-field semantics interact oddly with React 19 types.
   declare props: Readonly<Props>;
   declare setState: Component<Props, State>["setState"];
   state: State = { error: null };
@@ -54,6 +56,12 @@ export default class ErrorBoundary extends Component<Props, State> {
   reset = () => this.setState({ error: null });
   reload = () => window.location.reload();
 
+  /**
+   * ErrorBoundary sits above AuthProvider so it catches marketing crashes too.
+   * If the crashed route is public (marketing, legal, auth), the recovery link
+   * should go home — not `/overview`, which forces a redirect to /signin for
+   * signed-out visitors and drops them into a login wall on top of the crash.
+   */
   private recoveryHref(): { href: string; label: string } {
     if (typeof window === "undefined") return { href: "/", label: "Back home" };
     const path = window.location.pathname;
@@ -67,6 +75,11 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.error) return this.props.children;
+    // Use `in` so an explicit `fallback={null}` (used by App.tsx to
+    // silently drop non-critical lazy chrome on chunk-load failure)
+    // is honored. A truthy check would treat null as "no fallback"
+    // and render the full crash panel instead, which is the opposite
+    // of what those callers want.
     if ("fallback" in this.props) return this.props.fallback;
 
     const staleChunk = isLikelyStaleChunkError(this.state.error);
@@ -76,6 +89,12 @@ export default class ErrorBoundary extends Component<Props, State> {
       : "The rest of the app is fine. Only this view failed. Try again, reload, or head back to the workspace.";
 
     return (
+      /* `wl-ui-caps` is carried here rather than inherited: this boundary wraps
+         <App/> in main.tsx, so when it catches, the tree that owns the class is
+         precisely the tree that just unmounted. The recovery screen was the one
+         surface in the product rendering outside the case system — sentence-case
+         heading, untracked buttons — which is the worst possible moment to look
+         like a different application. */
       <div className="wl-ui-caps flex min-h-[70svh] items-center justify-center p-6">
         <div className={cn(WL_APP_CLASSES.panelFrame, "w-full max-w-xl")}>
           <div className="relative space-y-6 p-8 md:p-10">
