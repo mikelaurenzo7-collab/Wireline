@@ -1,9 +1,9 @@
-/* WIRELINE Letterpress — Paper appearance (first-visit default).
- * The generated semantic base tokens remain Obsidian so saved dark/system
+/* WIRELINE Design System — light appearance (first-visit default).
+ * The generated semantic base tokens remain dark so saved dark/system
  * preferences can resolve without a second token architecture. index.html
  * applies `.light` before first paint for visitors without a saved preference.
- * Paper uses a cool off-white canvas rather than stark white and keeps the same
- * violet/silver identity as Obsidian, inverted for contrast. */
+ * Light uses a cool off-white canvas rather than stark white and keeps the same
+ * violet/platinum identity as dark mode, inverted for contrast. */
 
 :root.light {
   color-scheme: light;
