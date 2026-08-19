@@ -10,7 +10,7 @@ import { PageMeta } from "../lib/page-meta";
  * There is no Settings → API Access key minting surface today. Session-cookie
  * product APIs and the account-bound MCP connector are the real contracts.
  * Customer-facing product language is Bot. Technical MCP functions and records
- * retain agent for compatibility with the existing API and data model.
+ * retain agent where required by the existing API and data model.
  */
 
 const MCP_BOUNDARIES = [
@@ -62,7 +62,7 @@ const MCP_CLIENTS = [
     description:
       "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Voice Bot.",
     action: "Add to Cursor",
-    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==",
+    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
     icon: Terminal,
   },
 ] as const;
@@ -70,8 +70,7 @@ const MCP_CLIENTS = [
 export default function Developers() {
   const [copied, setCopied] = useState(false);
 
-  const appOrigin =
-    typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
+  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.me";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = `${appOrigin}/mcp`;
 
@@ -168,8 +167,8 @@ export default function Developers() {
               change. There is no public API-key product and no repo voice SDK.
             </p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              BotBound calls the customer-facing product a Bot. MCP and API function names, agent
-              records, and compatibility identifiers retain agent so integrations remain stable.
+              BotBound calls the customer-facing product a Bot. MCP and API function names and
+              agent records remain stable only where the existing integration contract requires it.
             </p>
           </div>
 
