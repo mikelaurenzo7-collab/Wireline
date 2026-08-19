@@ -12,8 +12,8 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "wireline://agents"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("WIRELINE Bots")
-        .description("Open your WIRELINE Bots for coverage, handoff, and live work.")
+        .configurationDisplayName("BotBound Bots")
+        .description("Open your BotBound Bots for coverage, handoff, and live work.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 
@@ -61,7 +61,7 @@ private struct AssistantWidgetView: View {
                     .frame(width: 44, height: 44)
                     .background(WidgetColors.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("WIRELINE BOTS").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
+                    Text("BotBound Bots").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
                     Text("Coverage, handoff, and live work.")
                         .font(Brand.caption)
                         .foregroundStyle(WidgetColors.text2)
@@ -97,7 +97,7 @@ private struct AssistantWidgetView: View {
             .padding(16)
             .background(WidgetColors.panel)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("WIRELINE Bots. All active calls screened.")
+            .accessibilityLabel("BotBound Bots. All active calls screened.")
         }
     }
 }
