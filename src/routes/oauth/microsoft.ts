@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { BOTBOUND_BRAND_NAME } from "../../lib/brand";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -19,10 +20,6 @@ import {
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 
 const router = express.Router();
-
-// ────────────────────────────────────────────────────────────────────
-//  Microsoft OAuth
-// ────────────────────────────────────────────────────────────────────
 
 router.get(
   "/api/oauth/microsoft/url",
@@ -106,12 +103,11 @@ router.get(
         return res
           .status(401)
           .send(
-            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Microsoft again from Settings.",
+            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Microsoft again from Settings.`,
           );
       }
 
       const scopeStr = typeof tokens.scope === "string" ? tokens.scope : "";
-
       const accessTokenMs = encryptSecret(tokens.access_token);
       const refreshTokenMs = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
       const expiresAtMs = BigInt(Date.now() + (tokens.expires_in || 3600) * 1000);
