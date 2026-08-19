@@ -1,33 +1,33 @@
 /**
- * WIRELINE Letterpress — canonical design vision for web, extension, MCP, and native.
+ * WIRELINE Design System — canonical design vision for web, extension, MCP, and native.
  * Contracts: tests/wireline-design-vision-contract.test.ts (manifest),
  * tests/studio-canvas-vision-contract.test.ts (studio IA), design:check.
  * Studio behavioral invariants live in studio-canvas-contract.ts.
  */
 
 export const WIRELINE_DESIGN_VISION = {
-  system: "WIRELINE Letterpress",
+  system: "WIRELINE Design System",
   naming: {
-    designSystem: "WIRELINE Letterpress",
-    canvasMaterial: "obsidian",
+    designSystem: "WIRELINE Design System",
     rule:
-      "Letterpress is the design system. obsidian is a lowercase canvas/material descriptor inside Letterpress, never a second design system, UI system, or theme name.",
+      "WIRELINE Design System is the only system name. Describe visual decisions by function: canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
   },
-  tone: ["calm", "precise", "useful"] as const,
+  tone: ["clean", "precise", "confident"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
-    "Electric violet is action. Ink is structure. Cool obsidian is calm.",
-    "Letterpress is the system; obsidian is the canvas material, never a competing system name.",
-    "Silver is the wire, it carries the signal, never decorates.",
+    "Near-black canvas creates calm. Electric violet is action. Platinum is the wire.",
+    "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
+    "Visual vocabulary is semantic, not thematic: canvas, surface, elevation, ink, action, wire, signal, and status.",
+    "Wire carries structure and signal; it never becomes decoration for its own sake.",
     "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
     "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
     "Bot identity is a role-agnostic WIRELINE signal signature; status colors communicate state only.",
-    "One voice module, one composer dock, one elevation language.",
-    "Centered marketing storytelling; left/task-first authenticated work.",
-    "Inter Tight carries big ideas and the WIRELINE wordmark; Inter carries work; IBM Plex Mono carries labels.",
+    "One composer dock, one elevation language, one interaction language.",
+    "Marketing earns attention with restraint; authenticated work stays left-aligned and task-first.",
+    "Inter Tight carries big ideas and the WIRELINE wordmark; Inter carries work; IBM Plex Mono carries labels and technical metadata.",
     "No decorative green, orange, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
-    "Letterpress depth: inset highlights on surfaces, restrained glow only on active affordances.",
+    "Surface depth uses restrained inset highlights and elevation; glow is reserved for active affordances and signal motion.",
     "Route load → RouteFallback; panel load → skeleton presets; sole empty → EmptyState; errors → StatusNotice.",
     "Primary actions use atoms/Button, not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
     "Navigation IA lives in constants/navigation.ts, never duplicate nav arrays in shell components.",
@@ -50,14 +50,7 @@ export const WIRELINE_DESIGN_VISION = {
     liftPx: 1,
   },
   utilities: {
-    surface: [
-      "wl-paper",
-      "wl-paper-elevated",
-      "wl-letterpress",
-      "wl-letterpress-raised",
-      "wl-letterpress-recessed",
-      "wl-surface-tint",
-    ],
+    surface: ["wl-panel", "wl-panel-elevated", "wl-surface-tint"],
     feedback: [
       "wl-focus-ring",
       "wl-focus-ring-halo",
@@ -133,25 +126,24 @@ export const WIRELINE_DESIGN_VISION = {
     ],
   },
   legacyAliases: [
+    "wl-paper",
+    "wl-paper-elevated",
+    "wl-letterpress",
+    "wl-letterpress-raised",
+    "wl-letterpress-recessed",
     "wl-composer-dock",
     "wl-composer-dock__input",
     "wl-composer-dock__toolbar",
     "wl-chip-suggestion",
-    "wl-panel",
-    "wl-panel-elevated",
     "wl-composer-hero",
     "wl-eyebrow--wired--app",
     "wl-rail-agent-link",
     "wl-overview-greeting",
     "wl-operate-surface",
   ],
+  retiredDesignNames: ["Letterpress", "Obsidian", "Aurora"],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {
-    // Claude Design Agent Studio: a route-correct workspace rail, a compact
-    // context chrome (breadcrumb, readiness, test/deploy), and a split pane:
-    // 380px-ish builder chat on the left + spatial Agent Canvas cards on the
-    // right. Agent switching belongs in the Assistants directory / Overview
-    // preview, not as a second roster strip inside Studio.
     defaultSurface: "chat-plus-canvas",
     canvasSurface: "spatial-cards",
     agentSwitcher: "context-chrome",
