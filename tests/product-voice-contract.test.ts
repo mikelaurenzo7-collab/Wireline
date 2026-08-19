@@ -180,9 +180,9 @@ describe("Phone Bot product voice", () => {
     expect(landing).toContain("<AuthAccessPanel embedded");
     expect(landing).toContain("WIRE YOUR");
     expect(landing).toContain("PHONE BOT");
-    expect(landing).toContain("CALL");
-    expect(landing).toContain("EMAIL");
-    expect(landing).toContain("TEXT");
+    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;');
+    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
+    expect(landing).toContain("return channel.label.toUpperCase()");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");
