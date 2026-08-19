@@ -52,6 +52,7 @@ function isInternalLogLine(line: string): boolean {
 }
 
 function isPathScopedCompatibility(path: string, line: string): boolean {
+  if (path === "src/lib/brand-text.ts") return true;
   if (path === "src/lib/plan-catalog.ts") {
     return /name:\s*"Wireline (?:Free Builder|Starter|Starter Plus|Pro|Business)"/.test(line);
   }
@@ -95,19 +96,8 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
       /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
   }
-  // openapi-spec.ts is a large raw compatibility document. The public route
-  // always passes it through normalizeOpenApiForManagedRuntime, which performs
-  // a deep BotBound normalization while preserving X-Wireline-Key exactly.
   if (path === "src/lib/openapi-spec.ts") return true;
-  // showcase-assistant.ts contains long-lived provider prompt templates that
-  // can predate the rename. /api/vapi-webhook is guarded by the BotBound truth
-  // boundary, which recognizes both generations and rewrites delivered prompt,
-  // assistant-name, and at-capacity greeting identity before JSON leaves.
   if (path === "src/lib/showcase-assistant.ts") return true;
-  // The MCP account + OAuth route files contain stable tool names and a large
-  // legacy description corpus. registerMcpRoutes owns a scoped JSON/HTML brand
-  // normalizer before those routers, so clients receive BotBound while tool IDs,
-  // callback paths, scopes, and protocol identifiers remain untouched.
   if (
     path === "src/routes/chatgpt-mcp-account-routes.ts" ||
     path === "src/routes/chatgpt-mcp-routes.ts"
@@ -184,12 +174,13 @@ describe("BotBound visible-brand sweep", () => {
     expect(routes).toContain("normalizeOpenApiForManagedRuntime(getOpenApiSpec(");
   });
 
-  it("keeps connected-app MCP responses BotBound without renaming tool or protocol identifiers", () => {
+  it("keeps connected-app MCP responses BotBound without renaming tool, protocol, or tenant identifiers", () => {
     const registry = read("src/server/register-mcp-routes.ts");
-    expect(registry).toContain('import { normalizeCustomerBrandDeep, normalizeCustomerBrandText } from "../lib/brand-text"');
+    expect(registry).toContain("normalizePlatformBrandPhrases");
+    expect(registry).toContain("normalizePlatformBrandPhrasesDeep");
     expect(registry).toContain("function mcpBrandResponseNormalizer");
-    expect(registry).toContain("normalizeCustomerBrandDeep(body)");
-    expect(registry).toContain("normalizeCustomerBrandText(body)");
+    expect(registry).toContain("normalizePlatformBrandPhrasesDeep(body)");
+    expect(registry).toContain("normalizePlatformBrandPhrases(body)");
     expect(registry).toContain("app.use(mcpBrandResponseNormalizer)");
     expect(registry.indexOf("app.use(mcpBrandResponseNormalizer)")).toBeLessThan(
       registry.indexOf("app.use(chatgptMcpAccountRouter)"),
