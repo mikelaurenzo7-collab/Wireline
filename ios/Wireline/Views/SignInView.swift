@@ -10,15 +10,15 @@ struct SignInView: View {
             Spacer()
             Medallion(systemImage: "phone.connection.fill", size: 72)
             VStack(spacing: 6) {
-                Text("Wireline").font(.largeTitle.weight(.bold))
-                Text("BOTS THAT GET THE WORK DONE")
+                Text("BotBound").font(.largeTitle.weight(.bold))
+                Text("PUT YOUR BOT ON THE LINE")
                     .font(.headline.weight(.semibold))
-                Text("Voice-first Bots for calls, live conversations, text, and email.")
+                Text("AI employees for calls, texts, and email.")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Wireline. Bots that get the work done. Voice-first Bots for calls, live conversations, text, and email.")
+            .accessibilityLabel("BotBound. Put your Bot on the line. AI employees for calls, texts, and email.")
 
             VStack(spacing: 12) {
                 TextField("EMAIL", text: $email)
@@ -54,10 +54,10 @@ struct SignInView: View {
             .buttonStyle(PrimaryButtonStyle())
             .disabled(auth.isWorking || email.isEmpty || password.isEmpty)
             .accessibilityLabel(auth.isWorking ? "Signing in" : "Sign in")
-            .accessibilityHint("Signs in to your Wireline account")
+            .accessibilityHint("Signs in to your BotBound account")
 
             Spacer()
-            Text("New to Wireline? Create an account on the web.")
+            Text("New to BotBound? Create an account on the web.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(24)
