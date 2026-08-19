@@ -13,7 +13,12 @@ import {
 
 import { authFetch } from "../lib/api";
 import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
-import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
+import {
+  ConversationActivity,
+  ConversationMessage,
+  SearchField,
+  StatusNotice,
+} from "./molecules";
 
 type OutcomeStatus = "open" | "waiting" | "escalated" | "booked" | "resolved";
 
@@ -125,9 +130,11 @@ function InboxLoadingState({ frameClass }: { frameClass: string }) {
 export default function EmailInbox({
   embedded = false,
   agentId,
+  accountId,
 }: {
   embedded?: boolean;
   agentId?: string | null;
+  accountId?: string | null;
 }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -145,10 +152,11 @@ export default function EmailInbox({
     setLoading(true);
     setError(null);
     try {
-      const threadUrl = agentId
-        ? `/api/emails/threads?agent_id=${encodeURIComponent(agentId)}`
-        : "/api/emails/threads";
-      const response = await authFetch(threadUrl);
+      const queryParams = new URLSearchParams();
+      if (agentId) queryParams.set("agent_id", agentId);
+      if (accountId) queryParams.set("account_id", accountId);
+      const suffix = queryParams.toString();
+      const response = await authFetch(`/api/emails/threads${suffix ? `?${suffix}` : ""}`);
       const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
       if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
       const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
@@ -161,7 +169,7 @@ export default function EmailInbox({
     } finally {
       setLoading(false);
     }
-  }, [agentId]);
+  }, [accountId, agentId]);
 
   const loadThreadDetail = useCallback(async (threadId: string, signal?: AbortSignal) => {
     setDetailLoading(true);
@@ -244,7 +252,9 @@ export default function EmailInbox({
       if (!response.ok || !body?.thread)
         throw new Error(body?.error || "Could not update this conversation.");
       const updated = normalizeThread(body.thread);
-      setThreads((current) => current.map((thread) => (thread.id === updated.id ? updated : thread)));
+      setThreads((current) =>
+        current.map((thread) => (thread.id === updated.id ? updated : thread)),
+      );
       setDetail((current) => (current ? { ...current, thread: updated } : current));
     } catch (cause) {
       setDetailError(cause instanceof Error ? cause.message : "Could not update this conversation.");
@@ -258,14 +268,18 @@ export default function EmailInbox({
     setOutcomeBusy("handoff");
     setDetailError(null);
     try {
-      const response = await authFetch(`/api/emails/threads/${selectedId}/handoff`, { method: "POST" });
+      const response = await authFetch(`/api/emails/threads/${selectedId}/handoff`, {
+        method: "POST",
+      });
       const body = (await response.json().catch(() => null)) as {
         handoff?: { id: string; status: string };
         error?: string;
       } | null;
       if (!response.ok || !body?.handoff)
         throw new Error(body?.error || "Could not request a handoff.");
-      setDetail((current) => (current ? { ...current, handoff: body.handoff || null } : current));
+      setDetail((current) =>
+        current ? { ...current, handoff: body.handoff || null } : current,
+      );
       await updateOutcome("escalated");
     } catch (cause) {
       setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
@@ -302,8 +316,18 @@ export default function EmailInbox({
           aria-label="Search email conversations"
           className="min-w-0 flex-1"
         />
-        <Button type="button" variant="secondary" size="sm" onClick={() => void syncInbox()} disabled={syncing}>
-          {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => void syncInbox()}
+          disabled={syncing}
+        >
+          {syncing ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <RefreshCw className="size-4" />
+          )}
           <span className="hidden sm:inline">Refresh</span>
         </Button>
       </div>
@@ -320,15 +344,19 @@ export default function EmailInbox({
       ) : null}
 
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
-        <div className={`min-h-0 overflow-y-auto ${selectedId ? "hidden lg:block" : "block"} border-r border-border`}>
+        <div
+          className={`min-h-0 overflow-y-auto ${selectedId ? "hidden lg:block" : "block"} border-r border-border`}
+        >
           {!visibleThreads.length ? (
             <EmptyState
               icon={<Mail className="size-5" />}
               title={agentId ? "No email for this Bot" : "No email yet"}
-              description={agentId ? undefined : "Connected mailbox conversations will appear here."}
+              description={
+                agentId || accountId ? undefined : "Connected mailbox conversations will appear here."
+              }
               density="compact"
               action={
-                !agentId ? (
+                !agentId && !accountId ? (
                   <Button asChild variant="secondary" size="sm">
                     <Link to="/connections">Connect email</Link>
                   </Button>
@@ -363,7 +391,9 @@ export default function EmailInbox({
                         </span>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <Badge variant={OUTCOME_META[thread.status].variant}>{OUTCOME_META[thread.status].label}</Badge>
+                        <Badge variant={OUTCOME_META[thread.status].variant}>
+                          {OUTCOME_META[thread.status].label}
+                        </Badge>
                       </div>
                     </button>
                   </li>
@@ -402,10 +432,16 @@ export default function EmailInbox({
                 </button>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-semibold text-foreground">{selected.subject}</h2>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">{selected.sender}</p>
+                    <h2 className="truncate text-base font-semibold text-foreground">
+                      {selected.subject}
+                    </h2>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {selected.sender}
+                    </p>
                   </div>
-                  <Badge variant={OUTCOME_META[selected.status].variant}>{OUTCOME_META[selected.status].label}</Badge>
+                  <Badge variant={OUTCOME_META[selected.status].variant}>
+                    {OUTCOME_META[selected.status].label}
+                  </Badge>
                 </div>
               </header>
 
@@ -416,7 +452,13 @@ export default function EmailInbox({
                       <ConversationMessage
                         key={message.id}
                         direction={isAssistantMessage(message.role) ? "out" : "in"}
-                        avatar={isAssistantMessage(message.role) ? <Sparkles className="size-4" /> : senderInitial(selected.sender)}
+                        avatar={
+                          isAssistantMessage(message.role) ? (
+                            <Sparkles className="size-4" />
+                          ) : (
+                            senderInitial(selected.sender)
+                          )
+                        }
                         timestamp={formatTimestamp(message.createdAt)}
                       >
                         {message.content}
@@ -424,15 +466,25 @@ export default function EmailInbox({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No message body is available yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No message body is available yet.
+                  </p>
                 )}
               </div>
 
               <footer className="border-t border-border p-3 sm:p-4">
                 <ConversationActivity
                   items={[
-                    { icon: Clock3, label: "Last activity", value: formatTimestamp(selected.lastMessageAt) },
-                    { icon: UserRoundCheck, label: "Status", value: OUTCOME_META[selected.status].label },
+                    {
+                      icon: Clock3,
+                      label: "Last activity",
+                      value: formatTimestamp(selected.lastMessageAt),
+                    },
+                    {
+                      icon: UserRoundCheck,
+                      label: "Status",
+                      value: OUTCOME_META[selected.status].label,
+                    },
                     ...(detail?.handoff
                       ? [{ icon: Route, label: "Handoff", value: detail.handoff.status }]
                       : []),
@@ -448,7 +500,11 @@ export default function EmailInbox({
                       disabled={Boolean(outcomeBusy) || selected.status === status}
                       onClick={() => void updateOutcome(status)}
                     >
-                      {outcomeBusy === status ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+                      {outcomeBusy === status ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="size-3.5" />
+                      )}
                       {OUTCOME_META[status].label}
                     </Button>
                   ))}
@@ -459,7 +515,11 @@ export default function EmailInbox({
                     disabled={Boolean(outcomeBusy) || Boolean(detail?.handoff)}
                     onClick={() => void requestHandoff()}
                   >
-                    {outcomeBusy === "handoff" ? <Loader2 className="size-3.5 animate-spin" /> : <Route className="size-3.5" />}
+                    {outcomeBusy === "handoff" ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Route className="size-3.5" />
+                    )}
                     Handoff
                   </Button>
                 </div>
