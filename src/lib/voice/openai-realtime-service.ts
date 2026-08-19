@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { AppError } from "../api-error";
+import { BOTBOUND_BRAND_NAME } from "../brand";
 import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { providerHttpError } from "../provider-http-error";
@@ -18,9 +19,9 @@ export interface CreateOpenAIRealtimeClientSecretInput {
   agentName?: string | null;
   model?: string | null;
   voice?: string | null;
-  /** Overrides the standard Wireline runtime instructions for isolated previews. */
+  /** Overrides the standard BotBound runtime instructions for isolated previews. */
   instructions?: string | null;
-  /** Defaults to Wireline runtime tools. Pass [] for a tool-free demo. */
+  /** Defaults to BotBound runtime tools. Pass [] for a tool-free demo. */
   tools?: OpenAIRealtimeToolDefinition[];
   /** Tool-free demos must disable tool selection explicitly. */
   toolChoice?: "auto" | "none";
@@ -45,11 +46,6 @@ function getOpenAIApiKey(
   return apiKey;
 }
 
-/**
- * Lifetime of a minted ephemeral client secret, in seconds. The client opens
- * its WebRTC session immediately after the mint request returns, so this only
- * needs to cover network + handshake — not the length of the conversation.
- */
 const OPENAI_REALTIME_SECRET_TTL_SECONDS = 120;
 
 function safetyIdentifierForUser(userId: string): string {
@@ -58,10 +54,6 @@ function safetyIdentifierForUser(userId: string): string {
 
 export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClientSecretInput) {
   const tools = input.tools ?? OPENAI_REALTIME_WIRELINE_TOOLS;
-  // Sessions are minted on the PLATFORM OpenAI key, so the model is pinned to
-  // the platform-configured default. Forwarding a caller-supplied model string
-  // here let any authenticated user mint sessions on arbitrary (potentially
-  // far more expensive) realtime models at platform cost.
   const requestedModel = input.model?.trim();
   if (requestedModel && requestedModel !== OPENAI_REALTIME_DEFAULT_MODEL) {
     log.warn("openai realtime session requested non-platform model, using default", {
@@ -97,13 +89,6 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
         },
       },
     },
-    // Bound the mint-to-use window. Every mint durably debits five simulation
-    // minutes and books a fixed platform cost reserve BEFORE the secret is
-    // handed out, so an unbounded secret (OpenAI's default is ten minutes) let
-    // a client stockpile paid-for tokens and redeem them long after the debit,
-    // decoupling what a tenant is charged from when the platform key is spent.
-    // A secret is only ever used to open a session immediately after the
-    // request that minted it, so a short window costs nothing legitimate.
     expires_after: { anchor: "created_at", seconds: OPENAI_REALTIME_SECRET_TTL_SECONDS },
   };
 }
@@ -161,14 +146,12 @@ export async function createOpenAIRealtimeClientSecret(
         status: response.status,
         body: typeof text === "string" ? text.slice(0, 500) : undefined,
       });
-      // Never reuse OpenAI's status: a 401 here means the PLATFORM key is bad,
-      // and the browser force-signs-out the account holder on any 401.
       throw providerHttpError({
         provider: "OpenAI Realtime",
         path: "/v1/realtime/client_secrets",
         status: response.status,
         unavailableMessage:
-          "Live simulation is temporarily unavailable. Wireline has been notified, real phone calls are unaffected.",
+          `Live simulation is temporarily unavailable. ${BOTBOUND_BRAND_NAME} has been notified; real phone calls are unaffected.`,
       });
     }
 
