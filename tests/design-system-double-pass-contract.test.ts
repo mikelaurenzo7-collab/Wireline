@@ -50,6 +50,7 @@ describe("WIRELINE design-system double-pass contract", () => {
     const retiredPage = read("src/pages/LiveVideoStudioPage.tsx");
     const presenter = read("src/components/LiveVideoPresenter.tsx");
     const compatibilityFace = read("src/components/AgentFace.tsx");
+    const spendBoundary = read("tests/credential-and-spend-boundary-contract.test.ts");
 
     expect(retiredPage).toContain('<Navigate to="/studio" replace />');
     expect(retiredPage).not.toContain('import AgentFace from');
@@ -59,6 +60,13 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(presenter).not.toContain("AgentFace");
     expect(presenter).not.toContain("wl-presence-live");
     expect(compatibilityFace).toContain('import BotMark from "./BotMark"');
+
+    // Security/spend auditing must prove the real retirement boundary rather
+    // than requiring a retired face symbol to remain in source as a sentinel.
+    expect(spendBoundary).toContain("retired Live Video does not load a presenter SDK or session path");
+    expect(spendBoundary).toContain('page).toContain(\'<Navigate to="/studio" replace />\')');
+    expect(spendBoundary).toContain('page).not.toContain("@heygen/liveavatar-web-sdk")');
+    expect(spendBoundary).not.toContain('expect(page).toContain("AgentFace")');
   });
 
   it("keeps workspace layout in component source and signature CSS decorative", () => {
