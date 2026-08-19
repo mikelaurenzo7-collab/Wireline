@@ -173,7 +173,7 @@ export function KnowledgeFromDocumentForm({
                     <p className="text-sm text-foreground/85">
                       Drop a PDF here, or click to choose
                     </p>
-                    <p className="wl-label-muted">Up to 32 MB · Wireline AI reads it natively</p>
+                    <p className="wl-label-muted">Up to 32 MB · BotBound AI reads it natively</p>
                   </div>
                 </>
               )}
@@ -181,7 +181,7 @@ export function KnowledgeFromDocumentForm({
           </Field>
           <Field
             label="Agent Context (optional)"
-            hint="What's this agent's job? Helps Wireline AI prioritize relevant facts."
+            hint="What's this agent's job? Helps BotBound AI prioritize relevant facts."
           >
             <TextInput
               value={agentContext}
