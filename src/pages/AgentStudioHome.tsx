@@ -16,7 +16,7 @@ import { bootstrapManagedBotIdentity } from "../lib/bot-identity-bootstrap";
 import {
   consumeCreateWarning,
   readPostCreateWizard,
-  stashPostCreateWizard,
+  updatePostCreateWizard,
 } from "../lib/wireline-create-flow";
 import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
@@ -129,9 +129,9 @@ export default function AgentStudioHome() {
       phoneProvisionRequested: true,
       emailProvisionRequested: true,
     };
-    // Persist the fact that the managed identity attempt has started so a hard
-    // refresh can safely resume it. The provider routes themselves are idempotent.
-    stashPostCreateWizard(pending);
+    // Persist the fact that managed identity provisioning started, but do not
+    // move the user back to Train if they are already configuring the Bot.
+    updatePostCreateWizard(pending);
 
     let active = true;
     void bootstrapManagedBotIdentity(payload.agentId).then((result) => {
@@ -147,9 +147,9 @@ export default function AgentStudioHome() {
         emailCustomDomain: result.mailbox.customDomain,
         identityBootstrapComplete: true,
       };
-      stashPostCreateWizard(updated);
+      updatePostCreateWizard(updated);
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
-      refresh();
+      void refresh();
       if (active) setPostCreateWizard(updated);
     });
 
