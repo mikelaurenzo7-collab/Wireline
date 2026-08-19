@@ -7,10 +7,17 @@
 
 export const WIRELINE_DESIGN_VISION = {
   system: "WIRELINE Letterpress",
+  naming: {
+    designSystem: "WIRELINE Letterpress",
+    canvasMaterial: "obsidian",
+    rule:
+      "Letterpress is the design system. obsidian is a lowercase canvas/material descriptor inside Letterpress, never a second design system, UI system, or theme name.",
+  },
   tone: ["calm", "precise", "useful"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
     "Electric violet is action. Ink is structure. Cool obsidian is calm.",
+    "Letterpress is the system; obsidian is the canvas material, never a competing system name.",
     "Silver is the wire, it carries the signal, never decorates.",
     "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
     "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
