@@ -29,6 +29,7 @@ import {
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 import { clampVoiceTemperature, resolveCoherentVoiceModel } from "./ai-models";
+import { isPrincipalVoiceRole } from "./agent-role-definitions";
 import {
   buildGrokStrengthsPromptSection,
   isGrokModelId,
@@ -193,18 +194,18 @@ export async function buildVapiAssistant({
         )
         .join("\n")}\n`
     : "";
-  const isBusinessAgent = configured.isBusinessAgent !== false;
-  const identityBlock = isBusinessAgent
+  const principalFacing = isPrincipalVoiceRole(configured.role);
+  const identityBlock = principalFacing
     ? [
-        `You are ${configured.name}, a Wireline ${configured.role || "agent"}.`,
-        "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
-        "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
-      ].join("\n")
-    : [
-        `You are ${configured.name}, a personal Wireline agent for your principal.`,
+        `You are ${configured.name}, a personal BotBound Bot for your principal.`,
         "Be accurate, concise, discreet, and protective of their time. Never invent personal facts, schedule commitments, or private details.",
         "Represent your principal professionally. When something is outside your authority, say so and offer to relay a message or escalate.",
         "Default to privacy: do not volunteer address, family, health, finances, or schedule details unless required for the immediate task.",
+      ].join("\n")
+    : [
+        `You are ${configured.name}, a BotBound ${configured.role || "agent"}.`,
+        "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
+        "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
       ].join("\n");
   const callSpecificContext = [
     LIVE_CALL_EXECUTION_PROTOCOL,
@@ -216,9 +217,9 @@ export async function buildVapiAssistant({
     promptItem("APPROVED TRAINING", knowledge),
     flowBlock,
     configured.escalationPhone || configured.escalationEmail
-      ? isBusinessAgent
-        ? "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
-        : "\n## ESCALATION\nEscalate when the caller is urgent, distressed, asks for your principal by name with a time-sensitive matter, or anything exceeds your approved personal preferences.\n"
+      ? principalFacing
+        ? "\n## ESCALATION\nEscalate when the caller is urgent, distressed, asks for your principal by name with a time-sensitive matter, or anything exceeds your approved personal preferences.\n"
+        : "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
       : "",
   ]
     .filter(Boolean)
@@ -255,9 +256,9 @@ export async function buildVapiAssistant({
   // message-taking mode rather than promising an unrecorded human follow-up.
   const afterHours = !isOutbound && !runtime.inHours;
   const systemPrompt = afterHours
-    ? isBusinessAgent
-      ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise follow-up only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments, prices, or actions that require the business to be open.`
-      : `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise a relay only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments or personal details you are not cleared to share.`
+    ? principalFacing
+      ? `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise a relay only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments or personal details you are not cleared to share.`
+      : `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise follow-up only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments, prices, or actions that require the business to be open.`
     : runtime.prompt;
   const augmentedSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
@@ -267,9 +268,9 @@ export async function buildVapiAssistant({
   );
   const afterHoursGreeting = afterHours
     ? runtime.outOfHoursMessage ||
-      (isBusinessAgent
-        ? `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message for the team.`
-        : `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message for them.`)
+      (principalFacing
+        ? `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message for them.`
+        : `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message for the team.`)
     : null;
   const functionTools = toVapiFunctionTools(
     await buildRoleToolDefsForTenant(
@@ -290,7 +291,7 @@ export async function buildVapiAssistant({
       )
     : undefined;
 
-  // Wireline retains transcript-driven product value without full-call provider
+  // BotBound retains transcript-driven product value without full-call provider
   // audio by default. Vapi artifact defaults are permissive, so send the
   // privacy posture explicitly on every managed assistant payload.
   const artifactPlan = buildVapiTranscriptOnlyArtifactPlan();
