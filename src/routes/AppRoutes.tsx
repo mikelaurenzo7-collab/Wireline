@@ -19,7 +19,6 @@ const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
 const BrowserCommandInstallPage = lazy(() => import("../pages/BrowserCommandInstallPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
-const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
@@ -88,7 +87,8 @@ export default function AppRoutes() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
-        <Route path="/settings/phone" element={<PhoneSettings />} />
+        {/* Phone lines are operational work; keep old settings links compatible. */}
+        <Route path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />} />
         <Route path="/settings/team" element={<TeamSettings />} />
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />
