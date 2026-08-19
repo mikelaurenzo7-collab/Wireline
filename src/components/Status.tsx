@@ -181,7 +181,7 @@ export default function Status() {
     <>
       <PageMeta
         title="Provider Status | WIRELINE"
-        description="Live access checks for WIRELINE's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds."
+        description="Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds."
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
