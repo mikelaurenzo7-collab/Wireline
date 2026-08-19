@@ -106,8 +106,8 @@
 @import "./styles/prestige-polish.css";
 @import "./styles/brand-identity.css";
 @import "./styles/system-aesthetic-refinement.css";
-@import "./styles/safe-area-ownership.css";
 @import "./styles/public-mobile-refinement.css";
+@import "./styles/safe-area-ownership.css";
 
 body {
   /* `background-color`, not the `background` shorthand: this rule sits after
