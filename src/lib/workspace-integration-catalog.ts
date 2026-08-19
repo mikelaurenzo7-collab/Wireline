@@ -1,4 +1,5 @@
 import type { ToolIntegration } from "./agent-capabilities";
+import { BOTBOUND_BRAND_NAME } from "./brand";
 
 export type WorkspaceIntegrationReadiness = "live" | "beta" | "planned" | "platform";
 
@@ -24,7 +25,7 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     family: "Device integration",
     purpose: "Native Account Holder entrypoint for asking an agent to act from iOS.",
     detail: "Trigger agents via iOS Intents, Action Button, and Lock Screen.",
-    capabilities: ["Ask Wireline", "Place calls", "Summarize recent", "Follow-ups"],
+    capabilities: [`Ask ${BOTBOUND_BRAND_NAME}`, "Place calls", "Summarize recent", "Follow-ups"],
     agentScope: "Account Holder-owned device actions and approved mobile handoffs.",
     guardrail:
       "Not included in customer-facing default agents; each native action remains user-owned.",
