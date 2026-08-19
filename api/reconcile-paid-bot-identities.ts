@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, inArray } from "drizzle-orm";
 
 import * as schema from "../src/db/schema";
 import { ensurePaidBotIdentity } from "../src/lib/paid-bot-identity";
@@ -11,6 +11,16 @@ const PAID_PLANS = ["starter", "team", "business", "enterprise"] as const;
 const ACTIVE_STATUSES = ["active", "trialing"] as const;
 const DEFAULT_BATCH = 10;
 const MAX_BATCH = 25;
+const MAX_CURSOR_LENGTH = 256;
+
+type ReconciliationCursor = {
+  value: string | null;
+  error: boolean;
+};
+
+function requestUrl(req: IncomingMessage): URL {
+  return new URL(req.url || "/", "https://botbound.internal");
+}
 
 function bearerToken(req: IncomingMessage): string {
   const value = Array.isArray(req.headers.authorization)
@@ -33,10 +43,24 @@ function authorized(req: IncomingMessage): boolean {
 }
 
 function batchSize(req: IncomingMessage): number {
-  const raw = new URL(req.url || "/", "https://botbound.internal").searchParams.get("limit");
+  const raw = requestUrl(req).searchParams.get("limit");
   const parsed = Number(raw || DEFAULT_BATCH);
   if (!Number.isFinite(parsed)) return DEFAULT_BATCH;
   return Math.max(1, Math.min(MAX_BATCH, Math.floor(parsed)));
+}
+
+function reconciliationCursor(req: IncomingMessage): ReconciliationCursor {
+  const raw = requestUrl(req).searchParams.get("cursor");
+  if (raw == null || raw === "") return { value: null, error: false };
+  const cursor = raw.trim();
+  if (
+    !cursor ||
+    cursor.length > MAX_CURSOR_LENGTH ||
+    !/^[A-Za-z0-9._:-]+$/.test(cursor)
+  ) {
+    return { value: null, error: true };
+  }
+  return { value: cursor, error: false };
 }
 
 function send(res: ServerResponse, status: number, body: unknown) {
@@ -58,7 +82,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   const limit = batchSize(req);
-  const rows = await drizzle
+  const cursor = reconciliationCursor(req);
+  if (cursor.error) {
+    send(res, 400, { ok: false, code: "INVALID_CURSOR" });
+    return;
+  }
+
+  const conditions = [
+    inArray(schema.subscriptions.plan, [...PAID_PLANS]),
+    inArray(schema.subscriptions.status, [...ACTIVE_STATUSES]),
+  ];
+  if (cursor.value) conditions.push(gt(schema.agents.id, cursor.value));
+
+  // Fetch one extra row so callers know whether another page exists without
+  // provisioning more provider resources than the requested batch size.
+  const candidates = await drizzle
     .select({
       agentId: schema.agents.id,
       userId: schema.agents.userId,
@@ -67,15 +105,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     })
     .from(schema.agents)
     .innerJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.agents.userId))
-    .where(
-      and(
-        inArray(schema.subscriptions.plan, [...PAID_PLANS]),
-        inArray(schema.subscriptions.status, [...ACTIVE_STATUSES]),
-      ),
-    )
-    .orderBy(asc(schema.agents.createdAt))
-    .limit(limit);
+    .where(and(...conditions))
+    .orderBy(asc(schema.agents.id))
+    .limit(limit + 1);
 
+  const hasMore = candidates.length > limit;
+  const rows = candidates.slice(0, limit);
   const results: Array<{
     agentId: string;
     plan: string | null;
@@ -111,10 +146,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   const failed = results.filter((result) => !result.ok).length;
+  const nextCursor = hasMore && rows.length ? rows[rows.length - 1].agentId : null;
   send(res, failed ? 207 : 200, {
     ok: failed === 0,
     processed: results.length,
     failed,
+    has_more: hasMore,
+    next_cursor: nextCursor,
     results,
   });
 }
