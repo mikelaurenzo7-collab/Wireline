@@ -81,7 +81,7 @@ export default function McpCoachingPanel() {
       setEnabled(data?.coaching_writes_enabled === true);
       setNotice(
         data?.coaching_writes_enabled
-          ? "Connected apps can now save a confirmed Training fact or rule into Wireline."
+          ? "Connected apps can now save a confirmed Training fact or rule into BotBound."
           : "Connected-app Training writes are off. Drafts and private rehearsals still work.",
       );
     } catch (err) {
@@ -144,8 +144,8 @@ export default function McpCoachingPanel() {
         <p className="text-sm text-muted-foreground">Loading connected apps…</p>
       ) : connections.length === 0 ? (
         <p className="text-sm leading-6 text-muted-foreground">
-          No connected apps yet. After OAuth, they appear here. New users create a Wireline account
-          during Connect, then build their first voice agent in that chat.
+          No connected apps yet. After OAuth, they appear here. New users create a BotBound account
+          during Connect, then build their first Bot in that chat.
         </p>
       ) : (
         <ul className="space-y-2" aria-label="Connected MCP apps">
