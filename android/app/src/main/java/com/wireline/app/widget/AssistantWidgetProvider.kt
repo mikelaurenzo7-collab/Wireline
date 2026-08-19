@@ -53,7 +53,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
-                text = "WIRELINE BOTS",
+                text = "BotBound Bots",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize,
