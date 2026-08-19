@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { AppError } from "../../lib/api-error";
+import { BOTBOUND_BRAND_NAME } from "../../lib/brand";
 import { googleApis } from "../../lib/google-apis";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
@@ -22,10 +23,6 @@ import {
 } from "../../lib/google-sheets-service";
 
 const router = express.Router();
-
-// ────────────────────────────────────────────────────────────────────
-//  Google Sheets OAuth
-// ────────────────────────────────────────────────────────────────────
 
 router.get(
   "/api/oauth/google_sheets/url",
@@ -72,7 +69,6 @@ router.get(
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/google_sheets/callback`;
-
       const tokens = await exchangeGoogleSheetsCode(code, redirectUri);
 
       const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
@@ -80,11 +76,10 @@ router.get(
         return res
           .status(401)
           .send(
-            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Google Sheets again.",
+            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google Sheets again.`,
           );
       }
 
-      // Fetch user's email to store as connected email
       const oauth2Client = await getGoogleOAuthClient(req as express.Request);
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
