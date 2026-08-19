@@ -63,23 +63,17 @@ export function desktopNavParentHref(pathname: string): string | null {
 }
 
 /**
- * Primary setup destinations. Knowledge remains available as a contextual deep
- * link from the agent workspace rather than competing in the main rail.
+ * Studio is the product root: Bots are created, selected, configured, tested,
+ * and updated there. Connections stays visible on desktop as secondary setup;
+ * mobile keeps it in More so the bottom dock has only four primary concepts.
  */
 export const WORKSPACE_NAV: ShellNavItem[] = [
-  {
-    href: "/overview",
-    label: "Overview",
-    shortLabel: "Home",
-    icon: "Home",
-    matches: ["/overview"],
-  },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
     icon: "Bot",
-    matches: ["/studio", "/agents"],
+    matches: ["/studio", "/agents", "/overview"],
   },
   {
     href: "/connections",
@@ -98,20 +92,18 @@ export const OPERATE_NAV: ShellNavItem[] = [
   { href: "/settings", label: "Settings", icon: "Settings", matches: ["/settings", "/admin"] },
 ];
 
+/**
+ * Mobile has four primary destinations only. There is deliberately no Home:
+ * Studio is home. Inbox owns text/email work, Calls owns voice work, and More
+ * owns secondary/admin destinations.
+ */
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
-  {
-    href: "/overview",
-    label: "Overview",
-    shortLabel: "Home",
-    icon: "Home",
-    matches: ["/overview"],
-  },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
     icon: "Bot",
-    matches: ["/studio", "/agents"],
+    matches: ["/studio", "/agents", "/overview"],
   },
   { href: "/inbox", label: "Inbox", icon: "Inbox" },
   { href: "/phone", label: "Calls", icon: "Phone" },
@@ -183,6 +175,7 @@ export function isNavActive(pathname: string, href: string) {
       current === "/studio" ||
       current.startsWith("/studio/") ||
       current === "/agents" ||
+      current === "/overview" ||
       current === "/templates" ||
       current.startsWith("/templates/")
     );
@@ -213,10 +206,10 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/overview": "Overview",
+  "/overview": "Agent Studio",
   "/studio": "Agent Studio",
   "/studio/handoff": "Browser handoff",
-  "/studio/live-video": "Live video",
+  "/studio/live-video": "Agent Studio",
   "/templates": "Templates",
   "/knowledge": "Knowledge",
   "/connections": "Connections",
@@ -252,7 +245,7 @@ export function workspacePageTitle(pathname: string) {
 }
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
-  A: "/overview",
+  A: "/studio",
   S: "/studio",
   T: "/knowledge",
   W: "/connections",
@@ -262,7 +255,6 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 };
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
-  "/overview": "g a",
   "/studio": "g s",
   "/knowledge": "g t",
   "/connections": "g w",
