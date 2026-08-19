@@ -19,8 +19,8 @@ type ShowcaseAssistantPayload = {
 };
 
 const SHOWCASE_PROMPT_MARKERS = [
-  "showcase demo built by Wireline",
-  "a real Wireline employee on a real Wireline line",
+  "showcase demo built by BotBound",
+  "a real BotBound employee on a real BotBound line",
 ] as const;
 
 const FORBIDDEN_SHOWCASE_CLAIMS = [
@@ -49,8 +49,8 @@ function systemPrompt(payload: ShowcaseAssistantPayload): {
 }
 
 function showcaseKind(prompt: string): ShowcasePromptKind | null {
-  if (prompt.includes("showcase demo built by Wireline")) return "demo";
-  if (prompt.includes("a real Wireline employee on a real Wireline line")) return "cs";
+  if (prompt.includes("showcase demo built by BotBound")) return "demo";
+  if (prompt.includes("a real BotBound employee on a real BotBound line")) return "cs";
   return null;
 }
 
@@ -126,12 +126,12 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   prompt = replaceLiteral(
     prompt,
     "SOC 2 Type II - auditor engaged, target Q4 2026",
-    "SOC 2 readiness work is in progress; Wireline is not SOC 2 certified today",
+    "SOC 2 readiness work is in progress; BotBound is not SOC 2 certified today",
   );
   prompt = replaceLiteral(
     prompt,
     "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)",
-    "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
+    "HIPAA and BAA support are not currently available; do not present BotBound as HIPAA-certified",
   );
   prompt = replaceLiteral(
     prompt,
@@ -145,8 +145,8 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   );
   prompt = replaceLiteral(
     prompt,
-    "If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.",
-    "If asked about HIPAA: Wireline is not HIPAA-certified and BAA support is not currently available, say that plainly.",
+    "If asked about HIPAA: BotBound is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.",
+    "If asked about HIPAA: BotBound is not HIPAA-certified and BAA support is not currently available, say that plainly.",
   );
 
   prompt = prompt.replace(
@@ -200,7 +200,7 @@ export function showcasePromptTruthGuard(req: Request, res: Response, next: Next
       res.status(500);
       return originalJson({
         code: "SHOWCASE_PROMPT_REJECTED",
-        error: "The public assistant configuration did not pass Wireline's truth checks.",
+        error: "The public assistant configuration did not pass BotBound's truth checks.",
       });
     }
   }) as Response["json"];
