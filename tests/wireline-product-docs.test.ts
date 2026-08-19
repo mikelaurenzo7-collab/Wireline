@@ -20,7 +20,7 @@ function expectNoTerms(source: string, terms: string[]) {
   }
 }
 
-describe("Wireline product documentation contract", () => {
+describe("WIRELINE product documentation contract", () => {
   it("keeps the root README aligned with the current product model", () => {
     const readme = read("README.md");
     expect(readme).toContain("Wireline Command");
@@ -43,10 +43,6 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
     expect(launchTruth).toContain("Voice agents that get the work done.");
-    // The bare capitalised "Agents" this used to assert only ever appeared
-    // inside a retired-thesis footnote ("AI Profit Agents"), so it passed by
-    // accident and would have kept passing while the real terminology drifted.
-    // Assert the contextual naming rule the index actually states instead.
     expect(readme).toContain("Broad public copy uses **voice agents**");
     expect(readme).toContain("personal agents");
     expect(readme).toContain("support agents");
@@ -97,7 +93,7 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Bots, Connections, Phone, Inbox, Knowledge, or Studio");
   });
 
-  it("keeps product docs aligned with Training and agent-first copy", () => {
+  it("keeps product docs aligned with Training and agent-first technical copy", () => {
     const customization = read("docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md");
     const submission = read("docs/CHATGPT_APP_SUBMISSION.md");
 
@@ -120,25 +116,25 @@ describe("Wireline product documentation contract", () => {
     }
   });
 
-  it("keeps static metadata and OG positioning aligned with current product truth", () => {
+  it("keeps static metadata and OG positioning aligned with current public product truth", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
-    expect(head).toContain("Build a voice-first Bot");
-    expect(head).toContain("answers and makes calls");
-    expect(head).toContain("live conversations, text, and email");
-    expect(head).toContain("one workspace");
-    expect(head).toContain("Voice Bots");
-    expect(head).toContain("Conversation Bots");
-    expect(head).toContain("Human Bots");
+    expect(head).toContain("WIRELINE | WIRE YOUR PHONE BOT");
+    expect(head).toContain("A Phone Bot for calls, email, and text");
+    expect(head).toContain('"slogan": "WIRE YOUR PHONE BOT"');
+    expect(head).not.toContain("one workspace");
+    expect(head).not.toContain("VOICE-FIRST");
     expect(head).not.toContain("AI employee");
     expect(head).not.toContain("multichannel AI employee");
     expect(head).not.toContain("—");
-    expect(ogImage).toContain("BOTS THAT GET");
-    expect(ogImage).toContain("THE WORK DONE");
-    expect(ogImage).toContain("VOICE-FIRST / CALLS / LIVE CONVERSATIONS / TEXT / EMAIL");
-    expect(ogImage).toContain("ONE WORKSPACE / TRYWIRELINE.COM");
+
+    expect(ogImage).toContain("WIRE YOUR");
+    expect(ogImage).toContain("PHONE BOT");
+    expect(ogImage).toContain("CALL / EMAIL / TEXT");
+    expect(ogImage).toContain("TRYWIRELINE.COM");
+    expect(ogImage).not.toContain("ONE WORKSPACE");
+    expect(ogImage).not.toContain("VOICE-FIRST");
     expect(ogImage).not.toContain("Voice agents that");
     expect(ogImage).not.toContain("Build free. Go live from $19/mo.");
     expect(ogImage).not.toContain("·");
