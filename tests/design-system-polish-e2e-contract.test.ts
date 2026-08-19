@@ -15,9 +15,9 @@ describe("design system polish e2e verified wins", () => {
       'const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"]',
     );
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;');
+    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
     expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain("{HERO_CHANNELS.map((label) => (");
+    expect(landing).toContain("{HERO_CHANNELS.map((label) =>");
     expect(landing).not.toContain("landing-home__solution-icon");
     expect(landing).not.toContain("landing-home__compact-icon");
     expect(landing).not.toContain("landing-stage__lane-icon");
@@ -56,7 +56,7 @@ describe("design system polish e2e verified wins", () => {
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
-  it("keeps Bot labels in Title Case while WIRELINE stays the brand wordmark", () => {
+  it("keeps Bot labels in Title Case and BotBound in canonical mixed case", () => {
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain('createHeadline: "Build Your Bot"');
     expect(copy).toContain('runHeadline: "Your Bot Is Live"');
@@ -66,6 +66,8 @@ describe("design system polish e2e verified wins", () => {
     expect(copy).toContain(
       "Treat workspace architecture as product proof, never as a marketing headline.",
     );
-    expect(copy).toContain("Render the WIRELINE brand name in uppercase everywhere it is customer-visible");
+    expect(copy).toContain(
+      "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible",
+    );
   });
 });
