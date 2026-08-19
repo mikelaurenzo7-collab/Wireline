@@ -32,10 +32,24 @@ export type PostCreateWizardPayload = {
   identityBootstrapComplete?: boolean;
 };
 
+function persistPostCreateWizardPayload(payload: PostCreateWizardPayload): void {
+  sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify(payload));
+}
+
+/** Start a fresh post-create guide at Train. */
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
   try {
-    sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify(payload));
+    persistPostCreateWizardPayload(payload);
     sessionStorage.setItem(POST_CREATE_WIZARD_STEP_KEY, "train");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+/** Update background provisioning state without moving the user's current step. */
+export function updatePostCreateWizard(payload: PostCreateWizardPayload): void {
+  try {
+    persistPostCreateWizardPayload(payload);
   } catch {
     /* ignore quota / private mode */
   }
