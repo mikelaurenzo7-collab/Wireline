@@ -166,7 +166,7 @@ export async function listAgentMailInboxes(apiKey: string): Promise<AgentMailInb
 export async function createAgentMailInbox(
   apiKey: string,
   username: string,
-  displayName = "Wireline",
+  displayName = "BotBound",
 ): Promise<AgentMailInbox> {
   const { status, body } = await agentMailJson(apiKey, "/inboxes", {
     method: "POST",
@@ -208,12 +208,12 @@ export async function resolveAgentMailInbox(
 
   if (!isAgentMailManagedAddress(wanted)) {
     throw new AgentMailConnectError(
-      "That address is not in this AgentMail org. Free-tier inboxes are @agentmail.to. Custom domains such as trywireline.com need AgentMail Developer, then an inbox on that domain.",
+      "That address is not in this AgentMail org. Free-tier inboxes are @agentmail.to. Custom domains such as botbound.me need AgentMail Developer, then an inbox on that domain.",
     );
   }
   const username = agentmailLocalPart(wanted);
   if (!username) {
-    throw new AgentMailConnectError("Use a simple inbox name such as trywireline@agentmail.to.");
+    throw new AgentMailConnectError("Use a simple inbox name such as botbound@agentmail.to.");
   }
   return createAgentMailInbox(apiKey, username);
 }
