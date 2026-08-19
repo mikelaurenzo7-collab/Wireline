@@ -29,12 +29,13 @@ describe("BotBound managed Bot identity", () => {
     expect(ownership).toContain('input.agentId !== undefined ? { agentId: input.agentId } : {}');
   });
 
-  it("uses a verified custom domain when available and falls back rather than failing Bot creation", () => {
+  it("uses the configured custom domain as a launch invariant and fails closed when it is not ready", () => {
     const routes = read("src/routes/agentmail-routes.ts");
     expect(routes).toContain("managedMailboxDomain()");
     expect(routes).toContain("AGENTMAIL_FREE_DOMAIN");
-    expect(routes).toContain("custom-domain provisioning fell back to AgentMail domain");
-    expect(routes).toContain("usedCustomDomain: false");
+    expect(routes).toContain("Managed AgentMail custom-domain provisioning failed closed");
+    expect(routes).toContain("throw error");
+    expect(routes).not.toContain("custom-domain provisioning fell back to AgentMail domain");
   });
 
   it("protects platform-managed mailboxes from the legacy AgentMail disconnect path", () => {
