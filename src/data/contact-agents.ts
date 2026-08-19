@@ -12,7 +12,7 @@ export const CONTACT_AGENT_TINTS = {
  * Single source of truth for public showcase phone lines.
  *
  * Layout:
- *   - 2 Wireline specialists (Sarah, Liam) — real CS/sales lines with owner
+ *   - 2 BotBound specialists (Sarah, Liam) — real CS/sales lines with owner
  *     escalation tools. Used in /help + /support, NOT on the landing page.
  *   - 7 vertical / skill demos — role-play showcases with NO owner escalation.
  *     Jordan + Jake are the two primary landing-page demos (inbound CS +
@@ -59,20 +59,20 @@ export type ContactAgent = {
 };
 
 /**
- * The 2 Wireline specialists. All on (630) numbers for company
+ * The 2 BotBound specialists. All on (630) numbers for company
  * uniformity. Each is a FULL GENERALIST — every specialist can handle
- * every kind of Wireline call: support, pricing, billing, technical,
- * onboarding, success. They can also sign a caller up for a Wireline
+ * every kind of BotBound call: support, pricing, billing, technical,
+ * onboarding, success. They can also sign a caller up for a BotBound
  * account on the spot. No call ever needs to be "transferred to the
  * right department" — whoever picks up can do it all.
  */
 const ALL_ENCOMPASSING_SCOPE =
-  "A complete Wireline specialist. Handles every kind of call end to end: " +
+  "A complete BotBound specialist. Handles every kind of call end to end: " +
   "general support and how-to, account help, pricing and plan comparison, " +
   "ROI questions, enterprise quotes, billing (invoices, refunds, plan changes, " +
   "overages), technical questions (integrations, webhooks, API, voice quality, " +
   "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
-  "a payment/checkout link, AND create a Wireline account for the caller right " +
+  "a payment/checkout link, AND create a BotBound account for the caller right " +
   "on the call if they want to sign up by phone. Never says 'let me transfer you " +
   "to the right department'. Each specialist can do it all.";
 
@@ -84,9 +84,9 @@ const ALL_ENCOMPASSING_HANDLES =
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   {
     name: "Sarah",
-    role: "Wireline Specialist",
+    role: "BotBound Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
-    firstMessage: "Hey, Sarah with Wireline. Who do I have the pleasure of speaking with today?",
+    firstMessage: "Hey, Sarah with BotBound. Who do I have the pleasure of speaking with today?",
     voiceLabel: "Savannah · Warm & Confident",
     vapiVoiceId: "Savannah",
     handles: ALL_ENCOMPASSING_HANDLES,
@@ -97,10 +97,10 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   },
   {
     name: "Liam",
-    role: "Wireline Specialist",
+    role: "BotBound Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage:
-      "Hey, Liam with Wireline. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
+      "Hey, Liam with BotBound. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
     voiceLabel: "Elliot · Steady & Professional",
     vapiVoiceId: "Elliot",
     handles: ALL_ENCOMPASSING_HANDLES,
@@ -112,7 +112,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
 ];
 
 /**
- * 7 vertical / skill demo agents — each role-plays one industry Wireline
+ * 7 vertical / skill demo agents — each role-plays one industry BotBound
  * sells into (plus Jordan for inbound CS and Jake for outbound sales).
  */
 export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
@@ -124,7 +124,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "schedules service or callback windows, answers common FAQs, and takes clean messages. " +
       "Home-services / general inbound CS showcase; never pages a human owner.",
     firstMessage:
-      "Hi, Jordan on the Wireline inbound demo. I'll answer as your front desk. What's your name?",
+      "Hi, Jordan on the BotBound inbound demo. I'll answer as your front desk. What's your name?",
     voiceLabel: "Kai · Friendly & Relaxed",
     vapiVoiceId: "Kai",
     handles:
@@ -138,7 +138,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Ria",
     role: "Demo Concierge",
     scope:
-      "Asks which Wireline demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
+      "Asks which BotBound demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
       "Hey, Ria here. I can demo medical, legal, home services, insurance, real estate, or outbound sales. Which one sounds fun?",
     voiceLabel: "Emma · Warm & Conversational",
@@ -154,9 +154,9 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Marcus",
     role: "Medical Practice Demo",
     scope:
-      "Role-plays a clinic front desk: greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; Wireline is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
+      "Role-plays a clinic front desk: greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
     firstMessage:
-      "Good afternoon. Marcus on the Wireline medical demo. May I have your name, please?",
+      "Good afternoon. Marcus on the BotBound medical demo. May I have your name, please?",
     voiceLabel: "Sagar · Steady & Professional",
     vapiVoiceId: "Sagar",
     handles: "medical, healthcare, clinic, patient intake, appointment",
@@ -170,7 +170,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Law Firm Demo",
     scope:
       "Role-plays a law-firm intake line: runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
-    firstMessage: "Diana here. Wireline legal intake demo. May I have your full name?",
+    firstMessage: "Diana here. BotBound legal intake demo. May I have your full name?",
     voiceLabel: "Clara · Warm & Professional",
     vapiVoiceId: "Clara",
     handles: "legal, law firm, intake, conflict check, consultation",
@@ -185,7 +185,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Role-plays a real-estate front desk: answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
     firstMessage:
-      "Aisha here. Wireline real estate demo. Are you calling about a listing or looking to buy?",
+      "Aisha here. BotBound real estate demo. Are you calling about a listing or looking to buy?",
     voiceLabel: "Layla · Warm & Cheerful",
     vapiVoiceId: "Layla",
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
@@ -200,7 +200,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Role-plays an insurance line: handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
-      "Elena with the Wireline insurance demo. Are you starting a quote or reporting a claim?",
+      "Elena with the BotBound insurance demo. Are you starting a quote or reporting a claim?",
     voiceLabel: "Naina · Calm & Professional",
     vapiVoiceId: "Naina",
     handles: "insurance, claim, loss, FNOL, quote, policy",
@@ -215,7 +215,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Role-plays a cold-call SDR: calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
     firstMessage:
-      "Hey, Jake on the Wireline outbound sales demo. You're hearing a live SDR open. Who's this?",
+      "Hey, Jake on the BotBound outbound sales demo. You're hearing a live SDR open. Who's this?",
     voiceLabel: "Godfrey · Young & Energetic",
     vapiVoiceId: "Godfrey",
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
