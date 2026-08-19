@@ -5,7 +5,6 @@ import { botMarkFor, type BotMarkMotif } from "../lib/bot-mark";
 type BotMarkStyle = CSSProperties & {
   "--wl-bot-mark-wire": string;
   "--wl-bot-mark-accent": string;
-  "--wl-bot-mark-ink": string;
   "--wl-bot-mark-halo": string;
   "--wl-bot-mark-phase": string;
 };
@@ -48,7 +47,7 @@ function WireGlyph({
     >
       <g transform={transform}>
         {MOTIF_PATHS[motif].map((path) => (
-          <path key={path} d={path} />
+          <path key={path} d={path} pathLength="100" />
         ))}
         <circle className="wl-bot-mark__anchor" cx={anchor.x} cy={anchor.y} r="1.35" />
       </g>
@@ -75,13 +74,11 @@ export default function BotMark({
 }) {
   const mark = botMarkFor({ seed, name });
   const accessibleLabel = title || `${name || "Bot"} mark`;
-  const showMicroMonogram = !imageUrl && size >= 28;
   const style: BotMarkStyle = {
     width: size,
     height: size,
     "--wl-bot-mark-wire": mark.palette.wire,
     "--wl-bot-mark-accent": mark.palette.accent,
-    "--wl-bot-mark-ink": mark.palette.ink,
     "--wl-bot-mark-halo": mark.palette.halo,
     "--wl-bot-mark-phase": `${mark.phaseMs}ms`,
   };
@@ -114,15 +111,6 @@ export default function BotMark({
               mirror={mark.mirror}
               anchor={mark.anchor}
             />
-            {showMicroMonogram ? (
-              <span
-                aria-hidden="true"
-                className="wl-bot-mark__monogram"
-                style={{ fontSize: Math.min(14, Math.max(7, Math.round(size * 0.18))) }}
-              >
-                {mark.initial}
-              </span>
-            ) : null}
           </>
         )}
       </span>
