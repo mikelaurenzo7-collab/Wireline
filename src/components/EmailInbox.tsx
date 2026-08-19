@@ -228,27 +228,32 @@ export default function EmailInbox({
     }
   };
 
+  const persistOutcome = async (status: OutcomeStatus) => {
+    if (!selectedId) return;
+    const response = await authFetch(`/api/emails/threads/${selectedId}/outcome`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    const body = (await response.json().catch(() => null)) as {
+      thread?: Record<string, unknown>;
+      error?: string;
+    } | null;
+    if (!response.ok || !body?.thread)
+      throw new Error(body?.error || "Could not update this conversation.");
+    const updated = normalizeThread(body.thread);
+    setThreads((current) =>
+      current.map((thread) => (thread.id === updated.id ? updated : thread)),
+    );
+    setDetail((current) => (current ? { ...current, thread: updated } : current));
+  };
+
   const updateOutcome = async (status: OutcomeStatus) => {
     if (!selectedId || outcomeBusy) return;
     setOutcomeBusy(status);
     setDetailError(null);
     try {
-      const response = await authFetch(`/api/emails/threads/${selectedId}/outcome`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      const body = (await response.json().catch(() => null)) as {
-        thread?: Record<string, unknown>;
-        error?: string;
-      } | null;
-      if (!response.ok || !body?.thread)
-        throw new Error(body?.error || "Could not update this conversation.");
-      const updated = normalizeThread(body.thread);
-      setThreads((current) =>
-        current.map((thread) => (thread.id === updated.id ? updated : thread)),
-      );
-      setDetail((current) => (current ? { ...current, thread: updated } : current));
+      await persistOutcome(status);
     } catch (cause) {
       setDetailError(cause instanceof Error ? cause.message : "Could not update this conversation.");
     } finally {
@@ -273,7 +278,10 @@ export default function EmailInbox({
       setDetail((current) =>
         current ? { ...current, handoff: body.handoff || null } : current,
       );
-      await updateOutcome("escalated");
+      // Handoff creation and thread status are two durable writes. Do not route
+      // the second through updateOutcome(): its user-action busy guard is
+      // intentionally active while this handoff request is in flight.
+      await persistOutcome("escalated");
     } catch (cause) {
       setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
     } finally {
@@ -331,7 +339,7 @@ export default function EmailInbox({
           {notice}
         </StatusNotice>
       ) : null}
-      {error ? (
+      {error && threads.length ? (
         <StatusNotice tone="destructive" title="Inbox unavailable" className="mx-3 mt-3 sm:mx-4">
           {error}
         </StatusNotice>
@@ -341,7 +349,19 @@ export default function EmailInbox({
         <div
           className={`min-h-0 overflow-y-auto ${selectedId ? "hidden lg:block" : "block"} border-r border-border`}
         >
-          {!visibleThreads.length ? (
+          {error && !threads.length ? (
+            <EmptyState
+              icon={<Mail className="size-5" />}
+              title="Inbox unavailable"
+              description={error}
+              density="compact"
+              action={
+                <Button type="button" variant="secondary" size="sm" onClick={() => void loadThreads()}>
+                  Retry
+                </Button>
+              }
+            />
+          ) : !visibleThreads.length ? (
             <EmptyState
               icon={<Mail className="size-5" />}
               title={agentId ? "No email for this Bot" : "No email yet"}
