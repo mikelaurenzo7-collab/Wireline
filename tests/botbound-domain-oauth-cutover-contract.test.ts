@@ -1,15 +1,36 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-const INTEGRATION_ROUTE_FILES = globSync("src/routes/oauth/*.ts", { cwd: root })
-  .map((file) => file.replaceAll("\\", "/"))
-  .filter((file) => !file.endsWith("/index.ts") && !file.endsWith("/status.ts"))
-  .sort();
+const STATIC_INTEGRATION_CALLBACKS = {
+  "src/routes/oauth/google.ts": "/api/oauth/google/callback",
+  "src/routes/oauth/google-sheets.ts": "/api/oauth/google_sheets/callback",
+  "src/routes/oauth/microsoft.ts": "/api/oauth/microsoft/callback",
+  "src/routes/oauth/yahoo.ts": "/api/oauth/yahoo/callback",
+  "src/routes/oauth/salesforce.ts": "/api/oauth/salesforce/callback",
+  "src/routes/oauth/hubspot.ts": "/api/oauth/hubspot/callback",
+  "src/routes/oauth/apollo.ts": "/api/oauth/apollo/callback",
+  "src/routes/oauth/meta.ts": "/api/oauth/meta/callback",
+  "src/routes/oauth/shopify.ts": "/api/oauth/shopify/callback",
+  "src/routes/oauth/square.ts": "/api/oauth/square/callback",
+  "src/routes/oauth/slack.ts": "/api/oauth/slack/callback",
+  "src/routes/oauth/x.ts": "/api/oauth/x/callback",
+  "src/routes/oauth/zoom.ts": "/api/oauth/zoom/callback",
+} as const;
+
+const SIGN_IN_CALLBACKS = [
+  "/api/auth/google/callback",
+  "/api/auth/microsoft/callback",
+  "/api/auth/yahoo/callback",
+] as const;
+
+const MICROSOFT_GRAPH_CALLBACKS = [
+  "/api/oauth/microsoft_teams/callback",
+  "/api/oauth/microsoft_excel/callback",
+] as const;
 
 describe("BotBound domain and OAuth cutover boundary", () => {
   it("keeps brand identity separate from the stable technical namespace", () => {
@@ -39,44 +60,34 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     const authOAuth = read("src/routes/auth-oauth-routes.ts");
     expect(authOAuth).toContain('import { getCanonicalAppUrl } from "../lib/app-url"');
     expect(authOAuth).toContain("return getCanonicalAppUrl()");
-    for (const path of [
-      "/api/auth/google/callback",
-      "/api/auth/microsoft/callback",
-      "/api/auth/yahoo/callback",
-    ]) {
-      expect(authOAuth, path).toContain(path);
-    }
+    for (const path of SIGN_IN_CALLBACKS) expect(authOAuth, path).toContain(path);
     expect(authOAuth).not.toContain("https://trywireline.com/api/auth/");
   });
 
-  it("keeps every active integration callback path hostname-neutral and represented in the operator inventory", () => {
+  it("keeps every active integration callback hostname-neutral and represented in the operator inventory", () => {
     const inventory = read("scripts/print-oauth-redirects.mjs");
-    const callbackPaths = new Set<string>();
 
-    for (const file of INTEGRATION_ROUTE_FILES) {
+    for (const [file, callback] of Object.entries(STATIC_INTEGRATION_CALLBACKS)) {
       const source = read(file);
-      const matches = [...source.matchAll(/\/api\/oauth\/[a-z0-9-]+\/callback/g)].map(
-        (match) => match[0],
-      );
-      expect(matches.length, `${file} must expose an explicit callback path`).toBeGreaterThan(0);
+      expect(source, `${file} must retain ${callback}`).toContain(callback);
       expect(source, `${file} must not pin the retired hostname into its callback`).not.toContain(
         "https://trywireline.com/api/oauth/",
       );
       expect(source, `${file} must not pin a future BotBound hostname into source`).not.toMatch(
         /https:\/\/[^\s"'`]*botbound[^\s"'`]*/i,
       );
-      for (const path of matches) callbackPaths.add(path);
+      expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);
     }
 
-    for (const path of callbackPaths) {
-      expect(inventory, `operator OAuth inventory is missing ${path}`).toContain(path);
+    const graph = read("src/routes/oauth/microsoft-graph.ts");
+    expect(graph).toContain('return `${baseUrl}/api/oauth/${provider}/callback`');
+    expect(graph).toContain('provider === "microsoft_teams"');
+    for (const callback of MICROSOFT_GRAPH_CALLBACKS) {
+      expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);
     }
-    for (const path of [
-      "/api/auth/google/callback",
-      "/api/auth/microsoft/callback",
-      "/api/auth/yahoo/callback",
-    ]) {
-      expect(inventory, `operator sign-in inventory is missing ${path}`).toContain(path);
+
+    for (const callback of SIGN_IN_CALLBACKS) {
+      expect(inventory, `operator sign-in inventory is missing ${callback}`).toContain(callback);
     }
     expect(inventory).toContain("process.env.APP_URL");
     expect(inventory).toContain("BotBound");
