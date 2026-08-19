@@ -6,6 +6,7 @@ import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AGENTMAIL_API_BASE,
   AGENTMAIL_FREE_DOMAIN,
+  AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   AgentMailConnectError,
   agentmailGrantedScopes,
   deleteAgentMailWebhook,
@@ -214,7 +215,7 @@ async function resolveManagedBotInbox(input: {
   const fallbackEmail = `${username}@${AGENTMAIL_FREE_DOMAIN}`;
   const existing = await listAgentMailInboxes(input.apiKey);
   const current = existing.find(
-    (inbox) => inbox.email === preferredEmail || inbox.email === fallbackEmail,
+    (inbox) => inbox.email === preferredEmail || (!preferredDomain && inbox.email === fallbackEmail),
   );
   if (current) {
     return {
@@ -232,11 +233,12 @@ async function resolveManagedBotInbox(input: {
       });
       return { ...inbox, usedCustomDomain: true };
     } catch (error) {
-      log.warn("Managed AgentMail custom-domain provisioning fell back to AgentMail domain", {
+      log.warn("Managed AgentMail custom-domain provisioning failed closed", {
         agentId: input.agentId,
         domain: preferredDomain,
         error: getErrorMessage(error),
       });
+      throw error;
     }
   }
 
@@ -250,7 +252,8 @@ async function resolveManagedBotInbox(input: {
  * Platform-managed Bot identity. New users should never need to know AgentMail
  * exists: BotBound provisions the mailbox, binds it to the Bot, and registers
  * delivery push. A verified AGENTMAIL_DEFAULT_DOMAIN is preferred when present;
- * the provider-owned domain is the safe fallback.
+ * if a custom domain is configured but not ready, provisioning fails closed
+ * instead of silently degrading to a provider-branded address.
  */
 router.post(
   "/api/agents/:agentId/managed-mailbox",
@@ -318,7 +321,7 @@ router.post(
       agentId,
       emailAddress: inbox.email,
       provider: "agentmail",
-      accessToken: encryptSecret(apiKey),
+      accessToken: encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL),
       refreshToken: null,
       expiresAt: null,
       oauthGrantedScopes: `${agentmailGrantedScopes()} ${MANAGED_SCOPE_MARKER}`,
