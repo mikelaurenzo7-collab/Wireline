@@ -11,7 +11,7 @@ import {
 const WEBSITE_FETCH_DEADLINE_MS = 10_000;
 const WEBSITE_FETCH_MAX_BYTES = 1_000_000;
 const WEBSITE_FETCH_MAX_REDIRECTS = 3;
-const WEBSITE_USER_AGENT = "WirelineKnowledgeBot/1.0 (+https://trywireline.com)";
+const WEBSITE_USER_AGENT = "BotBoundKnowledgeBot/1.0 (+https://trywireline.com)";
 const ALLOWED_CONTENT_TYPES = new Set(["text/html", "text/plain", "application/xhtml+xml"]);
 
 type WebsiteFetchErrorCode =
@@ -58,11 +58,7 @@ type PinnedGetResponse = {
 };
 
 function timeoutError(): WebsiteFetchError {
-  return new WebsiteFetchError(
-    "request_failed",
-    "The website took too long to respond.",
-    504,
-  );
+  return new WebsiteFetchError("request_failed", "The website took too long to respond.", 504);
 }
 
 function responseTooLargeError(): WebsiteFetchError {
@@ -204,9 +200,6 @@ function getPinnedPage(
         ...(isIP(destination.hostname) === 0 ? { servername: destination.hostname } : {}),
       },
       (response) => {
-        // Attach the stream error handler before any header-driven early exit.
-        // Destroying an IncomingMessage with an error before this listener exists
-        // can surface as an unhandled stream error instead of a controlled API response.
         response.once("error", finishError);
 
         const statusCode = response.statusCode || 0;
@@ -222,9 +215,6 @@ function getPinnedPage(
           return;
         }
 
-        // A redirect body is irrelevant and can be attacker-controlled. Close the
-        // one-off socket immediately after capturing Location so each hop is
-        // re-resolved and revalidated without downloading up to the full body cap.
         if (statusCode >= 300 && statusCode < 400) {
           if (settled) return;
           settled = true;
@@ -333,9 +323,7 @@ export function htmlToVisibleText(html: string): { title: string | null; text: s
   const title = titleMatch
     ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim()
     : null;
-  const text = stripUnsafeControlCharacters(
-    decodeHtmlEntities(extractVisibleHtmlText(html)),
-  )
+  const text = stripUnsafeControlCharacters(decodeHtmlEntities(extractVisibleHtmlText(html)))
     .replace(/\r/g, "")
     .replace(/[\t\f\v ]+/g, " ")
     .replace(/ *\n */g, "\n")
@@ -420,7 +408,7 @@ async function fetchPage(
   if (response.contentEncoding && response.contentEncoding !== "identity") {
     throw new WebsiteFetchError(
       "unsupported_content_encoding",
-      "That website ignored Wireline's plain-text transfer request. Try another public page.",
+      "That website ignored BotBound's plain-text transfer request. Try another public page.",
       415,
     );
   }
@@ -440,7 +428,7 @@ async function fetchPage(
   if (parsed.text.length < 40) {
     throw new WebsiteFetchError(
       "empty_content",
-      "Wireline could not find enough readable text on that page.",
+      "BotBound could not find enough readable text on that page.",
       422,
     );
   }
@@ -453,11 +441,6 @@ async function fetchPage(
   };
 }
 
-/**
- * Fetch one public HTTPS page with DNS pinning, private-network rejection,
- * redirect revalidation, one absolute deadline, a hard byte ceiling, and no
- * cookies or credentials.
- */
 export async function fetchPublicWebsiteText(rawUrl: string): Promise<PublicWebsiteText> {
   return fetchPage(
     rawUrl,
