@@ -67,7 +67,7 @@ export default function AgentStudioHome() {
         toast({
           type: "warning",
           title: "Handoff expired",
-          message: body?.error || "Open Wireline Command and capture the page again.",
+          message: body?.error || "Open BotBound Command and capture the page again.",
           duration: 10_000,
         });
         clearHandoffParam();
@@ -84,7 +84,7 @@ export default function AgentStudioHome() {
         type: "warning",
         title: "Handoff unavailable",
         message:
-          "The captured page could not be retrieved. Capture it again from Wireline Command.",
+          "The captured page could not be retrieved. Capture it again from BotBound Command.",
         duration: 10_000,
       });
       clearHandoffParam();
