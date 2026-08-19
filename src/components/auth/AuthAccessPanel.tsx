@@ -370,7 +370,7 @@ export default function AuthAccessPanel({
   return (
     <section className={cn("wl-access-panel", embedded && "is-embedded", className)} aria-label="Account access">
       <div className="wl-access-panel__brand">
-        <Link to="/" aria-label="WIRELINE home">
+        <Link to="/" aria-label="BotBound home">
           <WirelineLockup size={embedded ? "standard" : "large"} />
         </Link>
       </div>
