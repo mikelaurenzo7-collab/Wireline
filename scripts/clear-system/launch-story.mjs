@@ -1,7 +1,7 @@
 /**
- * Launch story. One workspace, voice-first configurable Bots, and role
- * templates are the active truth across metadata, conversion, and billing.
- * Retired brand eras must not return to active product surfaces.
+ * Launch story. WIRELINE is a Phone Bot product customers can enter immediately.
+ * Public marketing leads with desire and proof; implementation architecture stays
+ * subordinate to the customer promise. Technical voice identifiers remain valid.
  */
 const RETIRED_PRODUCT_TERMS = [
   "Ametrine Precision",
@@ -25,32 +25,32 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>WIRELINE \| VOICE BOTS THAT GET THE WORK DONE<\/title>/,
-    "static metadata must state the current product promise",
+    /<title>WIRELINE \| WIRE YOUR PHONE BOT<\/title>/,
+    "static metadata must use the Phone Bot hero",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace\./,
-    "static metadata must state the current product category and value",
+    /Phone Bot[^<]*calls, text, and email/i,
+    "static metadata must make the three customer channels clear",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "WIRELINE \| VOICE BOTS THAT GET THE WORK DONE"/,
-    "runtime metadata must state the current product promise",
+    /DEFAULT_TITLE = "WIRELINE \| WIRE YOUR PHONE BOT"/,
+    "runtime metadata must use the Phone Bot hero",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace\./,
-    "runtime metadata must use the current product description",
+    /Phone Bot[^"`]*calls, text, and email/i,
+    "runtime metadata must make the three customer channels clear",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"WIRELINE \| VOICE BOTS THAT GET THE WORK DONE"/,
-    "install metadata must use the canonical voice-first Bot category",
+    /"name"\s*:\s*"WIRELINE \| WIRE YOUR PHONE BOT"/,
+    "install metadata must use the canonical Phone Bot promise",
   );
   mustExclude(
     "public/site.webmanifest",
@@ -62,16 +62,16 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"BOTS THAT GET THE WORK DONE"/,
-    "shared Bot product model must preserve the approved outcome promise",
+    /slogan:\s*"WIRE YOUR PHONE BOT"/,
+    "shared Bot product model must preserve the approved hero",
   );
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /supportingLine:\s*"VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"/,
-    "shared Bot product model must keep every core conversation channel explicit",
+    /supportingLine:\s*"CALL · TEXT · EMAIL"/,
+    "shared Bot product model must keep every customer channel explicit",
   );
-  for (const productType of ["Voice Bot", "Conversation Bot", "Human Bot"]) {
+  for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"]) {
     mustInclude(
       "src/lib/bot-product.ts",
       botProduct,
@@ -88,17 +88,23 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /title:\s*"ONE WORKSPACE\. EVERY BOT\."/,
-    "shared Bot product model must preserve the one-workspace architecture",
+    /title:\s*"YOUR BOT\. ALREADY MOVING\."/,
+    "shared product model must preserve a desire-led operating promise",
   );
-  for (const channel of ["Voice", "Text", "Email"]) {
+  for (const channel of ["Call", "Text", "Email"]) {
     mustInclude(
       "src/lib/bot-product.ts",
       botProduct,
       new RegExp(`label:\\s*"${channel}"`),
-      `shared Bot product model must expose ${channel.toLowerCase()} as a configurable channel`,
+      `shared Bot product model must expose ${channel.toLowerCase()} as a customer channel`,
     );
   }
+  mustInclude(
+    "src/lib/bot-product.ts",
+    botProduct,
+    /key:\s*"voice"\s+as\s+const/,
+    "technical voice channel identity must remain stable behind Phone language",
+  );
   mustExclude(
     "src/lib/bot-product.ts",
     botProduct,
@@ -109,26 +115,38 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /MARKETING_VOICE\.headline/,
-    "landing must consume the shared Bot headline",
+    /<AuthAccessPanel embedded initialMode="signin"\s*\/>/,
+    "landing must embed the real account-access panel",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /BOT_ROLE_TEMPLATES\.map/,
-    "landing must expose the shared role-template catalog",
+    /<span>WIRE YOUR<\/span>[\s\S]*<span>PHONE BOT<\/span>/,
+    "landing must render the approved two-line hero",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Runtime\s+Balance/,
-    "landing economics must explain prepaid Runtime Balance",
+    /FEATURED_TEMPLATE_KEYS[\s\S]*BOT_ROLE_TEMPLATES\.find/,
+    "landing must curate starters from the shared role-template catalog",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /template\.moves\.map/,
+    "landing role cards must expose role-specific playbooks",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /template\.category|Business and personal templates|ONE WORKSPACE\. EVERY BOT/i,
+    "landing must not revive retired audience taxonomy or architecture-first marketing",
   );
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,
     /MARKETING_VOICE|BOT_MARKETING_VOICE/,
-    "landing metadata or composition must preserve shared product voice",
+    "landing metadata must preserve shared product voice",
   );
 
   mustInclude(
