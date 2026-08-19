@@ -4,13 +4,13 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   {
     type: "function",
     name: "get_caller_info",
-    description: "Retrieve caller identity and account context available to this Wireline agent.",
+    description: "Retrieve caller identity and account context available to this BotBound Bot.",
     parameters: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     type: "function",
     name: "search_knowledge_base",
-    description: "Search approved Wireline agent knowledge and business policy content.",
+    description: "Search approved BotBound Bot knowledge and business policy content.",
     parameters: {
       type: "object",
       properties: {
@@ -70,7 +70,7 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   {
     type: "function",
     name: "send_follow_up",
-    description: "Send a customer follow-up message through an enabled Wireline messaging channel.",
+    description: "Send a customer follow-up message through an enabled BotBound messaging channel.",
     parameters: {
       type: "object",
       properties: {
