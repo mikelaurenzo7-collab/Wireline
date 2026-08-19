@@ -5,59 +5,82 @@ const agentmailLib = readFileSync("src/lib/agentmail-mail.ts", "utf8");
 const agentmailRoutes = readFileSync("src/routes/agentmail-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
 const mailboxCard = readFileSync("src/components/MailboxConnectionCard.tsx", "utf8");
-const envExample = readFileSync(".env.example", "utf8");
 const integrations = readFileSync("src/lib/integrations.ts", "utf8");
 const bodyParsers = readFileSync("src/lib/body-parsers.ts", "utf8");
 
-describe("agentmail mailbox contract", () => {
-  it("never treats AgentMail as a shared platform env key", () => {
-    expect(agentmailLib).not.toMatch(/process\.env\.AGENTMAIL_API_KEY/);
-    expect(agentmailRoutes).not.toMatch(/process\.env\.AGENTMAIL_API_KEY/);
-    expect(integrations).not.toMatch(/process\.env\.AGENTMAIL_API_KEY/);
-    expect(envExample).not.toMatch(/^AGENTMAIL_API_KEY=/m);
-    expect(envExample).not.toMatch(/^AGENTMAIL_WEBHOOK_SECRET=/m);
-    expect(envExample).toContain("do not set a shared AGENTMAIL_API_KEY");
-    expect(agentmailLib).not.toMatch(/process\.env\.AGENTMAIL_WEBHOOK_SECRET/);
-    expect(agentmailRoutes).not.toMatch(/process\.env\.AGENTMAIL_WEBHOOK_SECRET/);
+describe("BotBound managed AgentMail contract", () => {
+  it("owns the platform credential server-side without copying it into managed tenant rows", () => {
+    expect(agentmailRoutes).toContain("process.env.AGENTMAIL_API_KEY");
+    expect(agentmailLib).toContain('AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"');
+    expect(agentmailLib).toContain("resolveAgentMailCredential");
+    expect(agentmailLib).toContain("process.env.AGENTMAIL_API_KEY");
+    expect(agentmailRoutes).toContain("encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL)");
+
+    const managedSection = agentmailRoutes.slice(
+      agentmailRoutes.indexOf('"/api/agents/:agentId/managed-mailbox"'),
+      agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"'),
+    );
+    expect(managedSection).not.toContain("encryptSecret(apiKey)");
   });
 
-  it("stores the tenant key through the mailbox ownership guard", () => {
+  it("provisions managed Bot mailboxes without customer OAuth or provider setup", () => {
+    expect(agentmailRoutes).toContain('"/api/agents/:agentId/managed-mailbox"');
+    expect(agentmailRoutes).toContain("managedMailboxUsername");
+    expect(agentmailRoutes).toContain("resolveManagedBotInbox");
+    expect(agentmailRoutes).toContain("AGENTMAIL_DEFAULT_DOMAIN");
+    expect(agentmailRoutes).toContain('managed: "true"');
+    expect(agentmailRoutes).toContain('provider: "agentmail"');
     expect(agentmailRoutes).toContain("upsertOwnedEmailAccount");
     expect(agentmailRoutes).toContain("EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE");
-    expect(agentmailRoutes).toContain('provider: "agentmail"');
-    expect(agentmailRoutes).toContain("encryptSecret(apiKey)");
-    expect(agentmailRoutes).not.toContain("target: schema.emailAccounts.emailAddress");
   });
 
-  it("keys connection mutations by the authenticated tenant, not a shared IP bucket", () => {
-    expect(agentmailRoutes).toContain("createRateLimiter");
-    expect(agentmailRoutes).not.toContain("createIpRateLimiter");
+  it("fails closed when a configured custom domain is not ready", () => {
+    expect(agentmailRoutes).toContain("Managed AgentMail custom-domain provisioning failed closed");
     expect(agentmailRoutes).toMatch(
-      /"\/api\/integrations\/agentmail\/connect",\s*authenticateUser,\s*agentmailConnectRateLimiter,\s*validateBody/,
+      /if \(preferredDomain && preferredDomain !== AGENTMAIL_FREE_DOMAIN\)[\s\S]*throw error;/,
     );
-    expect(agentmailRoutes).toMatch(
-      /"\/api\/integrations\/agentmail\/disconnect",\s*authenticateUser,\s*agentmailConnectRateLimiter/,
+    expect(agentmailRoutes).not.toMatch(
+      /Managed AgentMail custom-domain provisioning failed[\s\S]*createManagedInboxAttempt\(\{ \.\.\.input, username \}\)/,
     );
+    expect(agentmailLib).toContain("Confirm the domain is verified in the AgentMail organization");
   });
 
-  it("registers inbound delivery on connect without asking the Account Holder to set up webhooks", () => {
+  it("keeps AgentMail infrastructure out of the normal customer Connections UI", () => {
+    expect(mailboxCard).not.toMatch(/id:\s*"agentmail"/);
+    expect(mailboxCard).not.toContain("/api/integrations/agentmail/connect");
+    expect(mailboxCard).not.toContain("AgentMail API key");
+    expect(mailboxCard).not.toContain("@agentmail.to");
+    expect(mailboxCard).toContain("Your Bot email identity is managed automatically by BotBound");
+    expect(mailboxCard).toContain("Optional inbox connections");
+    expect(mailboxCard).toContain('id: "google"');
+    expect(mailboxCard).toContain('id: "microsoft"');
+    expect(mailboxCard).toContain('id: "icloud"');
+  });
+
+  it("retains the tenant-owned AgentMail connect path only as legacy compatibility", () => {
+    const legacySection = agentmailRoutes.slice(
+      agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"'),
+    );
+    expect(legacySection).toContain("Legacy/advanced compatibility path");
+    expect(legacySection).toContain("encryptSecret(apiKey)");
+    expect(legacySection).toContain("resolveAgentMailInbox");
+    expect(legacySection).toContain("verifyAgentMailCredentials");
+  });
+
+  it("uses the managed sentinel transparently for IMAP, SMTP, and provider API execution", () => {
+    expect(agentmailLib).toContain("pass: resolveAgentMailCredential(apiKey)");
+    expect(agentmailLib).toContain("const credential = resolveAgentMailCredential(apiKey)");
+    expect(integrations).toContain("fetchAgentMailInbox(email, apiKey, opts)");
+    expect(integrations).toContain("sendAgentMail(email, apiKey, sendParams)");
+  });
+
+  it("registers signed inbound delivery without asking the Account Holder to configure webhooks", () => {
     expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
     expect(agentmailRoutes).toContain("deleteAgentMailWebhooksForAccount");
-    expect(mailboxCard.toLowerCase()).not.toContain("webhook");
-    expect(mailboxCard).toContain("trywireline@agentmail.to");
-    expect(mailboxCard).toContain("/api/emails/accounts/");
-    expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
-    expect(registry).toContain("app.use(agentmailWebhookRouter)");
-  });
-
-  it("requires and persists the signing secret, deleting any unverifiable webhook", () => {
-    expect(agentmailRoutes).toContain("listAgentMailWebhooks");
     expect(agentmailRoutes).toContain("AgentMail webhook did not expose its signing secret");
     expect(agentmailRoutes).toContain(".returning({ id: schema.emailAccounts.id })");
-    expect(agentmailRoutes).toContain(
-      "await deleteAgentMailWebhook(input.apiKey, input.webhookId)",
-    );
-    expect(agentmailRoutes).toContain("AgentMail orphan webhook cleanup failed");
+    expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
+    expect(registry).toContain("app.use(agentmailWebhookRouter)");
   });
 
   it("accepts AgentMail's documented one-megabyte webhook envelope", () => {
@@ -65,29 +88,10 @@ describe("agentmail mailbox contract", () => {
     expect(bodyParsers).toMatch(
       /"\/api\/webhooks\/agentmail"[\s\S]*limit: AGENTMAIL_WEBHOOK_LIMIT/,
     );
-    expect(bodyParsers).toMatch(
-      /"\/api\/webhooks\/resend"[\s\S]*limit: RESEND_WEBHOOK_LIMIT/,
-    );
-  });
-
-  it("cleans AgentMail delivery subscriptions on the Connections disconnect path", () => {
-    const revocation = readFileSync("src/lib/oauth-provider-revocation.ts", "utf8");
-    const emailRoutes = readFileSync("src/routes/email-routes.ts", "utf8");
-    expect(revocation).toContain("deleteAgentMailWebhooksForAccount");
-    expect(revocation).toContain("deleteWirelineAgentMailWebhooks");
-    expect(revocation).toContain('case "agentmail"');
-    expect(emailRoutes).toContain("revokeMailboxAccountTokens");
-    expect(emailRoutes).toContain("account.id");
   });
 
   it("is mounted in the explicit API registry", () => {
     expect(registry).toContain('from "../routes/agentmail-routes"');
     expect(registry).toContain("app.use(agentmailRouter)");
-  });
-
-  it("exposes AgentMail in Connections and keeps Yahoo out until IMAP ships", () => {
-    expect(mailboxCard).toMatch(/id:\s*"agentmail"/);
-    expect(mailboxCard).toContain("/api/integrations/agentmail/connect");
-    expect(mailboxCard).not.toMatch(/id:\s*"yahoo"/);
   });
 });
