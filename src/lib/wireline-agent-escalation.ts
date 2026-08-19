@@ -123,7 +123,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "showcase audio trigger ('can I hear it')",
   "competitor comparison (factual, no disparagement)",
   "data security questions (SOC 2 in progress, HIPAA mode, encryption)",
-  "what Wireline is + what problem it solves",
+  "what BotBound is + what problem it solves",
   "where we're based",
   "do we have a free trial",
   "how much does it cost",
