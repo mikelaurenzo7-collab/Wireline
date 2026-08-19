@@ -67,7 +67,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   for (const [pattern, description] of [
     [/<AuthAccessPanel embedded initialMode="signin"\s*\/>/, "root landing must embed real account access"],
     [/<span>WIRE YOUR<\/span>[\s\S]*<span>PHONE BOT<\/span>/, "root landing must use the approved two-line hero"],
-    [/landing-prestige__channels[\s\S]*CALL[\s\S]*EMAIL[\s\S]*TEXT/, "root landing must show Call, Email, and Text directly beneath the hero"],
+    [/const HERO_CHANNEL_ORDER = \["voice", "email", "text"\] as const;/, "root landing must preserve the intentional Call, Email, Text order"],
+    [/BOT_CHANNELS\.find\(\(candidate\) => candidate\.key === key\)/, "root landing hero labels must come from the canonical channel catalog"],
     [/size=\{30\}[\s\S]*active/, "Jordan identity must use a compact animated Bot signal"],
     [/FEATURED_TEMPLATE_KEYS/, "root landing must curate role starters rather than dumping every template"],
     [/template\.moves\.map/, "role starters must show role-specific playbook moves"],
