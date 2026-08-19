@@ -26,7 +26,8 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("incomingPhoneNumbers.list({ phoneNumber, limit: 1 })");
     expect(identity).toContain("Paid Bot line is not owned by the configured Twilio account");
     expect(identity).toContain("releaseTenantNumber(userId, provisioned.phoneNumber)");
-    expect(phone).toContain("provisionTenantNumber");
+    expect(identity).toContain("provisionTenantNumber(userId");
+    expect(phone).toContain("export async function provisionTenantNumber");
   });
 
   it("requires a managed custom AgentMail domain instead of provider-branded fallback", () => {
@@ -49,8 +50,8 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("if (!ensured.secret && input.hasStoredSecret) return");
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
     expect(identity).toContain("if (existing) return { ...existing, reused: true }");
-    expect(phone).toContain("alreadyAssigned");
-    expect(phone).toContain("reused: true");
+    expect(identity).toContain("reused: Boolean(provisioned.reused)");
+    expect(identity).toContain("phoneReused: phone.reused");
   });
 
   it("narrows ImapFlow search results before using array-only operations", () => {
