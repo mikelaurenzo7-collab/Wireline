@@ -45,10 +45,7 @@ export default function BillingSettings() {
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(
-    null,
-  );
-  // A failed status read must never masquerade as an unpaid/free workspace.
+  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(null);
   const [statusUnavailable, setStatusUnavailable] = useState(false);
 
   useEffect(() => {
@@ -58,9 +55,6 @@ export default function BillingSettings() {
       setLoadError(null);
       setCheckoutReturnNotice(null);
       try {
-        // Prove a returning Checkout Session before reading status so the page
-        // is correct even when Stripe webhook delivery is delayed. The webhook
-        // remains the primary writer; verification is idempotent against it.
         const params = new URLSearchParams(window.location.search);
         const returnedSessionId = params.get("session_id");
         const returnFlow =
@@ -98,23 +92,11 @@ export default function BillingSettings() {
                       : "Your plan will activate automatically after Stripe confirms the funds.",
               });
             } else if (returnFlow === "runtime_balance" && verification.credit_granted) {
-              setCheckoutReturnNotice({
-                tone: "success",
-                title: "Runtime Balance added",
-                message: "Your prepaid balance is ready for calls, texts, and live work.",
-              });
+              setCheckoutReturnNotice({ tone: "success", title: "Runtime Balance added", message: "Your prepaid balance is ready for calls, texts, and live work." });
             } else if (returnFlow === "live_video" && verification.live_video_enabled) {
-              setCheckoutReturnNotice({
-                tone: "success",
-                title: "Live video activated",
-                message: "Your workspace can now use the live video add-on.",
-              });
+              setCheckoutReturnNotice({ tone: "success", title: "Live video activated", message: "Your workspace can now use the live video add-on." });
             } else if (returnFlow === "plan" && verification.synced) {
-              setCheckoutReturnNotice({
-                tone: "success",
-                title: "Plan confirmed",
-                message: "Your Wireline plan and workspace access are up to date.",
-              });
+              setCheckoutReturnNotice({ tone: "success", title: "Plan confirmed", message: "Your BotBound plan and workspace access are up to date." });
             }
           }
         }
@@ -139,8 +121,6 @@ export default function BillingSettings() {
           setLoadError("Subscription status is temporarily unavailable.");
         }
 
-        // A malformed balance body degrades only the balance line; it must not
-        // erase a successfully loaded subscription state.
         const balanceData = balanceRes.ok
           ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
           : null;
@@ -181,9 +161,7 @@ export default function BillingSettings() {
   );
   const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const canAddBalance =
-    !statusUnavailable &&
-    paidPlan &&
-    (subscription?.status === "active" || subscription?.status === "trialing");
+    !statusUnavailable && paidPlan && (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
 
@@ -222,34 +200,20 @@ export default function BillingSettings() {
         <WorkspacePageIntro title="Billing" titleHidden />
 
         {checkoutReturnNotice ? (
-          <StatusNotice
-            tone={checkoutReturnNotice.tone}
-            title={checkoutReturnNotice.title}
-            className="mb-6"
-            aria-live="polite"
-          >
+          <StatusNotice tone={checkoutReturnNotice.tone} title={checkoutReturnNotice.title} className="mb-6" aria-live="polite">
             {checkoutReturnNotice.message}
           </StatusNotice>
         ) : null}
 
         {loadError ? (
-          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">
-            {loadError}
-          </StatusNotice>
+          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">{loadError}</StatusNotice>
         ) : null}
 
-        {/*
-         * Canonical plan surface: current plan or plan picker, plan usage,
-         * Live Video add-on, invoices/payment/cancel management. Billing owns
-         * the actual balance ledger below, so the generic duplicate top-up card
-         * is intentionally suppressed here.
-         */}
         <StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />
 
         {!loading && !statusUnavailable && paidPlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Plan capacity · {plan.included_phone_numbers} live number
-            {plan.included_phone_numbers === 1 ? "" : "s"} included
+            Plan capacity · {plan.included_phone_numbers} live number{plan.included_phone_numbers === 1 ? "" : "s"} included
           </p>
         ) : null}
 
@@ -257,9 +221,7 @@ export default function BillingSettings() {
           <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-eyebrow text-muted-foreground">
-                  {CONVERSATION_BALANCE_COPY.title}
-                </p>
+                <p className="text-eyebrow text-muted-foreground">{CONVERSATION_BALANCE_COPY.title}</p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   Prepaid coverage for live voice, SMS, and enrichment beyond included plan usage.
                 </p>
@@ -274,9 +236,7 @@ export default function BillingSettings() {
               </div>
             ) : (
               <>
-                <p
-                  className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
-                >
+                <p className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}>
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -292,9 +252,7 @@ export default function BillingSettings() {
                 {canAddBalance ? (
                   <div className="mt-5 flex flex-wrap gap-2">
                     {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
-                      const minutes =
-                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ??
-                        0;
+                      const minutes = balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
                       return (
                         <Button
                           key={amount}
@@ -305,17 +263,9 @@ export default function BillingSettings() {
                           onClick={() => void addBalance(amount)}
                           disabled={topUpBusy !== null}
                           className="gap-1.5"
-                          title={
-                            minutes > 0
-                              ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate`
-                              : undefined
-                          }
+                          title={minutes > 0 ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate` : undefined}
                         >
-                          {topUpBusy === amount ? (
-                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Plus className="size-3.5" aria-hidden="true" />
-                          )}
+                          {topUpBusy === amount ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Plus className="size-3.5" aria-hidden="true" />}
                           ${amount}
                         </Button>
                       );
@@ -328,14 +278,10 @@ export default function BillingSettings() {
         </section>
 
         {actionError ? (
-          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">
-            {actionError}
-          </StatusNotice>
+          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">{actionError}</StatusNotice>
         ) : null}
 
-        <div className="mt-8">
-          <BillingTrustFooter />
-        </div>
+        <div className="mt-8"><BillingTrustFooter /></div>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );
