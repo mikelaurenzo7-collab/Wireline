@@ -4,34 +4,34 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("homepage live demo contract", () => {
-  it("keeps the hero on the canonical voice-first Bot product truth", () => {
+describe("public live demo contract", () => {
+  it("keeps the homepage on the canonical Phone Bot product truth", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("BOT_MARKETING_VOICE as MARKETING_VOICE");
-    expect(landing).toContain("MARKETING_VOICE.headline");
-    expect(landing).toContain("MARKETING_VOICE.subline");
-    expect(landing).toContain('aria-label="Bot channels"');
-    expect(landing).toContain("CORE_CHANNELS.map");
-    expect(botProduct).toContain('slogan: "BOTS THAT GET THE WORK DONE"');
-    expect(botProduct).toContain(
-      'supportingLine: "VOICE-FIRST BOTS FOR CALLS, LIVE CONVERSATIONS, TEXT, AND EMAIL"',
-    );
+    expect(landing).toContain("WIRE YOUR");
+    expect(landing).toContain("PHONE BOT");
+    expect(landing).toContain("BOT_MARKETING_VOICE.subline");
+    expect(landing).toContain('aria-label="Phone Bot channels"');
+    expect(landing).toContain("HERO_CHANNELS.map");
+    expect(botProduct).toContain('slogan: "WIRE YOUR PHONE BOT"');
+    expect(botProduct).toContain('supportingLine: "CALL · EMAIL · TEXT"');
   });
 
-  it("keeps a real protected browser demo and an honest phone fallback", () => {
+  it("keeps a real protected browser demo and an honest phone fallback on Showcase", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const showcase = read("src/pages/Showcase.tsx");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
 
-    expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('id="hear-a-demo"');
+    expect(landing).toContain('to="/showcase"');
+    expect(landing).toContain("<BotMark");
+    expect(landing).not.toContain("<BrowserCallWidget");
+    expect(showcase).toContain("<BrowserCallWidget");
+    expect(showcase).toContain('id="demo-lines"');
+    expect(showcase).toContain("CALL A DEMO LINE");
+    expect(showcase).toContain('href={`tel:${agent.tel}`}');
     expect(widget).toContain("useProtectedPublicDemo");
-    expect(landing).toContain('aria-label="Call the Public Demo Bot"');
-    expect(landing).toContain("Call Demo Bot");
-    expect(landing).toContain("HERO_DEMO_AGENT.tel");
-    expect(landing).toContain('mode: "phone"');
-    expect(widget).toContain("Demo Voice Bot");
+    expect(widget).toContain("Demo Phone Bot");
     expect(widget).toContain("Bot speaking");
     expect(widget).not.toContain("Demo Voice Agent");
     expect(widget).not.toContain("Agent speaking");
@@ -52,9 +52,10 @@ describe("homepage live demo contract", () => {
     expect(provider).not.toMatch(/Wireline voice agent/i);
   });
 
-  it("does not present illustrative workflow events as live telemetry", () => {
+  it("does not present fabricated workflow telemetry on the homepage", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Illustrative completed workflow"');
-    expect(landing).toContain("Illustrative Workflow");
+    expect(landing).not.toContain("Illustrative Workflow");
+    expect(landing).not.toContain("Booked and logged");
+    expect(landing).not.toContain("landing-console__events");
   });
 });
