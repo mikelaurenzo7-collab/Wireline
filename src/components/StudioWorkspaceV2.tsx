@@ -269,7 +269,9 @@ export default function StudioWorkspaceV2() {
               role="tab"
               id={studioTabId(item.id)}
               aria-selected={selected}
-              aria-controls={splitWorkspace ? "studio-split-workspace" : studioPanelId(item.id)}
+              aria-controls={
+                splitWorkspace && item.id === "test" ? "studio-split-workspace" : studioPanelId(item.id)
+              }
               tabIndex={selected ? 0 : -1}
               onClick={() => setSection(item.id)}
               className={`min-w-0 rounded-lg px-2.5 py-2 text-center transition-colors wl-focus-ring-halo ${
@@ -300,7 +302,7 @@ export default function StudioWorkspaceV2() {
       isBusinessAgent={Boolean(active.is_business_agent)}
       onTestVoiceInChat={startCustomerTest}
       className="h-full border-t-0"
-      compact={splitWorkspace}
+      compact={splitWorkspace && section === "test"}
     />
   );
 
@@ -314,7 +316,7 @@ export default function StudioWorkspaceV2() {
       onEdit={() => setSection("setup")}
       onTest={startCustomerTest}
       className="h-full"
-      compact={splitWorkspace}
+      compact={splitWorkspace && section === "test"}
     />
   );
 
@@ -328,7 +330,7 @@ export default function StudioWorkspaceV2() {
       commandNonce={params.get("commandNonce") || undefined}
       onBack={() => setSection("setup")}
       backLabel="Back to setup"
-      layout={splitWorkspace ? "split" : "standalone"}
+      layout={splitWorkspace && section === "test" ? "split" : "standalone"}
       mode={section === "test" ? "test" : "configure"}
       allowOutbound={Boolean(active.phone_number)}
     />
@@ -338,7 +340,7 @@ export default function StudioWorkspaceV2() {
     <div className="flex h-full min-h-0 flex-col bg-background">
       {sectionTabs}
 
-      {splitWorkspace ? (
+      {splitWorkspace && section === "test" ? (
         <div
           id="studio-split-workspace"
           role="tabpanel"
