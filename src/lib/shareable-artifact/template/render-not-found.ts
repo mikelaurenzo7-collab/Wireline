@@ -8,7 +8,7 @@ import { escapeHtml } from "./escape";
 import { renderShell } from "./shell";
 
 const FALLBACK_BRAND: WorkspaceBrand = {
-  displayName: "Wireline",
+  displayName: "BotBound",
   accentHex: null,
   theme: "obsidian",
   logoUrl: null,
@@ -30,5 +30,5 @@ export function renderNotFound(brand: WorkspaceBrand = FALLBACK_BRAND): string {
       </p>
       <div class="wl-wire-rule" role="separator" aria-hidden="true"><span></span></div>
     </section>`;
-  return renderShell({ title: "Recap unavailable, Wireline", eyebrow, body, brand });
+  return renderShell({ title: "Recap unavailable, BotBound", eyebrow, body, brand });
 }
