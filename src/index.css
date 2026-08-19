@@ -29,12 +29,6 @@
   --color-surface: var(--wireline-color-surface-default);
   --color-warning: var(--wireline-color-status-warning);
 
-  /* shadcn-style semantic tokens — register here so Tailwind v4 actually
-     generates `bg-primary`, `text-primary-foreground`, `bg-card`,
-     `text-foreground`, `border-border`, etc. These were defined in `:root`
-     (foundation.css) but never reached @theme, so the utilities were
-     silently dropped — `wl-eyebrow text-primary-foreground` on the dark
-     pricing badge rendered with no color override and no green background. */
   --color-background: var(--wireline-color-canvas-default);
   --color-foreground: var(--wireline-color-text-primary);
   --color-card: var(--wireline-color-surface-default);
@@ -53,11 +47,6 @@
   --color-input: var(--wireline-color-border-default);
   --color-ring: var(--wireline-color-focus-default);
 
-  /* Redirect raw Tailwind rose/amber status utilities to the WIRELINE
-   * status tokens so every error/danger surface (DNC, usage overage,
-   * delete actions, status pills) and every warning surface (low credit,
-   * usage threshold) reads as the single canonical error/warning color.
-   * Opacity modifiers still create lightness variation via color-mix. */
   --color-rose-300: var(--wireline-color-status-error);
   --color-rose-400: var(--wireline-color-status-error);
   --color-rose-500: var(--wireline-color-status-error);
@@ -69,10 +58,6 @@
   --color-amber-600: var(--wireline-color-status-warning);
   --color-amber-800: var(--wireline-color-status-warning);
 
-  /* The same omission the color tokens above document, for the type families.
-   * WIRELINE defines Inter Tight for display, Inter for body, and IBM Plex Mono
-   * for labels/metadata. Register the families here so Tailwind utilities use
-   * the exact same stacks as the semantic CSS variables. */
   --font-sans: var(--wireline-font-sans);
   --font-serif: var(--wireline-font-display);
   --font-mono: var(--wireline-font-mono);
@@ -100,7 +85,9 @@
 @import "./styles/system-refinement-pass-two.css";
 
 /* Terminal responsive tiers intentionally follow the semantic system. They
- * may compact components, but must not redefine tokens or brand foundations. */
+ * may compact components, but must not redefine tokens or brand foundations.
+ * Safe-area ownership remains last so no later visual refinement can restack
+ * browser chrome or home-indicator clearance. */
 @import "./styles/responsive.css";
 @import "./styles/ruthless-mobile-cleanup.css";
 @import "./styles/agent-tabs-compact.css";
@@ -109,13 +96,10 @@
 @import "./styles/prestige-polish.css";
 @import "./styles/brand-identity.css";
 @import "./styles/system-aesthetic-refinement.css";
-@import "./styles/safe-area-ownership.css";
 @import "./styles/public-mobile-refinement.css";
+@import "./styles/safe-area-ownership.css";
 
 body {
-  /* `background-color`, not the `background` shorthand: this rule sits after the
-     prestige-polish import, and the shorthand reset its ambient gradient to
-     `none`, so that presentation layer silently did nothing. */
   background-color: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
@@ -148,15 +132,12 @@ body {
   overflow: hidden;
 }
 
-/* Current-production auth QA: keep compact CTA labels readable instead of novelty-spaced. */
 .studio-card button[class*="tracking-[0.22em]"],
 button[class*="tracking-[0.25em]"],
 button[class*="tracking-[0.3em]"] {
   letter-spacing: 0.08em !important;
 }
 
-/* Mobile editing contract: 16px controls prevent Safari focus zoom, including
- * legacy forms that have not yet migrated to the shared atoms. */
 @media (max-width: 767px) {
   .wl-ui-caps :where(
       input:not([type="checkbox"]):not([type="radio"]),
