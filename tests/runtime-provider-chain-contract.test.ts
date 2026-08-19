@@ -98,7 +98,7 @@ describe("structured runtime transport", () => {
   it("delegates eligibility and ordering to the policy module", () => {
     expect(client).toContain("orderReasoningProviders(available, resolveReasoningPreference())");
     expect(client).toContain("isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY)");
-    expect(client).toContain("id !== \"gateway\"");
+    expect(client).toContain("RUNTIME_PROVIDER_REGISTRY");
     // Every lane in the policy must have a transport entry, or a configured
     // credential would resolve to a provider the client cannot call.
     for (const id of REASONING_PROVIDER_ORDER) {
