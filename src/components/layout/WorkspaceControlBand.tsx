@@ -7,6 +7,8 @@ type WorkspaceControlBandProps = {
   secondary?: ReactNode;
   className?: string;
   ariaLabel?: string;
+  /** Use inside an existing bordered header such as WorkspaceOperateIntro. */
+  embedded?: boolean;
 };
 
 /**
@@ -20,13 +22,16 @@ export default function WorkspaceControlBand({
   secondary,
   className,
   ariaLabel = "Page controls",
+  embedded = false,
 }: WorkspaceControlBandProps) {
   return (
     <div
       data-wireline-control-band
+      data-embedded={embedded ? "true" : undefined}
       aria-label={ariaLabel}
       className={cn(
-        "mb-3 flex flex-col gap-2 border-b border-border/70 pb-3 sm:flex-row sm:items-center",
+        "flex flex-col gap-2 sm:flex-row sm:items-center",
+        embedded ? "mb-0 border-b-0 pb-0" : "mb-3 border-b border-border/70 pb-3",
         className,
       )}
     >
