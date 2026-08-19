@@ -60,8 +60,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "facts",
       label: "Business facts added",
       actionLabel: "Add business facts",
-      detail:
-        "Add pricing, hours, policies, FAQs, or other answers customers need.",
+      detail: "Add pricing, hours, policies, FAQs, or other answers customers need.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
       icon: GraduationCap,
@@ -71,17 +70,16 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       label: "Phone number connected",
       actionLabel: "Connect phone number",
       detail:
-        "Activate a paid plan, then claim an included Wireline number so customers can call or text.",
+        "Activate a paid plan, then claim an included BotBound number so customers can call or text.",
       done: p.numbers > 0,
-      href: "/settings/phone",
+      href: "/phone?tab=setup",
       icon: Cable,
     },
     {
       id: "live",
       label: "First live customer handled",
       actionLabel: "Handle first live customer",
-      detail:
-        "Confirm the line received a real conversation and logged the outcome.",
+      detail: "Confirm the line received a real conversation and logged the outcome.",
       done: p.activated,
       href: "/phone?tab=logs",
       icon: Phone,
@@ -98,17 +96,11 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
   ];
 }
 
-export default function ActivationChecklist({
-  className,
-}: {
-  className?: string;
-}) {
+export default function ActivationChecklist({ className }: { className?: string }) {
   const { user } = useAuth();
   const { activeAccount } = useAccount();
   const activationScope = activeAccount?.id ?? user?.id ?? null;
-  const dismissKey = activationScope
-    ? `${DISMISS_KEY}:${activationScope}`
-    : null;
+  const dismissKey = activationScope ? `${DISMISS_KEY}:${activationScope}` : null;
   const [progress, setProgress] = useState<AssistantSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
