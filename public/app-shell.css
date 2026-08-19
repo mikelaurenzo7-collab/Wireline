@@ -1,13 +1,16 @@
-/* Tiny first-paint layer. React owns all product layout after hydration. */
+/* Tiny first-paint layer. React owns all product layout after hydration.
+ * Paper is the first-visit appearance; saved Obsidian/system preferences are
+ * applied synchronously by index.html before this stylesheet paints. */
 :root {
-  background: var(--wireline-color-canvas-default);
+  background: var(--wireline-color-canvas-default, #F6F5FA);
   color-scheme: light;
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
-  background: var(--wireline-color-canvas-default);
-  color: var(--wireline-color-text-primary);
+  background: var(--wireline-color-canvas-default, #F6F5FA);
+  color: var(--wireline-color-text-primary, #171426);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-weight: 400;
 }
