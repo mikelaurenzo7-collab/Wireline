@@ -3,11 +3,13 @@
  * Canonical Vercel deployment entrypoint.
  *
  * Keep the project build command short while preserving one ordered release
- * pipeline: sanitize retired client configuration, prove the sanitizer contract,
- * run the application gate, build the public health function, and smoke the
- * resulting handler.
+ * pipeline: sanitize retired client configuration, migrate the final approved
+ * customer-facing BotBound literals, prove the sanitizer contract, run the
+ * application gate, build the public health function, and smoke the resulting
+ * handler.
  */
 import "./sanitize-retired-client-env.mjs";
+import "./apply-botbound-customer-literal-migration.mjs";
 import { spawnSync } from "node:child_process";
 
 function executable(command) {
@@ -29,9 +31,9 @@ function run(command, args) {
 }
 
 // Prove the production compatibility bridge before migrations or any provider
-// gate can run. The sanitizer is loaded in this parent process first; the
-// contract itself then runs in the same credential-free clean room as every
-// other build-time test process.
+// gate can run. The sanitizer and BotBound customer-literal migration are loaded
+// in this parent process first; the contract itself then runs in the same
+// credential-free clean room as every other build-time test process.
 run(process.execPath, [
   "scripts/run-test-estate.mjs",
   "tests/retired-client-env-sanitizer-contract.test.ts",
