@@ -123,8 +123,8 @@ export type ComplianceFooterAudience = "account" | "demo_line_recap";
 
 function footerReasonText(audience: ComplianceFooterAudience, email: string): string {
   return audience === "demo_line_recap"
-    ? `You're receiving this because you asked for a recap on Wireline's demo line (${email}).`
-    : `You're receiving this because you have a Wireline account (${email}).`;
+    ? `You're receiving this because you asked for a recap on BotBound's demo line (${email}).`
+    : `You're receiving this because you have a BotBound account (${email}).`;
 }
 
 function footerUnsubscribeLabel(audience: ComplianceFooterAudience): string {
