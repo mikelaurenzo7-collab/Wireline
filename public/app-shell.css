@@ -1,26 +1,26 @@
 /* Tiny first-paint layer. React owns all product layout after hydration.
- * Dark is the first-visit WIRELINE appearance; explicit Light/System choices
+ * Light is the first-visit WIRELINE appearance; explicit Dark/System choices
  * are applied synchronously by index.html before this stylesheet paints. */
 :root {
-  background: var(--wireline-color-canvas-default, #0A0A0E);
-  color-scheme: dark;
+  background: var(--wireline-color-canvas-default, #F6F5FA);
+  color-scheme: light;
 }
 
-:root.light {
-  background: #F6F5FA;
-  color-scheme: light;
+:root:not(.light) {
+  background: #0A0A0E;
+  color-scheme: dark;
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
-  background: var(--wireline-color-canvas-default, #0A0A0E);
-  color: var(--wireline-color-text-primary, #F5F4F8);
+  background: var(--wireline-color-canvas-default, #F6F5FA);
+  color: var(--wireline-color-text-primary, #171426);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   font-weight: 400;
 }
 
-:root.light body {
-  background: #F6F5FA;
-  color: #171426;
+:root:not(.light) body {
+  background: #0A0A0E;
+  color: #F5F4F8;
 }
