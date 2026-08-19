@@ -1,5 +1,5 @@
 /* Tiny first-paint layer. React owns all product layout after hydration.
- * Paper is the first-visit appearance; saved Obsidian/system preferences are
+ * Light is the first-visit appearance; saved dark/system preferences are
  * applied synchronously by index.html before this stylesheet paints. */
 :root {
   background: var(--wireline-color-canvas-default, #F6F5FA);
