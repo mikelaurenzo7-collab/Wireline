@@ -26,7 +26,7 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
-  studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
+  studioChrome: [{ id: "full-roster-copy", pattern: /Your agents|All Bots/ }],
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
@@ -78,6 +78,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "readiness", pattern: /Live|Setup needed|Needs setup/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
+    { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
+    { id: "bot-switch-options", pattern: /agents\.map/ },
     { id: "scoped-inbox", pattern: /\/inbox\?agent=/ },
     { id: "scoped-calls", pattern: /\/phone\?agent=/ },
   ],
