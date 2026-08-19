@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -75,11 +75,11 @@ export default function Developers() {
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = `${appOrigin}/mcp`;
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     void navigator.clipboard.writeText(mcpEndpoint);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
-  };
+  }, [mcpEndpoint]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -87,7 +87,7 @@ export default function Developers() {
     const node = document.getElementById("mcp-endpoint");
     node?.scrollIntoView({ behavior: "smooth", block: "start" });
     handleCopy();
-  }, []);
+  }, [handleCopy]);
 
   return (
     <MarketingPageFrame>
