@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Inbox, Phone, Plus } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button } from "../atoms/Button";
@@ -30,7 +30,7 @@ export default function StudioContextChrome() {
       className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
       aria-label={`${language.singular} context`}
     >
-      <div className="flex min-h-[56px] items-center justify-between gap-3 px-3 sm:px-5">
+      <div className="flex min-h-[56px] items-center justify-between gap-2 px-3 sm:px-5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           {activeAgent ? null : (
             <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
@@ -57,10 +57,24 @@ export default function StudioContextChrome() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
+          {activeAgent ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="size-9 px-0" aria-label={`Open ${activeAgent.name} Inbox`}>
+                <Link to={`/inbox?agent=${encodeURIComponent(activeAgent.id)}`}>
+                  <Inbox className="size-4" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="size-9 px-0" aria-label={`Open ${activeAgent.name} calls`}>
+                <Link to={`/phone?agent=${encodeURIComponent(activeAgent.id)}`}>
+                  <Phone className="size-4" aria-hidden="true" />
+                </Link>
+              </Button>
+            </>
+          ) : null}
           {readyLabel ? (
             <span
-              className={`inline-flex min-h-8 items-center rounded-md border px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] sm:px-3 ${
+              className={`hidden min-h-8 items-center rounded-md border px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] sm:inline-flex sm:px-3 ${
                 activeAgent?.phone_number
                   ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                   : "border-border bg-muted/50 text-muted-foreground"
