@@ -37,8 +37,8 @@ export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
-        title="ABOUT WIRELINE | VOICE-FIRST BOTS FOR CALLS AND FOLLOW-THROUGH"
-        description="Wireline is an independent platform for Voice Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it."
+        title="ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH"
+        description="BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it."
         path="/about"
       />
 
