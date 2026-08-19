@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, PlugZap, Save, Video } from "lucide-react";
+import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
@@ -37,15 +37,7 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
   return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
 }
 
-/**
- * Did /api/train/extract actually store anything?
- *
- * It answers 200 whether the extractor pulled out ten facts or none, so the
- * status alone cannot tell the panel whether it is safe to clear the box. The
- * `readiness` counts are the honest signal. An unreadable body is treated as
- * "captured" — the same posture as the 200 itself — so a response-shape change
- * can't strand a Account Holder who really did save.
- */
+/** Did /api/train/extract actually persist a useful fact/rule/tone signal? */
 async function extractionPersistedSomething(response: Response): Promise<boolean> {
   try {
     const body = (await response.json()) as {
@@ -161,10 +153,6 @@ export default function StudioAgentWorkspacePanel({
 
       await saveManual("personality", personalityText);
       if (isCurrentAgent()) setLoadedPersonality(personalityText);
-      // Always sent, and sent as a replace. Appending made every re-save leave
-      // the previous greeting live alongside the new one, and skipping the call
-      // on an empty field meant clearing the box removed nothing while the panel
-      // still reported the setup as saved.
       await saveManual(
         "directive",
         greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
@@ -184,11 +172,6 @@ export default function StudioAgentWorkspacePanel({
               : "Personal preferences could not be saved.",
           );
         }
-        // /api/train/extract answers 200 even when the extractor decided the
-        // text was too unclear to store anything — its prompt tells it to
-        // return empty arrays when in doubt. Clearing the box on that reply
-        // threw the Account Holder's typing away and still claimed the setup
-        // was saved. Only clear once the server reports something persisted.
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
         if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
       }
@@ -198,16 +181,12 @@ export default function StudioAgentWorkspacePanel({
           setSetupNotice(null);
           setSetupError(
             isBusinessAgent
-              ? "Tone and greeting were saved, but nothing concrete could be pulled out of the business details. Rewrite them as short, specific facts (hours, pricing, service area, what to do with a lead) and apply again."
-              : "Tone and greeting were saved, but nothing concrete could be pulled out of your preferences. Rewrite them as short, specific statements and apply again.",
+              ? "Tone and greeting were saved, but the business details need to be more specific. Add short facts such as hours, pricing, service area, or handoff rules."
+              : "Tone and greeting were saved, but the preferences need to be more specific. Add short, concrete rules and try again.",
           );
           return;
         }
-        setSetupNotice(
-          isBusinessAgent
-            ? "Run a customer test before connecting live traffic."
-            : "Run a private test before connecting a live line.",
-        );
+        setSetupNotice("Saved. Run a test before sending live traffic.");
       }
     } catch (reason) {
       if (isCurrentAgent()) {
@@ -220,7 +199,7 @@ export default function StudioAgentWorkspacePanel({
 
   return (
     <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
-      <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-7">
         <header>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Give <span className="wl-preserve-case">{agentName}</span> one clear job.
@@ -231,19 +210,14 @@ export default function StudioAgentWorkspacePanel({
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
           aria-labelledby="essentials-heading"
         >
-          <div className="mb-4">
-            <h3
-              id="essentials-heading"
-              className="text-lg font-semibold tracking-tight text-foreground"
-            >
-              Essentials
-            </h3>
-          </div>
+          <h3 id="essentials-heading" className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+            Essentials
+          </h3>
 
           {loadingSetup ? (
             <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              Loading setup…
+              Loading…
             </div>
           ) : setupLoadError ? (
             <StatusNotice
@@ -266,7 +240,7 @@ export default function StudioAgentWorkspacePanel({
             <div className="space-y-5">
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2">
                   {PERSONALITIES.map((option) => {
                     const selected = setupPersonality === option;
                     return (
@@ -275,7 +249,7 @@ export default function StudioAgentWorkspacePanel({
                         type="button"
                         aria-pressed={selected}
                         onClick={() => setSetupPersonality(option)}
-                        className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                        className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
                           selected
                             ? "border-primary/40 bg-primary/5"
                             : "border-border bg-background hover:bg-muted/60"
@@ -307,40 +281,33 @@ export default function StudioAgentWorkspacePanel({
 
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label
-                    className="text-sm font-semibold text-foreground"
-                    htmlFor="setup-knowledge"
-                  >
-                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                  <label className="text-sm font-semibold text-foreground" htmlFor="setup-knowledge">
+                    {isBusinessAgent ? "Business facts" : "Personal facts"}{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                     className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
-                    Open Knowledge
+                    Knowledge
                   </Link>
                 </div>
                 <textarea
                   id="setup-knowledge"
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
-                  className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
+                  className="min-h-24 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
                   placeholder={
                     isBusinessAgent
-                      ? "Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
-                      : "Preferences, hard rules, calendar constraints, and when to text or interrupt you…"
+                      ? "Hours, services, pricing, policies, and handoff rules…"
+                      : "Preferences, calendar rules, and when to interrupt you…"
                   }
                 />
               </div>
 
-              {setupNotice ? (
-                <StatusNotice tone="success" title="Changes saved">
-                  {setupNotice}
-                </StatusNotice>
-              ) : null}
+              {setupNotice ? <StatusNotice tone="success">{setupNotice}</StatusNotice> : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Setup needs attention">
+                <StatusNotice tone="destructive" title="Needs attention">
                   {setupError}
                 </StatusNotice>
               ) : null}
@@ -351,58 +318,32 @@ export default function StudioAgentWorkspacePanel({
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {applyingSetup ? "Saving…" : "Save changes"}
+                {applyingSetup ? "Saving…" : "Save"}
               </Button>
             </div>
           )}
         </section>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="voice-heading"
-        >
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
-              Phone voice
-            </h3>
-            {isBusinessAgent ? (
-              <Link
-                to={`/studio/live-video?agent=${encodeURIComponent(agentId)}`}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-              >
-                <Video className="size-3.5" aria-hidden="true" />
-                Live video
-              </Link>
-            ) : null}
-          </div>
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
+          <h3 id="voice-heading" className="mb-3 text-lg font-semibold tracking-tight text-foreground">
+            Phone voice
+          </h3>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
         <AgentToolPermissions agentId={agentId} />
 
-        <section
-          className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
-          aria-label="Continue setup"
-        >
-          <div className="flex justify-end">
-            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onTestVoiceInChat}
-                className="justify-center"
-              >
-                Test conversation
-              </Button>
-              <Button asChild className="justify-center">
-                <Link to="/connections">
-                  <PlugZap className="size-4" aria-hidden="true" />
-                  Connect channels
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" onClick={onTestVoiceInChat} className="justify-center">
+            Test
+          </Button>
+          <Button asChild className="justify-center">
+            <Link to="/connections">
+              <PlugZap className="size-4" aria-hidden="true" />
+              Connections
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
