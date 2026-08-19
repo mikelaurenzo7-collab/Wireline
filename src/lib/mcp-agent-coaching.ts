@@ -43,7 +43,7 @@ export async function assertOwnedAgent(
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
-  if (!agent) throw AppError.notFound("Wireline agent not found.");
+  if (!agent) throw AppError.notFound("BotBound Bot not found.");
   return agent;
 }
 
@@ -146,9 +146,9 @@ export async function getAgentCoachingBrief(
       priority: rule.priority ?? 5,
     })),
     next_step: onPhoneNetwork
-      ? "This agent is on the phone network. Coach it here, then operate live work in Wireline Studio."
+      ? "This Bot is on the phone network. Coach it here, then operate live work in BotBound Studio."
       : factCount + ruleCount === 0
-        ? "Add Training facts and operating rules, then open Wireline Wire to attach a number and launch."
-        : "Training is landing in Wireline. Open Wire to attach a number when you are ready to launch.",
+        ? "Add Training facts and operating rules, then open BotBound Connections to attach a number and launch."
+        : "Training is landing in BotBound. Open Connections to attach a number when you are ready to launch.",
   };
 }
