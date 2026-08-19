@@ -1,9 +1,9 @@
-/* Wireline Letterpress — Aurora light appearance (optional light mode).
- * Default tokens in tokens.generated.css are the dark Aurora canvas. Apply
- * `.light` on `html` to swap semantic colors for a cool, near-white surface
- * that keeps the same violet/silver identity as dark mode, inverted for
- * contrast: a deeper, more saturated violet carries the action color so
- * white text still holds AA contrast on a light background. */
+/* WIRELINE Letterpress — Paper appearance (first-visit default).
+ * The generated semantic base tokens remain Obsidian so saved dark/system
+ * preferences can resolve without a second token architecture. index.html
+ * applies `.light` before first paint for visitors without a saved preference.
+ * Paper uses a cool off-white canvas rather than stark white and keeps the same
+ * violet/silver identity as Obsidian, inverted for contrast. */
 
 :root.light {
   color-scheme: light;
