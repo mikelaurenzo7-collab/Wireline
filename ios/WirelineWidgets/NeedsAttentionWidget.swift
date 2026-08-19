@@ -122,12 +122,12 @@ private struct NeedsAttentionWidgetView: View {
     private var signedOutView: some View {
         switch family {
         case .accessoryInline:
-            Text("Open Wireline to sign in")
+            Text("Open BotBound to sign in")
         case .accessoryCircular:
             Image(systemName: "person.crop.circle.badge.questionmark")
                 .font(.title2)
         case .accessoryRectangular:
-            Text("Sign in to Wireline").font(.headline)
+            Text("Sign in to BotBound").font(.headline)
         default:
             VStack {
                 Image(systemName: "person.crop.circle.badge.questionmark")
