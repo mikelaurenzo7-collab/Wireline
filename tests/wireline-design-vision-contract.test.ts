@@ -31,14 +31,22 @@ describe("WIRELINE design vision", () => {
     expect(WIRELINE_DESIGN_VISION.naming).toEqual({
       designSystem: "WIRELINE Design System",
       rule:
-        "WIRELINE Design System is the only system name. Describe visual decisions by function: canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+        "WIRELINE Design System is the only system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+    });
+    expect(WIRELINE_DESIGN_VISION.appearance).toEqual({
+      default: "light",
+      modes: ["light", "dark", "system"],
+      lightCanvas: "#F6F5FA",
+      darkCanvas: "#0A0A0E",
+      rule:
+        "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same WIRELINE Design System, never separate visual systems.",
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "Visual vocabulary is semantic, not thematic: canvas, surface, elevation, ink, action, wire, signal, and status.",
+      "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
@@ -59,18 +67,18 @@ describe("WIRELINE design vision", () => {
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-letterpress");
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-composer-dock");
     expect(WIRELINE_DESIGN_VISION.retiredDesignNames).toEqual(
-      expect.arrayContaining(["Letterpress", "Obsidian", "Aurora"]),
+      expect.arrayContaining(["Letterpress", "Obsidian", "Aurora", "Paper"]),
     );
   });
 
   it("keeps old themed names out of canonical system declarations", () => {
     expect(read("src/lib/wireline-design-vision.ts")).not.toMatch(
-      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/,
     );
     expect(read("src/lib/surface-contract.ts")).not.toMatch(
-      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/,
     );
-    expect(read("src/constants/brand-colors.ts")).not.toMatch(/Wireline Letterpress|obsidian material/i);
+    expect(read("src/constants/brand-colors.ts")).not.toMatch(/Wireline Letterpress|obsidian material|Paper appearance/i);
   });
 
   it("defines shared primitives across the canonical system stylesheets", () => {
