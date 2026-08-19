@@ -278,13 +278,13 @@ export default function AdminSettings() {
       if (!res.ok) {
         toastError(
           "Sync failed",
-          data?.error || "Could not fetch available Wireline phone numbers.",
+          data?.error || "Could not fetch available BotBound phone numbers.",
         );
         return;
       }
       setCarrierNumbers(data.numbers || []);
     } catch {
-      toastError("Sync failed", "Could not fetch available Wireline phone numbers.");
+      toastError("Sync failed", "Could not fetch available BotBound phone numbers.");
     } finally {
       setIsSyncing(false);
     }
@@ -377,7 +377,7 @@ export default function AdminSettings() {
       open: true,
       title: "Permanently release number",
       message:
-        "This permanently releases the number from Wireline and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone.",
+        "This permanently releases the number from BotBound and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone.",
       confirmLabel: "Release number",
       onConfirm: async () => {
         setIsDeletingNumber(id);
