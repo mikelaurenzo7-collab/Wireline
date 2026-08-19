@@ -329,7 +329,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
           <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p className="text-xs leading-5 text-muted-foreground">
-              Wireline does not store the upload. Live use requires review.
+              BotBound does not store the upload. Live use requires review.
             </p>
           </div>
 
