@@ -73,7 +73,7 @@ const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(f
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `A BotBound number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
+    body: `Every active paid Bot gets its own BotBound production number, provisioned through Twilio and imported into the voice runtime. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     title: "Text / SMS",
@@ -81,7 +81,7 @@ const CHANNEL_RULES = [
   },
   {
     title: "Email",
-    body: "Connect Gmail, Outlook, iCloud, or your own stack. Your provider's limits stay authoritative.",
+    body: "Every active paid Bot gets a BotBound-managed mailbox. Verified custom domains keep the Bot on your brand; Gmail, Outlook, and iCloud connections are optional inputs, not prerequisites.",
   },
   {
     title: "Lead Hunt",
@@ -96,15 +96,15 @@ const FAQ = [
   ],
   [
     "Is the BotBound number free?",
-    "Every paid plan includes a BotBound number at no extra line fee. Free Builder is a private creation and simulation tier; production numbers and paid provider actions unlock after activation.",
+    "Every active paid Bot gets its own BotBound production number at no extra line fee within the plan's Bot capacity. Free Builder is a private creation and simulation tier; carrier resources allocate when a Bot becomes paid and active.",
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second number slot, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
+    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
   ],
   [
-    "Does every Bot automatically create a phone number cost?",
-    "No. Plans provide number slots, but BotBound provisions production numbers only when needed. Unused Bot capacity does not create unnecessary carrier spend.",
+    "Does every paid Bot get a phone number?",
+    "Yes. Every active paid Bot gets one dedicated production number through BotBound's Twilio account. Unused plan capacity does not allocate a carrier number until a Bot actually exists and is active, so you pay for the plan capacity without orphan line spend.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -120,7 +120,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@botbound.me within 30 days of your first paid invoice if the plan was not the right fit.",
   ],
   [
     "What is the Scale plan?",
@@ -134,7 +134,7 @@ const pricingJsonLd = {
     {
       "@type": "OfferCatalog",
       name: "BotBound Voice Bots pricing",
-      url: "https://trywireline.com/pricing",
+      url: "https://botbound.me/pricing",
       itemListElement: [
         {
           "@type": "Offer",
@@ -220,7 +220,7 @@ export default function Pricing() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Every paid plan includes a BotBound number
+                Every active paid Bot gets its own production number
               </p>
             </div>
 
