@@ -5,7 +5,7 @@
  * asking customers to choose an avatar, persona, or visual theme. The Bot's
  * role never affects the mark: identity and capability stay separate.
  *
- * The mark is intentionally a tiny Wireline signal system rather than a colored
+ * The mark is intentionally a tiny WIRELINE signal system rather than a colored
  * initial. A stable seed selects a restrained obsidian/violet/platinum gradient,
  * one of several wire geometries, an orientation, and an anchor point. This
  * gives customers fast recognition without creating another configuration
@@ -34,9 +34,9 @@ type BotMarkGradientFamily = {
 
 /**
  * Twenty deterministic gradient bits yield 1,048,576 brand-safe gradient
- * signatures before motif, rotation, mirror, anchor, glow position, or
- * monogram are considered. This deliberately dwarfs the commercial Bot-count
- * ceiling so a large workspace does not exhaust the visual identity system.
+ * signatures before motif, rotation, mirror, anchor, or glow position are
+ * considered. This deliberately dwarfs the commercial Bot-count ceiling so a
+ * large workspace does not exhaust the visual identity system.
  */
 export const BOT_MARK_GRADIENT_CAPACITY = 1_048_576;
 const BOT_MARK_GRADIENT_MASK = BOT_MARK_GRADIENT_CAPACITY - 1;
@@ -185,12 +185,6 @@ export function normalizeBotMarkSeed(seed: string | null | undefined): string {
   return (seed || "bot").trim().replace(/\s+/g, " ") || "bot";
 }
 
-export function botMarkInitial(label: string | null | undefined): string {
-  const normalized = normalizeBotMarkSeed(label);
-  const firstLetter = Array.from(normalized).find((character) => /[\p{L}\p{N}]/u.test(character));
-  return (firstLetter || "B").toLocaleUpperCase();
-}
-
 function mixedHash(seed: string, salt: string): number {
   return stableBotMarkHash(`${salt}:${seed}`);
 }
@@ -252,7 +246,6 @@ export function botMarkFor(input: {
   return {
     seed,
     gradientSignature: hash & BOT_MARK_GRADIENT_MASK,
-    initial: botMarkInitial(input.name || input.seed || input.id || "Bot"),
     palette,
     motif,
     anchor,
