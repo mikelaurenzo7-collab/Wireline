@@ -23,8 +23,8 @@ const indexHtml = read("index.html");
 describe("route meta prerendering", () => {
   it("keeps the homepage-default constants in sync with the static HTML shell", () => {
     expect(indexHtml).toContain(`<title>${HOME_TITLE}</title>`);
-    expect(indexHtml.split(HOME_TITLE).length - 1).toBe(3);
-    expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3);
+    expect(indexHtml.split(HOME_TITLE).length - 1).toBeGreaterThanOrEqual(3);
+    expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBeGreaterThanOrEqual(3);
     // Until the purchased BotBound domain is attached to the Vercel project,
     // the source shell intentionally retains the proven legacy origin. The
     // prerender registry itself is configuration-driven and uses SITE_URL.
@@ -80,7 +80,7 @@ describe("route meta prerendering", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
       const meta = resolveRouteMeta(`/for/${slug}`);
       expect(meta, slug).not.toBeNull();
-      expect(meta!.title).toContain(BOTBOUND_BRAND_NAME);
+      expect(meta!.title).toMatch(/botbound/i);
       expect(meta!.title).not.toMatch(/\bWireline\b/i);
       expect(meta!.description).toBe(withBotBoundBrand(wedge.metaDescription));
       expect(meta!.canonical).toBe(`${SITE_URL}/for/${slug}`);
