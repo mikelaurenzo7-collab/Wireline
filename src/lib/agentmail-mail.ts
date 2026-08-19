@@ -36,11 +36,7 @@ export class AgentMailConnectError extends Error {
   }
 }
 
-export type AgentMailInbox = {
-  inboxId: string;
-  email: string;
-};
-
+export type AgentMailInbox = { inboxId: string; email: string };
 export type AgentMailInboxMessage = {
   messageId: string;
   threadId?: string;
@@ -57,22 +53,26 @@ type AgentMailInboxCreateOptions = {
   metadata?: Record<string, string | number | boolean>;
 };
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 function resolveAgentMailCredential(value: string): string {
   const supplied = String(value || "").replace(/\s+/g, "");
   if (supplied !== AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL) return supplied;
   const managed = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
-  if (!managed) {
-    throw new AgentMailConnectError("BotBound managed email is temporarily unavailable.");
-  }
+  if (!managed) throw new AgentMailConnectError("BotBound managed email is temporarily unavailable.");
   return managed;
 }
 
-function createImapClient(email: string, apiKey: string) {
+function createImapClient(email: string, credential: string) {
   return new ImapFlow({
     host: AGENTMAIL_IMAP_HOST,
     port: AGENTMAIL_IMAP_PORT,
     secure: true,
-    auth: { user: email, pass: resolveAgentMailCredential(apiKey) },
+    auth: { user: email, pass: resolveAgentMailCredential(credential) },
     logger: false,
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
@@ -81,30 +81,19 @@ function createImapClient(email: string, apiKey: string) {
 }
 
 function formatAddressList(list: Array<{ name?: string; address?: string }> | undefined): string {
-  if (!list?.length) return "";
-  return list
-    .map((a) => (a.name ? `${nameAddress(a.name, a.address)}` : (a.address ?? "")))
+  return (list || [])
+    .map((entry) =>
+      entry.name ? (entry.address ? `${entry.name} <${entry.address}>` : entry.name) : (entry.address ?? ""),
+    )
     .filter(Boolean)
     .join(", ");
-}
-
-function nameAddress(name: string, address?: string): string {
-  return address ? `${name} <${address}>` : name;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
 }
 
 export function normalizeAgentMailInbox(raw: unknown): AgentMailInbox | null {
   const row = asRecord(raw);
   if (!row) return null;
   const inboxId = String(row.inbox_id ?? row.inboxId ?? "").trim();
-  const email = String(row.email ?? inboxId)
-    .trim()
-    .toLowerCase();
+  const email = String(row.email ?? inboxId).trim().toLowerCase();
   if (!inboxId && !email) return null;
   return { inboxId: inboxId || email, email: email || inboxId.toLowerCase() };
 }
@@ -122,20 +111,19 @@ export function agentmailLocalPart(emailAddress: string): string | null {
 }
 
 export function isAgentMailManagedAddress(emailAddress: string): boolean {
-  const host = emailAddress.split("@")[1]?.trim().toLowerCase();
-  return host === AGENTMAIL_FREE_DOMAIN;
+  return emailAddress.split("@")[1]?.trim().toLowerCase() === AGENTMAIL_FREE_DOMAIN;
 }
 
 async function agentMailJson(
-  apiKey: string,
+  credential: string,
   path: string,
   init: RequestInit = {},
 ): Promise<{ status: number; body: unknown }> {
-  const credential = resolveAgentMailCredential(apiKey);
+  const apiKey = resolveAgentMailCredential(credential);
   const response = await fetchWithTimeout(`${AGENTMAIL_API_BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${credential}`,
+      Authorization: `Bearer ${apiKey}`,
       Accept: "application/json",
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...(init.headers ?? {}),
@@ -153,24 +141,23 @@ async function agentMailJson(
   return { status: response.status, body };
 }
 
-export async function listAgentMailInboxes(apiKey: string): Promise<AgentMailInbox[]> {
+function assertAgentMailStatus(status: number, message: string): void {
+  if (status === 401 || status === 403) {
+    throw new AgentMailConnectError("That AgentMail API key was rejected.");
+  }
+  if (status < 200 || status >= 300) throw new AgentMailConnectError(message);
+}
+
+export async function listAgentMailInboxes(credential: string): Promise<AgentMailInbox[]> {
   const inboxes: AgentMailInbox[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 10; page += 1) {
     const query = new URLSearchParams({ limit: "100" });
     if (pageToken) query.set("page_token", pageToken);
-    const { status, body } = await agentMailJson(apiKey, `/inboxes?${query.toString()}`);
-    if (status === 401 || status === 403) {
-      throw new AgentMailConnectError(
-        "That AgentMail API key was rejected. Create a key in the AgentMail console and paste it here.",
-      );
-    }
-    if (status < 200 || status >= 300) {
-      throw new AgentMailConnectError("Could not list AgentMail inboxes with that API key.");
-    }
+    const { status, body } = await agentMailJson(credential, `/inboxes?${query}`);
+    assertAgentMailStatus(status, "Could not list AgentMail inboxes with that API key.");
     const payload = asRecord(body);
-    const rows = Array.isArray(payload?.inboxes) ? payload.inboxes : [];
-    for (const row of rows) {
+    for (const row of Array.isArray(payload?.inboxes) ? payload.inboxes : []) {
       const inbox = normalizeAgentMailInbox(row);
       if (inbox) inboxes.push(inbox);
     }
@@ -182,12 +169,12 @@ export async function listAgentMailInboxes(apiKey: string): Promise<AgentMailInb
 }
 
 export async function createAgentMailInbox(
-  apiKey: string,
+  credential: string,
   username: string,
   displayName = "BotBound",
   options: AgentMailInboxCreateOptions = {},
 ): Promise<AgentMailInbox> {
-  const { status, body } = await agentMailJson(apiKey, "/inboxes", {
+  const { status, body } = await agentMailJson(credential, "/inboxes", {
     method: "POST",
     body: JSON.stringify({
       username,
@@ -197,53 +184,37 @@ export async function createAgentMailInbox(
       ...(options.metadata ? { metadata: options.metadata } : {}),
     }),
   });
-  if (status === 401 || status === 403) {
-    throw new AgentMailConnectError(
-      "That AgentMail API key was rejected. Create a key in the AgentMail console and paste it here.",
-    );
-  }
-  if (status < 200 || status >= 300) {
-    throw new AgentMailConnectError(
-      options.domain
-        ? `Could not create that AgentMail inbox on ${options.domain}. Confirm the domain is verified in the AgentMail organization.`
-        : "Could not create that AgentMail inbox. Check the username is free and the org still has inbox capacity.",
-    );
-  }
+  assertAgentMailStatus(
+    status,
+    options.domain
+      ? `Could not create that AgentMail inbox on ${options.domain}. Confirm the domain is verified in the AgentMail organization.`
+      : "Could not create that AgentMail inbox. Check the username and org capacity.",
+  );
   const created = normalizeAgentMailInbox(body) ?? normalizeAgentMailInbox(asRecord(body)?.inbox);
-  if (!created) {
-    throw new AgentMailConnectError("AgentMail created an inbox but did not return its address.");
-  }
+  if (!created) throw new AgentMailConnectError("AgentMail created an inbox but did not return its address.");
   return created;
 }
 
-/**
- * Resolve an existing inbox, or create `local@agentmail.to` when the org is on
- * the free domain. Custom domains must already exist and be verified in the
- * AgentMail org before a managed inbox can be created on them.
- */
 export async function resolveAgentMailInbox(
-  apiKey: string,
+  credential: string,
   emailAddress: string,
 ): Promise<AgentMailInbox> {
   const wanted = emailAddress.trim().toLowerCase();
-  const existing = await listAgentMailInboxes(apiKey);
+  const existing = await listAgentMailInboxes(credential);
   const match = existing.find((inbox) => inboxMatchesAddress(inbox, wanted));
   if (match) return match;
-
   if (!isAgentMailManagedAddress(wanted)) {
     throw new AgentMailConnectError(
-      "That address is not in this AgentMail org. Free-tier inboxes are @agentmail.to. Custom domains must be verified before inbox creation.",
+      "That address is not in this AgentMail org. Custom domains must be verified before inbox creation.",
     );
   }
   const username = agentmailLocalPart(wanted);
-  if (!username) {
-    throw new AgentMailConnectError("Use a simple inbox name such as botbound@agentmail.to.");
-  }
-  return createAgentMailInbox(apiKey, username);
+  if (!username) throw new AgentMailConnectError("Use a simple AgentMail inbox name.");
+  return createAgentMailInbox(credential, username);
 }
 
-export async function verifyAgentMailCredentials(email: string, apiKey: string): Promise<void> {
-  const client = createImapClient(email, apiKey);
+export async function verifyAgentMailCredentials(email: string, credential: string): Promise<void> {
+  const client = createImapClient(email, credential);
   try {
     await client.connect();
     const lock = await client.getMailboxLock("INBOX");
@@ -255,35 +226,27 @@ export async function verifyAgentMailCredentials(email: string, apiKey: string):
 
 export async function fetchAgentMailInbox(
   email: string,
-  apiKey: string,
+  credential: string,
   opts: { limit: number; sinceIso?: string },
 ): Promise<AgentMailInboxMessage[]> {
-  const client = createImapClient(email, apiKey);
+  const client = createImapClient(email, credential);
   const limit = Math.min(Math.max(opts.limit, 1), 100);
   try {
     await client.connect();
     const lock = await client.getMailboxLock("INBOX");
     try {
       const since = opts.sinceIso ? new Date(opts.sinceIso) : undefined;
-      const searchQuery = since ? { since } : { all: true };
-      const uids = await client.search(searchQuery, { uid: true });
-      if (!uids || uids.length === 0) return [];
-
+      const uids = await client.search(since ? { since } : { all: true }, { uid: true });
+      if (!uids?.length) return [];
       const recentUids = uids.slice(-limit).reverse();
       const messages: AgentMailInboxMessage[] = [];
-
-      for await (const msg of client.fetch(
-        recentUids,
-        { envelope: true, source: false },
-        { uid: true },
-      )) {
+      for await (const msg of client.fetch(recentUids, { envelope: true }, { uid: true })) {
         const envelope = msg.envelope;
         if (!envelope) continue;
-        const messageId =
-          envelope.messageId ||
-          (msg.uid != null ? `agentmail-uid-${msg.uid}` : `agentmail-seq-${msg.seq}`);
         messages.push({
-          messageId,
+          messageId:
+            envelope.messageId ||
+            (msg.uid != null ? `agentmail-uid-${msg.uid}` : `agentmail-seq-${msg.seq}`),
           from: formatAddressList(envelope.from),
           subject: envelope.subject ?? "",
           snippet: envelope.subject ?? "",
@@ -291,15 +254,13 @@ export async function fetchAgentMailInbox(
           provider: "agentmail",
         });
       }
-
-      messages.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
-      return messages.slice(0, limit);
+      return messages.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime()).slice(0, limit);
     } finally {
       lock.release();
     }
-  } catch (err) {
-    log.warn("AgentMail inbox fetch failed", { email, error: getErrorMessage(err) });
-    throw err;
+  } catch (error) {
+    log.warn("AgentMail inbox fetch failed", { email, error: getErrorMessage(error) });
+    throw error;
   } finally {
     await client.logout().catch(() => undefined);
   }
@@ -307,7 +268,7 @@ export async function fetchAgentMailInbox(
 
 export async function sendAgentMail(
   email: string,
-  apiKey: string,
+  credential: string,
   params: {
     to: string;
     subject: string;
@@ -321,12 +282,11 @@ export async function sendAgentMail(
     host: AGENTMAIL_SMTP_HOST,
     port: AGENTMAIL_SMTP_PORT,
     secure: true,
-    auth: { user: email, pass: resolveAgentMailCredential(apiKey) },
+    auth: { user: email, pass: resolveAgentMailCredential(credential) },
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
     socketTimeout: 30_000,
   });
-
   try {
     await transporter.verify();
     await transporter.sendMail({
@@ -338,8 +298,8 @@ export async function sendAgentMail(
       ...(params.unsubscribeHeaders ? { headers: params.unsubscribeHeaders } : {}),
     });
     return true;
-  } catch (err) {
-    log.error("AgentMail SMTP send failed", { email, error: getErrorMessage(err) });
+  } catch (error) {
+    log.error("AgentMail SMTP send failed", { email, error: getErrorMessage(error) });
     return false;
   } finally {
     transporter.close();
@@ -359,57 +319,40 @@ export type AgentMailWebhook = {
   secret: string | null;
 };
 
-function webhookOwnedByAccount(
-  webhook: AgentMailWebhook,
-  accountId: string,
-  url: string | null,
-): boolean {
-  if (url && webhook.url === url) return true;
-  if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
-  // Legacy org-wide client id. Claim that row only when it still
-  // points at this mailbox URL so a second inbox does not steal it.
-  return webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID && Boolean(url) && webhook.url === url;
-}
-
 function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
   const row = asRecord(raw);
   if (!row) return null;
   const webhookId = String(row.webhook_id ?? row.webhookId ?? "").trim();
   const url = String(row.url ?? "").trim();
   if (!webhookId || !url) return null;
-  const inboxIds = Array.isArray(row.inbox_ids)
-    ? row.inbox_ids.map((id) => String(id).trim()).filter(Boolean)
-    : Array.isArray(row.inboxIds)
-      ? row.inboxIds.map((id) => String(id).trim()).filter(Boolean)
-      : [];
-  const eventTypes = Array.isArray(row.event_types)
-    ? row.event_types.map((id) => String(id).trim()).filter(Boolean)
-    : Array.isArray(row.eventTypes)
-      ? row.eventTypes.map((id) => String(id).trim()).filter(Boolean)
-      : [];
-  const clientId = String(row.client_id ?? row.clientId ?? "").trim() || null;
-  const secret = String(row.secret ?? "").trim() || null;
-  return { webhookId, url, clientId, inboxIds, eventTypes, secret };
+  const ids = (value: unknown) =>
+    Array.isArray(value) ? value.map((id) => String(id).trim()).filter(Boolean) : [];
+  return {
+    webhookId,
+    url,
+    clientId: String(row.client_id ?? row.clientId ?? "").trim() || null,
+    inboxIds: ids(row.inbox_ids ?? row.inboxIds),
+    eventTypes: ids(row.event_types ?? row.eventTypes),
+    secret: String(row.secret ?? "").trim() || null,
+  };
 }
 
-export async function listAgentMailWebhooks(apiKey: string): Promise<AgentMailWebhook[]> {
+function webhookOwnedByAccount(webhook: AgentMailWebhook, accountId: string, url: string | null): boolean {
+  if (url && webhook.url === url) return true;
+  if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
+  return webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID && Boolean(url) && webhook.url === url;
+}
+
+export async function listAgentMailWebhooks(credential: string): Promise<AgentMailWebhook[]> {
   const webhooks: AgentMailWebhook[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 10; page += 1) {
     const query = new URLSearchParams({ limit: "100" });
     if (pageToken) query.set("page_token", pageToken);
-    const { status, body } = await agentMailJson(apiKey, `/webhooks?${query.toString()}`);
-    if (status === 401 || status === 403) {
-      throw new AgentMailConnectError(
-        "That AgentMail API key was rejected. Create a key in the AgentMail console and paste it here.",
-      );
-    }
-    if (status < 200 || status >= 300) {
-      throw new AgentMailConnectError("Could not list AgentMail webhooks with that API key.");
-    }
+    const { status, body } = await agentMailJson(credential, `/webhooks?${query}`);
+    assertAgentMailStatus(status, "Could not list AgentMail webhooks with that API key.");
     const payload = asRecord(body);
-    const rows = Array.isArray(payload?.webhooks) ? payload.webhooks : [];
-    for (const row of rows) {
+    for (const row of Array.isArray(payload?.webhooks) ? payload.webhooks : []) {
       const webhook = normalizeAgentMailWebhook(row);
       if (webhook) webhooks.push(webhook);
     }
@@ -420,14 +363,12 @@ export async function listAgentMailWebhooks(apiKey: string): Promise<AgentMailWe
   return webhooks;
 }
 
-export async function deleteAgentMailWebhook(apiKey: string, webhookId: string): Promise<void> {
-  const { status } = await agentMailJson(apiKey, `/webhooks/${encodeURIComponent(webhookId)}`, {
+export async function deleteAgentMailWebhook(credential: string, webhookId: string): Promise<void> {
+  const { status } = await agentMailJson(credential, `/webhooks/${encodeURIComponent(webhookId)}`, {
     method: "DELETE",
   });
   if (status === 404) return;
-  if (status < 200 || status >= 300) {
-    throw new AgentMailConnectError("Could not remove the previous AgentMail webhook.");
-  }
+  assertAgentMailStatus(status, "Could not remove the previous AgentMail webhook.");
 }
 
 export function publicAgentMailWebhookUrl(accountId: string): string | null {
@@ -450,24 +391,17 @@ export async function ensureAgentMailWebhook(input: {
     });
     return null;
   }
-
   const existing = (await listAgentMailWebhooks(input.apiKey)).find((webhook) =>
     webhookOwnedByAccount(webhook, input.accountId, url),
   );
-
   const canReuse =
     existing &&
     existing.url === url &&
     input.hasStoredSecret &&
     existing.inboxIds.includes(input.inboxId) &&
     AGENTMAIL_WEBHOOK_EVENT_TYPES.every((eventType) => existing.eventTypes.includes(eventType));
-  if (canReuse && existing) {
-    return { webhookId: existing.webhookId, secret: null };
-  }
-
-  if (existing) {
-    await deleteAgentMailWebhook(input.apiKey, existing.webhookId);
-  }
+  if (canReuse && existing) return { webhookId: existing.webhookId, secret: null };
+  if (existing) await deleteAgentMailWebhook(input.apiKey, existing.webhookId);
 
   const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
     method: "POST",
@@ -478,21 +412,9 @@ export async function ensureAgentMailWebhook(input: {
       client_id: agentMailWebhookClientId(input.accountId),
     }),
   });
-  if (status === 401 || status === 403) {
-    throw new AgentMailConnectError(
-      "That AgentMail API key cannot create webhooks. Create a key with webhook permission in the AgentMail console.",
-    );
-  }
-  if (status < 200 || status >= 300) {
-    throw new AgentMailConnectError(
-      "Could not register the AgentMail inbound webhook for this inbox.",
-    );
-  }
-  const created =
-    normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
-  if (!created?.webhookId) {
-    throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
-  }
+  assertAgentMailStatus(status, "Could not register the AgentMail inbound webhook for this inbox.");
+  const created = normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
+  if (!created) throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
   return { webhookId: created.webhookId, secret: created.secret };
 }
 
@@ -501,10 +423,10 @@ export async function deleteAgentMailWebhooksForAccount(input: {
   accountId: string;
 }): Promise<void> {
   const url = publicAgentMailWebhookUrl(input.accountId);
-  const webhooks = await listAgentMailWebhooks(apiKey);
+  const webhooks = await listAgentMailWebhooks(input.apiKey);
   for (const webhook of webhooks) {
     if (webhookOwnedByAccount(webhook, input.accountId, url)) {
-      await deleteAgentMailWebhook(apiKey, webhook.webhookId);
+      await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
     }
   }
 }
