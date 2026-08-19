@@ -99,7 +99,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "EMAIL_UNVERIFIED":
       return {
         title: "Verify your email first",
-        body: "We sent you a link from Wireline. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder, or resend the link below.",
+        body: "We sent you a link from BotBound. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder, or resend the link below.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
@@ -431,7 +431,7 @@ export default function TrialGateModal() {
                   </ShadButton>
                   {resend === "sent" && (
                     <p className="text-xs leading-relaxed text-foreground/65">
-                      Sent. Check your inbox and spam folder for a link from Wireline.
+                      Sent. Check your inbox and spam folder for a link from BotBound.
                     </p>
                   )}
                   {resend === "no-transport" && (
@@ -474,7 +474,7 @@ export default function TrialGateModal() {
                     href="/settings/billing"
                     className="text-xs text-brand underline-offset-2 hover:underline"
                   >
-                    View Wireline billing details
+                    View BotBound billing details
                   </a>
                 </div>
               )}
