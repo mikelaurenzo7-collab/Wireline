@@ -186,59 +186,57 @@ describe("E2E design and brand polish", () => {
     );
   });
 
-  it("keeps the landing journey professional, concise, and outcome led", () => {
+  it("keeps the root landing as a focused product entrance, not a brochure", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const executableLanding = withoutComments(landing);
-    const stage = read("src/styles/landing-call-stage.css");
-    const layout = read("src/styles/landing-stage-layout.css");
-    const consoleCss = read("src/styles/landing-live-console.css");
-    const executableStage = withoutComments(`${stage}\n${layout}\n${consoleCss}`);
+    const prestige = read("src/styles/landing-prestige.css");
+    const executablePrestige = withoutComments(prestige);
+    const auth = read("src/styles/auth-access-panel.css");
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
 
-    expect(executableLanding).toContain('aria-label="Bot template lane"');
-    expect(executableLanding).toContain("BOT_ROLE_TEMPLATES.map");
-    expect(executableLanding).toContain("<PrecisionPublicHeader />");
-    expect(executableLanding).toContain('variant="stage"');
-    expect(executableLanding).toContain("landing-stage__rail");
-    expect(executableLanding).toContain("landing-stage__copy");
-    expect(executableLanding).toContain("landing-stage__lane-group");
-    expect(executableLanding).toContain("landing-console");
-    expect(executableLanding).toContain("landing-console__activity");
-    expect(executableLanding).toContain("Illustrative Workflow");
-    expect(executableLanding).toContain("From first answer to confirmed next step");
-    expect(executableLanding).not.toContain("From first answer to confirmed next step.");
-    expect(executableLanding).toContain("Booked and logged");
-    expect(executableLanding).toContain("MARKETING_VOICE.subline");
-    expect(executableLanding).toContain("MARKETING_VOICE.spine");
-    expect(executableLanding).toContain("View Pricing");
-    expect(executableLanding).toContain("Build Free");
-    expect(executableLanding).toContain("rules, approvals, spend, and handoffs");
-    expect(executableLanding).not.toContain("00:42");
-    expect(executableLanding).not.toContain("landing-console__duration");
+    expect(executableLanding).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(executableLanding).toMatch(/<span>WIRE YOUR<\/span>[\s\S]*<span>PHONE BOT<\/span>/);
+    expect(executableLanding).toMatch(
+      /landing-prestige__channels[\s\S]*<span>CALL<\/span>[\s\S]*<span>EMAIL<\/span>[\s\S]*<span>TEXT<\/span>/,
+    );
+    expect(executableLanding).toContain("FEATURED_TEMPLATE_KEYS");
+    expect(executableLanding).toContain("FEATURED_TEMPLATES.map");
+    expect(executableLanding).toContain("template.moves.map");
+    expect(executableLanding).toContain("size={30}");
+    expect(executableLanding).toContain("active");
+    expect(executableLanding).toContain('id="pricing"');
+    expect(executableLanding).toContain("landing-prestige__trust");
+    expect(executableLanding).toContain("<LandingFooter />");
+    expect(executableLanding).toContain("BOT_MARKETING_VOICE.subline");
+
+    expect(executableLanding).not.toContain("<PrecisionPublicHeader");
+    expect(executableLanding).not.toContain('aria-label="Bot template lane"');
+    expect(executableLanding).not.toContain('variant="stage"');
+    expect(executableLanding).not.toContain("landing-console__activity");
+    expect(executableLanding).not.toContain("Illustrative Workflow");
+    expect(executableLanding).not.toContain("Booked and logged");
+    expect(executableLanding).not.toContain("template.category");
+    expect(executableLanding).not.toContain("ONE WORKSPACE");
+    expect(executableLanding).not.toContain("Runtime Balance");
     expect(executableLanding).not.toContain("Live Video");
-    expect(executableLanding).not.toContain("Choose the outcome");
     expect(executableLanding).not.toContain("landing-phone");
     expect(executableLanding).not.toContain("landing-os__tray");
-    expect(executableLanding).not.toContain('chrome="hidden"');
-    expect(executableLanding).not.toContain("MarketingChromeBar");
-
-    expect(stage).toContain('@import "./landing-stage-layout.css";');
-    expect(stage).toContain('@import "./landing-live-console.css";');
-    expect(executableStage).toContain("--wireline-color-action-primary-default");
-    expect(executableStage).toContain("--wireline-color-action-secondary-default");
-    expect(executableStage).not.toContain("#4ade80");
-    expect(executableStage).not.toContain("#fbbf24");
-    expect(executableStage).not.toContain("#7dd3fc");
-    expect(executableStage).not.toContain("#2563eb");
-    expect(consoleCss).toContain("font-size: 0.71rem");
-    expect(consoleCss).not.toContain("0 2.4rem 6rem");
-    expect(header).not.toContain("landing-os-nav");
-    expect(header).not.toContain('chrome?: "bar" | "hidden"');
-
-    expect(executableLanding).not.toContain("Put your first voice agent to work");
-    expect(executableLanding).not.toContain('wl-display-2">Build. Train. Launch. Improve.');
     expect(executableLanding).not.toContain("—");
     expect(executableLanding).not.toContain("·");
+
+    expect(executablePrestige).toContain(
+      "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)",
+    );
+    expect(prestige).toContain("font-size: clamp(4.25rem, 7.15vw, 8.4rem)");
+    expect(executablePrestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero,[\s\S]*\.landing-prestige__desktop-only[\s\S]*display:\s*none/,
+    );
+    expect(executablePrestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*100dvh/,
+    );
+    expect(auth).toContain("grid-template-columns: repeat(3");
+    expect(header).not.toContain("landing-os-nav");
+    expect(header).not.toContain('chrome?: "bar" | "hidden"');
   });
 
   it("keeps the shell scroll-container rule from swallowing sr-only live regions", () => {
