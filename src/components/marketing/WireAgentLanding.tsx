@@ -5,11 +5,12 @@ import AuthAccessPanel from "../auth/AuthAccessPanel";
 import BotMark from "../BotMark";
 import { WirelineLockup } from "../brand/WirelineBrand";
 import LandingFooter from "./LandingFooter";
-import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { BOT_CHANNELS, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
+const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase());
 const FEATURED_TEMPLATE_KEYS = [
   "front-desk",
   "sales-rep",
@@ -61,9 +62,9 @@ export default function WireAgentLanding() {
               </h1>
 
               <div className="landing-prestige__channels" aria-label="Phone Bot channels">
-                <span>CALL</span>
-                <span>EMAIL</span>
-                <span>TEXT</span>
+                {HERO_CHANNELS.map((label) => (
+                  <span key={label}>{label}</span>
+                ))}
               </div>
 
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.subline}</p>
