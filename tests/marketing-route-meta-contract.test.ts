@@ -6,10 +6,16 @@ import {
   HOME_TITLE,
   HOME_DESCRIPTION,
   PRERENDERED_ROUTE_SHELLS,
+  SITE_URL,
   injectMarketingMeta,
   resolveRouteMeta,
+  withBotBoundBrand,
 } from "../src/lib/marketing-route-meta";
 import { WEDGES } from "../src/data/vertical-wedges";
+import {
+  BOTBOUND_BRAND_NAME,
+  LEGACY_PRODUCTION_ORIGIN,
+} from "../src/lib/brand";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const indexHtml = read("index.html");
@@ -19,14 +25,22 @@ describe("route meta prerendering", () => {
     expect(indexHtml).toContain(`<title>${HOME_TITLE}</title>`);
     expect(indexHtml.split(HOME_TITLE).length - 1).toBe(3);
     expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3);
-    expect(indexHtml).toContain('<link rel="canonical" href="https://trywireline.com/" />');
-    expect(indexHtml).toContain('<meta property="og:url" content="https://trywireline.com/" />');
+    // Until the purchased BotBound domain is attached to the Vercel project,
+    // the source shell intentionally retains the proven legacy origin. The
+    // prerender registry itself is configuration-driven and uses SITE_URL.
+    expect(indexHtml).toContain(
+      `<link rel="canonical" href="${LEGACY_PRODUCTION_ORIGIN}/" />`,
+    );
+    expect(indexHtml).toContain(
+      `<meta property="og:url" content="${LEGACY_PRODUCTION_ORIGIN}/" />`,
+    );
     expect(indexHtml).toContain(
       '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
     );
     expect(indexHtml).toContain(
       '<meta name="googlebot" content="index, follow, max-image-preview:large" />',
     );
+    expect(indexHtml).toContain('content="BotBound"');
   });
 
   it("prerenders every /for/* wedge, inline commercial page, and guarded account shell", () => {
@@ -66,9 +80,10 @@ describe("route meta prerendering", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
       const meta = resolveRouteMeta(`/for/${slug}`);
       expect(meta, slug).not.toBeNull();
-      expect(meta!.title).toBe(wedge.metaTitle.replace(/\bWireline\b/gi, "WIRELINE"));
-      expect(meta!.description).toBe(wedge.metaDescription);
-      expect(meta!.canonical).toBe(`https://trywireline.com/for/${slug}`);
+      expect(meta!.title).toContain(BOTBOUND_BRAND_NAME);
+      expect(meta!.title).not.toMatch(/\bWireline\b/i);
+      expect(meta!.description).toBe(withBotBoundBrand(wedge.metaDescription));
+      expect(meta!.canonical).toBe(`${SITE_URL}/for/${slug}`);
       expect(meta!.noIndex).not.toBe(true);
     }
   });
@@ -93,8 +108,8 @@ describe("route meta prerendering", () => {
 
     for (const route of ["/solutions/sales", "/solutions/support"] as const) {
       const meta = resolveRouteMeta(route)!;
-      expect(meta.title.endsWith(" | WIRELINE")).toBe(true);
-      expect(solutions).toContain(`"${meta.title.replace(" | WIRELINE", "")}"`);
+      expect(meta.title.endsWith(` | ${BOTBOUND_BRAND_NAME}`)).toBe(true);
+      expect(solutions).toContain(`"${meta.title.replace(` | ${BOTBOUND_BRAND_NAME}`, "")}"`);
       expect(solutions).toContain(meta.description);
     }
 
@@ -115,7 +130,7 @@ describe("route meta prerendering", () => {
     for (const [route, path] of Object.entries(routeSources)) {
       const meta = resolveRouteMeta(route)!;
       const source = read(path);
-      const inlineTitle = meta.title.replace(/ \| WIRELINE$/, "");
+      const inlineTitle = meta.title.replace(new RegExp(` \\| ${BOTBOUND_BRAND_NAME}$`), "");
       expect(source, `${route} title`).toContain(inlineTitle);
       expect(source, `${route} description`).toContain(meta.description);
       expect(meta.noIndex, route).not.toBe(true);
@@ -133,8 +148,8 @@ describe("route meta prerendering", () => {
     for (const vertical of ["medical", "legal", "insurance", "enterprise"]) {
       const meta = resolveRouteMeta(`/trust/${vertical}`);
       expect(meta, `/trust/${vertical}`).not.toBeNull();
-      expect(meta!.title.endsWith(" | WIRELINE")).toBe(true);
-      expect(meta!.canonical).toBe(`https://trywireline.com/trust/${vertical}`);
+      expect(meta!.title.endsWith(` | ${BOTBOUND_BRAND_NAME}`)).toBe(true);
+      expect(meta!.canonical).toBe(`${SITE_URL}/trust/${vertical}`);
     }
   });
 
@@ -181,12 +196,12 @@ describe("route meta prerendering", () => {
       );
     }
 
-    expect(resolveRouteMeta("/get-started")!.canonical).toBe("https://trywireline.com/signup");
-    expect(resolveRouteMeta("/auth")!.canonical).toBe("https://trywireline.com/signin");
+    expect(resolveRouteMeta("/get-started")!.canonical).toBe(`${SITE_URL}/signup`);
+    expect(resolveRouteMeta("/auth")!.canonical).toBe(`${SITE_URL}/signin`);
     expect(resolveRouteMeta("/oauth-complete")!.canonical).toBe(
-      "https://trywireline.com/auth/oauth-complete",
+      `${SITE_URL}/auth/oauth-complete`,
     );
-    expect(resolveRouteMeta("/not-found")!.canonical).toBe("https://trywireline.com/404");
+    expect(resolveRouteMeta("/not-found")!.canonical).toBe(`${SITE_URL}/404`);
   });
 
   it("rewrites the static head for a marketing route without touching unrelated markup", () => {
@@ -204,12 +219,14 @@ describe("route meta prerendering", () => {
     );
 
     expect(out).not.toContain(`<title>${HOME_TITLE}</title>`);
-    expect(out).not.toContain('<link rel="canonical" href="https://trywireline.com/" />');
+    expect(out).not.toContain(
+      `<link rel="canonical" href="${LEGACY_PRODUCTION_ORIGIN}/" />`,
+    );
     expect(out).toContain('<meta name="twitter:card" content="summary_large_image" />');
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
-    expect(out).toContain('"@type": "WebSite"');
+    expect(out).toMatch(/"@type"\s*:\s*"WebSite"/);
     expect(out).toContain(
-      '<meta property="og:image" content="https://trywireline.com/og-image.png" />',
+      `<meta property="og:image" content="${LEGACY_PRODUCTION_ORIGIN}/og-image.png" />`,
     );
   });
 
