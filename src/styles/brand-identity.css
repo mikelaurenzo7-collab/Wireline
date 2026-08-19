@@ -1,8 +1,9 @@
 /* BotBound identity layer.
  *
- * Brand rule: customer-visible identity is BotBound. Stable technical
- * `wireline` identifiers remain unchanged until a dedicated compatibility
- * migration is operationally justified.
+ * Customer-visible identity is BotBound. The mark is intentionally compact and
+ * unmistakably telephonic: platinum Bot hardware, violet signal energy, and an
+ * obsidian equipment surface. Stable technical `wireline` identifiers can stay
+ * below the presentation layer without leaking into the product brand.
  */
 :root {
   --wireline-brand-violet: var(--wireline-color-action-primary-default);
@@ -12,9 +13,12 @@
   --wireline-brand-obsidian-deeper: #050508;
   --bb-wordmark-tracking: -0.035em;
   --bb-wordmark-inline-tracking: -0.025em;
+  --bb-brand-glow: color-mix(in srgb, var(--wireline-brand-violet) 22%, transparent);
+  --bb-brand-platinum-soft: color-mix(in srgb, var(--wireline-brand-platinum) 76%, white 24%);
 }
 
 .bb-wordmark {
+  position: relative;
   display: inline-flex;
   align-items: baseline;
   color: currentColor;
@@ -35,6 +39,16 @@
 
 .bb-wordmark__bound {
   color: var(--wireline-brand-violet-light);
+  background: linear-gradient(
+    112deg,
+    var(--wireline-brand-violet-light) 0%,
+    color-mix(in srgb, var(--wireline-brand-violet-light) 58%, var(--bb-brand-platinum-soft)) 52%,
+    var(--bb-brand-platinum-soft) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 1.15rem color-mix(in srgb, var(--wireline-brand-violet) 13%, transparent);
 }
 
 .bb-wordmark[data-inline="true"] {
@@ -70,15 +84,19 @@
 }
 
 .bb-lockup__mark {
+  position: relative;
   display: inline-grid;
   width: var(--bb-lockup-mark);
   height: var(--bb-lockup-mark);
   flex: 0 0 var(--bb-lockup-mark);
   place-items: center;
   color: var(--wireline-brand-violet);
+  filter: drop-shadow(0 0.3rem 0.72rem color-mix(in srgb, var(--wireline-brand-violet) 14%, transparent));
 }
 
 .bb-lockup__mark > svg {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
@@ -90,16 +108,40 @@
 }
 
 .bb-lockup[data-surface="tile"] .bb-lockup__mark {
-  width: calc(var(--bb-lockup-mark) + 0.42rem);
-  height: calc(var(--bb-lockup-mark) + 0.42rem);
-  flex-basis: calc(var(--bb-lockup-mark) + 0.42rem);
+  isolation: isolate;
+  width: calc(var(--bb-lockup-mark) + 0.48rem);
+  height: calc(var(--bb-lockup-mark) + 0.48rem);
+  flex-basis: calc(var(--bb-lockup-mark) + 0.48rem);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 18%, transparent);
-  border-radius: var(--wireline-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 22%, transparent);
+  border-radius: calc(var(--wireline-radius-sm) + 0.12rem);
   background:
-    radial-gradient(circle at 38% 24%, color-mix(in srgb, var(--wireline-brand-violet) 20%, transparent), transparent 52%),
-    linear-gradient(145deg, color-mix(in srgb, var(--wireline-brand-obsidian) 86%, var(--wireline-brand-platinum) 14%) 0%, var(--wireline-brand-obsidian) 58%, var(--wireline-brand-obsidian-deeper) 100%);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-brand-platinum) 14%, transparent), 0 7px 18px rgba(0, 0, 0, 0.22);
+    radial-gradient(circle at 32% 18%, color-mix(in srgb, white 8%, transparent), transparent 32%),
+    radial-gradient(circle at 40% 28%, color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent), transparent 55%),
+    linear-gradient(
+      148deg,
+      color-mix(in srgb, var(--wireline-brand-obsidian) 82%, var(--wireline-brand-platinum) 18%) 0%,
+      var(--wireline-brand-obsidian) 54%,
+      var(--wireline-brand-obsidian-deeper) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--wireline-brand-violet) 5%, transparent),
+    0 0.55rem 1.45rem rgba(0, 0, 0, 0.24),
+    0 0 1.8rem var(--bb-brand-glow);
+}
+
+.bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 12%;
+  border: 1px solid color-mix(in srgb, var(--wireline-brand-violet-light) 12%, transparent);
+  border-radius: 50%;
+  opacity: 0.82;
+  box-shadow: 0 0 1rem color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent);
+  pointer-events: none;
 }
 
 .bb-lockup[data-surface="tile"] .bb-lockup__mark > svg {
@@ -107,7 +149,8 @@
   height: 84%;
 }
 
-/* Legacy selectors remain only as a transition safety net. */
+/* Compatibility selectors keep older component imports visually identical to
+ * the canonical BotBound lockup while source modules are retired incrementally. */
 .wl-wireline-wordmark {
   text-transform: none !important;
   letter-spacing: var(--bb-wordmark-tracking) !important;
@@ -140,10 +183,14 @@ button:has(> .wl-wireline-lockup):focus-visible {
   .bb-lockup__mark,
   .wl-wireline-lockup__mark {
     color: CanvasText;
+    filter: none;
   }
 
   .bb-wordmark__bound {
     color: currentColor;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    text-shadow: none;
   }
 
   .bb-lockup[data-surface="tile"] .bb-lockup__mark,
@@ -151,5 +198,9 @@ button:has(> .wl-wireline-lockup):focus-visible {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
+  }
+
+  .bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
+    display: none;
   }
 }
