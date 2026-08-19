@@ -13,12 +13,14 @@ This root path is retained for legacy links, development-tool discovery, and dep
 
 ## Self-serve billing release control
 
-Self-serve checkout requires all three production controls to align:
+Self-serve checkout is authorized only on the audited canonical `main` production release channel and requires:
 
 - `WIRELINE_SELF_SERVE_BILLING_ENABLED=true`;
 - `WIRELINE_LAUNCH_DEMO_MODE=false`;
-- `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` exactly matching Vercel's full `VERCEL_GIT_COMMIT_SHA` for the deployed artifact.
+- Vercel runtime identity `VERCEL_ENV=production` and `VERCEL_GIT_COMMIT_REF=main`.
 
-The exact-head authorization defaults closed, is production-only, and must be deliberate for every new release. A boolean left enabled from an older deployment cannot authorize a new commit. The complete certification prerequisites, opening procedure, and verified rollback procedure live in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control).
+`WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` is retired legacy configuration and no longer authorizes checkout. Safe production redeploys do **not** require per-commit environment-variable rotation. Preview and non-`main` deployments remain fail-closed, and every canonical production artifact still must pass the mandatory comprehensive release audit, live Stripe verification, migrations/schema checks, build, and smoke tests before it can become READY.
+
+The complete certification prerequisites, opening procedure, and verified rollback procedure live in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control).
 
 Use the canonical runbook for the complete release, environment, provider-verification, and rollback procedure.
