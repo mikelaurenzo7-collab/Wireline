@@ -50,7 +50,7 @@ const PACKS: Record<string, TrustPack> = {
       },
     ],
     boundary:
-      "Wireline does not claim HIPAA compliance or certification. Do not send, store, or process PHI unless Wireline has confirmed both a signed BAA and an approved configuration in writing.",
+      "BotBound does not claim HIPAA compliance or certification. Do not send, store, or process PHI unless BotBound has confirmed both a signed BAA and an approved configuration in writing.",
     reviewItems: [
       "Confirm the exact data your workflow will handle.",
       "Approve disclosure, consent, and recording language.",
@@ -91,7 +91,7 @@ const PACKS: Record<string, TrustPack> = {
       },
     ],
     boundary:
-      "Wireline is not a law firm and does not provide legal advice. It cannot determine conflicts, privilege, representation, or matter acceptance; the firm owns those decisions and all jurisdiction-specific obligations.",
+      "BotBound is not a law firm and does not provide legal advice. It cannot determine conflicts, privilege, representation, or matter acceptance; the firm owns those decisions and all jurisdiction-specific obligations.",
     reviewItems: [
       "Define what the agent may and may not say.",
       "Route conflict and matter-acceptance decisions to staff.",
@@ -144,7 +144,7 @@ const PACKS: Record<string, TrustPack> = {
     eyebrow: "Enterprise review",
     title: "Proof that matches the product",
     subtitle:
-      "A concise starting point for security, procurement, and operations teams evaluating Wireline today.",
+      "A concise starting point for security, procurement, and operations teams evaluating BotBound today.",
     controls: [
       {
         title: "Tenant isolation",
@@ -173,7 +173,7 @@ const PACKS: Record<string, TrustPack> = {
       },
     ],
     boundary:
-      "SSO, residency, DPA, BAA, support, and other enterprise terms are available only when the signed order or written security response explicitly confirms them. Wireline does not currently present a SOC 2 attestation badge.",
+      "SSO, residency, DPA, BAA, support, and other enterprise terms are available only when the signed order or written security response explicitly confirms them. BotBound does not currently present a SOC 2 attestation badge.",
     reviewItems: [
       "Confirm identity and access requirements.",
       "Inventory subprocessors and data regions.",
@@ -200,7 +200,7 @@ export default function TrustPackPage() {
   if (!pack) {
     return (
       <MarketingChrome>
-        <PageMeta title="Trust pack not found | Wireline" noIndex />
+        <PageMeta title="Trust pack not found | BotBound" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-muted">Trust pack not found.</p>
           <Link to="/security" className="wl-label mt-4 inline-block text-brand">
@@ -304,7 +304,7 @@ export default function TrustPackPage() {
         <section className="mt-10 border-t border-border pt-8 text-center">
           <h2 className="font-display text-2xl text-foreground">Review the real workflow</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Bring your use case, data map, and approval rules. Wireline will separate what is
+            Bring your use case, data map, and approval rules. BotBound will separate what is
             available today from anything that still needs contractual or technical work.
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
