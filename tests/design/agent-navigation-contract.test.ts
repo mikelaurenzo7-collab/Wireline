@@ -9,10 +9,6 @@ describe("authenticated Bot navigation contract", () => {
   const navigation = read("src/constants/navigation.ts");
   const shell = read("src/components/WorkspaceShell.tsx");
   const routes = read("src/routes/AppRoutes.tsx");
-  const overview = read("src/pages/OverviewPage.tsx");
-  const overviewInbox = read("src/components/overview/UnifiedInbox.tsx");
-  const overviewRail = read("src/components/overview/OverviewRail.tsx");
-  const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
   const studio = read("src/components/StudioWorkspaceV2.tsx");
   const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
   const studioPanel = read("src/components/StudioAgentWorkspacePanel.tsx");
@@ -21,66 +17,51 @@ describe("authenticated Bot navigation contract", () => {
   const create = read("src/components/CreateAgentDialog.tsx");
   const copy = read("src/lib/product-copy.ts");
 
-  it("keeps the primary IA small and routes secondary tools through their parents", () => {
-    expect(navigation).toMatch(/href: "\/overview"[\s\S]*label: "Overview"/);
+  it("keeps daily IA small and moves management destinations below it", () => {
     expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Agent Studio"/);
-    expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
+    expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
     expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
     expect(shell).toContain("desktopNavParentHref(pathname)");
     expect(shell).toContain('navLabel: "Bot Studio"');
-    expect(shell).toContain('plural: "Bots"');
     expect(shell).toContain("MobileNavMoreSheet");
+    expect(shell).toContain("WorkspaceResizablePanel");
   });
 
-  it("keeps legacy agent URLs compatible without reviving retired pages", () => {
-    expect(routes).toContain('path="/agents"');
-    expect(routes).toContain("AgentsToStudioRedirect");
-    expect(routes).toMatch(/AgentsToStudioRedirect[\s\S]*\/studio/);
+  it("keeps legacy agent and Overview URLs compatible without reviving retired command centers", () => {
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
+    expect(routes).toContain('path="/agents" element={<ToStudioRedirect />}');
     for (const path of ["/pulse", "/fleet", "/ops", "/training", "/chat", "/actions", "/nexus", "/wires"]) {
       expect(routes).not.toContain(`path="${path}"`);
     }
   });
 
-  it("operates one modular Overview before exposing configuration", () => {
-    expect(overview).toContain("UnifiedInbox");
-    expect(overview).toContain("BotRoster");
-    expect(overview).toContain("ConfigureCard");
-    expect(overview).toContain("Customer demand and outcomes");
-    expect(overview).toContain("Customer conversations today");
-    expect(overview).toContain("High-intent today");
-    expect(overview).toContain("Appointments booked");
-    expect(overview).toContain("Needs attention");
-    expect(overviewInbox).toContain("Unified Inbox");
-    expect(overviewInbox).toContain("Recent customer conversations");
-    expect(overviewRail).toContain("Bots");
-    expect(overviewRail).toContain("One Control Surface");
-    expect(firstRun).toContain("Build Your Bot");
-    expect(firstRun).toContain("Create Your Own");
-    expect(firstRun).toContain("Browse Templates");
-    expect(`${overview}\n${overviewInbox}\n${overviewRail}\n${firstRun}`).not.toMatch(
-      /personalAgents|businessAgents|founderPair|posture=/,
-    );
+  it("makes Studio the authenticated home and gives each Bot a scoped workspace", () => {
+    expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
+    expect(studioChrome).toContain('aria-label="Switch Bot"');
+    expect(studioChrome).toContain("agents.map");
+    expect(studioChrome).toContain("/inbox?agent=");
+    expect(studioChrome).toContain("/phone?agent=");
+    expect(shell).toContain("Current Bot");
+    expect(shell).not.toContain("orderedAgents");
   });
 
-  it("keeps Studio on a simple Set Up, Test, Review loop", () => {
+  it("keeps Studio on a simple Setup, Test, Review loop", () => {
     expect(studio).toContain('type WorkspaceSection = "setup" | "test" | "review"');
-    expect(studio).toContain('label: "Set Up"');
+    expect(studio).toContain('label: "Setup"');
     expect(studio).toContain('label: "Test"');
     expect(studio).toContain('label: "Review"');
     expect(studio).toContain("StudioAgentWorkspacePanel");
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");
+    expect(studio).toContain("WorkspaceResizablePanel");
     expect(studio).not.toContain("StudioAgentCanvas");
-    expect(studio).not.toContain("useAccount");
     expect(studio).not.toContain("posture=");
-    expect(studioChrome).toContain("language.navLabel");
-    expect(studioChrome).toContain("language.createCta");
   });
 
   it("uses a real customer roleplay with saved configuration and no persistence bait", () => {
@@ -97,13 +78,15 @@ describe("authenticated Bot navigation contract", () => {
     expect(route).not.toContain("agentConversationMessages");
   });
 
-  it("keeps the managed phone voice and readiness review inside Studio", () => {
+  it("keeps managed voice and readiness review in Studio without provider-facing guidance", () => {
     const voice = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(voice).toContain("VAPI_CURATED_VOICES");
     expect(voice).toContain("Savannah");
     expect(voice).toContain("Elliot");
     expect(voice).toContain('provider: "vapi"');
-    expect(voice).toContain("Browser tests the words");
+    expect(voice).not.toContain("Browser tests the words");
+    expect(voice).not.toContain("Speech-to-Speech");
+    expect(voice).not.toContain("live PSTN");
     expect(studioPanel).toContain("<SimpleVoicePicker");
     expect(studioPanel).toContain("Phone voice");
     expect(studioPanel).not.toMatch(/VoiceGallery|AgentPresenceLivePreview/);
@@ -124,16 +107,17 @@ describe("authenticated Bot navigation contract", () => {
     expect(create).not.toMatch(/Provision a number|video-presenter/);
   });
 
-  it("keeps secondary authenticated surfaces mounted to current destinations", () => {
+  it("keeps secondary surfaces mounted to current destinations and shared page rhythm", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
     const knowledge = read("src/pages/KnowledgePage.tsx");
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
     const billing = read("src/pages/BillingSettings.tsx");
     expect(connections).toContain("IntegrationOperatingMap");
     expect(connections).toContain("CrmConnectionCard");
+    expect(knowledge).toContain("WorkspaceControlBand");
     expect(knowledge).toContain("WorkspaceTabStrip");
-    expect(knowledge).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
     expect(settingsTabs).toContain('href: "/settings/apps", label: "Apps"');
+    expect(settingsTabs).toContain("WorkspaceControlBand");
     expect(billing).toContain("Runtime Balance");
   });
 });
