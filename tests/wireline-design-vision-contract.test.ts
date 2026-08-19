@@ -25,10 +25,19 @@ const AUTHENTICATED_SURFACE_GLOBS = [
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
 
 describe("WIRELINE Letterpress design vision", () => {
-  it("exports a single canonical vision manifest", () => {
+  it("exports one canonical design system and treats obsidian only as its canvas material", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
     expect(WIRELINE_DESIGN_VISION.system).toBe("WIRELINE Letterpress");
+    expect(WIRELINE_DESIGN_VISION.naming).toEqual({
+      designSystem: "WIRELINE Letterpress",
+      canvasMaterial: "obsidian",
+      rule:
+        "Letterpress is the design system. obsidian is a lowercase canvas/material descriptor inside Letterpress, never a second design system, UI system, or theme name.",
+    });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "Letterpress is the system; obsidian is the canvas material, never a competing system name.",
+    );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
     );
