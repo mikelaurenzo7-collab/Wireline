@@ -136,7 +136,7 @@ export function ContactPage() {
   return (
     <MarketingPageFrame longform>
       <PageMeta
-        title="Contact Wireline"
+        title="Contact WIRELINE"
         description="Talk to Wireline about personal call coverage, team rollout, partnerships, or support."
         path="/contact"
       />
