@@ -17,6 +17,8 @@ type VapiModelConfig = {
 };
 
 type ShowcaseAssistantPayload = {
+  name?: string;
+  firstMessage?: string;
   model?: VapiModelConfig;
 };
 
@@ -67,8 +69,8 @@ function replaceLiteral(source: string, from: string, to: string): string {
   return source.includes(from) ? source.split(from).join(to) : source;
 }
 
-function migrateLegacyBrand(prompt: string): string {
-  let migrated = replaceLiteral(prompt, LEGACY_WIRELINE_NAME, BOTBOUND_BRAND_NAME);
+function migrateLegacyBrand(source: string): string {
+  let migrated = replaceLiteral(source, LEGACY_WIRELINE_NAME, BOTBOUND_BRAND_NAME);
   migrated = replaceLiteral(migrated, LEGACY_WIRELINE_NAME.toUpperCase(), BOTBOUND_BRAND_NAME);
   return migrated;
 }
@@ -118,6 +120,19 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
   delete model.fallbackModels;
 }
 
+function migrateShowcaseIdentityFields(payload: ShowcaseAssistantPayload): void {
+  if (typeof payload.name === "string") payload.name = migrateLegacyBrand(payload.name);
+  if (typeof payload.firstMessage === "string") {
+    payload.firstMessage = migrateLegacyBrand(payload.firstMessage);
+  }
+}
+
+function isCapacityAssistant(payload: ShowcaseAssistantPayload): boolean {
+  const name = String(payload.name || "");
+  const firstMessage = String(payload.firstMessage || "");
+  return /\(at capacity\)$/i.test(name) && /demo line/i.test(firstMessage);
+}
+
 /**
  * Last-mile guard for public Vapi prompts and model payloads.
  *
@@ -128,11 +143,17 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
 export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayload>(
   payload: T,
 ): T {
+  migrateShowcaseIdentityFields(payload);
+
   const promptRow = systemPrompt(payload);
   if (!promptRow) return payload;
 
   const kind = showcaseKind(promptRow.content);
-  if (!kind) return payload;
+  if (!kind) {
+    // The bounded at-capacity assistant intentionally has no full showcase
+    // system prompt. Its name/firstMessage were still normalized above.
+    return payload;
+  }
 
   makeModelFallbacksProviderCoherent(payload.model);
 
@@ -161,6 +182,11 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
     prompt,
     `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.`,
     `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified and BAA support is not currently available, say that plainly.`,
+  );
+  prompt = replaceLiteral(
+    prompt,
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified today; BAA is on the Enterprise roadmap. Say that plainly.`,
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified and BAA support is not currently available. Say that plainly.`,
   );
 
   prompt = prompt.replace(
@@ -194,8 +220,12 @@ function isShowcaseAssistantResponse(
   if (!body || typeof body !== "object") return false;
   const assistant = (body as { assistant?: unknown }).assistant;
   if (!assistant || typeof assistant !== "object") return false;
-  const row = systemPrompt(assistant as ShowcaseAssistantPayload);
-  return Boolean(row && SHOWCASE_PROMPT_MARKERS.some((marker) => row.content.includes(marker)));
+  const typed = assistant as ShowcaseAssistantPayload;
+  const row = systemPrompt(typed);
+  return Boolean(
+    (row && SHOWCASE_PROMPT_MARKERS.some((marker) => row.content.includes(marker))) ||
+      isCapacityAssistant(typed),
+  );
 }
 
 export function showcasePromptTruthGuard(req: Request, res: Response, next: NextFunction): void {
