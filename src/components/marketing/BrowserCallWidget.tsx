@@ -12,7 +12,7 @@ type BrowserCallWidgetProps = {
   /** Retained for call-site compatibility. Public demos use semantic tokens. */
   tintColor?: string;
   buttonLabel?: string;
-  /** compact: supporting public pages. stage: the flagship homepage proof console. */
+  /** compact: supporting public pages. stage: larger proof surfaces retained for compatibility. */
   variant?: "compact" | "stage";
   /** Optional non-runtime path displayed after a protected preview cannot start. */
   fallback?: ReactNode;
@@ -92,7 +92,7 @@ export default function BrowserCallWidget({
             />
           </div>
           <p className="landing-demo__name wl-preserve-case">{agentName}</p>
-          <p className="landing-demo__role">Demo Voice Bot</p>
+          <p className="landing-demo__role">Demo Phone Bot</p>
         </div>
 
         <div className="landing-demo__controls">
@@ -151,7 +151,7 @@ export default function BrowserCallWidget({
             {demo.callActive
               ? `This preview ends automatically after ${demo.maxDurationSeconds} seconds. End it sooner at any time.`
               : demo.connecting
-                ? "Cancel at any time before the private voice session begins."
+                ? "Cancel at any time before the private call session begins."
                 : showPhoneFallback
                   ? "Call the public demo line below. Standard carrier rates may apply."
                   : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}
@@ -236,7 +236,7 @@ export default function BrowserCallWidget({
 
       <p className="wl-preserve-case max-w-xs text-center text-xs leading-5 text-muted-foreground">
         {demo.connecting
-          ? "Cancel at any time before the private voice session begins."
+          ? "Cancel at any time before the private call session begins."
           : `${demo.maxDurationSeconds}-second private preview. No retained call artifacts.`}
       </p>
 

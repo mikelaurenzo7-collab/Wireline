@@ -81,9 +81,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Wireline is an independent platform for Voice Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
   },
   "/showcase": {
-    title: "TRY WIRELINE | HEAR A VOICE BOT",
+    title: "TRY WIRELINE | HEAR A PHONE BOT",
     description:
-      "Hear the Voice Bot your customers will meet first, then build one that handles calls, live conversations, text, and email from one workspace.",
+      "Hear the Phone Bot first. Then wire one for calls, email, text, and the work that should happen next.",
   },
   "/blog": {
     title: "WIRELINE NOTES | VOICE BOT GUIDES FOR SMALL BUSINESS",

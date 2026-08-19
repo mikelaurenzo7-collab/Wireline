@@ -58,8 +58,6 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
-    // Main fills the shell's safe box. Dock clearance is the scroller's job, so
-    // first-run pages are not given two empty bands above the mobile dock.
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
     expect(workspace).toContain("pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6");
     expect(responsive).not.toContain(
@@ -83,6 +81,9 @@ describe("safe-area spacing ownership", () => {
 
   it("preserves the public document and bounded form contracts", () => {
     const documentFlow = read("src/styles/marketing-document-flow.css");
+    const authPortal = read("src/components/AuthPortal.tsx");
+    const landingCss = read("src/styles/landing-prestige.css");
+    const mobile = read("src/styles/public-mobile-refinement.css");
 
     expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
     expect(documentFlow).toContain('body[data-wireline-viewport="document"]');
@@ -91,8 +92,11 @@ describe("safe-area spacing ownership", () => {
     for (const path of ["src/pages/Features.tsx", "src/pages/Pricing.tsx", "src/pages/About.tsx"]) {
       expect(read(path), path).not.toContain('className="pt-16"');
     }
-    expect(read("src/components/AuthPortal.tsx")).toContain(
-      "wl-auth-form-panel flex h-[100dvh] max-h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-4 sm:px-6",
+    expect(authPortal).toContain("wl-auth-form-panel flex min-h-[100dvh]");
+    expect(authPortal).toContain("w-full max-w-[520px]");
+    expect(landingCss).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*100dvh/,
     );
+    expect(mobile).toContain("env(safe-area-inset-left)");
   });
 });

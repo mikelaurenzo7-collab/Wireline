@@ -19,8 +19,8 @@ export default function Showcase() {
   return (
     <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
-        title="TRY WIRELINE | HEAR A VOICE BOT"
-        description="Hear the Voice Bot your customers will meet first, then build one that handles calls, live conversations, text, and email from one workspace."
+        title="TRY WIRELINE | HEAR A PHONE BOT"
+        description="Hear the Phone Bot first. Then wire one for calls, email, text, and the work that should happen next."
         path="/showcase"
       />
 
@@ -30,7 +30,7 @@ export default function Showcase() {
           primaryAction={{ label: "BUILD YOUR BOT", to: PERSONAL_SIGNUP }}
           visual={
             <div className="flex flex-col gap-3 text-center">
-              <div className="text-sm font-semibold text-foreground">LIVE VOICE PREVIEW</div>
+              <div className="text-sm font-semibold text-foreground">LIVE PHONE PREVIEW</div>
               <div className="rounded-[16px] border border-border bg-background/70 p-3">
                 <BrowserCallWidget
                   agentName={primaryDemo.name}

@@ -16,11 +16,9 @@ const indexHtml = read("index.html");
 
 describe("route meta prerendering", () => {
   it("keeps the homepage-default constants in sync with the static HTML shell", () => {
-    // If these drift, injection silently no-ops — this guard (and the build
-    // script's own check) makes it loud instead.
     expect(indexHtml).toContain(`<title>${HOME_TITLE}</title>`);
-    expect(indexHtml.split(HOME_TITLE).length - 1).toBe(3); // title, og:title, twitter:title
-    expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3); // desc, og:desc, twitter:desc
+    expect(indexHtml.split(HOME_TITLE).length - 1).toBe(3);
+    expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3);
     expect(indexHtml).toContain('<link rel="canonical" href="https://trywireline.com/" />');
     expect(indexHtml).toContain('<meta property="og:url" content="https://trywireline.com/" />');
     expect(indexHtml).toContain(
@@ -51,7 +49,6 @@ describe("route meta prerendering", () => {
     ]) {
       expect(PRERENDERED_ROUTE_SHELLS).toContain(route);
     }
-    // Every listed route must resolve — the build script exits non-zero otherwise.
     for (const route of PRERENDERED_ROUTE_SHELLS) {
       expect(resolveRouteMeta(route), route).not.toBeNull();
     }
@@ -69,7 +66,7 @@ describe("route meta prerendering", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
       const meta = resolveRouteMeta(`/for/${slug}`);
       expect(meta, slug).not.toBeNull();
-      expect(meta!.title).toBe(wedge.metaTitle); // metaTitle already carries "Wireline"
+      expect(meta!.title).toBe(wedge.metaTitle.replace(/\bWireline\b/gi, "WIRELINE"));
       expect(meta!.description).toBe(wedge.metaDescription);
       expect(meta!.canonical).toBe(`https://trywireline.com/for/${slug}`);
       expect(meta!.noIndex).not.toBe(true);
@@ -93,15 +90,14 @@ describe("route meta prerendering", () => {
       }[route];
       expect(source).toContain(resolveRouteMeta(route)!.description);
     }
-    // SolutionsPage titles are `${page.title} | Wireline`; assert both halves.
+
     for (const route of ["/solutions/sales", "/solutions/support"] as const) {
       const meta = resolveRouteMeta(route)!;
-      expect(meta.title.endsWith(" | Wireline")).toBe(true);
-      expect(solutions).toContain(`"${meta.title.replace(" | Wireline", "")}"`);
+      expect(meta.title.endsWith(" | WIRELINE")).toBe(true);
+      expect(solutions).toContain(`"${meta.title.replace(" | WIRELINE", "")}"`);
       expect(solutions).toContain(meta.description);
     }
-    // The wider sitemap set: every prerendered marketing route's title and
-    // description must appear verbatim in the component that owns PageMeta.
+
     const routeSources: Record<string, string> = {
       "/about": "src/pages/About.tsx",
       "/showcase": "src/pages/Showcase.tsx",
@@ -119,15 +115,12 @@ describe("route meta prerendering", () => {
     for (const [route, path] of Object.entries(routeSources)) {
       const meta = resolveRouteMeta(route)!;
       const source = read(path);
-      expect(source, `${route} title`).toContain(meta.title.replace(" | Wireline", ""));
+      expect(source, `${route} title`).toContain(meta.title.replace(" | WIRELINE", ""));
       expect(source, `${route} description`).toContain(meta.description);
       expect(meta.noIndex, route).not.toBe(true);
     }
   });
 
-  // The four vertical trust packs were the only prerendered marketing routes
-  // with no gate, and they had already drifted. They carry no verbatim strings
-  // to pin because the page now reads the registry back, so pin that wiring.
   it("keeps the trust packs' hydrated head sourced from the prerendered registry", () => {
     const page = read("src/components/TrustPackPage.tsx");
 
@@ -139,7 +132,7 @@ describe("route meta prerendering", () => {
     for (const vertical of ["medical", "legal", "insurance", "enterprise"]) {
       const meta = resolveRouteMeta(`/trust/${vertical}`);
       expect(meta, `/trust/${vertical}`).not.toBeNull();
-      expect(meta!.title.endsWith(" | Wireline")).toBe(true);
+      expect(meta!.title.endsWith(" | WIRELINE")).toBe(true);
       expect(meta!.canonical).toBe(`https://trywireline.com/trust/${vertical}`);
     }
   });
@@ -209,10 +202,8 @@ describe("route meta prerendering", () => {
       '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
     );
 
-    // Homepage defaults are gone…
     expect(out).not.toContain(`<title>${HOME_TITLE}</title>`);
     expect(out).not.toContain('<link rel="canonical" href="https://trywireline.com/" />');
-    // …but unrelated head content and the asset shell are preserved.
     expect(out).toContain('<meta name="twitter:card" content="summary_large_image" />');
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(out).toContain('"@type": "WebSite"');

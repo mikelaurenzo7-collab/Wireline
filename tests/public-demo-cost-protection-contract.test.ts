@@ -11,6 +11,7 @@ describe("public browser demo cost protection", () => {
   const hook = read("src/hooks/useProtectedPublicDemo.ts");
   const widget = read("src/components/marketing/BrowserCallWidget.tsx");
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
+  const showcase = read("src/pages/Showcase.tsx");
   const server = read("server.ts");
 
   it("keeps platform authorization and assistant construction on the server", () => {
@@ -76,7 +77,7 @@ describe("public browser demo cost protection", () => {
     expect(widget).toContain('? "Cancel"');
     expect(widget).toContain("disabled={demo.completed}");
     expect(widget).toContain("demo.callActive || demo.connecting");
-    expect(widget).toContain("Cancel at any time before the private voice session begins.");
+    expect(widget).toContain("Cancel at any time before the private call session begins.");
     expect(widget).not.toContain("disabled={demo.connecting || demo.completed}");
   });
 
@@ -119,12 +120,14 @@ describe("public browser demo cost protection", () => {
     expect(routes).toContain("requireSameOrigin(req)");
   });
 
-  it("keeps live proof and a truthful phone fallback inside the approved console", () => {
-    expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('variant="stage"');
-    expect(landing).toContain("href={`tel:${HERO_DEMO_AGENT.tel}`}");
-    expect(landing).toContain('aria-label="Call the Public Demo Bot"');
-    expect(landing).toContain("Call Demo Bot");
+  it("keeps compact home proof and the protected live demo on Showcase", () => {
+    expect(landing).toContain('to="/showcase"');
+    expect(landing).toContain("<BotMark");
+    expect(landing).not.toContain("<BrowserCallWidget");
+    expect(showcase).toContain("<BrowserCallWidget");
+    expect(showcase).toContain('id="demo-lines"');
+    expect(showcase).toContain("CALL A DEMO LINE");
+    expect(showcase).toContain('href={`tel:${agent.tel}`}');
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");

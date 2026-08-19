@@ -30,7 +30,8 @@ describe("unified Bot workspace compatibility", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(customerAgentLanguage("personal")).toMatchObject({ singular: "Bot", plural: "Bots", navLabel: "Bot Studio", createCta: "Create Bot" });
-    expect(BOT_WORKSPACE_PROMISE.title).toBe("ONE WORKSPACE. EVERY BOT.");
+    expect(BOT_WORKSPACE_PROMISE.title).toBe("YOUR BOT. ALREADY MOVING.");
+    expect(BOT_WORKSPACE_PROMISE.description).toContain("Context carries forward");
   });
 
   it("keeps business, personal, and custom starters in one role catalog", () => {
