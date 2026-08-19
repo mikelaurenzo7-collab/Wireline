@@ -257,7 +257,7 @@ export default function MailboxConnectionCard() {
             }
           >
             {error ||
-              "Wireline couldn't verify your connected mailboxes. No connection state was changed."}
+              "BotBound couldn't verify your connected mailboxes. No connection state was changed."}
           </StatusNotice>
         </div>
       ) : (
