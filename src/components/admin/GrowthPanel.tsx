@@ -48,7 +48,7 @@ function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
       "Add at least one decision-maker title (e.g. Owner, CEO) so Apollo searches stay focused.";
   } else if (settings.prospecting_enabled && industries.length === 0) {
     advice =
-      "Add target industries so prospecting matches businesses that fit Wireline's sweet spot.";
+      "Add target industries so prospecting matches businesses that fit BotBound's sweet spot.";
   } else if (settings.prospecting_enabled && states.length === 0) {
     advice = "Geographic filters reduce wasted dials. Start with your primary state or region.";
   } else if (settings.prospecting_enabled) {
@@ -107,7 +107,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       Autonomous Prospecting Protocol
                     </h4>
                     <p className="text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed max-w-sm">
-                      Enable Wireline to autonomously search, qualify, and ingest leads based on
+                      Enable BotBound to autonomously search, qualify, and ingest leads based on
                       your specified Ideal Customer Profile (ICP).
                     </p>
                   </div>
