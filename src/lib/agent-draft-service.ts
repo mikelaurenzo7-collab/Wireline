@@ -59,7 +59,7 @@ async function assertAgentIsDraftOnly(agentId: string, userId: string): Promise<
     .limit(1);
   if (line) {
     throw AppError.forbidden(
-      "This agent is live on the phone network. Open it in Wireline Studio to make changes.",
+      "This Bot is live on the phone network. Open it in BotBound Studio to make changes.",
     );
   }
 }
@@ -189,7 +189,7 @@ export async function createAgentDraft(
         voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
-        // them explicitly in Wireline.
+        // them explicitly in BotBound.
         enabledTools: [],
         firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
         personalityVibe: profile.identity.tone,
@@ -242,7 +242,7 @@ export async function getAgentDraft(
       .from(schema.agents)
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, principal.userId)))
       .limit(1);
-    if (!agent) throw AppError.notFound("Wireline agent draft not found.");
+    if (!agent) throw AppError.notFound("BotBound Bot draft not found.");
     const profile = profileFromStoredAgent(agent);
     return {
       view: toView(agent.id, profile),
