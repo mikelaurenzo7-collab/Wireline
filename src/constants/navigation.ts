@@ -63,9 +63,9 @@ export function desktopNavParentHref(pathname: string): string | null {
 }
 
 /**
- * Studio is the product root: Bots are created, selected, configured, tested,
- * and updated there. Connections stays visible on desktop as secondary setup;
- * mobile keeps it in More so the bottom dock has only four primary concepts.
+ * The first desktop group answers one question: where does daily work happen?
+ * Studio is home, Inbox owns written conversations, and Calls owns voice work.
+ * Provider/setup concepts are deliberately not interleaved with these three.
  */
 export const WORKSPACE_NAV: ShellNavItem[] = [
   {
@@ -75,6 +75,13 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     icon: "Bot",
     matches: ["/studio", "/agents", "/overview"],
   },
+  { href: "/inbox", label: "Inbox", icon: "Inbox" },
+  { href: "/phone", label: "Calls", icon: "Phone" },
+];
+
+/** Lower-frequency management/setup destinations stay visually secondary. */
+export const OPERATE_NAV: ShellNavItem[] = [
+  { href: "/insights", label: "Activity", icon: "BarChart3" },
   {
     href: "/connections",
     label: "Connections",
@@ -82,13 +89,6 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     icon: "Workflow",
     matches: ["/connections"],
   },
-];
-
-/** Daily operating destinations. Approvals and training are secondary tools. */
-export const OPERATE_NAV: ShellNavItem[] = [
-  { href: "/inbox", label: "Inbox", icon: "Inbox" },
-  { href: "/phone", label: "Calls", icon: "Phone" },
-  { href: "/insights", label: "Activity", icon: "BarChart3" },
   { href: "/settings", label: "Settings", icon: "Settings", matches: ["/settings", "/admin"] },
 ];
 
@@ -142,12 +142,12 @@ function toLegacyItem(item: ShellNavItem, section: string): NavItem {
 
 export const NAV_GROUPS = [
   {
-    label: "Set up",
-    items: WORKSPACE_NAV.map((item) => toLegacyItem(item, "Workspace")),
+    label: "Work",
+    items: WORKSPACE_NAV.map((item) => toLegacyItem(item, "Work")),
   },
   {
-    label: "Work",
-    items: OPERATE_NAV.map((item) => toLegacyItem(item, "Run")),
+    label: "Manage",
+    items: OPERATE_NAV.map((item) => toLegacyItem(item, "Manage")),
   },
 ] as const;
 
