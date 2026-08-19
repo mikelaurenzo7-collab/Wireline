@@ -1,64 +1,26 @@
 {
-  "name": "WIRELINE | WIRE YOUR PHONE BOT",
-  "short_name": "WIRELINE",
-  "description": "A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready.",
+  "name": "BotBound | Put Your Bot on the Line",
+  "short_name": "BotBound",
+  "description": "AI employees for calls, texts, and email.",
   "id": "/",
-  "start_url": "/overview",
+  "start_url": "/studio",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui",
-    "browser"
-  ],
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "theme_color": "#0A0A0E",
   "background_color": "#0A0A0E",
   "lang": "en-US",
-  "categories": [
-    "productivity",
-    "utilities",
-    "communications"
-  ],
+  "categories": ["productivity", "utilities", "communications"],
   "icons": [
-    {
-      "src": "/wireline-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/wireline-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wireline-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "/botbound-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/botbound-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/botbound-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    {
-      "name": "BOT STUDIO",
-      "short_name": "STUDIO",
-      "description": "Build and configure any Bot in WIRELINE.",
-      "url": "/studio"
-    },
-    {
-      "name": "INBOX",
-      "short_name": "INBOX",
-      "description": "Review calls, email, and text conversations in one place.",
-      "url": "/inbox"
-    },
-    {
-      "name": "KNOWLEDGE",
-      "short_name": "KNOWLEDGE",
-      "description": "Add approved facts, sources, rules, and tone for every Bot.",
-      "url": "/knowledge"
-    }
+    { "name": "BOT STUDIO", "short_name": "STUDIO", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },
+    { "name": "INBOX", "short_name": "INBOX", "description": "Review texts and email by Bot.", "url": "/inbox" },
+    { "name": "CALLS", "short_name": "CALLS", "description": "Manage lines and review call history.", "url": "/calls" }
   ],
   "prefer_related_applications": false
 }
