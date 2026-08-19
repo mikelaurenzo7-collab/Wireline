@@ -6,7 +6,7 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 export const BOT_BRAND = {
   name: "WIRELINE",
   slogan: "WIRE YOUR PHONE BOT",
-  supportingLine: "CALL · TEXT · EMAIL",
+  supportingLine: "CALL · EMAIL · TEXT",
   promise: "Put a Bot on the line and let the work start moving.",
 } as const;
 
@@ -23,7 +23,7 @@ export const BOT_PRODUCT_TYPES = [
     name: "Conversation Bot",
     label: "CONVERSATION BOT",
     description:
-      "Carry one continuous conversation across calls, text, and email with shared context.",
+      "Carry one continuous conversation across calls, email, and text with shared context.",
   },
   {
     key: "human" as const,
@@ -47,16 +47,16 @@ export const BOT_CHANNELS = [
       "Answer and make calls, hold natural conversations, qualify needs, book, transfer, and recap.",
   },
   {
-    key: "text" as const,
-    label: "Text",
-    description:
-      "Continue the same conversation by SMS for follow-up, reminders, confirmations, and updates.",
-  },
-  {
     key: "email" as const,
     label: "Email",
     description:
       "Read, reply, follow up, and preserve the complete conversation and outcome record.",
+  },
+  {
+    key: "text" as const,
+    label: "Text",
+    description:
+      "Continue the same conversation by SMS for follow-up, reminders, confirmations, and updates.",
   },
 ] as const;
 
@@ -82,7 +82,7 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Work new leads while they are hot and keep qualified buyers moving.",
     outcomes: ["Qualify Leads", "Handle Objections", "Advance Deals"],
     moves: [
-      "Respond to fresh leads by call, text, or email",
+      "Respond to fresh leads by call, email, or text",
       "Qualify against your offer, fit, and buying criteria",
       "Handle approved objections and run the next follow-up",
     ],
@@ -147,7 +147,7 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Run respectful, controlled follow-up without losing the paper trail.",
     outcomes: ["Run Reminders", "Capture Payment Intent", "Escalate Exceptions"],
     moves: [
-      "Run approved reminder sequences across call, text, and email",
+      "Run approved reminder sequences across call, email, and text",
       "Capture promise-to-pay, dispute, or callback intent",
       "Escalate exceptions and sensitive commitments for review",
     ],
@@ -211,7 +211,7 @@ export const BOT_MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
   primaryCta: "Start Free",
-  spine: ["Call", "Text", "Email"],
+  spine: ["Call", "Email", "Text"],
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {
