@@ -56,8 +56,8 @@ export default function WireAgentLanding() {
 
               <div className="landing-prestige__channels" aria-label="Phone Bot channels">
                 <span>CALL</span>
-                <span>TEXT</span>
                 <span>EMAIL</span>
+                <span>TEXT</span>
               </div>
 
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.subline}</p>
