@@ -99,6 +99,11 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   // always passes it through normalizeOpenApiForManagedRuntime, which performs
   // a deep BotBound normalization while preserving X-Wireline-Key exactly.
   if (path === "src/lib/openapi-spec.ts") return true;
+  // showcase-assistant.ts contains long-lived provider prompt templates that
+  // can predate the rename. /api/vapi-webhook is guarded by the BotBound truth
+  // boundary, which recognizes both generations and rewrites delivered prompt,
+  // assistant-name, and at-capacity greeting identity before JSON leaves.
+  if (path === "src/lib/showcase-assistant.ts") return true;
   return false;
 }
 
@@ -167,6 +172,16 @@ describe("BotBound visible-brand sweep", () => {
     expect(runtime).toContain('import { normalizeCustomerBrandDeep } from "./brand-text"');
     expect(runtime).toContain('preserve: ["X-Wireline-Key"]');
     expect(routes).toContain("normalizeOpenApiForManagedRuntime(getOpenApiSpec(");
+  });
+
+  it("keeps long-lived showcase provider payloads brand-safe throughout the rename", () => {
+    const guard = read("src/lib/showcase-prompt-truth-guard.ts");
+    const routes = read("src/server/register-api-routes.ts");
+    expect(guard).toContain("LEGACY_DEMO_MARKER");
+    expect(guard).toContain("BOTBOUND_DEMO_MARKER");
+    expect(guard).toContain("migrateShowcaseIdentityFields");
+    expect(guard).toContain("isCapacityAssistant");
+    expect(routes).toContain('app.use("/api/vapi-webhook", showcasePromptTruthGuard)');
   });
 
   it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {
