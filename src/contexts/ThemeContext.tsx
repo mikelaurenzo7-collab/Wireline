@@ -17,21 +17,21 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/** Light is the WIRELINE first-visit appearance; an explicit stored choice wins. */
+/** Dark is the WIRELINE first-visit appearance; an explicit stored choice wins. */
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system") return stored;
   } catch {
     /* ignore */
   }
-  return "light";
+  return "dark";
 }
 
 function systemPrefersDark(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
+  if (typeof window === "undefined") return true;
+  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? true;
 }
 
 function resolveTheme(theme: Theme, systemDark: boolean): "light" | "dark" {
@@ -101,8 +101,8 @@ export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
   return (
     context ?? {
-      theme: "light",
-      resolvedTheme: "light",
+      theme: "dark",
+      resolvedTheme: "dark",
       setTheme: () => {},
       toggleTheme: () => {},
     }
