@@ -59,9 +59,6 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
-      {/* The 340px rail cannot hold icon + title + badge on one line; let the
-          badge drop below the title block cleanly instead of the title and
-          badge wrapping into each other. */}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
@@ -191,8 +188,6 @@ export default function SalesforceIntegrationPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
-        {/* Title anchors the header row; without it the badge and Refresh
-            floated alone at the far right with nothing naming the page. */}
         <WorkspacePageIntro
           title="Salesforce"
           action={
@@ -237,9 +232,6 @@ export default function SalesforceIntegrationPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4">
-                {/* min-w-0 lets the label wrap instead of overflowing the row;
-                    the switch never shrinks (flagged by visual QA as a visible
-                    internal overflow in a narrow intermediate state). */}
                 <label
                   htmlFor="salesforce-call-activity-sync"
                   className="min-w-0 font-medium text-foreground"
@@ -282,7 +274,7 @@ export default function SalesforceIntegrationPage() {
                   tone="warning"
                   title="Connect Salesforce to control delivery"
                 >
-                  Complete OAuth from Connections before Wireline can create or pause Salesforce
+                  Complete OAuth from Connections before BotBound can create or pause Salesforce
                   call activities.
                 </StatusNotice>
               ) : null}

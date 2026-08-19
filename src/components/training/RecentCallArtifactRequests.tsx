@@ -246,7 +246,7 @@ export default function RecentCallArtifactRequests() {
           <p className="wl-eyebrow wl-eyebrow--muted">Create on demand</p>
           <h2 className="mt-2 wl-card-title">Recent call files</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Request the default {formatLabel} file for an individual completed call. Wireline saves
+            Request the default {formatLabel} file for an individual completed call. BotBound saves
             it to your configured destination and keeps only the job metadata and link.
           </p>
         </div>

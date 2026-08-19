@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  CheckCircle2,
-  MessageCircle,
-  PhoneCall,
-  Settings2,
-} from "lucide-react";
+import { CheckCircle2, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button, Skeleton } from "./atoms";
@@ -33,16 +28,12 @@ type StudioAgentReviewPanelProps = {
   onEdit: () => void;
   onTest: () => void;
   className?: string;
+  compact?: boolean;
 };
 
 function openingGreeting(directives: AgentConfigResponse["directives"]) {
-  const match = directives?.find((directive) =>
-    directive.content?.startsWith(GREETING_PREFIX),
-  );
-  return (
-    match?.content?.slice(GREETING_PREFIX.length).trim() ||
-    "Uses the standard greeting"
-  );
+  const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
+  return match?.content?.slice(GREETING_PREFIX.length).trim() || "Uses the standard greeting";
 }
 
 function toneLabel(personality?: string | null) {
@@ -62,9 +53,7 @@ function toneLabel(personality?: string | null) {
   if (knownTone[normalized]) return knownTone[normalized];
 
   const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
-  return sentence.length > 80
-    ? `${sentence.slice(0, 77).trimEnd()}…`
-    : sentence;
+  return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
 }
 
 export default function StudioAgentReviewPanel({
@@ -75,6 +64,7 @@ export default function StudioAgentReviewPanel({
   onEdit,
   onTest,
   className = "",
+  compact = false,
 }: StudioAgentReviewPanelProps) {
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,9 +86,7 @@ export default function StudioAgentReviewPanel({
       .catch((reason) => {
         if (!cancelled) {
           setError(
-            reason instanceof Error
-              ? reason.message
-              : "Setup summary could not be loaded.",
+            reason instanceof Error ? reason.message : "Setup summary could not be loaded.",
           );
         }
       })
@@ -114,16 +102,28 @@ export default function StudioAgentReviewPanel({
   const voiceName = resolveVoiceLabel(config?.voice?.voiceId);
   const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
+  const contentClass = compact
+    ? "mx-auto w-full max-w-none space-y-3 px-3 py-3"
+    : "mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8";
+  const sectionClass = compact
+    ? "rounded-xl border border-border bg-card p-4"
+    : "rounded-2xl border border-border bg-card p-5 sm:p-6";
 
   return (
     <div
+      data-wireline-studio-review-density={compact ? "inspector" : "page"}
       className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
     >
-      <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-        <header>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Is <span className="wl-preserve-case">{agentName}</span> ready for
-            customers?
+      <div className={contentClass}>
+        <header className={compact ? "px-1 pt-1" : ""}>
+          <h2
+            className={
+              compact
+                ? "text-lg font-semibold leading-tight tracking-tight text-foreground"
+                : "text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+            }
+          >
+            Is <span className="wl-preserve-case">{agentName}</span> ready for customers?
           </h2>
         </header>
 
@@ -133,44 +133,30 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        <section
-          hidden={Boolean(error)}
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-label="Launch summary"
-        >
+        <section hidden={Boolean(error)} className={sectionClass} aria-label="Launch summary">
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
+            <div className={compact ? "grid gap-3" : "grid gap-4 sm:grid-cols-2"} aria-busy="true">
               {Array.from({ length: 4 }, (_, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-border bg-background p-4"
-                >
+                <div key={index} className="rounded-xl border border-border bg-background p-4">
                   <Skeleton shape="text" className="h-3 w-20" />
                   <Skeleton shape="text" className="mt-3 h-5 w-40 max-w-full" />
                 </div>
               ))}
             </div>
           ) : (
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <dl className={compact ? "grid gap-2.5" : "grid gap-3 sm:grid-cols-2"}>
               {[
                 { label: "Customer-facing job", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                {
-                  label: "Opening greeting",
-                  value: openingGreeting(config?.directives),
-                },
+                { label: "Opening greeting", value: openingGreeting(config?.directives) },
                 { label: "Managed phone voice", value: voiceName },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-xl border border-border bg-background p-4"
+                  className={`rounded-xl border border-border bg-background ${compact ? "p-3" : "p-4"}`}
                 >
-                  <dt className="text-xs font-semibold text-muted-foreground">
-                    {item.label}
-                  </dt>
-                  <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">
-                    {item.value}
-                  </dd>
+                  <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
+                  <dd className="mt-1.5 text-sm font-semibold leading-5 text-foreground">{item.value}</dd>
                 </div>
               ))}
             </dl>
@@ -179,26 +165,16 @@ export default function StudioAgentReviewPanel({
 
         <StatusNotice
           tone={hasPhone ? "success" : "warning"}
-          title={
-            hasPhone
-              ? "Live customer line connected"
-              : "Browser-ready; live line not connected"
-          }
+          title={hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"}
         >
           {hasPhone
             ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
             : "Test in the browser, then connect a phone line when the greeting and handoff are ready."}
         </StatusNotice>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-label="Next actions"
-        >
-          <div className="flex flex-col gap-3">
-            <Button
-              asChild
-              className="w-full justify-center sm:w-auto sm:self-start"
-            >
+        <section className={sectionClass} aria-label="Next actions">
+          <div className="flex flex-col gap-2.5">
+            <Button asChild size={compact ? "sm" : undefined} className="w-full justify-center sm:w-auto sm:self-start">
               <Link to={hasPhone ? "/phone?tab=logs" : "/settings/phone"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -211,6 +187,7 @@ export default function StudioAgentReviewPanel({
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
+                size={compact ? "sm" : undefined}
                 variant="secondary"
                 onClick={onEdit}
                 className="justify-center"
@@ -220,6 +197,7 @@ export default function StudioAgentReviewPanel({
               </Button>
               <Button
                 type="button"
+                size={compact ? "sm" : undefined}
                 variant="secondary"
                 onClick={onTest}
                 className="justify-center"
@@ -229,31 +207,28 @@ export default function StudioAgentReviewPanel({
               </Button>
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-4 text-sm">
-            <Link
-              to="/settings/phone#company-identity"
-              className="font-medium text-primary hover:underline"
-            >
+          <div
+            className={`mt-4 flex flex-wrap border-t border-border pt-3 text-sm ${
+              compact ? "gap-x-3 gap-y-1.5" : "gap-x-4 gap-y-2"
+            }`}
+          >
+            <Link to="/settings/phone#company-identity" className="font-medium text-primary hover:underline">
               Caller identity
             </Link>
             <Link
               to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
               className="font-medium text-primary hover:underline"
             >
-              Add business knowledge
+              Add knowledge
             </Link>
-            <Link
-              to="/connections"
-              className="font-medium text-primary hover:underline"
-            >
-              Open Connections
+            <Link to="/connections" className="font-medium text-primary hover:underline">
+              Connections
             </Link>
-            <Link
-              to="/settings/customization"
-              className="font-medium text-primary hover:underline"
-            >
-              Appearance & brand
-            </Link>
+            {!compact ? (
+              <Link to="/settings/customization" className="font-medium text-primary hover:underline">
+                Appearance & brand
+              </Link>
+            ) : null}
           </div>
         </section>
       </div>

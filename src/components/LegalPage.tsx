@@ -5,9 +5,6 @@ import MarketingChrome from "./marketing/MarketingChrome";
 
 const LAST_UPDATED = "August 1, 2026";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared layout wrapper for legal pages
-// ─────────────────────────────────────────────────────────────────────────────
 function LegalLayout({
   title,
   icon: Icon,
@@ -100,9 +97,6 @@ function Section({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Terms of Service
-// ─────────────────────────────────────────────────────────────────────────────
 export function TermsOfService() {
   return (
     <LegalLayout
@@ -116,28 +110,28 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026."
+        description="BotBound's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026."
         path="/terms"
       />
 
       <Section title="1. Acceptance">
         <p>
-          By accessing or using Wireline you agree to these Terms of Service ("Terms"). If you do
+          By accessing or using BotBound you agree to these Terms of Service ("Terms"). If you do
           not agree, do not use the service. These Terms constitute a binding agreement between you
-          and <strong>Wireline</strong>.
+          and <strong>BotBound</strong>.
         </p>
       </Section>
 
       <Section title="2. Service Description">
         <p>
-          Wireline provides voice, SMS, and email agent infrastructure for personal and business
+          BotBound provides voice, SMS, and email agent infrastructure for personal and business
           use. The service includes agent configuration tools, call routing, email triage, outbound
           dialing campaigns, a DNC manager, and analytics.
         </p>
       </Section>
 
       <Section title="3. Acceptable Use">
-        <p>You agree not to use Wireline to:</p>
+        <p>You agree not to use BotBound to:</p>
         <ul className="list-disc list-inside space-y-1 ml-2">
           <li>Dial numbers on the National Do Not Call Registry without a valid exemption</li>
           <li>
@@ -173,14 +167,14 @@ export function TermsOfService() {
         <p>
           You are solely responsible for ensuring all outbound calls and messages comply with
           applicable laws, including the Telephone Consumer Protection Act (TCPA), FTC regulations,
-          and any state or local laws. Wireline provides DNC list management tools to assist
+          and any state or local laws. BotBound provides DNC list management tools to assist
           compliance, but does not guarantee your legal compliance and accepts no liability for
           regulatory violations.
         </p>
         <p>
           AI-generated and cloned voices are artificial voices. You must obtain every consent and
           provide every identification or disclosure required for the call, its purpose, and its
-          recipients. A Wireline feature, safeguard, or default is not legal advice or a substitute
+          recipients. A BotBound feature, safeguard, or default is not legal advice or a substitute
           for your own compliance review.
         </p>
       </Section>
@@ -198,14 +192,14 @@ export function TermsOfService() {
           or other high-risk voice; bypass a provider verification step; conceal synthetic origin
           where disclosure is required; or use a synthetic voice for fraud, deception, harassment,
           impersonation, identity verification, biometric authentication, voter influence,
-          unauthorized transactions, or harm. Wireline may reject, suspend, or delete a voice when
+          unauthorized transactions, or harm. BotBound may reject, suspend, or delete a voice when
           authorization, quality, safety, or provider eligibility cannot be verified.
         </p>
         <p>
           You retain your rights in authorized source audio and voice characteristics. You grant
-          Wireline and its voice-processing providers a limited license to process the sample,
+          BotBound and its voice-processing providers a limited license to process the sample,
           create and operate a private voice model, generate review audio, and synthesize calls only
-          to provide the service you direct. Withdrawal stops future Wireline use and starts
+          to provide the service you direct. Withdrawal stops future BotBound use and starts
           provider deletion; it cannot undo audio already lawfully generated or processing already
           completed.
         </p>
@@ -213,18 +207,18 @@ export function TermsOfService() {
 
       <Section title="6. SMS and Messaging Terms">
         <p>
-          <strong>Consumer notice: reply STOP to opt out, HELP for help.</strong> Wireline numbers
+          <strong>Consumer notice: reply STOP to opt out, HELP for help.</strong> BotBound numbers
           can send transactional and business communications by SMS. Recipients may reply
           <strong> STOP</strong>, <strong>UNSUBSCRIBE</strong>, <strong>CANCEL</strong>,{" "}
           <strong>QUIT</strong>, or <strong>END</strong> at any time to stop further messages from
-          that number, and <strong>HELP</strong> to receive support contact information. Wireline
+          that number, and <strong>HELP</strong> to receive support contact information. BotBound
           honors these keywords automatically and records the opt-out on the underlying consent
           ledger.
         </p>
         <p>
           <strong>Message and data rates may apply. Message frequency varies</strong> by the
-          business, the campaign, and the recipient's activity. Wireline does not charge recipients
-          for messages, but the recipient's carrier may. Wireline is not responsible for carrier
+          business, the campaign, and the recipient's activity. BotBound does not charge recipients
+          for messages, but the recipient's carrier may. BotBound is not responsible for carrier
           fees.
         </p>
         <p>
@@ -239,12 +233,12 @@ export function TermsOfService() {
         <p>
           <strong>A2P 10DLC registration (US carriers).</strong> Business (Application-to-Person)
           messaging in the United States requires brand and campaign registration with US carrier
-          consortia. Wireline coordinates that registration through Twilio; each account holder's
+          consortia. BotBound coordinates that registration through Twilio; each account holder's
           legal brand, use case, consent flow, and campaign must be registered accurately before
           messaging is enabled. Unregistered or misrepresented traffic may be blocked.
         </p>
         <p>
-          Report messaging complaints or ask a question about SMS from a Wireline number by emailing{" "}
+          Report messaging complaints or ask a question about SMS from a BotBound number by emailing{" "}
           <strong>support@trywireline.com</strong>.
         </p>
       </Section>
@@ -257,7 +251,7 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
+          <strong>30-day money-back guarantee.</strong> If BotBound isn't working for your business
           for any reason within 30 days of your first paid invoice, email{" "}
           <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
           refund that month's charge in full. No forms, no escalation, no questions about your
@@ -277,7 +271,7 @@ export function TermsOfService() {
 
       <Section title="8. Data and Privacy">
         <p>
-          Your use of Wireline is governed by our{" "}
+          Your use of BotBound is governed by our{" "}
           <Link to="/privacy" className="text-brand hover:text-brand/80 underline">
             Privacy Policy
           </Link>
@@ -287,13 +281,13 @@ export function TermsOfService() {
 
       <Section title="9. Intellectual Property">
         <p>
-          As between you and Wireline, and subject to third-party rights, you retain ownership of
+          As between you and BotBound, and subject to third-party rights, you retain ownership of
           your agent configurations, knowledge, authorized recordings, and other data you create in
-          Wireline. By using the platform you grant us a limited, non-exclusive license to process
+          BotBound. By using the platform you grant us a limited, non-exclusive license to process
           this data solely to provide, secure, and support the service.
         </p>
         <p>
-          All platform code, design, trademarks, and other IP belonging to <strong>Wireline</strong>{" "}
+          All platform code, design, trademarks, and other IP belonging to <strong>BotBound</strong>{" "}
           remain our exclusive property. You may not copy, modify, or distribute any part of the
           platform.
         </p>
@@ -301,7 +295,7 @@ export function TermsOfService() {
 
       <Section title="10. Disclaimer of Warranties">
         <p>
-          Wireline is provided "as is" and "as available" without warranty of any kind, express or
+          BotBound is provided "as is" and "as available" without warranty of any kind, express or
           implied, including warranties of merchantability, fitness for a particular purpose, or
           non-infringement. We do not warrant that the service will be uninterrupted, error-free, or
           free of viruses.
@@ -310,7 +304,7 @@ export function TermsOfService() {
 
       <Section title="11. Limitation of Liability">
         <p>
-          To the maximum extent permitted by applicable law, <strong>Wireline</strong>'s total
+          To the maximum extent permitted by applicable law, <strong>BotBound</strong>'s total
           liability arising out of or related to these Terms or the service shall not exceed the
           amounts paid by you in the 12 months preceding the claim. We are not liable for any
           indirect, incidental, special, consequential, or punitive damages.
@@ -319,7 +313,7 @@ export function TermsOfService() {
 
       <Section title="12. Indemnification">
         <p>
-          You agree to indemnify and hold harmless <strong>Wireline</strong> from any claims,
+          You agree to indemnify and hold harmless <strong>BotBound</strong> from any claims,
           damages, or expenses (including reasonable attorneys' fees) arising from your use of the
           service, violation of these Terms, or violation of any applicable law or third-party
           right.

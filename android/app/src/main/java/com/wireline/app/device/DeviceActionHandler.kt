@@ -19,7 +19,7 @@ object DeviceActionHandler {
             "navigate" -> openMaps(context, args.optString("destination"))
             "reminder" -> addReminder(context, args.optString("title"), args.optString("datetime"))
             "play_music" -> playMusic(context, args.optString("query"))
-            else -> WirelineNotifications.showDeviceAction(context, "Wireline", "Open Wireline for the latest update.")
+            else -> WirelineNotifications.showDeviceAction(context, "BotBound", "Open BotBound for the latest update.")
         }
     }
 
@@ -36,7 +36,7 @@ object DeviceActionHandler {
         val intent = Intent(Intent.ACTION_INSERT)
             .setData(CalendarContract.Events.CONTENT_URI)
             .putExtra(CalendarContract.Events.TITLE, title)
-            .putExtra(CalendarContract.Events.DESCRIPTION, "Created from a Wireline call.")
+            .putExtra(CalendarContract.Events.DESCRIPTION, "Created from a BotBound call.")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (beginAt != null) intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginAt)
         startOrNotify(context, intent, "Reminder", title)

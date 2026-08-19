@@ -14,7 +14,9 @@ describe("mobile TCPA consent contract", () => {
     expect(studio).toMatch(/consentConfirmed/);
     expect(studio).toContain("marketing_or_sales");
     expect(studio).toContain("service_or_requested");
-    expect(ask).toMatch(/outboundConsent/);
+    expect(ask).toContain('val requiresConsent = purpose == "marketing_or_sales"');
+    expect(ask).toContain("requiresConsent && consent");
+    expect(ask).toContain("(!requiresConsent || consent)");
     expect(ask).toContain("callback");
   });
 

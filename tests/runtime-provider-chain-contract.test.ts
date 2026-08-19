@@ -21,14 +21,14 @@ const realtime = read("src/lib/voice/openai-realtime-config.ts");
 const ALL: ReasoningProviderId[] = ["openai", "gemini", "gateway", "xai"];
 
 describe("structured runtime provider chain policy", () => {
-  it("defaults to AI Gateway before any direct degraded-mode lane", () => {
-    expect(DEFAULT_REASONING_PROVIDER).toBe("gateway");
-    expect([...REASONING_PROVIDER_ORDER]).toEqual(["gateway", "xai", "openai", "gemini"]);
-    expect(orderReasoningProviders(ALL)).toEqual(["gateway", "xai", "openai", "gemini"]);
+  it("defaults to OpenAI before every continuity lane", () => {
+    expect(DEFAULT_REASONING_PROVIDER).toBe("openai");
+    expect([...REASONING_PROVIDER_ORDER]).toEqual(["openai", "gateway", "xai", "gemini"]);
+    expect(orderReasoningProviders(ALL)).toEqual(["openai", "gateway", "xai", "gemini"]);
   });
 
-  it("keeps the managed default when no preference is configured", () => {
-    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("gateway");
+  it("keeps the managed OpenAI default when no preference is configured", () => {
+    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("openai");
   });
 
   it("ignores an unrecognized preference instead of routing traffic off-policy", () => {
@@ -36,7 +36,7 @@ describe("structured runtime provider chain policy", () => {
       resolveReasoningPreference({
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "not-a-provider",
       } as NodeJS.ProcessEnv),
-    ).toBe("gateway");
+    ).toBe("openai");
     expect(normalizeReasoningProvider("not-a-provider")).toBeNull();
     expect(normalizeReasoningProvider("")).toBeNull();
     expect(normalizeReasoningProvider(undefined)).toBeNull();
@@ -52,15 +52,15 @@ describe("structured runtime provider chain policy", () => {
 
   it("promotes an explicitly preferred provider without dropping continuity", () => {
     expect(orderReasoningProviders(ALL, "openai")).toEqual(["openai", "gateway", "xai", "gemini"]);
-    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "gateway", "xai", "openai"]);
+    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "openai", "gateway", "xai"]);
   });
 
   it("ignores a preference for a provider that is not configured", () => {
     expect(orderReasoningProviders(["openai", "gemini"], "xai")).toEqual(["openai", "gemini"]);
   });
 
-  it("preserves relative order for whatever subset is configured", () => {
-    expect(orderReasoningProviders(["gateway", "openai"])).toEqual(["gateway", "openai"]);
+  it("preserves OpenAI-first relative order for whatever subset is configured", () => {
+    expect(orderReasoningProviders(["gateway", "openai"])).toEqual(["openai", "gateway"]);
     expect(orderReasoningProviders(["xai"])).toEqual(["xai"]);
     expect(orderReasoningProviders([])).toEqual([]);
   });
@@ -91,14 +91,14 @@ describe("structured runtime transport", () => {
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
     expect(client).toContain("gatewayModels: models");
     expect(client).toContain("providerOptions: { gateway: { models: args.gatewayModels } }");
-    expect(client).toContain("if (RUNTIME_PROVIDER_REGISTRY.gateway.available())");
+    expect(client).toContain('provider: { name: "AI Gateway", call: callGateway');
     expect(models).toContain('GROK_4_6: "grok-4.6"');
   });
 
   it("delegates eligibility and ordering to the policy module", () => {
     expect(client).toContain("orderReasoningProviders(available, resolveReasoningPreference())");
     expect(client).toContain("isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY)");
-    expect(client).toContain("id !== \"gateway\"");
+    expect(client).toContain("RUNTIME_PROVIDER_REGISTRY");
     // Every lane in the policy must have a transport entry, or a configured
     // credential would resolve to a provider the client cannot call.
     for (const id of REASONING_PROVIDER_ORDER) {
@@ -134,10 +134,9 @@ describe("structured runtime transport", () => {
     expect(client).toContain("/grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL");
   });
 
-  it("logs each fallback advance with the provider it is trying next", () => {
-    expect(client).toContain("xAI request failed; trying OpenAI fallback");
-    expect(client).toContain("OpenAI request failed; trying Gemini fallback");
-    expect(client).toContain("Gemini request failed; trying AI Gateway fallback");
+  it("keeps deterministic fallback logging for every continuity advance", () => {
+    expect(client).toContain("provider request failed; trying fallback");
+    expect(client).toContain("nextProvider");
   });
 
   it("does not turn an aborted request into another provider call", () => {

@@ -1,12 +1,23 @@
-import { CheckCircle2, MessageCircle, Plus, Settings2, Sparkles, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronsLeft,
+  ChevronsRight,
+  MessageCircle,
+  Plus,
+  Settings2,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Link, useSearchParams } from "react-router";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
+import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
@@ -17,13 +28,14 @@ import WorkspaceRecovery from "./WorkspaceRecovery";
 type WorkspaceSection = "setup" | "test" | "review";
 
 const BOT_LANGUAGE = customerAgentLanguage("personal");
+const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-inspector:v1";
 
 const SECTIONS: Array<{
   id: WorkspaceSection;
   label: string;
   icon: typeof Settings2;
 }> = [
-  { id: "setup", label: "Set Up", icon: Settings2 },
+  { id: "setup", label: "Setup", icon: Settings2 },
   { id: "test", label: "Test", icon: MessageCircle },
   { id: "review", label: "Review", icon: CheckCircle2 },
 ];
@@ -104,8 +116,10 @@ export default function StudioWorkspaceV2() {
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
+  const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
   const section = normalizeSection(params.get("section"));
+  const inspectorSection = section === "review" ? "review" : "setup";
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
   const hasCommand = Boolean(params.get("command") || params.get("commandNonce"));
@@ -234,126 +248,205 @@ export default function StudioWorkspaceV2() {
     window.requestAnimationFrame(() => document.getElementById(studioTabId(next))?.focus());
   };
 
+  const sectionTabs = (
+    <nav
+      className="shrink-0 border-b border-border/70 bg-card/45 px-3 py-2 sm:px-5"
+      aria-label="Bot workspace"
+    >
+      <div
+        className="mx-auto grid w-full max-w-md grid-cols-3 gap-1 rounded-xl bg-muted/35 p-1"
+        role="tablist"
+        aria-label={`${BOT_LANGUAGE.singular} workspace`}
+        onKeyDown={handleSectionKeyDown}
+      >
+        {SECTIONS.map((item) => {
+          const selected = section === item.id;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              id={studioTabId(item.id)}
+              aria-selected={selected}
+              aria-controls={
+                splitWorkspace && item.id === "test" ? "studio-split-workspace" : studioPanelId(item.id)
+              }
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setSection(item.id)}
+              className={`min-w-0 rounded-lg px-2.5 py-2 text-center transition-colors wl-focus-ring-halo ${
+                selected
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <Icon
+                  className={`size-3.5 shrink-0 ${selected ? "text-primary" : ""}`}
+                  aria-hidden="true"
+                />
+                <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+
+  const setupPanel = (
+    <StudioAgentWorkspacePanel
+      key={active.id}
+      agentId={active.id}
+      agentName={active.name}
+      isBusinessAgent={Boolean(active.is_business_agent)}
+      onTestVoiceInChat={startCustomerTest}
+      className="h-full border-t-0"
+      compact={splitWorkspace && section === "test"}
+    />
+  );
+
+  const reviewPanel = (
+    <StudioAgentReviewPanel
+      key={active.id}
+      agentId={active.id}
+      agentName={active.name}
+      agentRole={active.role}
+      phoneNumber={active.phone_number}
+      onEdit={() => setSection("setup")}
+      onTest={startCustomerTest}
+      className="h-full"
+      compact={splitWorkspace && section === "test"}
+    />
+  );
+
+  const workroom = (
+    <StudioWorkroom
+      key={active.id}
+      ref={workroomRef}
+      agentId={active.id}
+      agentName={active.name}
+      initialCommand={params.get("command") || undefined}
+      commandNonce={params.get("commandNonce") || undefined}
+      onBack={() => setSection("setup")}
+      backLabel="Back to setup"
+      layout={splitWorkspace && section === "test" ? "split" : "standalone"}
+      mode={section === "test" ? "test" : "configure"}
+      allowOutbound={Boolean(active.phone_number)}
+    />
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <nav
-        className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5"
-        aria-label="Studio steps"
-      >
-        <div
-          className="mx-auto grid w-full max-w-2xl grid-cols-3 gap-1.5 sm:gap-2"
-          role="tablist"
-          aria-label={`${BOT_LANGUAGE.singular} setup steps`}
-          onKeyDown={handleSectionKeyDown}
-        >
-          {SECTIONS.map((item, index) => {
-            const selected = section === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                id={studioTabId(item.id)}
-                aria-selected={selected}
-                aria-controls={studioPanelId(item.id)}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => setSection(item.id)}
-                aria-label={item.label}
-                className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
-                  selected
-                    ? "border-primary/35 bg-primary/5 text-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <span className="flex items-center justify-center gap-2 sm:justify-start">
-                  <span
-                    className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
-                      selected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                  <Icon
-                    className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`}
-                    aria-hidden="true"
-                  />
-                  <span
-                    className={`truncate text-xs font-semibold sm:text-sm ${
-                      selected ? "" : "hidden sm:block"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {sectionTabs}
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        {section === "setup" ? (
-          <div
-            role="tabpanel"
-            id={studioPanelId("setup")}
-            aria-labelledby={studioTabId("setup")}
-            className="h-full min-h-0"
+      {splitWorkspace && section === "test" ? (
+        <div
+          id="studio-split-workspace"
+          role="tabpanel"
+          aria-labelledby={studioTabId(section)}
+          className="flex min-h-0 flex-1 overflow-hidden"
+        >
+          <div className="min-w-0 flex-1">{workroom}</div>
+
+          <WorkspaceResizablePanel
+            storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
+            side="right"
+            defaultSize={372}
+            minSize={312}
+            maxSize={520}
+            collapsedSize={44}
+            resizeHandleLabel="Resize Bot inspector"
+            className="border-l border-border/70 bg-card/25"
           >
-            <StudioAgentWorkspacePanel
-              key={active.id}
-              agentId={active.id}
-              agentName={active.name}
-              isBusinessAgent={Boolean(active.is_business_agent)}
-              onTestVoiceInChat={startCustomerTest}
-              className="h-full border-t-0"
-            />
-          </div>
-        ) : null}
-        {section === "test" ? (
-          <div
-            role="tabpanel"
-            id={studioPanelId("test")}
-            aria-labelledby={studioTabId("test")}
-            className="h-full min-h-0"
-          >
-            <StudioWorkroom
-              key={active.id}
-              ref={workroomRef}
-              agentId={active.id}
-              agentName={active.name}
-              initialCommand={params.get("command") || undefined}
-              commandNonce={params.get("commandNonce") || undefined}
-              onBack={() => setSection("setup")}
-              backLabel="Back to setup"
-              layout="split"
-              mode="test"
-              allowOutbound={Boolean(active.phone_number)}
-            />
-          </div>
-        ) : null}
-        {section === "review" ? (
-          <div
-            role="tabpanel"
-            id={studioPanelId("review")}
-            aria-labelledby={studioTabId("review")}
-            className="h-full min-h-0"
-          >
-            <StudioAgentReviewPanel
-              key={active.id}
-              agentId={active.id}
-              agentName={active.name}
-              agentRole={active.role}
-              phoneNumber={active.phone_number}
-              onEdit={() => setSection("setup")}
-              onTest={startCustomerTest}
-              className="h-full"
-            />
-          </div>
-        ) : null}
-      </div>
+            {({ collapsed, toggleCollapsed }) =>
+              collapsed ? (
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  className="flex h-full w-full flex-col items-center gap-3 py-3 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground wl-focus-ring-halo"
+                  aria-label="Open Bot inspector"
+                  title="Open Bot inspector"
+                >
+                  <ChevronsLeft className="size-4 shrink-0" aria-hidden="true" />
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    style={{ writingMode: "vertical-rl" }}
+                  >
+                    {inspectorSection === "review" ? "Review" : "Setup"}
+                  </span>
+                </button>
+              ) : (
+                <aside className="flex h-full min-h-0 w-full flex-col" aria-label="Bot inspector">
+                  <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 px-3">
+                    <div className="flex items-center gap-1 rounded-lg bg-muted/35 p-0.5">
+                      {(["setup", "review"] as const).map((id) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setSection(id)}
+                          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                            inspectorSection === id
+                              ? "bg-card text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {id === "setup" ? "Setup" : "Review"}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleCollapsed}
+                      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+                      aria-label="Collapse Bot inspector"
+                      title="Collapse inspector"
+                    >
+                      <ChevronsRight className="size-4" aria-hidden="true" />
+                    </button>
+                  </header>
+                  <div className="min-h-0 flex-1 overflow-hidden">
+                    {inspectorSection === "review" ? reviewPanel : setupPanel}
+                  </div>
+                </aside>
+              )
+            }
+          </WorkspaceResizablePanel>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {section === "setup" ? (
+            <div
+              role="tabpanel"
+              id={studioPanelId("setup")}
+              aria-labelledby={studioTabId("setup")}
+              className="h-full min-h-0"
+            >
+              {setupPanel}
+            </div>
+          ) : null}
+          {section === "test" ? (
+            <div
+              role="tabpanel"
+              id={studioPanelId("test")}
+              aria-labelledby={studioTabId("test")}
+              className="h-full min-h-0"
+            >
+              {workroom}
+            </div>
+          ) : null}
+          {section === "review" ? (
+            <div
+              role="tabpanel"
+              id={studioPanelId("review")}
+              aria-labelledby={studioTabId("review")}
+              className="h-full min-h-0"
+            >
+              {reviewPanel}
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

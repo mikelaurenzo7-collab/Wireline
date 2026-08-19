@@ -18,7 +18,7 @@ class WirelineConnectionService : ConnectionService() {
         val agentName = extras.getString(EXTRA_AGENT_NAME)
         return WirelineCallConnection(applicationContext, callId).apply {
             setAddress(Uri.fromParts("tel", from, null), TelecomManager.PRESENTATION_ALLOWED)
-            setCallerDisplayName(agentName ?: "Wireline call", TelecomManager.PRESENTATION_ALLOWED)
+            setCallerDisplayName(agentName ?: "BotBound call", TelecomManager.PRESENTATION_ALLOWED)
             setRinging()
         }
     }

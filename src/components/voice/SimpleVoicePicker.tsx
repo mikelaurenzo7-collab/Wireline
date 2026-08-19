@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, MessageCircle, Pause, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
-import { normalizeApiVoices, VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES, type VoiceOption } from "../../lib/voice-catalog";
+import {
+  normalizeApiVoices,
+  VAPI_CURATED_VOICES,
+  WIRELINE_LIVE_VOICES,
+  type VoiceOption,
+} from "../../lib/voice-catalog";
 import { StatusNotice } from "../molecules";
 import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
 
@@ -198,16 +203,12 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
             )}
           </span>
           <span className="min-w-0">
-            {/* Catalog names embed the character after a middot separator
-                ("Savannah · Warm & Confident"). One truncating line cut off
-                exactly the half a listener chooses by, so the given name and
-                the descriptor each get their own line. */}
             <span className="block truncate text-sm font-semibold text-foreground">
               {voice.name.split("·")[0].trim()}
             </span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {selected
-                ? "Live"
+                ? "Selected"
                 : voice.category === "cloned"
                   ? "Private"
                   : voice.name.split("·").slice(1).join("·").trim() || "Choose"}
@@ -254,21 +255,11 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
-          Test response
+          Test
         </button>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Browser tests the words. Place a real call to verify the selected audio. Live phone calls
-        use Speech-to-Speech from the agent's role. Savannah and Elliot apply only on the optional
-        Vapi rollback path. Studio clones are Studio TTS, not live PSTN.
-      </p>
-
-      {notice ? (
-        <StatusNotice tone="success" title="Voice saved">
-          {notice}
-        </StatusNotice>
-      ) : null}
+      {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {error ? (
         <StatusNotice tone="destructive" title="Voice unavailable">
           {error}
@@ -284,7 +275,7 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
         <>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Included
+              Voices
             </p>
             <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
           </div>
@@ -292,16 +283,14 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
           {studioVoices.length ? (
             <div className="space-y-2 border-t border-border pt-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Studio
-                </p>
+                <p className="text-xs font-semibold text-muted-foreground">More voices</p>
                 <button
                   type="button"
                   aria-expanded={showStudioVoices}
                   onClick={() => setShowStudioVoices((current) => !current)}
                   className="text-xs font-semibold text-primary hover:underline"
                 >
-                  {showStudioVoices ? "Show less" : `Show ${studioVoices.length} voices`}
+                  {showStudioVoices ? "Hide" : `Show ${studioVoices.length}`}
                 </button>
               </div>
               {visibleStudioVoices.length ? (
@@ -322,9 +311,7 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       )}
 
       {!loading && !selectedIsAvailable ? (
-        <StatusNotice tone="warning" title="Choose a live voice">
-          Select a voice before the next call.
-        </StatusNotice>
+        <StatusNotice tone="warning">Choose a voice before the next call.</StatusNotice>
       ) : null}
     </div>
   );

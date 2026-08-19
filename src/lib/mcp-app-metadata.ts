@@ -3,8 +3,9 @@ import { createHash } from "node:crypto";
 import { MCP_SCOPES } from "./chatgpt-mcp";
 import { mcpIssuer, mcpResourceUrl } from "./mcp-oauth-security";
 
+/** Stable protocol/package name retained for existing connected clients. */
 export const MCP_SERVER_NAME = "wireline";
-export const MCP_SERVER_TITLE = "Wireline";
+export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.4.0";
 
 export const MCP_DOCUMENTATION_URL = "https://trywireline.com/claude-connector.html";
@@ -30,7 +31,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     },
     "openai/widgetPrefersBorder": false,
     "openai/widgetDescription":
-      "Shows the first Wireline voice-agent draft created from this chat, a private voice simulation, and a secure path to continue in Wireline.",
+      "Shows the first BotBound Bot draft created from this chat, a private voice simulation, and a secure path to continue in BotBound.",
     "openai/widgetCSP": {
       connect_domains: ["https://api.openai.com"],
       resource_domains: [],
@@ -44,11 +45,12 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
   const resource = mcpResourceUrl(req);
   return {
     $schema: "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+    // Stable package identifier; visible title/description carry BotBound.
     name: "com.trywireline/mcp",
     title: MCP_SERVER_TITLE,
     version: MCP_SERVER_VERSION,
     description:
-      "Create a Wireline account, build your first voice agent from Cursor, ChatGPT, or Claude, privately rehearse it, and continue in Wireline. Live calls, numbers, and launch stay in Wireline.",
+      "Create a BotBound account, build your first Bot from Cursor, ChatGPT, or Claude, privately rehearse it, and continue in BotBound. Live calls, numbers, and launch stay in BotBound.",
     websiteUrl: issuer,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
     icons: [{ src: MCP_ICON_URL, mimeType: "image/svg+xml" }],

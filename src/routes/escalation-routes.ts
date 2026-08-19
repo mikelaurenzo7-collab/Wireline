@@ -75,7 +75,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   const callerEmail = (b.caller_email || "").trim();
   const summary = (b.summary || "").trim() || "Caller requested human follow-up.";
   const urgency = b.urgency === "urgent" ? "urgent" : "normal";
-  const agentName = (b.agent_name || "Wireline agent").trim();
+  const agentName = (b.agent_name || "BotBound Bot").trim();
   const sourceNumber = (b.source_number || "").trim();
   const claimedTenantId = (b.tenant_user_id || "").trim() || null;
 
@@ -155,11 +155,11 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
         if (channelId) {
           const urgencyEmoji = urgency === "urgent" ? "🚨" : "📞";
           const text = [
-            `${urgencyEmoji} *Wireline escalation, ${urgency.toUpperCase()}*`,
-            `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
+            `${urgencyEmoji} *BotBound escalation, ${urgency.toUpperCase()}*`,
+            `*Bot:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
             `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
             `*Summary:* ${summary}`,
-            `<https://trywireline.com/phone?tab=logs|Open call history →>`,
+            `<https://botbound.me/phone?tab=logs|Open call history →>`,
           ].join("\n");
           slackPosted = await slackPostMessage(tenantUserId!, channelId, text);
         }
@@ -173,7 +173,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   let smsDispatched = false;
   if (urgency === "urgent" && process.env.OWNER_PHONE) {
     const smsBody = [
-      `[Wireline ESCALATION]`,
+      `[BOTBOUND ESCALATION]`,
       `${agentName} on ${sourceNumber || "platform"}`,
       `${callerName} (${callerPhone})`,
       summary.slice(0, 200),

@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, emailThreadsReadStateSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -53,10 +53,6 @@ router.patch(
     try {
       const { agent_id } = req.body;
 
-      // `agent_id: null` is the documented way to unassign, so absence is what
-      // means "nothing to change" — not null. Passing undefined through to
-      // `.set()` left drizzle with no columns and it threw "No values to set",
-      // which surfaced as a 500 for what is really a malformed request.
       if (agent_id === undefined) {
         throw AppError.fromHttpStatus(400, "agent_id is required, pass null to unassign.");
       }
@@ -81,8 +77,6 @@ router.patch(
         )
         .returning()) as unknown[];
 
-      // Reporting success for an update that matched no rows told the caller the
-      // assignment was saved against a mailbox that is not theirs or is gone.
       if (!updated.length) throw AppError.fromHttpStatus(404, "Email account not found");
 
       res.json({ success: true });
@@ -99,10 +93,53 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const requestedAgentId =
+        typeof req.query.agent_id === "string" ? req.query.agent_id.trim() : "";
+      const requestedAccountId =
+        typeof req.query.account_id === "string" ? req.query.account_id.trim() : "";
+      let accountIds: string[] | null = null;
+
+      if (requestedAccountId) {
+        const [account] = await drizzle
+          .select({ id: schema.emailAccounts.id, agentId: schema.emailAccounts.agentId })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.id, requestedAccountId),
+              eq(schema.emailAccounts.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (!account) return res.json({ threads: [] });
+        if (requestedAgentId && account.agentId !== requestedAgentId) {
+          return res.json({ threads: [] });
+        }
+        accountIds = [account.id];
+      } else if (requestedAgentId) {
+        const accounts = await drizzle
+          .select({ id: schema.emailAccounts.id })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.userId, req.user.id),
+              eq(schema.emailAccounts.agentId, requestedAgentId),
+            ),
+          );
+        accountIds = accounts.map((account) => account.id);
+        if (!accountIds.length) return res.json({ threads: [] });
+      }
+
+      const where = accountIds
+        ? and(
+            eq(schema.emailThreads.userId, req.user.id),
+            inArray(schema.emailThreads.accountId, accountIds),
+          )
+        : eq(schema.emailThreads.userId, req.user.id);
+
       const threads = await drizzle
         .select()
         .from(schema.emailThreads)
-        .where(eq(schema.emailThreads.userId, req.user.id))
+        .where(where)
         .orderBy(desc(schema.emailThreads.lastMessageAt))
         .limit(100);
 
@@ -125,14 +162,12 @@ router.get(
         .from(schema.emailMessages)
         .where(
           and(
-            eq(schema.emailMessages.threadId, threadId as any), // threadId is uuid in schema, but req.params.id is string. drizzle handles conversion usually.
+            eq(schema.emailMessages.threadId, threadId as any),
             eq(schema.emailMessages.userId, req.user.id),
           ),
         )
         .orderBy(asc(schema.emailMessages.createdAt));
 
-      // Mark the thread as read once its messages have been fetched. Failures
-      // here must never break the read path, so we swallow errors quietly.
       void drizzle
         .update(schema.emailThreads)
         .set({ read: true })
@@ -155,10 +190,6 @@ router.get(
   },
 );
 
-/**
- * Bulk mark threads as read / unread. Body: { ids: string[], read: boolean }.
- * Used by the inbox UI when the user explicitly toggles read state.
- */
 router.post(
   "/api/emails/threads/read-state",
   authenticateUser,
@@ -166,7 +197,6 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { ids, read } = req.body;
-      const { inArray } = await import("drizzle-orm");
       await drizzle
         .update(schema.emailThreads)
         .set({ read })
@@ -208,8 +238,6 @@ router.delete(
       if (account) {
         const { revokeMailboxAccountTokens } = await import("../lib/oauth-provider-revocation");
         await revokeMailboxAccountTokens(account);
-        // Google/Microsoft connect also upsert a calendar row for the same
-        // mailbox — drop it with the inbox so reconnects start clean.
         if (
           account.emailAddress &&
           (account.provider === "google" || account.provider === "microsoft")

@@ -147,11 +147,6 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
     if (pct >= warnPct) thresholdsToFire.push({ pct: warnPct, event: "spend.warning" });
 
     for (const threshold of thresholdsToFire) {
-      // Claim the alert row first: only the request that actually inserts it
-      // dispatches the webhook. onConflictDoNothing without an explicit target
-      // dedups on the (user_id, period, threshold_pct) unique index once
-      // migration 0128 is applied, and degrades to the pre-constraint behavior
-      // (insert always succeeds) if this code deploys ahead of it.
       let claimed: { id: bigint } | undefined;
       try {
         [claimed] = await drizzle
@@ -199,16 +194,10 @@ function sendSpendGuardUnavailable(res: Response) {
   return res.status(503).json({
     code: "SPEND_GUARD_UNAVAILABLE",
     error:
-      "Wireline could not verify your spend guard. New live work is paused until the check recovers.",
+      "BotBound could not verify your spend guard. New live work is paused until the check recovers.",
   });
 }
 
-/**
- * Cost-sensitive routes call this before starting new work. The guard stops a
- * new outbound task once an account holder's chosen cap is exhausted. It does
- * not interrupt an active conversation; stopping mid-call would create a worse
- * customer outcome and an unpredictable partial task.
- */
 export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
   const userId = req.user?.id;
   if (!userId) return next();
@@ -238,13 +227,11 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
   }
 }
 
-/** Ops telemetry only — optional alert threshold (USD / rolling 24h). */
 const AI_DAILY_ALERT_USD = resolveAiDailySpendAlertUsd();
 
 /** @deprecated Blocking removed — kept for tests/metrics that referenced the old 1% valve. */
 export const DAILY_SPEND_LIMIT_USD = 0;
 
-/** Call this after every managed-model round trip to track cumulative 24h spend. */
 export function recordDailySpend(usd: number): void {
   void recordDailySpendUsd(usd)
     .then(() => getDailySpendUsd())

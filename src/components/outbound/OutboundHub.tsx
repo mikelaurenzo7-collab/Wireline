@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone } from "lucide-react";
+import { ChevronDown, Phone } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import Cadences from "../Cadences";
 import CampaignsPanel from "./CampaignsPanel";
@@ -19,10 +19,29 @@ export default function OutboundHub({
   onViewChange: (id: OutboundView) => void;
 }) {
   const [showDial, setShowDial] = useState(false);
+  const activeLabel = OUTBOUND_VIEW_TABS.find((tab) => tab.id === activeView)?.label || "Outbound";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2 sm:px-4">
+        <label className="relative min-w-0 flex-1 sm:hidden">
+          <span className="sr-only">Outbound section</span>
+          <select
+            value={activeView}
+            onChange={(event) => onViewChange(event.target.value as OutboundView)}
+            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-3 pr-9 text-sm font-semibold text-foreground outline-none focus:border-primary/50"
+          >
+            {OUTBOUND_VIEW_TABS.map((tab) => (
+              <option key={tab.id} value={tab.id}>
+                {tab.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+        </label>
         <WorkspaceTabStrip
           tabs={OUTBOUND_VIEW_TABS}
           activeId={activeView}
@@ -30,31 +49,38 @@ export default function OutboundHub({
           ariaLabel="Outbound sections"
           density="compact"
           align="start"
-          className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
+          className="mb-0 hidden min-w-0 flex-1 border-b-0 pb-0 sm:flex"
         />
-        {activeView === "dispatch" && (
+        {activeView === "dispatch" ? (
           <Button
             type="button"
-            variant="secondary"
             size="sm"
             className="shrink-0"
             onClick={() => setShowDial(true)}
             aria-label="Dial now"
           >
-            <Phone className="h-3.5 w-3.5" aria-hidden />
-            <span className="hidden sm:inline">Dial now</span>
+            <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Dial</span>
           </Button>
+        ) : (
+          <span className="hidden text-xs text-muted-foreground sm:inline">{activeLabel}</span>
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (
-          <div className="flex min-h-0 flex-col">
-            <p className="border-b border-border px-4 py-3 text-sm text-muted-foreground sm:px-6">
-              Place one-off calls or accept form leads. Consent checks run before every dial.
-            </p>
-            <div className="px-4 py-4 sm:px-6">
-              <IntakeKeysManager />
-            </div>
+          <div className="px-3 py-4 sm:px-6">
+            <details className="group rounded-xl border border-border bg-card">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
+                Lead intake
+                <ChevronDown
+                  className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </summary>
+              <div className="border-t border-border p-3 sm:p-4">
+                <IntakeKeysManager />
+              </div>
+            </details>
           </div>
         )}
         {activeView === "campaigns" && <CampaignsPanel />}

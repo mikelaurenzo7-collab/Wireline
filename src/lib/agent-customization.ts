@@ -81,7 +81,7 @@ function escalationPolicy(value: unknown): AgentEscalationPolicy {
 }
 
 function defaultName(agentRole: AgentRole, businessName: string): string {
-  const label = businessName || "Wireline";
+  const label = businessName || "BotBound";
   switch (agentRole) {
     case "scheduler":
       return `${label} Scheduling Assistant`;
@@ -190,7 +190,7 @@ export function compileAgentRuntimeInstructions(profile: AgentCustomizationProfi
     : "No additional prohibited topics were specified.";
   const actions = profile.behavior.allowedActions.length
     ? profile.behavior.allowedActions.join(", ")
-    : "No external action is assumed to be available until configured and approved in Wireline.";
+    : "No external action is assumed to be available until configured and approved in BotBound.";
   const success = profile.mission.successCriteria.length
     ? profile.mission.successCriteria.map((item) => `- ${item}`).join("\n")
     : "- Leave the person with one clear next step.";
@@ -224,7 +224,7 @@ export function compileAgentRuntimeInstructions(profile: AgentCustomizationProfi
     "",
     "# Action boundary",
     `The account holder intends for this agent to support: ${actions}`,
-    "No external action is assumed to be available unless it is configured and approved in Wireline.",
+    "No external action is assumed to be available unless it is configured and approved in BotBound.",
     "Never claim an appointment was booked, a message was sent, a call was transferred, a payment was taken, or any external action was completed unless the configured tool returned a successful result in the current conversation.",
     "",
     "# Escalation",
@@ -258,7 +258,7 @@ export function assertDraftConfirmation(value: unknown): asserts value is true {
   if (value !== true) {
     throw AppError.fromHttpStatus(
       400,
-      "Confirm that you want to create or update this private Wireline agent draft before continuing.",
+      "Confirm that you want to create or update this private BotBound Bot draft before continuing.",
     );
   }
 }

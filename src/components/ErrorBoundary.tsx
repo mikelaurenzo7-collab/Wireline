@@ -83,7 +83,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if ("fallback" in this.props) return this.props.fallback;
 
     const staleChunk = isLikelyStaleChunkError(this.state.error);
-    const title = staleChunk ? "Wireline updated" : "This view crashed";
+    const title = staleChunk ? "BotBound updated" : "This view crashed";
     const body = staleChunk
       ? "A new version is available. Reload once to fetch the current app bundle and keep working."
       : "The rest of the app is fine. Only this view failed. Try again, reload, or head back to the workspace.";

@@ -193,7 +193,7 @@ export async function sendDemoRecapEmail(args: {
     const safeSignupUrl = escapeHtml(validateDemoRecapUrl(args.signupUrl));
     const result = await sendEmail({
       to: args.to,
-      subject: `Your Wireline demo with ${args.agentName}`,
+      subject: `Your BotBound demo with ${args.agentName}`,
       text:
         [
           "Thanks for calling our live demo line.",

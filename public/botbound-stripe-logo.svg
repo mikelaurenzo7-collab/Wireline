@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title description">
+  <title id="title">BotBound</title>
+  <desc id="description">BotBound phone Bot logo with AI employees for calls, texts, and email.</desc>
+  <defs>
+    <linearGradient id="frame" x1="20" y1="20" x2="330" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#211B36"/><stop offset=".5" stop-color="#0D0D14"/><stop offset="1" stop-color="#050508"/>
+    </linearGradient>
+    <linearGradient id="shell" x1="120" y1="60" x2="260" y2="310" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/><stop offset=".56" stop-color="#EEE9FF"/><stop offset="1" stop-color="#B8A2FF"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="55" y1="80" x2="135" y2="285" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C4B5FD"/><stop offset=".42" stop-color="#8B5CF6"/><stop offset="1" stop-color="#6D3DEB"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="304" height="304" rx="68" fill="url(#frame)"/>
+  <rect x="34" y="34" width="292" height="292" rx="62" fill="none" stroke="#A78BFA" stroke-opacity=".22" stroke-width="3"/>
+  <g transform="translate(29 29) scale(.296875)">
+    <rect x="493" y="128" width="38" height="94" rx="19" fill="url(#phone)"/>
+    <circle cx="512" cy="116" r="40" fill="url(#phone)"/>
+    <path d="M328 650c0-79 64-143 143-143h95c79 0 143 64 143 143v185H328V650Z" fill="url(#shell)"/>
+    <rect x="270" y="224" width="504" height="438" rx="183" fill="url(#shell)"/>
+    <rect x="330" y="303" width="382" height="235" rx="112" fill="#08080D"/>
+    <path d="M402 414c23-39 62-39 84 0M546 414c23-39 62-39 84 0" fill="none" stroke="#A78BFA" stroke-width="31" stroke-linecap="round"/>
+    <path d="M213 301c-43 53-65 124-65 207 0 90 24 166 70 221" fill="none" stroke="url(#phone)" stroke-width="74" stroke-linecap="round"/>
+    <path d="M180 301l79 40M187 731l84-45" fill="none" stroke="url(#phone)" stroke-width="68" stroke-linecap="round"/>
+    <circle cx="280" cy="653" r="59" fill="url(#shell)"/>
+  </g>
+  <text x="390" y="174" fill="#141319" font-family="Inter Tight, Inter, sans-serif" font-size="104" font-weight="700" letter-spacing="-4">Bot<tspan fill="#7C3AED">Bound</tspan></text>
+  <rect x="394" y="204" width="620" height="3" rx="1.5" fill="#8B5CF6"/>
+  <text x="394" y="258" fill="#4B4657" font-family="Inter, sans-serif" font-size="27" font-weight="600" letter-spacing="2.5">AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL</text>
+</svg>

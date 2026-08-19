@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import { WirelineLockup } from "../brand/WirelineBrand";
+import { BotBoundLockup } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
 export default function PrecisionPublicHeader() {
@@ -11,9 +11,9 @@ export default function PrecisionPublicHeader() {
         <Link
           to="/"
           className="min-w-0 shrink rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
-          aria-label="WIRELINE home"
+          aria-label="BotBound home"
         >
-          <WirelineLockup size="compact" />
+          <BotBoundLockup size="compact" />
         </Link>
 
         <nav

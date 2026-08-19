@@ -38,19 +38,12 @@ const assistantRateLimit = createIpRateLimiter({
 
 const ALL_PUBLIC_AGENTS = [...WIRELINE_DEMO_AGENTS, ...WIRELINE_CONTACT_AGENTS] as const;
 
-/** Static marketing counters — no live tenant aggregates or owner-role scans. */
 const PUBLIC_MARKETING_STATS = {
   agents_online: 120,
   calls_this_month: 8400,
   tenants: 95,
 } as const;
 
-/**
- * Express trusts exactly one production proxy hop in server.ts. `req.ip` is
- * therefore the canonical client identity. Reading the left-most raw
- * X-Forwarded-For value here would let a caller supply a fresh rate-limit key
- * on every request and bypass both ticket and provider-spend ceilings.
- */
 function requestIp(req: Request): string {
   return String(req.ip || "unknown").trim();
 }
@@ -79,7 +72,7 @@ function requireSameOrigin(req: Request): string {
   }
 
   if (parsed.host.toLowerCase() !== host) {
-    throw AppError.fromHttpStatus(403, "The live demo is restricted to this Wireline page.");
+    throw AppError.fromHttpStatus(403, "The live demo is restricted to this BotBound page.");
   }
   if (isProduction && parsed.protocol !== "https:") {
     throw AppError.fromHttpStatus(403, "The live demo requires a secure browser context.");
@@ -133,11 +126,10 @@ router.get("/api/public/stats", async (req, res) => {
   });
 });
 
-/** Public metadata only; the prompt and ephemeral credential remain server-owned. */
 router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) => {
   const name = String(req.params.agentName || "").trim();
   const agent = publicAgent(name);
-  if (!agent) throw AppError.fromHttpStatus(404, `Showcase agent '${name}' not found`);
+  if (!agent) throw AppError.fromHttpStatus(404, `Showcase Bot '${name}' not found`);
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=900");
   res.json({
     name: agent.name,
@@ -148,10 +140,6 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
   });
 });
 
-/**
- * Cheap availability preflight. A one-use context-bound ticket is minted before
- * the microphone prompt; no xAI credential or provider spend occurs yet.
- */
 router.post(
   "/api/public/demo-session",
   asyncHandler(async (req, res) => {
@@ -164,7 +152,7 @@ router.post(
       .trim()
       .slice(0, 80);
     const agent = publicAgent(agentName);
-    if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
+    if (!agent) throw AppError.fromHttpStatus(404, "That live demo Bot is unavailable.");
 
     const ip = requestIp(req);
     const fingerprint = publicDemoIpFingerprint(ip);
@@ -185,11 +173,6 @@ router.post(
   }),
 );
 
-/**
- * Provider session mint. The browser calls this only after microphone access is
- * granted. The ticket is consumed exactly once and the distributed spend
- * ceilings are charged before an ephemeral xAI client secret is created.
- */
 router.post(
   "/api/public/demo-xai-session",
   asyncHandler(async (req, res) => {
@@ -216,7 +199,7 @@ router.post(
     }
 
     const agent = publicAgent(verification.claims.agent);
-    if (!agent) throw AppError.fromHttpStatus(404, "That live demo agent is unavailable.");
+    if (!agent) throw AppError.fromHttpStatus(404, "That live demo Bot is unavailable.");
 
     const session = await createPublicXAILiveDemoSession(agent);
     res.setHeader("Cache-Control", "no-store");

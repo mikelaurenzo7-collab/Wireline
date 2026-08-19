@@ -105,7 +105,7 @@ async function assertMiddlewarePasses(
 
 function quotaUnavailableError(input: AssertOutboundVoiceAllowedInput) {
   return new OutboundVoiceControlError(503, {
-    error: "Wireline could not verify the daily voice allowance. New calls are paused briefly.",
+    error: "BotBound could not verify the daily voice allowance. New calls are paused briefly.",
     code: "QUOTA_VOICE_UNAVAILABLE",
     source: input.source,
   });

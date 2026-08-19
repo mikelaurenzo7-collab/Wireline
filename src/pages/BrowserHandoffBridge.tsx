@@ -38,7 +38,7 @@ export default function BrowserHandoffBridge() {
       const context = parseExtensionBrowserContext(decoded);
       if (!context) {
         setError(
-          "This handoff link is invalid or expired. Capture the page again from Wireline Command.",
+          "This handoff link is invalid or expired. Capture the page again from BotBound Command.",
         );
         return;
       }
@@ -65,7 +65,7 @@ export default function BrowserHandoffBridge() {
         error?: string;
       };
       if (!response.ok || !body.studio_url || !body.handoff_id) {
-        setError(body.error || "Could not secure this handoff. Try again from Wireline Command.");
+        setError(body.error || "Could not secure this handoff. Try again from BotBound Command.");
         return;
       }
 
@@ -73,7 +73,7 @@ export default function BrowserHandoffBridge() {
     };
 
     void run().catch(() => {
-      setError("Could not complete the handoff. Try again from Wireline Command.");
+      setError("Could not complete the handoff. Try again from BotBound Command.");
     });
   }, [loading, user, location.hash]);
 

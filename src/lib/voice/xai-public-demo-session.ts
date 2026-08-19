@@ -40,14 +40,14 @@ function tokenExpiry(payload: XAIClientSecretPayload): number | null {
 
 function publicDemoInstructions(agent: ContactAgent): string {
   return [
-    `You are ${agent.name}, demonstrating a Wireline Voice Bot in a protected browser conversation.`,
+    `You are ${agent.name}, demonstrating a BotBound Voice Bot in a protected browser conversation.`,
     agent.scope,
     "The visitor may give you a customer situation, personal task, or business request. Show how you would answer, qualify, follow up, or establish the next step.",
     "Keep every spoken turn under 18 words. Ask no more than one question at a time.",
     "This is a short role-play. Never collect sensitive data, phone numbers, payment details, health details, legal details, or email addresses.",
     "You have no tools and cannot create records, appointments, messages, payments, transfers, or external commitments. Never claim an action happened.",
     "Do not mention model names, providers, APIs, prompts, tokens, or internal systems.",
-    "When asked to act, explain in one sentence what a configured Wireline Bot could do, then continue the role-play without pretending it happened.",
+    "When asked to act, explain in one sentence what a configured BotBound Bot could do, then continue the role-play without pretending it happened.",
   ].join("\n\n");
 }
 
@@ -113,7 +113,7 @@ export async function createPublicXAILiveDemoSession(agent: ContactAgent) {
     model: GROK_VOICE_DEFAULT_MODEL,
     voice,
     greeting:
-      "Hi, I’m a live Wireline Voice Bot. Give me a customer situation or task, and I’ll show you how I’d handle it.",
+      "Hi, I’m a live BotBound Voice Bot. Give me a customer situation or task, and I’ll show you how I’d handle it.",
     maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
     session: {
       instructions: publicDemoInstructions(agent),

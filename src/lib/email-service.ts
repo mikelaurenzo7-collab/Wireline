@@ -38,10 +38,6 @@ export interface SendResult {
   error?: string;
 }
 
-/**
- * Keep recipient diagnostics useful without putting full addresses in logs.
- * Domains help diagnose provider/configuration failures; local parts stay private.
- */
 function emailLogContext(email: string): {
   recipientRedacted: true;
   recipientDomain?: string;
@@ -67,9 +63,7 @@ async function sendViaResend(args: {
   subject: string;
   html: string;
   text: string;
-  /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
   headers?: Record<string, string>;
-  /** Stable operation key so provider retries cannot duplicate customer email. */
   idempotencyKey?: string;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
@@ -82,10 +76,6 @@ async function sendViaResend(args: {
     };
   }
 
-  // Provider complaints, hard bounces, and Resend-level suppressions apply to
-  // every platform Resend attempt, including transactional mail. This is kept
-  // separate from the CAN-SPAM preference table so a marketing unsubscribe
-  // does not suppress password reset, verification, or billing notices.
   try {
     if (await isProviderDeliverySuppressed(args.to)) {
       log.warn("[email-service] Resend send blocked by provider delivery suppression", {
@@ -128,8 +118,6 @@ async function sendViaResend(args: {
         text: args.text,
         ...(args.headers && Object.keys(args.headers).length ? { headers: args.headers } : {}),
       }),
-      // Cap the send so a hung Resend request can't stall auth/billing critical
-      // paths (password reset, security alerts) indefinitely.
       signal: AbortSignal.timeout(10_000),
     });
     const body = await res.text();
@@ -168,18 +156,12 @@ async function sendViaResend(args: {
   }
 }
 
-/**
- * Generic transactional email send. Used by ad-hoc senders (e.g. the
- * phone agent's send_payment_link tool) that don't have a dedicated
- * templated helper. Returns ok:false if no transport is configured —
- * callers must not claim delivery on a false result.
- */
+/** Generic transactional email send. */
 export async function sendEmail(opts: {
   to: string;
   subject: string;
   text: string;
   html: string;
-  /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
   headers?: Record<string, string>;
   idempotencyKey?: string;
 }): Promise<SendResult> {
@@ -197,9 +179,9 @@ export async function sendEmail(opts: {
 export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Promise<SendResult> {
   const expiresHuman = `${Math.max(1, Math.round((opts.expiresAt.getTime() - Date.now()) / 60_000))} min`;
 
-  const subject = "Reset your Wireline password";
+  const subject = "Reset your BotBound password";
   const text = [
-    "Someone (hopefully you) requested a password reset for your Wireline account.",
+    "Someone (hopefully you) requested a password reset for your BotBound account.",
     "",
     `Click the link below to set a new password. The link expires in ${expiresHuman}.`,
     "",
@@ -207,12 +189,12 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     "",
     "If you did not request this, you can ignore this email, your password stays unchanged.",
     "",
-    "Wireline",
+    "BotBound",
   ].join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
-      <h2 style="margin: 0 0 16px; font-weight: 600;">Reset your Wireline password</h2>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Someone (hopefully you) requested a password reset for your Wireline account.</p>
+      <h2 style="margin: 0 0 16px; font-weight: 600;">Reset your BotBound password</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Someone (hopefully you) requested a password reset for your BotBound account.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">Click the button below to set a new password. The link expires in <strong>${expiresHuman}</strong>.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.resetUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.resetUrl)}</span></p>
@@ -224,8 +206,6 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
 
-  // Fail closed. The reset URL is a bearer credential and must never
-  // be copied into runtime logs, even as a development fallback.
   log.error("Password reset email unavailable: RESEND_API_KEY missing");
   return {
     ok: false,
@@ -235,22 +215,6 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
   };
 }
 
-/**
- * Send a Wireline sign-up link via platform Resend. Used by the
- * `send_signup_link` Vapi tool that the 10 showcase demo agents call
- * when a caller asks for an email with the signup link.
- *
- * Distinct from sendEmail() in IntegrationService — that one routes
- * through the TENANT's connected Google/Microsoft OAuth account.
- * Showcase agents have no tenant; they use the platform Resend key.
- *
- *   to          recipient inbox (validated upstream as RFC-5322-shape)
- *   callerName  optional; if provided, used in the greeting
- *   agentName   the agent who's sending it (Sarah / Liam / Marcus / …)
- */
-/**
- * Branded payment-link email for the showcase `send_payment_link` Vapi tool.
- */
 function redactPayUrlForLog(payUrl: string): { payUrlRedacted: true; payUrlHost?: string } {
   try {
     const parsed = new URL(payUrl);
@@ -266,25 +230,25 @@ export async function sendPaymentLinkEmail(opts: {
   planLabel?: string;
 }): Promise<SendResult> {
   const planSuffix = opts.planLabel ? ` (${escapeHtml(opts.planLabel)} plan)` : "";
-  const subject = "Your Wireline payment link";
+  const subject = "Your BotBound payment link";
   const text = [
     "Hi,",
     "",
-    `Here's your secure link to activate your Wireline plan${opts.planLabel ? ` (${opts.planLabel} plan)` : ""}:`,
+    `Here's your secure link to activate your BotBound plan${opts.planLabel ? ` (${opts.planLabel} plan)` : ""}:`,
     "",
     opts.payUrl,
     "",
     "Any questions, just call us back on the same number you reached us on.",
     "",
-    "Wireline",
+    "BotBound",
   ].join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">Hi,</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Here's your secure link to activate your Wireline plan${planSuffix}.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Here's your secure link to activate your BotBound plan${planSuffix}.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.payUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Open payment link</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.payUrl)}</span></p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Wireline</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">BotBound</p>
     </div>
   `;
 
@@ -323,27 +287,27 @@ export async function sendSignupLinkEmail(opts: {
   const fromAgentHtml = opts.agentName ? `, ${escapeHtml(opts.agentName)}` : "";
   const fromAgentText = opts.agentName ? `, ${opts.agentName}` : "";
 
-  const subject = "Your Wireline sign-up link";
+  const subject = "Your BotBound sign-up link";
   const text = [
     greetingText,
     "",
-    "Thanks for the call. Here's the link to create your free Wireline agent, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number:",
+    "Thanks for the call. Here's the link to create your free BotBound Bot, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number:",
     "",
     signupUrl,
     "",
-    "If you have any follow-up questions, just call back, same number you reached me on. Looking forward to hearing how your agent turns out.",
+    "If you have any follow-up questions, just call back, same number you reached me on. Looking forward to hearing how your Bot turns out.",
     "",
-    `Wireline${fromAgentText}`,
+    `BotBound${fromAgentText}`,
   ].join("\n");
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free Wireline agent</strong>, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number.</p>
-      <p style="margin: 0 0 24px;"><a href="${escapeHtml(signupUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your agent</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free BotBound Bot</strong>, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number.</p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(signupUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your Bot</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(signupUrl)}</span></p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back, same number you reached me on.</p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Wireline${fromAgentHtml}</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">BotBound${fromAgentHtml}</p>
     </div>
   `;
 
@@ -365,16 +329,6 @@ export async function sendSignupLinkEmail(opts: {
     return sent;
   }
 
-  // The showcase Vapi agents use this path on every demo call where
-  // a caller asks for a signup link. Unlike sendPasswordResetEmail
-  // (which has a legit dev/single-tenant log-fallback) — we MUST NOT
-  // return ok:true here when no transport is configured, because the
-  // agent treats ok:true as "tell the caller it was sent" and the
-  // caller waits for an email that never arrives. That's exactly the
-  // fabrication failure mode the agent moat is supposed to prevent.
-  //
-  // Fail loud in prod so the agent reads back the URL by mouth and
-  // ends the call honestly:
   log.warn(
     "send_signup_link called but RESEND_API_KEY is not set, failing loud so the agent doesn't lie about delivery.",
     {
@@ -390,14 +344,6 @@ export async function sendSignupLinkEmail(opts: {
   };
 }
 
-/**
- * Send the email-verification link at signup (and on resend). Single-
- * use token built by auth-service.startEmailVerification() and emailed
- * here in plaintext. Mirrors sendPasswordResetEmail's structure +
- * styling. Returns ok:false if no transport is configured — caller
- * MUST NOT fabricate "sent" UX on a no-transport result; surface the
- * failure cleanly to the user so they can retry once mail is up.
- */
 export async function sendEmailVerification(opts: {
   to: string;
   verifyUrl: string;
@@ -406,23 +352,23 @@ export async function sendEmailVerification(opts: {
   const greetingHtml = firstNameGreeting(opts.fullName);
   const greetingText = opts.fullName ? `Hi ${opts.fullName.trim().split(/\s+/)[0]},` : "Hi,";
 
-  const subject = "Verify your Wireline email";
+  const subject = "Verify your BotBound email";
   const text = [
     greetingText,
     "",
-    "Welcome to Wireline. Click the link below to verify your email and start building your first voice agent:",
+    "Welcome to BotBound. Click the link below to verify your email and start building your first Bot:",
     "",
     opts.verifyUrl,
     "",
     "The link expires in 24 hours. If you didn't sign up, you can ignore this email.",
     "",
-    "Wireline",
+    "BotBound",
   ].join("\n");
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and start building your first voice agent.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to BotBound. Click the button below to verify your email and start building your first Bot.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.verifyUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.verifyUrl)}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
@@ -433,11 +379,6 @@ export async function sendEmailVerification(opts: {
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
 
-  // Same fail-loud pattern as sendSignupLinkEmail. We MUST NOT return
-  // ok:true here — the caller (signup endpoint) will tell the user
-  // "check your email" but no email actually goes out. Bad UX, worse
-  // brand. Better to surface the transport failure so the user can
-  // see "verification email transport down — try again in a few".
   log.warn("sendEmailVerification called but RESEND_API_KEY is not set, failing loud.", {
     ...emailLogContext(opts.to),
   });
@@ -449,12 +390,6 @@ export async function sendEmailVerification(opts: {
   };
 }
 
-/**
- * Per-agent escalation email — fires when an agent's
- * escalation_email is set and the `escalate_to_human` tool runs.
- * Designed to feel like a brief from a trusted assistant, not a
- * generic webhook alert.
- */
 export async function sendUrgentEscalationEmail(opts: {
   to: string;
   title: string;
@@ -470,9 +405,9 @@ export async function sendUrgentEscalationEmail(opts: {
     "",
     callIdLine,
     "",
-    "This alert was generated by your Wireline voice agent. Reply to your customer at your earliest convenience.",
+    "This alert was generated by your BotBound Bot. Reply to your customer at your earliest convenience.",
     "",
-    "Wireline",
+    "BotBound",
   ]
     .filter((s) => s !== "")
     .join("\n");
@@ -484,9 +419,9 @@ export async function sendUrgentEscalationEmail(opts: {
         <p style="margin: 0 0 16px; line-height: 1.55; color: #2A2A33;">${escapeHtml(opts.message)}</p>
         ${opts.callId ? `<p style="margin: 0 0 16px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: #6B6B7A;">Call ID: ${escapeHtml(opts.callId)}</p>` : ""}
         <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.06); margin: 20px 0;" />
-        <p style="margin: 0; line-height: 1.55; color: #6B6B7A; font-size: 12px;">This alert was generated by your Wireline voice agent. Reply to your customer at your earliest convenience.</p>
+        <p style="margin: 0; line-height: 1.55; color: #6B6B7A; font-size: 12px;">This alert was generated by your BotBound Bot. Reply to your customer at your earliest convenience.</p>
       </div>
-      <p style="margin: 20px 0 0; text-align: center; color: #9A9AA8; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;">Wireline</p>
+      <p style="margin: 20px 0 0; text-align: center; color: #9A9AA8; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;">BotBound</p>
     </div>
   `;
   if (process.env.RESEND_API_KEY) {
@@ -511,13 +446,13 @@ export async function sendPaymentFailedEmail(opts: {
   updateCardUrl: string;
   idempotencyKey?: string;
 }): Promise<SendResult> {
-  const subject = "Your Wireline payment failed";
+  const subject = "Your BotBound payment failed";
   const text = [
     "Hi,",
     "",
-    `A recent payment of ${opts.amountDisplay} for your Wireline subscription was declined.`,
+    `A recent payment of ${opts.amountDisplay} for your BotBound subscription was declined.`,
     "",
-    "To keep your agents live, update your payment method:",
+    "To keep your Bots live, update your payment method:",
     "",
     opts.updateCardUrl,
     "",
@@ -525,15 +460,15 @@ export async function sendPaymentFailedEmail(opts: {
     "",
     "If you have questions, reply to this email, we're happy to help.",
     "",
-    "Wireline",
+    "BotBound",
   ]
     .filter((s) => s !== undefined)
     .join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Payment failed</h2>
-      <p style="margin: 0 0 16px; line-height: 1.55;">A recent payment of <strong>${escapeHtml(opts.amountDisplay)}</strong> for your Wireline subscription was declined.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">To keep your agents live, update your payment method.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">A recent payment of <strong>${escapeHtml(opts.amountDisplay)}</strong> for your BotBound subscription was declined.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">To keep your Bots live, update your payment method.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.updateCardUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
       ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${escapeHtml(opts.invoiceUrl)}" style="color: ${BRAND.colors.primary};">View invoice</a></p>` : ""}
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email, we're happy to help.</p>
@@ -577,11 +512,6 @@ export async function sendTrialEndingSoonEmail(opts: {
     };
   }
 
-  // Commercial (upsell) mail, so it gets the full CAN-SPAM + bulk-sender
-  // treatment: honor opt-outs, RFC 8058 one-click unsubscribe headers, and a
-  // footer with a working unsubscribe link + physical postal address.
-  // (Transactional mail above is exempt.) The demo-line recap in
-  // lib/demo-funnel.ts is the other commercial sender and mirrors this shape.
   if (await isEmailSuppressed(opts.to)) {
     log.info("[email-service] trial-ending-soon email skipped, recipient unsubscribed.", {
       ...emailLogContext(opts.to),
@@ -600,23 +530,23 @@ export async function sendTrialEndingSoonEmail(opts: {
     [
       "Hi,",
       "",
-      `Your Wireline activation window closes in ${dayWord}.`,
+      `Your BotBound activation window closes in ${dayWord}.`,
       "",
-      "Choose Starter or higher to keep your agents live, your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
+      "Choose Starter or higher to keep your Bots live, your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
       "",
       opts.checkoutUrl,
       "",
-      "If you decide not to fund live work, your agents will stop answering calls when activation lapses.",
+      "If you decide not to fund live work, your Bots will stop answering calls when activation lapses.",
       "",
-      "Wireline",
+      "BotBound",
     ].join("\n") + buildComplianceFooterText(opts.to);
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your agents live, your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Your BotBound activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your Bots live, your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your agents will stop answering calls when activation lapses.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your Bots will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}
     </div>
   `;
@@ -642,7 +572,6 @@ export async function sendTrialEndingSoonEmail(opts: {
   };
 }
 
-/** Tiny HTML escape — sufficient for user-supplied strings and URL attributes. */
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

@@ -1,10 +1,16 @@
 import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 
+/**
+ * Authenticated product architecture contract: Studio is the workspace root;
+ * Inbox and Calls are canonical global surfaces with optional Bot-scoped lenses;
+ * advanced configuration is progressively disclosed instead of becoming nav.
+ */
 export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 
 export const STUDIO_CANVAS_SURFACES = {
   appRoutes: "src/routes/AppRoutes.tsx",
   studioShell: "src/components/WorkspaceShell.tsx",
+  resizablePanel: "src/components/layout/WorkspaceResizablePanel.tsx",
   navigation: "src/constants/navigation.ts",
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
@@ -12,7 +18,6 @@ export const STUDIO_CANVAS_SURFACES = {
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
-  overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHome.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
   activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
@@ -27,7 +32,7 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
-  studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
+  studioChrome: [{ id: "full-roster-copy", pattern: /Your agents|All Bots/ }],
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
@@ -35,10 +40,6 @@ export const STUDIO_CANVAS_FORBIDDEN = {
   workspacePanel: [
     { id: "fake-badge", pattern: />\s*wired\s*</ },
     { id: "external-voice", pattern: /VoiceGallery|AgentPresenceLivePreview/ },
-  ],
-  overview: [
-    { id: "posture-split", pattern: /personalAgents|businessAgents|founderPair|posture=/ },
-    { id: "account-mode-copy", pattern: /customerAgentLanguage|useAccount/ },
   ],
 } as const;
 
@@ -48,11 +49,9 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
-    {
-      id: "agents-redirect",
-      pattern:
-        /path="\/agents"[\s\S]*AgentsToStudioRedirect|AgentsToStudioRedirect[\s\S]*\/studio\$\{location\.search\}/,
-    },
+    { id: "root-to-studio", pattern: /path="\/" element=\{<Navigate to="\/studio"/ },
+    { id: "overview-retired", pattern: /path="\/overview" element=\{<ToStudioRedirect/ },
+    { id: "agents-redirect", pattern: /path="\/agents" element=\{<ToStudioRedirect/ },
   ],
   studioHome: [
     { id: "dedicated-studio-shell", pattern: /StudioPageShell/ },
@@ -65,18 +64,29 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   studioShell: [
     { id: "workspace-navigation", pattern: /aria-label="Workspace navigation"/ },
-    { id: "rail-width", pattern: /w-\[236px\]/ },
+    { id: "resizable-rail", pattern: /WorkspaceResizablePanel/ },
+    { id: "rail-default", pattern: /defaultSize=\{232\}/ },
+    { id: "rail-range", pattern: /minSize=\{208\}[\s\S]*maxSize=\{320\}/ },
+    { id: "rail-collapse", pattern: /collapsedSize=\{68\}/ },
     { id: "wordmark", pattern: /Wireline\s*<\/span>/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "apps-route", pattern: /OPERATE_NAV/ },
+    { id: "manage-nav", pattern: /OPERATE_NAV/ },
     { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
     { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
     { id: "touch-target", pattern: /min-h-\[44px\]|min-h-\[48px\]/ },
-    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
+  ],
+  resizablePanel: [
+    { id: "persistent-panel", pattern: /localStorage\.setItem/ },
+    { id: "pointer-resize", pattern: /pointermove/ },
+    { id: "keyboard-resize", pattern: /ArrowLeft[\s\S]*ArrowRight/ },
+    { id: "separator", pattern: /role="separator"/ },
+    { id: "double-click-reset", pattern: /onDoubleClick=\{resetSize\}/ },
   ],
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
     { id: "studio-label", pattern: /label: "Agent Studio"/ },
+    { id: "daily-work-order", pattern: /href: "\/studio"[\s\S]*href: "\/inbox"[\s\S]*href: "\/phone"/ },
+    { id: "no-mobile-home", pattern: /MOBILE_PRIMARY_NAV[\s\S]*href:\s*"\/studio"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
@@ -84,17 +94,10 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "readiness", pattern: /Live|Setup needed|Needs setup/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
-  ],
-  overview: [
-    { id: "overview-title", pattern: /wl-app-page-title/ },
-    { id: "unified-inbox", pattern: /UnifiedInbox/ },
-    { id: "bot-roster", pattern: /BotRoster/ },
-    { id: "configuration-surface", pattern: /ConfigureCard/ },
-    { id: "create-entry", pattern: /\/studio\?create=1/ },
-    { id: "template-entry", pattern: /\/templates/ },
-    { id: "operating-metrics", pattern: /Customer conversations today/ },
-    { id: "recent-conversations", pattern: /Recent customer conversations/ },
-    { id: "studio-link", pattern: /\/studio\?agent=/ },
+    { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
+    { id: "bot-switch-options", pattern: /agents\.map/ },
+    { id: "scoped-inbox", pattern: /\/inbox\?agent=/ },
+    { id: "scoped-calls", pattern: /\/phone\?agent=/ },
   ],
   canvas: [
     { id: "setup-section", pattern: /section === "setup"/ },
@@ -108,6 +111,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state", pattern: /Start With One Job/i },
     { id: "command-nonce", pattern: /commandNonce/ },
+    { id: "named-workspace-tabs", pattern: /Setup[\s\S]*Test[\s\S]*Review/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },
@@ -136,7 +140,4 @@ export const STUDIO_CANVAS_REQUIRED = {
   authContext: [{ id: "logout-clears-mru", pattern: /clearStudioLastAgentId/ }],
 } as const;
 
-export const STUDIO_CANVAS_LINK_SURFACES = [
-  "src/pages/OverviewPage.tsx",
-  STUDIO_CANVAS_SURFACES.workspacePanel,
-] as const;
+export const STUDIO_CANVAS_LINK_SURFACES = [STUDIO_CANVAS_SURFACES.workspacePanel] as const;

@@ -67,7 +67,7 @@ describe("Stripe Checkout modernization contract", () => {
       "const userId = session.metadata?.wireline_user_id?.trim()",
     );
     expect(subscriptionBranch).toContain(".returning({ userId: schema.settings.userId })");
-    expect(fulfillment).toContain("has no Wireline workspace");
+    expect(fulfillment).toContain("has no BotBound workspace");
     expect(billingPage).toContain('params.get("balance") === "success"');
     expect(billingPage).toContain('params.get("live_video") === "success"');
     expect(billingPage).toContain("Payment processing");

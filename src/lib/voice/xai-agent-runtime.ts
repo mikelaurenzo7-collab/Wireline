@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
+import { BOTBOUND_BRAND_NAME } from "../brand";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { buildRoleToolDefsForTenant } from "../vapi-helpers";
 import {
@@ -117,7 +118,7 @@ function buildInstructions(input: {
 }) {
   const customInstructions = trimLine(input.agent.systemPromptOverride, 8_000);
   const identity = [
-    `You are ${input.agent.name}, a Wireline voice agent.`,
+    `You are ${input.agent.name}, a ${BOTBOUND_BRAND_NAME} voice Bot.`,
     `Your role is ${input.agent.role || "agent"}.`,
     input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
     ...NON_NEGOTIABLE_RUNTIME_RULES,
@@ -259,9 +260,6 @@ async function resolveTools(
     return WIRELINE_GROK_REALTIME_TOOLS as readonly ProviderTool[];
   }
 
-  // The historical helper name reflects the first phone runtime. Its output is
-  // provider-neutral JSON Schema and remains the canonical connection-aware
-  // tool resolver while Vapi is removed from transport and naming surfaces.
   const tools = await buildRoleToolDefsForTenant(
     runtime.agent.role || "customer_service",
     runtime.agent.enabledTools,

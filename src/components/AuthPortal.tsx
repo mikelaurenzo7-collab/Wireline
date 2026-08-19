@@ -8,8 +8,8 @@ export default function AuthPortal() {
   const isSignupRoute = location.pathname === "/signup" || location.pathname === "/get-started";
   const title = isSignupRoute ? "Create your account" : "Sign in";
   const description = isSignupRoute
-    ? "Create your WIRELINE account and wire your first Phone Bot."
-    : "Sign in to WIRELINE.";
+    ? "Create your BotBound account and build your first Bot."
+    : "Sign in to BotBound.";
 
   return (
     <>

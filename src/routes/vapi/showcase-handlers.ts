@@ -118,14 +118,14 @@ export async function handleShowcaseToolCalls(args: {
     // never page the founder (Mike) — no escalations, no callbacks, no
     // follow-up tasks. Even if the model hallucinates an owner-routing
     // tool, short-circuit here so a demo call can never land a task in
-    // the owner's triage inbox. Only the real Wireline employee lines
+    // the owner's triage inbox. Only the real BotBound employee lines
     // ("cs") are allowed to escalate to a human.
     if (args.showcaseKind === "demo" && isOwnerRoutingShowcaseTool(toolName)) {
       results.push({
         toolCallId: toolCall.id,
         result:
-          "This is a live Wireline demo, so I can't transfer you or set up a callback from our team. " +
-          "If you'd like to talk to the real Wireline team, I can email you a link to sign up and add Runtime Balance when you are ready for live calls.",
+          "This is a live BotBound demo, so I can't transfer you or set up a callback from our team. " +
+          "If you'd like to talk to the real BotBound team, I can email you a link to sign up and add Runtime Balance when you are ready for live calls.",
       });
       continue;
     }

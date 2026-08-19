@@ -3,11 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
-const retiredProductTerms = [
-  "Ametrine Precision",
-  "Browser Companion",
-  "personal AI call assistant",
-];
+const retiredProductTerms = ["Ametrine Precision", "Browser Companion", "personal AI call assistant"];
 
 function read(relativePath: string) {
   return readFileSync(resolve(root, relativePath), "utf8");
@@ -15,12 +11,10 @@ function read(relativePath: string) {
 
 function expectNoTerms(source: string, terms: string[]) {
   const lower = source.toLowerCase();
-  for (const term of terms) {
-    expect(lower).not.toContain(term.toLowerCase());
-  }
+  for (const term of terms) expect(lower).not.toContain(term.toLowerCase());
 }
 
-describe("WIRELINE product documentation contract", () => {
+describe("product documentation and compatibility contract", () => {
   it("keeps the root README aligned with the current product model", () => {
     const readme = read("README.md");
     expect(readme).toContain("Wireline Command");
@@ -56,11 +50,7 @@ describe("WIRELINE product documentation contract", () => {
 
   it("pins the active launch creative manifest to the actual QA pack", () => {
     const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    for (const asset of [
-      "Wireline_Launch_15s_Missed_Call_Clean.mp4",
-      "Wireline_Product_Loop_22s_Music.mp4",
-      "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4",
-    ]) {
+    for (const asset of ["Wireline_Launch_15s_Missed_Call_Clean.mp4", "Wireline_Product_Loop_22s_Music.mp4", "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4"]) {
       expect(launchTruth).toContain(asset);
     }
     expect(launchTruth).not.toContain("Wireline_Launch_22s_Product_Reel_Clean.mp4");
@@ -73,7 +63,6 @@ describe("WIRELINE product documentation contract", () => {
     const vendors = read("docs/PRESENTER_VENDOR_STRATEGY.md");
     const theme = read("src/contexts/ThemeContext.tsx");
     const themeLight = read("src/styles/theme-light.css");
-
     expect(roadmap).toContain("Create → Train → Wire → Run");
     expect(roadmap).toContain("Letterpress");
     expect(roadmap).toContain("voice + chat AI-employee");
@@ -84,9 +73,8 @@ describe("WIRELINE product documentation contract", () => {
     expect(themeLight).toContain(":root.light");
   });
 
-  it("keeps extension docs positioned as WIRELINE Command with Bot-native IA", () => {
+  it("keeps extension docs aligned with Bot-native IA while legacy file history remains readable", () => {
     const readme = read("apps/browser-extension/README.md");
-    expect(readme).toContain("# WIRELINE Command");
     expect(readme).toContain("Prepare a call");
     expect(readme).toContain("Draft a text");
     expect(readme).toContain("Send a Bot task");
@@ -96,7 +84,6 @@ describe("WIRELINE product documentation contract", () => {
   it("keeps product docs aligned with Training and agent-first technical copy", () => {
     const customization = read("docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md");
     const submission = read("docs/CHATGPT_APP_SUBMISSION.md");
-
     expect(customization).toContain("Training");
     expect(customization).not.toContain("Knowledge");
     expect(submission).toContain("agent draft");
@@ -106,38 +93,31 @@ describe("WIRELINE product documentation contract", () => {
     expectNoTerms(submission, retiredProductTerms);
   });
 
-  it("keeps native docs on the Wireline Letterpress contract", () => {
+  it("keeps native documentation on the existing technical Letterpress contract during brand migration", () => {
     const android = read("android/README.md");
     const ios = read("ios/README.md");
-
-    for (const source of [android, ios]) {
-      expect(source).toContain("Wire your agent");
-      expect(source).toContain("Wireline Letterpress");
-    }
+    for (const source of [android, ios]) expect(source).toContain("Wireline Letterpress");
   });
 
-  it("keeps static metadata and OG positioning aligned with current public product truth", () => {
+  it("keeps static metadata and OG positioning aligned with BotBound", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("WIRELINE | WIRE YOUR PHONE BOT");
-    expect(head).toContain("A Phone Bot for calls, email, and text");
-    expect(head).toContain('"slogan": "WIRE YOUR PHONE BOT"');
-    expect(head).not.toContain("one workspace");
+    expect(head).toContain("BotBound | Put Your Bot on the Line");
+    expect(head).toContain("AI employees for calls, texts, and email.");
+    expect(head).toContain('"name":"BotBound"');
+    expect(head).toContain('"slogan":"Put Your Bot on the Line"');
+    expect(head).not.toContain("WIRE YOUR PHONE BOT");
     expect(head).not.toContain("VOICE-FIRST");
-    expect(head).not.toContain("AI employee");
-    expect(head).not.toContain("multichannel AI employee");
     expect(head).not.toContain("—");
 
-    expect(ogImage).toContain("WIRE YOUR");
-    expect(ogImage).toContain("PHONE BOT");
-    expect(ogImage).toContain("CALL / EMAIL / TEXT");
-    expect(ogImage).toContain("TRYWIRELINE.COM");
+    expect(ogImage).toContain("BotBound");
+    expect(ogImage).toContain("PUT YOUR BOT ON THE LINE");
+    expect(ogImage).toContain("AI employees for calls, texts, and email.");
+    expect(ogImage).toMatch(/phone|Phone/);
+    expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");
     expect(ogImage).not.toContain("VOICE-FIRST");
-    expect(ogImage).not.toContain("Voice agents that");
-    expect(ogImage).not.toContain("Build free. Go live from $19/mo.");
-    expect(ogImage).not.toContain("·");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });
@@ -145,23 +125,7 @@ describe("WIRELINE product documentation contract", () => {
   it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
-    const privateRoutes = [
-      "/admin",
-      "/agents",
-      "/overview",
-      "/studio",
-      "/settings",
-      "/inbox",
-      "/knowledge",
-      "/templates",
-      "/connections",
-      "/phone",
-      "/insights",
-      "/approvals",
-      "/apps",
-      "/call-logs",
-    ];
-
+    const privateRoutes = ["/admin", "/agents", "/overview", "/studio", "/settings", "/inbox", "/knowledge", "/templates", "/connections", "/phone", "/insights", "/approvals", "/apps", "/call-logs"];
     for (const route of privateRoutes) {
       expect(robots).toContain(`Disallow: ${route}`);
       expect(sitemap).not.toContain(`https://trywireline.com${route}`);

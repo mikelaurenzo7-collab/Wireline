@@ -29,7 +29,7 @@ const PAID_TIERS = [
     eyebrow: "Put Your Voice Bot Live",
     tagline: "Your Voice Bot from $19/month",
     detail:
-      "One focused Voice Bot for inbound calls, outbound calls, or scheduling, with an included Wireline number.",
+      "One focused Voice Bot for inbound calls, outbound calls, or scheduling, with an included BotBound number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -62,18 +62,6 @@ const PAID_TIERS = [
   },
 ] as const;
 
-/**
- * Features every paid tier lists verbatim, computed rather than hand-listed so
- * a catalog edit cannot leave this out of step.
- *
- * Three lines (the +$15/mo add-agent rate, the post-call record, and "no
- * automatic overages") were printed identically on Starter, Starter Plus and
- * Pro. At four columns each wrapped to two or three lines, so one shared fact
- * cost roughly 130 vertical pixels three times over, and a visitor comparing
- * plans had to read the same sentence three times to discover it did not
- * differentiate them. Stated once, under the grid, it reads as what it is: a
- * property of the product, not of a tier.
- */
 const PAID_PLAN_FEATURES: readonly (readonly string[])[] = PAID_TIERS.map(
   ({ plan }) => plan.features,
 );
@@ -85,7 +73,7 @@ const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(f
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
+    body: `Every active paid Bot gets its own BotBound production number, provisioned through Twilio and imported into the voice runtime. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     title: "Text / SMS",
@@ -93,7 +81,7 @@ const CHANNEL_RULES = [
   },
   {
     title: "Email",
-    body: "Connect Gmail, Outlook, iCloud, or your own stack. Your provider's limits stay authoritative.",
+    body: "Every active paid Bot gets a BotBound-managed mailbox. Verified custom domains keep the Bot on your brand; Gmail, Outlook, and iCloud connections are optional inputs, not prerequisites.",
   },
   {
     title: "Lead Hunt",
@@ -104,19 +92,19 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Does one Bot handle voice, text, and email?",
-    "Yes. A single Wireline Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
+    "Yes. A single BotBound Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
-    "Is the Wireline number free?",
-    "Every paid plan includes a Wireline number at no extra line fee. Free Builder is a private creation and simulation tier; production numbers and paid provider actions unlock after activation.",
+    "Is the BotBound number free?",
+    "Every active paid Bot gets its own BotBound production number at no extra line fee within the plan's Bot capacity. Free Builder is a private creation and simulation tier; carrier resources allocate when a Bot becomes paid and active.",
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second number slot, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
+    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
   ],
   [
-    "Does every Bot automatically create a phone number cost?",
-    "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused Bot capacity does not create unnecessary carrier spend.",
+    "Does every paid Bot get a phone number?",
+    "Yes. Every active paid Bot gets one dedicated production number through BotBound's Twilio account. Unused plan capacity does not allocate a carrier number until a Bot actually exists and is active, so you pay for the plan capacity without orphan line spend.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -132,7 +120,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@botbound.me within 30 days of your first paid invoice if the plan was not the right fit.",
   ],
   [
     "What is the Scale plan?",
@@ -145,19 +133,19 @@ const pricingJsonLd = {
   "@graph": [
     {
       "@type": "OfferCatalog",
-      name: "Wireline Voice Bots pricing",
-      url: "https://trywireline.com/pricing",
+      name: "BotBound Voice Bots pricing",
+      url: "https://botbound.me/pricing",
       itemListElement: [
         {
           "@type": "Offer",
-          name: "Wireline Free Builder",
+          name: "BotBound Free Builder",
           price: 0,
           priceCurrency: "USD",
           description: "Build, configure, and privately simulate one Voice Bot.",
         },
         ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
           "@type": "Offer",
-          name: `Wireline ${publicName}`,
+          name: `BotBound ${publicName}`,
           price: plan.price_usd_monthly,
           priceCurrency: "USD",
           description: detail,
@@ -182,7 +170,7 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="PRICING | WIRELINE VOICE BOTS FROM $19/MONTH"
+        title="PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH"
         description="Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />
@@ -193,22 +181,6 @@ export default function Pricing() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
-        {/*
-          The pricing page has no hero, on purpose.
-
-          It used to open with a three-line display headline carrying the whole
-          price story ("Build free. Go live from $19/mo. Scale when it pays"),
-          its own pair of CTAs, and then a *second* full-size headline directly
-          beneath it: roughly 450 vertical pixels spent restating, in prose,
-          numbers that four cards state exactly, eight hundred pixels further
-          down. On a pricing page the plans are the content and the plan buttons
-          are the call to action; a hero can only delay both.
-
-          What stands in its place is a mast: the page's name, the one control
-          it owns, and the one fact that is true of every card and printed on
-          none of them. It uses the full width, it is 44px tall, and every plan
-          is above the fold behind it.
-        */}
         <section id="plans" className="marketing-section marketing-section--screen">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-border pb-3 lg:justify-between">
@@ -247,11 +219,8 @@ export default function Pricing() {
                 </button>
               </div>
 
-              {/* The one thing true of every paid card and printed on none of
-                  them. It earns the third slot of the mast because it answers
-                  the question the grid otherwise leaves open. */}
               <p className="text-xs text-muted-foreground">
-                Every paid plan includes a Wireline number
+                Every active paid Bot gets its own production number
               </p>
             </div>
 

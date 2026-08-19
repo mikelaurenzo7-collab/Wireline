@@ -59,7 +59,7 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "WIRELINE FOR HOME SERVICES | VOICE BOTS FOR CALLS AND FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR HOME SERVICES | VOICE BOTS FOR CALLS AND FOLLOW-UP",
     metaDescription:
       "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, continue by text and email, and follow up from one workspace.",
     eyebrow: "For Home Services Pros",
@@ -97,7 +97,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will customers know they are talking to a Bot?",
-        a: 'Wireline Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: 'BotBound Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What happens if the Bot does not know the answer?",
@@ -109,14 +109,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost compared with an answering service?",
-        a: "Wireline plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, text and email follow-up, and logged outcomes, not only the per-minute rate, against any answering service you use today.",
+        a: "BotBound plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, text and email follow-up, and logged outcomes, not only the per-minute rate, against any answering service you use today.",
       },
     ],
   },
 
   medical: {
     slug: "medical",
-    metaTitle: "WIRELINE FOR MEDICAL PRACTICES | VOICE BOTS FOR INTAKE AND SCHEDULING",
+    metaTitle: "BOTBOUND FOR MEDICAL PRACTICES | VOICE BOTS FOR INTAKE AND SCHEDULING",
     metaDescription:
       "A voice-first Bot for dental, med spa, chiropractic, and primary care practices. Handle approved intake, book appointments, continue by text and email, and route exceptions.",
     eyebrow: "For Medical Practices",
@@ -140,7 +140,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Shield",
         title: "Compliance-Aware, Not Certified",
-        body: "Healthcare-sensitive intake controls include consent logging, opt-out enforcement, recording off by default, and configurable retention. Do not use Wireline for PHI unless a signed BAA and approved configuration are confirmed in writing.",
+        body: "Healthcare-sensitive intake controls include consent logging, opt-out enforcement, recording off by default, and configurable retention. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
       },
     ],
     scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
@@ -150,11 +150,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Call Medical Demo", href: "tel:+16173134469" },
     secondaryCta: { label: "Create Medical Bot", href: signupHrefForWedge("medical") },
     trustLine:
-      "Uses your configured practice identity, subject to carrier display support. Do not use Wireline for PHI unless a signed BAA and approved configuration are confirmed in writing.",
+      "Uses your configured practice identity, subject to carrier display support. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
     faqs: [
       {
-        q: "Is Wireline HIPAA compliant?",
-        a: "No. Wireline offers healthcare-sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless Wireline confirms a signed BAA and approved configuration in writing.",
+        q: "Is BotBound HIPAA compliant?",
+        a: "No. BotBound offers healthcare-sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
       },
       {
         q: "Can the Bot actually book to my existing schedule?",
@@ -173,7 +173,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "WIRELINE FOR LAW FIRMS | VOICE BOTS FOR INTAKE AND CONSULT ROUTING",
+    metaTitle: "BOTBOUND FOR LAW FIRMS | VOICE BOTS FOR INTAKE AND CONSULT ROUTING",
     metaDescription:
       "A voice-first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by text and email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
@@ -187,7 +187,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "MailCheck",
         title: "Firm-Approved Intake Language",
-        body: "Uses the disclaimer and intake language your firm approves. Wireline does not determine whether privilege exists and is configured not to provide legal advice.",
+        body: "Uses the disclaimer and intake language your firm approves. BotBound does not determine whether privilege exists and is configured not to provide legal advice.",
       },
       {
         icon: "Calendar",
@@ -207,7 +207,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Call Legal Demo", href: "tel:+15727269365" },
     secondaryCta: { label: "Create Legal Intake Bot", href: signupHrefForWedge("legal") },
     trustLine:
-      "Audit logs preserve configured disclosures and opt-outs. Wireline is the intake layer; your attorneys deliver the advice.",
+      "Audit logs preserve configured disclosures and opt-outs. BotBound is the intake layer; your attorneys deliver the advice.",
     faqs: [
       {
         q: "Does the Bot give legal advice?",
@@ -219,7 +219,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about attorney-client privilege?",
-        a: "Wireline cannot determine whether attorney-client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.",
+        a: "BotBound cannot determine whether attorney-client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.",
       },
       {
         q: "Can it qualify by case type before booking?",
@@ -230,7 +230,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "WIRELINE FOR REAL ESTATE | VOICE BOTS FOR LISTING CALLS AND FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR REAL ESTATE | VOICE BOTS FOR LISTING CALLS AND FOLLOW-UP",
     metaDescription:
       "A voice-first Bot for real estate teams. Qualify buyers, book showings, revive approved leads, continue by text and email, and sync CRM notes.",
     eyebrow: "For Real Estate",
@@ -287,9 +287,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "WIRELINE FOR EVERYONE | A VOICE BOT FOR CALLS YOU AVOID",
+    metaTitle: "BOTBOUND FOR EVERYONE | A VOICE BOT FOR CALLS YOU AVOID",
     metaDescription:
-      "A personal Voice Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one Wireline workspace.",
+      "A personal Voice Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
     eyebrow: "For Everyone Who Hates the Phone",
     headline: "Hand Off the Calls You Keep Avoiding",
     pains: [
@@ -311,7 +311,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Shield",
         title: "Phone Anxiety and Accessibility Support",
-        body: "Calls can be especially difficult for autistic and ADHD adults, people with social anxiety, and people with hearing disabilities. Wireline can handle an authorized call and return a readable summary; it is not an emergency or certified accessibility service.",
+        body: "Calls can be especially difficult for autistic and ADHD adults, people with social anxiety, and people with hearing disabilities. BotBound can handle an authorized call and return a readable summary; it is not an emergency or certified accessibility service.",
       },
     ],
     scriptPreview:
@@ -326,7 +326,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Is it actually legal for an AI to make calls on my behalf?",
-        a: "Wireline is a tool you authorize to place calls with your script and limits. Rules vary by call type, state, and account, so do not treat this as legal advice; configure calls using your own guidance. Your Bot identifies that it is calling on your behalf and records what happened.",
+        a: "BotBound is a tool you authorize to place calls with your script and limits. Rules vary by call type, state, and account, so do not treat this as legal advice; configure calls using your own guidance. Your Bot identifies that it is calling on your behalf and records what happened.",
       },
       {
         q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
@@ -349,7 +349,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   insurance: {
     slug: "insurance",
-    metaTitle: "WIRELINE FOR INSURANCE AGENCIES | VOICE BOTS FOR QUOTE INTAKE AND RENEWALS",
+    metaTitle: "BOTBOUND FOR INSURANCE AGENCIES | VOICE BOTS FOR QUOTE INTAKE AND RENEWALS",
     metaDescription:
       "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, renewal follow-up, text and email context, and producer-ready notes.",
     eyebrow: "For Insurance Agencies",
@@ -387,7 +387,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will the Bot actually bind a policy?",
-        a: "No. Binding requires a licensed person. Wireline gathers the approved quote-intake fields and routes the record to your producer for review and any coverage decision.",
+        a: "No. Binding requires a licensed person. BotBound gathers the approved quote-intake fields and routes the record to your producer for review and any coverage decision.",
       },
       {
         q: "Can it handle commercial lines, not just personal?",
@@ -399,14 +399,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare with a 24/7 answering service?",
-        a: "Compare Wireline on the complete intake, conversation, follow-up, and logged outcome, not only the per-call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
+        a: "Compare BotBound on the complete intake, conversation, follow-up, and logged outcome, not only the per-call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
       },
     ],
   },
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "WIRELINE FOR RESTAURANTS | VOICE BOTS FOR RESERVATIONS AND TAKEOUT",
+    metaTitle: "BOTBOUND FOR RESTAURANTS | VOICE BOTS FOR RESERVATIONS AND TAKEOUT",
     metaDescription:
       "A voice-first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by text and email, and route exceptions to staff.",
     eyebrow: "For Restaurants",
@@ -456,14 +456,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from Yelp or Google booking widgets?",
-        a: "Booking widgets cover web demand. Wireline adds a configurable Voice Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
+        a: "Booking widgets cover web demand. BotBound adds a configurable Voice Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
       },
     ],
   },
 
   sales: {
     slug: "sales",
-    metaTitle: "WIRELINE FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP",
     metaDescription:
       "A voice-first Sales Bot for speed-to-lead, quote follow-up, warm reactivation, governed outbound queues, text and email continuation, and approved CRM actions.",
     eyebrow: "For Sales Teams",
@@ -513,7 +513,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from Apollo or Outreach AI features?",
-        a: "Those products center on sales sequencing and enrichment. Wireline centers on governed voice conversations, call outcomes, and connected text and email follow-up. Use each only where its configured integration and your consent policy support the workflow.",
+        a: "Those products center on sales sequencing and enrichment. BotBound centers on governed voice conversations, call outcomes, and connected text and email follow-up. Use each only where its configured integration and your consent policy support the workflow.",
       },
     ],
   },

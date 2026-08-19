@@ -52,7 +52,7 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
-        title="FEATURES | WIRELINE VOICE BOTS"
+        title="FEATURES | BOTBOUND VOICE BOTS"
         description="Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory."
         path="/features"
       />

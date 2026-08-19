@@ -286,7 +286,7 @@ export default function CompanyIdentityPack() {
       setForm(formFromIdentity(body));
       if (body.review_state_invalidated) {
         setMessage(
-          "A company identity field or dedicated number changed after the prior review request, so Wireline reset the stale provider state.",
+          "A company identity field or dedicated number changed after the prior review request, so BotBound reset the stale provider state.",
         );
       }
     } catch (err) {

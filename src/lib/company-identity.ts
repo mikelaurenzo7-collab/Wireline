@@ -108,8 +108,6 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
     supportEmail: nullableString(raw.supportEmail),
     physicalPostalAddress: nullableString(raw.physicalPostalAddress),
     defaultCallReason: nullableString(raw.defaultCallReason),
-    // An explicitly empty or corrupt stored selection must fail closed. It must
-    // never silently broaden review scope back to all channels.
     requestedChannels,
     reviewRequestedAt: nullableString(raw.reviewRequestedAt),
     reviewFingerprint: nullableString(raw.reviewFingerprint),
@@ -145,13 +143,6 @@ export function buildCompanyIdentityProfile(args: {
   };
 }
 
-/**
- * Hashes the facts a carrier, messaging provider, or email provider actually
- * reviews. Requested channel selection is deliberately excluded so adding
- * Email later does not erase an already-approved Voice identity. Only the
- * digest is persisted; the normalized profile is not duplicated as a
- * misleading raw "fingerprint" inside preferences.
- */
 export function companyIdentityFingerprint(value: {
   businessName: string | null;
   brandName: string | null;
@@ -202,21 +193,18 @@ export function buildCompanyIdentityReadiness(args: {
   const hasWebsite = Boolean(args.profile.website);
   const hasSupportEmail = Boolean(args.profile.supportEmail);
   const hasPhysicalPostalAddress = Boolean(args.profile.physicalPostalAddress);
-  const hasBrandedSupportEmail = supportEmailMatchesWebsite(
-    args.profile.website,
-    args.profile.supportEmail,
-  );
+  const hasBrandedSupportEmail = supportEmailMatchesWebsite(args.profile.website, args.profile.supportEmail);
   const hasCallerIdName = Boolean(args.profile.callerIdName);
 
   const voiceMissing = [
-    !hasNumber ? "dedicated Wireline number" : null,
+    !hasNumber ? "dedicated BotBound number" : null,
     !hasName ? "company display name" : null,
     !hasCallerIdName ? "15-character caller ID fallback name" : null,
     !hasWebsite ? "company website" : null,
   ].filter((value): value is string => Boolean(value));
 
   const smsMissing = [
-    !hasNumber ? "dedicated Wireline number" : null,
+    !hasNumber ? "dedicated BotBound number" : null,
     !hasName ? "company display name" : null,
     !hasWebsite ? "company website" : null,
     !hasSupportEmail ? "support email" : null,

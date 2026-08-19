@@ -1,12 +1,14 @@
 /**
  * Native Android, iOS, CarPlay, and widget contracts.
  *
- * Visible product language is Bot-native, the visible company name is WIRELINE,
- * and compact interface language is uppercase. Technical classes, route keys,
- * API methods, bundle identifiers, URL schemes, and persisted records may retain
- * agent/assistant/wireline identifiers for compatibility.
+ * Visible product language is Bot-native, the visible company name is BotBound,
+ * and compact interface language is uppercase where it acts as a control label.
+ * Technical classes, route keys, API methods, bundle identifiers, URL schemes,
+ * and persisted records may retain agent/assistant/wireline identifiers for compatibility.
  */
 export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
+  const androidManifest = read("android/app/src/main/AndroidManifest.xml");
+  const androidLauncherForeground = read("android/app/src/main/res/drawable/ic_launcher_foreground.xml");
   const androidApp = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
   const androidSetup = read("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt");
   const androidStrings = read("android/app/src/main/res/values/strings.xml");
@@ -26,8 +28,32 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "android/app/src/main/res/values/strings.xml",
     androidStrings,
-    /<string name="app_name">WIRELINE<\/string>/,
-    "Android launcher display name must use canonical WIRELINE casing",
+    /<string name="app_name">BotBound<\/string>/,
+    "Android launcher display name must use BotBound",
+  );
+  mustInclude(
+    "android/app/src/main/AndroidManifest.xml",
+    androidManifest,
+    /android:label="BotBound"/,
+    "Android application label must use BotBound",
+  );
+  mustInclude(
+    "android/app/src/main/AndroidManifest.xml",
+    androidManifest,
+    /android:label="Ask BotBound"/,
+    "Android quick-action widget must use BotBound",
+  );
+  mustInclude(
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+    androidLauncherForeground,
+    /BotBound phone-Bot foreground/,
+    "Android adaptive icon must use the phone-Bot identity",
+  );
+  mustExclude(
+    "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
+    androidLauncherForeground,
+    /folded Wireline W/,
+    "retired folded-W launcher identity must not return",
   );
 
   for (const [pattern, description] of [
@@ -36,8 +62,8 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     [/object Knowledge : Screen\("knowledge", "KNOWLEDGE"\)/, "Android app must use Knowledge"],
     [/object Actions : Screen\("actions", "CONNECTIONS"\)/, "Android app must use Connections"],
     [/object Recaps : Screen\("recaps", "CALLS"\)/, "Android app must use Calls"],
-    [/BOTS THAT GET THE WORK DONE/, "Android sign-in must carry the approved slogan"],
-    [/Voice-first Bots for calls, live conversations, text, and email\./, "Android sign-in must state the voice-first channel promise"],
+    [/BOTS THAT GET THE WORK DONE/, "Android sign-in must retain the current native slogan until its next IA copy pass"],
+    [/Voice-first Bots for calls, live conversations, text, and email\./, "Android sign-in must state the current native channel promise"],
     [/MetricStatCard\([^\n]*label = "BOTS"/, "Android overview must report Bots"],
     [/Text\("BOTS"/, "Android Bot library must use the customer-facing noun"],
   ]) {
@@ -66,15 +92,15 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "android/app/src/main/java/com/wireline/app/widget/AssistantWidgetProvider.kt",
     androidBotWidget,
-    /WIRELINE BOTS/,
-    "Android widget must use uppercase Bot identity",
+    /BotBound Bots/,
+    "Android widget must use BotBound identity",
   );
 
   mustInclude(
     "ios/Wireline/Info.plist",
     iosInfo,
-    /<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/,
-    "iOS launcher display name must use canonical WIRELINE casing",
+    /<key>CFBundleDisplayName<\/key>\s*<string>BotBound<\/string>/,
+    "iOS launcher display name must use BotBound",
   );
   for (const permission of [
     "NSMicrophoneUsageDescription",
@@ -87,15 +113,15 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     mustInclude(
       "ios/Wireline/Info.plist",
       iosInfo,
-      new RegExp(`<key>${permission}<\\/key>\\s*<string>WIRELINE\\b`),
-      `${permission} must present the brand as WIRELINE`,
+      new RegExp(`<key>${permission}<\\/key>\\s*<string>BotBound\\b`),
+      `${permission} must present the brand as BotBound`,
     );
   }
   mustInclude(
     "ios/WirelineWidgets/Info.plist",
     iosWidgetInfo,
-    /<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/,
-    "iOS widget display name must use canonical WIRELINE casing",
+    /<key>CFBundleDisplayName<\/key>\s*<string>BotBound<\/string>/,
+    "iOS widget display name must use BotBound",
   );
 
   for (const [pattern, description] of [
@@ -114,9 +140,11 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   }
 
   for (const [pattern, description] of [
-    [/BOTS THAT GET THE WORK DONE/, "iOS sign-in must carry the approved slogan"],
-    [/Voice-first Bots for calls, live conversations, text, and email\./, "iOS sign-in must state the voice-first channel promise"],
+    [/Text\("BotBound"\)/, "iOS sign-in must use the BotBound brand"],
+    [/PUT YOUR BOT ON THE LINE/, "iOS sign-in must use the BotBound slogan"],
+    [/AI employees for calls, texts, and email\./, "iOS sign-in must use the compact BotBound promise"],
     [/Text\("SIGN IN"\)/, "iOS sign-in action must use uppercase control language"],
+    [/Signs in to your BotBound account/, "iOS accessibility copy must use BotBound"],
   ]) {
     mustInclude("ios/Wireline/Views/SignInView.swift", iosSignIn, pattern, description);
   }
@@ -132,10 +160,10 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
     ["ios/Wireline/Views/AssistantSetupViews.swift", iosKnowledgeConnections, /WAYS YOUR BOT CAN HELP/, "iOS connections must describe Bot capabilities"],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["BOTS", "CHOOSE A BOT"\]/, "CarPlay must expose Bot selection"],
     ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /CPListTemplate\(title: "BOTS"/, "CarPlay Bot list must use Bots"],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /configurationDisplayName\("WIRELINE Bots"\)/, "iOS widget gallery must use canonical WIRELINE casing"],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /description\("Open your WIRELINE Bots/, "iOS widget description must use canonical WIRELINE casing"],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Text\("WIRELINE BOTS"\)/, "iOS widget face must use uppercase Bot identity"],
-    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /accessibilityLabel\("WIRELINE Bots\./, "iOS widget accessibility label must use canonical WIRELINE casing"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /configurationDisplayName\("BotBound Bots"\)/, "iOS widget gallery must use BotBound"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /description\("Open your BotBound Bots/, "iOS widget description must use BotBound"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /Text\("BotBound Bots"\)/, "iOS widget face must use BotBound identity"],
+    ["ios/WirelineWidgets/AssistantWidget.swift", iosBotWidget, /accessibilityLabel\("BotBound Bots\./, "iOS widget accessibility label must use BotBound"],
   ]) {
     mustInclude(file, source, pattern, description);
   }

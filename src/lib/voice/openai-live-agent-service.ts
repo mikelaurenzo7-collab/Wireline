@@ -48,7 +48,7 @@ const LIVE_DEMO_TOOLS: OpenAIRealtimeToolDefinition[] = [
   {
     type: "function",
     name: "search_agent_knowledge",
-    description: "Search this agent's approved Training rules and knowledge before answering.",
+    description: "Search this Bot's approved Training rules and knowledge before answering.",
     parameters: {
       type: "object",
       properties: {
@@ -149,8 +149,8 @@ function buildInstructions(
 ) {
   const customInstructions = trimLine(agent.systemPromptOverride, 8_000);
   const identity = [
-    `You are ${agent.name}, a Wireline voice agent.`,
-    `Your role is ${agent.role || "agent"}.`,
+    `You are ${agent.name}, a BotBound voice Bot.`,
+    `Your role is ${agent.role || "Bot"}.`,
     ...NON_NEGOTIABLE_RUNTIME_RULES,
   ].join("\n");
   const compliance = [
@@ -226,7 +226,7 @@ async function loadAgentRuntime(agentId: string, userId: string) {
     ]),
   );
   const agent = agents[0] as AgentRow | undefined;
-  if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
+  if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
   return {
     agent,
     personality: personalities[0]?.content || "",
@@ -286,9 +286,6 @@ export async function createOpenAILiveVoiceCall(input: {
       },
     },
   };
-  // GA Realtime WebRTC expects an ephemeral client secret first, then an
-  // application/sdp offer against /v1/realtime/calls. Multipart FormData with
-  // the platform key is rejected by the current API shape.
   try {
     const secretResponse = await fetchWithTimeout(
       OPENAI_REALTIME_CLIENT_SECRETS_URL,
@@ -398,21 +395,8 @@ function tokens(value: string): string[] {
   );
 }
 
-/** Longest excerpt a single live-voice knowledge match is allowed to speak from. */
 const MAX_LIVE_KB_RESULT_CHARS = 900;
 
-/**
- * Return the window of an entry AROUND the caller's match, not its opening
- * characters.
- *
- * Live-voice entries used to be truncated to MAX_LIVE_KB_RESULT_CHARS before
- * scoring, which made every entry unsearchable past its first 900 characters.
- * A caller asking about something documented in the second half of a page
- * scored zero, was dropped from the results, and the agent said it had no
- * approved answer while the answer sat in its own Training. The Vapi phone
- * path fixed this in excerptAroundMatch; this is the same fix for the live
- * browser/mobile path. The excerpt is a presentation concern only.
- */
 function excerptAroundMatch(content: string, queryTokens: string[]): string {
   if (content.length <= MAX_LIVE_KB_RESULT_CHARS) return content;
   const lower = content.toLowerCase();
@@ -422,7 +406,6 @@ function excerptAroundMatch(content: string, queryTokens: string[]): string {
     if (index >= 0 && (hit < 0 || index < hit)) hit = index;
   }
   if (hit < 0) return `${content.slice(0, MAX_LIVE_KB_RESULT_CHARS)}…`;
-  // Leave a third of the window as lead-in so the match keeps its context.
   const start = Math.max(0, hit - Math.floor(MAX_LIVE_KB_RESULT_CHARS / 3));
   const end = start + MAX_LIVE_KB_RESULT_CHARS;
   return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
@@ -445,8 +428,6 @@ export async function runOpenAILiveVoiceTool(input: {
   const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
   const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
-  // Full content — the excerpt window is applied on OUTPUT, never before
-  // scoring. See excerptAroundMatch above.
   const snippets: Snippet[] = [
     ...directives.map((item) => ({
       source: "rule" as const,

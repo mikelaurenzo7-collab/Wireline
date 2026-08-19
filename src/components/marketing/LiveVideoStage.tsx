@@ -99,7 +99,7 @@ export default function LiveVideoStage() {
               <span className="vr-panel__sub">Live Video session</span>
             </span>
           </span>
-          <span className="vr-panel__sub">Wireline voice</span>
+          <span className="vr-panel__sub">BotBound voice</span>
         </div>
 
         <div className="vr-panel__stage">
@@ -146,7 +146,7 @@ export default function LiveVideoStage() {
       </div>
 
       <p className="sr-only">
-        Illustration of a Wireline Live Video session: the agent takes its turn in a spoken
+        Illustration of a BotBound Live Video session: the agent takes its turn in a spoken
         conversation while the {LIVE_VIDEO_MAX_SESSION_SECONDS / 60}-minute session cap counts down.
       </p>
     </div>

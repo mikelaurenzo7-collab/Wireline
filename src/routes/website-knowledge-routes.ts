@@ -72,7 +72,7 @@ router.post(
       .from(schema.agents)
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
-    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
 
     try {
       const result = await runWithWebsiteKnowledgeSpend({
@@ -117,7 +117,7 @@ router.post(
         hostname: parsed.hostname,
         error: getErrorMessage(error),
       });
-      throw AppError.fromHttpStatus(502, "Wireline could not analyze that website page.");
+      throw AppError.fromHttpStatus(502, "BotBound could not analyze that website page.");
     }
   },
 );

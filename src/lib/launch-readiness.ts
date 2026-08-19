@@ -1,8 +1,9 @@
 /**
- * Launch readiness — capability report for the product Wireline actually sells.
- * Voice and a working number are guaranteed. Platform email plus signed
- * delivery feedback are release infrastructure; customer-connected mailboxes,
- * SMS, artifacts, and OAuth integrations remain optional capabilities.
+ * Launch readiness — capability report for the product BotBound actually sells.
+ * Voice and a working number are guaranteed for active paid Bots. Managed
+ * AgentMail inboxes are the Bot email identity; Resend remains transactional
+ * platform email and signed delivery feedback. Customer OAuth mailboxes, SMS,
+ * artifacts, and workspace integrations remain optional capabilities.
  *
  * Federal DNC is intentionally deferred from the GO / score gate until the
  * founder completes business registration with DNCScrub. Marketing outbound
@@ -73,6 +74,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   }
 
   const emailBlockers: string[] = [];
+  if (!envPresent("AGENTMAIL_API_KEY")) emailBlockers.push("AGENTMAIL_API_KEY");
   if (byId.get("resend")?.status !== "configured") emailBlockers.push("RESEND_API_KEY");
   if (byId.get("resend-feedback")?.status !== "configured") {
     emailBlockers.push("RESEND_WEBHOOK_SECRET");
@@ -97,13 +99,13 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "voice_ready",
-      label: "PSTN voice + number stack",
+      label: "PSTN voice + Twilio number stack",
       level: levelFromBlockers(voiceBlockers),
       blockers: voiceBlockers,
     },
     {
       id: "email_ready",
-      label: "Platform email + delivery feedback",
+      label: "Managed AgentMail + transactional delivery",
       level: levelFromBlockers(emailBlockers),
       blockers: emailBlockers,
     },
@@ -157,7 +159,7 @@ export function launchBlockResponse() {
   return {
     code: "LAUNCH_NOT_READY",
     error:
-      "Launch hard gate is on and Wireline is not launch-ready (voice, billing, email, or core).",
+      "Launch hard gate is on and BotBound is not launch-ready (voice, billing, managed email, or core).",
     launch_blockers: report.launch_blockers,
     deferred_checklist: report.deferred_checklist,
     capabilities: report.capabilities,

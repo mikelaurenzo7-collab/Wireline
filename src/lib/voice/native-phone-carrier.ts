@@ -10,7 +10,7 @@ import { getTwilioClient } from "../twilio-service";
 import { normalizeXAIPhoneNumber, twilioVoiceFallbackUrl } from "./xai-sip-config";
 
 export const NATIVE_PROVISIONING_UNAVAILABLE =
-  "Wireline could not activate a phone line right now. The platform configuration needs attention; no duplicate purchase will be attempted.";
+  "BotBound could not activate a phone line right now. The platform configuration needs attention; no duplicate purchase will be attempted.";
 
 export type NativeAvailableLocalNumber = {
   phoneNumber: string;
@@ -85,10 +85,7 @@ async function recoverAcceptedPurchase(input: {
 }): Promise<PurchasedNativeNumber | null> {
   const client = getTwilioClient();
   if (!client) return null;
-  const rows = await client.incomingPhoneNumbers.list({
-    phoneNumber: input.phoneNumber,
-    limit: 10,
-  });
+  const rows = await client.incomingPhoneNumbers.list({ phoneNumber: input.phoneNumber, limit: 10 });
   const matching = rows.filter(
     (row) =>
       String(row.phoneNumber || "") === input.phoneNumber &&
@@ -96,9 +93,7 @@ async function recoverAcceptedPurchase(input: {
   );
   if (matching.length !== 1) return null;
   const sid = String(matching[0]?.sid || "").trim();
-  return isTwilioPhoneNumberSid(sid)
-    ? { phoneNumber: input.phoneNumber, sid }
-    : null;
+  return isTwilioPhoneNumberSid(sid) ? { phoneNumber: input.phoneNumber, sid } : null;
 }
 
 async function recordAmbiguousPurchase(input: {
@@ -150,7 +145,7 @@ export async function purchaseNativeNumber(input: {
   }
 
   const operationId = randomUUID();
-  const friendlyName = `Wireline native ${operationId.slice(0, 12)} · ${input.userId.slice(0, 8)}`.slice(
+  const friendlyName = `BotBound native ${operationId.slice(0, 12)} · ${input.userId.slice(0, 8)}`.slice(
     0,
     64,
   );

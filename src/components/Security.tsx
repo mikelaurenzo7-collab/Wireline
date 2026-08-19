@@ -2,7 +2,7 @@
  * Security.tsx — public-facing security & compliance page at /security.
  *
  * Discoverable from the TrustSignals strip + the homepage footer.
- * Documents — honestly — what Wireline ships in production today and
+ * Documents — honestly — what BotBound ships in production today and
  * what remains on the security-attestation roadmap.
  *
  * Hard rule: no fabrication. Do not imply an attestation, certification,
@@ -61,8 +61,8 @@ const SECTIONS = [
     items: [
       "Call transcripts are stored in the managed database with configurable retention per tenant (365-day default; supported range 90 to 365 days).",
       "Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when intentionally used.",
-      "Credit card numbers are never stored, logged, or read by Wireline servers. PCI scope is reduced through Stripe Checkout.",
-      "Healthcare-sensitive runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless Wireline confirms a signed BAA and approved configuration in writing.",
+      "Credit card numbers are never stored, logged, or read by BotBound servers. PCI scope is reduced through Stripe Checkout.",
+      "Healthcare-sensitive runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
     ],
   },
   {
@@ -70,15 +70,15 @@ const SECTIONS = [
     title: "Healthcare-sensitive controls",
     items: [
       "Per-agent compliance_mode = 'hipaa' tightens runtime behavior and data-handling defaults. This setting is not a certification or compliance determination.",
-      "Do not send, store, or process PHI unless Wireline confirms both a signed BAA and an approved configuration in writing.",
-      "A SOC 2 Type II attestation is not currently available. Wireline does not display an unearned badge or imply that planning equals proof.",
+      "Do not send, store, or process PHI unless BotBound confirms both a signed BAA and an approved configuration in writing.",
+      "A SOC 2 Type II attestation is not currently available. BotBound does not display an unearned badge or imply that planning equals proof.",
     ],
   },
   {
     icon: CreditCard,
     title: "Card data stays with Stripe",
     items: [
-      "Wireline never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
+      "BotBound never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
       "We hold tokenized customer references only.",
     ],
   },
@@ -115,7 +115,7 @@ const SECTIONS = [
     title: "Responsible disclosure",
     items: [
       "Found a vulnerability? Email security@trywireline.com with details; we aim to acknowledge reports within one business day.",
-      "Wireline does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
+      "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
       "Please do not test exploits against tenant data; use your own Free Builder account.",
     ],
   },
@@ -133,7 +133,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: Globe2,
-    title: "Wireline Command (browser extension)",
+    title: "BotBound Command (browser extension)",
     items: [
       "Early access handoff only. Install from Apps in Studio; store listings are not GA.",
       "Page context is sent only when you explicitly click Send to Studio. No background harvesting.",
@@ -155,7 +155,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial. Marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Marketing and campaign outbound fail closed and stay blocked until Wireline finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
+      "Marketing and campaign outbound fail closed and stay blocked until BotBound finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
     ],
   },
   {
@@ -181,9 +181,9 @@ const TRUST_PACK_SECTIONS = [
     title: "Subprocessors & vendors",
     items: [
       "Production voice: Twilio for PSTN and xAI Direct SIP Speech-to-Speech for live conversation. OpenAI remains continuity inference and ChatGPT-widget realtime. ElevenLabs is managed text-to-speech and authorized private voices. Vapi is optional rollback and public-showcase PSTN only.",
-      "Payments: Stripe (PCI scope reduced, Wireline never stores card numbers).",
+      "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
-      "Provider credentials and routing stay server-side. Wireline owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
+      "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],
   },
 ];
@@ -195,8 +195,8 @@ export default function Security() {
   return (
     <>
       <PageMeta
-        title={isTrustHub ? "Trust Center | Wireline" : "Security and Compliance | Wireline"}
-        description="How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
+        title={isTrustHub ? "Trust Center | BotBound" : "Security and Compliance | BotBound"}
+        description="How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
         // /trust adds buyer-facing vendor, compliance, billing, and lifecycle
         // evidence beyond /security, so each indexable route owns its canonical.
         path={isTrustHub ? "/trust" : "/security"}
@@ -215,7 +215,7 @@ export default function Security() {
               </div>
               <div className="text-center">
                 <h1 className="wl-public-section-heading max-w-[22ch]">
-                  {isTrustHub ? "How Wireline earns live calls" : "How we keep your data safe"}
+                  {isTrustHub ? "How BotBound earns live calls" : "How we keep your data safe"}
                 </h1>
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function Security() {
             </ul>
             <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
               Evaluation is not a delivery commitment. Contractual requirements apply only when
-              Wireline confirms them in writing.
+              BotBound confirms them in writing.
             </p>
           </div>
 

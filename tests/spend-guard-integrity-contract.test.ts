@@ -90,7 +90,9 @@ describe("spend guard integrity", () => {
     expect(route).toContain('type SpendGuardScope = "plan_funded" | "free_simulation_allowance"');
     expect(route).toContain('guardScope === "free_simulation_allowance"');
     expect(route).toContain("live_provider_work_enabled: liveProviderWorkEnabled");
-    expect(route).toContain("Wireline could not resolve the active plan");
+    expect(route).toContain("BOTBOUND_BRAND_NAME");
+    expect(route).toContain("could not resolve the active plan for provider spend controls");
+    expect(route).not.toContain('"Wireline could not resolve the active plan');
 
     const migration = read("drizzle/migrations/0134_free_builder_simulation_allowance.sql");
     const journal = read("drizzle/migrations/meta/_journal.json");
@@ -186,8 +188,6 @@ describe("spend guard integrity", () => {
     const migration = read("drizzle/migrations/0128_spend_alerts_threshold_dedup.sql");
     const journal = read("drizzle/migrations/meta/_journal.json");
 
-    // The webhook only fires when this request actually inserted the alert
-    // row; a conflicting concurrent or repeated evaluation skips dispatch.
     expect(guard).toContain(".onConflictDoNothing()");
     expect(guard).toContain(".returning({ id: schema.spendAlerts.id })");
     expect(guard).toContain("if (!claimed) continue;");

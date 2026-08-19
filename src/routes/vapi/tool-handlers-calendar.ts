@@ -91,7 +91,7 @@ export async function handleCalendarToolCall(
 
       const success = await service.bookAppointment({
         title,
-        description: `Booked via Wireline Voice Agent. Confirmed timezone: ${timeZone}.`,
+        description: `Booked via BotBound Voice Bot. Confirmed timezone: ${timeZone}.`,
         startTime,
         endTime,
         agentId: agent.id,

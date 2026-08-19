@@ -10,14 +10,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-/**
- * Tenant-safe call history for one owned agent.
- *
- * The global /api/calls endpoint intentionally stays partner-compatible. Agent
- * workspaces need a different invariant: filter by tenant + agent in Postgres
- * before LIMIT/OFFSET, otherwise a busy workspace can show an empty outcome
- * ledger simply because another agent owns the newest global rows.
- */
+/** Tenant-safe call history for one owned Bot. */
 router.get(
   "/api/agents/:agentId/calls",
   authenticateUser,
@@ -51,8 +44,6 @@ router.get(
         .where(callScope);
       const count = Number(countResult?.count ?? 0);
 
-      // Return only evidence and presentation fields the outcome ledger needs.
-      // Tenant ids, provider ids, demo flags, and unrelated QA internals stay server-side.
       const calls = await drizzle
         .select({
           id: schema.callLogs.id,
@@ -68,6 +59,7 @@ router.get(
           intentLabel: schema.callLogs.intentLabel,
           sentiment: schema.callLogs.sentiment,
           coachingNote: schema.callLogs.coachingNote,
+          qaScore: schema.callLogs.qaScore,
           outcomeTag: schema.callLogs.outcomeTag,
           campaignSource: schema.callLogs.campaignSource,
           createdAt: schema.callLogs.createdAt,
@@ -81,9 +73,7 @@ router.get(
       const safeCalls = (calls || []).map((call) => ({
         ...call,
         agentName: agent.name,
-        recordingUrl: call.recordingUrl
-          ? `/api/calls/${String(call.id)}/recording`
-          : null,
+        recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
       }));
 
       res.setHeader("Cache-Control", "private, no-store, max-age=0");

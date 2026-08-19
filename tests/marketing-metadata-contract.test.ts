@@ -10,26 +10,25 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the Phone Bot promise", () => {
+  it("keeps static and runtime fallback metadata aligned to BotBound", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("WIRELINE | WIRE YOUR PHONE BOT");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "WIRELINE | WIRE YOUR PHONE BOT"');
+    expect(staticHead).toContain("BotBound | Put Your Bot on the Line");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("A Phone Bot for calls, email, and text");
-      expect(source).not.toContain("one workspace");
+      expect(source).toContain("AI employees for calls, texts, and email.");
+      expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");
     }
-    expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
+    expect(staticHead).toContain('content="BotBound"');
+    expect(runtimeMeta).toContain("VITE_PUBLIC_SITE_URL");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
-    expect(runtimeMeta).not.toContain("Voice agents that get the work done");
   });
 
   it("does not hard-code plan prices into public structured data", () => {
     const staticHead = read("index.html");
-
     expect(staticHead).toMatch(/"@type"\s*:\s*"SoftwareApplication"/);
     expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
@@ -41,7 +40,7 @@ describe("marketing metadata contract", () => {
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
-    expect(security).toContain("How Wireline earns live calls");
+    expect(security).toContain("How BotBound earns live calls");
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
     expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
@@ -51,16 +50,13 @@ describe("marketing metadata contract", () => {
 
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
-
     expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",
       "https://www.bland.ai/pricing",
       "https://www.retellai.com/pricing",
-    ]) {
-      expect(compare).toContain(href);
-    }
+    ]) expect(compare).toContain(href);
   });
 
   it("never quotes a public price the catalog does not charge", () => {
@@ -71,7 +67,6 @@ describe("marketing metadata contract", () => {
       "src/pages/SolutionsPage.tsx",
       "src/components/ContactPage.tsx",
     ];
-
     const chargeable = new Set<number>([0, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY]);
     for (const plan of STRIPE_PLANS) {
       chargeable.add(plan.price_usd_monthly);
@@ -79,17 +74,9 @@ describe("marketing metadata contract", () => {
       chargeable.add(plan.runtime_allowance_usd_monthly);
       chargeable.add(plan.overage_per_min_usd);
     }
-
     for (const path of surfaces) {
-      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) =>
-        Number(match[1]),
-      );
-      for (const amount of quoted) {
-        expect(
-          chargeable.has(amount),
-          `${path} quotes $${amount}, which no plan, add-on, allowance, or overage rate charges`,
-        ).toBe(true);
-      }
+      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) => Number(match[1]));
+      for (const amount of quoted) expect(chargeable.has(amount), `${path} quotes $${amount}, which no plan, add-on, allowance, or overage rate charges`).toBe(true);
     }
   });
 
@@ -104,7 +91,6 @@ describe("marketing metadata contract", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
-
     expect(pricing).toContain("launch from $19/month");
     expect(pricing).toContain("plan.price_usd_monthly");
     expect(contact).toContain('planById("starter")');
@@ -124,7 +110,6 @@ describe("marketing metadata contract", () => {
       expect(source).not.toContain("~$0.08/min");
       expect(source).not.toContain("Team starts at $29");
     }
-
     for (const source of [pricing, planCatalog, features, solutions]) {
       expect(source).not.toMatch(/\bemployees?\b/i);
       expect(source).not.toMatch(/\bAI Voice Employees?\b/i);

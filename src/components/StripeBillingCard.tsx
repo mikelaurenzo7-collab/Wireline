@@ -326,7 +326,7 @@ export default function StripeBillingCard({
         </div>
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
-          You can keep using Wireline. We'll email you the moment self-serve plan changes are
+          You can keep using BotBound. We'll email you the moment self-serve plan changes are
           available, or write to{" "}
           <a href="mailto:sales@trywireline.com" className="text-brand hover:underline">
             sales@trywireline.com

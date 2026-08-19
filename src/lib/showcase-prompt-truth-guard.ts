@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { BOTBOUND_BRAND_NAME, LEGACY_WIRELINE_NAME } from "./brand";
+
 export type ShowcasePromptKind = "cs" | "demo";
 
 type VapiMessage = {
@@ -15,12 +17,21 @@ type VapiModelConfig = {
 };
 
 type ShowcaseAssistantPayload = {
+  name?: string;
+  firstMessage?: string;
   model?: VapiModelConfig;
 };
 
+const BOTBOUND_DEMO_MARKER = `showcase demo built by ${BOTBOUND_BRAND_NAME}`;
+const BOTBOUND_CS_MARKER = `a real ${BOTBOUND_BRAND_NAME} employee on a real ${BOTBOUND_BRAND_NAME} line`;
+const LEGACY_DEMO_MARKER = `showcase demo built by ${LEGACY_WIRELINE_NAME}`;
+const LEGACY_CS_MARKER = `a real ${LEGACY_WIRELINE_NAME} employee on a real ${LEGACY_WIRELINE_NAME} line`;
+
 const SHOWCASE_PROMPT_MARKERS = [
-  "showcase demo built by Wireline",
-  "a real Wireline employee on a real Wireline line",
+  BOTBOUND_DEMO_MARKER,
+  BOTBOUND_CS_MARKER,
+  LEGACY_DEMO_MARKER,
+  LEGACY_CS_MARKER,
 ] as const;
 
 const FORBIDDEN_SHOWCASE_CLAIMS = [
@@ -49,13 +60,19 @@ function systemPrompt(payload: ShowcaseAssistantPayload): {
 }
 
 function showcaseKind(prompt: string): ShowcasePromptKind | null {
-  if (prompt.includes("showcase demo built by Wireline")) return "demo";
-  if (prompt.includes("a real Wireline employee on a real Wireline line")) return "cs";
+  if (prompt.includes(BOTBOUND_DEMO_MARKER) || prompt.includes(LEGACY_DEMO_MARKER)) return "demo";
+  if (prompt.includes(BOTBOUND_CS_MARKER) || prompt.includes(LEGACY_CS_MARKER)) return "cs";
   return null;
 }
 
 function replaceLiteral(source: string, from: string, to: string): string {
   return source.includes(from) ? source.split(from).join(to) : source;
+}
+
+function migrateLegacyBrand(source: string): string {
+  let migrated = replaceLiteral(source, LEGACY_WIRELINE_NAME, BOTBOUND_BRAND_NAME);
+  migrated = replaceLiteral(migrated, LEGACY_WIRELINE_NAME.toUpperCase(), BOTBOUND_BRAND_NAME);
+  return migrated;
 }
 
 function setCompatibleFallbacks(
@@ -103,35 +120,53 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
   delete model.fallbackModels;
 }
 
+function migrateShowcaseIdentityFields(payload: ShowcaseAssistantPayload): void {
+  if (typeof payload.name === "string") payload.name = migrateLegacyBrand(payload.name);
+  if (typeof payload.firstMessage === "string") {
+    payload.firstMessage = migrateLegacyBrand(payload.firstMessage);
+  }
+}
+
+function isCapacityAssistant(payload: ShowcaseAssistantPayload): boolean {
+  const name = String(payload.name || "");
+  const firstMessage = String(payload.firstMessage || "");
+  return /\(at capacity\)$/i.test(name) && /demo line/i.test(firstMessage);
+}
+
 /**
  * Last-mile guard for public Vapi prompts and model payloads.
  *
- * Public assistants are long-lived provider objects and can outlive a code
- * deployment. This guard keeps both dynamic assistant responses and the
- * provider-sync script from re-publishing unverified claims or cross-provider
- * fallback model IDs that Vapi rejects at the assistant boundary.
+ * It recognizes both current and legacy provider objects during the migration,
+ * rewrites legacy customer branding to BotBound, and then enforces the same
+ * compliance-truth and provider-model constraints as before the rename.
  */
 export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayload>(
   payload: T,
 ): T {
+  migrateShowcaseIdentityFields(payload);
+
   const promptRow = systemPrompt(payload);
   if (!promptRow) return payload;
 
   const kind = showcaseKind(promptRow.content);
-  if (!kind) return payload;
+  if (!kind) {
+    // The bounded at-capacity assistant intentionally has no full showcase
+    // system prompt. Its name/firstMessage were still normalized above.
+    return payload;
+  }
 
   makeModelFallbacksProviderCoherent(payload.model);
 
-  let prompt = promptRow.content;
+  let prompt = migrateLegacyBrand(promptRow.content);
   prompt = replaceLiteral(
     prompt,
     "SOC 2 Type II - auditor engaged, target Q4 2026",
-    "SOC 2 readiness work is in progress; Wireline is not SOC 2 certified today",
+    `SOC 2 readiness work is in progress; ${BOTBOUND_BRAND_NAME} is not SOC 2 certified today`,
   );
   prompt = replaceLiteral(
     prompt,
     "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)",
-    "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
+    `HIPAA and BAA support are not currently available; do not present ${BOTBOUND_BRAND_NAME} as HIPAA-certified`,
   );
   prompt = replaceLiteral(
     prompt,
@@ -145,8 +180,13 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   );
   prompt = replaceLiteral(
     prompt,
-    "If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.",
-    "If asked about HIPAA: Wireline is not HIPAA-certified and BAA support is not currently available, say that plainly.",
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified today; BAA is on the Enterprise roadmap, say that plainly.`,
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified and BAA support is not currently available, say that plainly.`,
+  );
+  prompt = replaceLiteral(
+    prompt,
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified today; BAA is on the Enterprise roadmap. Say that plainly.`,
+    `If asked about HIPAA: ${BOTBOUND_BRAND_NAME} is not HIPAA-certified and BAA support is not currently available. Say that plainly.`,
   );
 
   prompt = prompt.replace(
@@ -180,11 +220,14 @@ function isShowcaseAssistantResponse(
   if (!body || typeof body !== "object") return false;
   const assistant = (body as { assistant?: unknown }).assistant;
   if (!assistant || typeof assistant !== "object") return false;
-  const row = systemPrompt(assistant as ShowcaseAssistantPayload);
-  return Boolean(row && SHOWCASE_PROMPT_MARKERS.some((marker) => row.content.includes(marker)));
+  const typed = assistant as ShowcaseAssistantPayload;
+  const row = systemPrompt(typed);
+  return Boolean(
+    (row && SHOWCASE_PROMPT_MARKERS.some((marker) => row.content.includes(marker))) ||
+      isCapacityAssistant(typed),
+  );
 }
 
-/** Apply the same truth guard to dynamic /api/vapi-webhook assistant responses. */
 export function showcasePromptTruthGuard(req: Request, res: Response, next: NextFunction): void {
   const originalJson = res.json.bind(res);
   res.json = ((body: unknown) => {
@@ -200,7 +243,7 @@ export function showcasePromptTruthGuard(req: Request, res: Response, next: Next
       res.status(500);
       return originalJson({
         code: "SHOWCASE_PROMPT_REJECTED",
-        error: "The public assistant configuration did not pass Wireline's truth checks.",
+        error: `The public assistant configuration did not pass ${BOTBOUND_BRAND_NAME}'s truth checks.`,
       });
     }
   }) as Response["json"];

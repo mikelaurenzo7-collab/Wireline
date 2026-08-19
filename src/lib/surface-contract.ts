@@ -3,7 +3,6 @@ const KNOWLEDGE_TABS = ["Business knowledge", "Reports"] as const;
 const SETTINGS_TABS = [
   "Account",
   "Billing",
-  "Phone",
   "Team",
   "Appearance",
   "Apps",
@@ -11,26 +10,21 @@ const SETTINGS_TABS = [
 ] as const;
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
-
-const NAV_GROUPS = ["Workspace", "Agents", "Operate"] as const;
-
-const MOBILE_PRIMARY_LABELS = ["Overview", "Agent Studio", "Inbox", "Calls", "More"] as const;
-
-const MOBILE_MORE_LABELS = [
-  "Connections",
-  "Knowledge",
-  "Approvals",
-  "Activity",
-  "Settings",
-] as const;
+const NAV_GROUPS = ["Work", "Manage"] as const;
+const MOBILE_PRIMARY_LABELS = ["Studio", "Inbox", "Calls", "More"] as const;
+const MOBILE_MORE_LABELS = ["Connections", "Knowledge", "Approvals", "Activity", "Settings"] as const;
 
 export const AUTHENTICATED_SURFACE_CONTRACT = {
   brand: {
-    system: "WIRELINE Design System",
-    doctrine: "near-black canvas, electric violet action, platinum wire, semantic status",
+    system: "BotBound Design System",
+    doctrine:
+      "near-black canvas, restrained electric-violet action, off-white primary text, quiet secondary text, and semantic status",
     namingRule:
-      "WIRELINE Design System is the only system name. Use functional visual terms only: canvas, surface, raised, recessed, ink, violet, wire, signal, and status.",
+      "BotBound is the only customer-facing product name. Use functional visual terms only: canvas, surface, raised, recessed, text, violet, signal, and status.",
+    typography:
+      "Inter Tight for display and the BotBound wordmark, Inter for body and controls, IBM Plex Mono only for compact metadata and system labels.",
     retired: [
+      "the pre-BotBound customer-facing company name",
       "Letterpress as a design-system name",
       "Obsidian as a design-system name",
       "Aurora as a design-system name",
@@ -38,20 +32,24 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
       "warm cream paper",
       "forest green primary",
       "copper wire rule",
+      "all-caps product wordmarks",
     ],
   },
   navigation: {
     groups: NAV_GROUPS,
+    primaryWork: ["Studio", "Inbox", "Calls"],
     mobilePrimary: MOBILE_PRIMARY_LABELS,
     mobileMore: MOBILE_MORE_LABELS,
     sourceOfTruth: "src/constants/navigation.ts",
+    doctrine:
+      "There is no separate Home dashboard. Studio is home. Inbox owns written conversations; Calls owns voice; More owns lower-frequency management surfaces.",
   },
   pageChrome: {
     modes: PAGE_CHROME_MODES,
     standard: {
       maxWidth: "980px",
       header: "WorkspacePageIntro start-aligned",
-      surfaces: ["Overview", "Knowledge", "Connections", "Approvals", "Apps", "Inbox"],
+      surfaces: ["Knowledge", "Connections", "Approvals", "Apps", "Inbox"],
     },
     narrow: {
       maxWidth: "700px",
@@ -61,11 +59,11 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     operate: {
       fullBleed: true,
       header: "thin operate title bar with tabs",
-      surfaces: ["Phone", "Insights"],
+      surfaces: ["Calls", "Activity"],
     },
     studio: {
       fullBleed: true,
-      header: "StudioContextChrome only",
+      header: "Bot context plus workroom; setup/review becomes an inspector on wide screens",
       surfaces: ["Studio"],
     },
   },
@@ -82,18 +80,18 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     requiredScreens: [
       "SettingsPage",
       "BillingSettings",
-      "PhoneSettings",
       "TeamSettings",
       "CustomizationSettings",
       "ComplianceCenterPage",
     ],
-    standardTabs: ["Account", "Billing", "Phone", "Team", "Appearance", "Apps", "Compliance"],
-    requiredPhoneSections: [
-      "Your Wireline number",
-      "Routing",
-      "Company identity pack",
+    standardTabs: SETTINGS_TABS,
+    phoneOwnership: "Calls → Lines is canonical; /settings/phone is compatibility-only",
+    retiredPatterns: [
+      "duplicate phone setup inside Settings",
+      "settingsDestinations",
+      "link tile hub",
+      "Call forwarding card grid",
     ],
-    retiredPatterns: ["settingsDestinations", "link tile hub", "Call forwarding card grid"],
   },
   knowledge: {
     route: "/knowledge",
@@ -106,8 +104,10 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     tabs: KNOWLEDGE_TABS,
   },
   hierarchy: {
-    overview: "complete agent roster, health summary, and next-action home",
-    studio: "full bleed chat plus spatial canvas",
-    agentsRoute: "defensive redirect to overview for old assistant-roster bookmarks",
+    studio: "canonical home and Bot workspace: create, select, configure, test, and improve",
+    inbox: "email and text conversations, globally or scoped to one Bot; providers are filters, not navigation",
+    calls: "voice operations, lines, history, outbound work, and reports, globally or scoped to one Bot",
+    overviewRoute: "compatibility redirect to Studio; never a competing dashboard",
+    agentsRoute: "compatibility redirect to Studio for old roster bookmarks",
   },
 } as const;

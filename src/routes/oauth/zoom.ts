@@ -80,7 +80,7 @@ router.get(
       if (!userId) {
         return res
           .status(401)
-          .send("Complete this connection in the same browser and Wireline account that started it.");
+          .send("Complete this connection in the same browser and BotBound account that started it.");
       }
 
       const accessTokenZoom = encryptSecret(tokens.access_token);

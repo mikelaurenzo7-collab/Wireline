@@ -158,10 +158,10 @@ export function CarrierPanel({
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
             <p className="text-sm font-semibold text-foreground">
-              Wireline manages the live-call stack
+              BotBound manages the live-call stack
             </p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Wireline manages the phone conversation runtime, voice selection, intelligence
+              BotBound manages the phone conversation runtime, voice selection, intelligence
               routing, and continuity. Carrier and messaging infrastructure stay configured behind
               the scenes.
             </p>
@@ -169,7 +169,7 @@ export function CarrierPanel({
 
           <dl className="grid gap-2 sm:grid-cols-2">
             {[
-              ["Phone runtime", "Wireline managed"],
+              ["Phone runtime", "BotBound managed"],
               ["Phone voices", "Managed voice library"],
               ["Call intelligence", "Managed automatically"],
               ["Continuity", "Automatic failover"],
@@ -350,7 +350,7 @@ export function CarrierPanel({
             <div>
               <p className="text-sm font-semibold text-foreground">Customer follow-up by text</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Enables outbound SMS while Wireline tracks replies and opt-outs.
+                Enables outbound SMS while BotBound tracks replies and opt-outs.
               </p>
             </div>
             <Toggle
@@ -455,7 +455,7 @@ export function CarrierPanel({
             <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
               BYOC inbound SMS webhook:{" "}
               <code className="break-all text-foreground">
-                https://trywireline.com/api/twilio-webhook/sms
+                https://botbound.me/api/twilio-webhook/sms
               </code>
             </div>
           ) : null}

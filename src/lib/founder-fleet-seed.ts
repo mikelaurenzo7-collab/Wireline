@@ -30,7 +30,7 @@ Be substantive, structured, and actionable. Match the operator's industry when k
 /**
  * Operating pods for the founder fleet.
  *
- * Wireline sells and serves itself with this account, so the roster is grouped
+ * BotBound sells and serves itself with this account, so the roster is grouped
  * by the work it does rather than by vertical flavor. The pod is persisted in
  * `business_variables.team` so Studio, analytics, and routing can group agents
  * without a schema change.
@@ -61,12 +61,12 @@ export interface AssistantAgentTemplate {
 }
 
 /**
- * Specialty roster beyond the 6 internal Wireline personas.
+ * Specialty roster beyond the 6 internal compatibility personas.
  *
- * Every business agent here sells or serves Wireline itself. The roster used to
+ * Every business agent here sells or serves BotBound itself. The roster used to
  * carry vertical demo flavor (a real-estate closer asking about listings, an
  * insurance desk asking for a policy number), which reads as someone else's
- * company on the account that runs Wireline. Vertical role-play belongs to the
+ * company on the account that runs BotBound. Vertical role-play belongs to the
  * public demo lines in `src/data/contact-agents.ts`, not to the founder fleet.
  */
 export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
@@ -76,10 +76,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "customer_service",
     channel: "voice",
     archetype: "Receptionist",
-    firstMessage: "Hi, Jordan here with Wireline. What can I help you with today?",
+    firstMessage: "Hi, Jordan here with BotBound. What can I help you with today?",
     team: "support",
     personalityVibe: "warm",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-marcus",
@@ -88,10 +88,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Scheduler",
     firstMessage:
-      "Hi, this is Marcus with Wireline. I can get a walkthrough on the calendar. What's your name?",
+      "Hi, this is Marcus with BotBound. I can get a walkthrough on the calendar. What's your name?",
     team: "front_door",
     personalityVibe: "authoritative",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-diana",
@@ -100,10 +100,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Intake Specialist",
     firstMessage:
-      "Diana with Wireline. A couple of quick questions so I route you to the right person. May I have your name?",
+      "Diana with BotBound. A couple of quick questions so I route you to the right person. May I have your name?",
     team: "revenue",
     personalityVibe: "authoritative",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-aisha",
@@ -112,10 +112,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "The Closer",
     firstMessage:
-      "Hey, Aisha with Wireline partnerships. Are you reselling for clients or running this in your own business?",
+      "Hey, Aisha with BotBound partnerships. Are you reselling for clients or running this in your own business?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-elena",
@@ -124,10 +124,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Claims Intake",
     firstMessage:
-      "Elena with Wireline account care. I can look at your plan, usage, or renewal. What's going on?",
+      "Elena with BotBound account care. I can look at your plan, usage, or renewal. What's going on?",
     team: "retention",
     personalityVibe: "warm",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-jake",
@@ -135,10 +135,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "sales",
     channel: "voice",
     archetype: "The Closer",
-    firstMessage: "Hey, Jake with Wireline. Who am I speaking with?",
+    firstMessage: "Hey, Jake with BotBound. Who am I speaking with?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-billing",
@@ -146,7 +146,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "collections",
     channel: "voice",
     archetype: "The Collector",
-    firstMessage: "Wireline billing. How can I help with your account today?",
+    firstMessage: "BotBound billing. How can I help with your account today?",
     team: "retention",
     personalityVibe: "authoritative",
   },
@@ -157,10 +157,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "The Closer",
     firstMessage:
-      "Hi, this is Wireline. You're talking to a voice agent right now. Got a quick minute?",
+      "Hi, this is BotBound. You're talking to a voice Bot right now. Got a quick minute?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://trywireline.com",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-growth-email",
@@ -172,8 +172,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     team: "revenue",
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
-    emailSignature: "The Wireline Team",
-    websiteUrl: "https://trywireline.com",
+    emailSignature: "The BotBound Team",
+    websiteUrl: "https://botbound.me",
   },
   {
     id: "founder-tier2",
@@ -181,7 +181,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "technical_support",
     channel: "voice",
     archetype: "Support Tech",
-    firstMessage: "Wireline technical support. What symptoms are you seeing?",
+    firstMessage: "BotBound technical support. What symptoms are you seeing?",
     team: "support",
     personalityVibe: "warm",
   },
@@ -203,7 +203,7 @@ export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
   Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length;
 
 /**
- * Live plan facts for the agents that sell Wireline.
+ * Live plan facts for the agents that sell BotBound.
  *
  * Derived from the Stripe catalog rather than written out, so a catalog change
  * cannot leave the fleet quoting a retired price on a real call. Never hardcode
@@ -223,13 +223,13 @@ export function wirelinePlanFacts(): string[] {
       ? `${plan.voice_minutes_monthly} guaranteed live voice minutes each month`
       : "no production minutes until a paid plan is active";
     const numbers = plan.included_phone_numbers
-      ? `${plan.included_phone_numbers} included Wireline number${plan.included_phone_numbers === 1 ? "" : "s"}`
+      ? `${plan.included_phone_numbers} included BotBound number${plan.included_phone_numbers === 1 ? "" : "s"}`
       : "no included number";
     const agents = `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"}`;
     return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}.`;
   });
   return [
-    `Wireline in one line: ${BRAND_SYSTEM.northStar}`,
+    `BotBound in one line: ${BRAND_SYSTEM.northStar}`,
     ...lines,
     `Additional agents are an add-on at $${EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY}/month each.`,
     AGENT_NUMBER_PROMISE,
@@ -240,9 +240,9 @@ export function wirelinePlanFacts(): string[] {
 
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
-    "Operators configure agents via Create, Training, Wire or Integrations, and Studio.",
+    "Operators configure Bots via Create, Training, Connections, and Studio.",
     "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
-    "Wireline agents work across voice, text, and email under one identity, memory, and outcome record.",
+    "BotBound Bots work across voice, text, and email under one identity, memory, and outcome record.",
   ],
   sales: [
     "Lead with outcome before features. Always propose a concrete next step before ending the conversation.",
@@ -260,11 +260,11 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   ],
   marketing: [
     "Campaign brief template: Audience → Hook → Offer → CTA → Success metric.",
-    "Wireline markets its own product with its own agents. Anything sent must be something the founder would sign.",
+    "BotBound markets its own product with its own Bots. Anything sent must be something the founder would sign.",
     "Outbound marketing contact runs only after consent and DNC gates pass. If a gate blocks the work, report it instead of routing around it.",
   ],
   technical_support: [
-    "Diagnose in this order: number and routing, then agent configuration, then integration connection, then provider status.",
+    "Diagnose in this order: number and routing, then Bot configuration, then integration connection, then provider status.",
     "Never invent a root cause. If telemetry does not show it, say what is known and escalate with the call id.",
   ],
   scheduler: [
@@ -287,7 +287,7 @@ const LESSON_SNIPPETS: string[] = [
   "Logo requests in agent chat -> outline concepts here; send the operator to Studio for brand artifacts.",
 ];
 
-/** Pod for each internal Wireline persona. */
+/** Pod for each internal compatibility persona. */
 function personaTeam(personaId: WirelinePersonaId): FounderFleetTeam {
   if (personaId === "sales") return "revenue";
   if (personaId === "support" || personaId === "technical") return "support";
@@ -556,7 +556,7 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
 
   let voiceIndex = 0;
 
-  // 6 internal Wireline personas
+  // 6 internal compatibility personas
   for (const persona of Object.values(WIRELINE_PERSONAS)) {
     await upsertAgent(
       userId,

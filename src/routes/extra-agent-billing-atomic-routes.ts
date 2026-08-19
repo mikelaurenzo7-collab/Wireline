@@ -246,7 +246,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
             status: 503,
             body: {
               code: "SERVICE_UNAVAILABLE",
-              error: `Extra-agent pricing for ${plan.name} is not in the current Wireline catalog.`,
+              error: `Extra-agent pricing for ${plan.name} is not in the current BotBound catalog.`,
             },
           };
         }

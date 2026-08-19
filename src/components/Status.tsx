@@ -116,14 +116,10 @@ export default function Status() {
       try {
         const res = await fetch("/api/health/public", {
           headers: { Accept: "application/json" },
-          // The server owns a bounded distributed probe cache. Do not let the
-          // browser retain an older degraded payload across later 60s polls.
           cache: "no-store",
           signal: controller.signal,
         });
 
-        // A non-2xx response may still carry a valid last-known health snapshot,
-        // so consume and normalize the body before deciding the reading is absent.
         let rawText = "";
         try {
           rawText = await res.text();
@@ -180,8 +176,8 @@ export default function Status() {
   return (
     <>
       <PageMeta
-        title="Provider Status | WIRELINE"
-        description="Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds."
+        title="Provider Status | BotBound"
+        description="Live access checks for BotBound's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds."
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
@@ -273,7 +269,7 @@ export default function Status() {
             </summary>
             <div className="pb-2 pt-2 text-sm leading-6 text-muted-foreground">
               <p>
-                WIRELINE checks managed call control-plane access and performs a minimal,
+                BotBound checks managed call control-plane access and performs a minimal,
                 non-persistent inference against the managed reasoning provider. These are provider-access
                 checks, not an end-to-end customer call.
               </p>

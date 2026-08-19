@@ -28,7 +28,7 @@ const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
   >;
 };
 
-describe("Wireline ChatGPT App production contract", () => {
+describe("BotBound ChatGPT App production contract", () => {
   it("publishes the required MCP and OAuth discovery surfaces", () => {
     expect(accountRouteSource).toContain('router.post("/mcp"');
     expect(oauthRouteSource).toContain('"/.well-known/oauth-protected-resource"');
@@ -119,13 +119,14 @@ describe("Wireline ChatGPT App production contract", () => {
   });
 
   it("keeps submission identity and OAuth metadata aligned with production", () => {
+    // Transition origin remains until botbound.me is attached to the Vercel project.
     expect(submission.app_info.logo_url).toBe(
       "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     );
     expect(submission.oauth.client_url).toBe(
       "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
     );
-    expect(read("public/wireline-chatgpt-app-icon.svg")).toContain("<title id=\"title\">Wireline</title>");
+    expect(read("public/wireline-chatgpt-app-icon.svg")).toContain("<title id=\"title\">BotBound</title>");
   });
 
   it("publishes explicit, complete tool annotations in the submission packet", () => {

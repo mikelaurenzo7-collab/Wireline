@@ -113,7 +113,6 @@ export function ContactPage() {
     } catch (reason) {
       const message =
         reason instanceof Error ? reason.message : "The message service did not respond.";
-      // Only fall back to mailto for transport/service failures — keep validation/API errors inline.
       const isTransport =
         (responseStatus !== null && responseStatus >= 500) ||
         /did not respond|failed to fetch|network|503|502|504|Message was not delivered/i.test(
@@ -121,7 +120,7 @@ export function ContactPage() {
         ) ||
         message.includes("(5");
       if (isTransport) {
-        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
+        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
         setError(
           "The message service did not respond, so your email client has opened with the note prepared.",
         );
@@ -136,8 +135,8 @@ export function ContactPage() {
   return (
     <MarketingPageFrame longform>
       <PageMeta
-        title="Contact WIRELINE"
-        description="Talk to Wireline about personal call coverage, team rollout, partnerships, or support."
+        title="Contact BotBound"
+        description="Talk to BotBound about personal call coverage, team rollout, partnerships, or support."
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
@@ -160,7 +159,7 @@ export function ContactPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Call Wireline</h2>
+            <h2 className="mt-5 font-semibold text-foreground">Call BotBound</h2>
             <p className="mt-2 text-sm text-muted-foreground">{salesAgent.display}</p>
           </a>
           <a

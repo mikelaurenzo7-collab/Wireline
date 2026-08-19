@@ -1,11 +1,11 @@
-// Keep the Stripe account identity aligned with the public merchant name. The
-// product remains "Wireline" inside Checkout, while the Dashboard/business
-// profile uses "Try Wireline" to match the canonical trywireline.com domain.
-export const STRIPE_PUBLIC_BRAND = "Try Wireline";
-export const STRIPE_PUBLIC_HOSTS = new Set(["trywireline.com", "www.trywireline.com"]);
-export const STRIPE_PUBLIC_SUPPORT_URL = "https://trywireline.com/support";
-export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@trywireline.com";
-export const STRIPE_STATEMENT_DESCRIPTOR_PREFIX = "WIRELINE";
+// Canonical customer-facing Stripe merchant identity. Stable Stripe object ids,
+// lookup keys, wireline_* metadata, and environment variable names remain
+// compatibility contracts; hosted merchant presentation is BotBound.
+export const STRIPE_PUBLIC_BRAND = "BotBound";
+export const STRIPE_PUBLIC_HOSTS = new Set(["botbound.me", "www.botbound.me"]);
+export const STRIPE_PUBLIC_SUPPORT_URL = "https://botbound.me/support";
+export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@botbound.me";
+export const STRIPE_STATEMENT_DESCRIPTOR_PREFIX = "BOTBOUND";
 export const STRIPE_BRAND_PRIMARY_COLOR = "#A78BFA";
 export const STRIPE_BRAND_SECONDARY_COLOR = "#141319";
 
@@ -43,10 +43,13 @@ function canonicalHttpsUrl(value) {
   }
 }
 
-export function hasWirelineDescriptor(value) {
+export function hasBotBoundDescriptor(value) {
   const normalized = normalizeText(value).toUpperCase();
-  return /^WIRELINE(?:$|[\s*-])/.test(normalized);
+  return /^BOTBOUND(?:$|[\s*-])/.test(normalized);
 }
+
+/** Compatibility export for launch scripts that still import the historical helper name. */
+export const hasWirelineDescriptor = hasBotBoundDescriptor;
 
 /**
  * Stripe uses the static payment descriptor as the card prefix when an
@@ -78,7 +81,7 @@ function finding(level, message, metadata = {}) {
  *
  * Never include owner, representative, bank, address, tax, or verification data
  * in findings or summaries. This guard exists to prevent an otherwise-correct
- * Wireline catalog from shipping under a stale product name or domain.
+ * BotBound catalog from shipping under a stale product name or domain.
  */
 export function stripeAccountIdentityFindings(account) {
   const findings = [];
@@ -90,7 +93,7 @@ export function stripeAccountIdentityFindings(account) {
 
   if (normalizedBrand(profileName) !== normalizedBrand(STRIPE_PUBLIC_BRAND)) {
     findings.push(
-      finding("error", "Stripe business profile name does not match the Wireline brand.", {
+      finding("error", "Stripe business profile name does not match the BotBound brand.", {
         expected: STRIPE_PUBLIC_BRAND,
         actual: profileName || null,
       }),
@@ -99,7 +102,7 @@ export function stripeAccountIdentityFindings(account) {
 
   if (profileIdentity.protocol !== "https:" || !STRIPE_PUBLIC_HOSTS.has(profileIdentity.hostname)) {
     findings.push(
-      finding("error", "Stripe business profile URL is not the canonical Wireline domain.", {
+      finding("error", "Stripe business profile URL is not the canonical BotBound domain.", {
         expected_hosts: [...STRIPE_PUBLIC_HOSTS],
         expected_protocol: "https:",
         actual_host: profileIdentity.hostname || null,
@@ -111,7 +114,7 @@ export function stripeAccountIdentityFindings(account) {
   const supportUrl = canonicalHttpsUrl(account?.business_profile?.support_url);
   if (supportUrl !== STRIPE_PUBLIC_SUPPORT_URL) {
     findings.push(
-      finding("error", "Stripe support URL is not the canonical Wireline support page.", {
+      finding("error", "Stripe support URL is not the canonical BotBound support page.", {
         expected: STRIPE_PUBLIC_SUPPORT_URL,
         actual: supportUrl || null,
       }),
@@ -121,16 +124,16 @@ export function stripeAccountIdentityFindings(account) {
   const supportEmail = normalizeText(account?.business_profile?.support_email).toLowerCase();
   if (supportEmail !== STRIPE_PUBLIC_SUPPORT_EMAIL) {
     findings.push(
-      finding("error", "Stripe support email does not match the public Wireline inbox.", {
+      finding("error", "Stripe support email does not match the public BotBound inbox.", {
         expected: STRIPE_PUBLIC_SUPPORT_EMAIL,
         actual: supportEmail || null,
       }),
     );
   }
 
-  if (!hasWirelineDescriptor(cardDescriptor.value)) {
+  if (!hasBotBoundDescriptor(cardDescriptor.value)) {
     findings.push(
-      finding("error", "Stripe card statement descriptor prefix is not Wireline-branded.", {
+      finding("error", "Stripe card statement descriptor prefix is not BotBound-branded.", {
         expected_prefix: STRIPE_STATEMENT_DESCRIPTOR_PREFIX,
         actual: cardDescriptor.value || null,
         source: cardDescriptor.source,
@@ -138,9 +141,9 @@ export function stripeAccountIdentityFindings(account) {
     );
   }
 
-  if (!hasWirelineDescriptor(paymentDescriptor)) {
+  if (!hasBotBoundDescriptor(paymentDescriptor)) {
     findings.push(
-      finding("error", "Stripe payment statement descriptor is not Wireline-branded.", {
+      finding("error", "Stripe payment statement descriptor is not BotBound-branded.", {
         expected_prefix: STRIPE_STATEMENT_DESCRIPTOR_PREFIX,
         actual: paymentDescriptor || null,
       }),
@@ -160,7 +163,7 @@ export function stripeAccountIdentityFindings(account) {
   }
   if (normalizeText(branding.primary_color).toUpperCase() !== STRIPE_BRAND_PRIMARY_COLOR) {
     findings.push(
-      finding("error", "Stripe brand color does not match the Wireline design system.", {
+      finding("error", "Stripe brand color does not match the BotBound design system.", {
         expected: STRIPE_BRAND_PRIMARY_COLOR,
         actual: normalizeText(branding.primary_color).toUpperCase() || null,
       }),
@@ -168,7 +171,7 @@ export function stripeAccountIdentityFindings(account) {
   }
   if (normalizeText(branding.secondary_color).toUpperCase() !== STRIPE_BRAND_SECONDARY_COLOR) {
     findings.push(
-      finding("error", "Stripe accent color does not match the Wireline design system.", {
+      finding("error", "Stripe accent color does not match the BotBound design system.", {
         expected: STRIPE_BRAND_SECONDARY_COLOR,
         actual: normalizeText(branding.secondary_color).toUpperCase() || null,
       }),

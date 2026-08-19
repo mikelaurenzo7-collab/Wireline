@@ -151,6 +151,7 @@ const StudioWorkroom = forwardRef<
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const split = layout === "split";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
+  const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
 
   useImperativeHandle(
     ref,
@@ -241,6 +242,14 @@ const StudioWorkroom = forwardRef<
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, streamState.phase, split]);
 
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+    textarea.style.minHeight = "52px";
+    textarea.style.height = "0px";
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
+  }, [draft]);
+
   const submit = useCallback(() => {
     const text = draft.trim();
     if (!text || sending) return;
@@ -307,6 +316,7 @@ const StudioWorkroom = forwardRef<
       onClick={() => void clearConversation()}
       className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
+      title={mode === "test" ? "Reset test" : "Clear conversation"}
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
@@ -317,24 +327,43 @@ const StudioWorkroom = forwardRef<
       className="flex h-full min-h-0 flex-col bg-background"
       aria-label={mode === "test" ? `${agentName} customer test` : `${agentName} workroom`}
     >
-      <header className="shrink-0 border-b border-border/60 bg-card/50 px-4 py-4 sm:px-6">
-        <div className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-eyebrow text-primary">
-              {mode === "test" ? "Browser test" : "Build by conversation"}
-            </p>
-            <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-              {mode === "test" ? (
-                <>
-                  Talk to <span className="wl-preserve-case">{agentName}</span> like a customer
-                </>
-              ) : (
-                <>
-                  Improve <span className="wl-preserve-case">{agentName}</span>
-                </>
-              )}
-            </h2>
-          </div>
+      <header
+        className={`shrink-0 border-b border-border/60 bg-card/40 ${
+          split ? "px-3 py-2.5 sm:px-4" : "px-4 py-4 sm:px-6"
+        }`}
+      >
+        <div
+          className={`mx-auto flex w-full max-w-3xl justify-between gap-4 ${
+            split ? "items-center" : "items-start"
+          }`}
+        >
+          {split ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                {mode === "test" ? "Customer test" : "Build"}
+              </span>
+              <span className="wl-preserve-case truncate text-xs font-medium text-foreground">
+                {agentName}
+              </span>
+            </div>
+          ) : (
+            <div className="min-w-0">
+              <p className="text-eyebrow text-primary">
+                {mode === "test" ? "Browser test" : "Build by conversation"}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+                {mode === "test" ? (
+                  <>
+                    Talk to <span className="wl-preserve-case">{agentName}</span> like a customer
+                  </>
+                ) : (
+                  <>
+                    Improve <span className="wl-preserve-case">{agentName}</span>
+                  </>
+                )}
+              </h2>
+            </div>
+          )}
           <div className="flex shrink-0 items-center gap-1.5">
             {mode === "test" && allowOutbound ? (
               <Button
@@ -349,14 +378,16 @@ const StudioWorkroom = forwardRef<
               </Button>
             ) : null}
             {clearButton}
-            <button
-              type="button"
-              onClick={onBack}
-              className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={backLabel}
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-            </button>
+            {!split ? (
+              <button
+                type="button"
+                onClick={onBack}
+                className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={backLabel}
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -417,7 +448,7 @@ const StudioWorkroom = forwardRef<
               </h3>
               {mode === "configure" ? (
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                  Use plain language. Wireline will propose the smallest useful update.
+                  Use plain language. BotBound will propose the smallest useful update.
                 </p>
               ) : null}
             </div>
@@ -425,8 +456,25 @@ const StudioWorkroom = forwardRef<
         </div>
       </section>
 
-      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+      <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
         <div className="mx-auto max-w-3xl">
+          {showStarterPrompts ? (
+            <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5" aria-label="Starter prompts">
+              {quickPrompts.slice(0, 3).map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setDraft(prompt);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0`}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className={WL_COMPOSER_CLASSES.composerDock}>
             <label className="sr-only" htmlFor="studio-workroom-message">
               {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
@@ -437,55 +485,50 @@ const StudioWorkroom = forwardRef<
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
-                if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !sending) {
-                  event.preventDefault();
-                  submit();
-                }
+                if (event.nativeEvent.isComposing || event.key !== "Enter" || event.shiftKey || sending)
+                  return;
+                const finePointer = window.matchMedia("(pointer: fine)").matches;
+                if (!finePointer && !event.metaKey && !event.ctrlKey) return;
+                event.preventDefault();
+                submit();
               }}
-              rows={2}
+              rows={1}
               disabled={sending}
               placeholder={
                 mode === "test"
-                  ? "Type what a customer would say…"
-                  : `Tell Wireline what to change about ${agentName}…`
+                  ? "Ask as a customer…"
+                  : `Tell BotBound what ${agentName} should change…`
               }
-              className="wl-composer-dock__input disabled:opacity-60"
+              className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
             />
             <div className="wl-composer-dock__toolbar">
-              <div className="flex flex-wrap gap-1.5">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => {
-                      setDraft(prompt);
-                      requestAnimationFrame(() => inputRef.current?.focus());
-                    }}
-                    className={WL_COMPOSER_CLASSES.starterChip}
-                  >
-                    {prompt}
-                  </button>
-                ))}
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  {mode === "test" ? "Test" : "Build"}
+                </span>
+                <span className="hidden truncate text-[10px] text-muted-foreground sm:inline">
+                  {mode === "configure" ? "Changes stay reviewable" : "No customer data is changed"}
+                </span>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                disabled={!draft.trim() || sending}
-                onClick={submit}
-                className="transition-all active:scale-[0.985]"
-                aria-busy={sending}
-                aria-label={sending ? "Sending" : "Send"}
-              >
-                {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-                <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-              </Button>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="hidden text-[10px] text-muted-foreground lg:inline">
+                  Enter send · Shift+Enter line break
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!draft.trim() || sending}
+                  onClick={submit}
+                  className="min-w-9 transition-all active:scale-[0.985]"
+                  aria-busy={sending}
+                  aria-label={sending ? "Sending" : "Send"}
+                >
+                  {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                  <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+                </Button>
+              </div>
             </div>
           </div>
-          {mode === "configure" ? (
-            <p className="mt-2 text-center text-[10px] text-muted-foreground">
-              Review proposed changes before using them with customers.
-            </p>
-          ) : null}
         </div>
       </div>
 

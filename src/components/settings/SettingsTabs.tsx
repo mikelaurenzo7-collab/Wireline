@@ -1,11 +1,11 @@
 import { useLocation } from "react-router";
 
+import WorkspaceControlBand from "../layout/WorkspaceControlBand";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 
 const settingsTabs = [
   { id: "account", href: "/settings", label: "Account" },
   { id: "billing", href: "/settings/billing", label: "Billing" },
-  { id: "phone", href: "/settings/phone", label: "Phone" },
   { id: "team", href: "/settings/team", label: "Team" },
   {
     id: "customization",
@@ -32,14 +32,19 @@ export default function SettingsTabs() {
   const activeTab = settingsTabs.find((tab) => isActive(pathname, tab.href))?.id ?? "account";
 
   return (
-    <WorkspaceTabStrip
-      ariaLabel="Settings sections"
-      tabs={settingsTabs}
-      activeId={activeTab}
-      density="compact"
-      align="start"
-      wrap="always"
-      className="mb-5 border-b border-border/70 pb-3 sm:mb-7"
+    <WorkspaceControlBand
+      ariaLabel="Settings controls"
+      className="mb-5 sm:mb-7"
+      primary={
+        <WorkspaceTabStrip
+          ariaLabel="Settings sections"
+          tabs={settingsTabs}
+          activeId={activeTab}
+          density="compact"
+          align="start"
+          className="mb-0 border-b-0 pb-0"
+        />
+      }
     />
   );
 }

@@ -7,6 +7,7 @@ import { StatusNotice } from "./molecules";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
 type MailboxProvider = "google" | "microsoft" | "yahoo" | "icloud" | "agentmail";
+type ConnectableMailboxProvider = Exclude<MailboxProvider, "agentmail" | "yahoo">;
 type MailboxAccount = {
   id: string;
   emailAddress: string;
@@ -14,33 +15,24 @@ type MailboxAccount = {
 };
 
 const PROVIDERS: Array<{
-  id: MailboxProvider;
+  id: ConnectableMailboxProvider;
   label: string;
   detail: string;
   logo: string;
 }> = [
-  { id: "google", label: "Gmail", detail: "Mail + Calendar", logo: "gmail" },
+  { id: "google", label: "Gmail", detail: "Optional Mail + Calendar", logo: "gmail" },
   {
     id: "microsoft",
     label: "Outlook",
-    detail: "Mail + Calendar",
+    detail: "Optional Mail + Calendar",
     logo: "microsoft_outlook",
   },
   {
     id: "icloud",
     label: "iCloud Mail",
-    detail: "App-specific password",
+    detail: "Optional app-specific password",
     logo: "icloud",
   },
-  {
-    id: "agentmail",
-    label: "AgentMail",
-    detail: "API-key inbox",
-    logo: "agentmail",
-  },
-  // Yahoo OAuth stores tokens today, but inbox fetch/send is not wired
-  // (XOAUTH2 IMAP). Keep it out of the connect UI until both paths ship —
-  // catalog readiness remains "planned".
 ];
 
 export default function MailboxConnectionCard() {
@@ -52,9 +44,6 @@ export default function MailboxConnectionCard() {
   const [showIcloudForm, setShowIcloudForm] = useState(false);
   const [icloudEmail, setIcloudEmail] = useState("");
   const [icloudPassword, setIcloudPassword] = useState("");
-  const [showAgentmailForm, setShowAgentmailForm] = useState(false);
-  const [agentmailEmail, setAgentmailEmail] = useState("");
-  const [agentmailApiKey, setAgentmailApiKey] = useState("");
 
   const loadAccounts = useCallback(async () => {
     setLoading(true);
@@ -69,9 +58,6 @@ export default function MailboxConnectionCard() {
       setStatusUnavailable(false);
       setError(null);
     } catch (reason) {
-      // A status outage is not proof that every mailbox disconnected. Fail
-      // closed instead of rendering a fresh set of Connect buttons that can
-      // push an already-connected customer into duplicate OAuth setup.
       setStatusUnavailable(true);
       setError(reason instanceof Error ? reason.message : "Could not load inbox connections.");
     } finally {
@@ -83,10 +69,6 @@ export default function MailboxConnectionCard() {
     void loadAccounts();
   }, [loadAccounts]);
 
-  // The popup-close poll is started from a click handler, so nothing else tears
-  // it down. Left alone it survives unmount and keeps firing every 500ms for the
-  // life of the tab — and its callback calls loadAccounts(), so navigating away
-  // mid-consent leaves a dead component issuing authenticated requests forever.
   const popupPollRef = useRef<number | null>(null);
   const stopPopupPoll = useCallback(() => {
     if (popupPollRef.current !== null) {
@@ -112,14 +94,9 @@ export default function MailboxConnectionCard() {
     return () => window.removeEventListener("message", onMessage);
   }, [loadAccounts, stopPopupPoll]);
 
-  async function connect(provider: MailboxProvider) {
+  async function connect(provider: ConnectableMailboxProvider) {
     if (provider === "icloud") {
       setShowIcloudForm(true);
-      setError(null);
-      return;
-    }
-    if (provider === "agentmail") {
-      setShowAgentmailForm(true);
       setError(null);
       return;
     }
@@ -174,31 +151,11 @@ export default function MailboxConnectionCard() {
     }
   }
 
-  async function connectAgentmail(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy("agentmail");
-    setError(null);
-    try {
-      const response = await authFetch("/api/integrations/agentmail/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email_address: agentmailEmail, api_key: agentmailApiKey }),
-      });
-      const body = (await safeJson(response)) as { error?: string } | null;
-      if (!response.ok) throw new Error(body?.error || "Could not connect AgentMail.");
-      setAgentmailApiKey("");
-      setShowAgentmailForm(false);
-      await loadAccounts();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not connect AgentMail.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function disconnect(account: MailboxAccount) {
-    if (!window.confirm(`Disconnect ${account.emailAddress}? New messages will stop syncing.`))
-      return;
+    // Managed Bot mailboxes are platform identity, not customer connections.
+    // They are intentionally absent from this surface and cannot be removed here.
+    if (account.provider === "agentmail") return;
+    if (!window.confirm(`Disconnect ${account.emailAddress}? New messages will stop syncing.`)) return;
     setBusy(account.id);
     setError(null);
     try {
@@ -215,6 +172,8 @@ export default function MailboxConnectionCard() {
     }
   }
 
+  const customerAccounts = accounts.filter((account) => account.provider !== "agentmail");
+
   return (
     <section
       className="wl-paper wl-paper-elevated p-5 sm:p-6"
@@ -223,15 +182,19 @@ export default function MailboxConnectionCard() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
-            Inbox connections
+            Optional inbox connections
           </h2>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+            Your Bot email identity is managed automatically by BotBound. Connect an existing
+            mailbox only when you want the Bot to read or act through that separate account.
+          </p>
         </div>
         <Mail className="size-5 text-primary" aria-hidden="true" />
       </div>
 
       {loading ? (
         <div
-          className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+          className="mt-5 grid gap-3 md:grid-cols-3"
           aria-busy="true"
           aria-label="Checking inbox connections"
         >
@@ -245,19 +208,14 @@ export default function MailboxConnectionCard() {
             tone="destructive"
             title="Inbox connection status unavailable"
             action={
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => void loadAccounts()}
-              >
+              <Button type="button" size="sm" variant="secondary" onClick={() => void loadAccounts()}>
                 <RefreshCw className="size-3.5" aria-hidden="true" />
                 Retry
               </Button>
             }
           >
             {error ||
-              "Wireline couldn't verify your connected mailboxes. No connection state was changed."}
+              "BotBound couldn't verify your connected mailboxes. No connection state was changed."}
           </StatusNotice>
         </div>
       ) : (
@@ -267,9 +225,9 @@ export default function MailboxConnectionCard() {
               {error}
             </StatusNotice>
           ) : null}
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
             {PROVIDERS.map((provider) => {
-              const providerAccounts = accounts.filter((item) => item.provider === provider.id);
+              const providerAccounts = customerAccounts.filter((item) => item.provider === provider.id);
               const isBusy = busy === provider.id;
               return (
                 <article
@@ -282,18 +240,15 @@ export default function MailboxConnectionCard() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">
-                          {provider.label}
-                        </span>
-                        {providerAccounts.length ? (
-                          <Badge variant="outline">Connected</Badge>
-                        ) : null}
+                        <span className="text-sm font-semibold text-foreground">{provider.label}</span>
+                        {providerAccounts.length ? <Badge variant="outline">Connected</Badge> : null}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {provider.detail}
                       </span>
                     </span>
                   </div>
+
                   {providerAccounts.length ? (
                     <ul className="mt-4 grid gap-2">
                       {providerAccounts.map((account) => (
@@ -321,11 +276,9 @@ export default function MailboxConnectionCard() {
                       ))}
                     </ul>
                   ) : null}
+
                   {provider.id === "icloud" && showIcloudForm ? (
-                    <form
-                      className="mt-auto grid gap-2 pt-4"
-                      onSubmit={(event) => void connectIcloud(event)}
-                    >
+                    <form className="mt-auto grid gap-2 pt-4" onSubmit={(event) => void connectIcloud(event)}>
                       <input
                         type="email"
                         required
@@ -347,14 +300,11 @@ export default function MailboxConnectionCard() {
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Generate one in Apple ID under Sign-In and Security → App-Specific
-                        Passwords.
+                        Generate one in Apple ID under Sign-In and Security → App-Specific Passwords.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button type="submit" size="sm" disabled={isBusy}>
-                          {isBusy ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                          ) : null}
+                          {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
                           Connect
                         </Button>
                         <Button
@@ -362,52 +312,6 @@ export default function MailboxConnectionCard() {
                           size="sm"
                           variant="secondary"
                           onClick={() => setShowIcloudForm(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
-                  ) : provider.id === "agentmail" && showAgentmailForm ? (
-                    <form
-                      className="mt-auto grid gap-2 pt-4"
-                      onSubmit={(event) => void connectAgentmail(event)}
-                    >
-                      <input
-                        type="email"
-                        required
-                        autoComplete="email"
-                        value={agentmailEmail}
-                        onChange={(event) => setAgentmailEmail(event.target.value)}
-                        placeholder="trywireline@agentmail.to"
-                        aria-label="AgentMail inbox address"
-                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                      />
-                      <input
-                        type="password"
-                        required
-                        autoComplete="off"
-                        value={agentmailApiKey}
-                        onChange={(event) => setAgentmailApiKey(event.target.value)}
-                        placeholder="AgentMail API key"
-                        aria-label="AgentMail API key"
-                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                      />
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Paste the inbox address and an org API key from the AgentMail console. Free
-                        inboxes are @agentmail.to. A custom domain needs AgentMail Developer.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button type="submit" size="sm" disabled={isBusy}>
-                          {isBusy ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                          ) : null}
-                          Connect
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setShowAgentmailForm(false)}
                         >
                           Cancel
                         </Button>
@@ -422,9 +326,7 @@ export default function MailboxConnectionCard() {
                         disabled={isBusy}
                         onClick={() => void connect(provider.id)}
                       >
-                        {isBusy ? (
-                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                        ) : null}
+                        {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
                         {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
                       </Button>
                     </div>

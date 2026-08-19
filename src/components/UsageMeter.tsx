@@ -181,7 +181,7 @@ export default function UsageMeter({
                 : `Your included minutes are used and ${BALANCE_TITLE} cannot cover another attempt. Add balance or wait for the monthly reset.`}
             </span>
             <span className="block text-foreground/55 mt-1">
-              Wireline never cuts off an active call because billing coverage changes
+              BotBound never cuts off an active call because billing coverage changes
               mid-conversation.
             </span>
           </div>

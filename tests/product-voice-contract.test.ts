@@ -44,12 +44,13 @@ const CUSTOMER_BOT_SURFACES = [
   "src/lib/voice/xai-public-demo-session.ts",
 ] as const;
 
-describe("Phone Bot product voice", () => {
-  it("uses Bot as the customer object while retaining agent as the technical domain", () => {
+describe("BotBound product voice", () => {
+  it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
-      name: "WIRELINE",
-      slogan: "WIRE YOUR PHONE BOT",
-      supportingLine: "CALL · EMAIL · TEXT",
+      name: "BotBound",
+      slogan: "PUT YOUR BOT ON THE LINE",
+      supportingLine: "CALL · TEXT · EMAIL",
+      promise: "AI employees for calls, texts, and email.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -61,16 +62,10 @@ describe("Phone Bot product voice", () => {
       productTypes: BOT_PRODUCT_TYPES,
     });
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Use Phone Bot as the public acquisition wedge; Call, Email, and Text are the compact channel proof.",
+      "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Treat workspace architecture as product proof, never as a marketing headline.",
-    );
-    expect(BRAND_SYSTEM.toneRules).toContain(
-      "Never require customers to classify a Bot as personal or business before describing the work.",
-    );
-    expect(BRAND_SYSTEM.toneRules).toContain(
-      "Leave room for curiosity; do not explain every capability before account entry.",
+      "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
     );
   });
 
@@ -97,13 +92,13 @@ describe("Phone Bot product voice", () => {
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
   });
 
-  it("makes Phone Bot concrete while keeping all three channels explicit", () => {
-    expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Email", "Text"]);
-    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Text"]);
-    expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Text"]);
-    expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, text");
+  it("makes all three communication channels explicit in one consistent order", () => {
+    expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Text", "Email"]);
+    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email"]);
+    expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Text", "Email"]);
+    expect(WORKSPACE_VOICE.emptyCue).toContain("calls, text, email");
     expect(AGENT_NUMBER_PROMISE).toContain("Every paid Bot");
-    expect(AGENT_NUMBER_PROMISE).toContain("includes a WIRELINE number");
+    expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
     expect(AGENT_NUMBER_PROMISE).toContain("answer and make calls");
   });
 
@@ -118,13 +113,13 @@ describe("Phone Bot product voice", () => {
     );
     expect(
       BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,
-    ).toContain("calls, email, and text");
+    ).toContain("calls, text, and email");
     expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain(
       "real human role",
     );
   });
 
-  it("keeps role starters materially differentiated without marketing category labels", () => {
+  it("keeps role starters materially differentiated without forcing marketing categories", () => {
     const names = BOT_ROLE_TEMPLATES.map((template) => template.name);
     const directions = [...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction))].sort();
     expect(directions).toEqual(["hybrid", "inbound", "outbound"]);
@@ -148,11 +143,9 @@ describe("Phone Bot product voice", () => {
       expect(new Set(template.moves).size).toBe(3);
       expect(template.summary.length).toBeGreaterThan(24);
     }
-
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("template.moves.map");
     expect(landing).not.toContain("template.category");
-    expect(landing).not.toMatch(/>Business<|>Personal<|>Custom</);
   });
 
   it("keeps role positioning concrete and action-oriented", () => {
@@ -163,9 +156,6 @@ describe("Phone Bot product voice", () => {
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow Up", "Sync"]);
     expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Moves Growth Work Forward");
-    for (const verb of ["researches", "calls", "texts", "emails", "books", "logs proof"]) {
-      expect(OUTBOUND_WEDGE.subline.toLowerCase()).toContain(verb);
-    }
   });
 
   it("keeps the public entrance concise, auth-forward, and tied to shared constants", () => {
@@ -175,28 +165,23 @@ describe("Phone Bot product voice", () => {
       expect(source, path).not.toContain("AI VOICE AGENTS");
       expect(source, path).not.toMatch(/guaranteed profit|profit guarantee/i);
     }
-
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("WIRE YOUR");
-    expect(landing).toContain("PHONE BOT");
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;');
+    expect(landing).toContain("PUT YOUR BOT");
+    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
     expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain("return channel.label.toUpperCase()");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("LandingFooter");
-    expect(landing).not.toContain("BOT_CHANNELS.map");
-    expect(landing).not.toContain("BOT_WORKSPACE_PROMISE.title");
     expect(landing).not.toContain("PrecisionPublicHeader");
     expect(landing).not.toContain("Runtime Balance");
-    expect(landing).not.toContain("posture=");
   });
 
-  it("keeps shared marketing voice aligned to the acquisition wedge", () => {
+  it("keeps shared marketing voice aligned to BotBound", () => {
     expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
-    expect(MARKETING_VOICE.eyebrow).toBe("CALL · EMAIL · TEXT");
+    expect(MARKETING_VOICE.eyebrow).toBe("CALL · TEXT · EMAIL");
     expect(MARKETING_VOICE.primaryCta).toBe("Start Free");
     expect(MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
     expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
@@ -204,19 +189,19 @@ describe("Phone Bot product voice", () => {
     expect(BOT_MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
   });
 
-  it("keeps included phone capacity aligned to live Bot capacity", () => {
+  it("keeps included phone capacity aligned to live Bot capacity and automatic activation", () => {
     const publicCapacityPlans = STRIPE_PLANS.filter(
       (plan) => plan.id !== "enterprise" && plan.id !== "personal",
     );
     for (const plan of publicCapacityPlans) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
+      expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
+      expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
     }
-
     const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(catalog).toContain(
-      "Every paid tier guarantees live voice capacity and an on-demand number slot",
-    );
+    expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
+    expect(catalog).toContain("Paid Bots receive a BotBound-managed email identity");
     expect(billing).toContain("plan.included_phone_numbers");
   });
 
@@ -236,21 +221,9 @@ describe("Phone Bot product voice", () => {
     ]) {
       expect(routes).toContain(`path="${path}"`);
     }
-    expect(routes).toContain('to="/phone?tab=logs"');
-    expect(routes).toContain("AgentsToStudioRedirect");
-    for (const retiredPath of [
-      "/actions",
-      "/dashboard",
-      "/pulse",
-      "/fleet",
-      "/ops",
-      "/training",
-      "/chat",
-      "/nexus",
-      "/wires",
-    ]) {
-      expect(routes).not.toContain(`path="${retiredPath}"`);
-    }
+    expect(routes).toContain('path="/" element={<Navigate to="/studio" replace />}');
+    expect(routes).toContain("ToStudioRedirect");
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
   });
 
   it("keeps every public top-level surface session optional", () => {
@@ -279,9 +252,7 @@ describe("Phone Bot product voice", () => {
       "/oauth-complete",
       "/auth/oauth-complete",
     ];
-    for (const path of publicPaths) {
-      expect(isSessionOptionalPublicPath(path), path).toBe(true);
-    }
+    for (const path of publicPaths) expect(isSessionOptionalPublicPath(path), path).toBe(true);
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { AppError } from "../../lib/api-error";
+import { BOTBOUND_BRAND_NAME } from "../../lib/brand";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -22,10 +23,6 @@ import {
 import { bootstrapDefaultChannel } from "../../lib/slack-service";
 
 const router = express.Router();
-
-// ────────────────────────────────────────────────────────────────────
-//  Apollo OAuth
-// ────────────────────────────────────────────────────────────────────
 
 router.get(
   "/api/oauth/apollo/url",
@@ -82,7 +79,9 @@ router.get(
       if (!userId) {
         return res
           .status(401)
-          .send("Complete this connection in the same browser and Wireline account that started it.");
+          .send(
+            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it.`,
+          );
       }
 
       const info = await getApolloUserInfo(tokens.access_token);

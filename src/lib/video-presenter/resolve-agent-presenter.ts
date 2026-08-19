@@ -1,6 +1,6 @@
 /**
- * Resolve per-agent video presenter policy. Live talking-head providers are
- * retired; every agent keeps the Wireline identity badge.
+ * Resolve per-Bot video presenter policy. Live talking-head providers are
+ * retired; every Bot keeps the BotBound identity badge.
  */
 import { buildAgentIdentityPreview, type VideoPresenterProviderId } from "../agent-identity";
 import { getLiveAvatarStatus } from "./liveavatar-service";
@@ -43,7 +43,7 @@ export function resolveAgentVideoPresenter(input: {
     consentStatus,
     status: "disabled",
     platformConfigured: liveAvatar.configured,
-    headline: "Wireline identity",
+    headline: "BotBound identity",
     description: videoPresenterStatusMessage(
       {
         provider: providerPreference,

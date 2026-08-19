@@ -142,19 +142,19 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /system:\s*"WIRELINE Design System"/,
-    "canonical vision must name the single WIRELINE Design System",
+    /system:\s*"BotBound Design System"/,
+    "canonical vision must name the single BotBound Design System",
   );
   mustInclude(
     "src/lib/surface-contract.ts",
     surfaceContract,
-    /system:\s*"WIRELINE Design System"/,
+    /system:\s*"BotBound Design System"/,
     "authenticated surface contract must use the same single system name",
   );
   mustExclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+    /system:\s*"BotBound (?:Letterpress|Obsidian|Aurora)"/,
     "canonical vision must not declare a themed sub-system",
   );
   mustInclude(

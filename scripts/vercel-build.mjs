@@ -181,6 +181,8 @@ run("node", [
   "tests/stripe-customer-binding-contract.test.ts",
   "tests/dogfood-credential-alias-contract.test.ts",
   "tests/product-voice-contract.test.ts",
+  "tests/botbound-visible-brand-sweep.test.ts",
+  "tests/botbound-domain-oauth-cutover-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/launch-completeness-contract.test.ts",

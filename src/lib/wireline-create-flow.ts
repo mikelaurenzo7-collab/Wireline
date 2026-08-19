@@ -12,16 +12,44 @@ export type PostCreateWizardStep = "train" | "channels" | "wire" | "test";
 export type PostCreateWizardPayload = {
   agentId: string;
   agentName: string;
-  /** User checked "Provision number" during Fast Start. */
+  /** BotBound attempted the managed phone identity after the Bot record committed. */
   phoneProvisionRequested: boolean;
-  /** Provision succeeded during create (false when gated or skipped). */
+  /** A managed line is already assigned to this Bot. */
   phoneProvisioned: boolean;
+  /** Paid activation is the only known blocker to automatic phone provisioning. */
+  phoneActivationRequired?: boolean;
+  /** Assigned line when the bootstrap response returned it. */
+  phoneNumber?: string | null;
+  /** BotBound attempted the managed mailbox after the Bot record committed. */
+  emailProvisionRequested?: boolean;
+  /** A managed mailbox is already bound to this Bot. */
+  emailProvisioned?: boolean;
+  /** Assigned managed mailbox address. */
+  emailAddress?: string | null;
+  /** True only when the provider confirmed the configured custom domain was used. */
+  emailCustomDomain?: boolean;
+  /** One full managed phone+mail bootstrap attempt completed for this Bot. */
+  identityBootstrapComplete?: boolean;
 };
 
+function persistPostCreateWizardPayload(payload: PostCreateWizardPayload): void {
+  sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify(payload));
+}
+
+/** Start a fresh post-create guide at Train. */
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
   try {
-    sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify(payload));
+    persistPostCreateWizardPayload(payload);
     sessionStorage.setItem(POST_CREATE_WIZARD_STEP_KEY, "train");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+/** Update background provisioning state without moving the user's current step. */
+export function updatePostCreateWizard(payload: PostCreateWizardPayload): void {
+  try {
+    persistPostCreateWizardPayload(payload);
   } catch {
     /* ignore quota / private mode */
   }

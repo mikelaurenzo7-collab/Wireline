@@ -42,8 +42,10 @@ describe("omnichannel outcome loop", () => {
     expect(emailRoute).toContain("pg_advisory_xact_lock");
     expect(emailRoute).toContain("handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id)");
     expect(emailRoute).toContain("touchNavCounts(req.user.id)");
-    expect(emailInbox).toContain('updated.status === "escalated"');
-    expect(emailInbox).toContain('detail?.handoff && selectedThread.status === "escalated"');
+    expect(emailInbox).toContain("const persistOutcome = async (status: OutcomeStatus)");
+    expect(emailInbox).toContain('await persistOutcome("escalated")');
+    expect(emailInbox).toContain("detail?.handoff");
+    expect(emailInbox).toContain('title="Handoff"');
   });
 
   it("gives SMS the same evidence-to-outcome-to-handoff lifecycle without changing reply delivery", () => {

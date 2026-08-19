@@ -42,7 +42,7 @@ object WirelineNotifications {
             channel = CHANNEL_UPDATES,
             id = (callId ?: "recap").hashCode(),
             title = title ?: "Call recap",
-            body = body ?: "Tap to see the latest Wireline recap.",
+            body = body ?: "Tap to see the latest BotBound recap.",
         )
     }
 

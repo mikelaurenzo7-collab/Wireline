@@ -1,6 +1,7 @@
 import express, { Response } from "express";
 import { eq } from "drizzle-orm";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
+import { BOTBOUND_BRAND_NAME } from "../lib/brand";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -53,10 +54,6 @@ router.get(
   },
 );
 
-/**
- * One-time prepaid top-up. A live paid plan is required because Runtime
- * Balance is controlled overflow, not a back door around Starter activation.
- */
 router.post(
   "/api/conversation-balance/checkout",
   authenticateUser,
@@ -84,9 +81,6 @@ router.post(
         .limit(1);
 
       const plan = planById(subscription?.plan);
-      // Every active paid entitlement can top up. `personal` is the free Builder
-      // tier. Keep legacy `enterprise` subscriptions eligible without presenting
-      // that retired catalog row as a current self-serve offer.
       const activePaidPlan =
         !!plan &&
         plan.id !== "personal" &&
@@ -142,7 +136,7 @@ router.post(
               currency: "usd",
               unit_amount: Math.round(amountUsd * 100),
               product_data: {
-                name: "Wireline Runtime Balance",
+                name: `${BOTBOUND_BRAND_NAME} Runtime Balance`,
                 description: `$${amountUsd} prepaid Runtime Balance for extra calls, texts, and live work`,
               },
             },

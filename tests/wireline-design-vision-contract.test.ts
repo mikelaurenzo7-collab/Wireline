@@ -24,14 +24,14 @@ const AUTHENTICATED_SURFACE_GLOBS = [
 
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
 
-describe("WIRELINE design vision", () => {
+describe("BotBound design vision", () => {
   it("exports one canonical design system with semantic visual vocabulary", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
-    expect(WIRELINE_DESIGN_VISION.system).toBe("WIRELINE Design System");
+    expect(WIRELINE_DESIGN_VISION.system).toBe("BotBound Design System");
     expect(WIRELINE_DESIGN_VISION.naming).toEqual({
-      designSystem: "WIRELINE Design System",
+      designSystem: "BotBound Design System",
       rule:
-        "WIRELINE Design System is the only system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+        "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
     });
     expect(WIRELINE_DESIGN_VISION.appearance).toEqual({
       default: "light",
@@ -39,20 +39,23 @@ describe("WIRELINE design vision", () => {
       lightCanvas: "#F6F5FA",
       darkCanvas: "#0A0A0E",
       rule:
-        "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same WIRELINE Design System, never separate visual systems.",
+        "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
+      "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
+      "BotBound is mixed case whenever the brand name is visibly presented; lowercase wireline remains reserved for stable technical data such as URLs, identifiers, events, APIs, and persistence keys during migration.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
+      "The phone-Bot mark and BotBound wordmark keep one optical ratio and scale only as a complete lockup.",
+    );
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "Authenticated desktop panels may fold and resize, but their state must be obvious, persistent, keyboard operable, and never change the user's information hierarchy silently.",
     );
     expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
       expect.objectContaining({
@@ -73,10 +76,10 @@ describe("WIRELINE design vision", () => {
 
   it("keeps old themed names out of canonical system declarations", () => {
     expect(read("src/lib/wireline-design-vision.ts")).not.toMatch(
-      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/,
+      /system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora|Paper)"/,
     );
     expect(read("src/lib/surface-contract.ts")).not.toMatch(
-      /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/,
+      /system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora|Paper)"/,
     );
     expect(read("src/constants/brand-colors.ts")).not.toMatch(/Wireline Letterpress|obsidian material|Paper appearance/i);
   });
@@ -109,7 +112,7 @@ describe("WIRELINE design vision", () => {
     expect(WIRELINE_DESIGN_VISION.motion.pressScale).toBe(0.985);
   });
 
-  it("defines authenticated WIRELINE signature utilities without duplicating selection ownership", () => {
+  it("defines authenticated BotBound signature utilities without duplicating selection ownership", () => {
     const appSignature = read("src/styles/wireline-app-signature.css");
     expect(appSignature).toContain(".wl-workspace-shell::before");
     expect(appSignature).toContain(".wl-workspace-content .wl-paper::before");
@@ -121,12 +124,13 @@ describe("WIRELINE design vision", () => {
     expect(read("ios/WirelineShared/WirelineBrand.swift")).toContain("static let wire");
   });
 
-  it("centralizes workspace page intros and presence hooks", () => {
+  it("centralizes workspace page intros and adjustable-pane behavior", () => {
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
-    expect(read("src/components/CallLogsClaude.tsx")).toContain("usePresenceSignals");
+    expect(read("src/components/WorkspaceShell.tsx")).toContain("WorkspaceResizablePanel");
+    expect(read("src/components/CallLogsClaude.tsx")).toContain("WorkspaceResizablePanel");
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {
@@ -142,7 +146,7 @@ describe("WIRELINE design vision", () => {
     expect(WL_COMPOSER_CLASSES.starterChip).toContain("wl-chip-suggestion");
   });
 
-  it("documents studio canvas routing via the shared contract module", () => {
+  it("documents Studio routing and adjustable rail dimensions via the shared contract", () => {
     const contract = read("src/lib/studio-canvas-contract.ts");
     expect(contract).toContain("STUDIO_CANVAS_VISION");
     expect(contract).toContain("STUDIO_CANVAS_FORBIDDEN");
@@ -152,7 +156,11 @@ describe("WIRELINE design vision", () => {
         defaultSurface: "chat-plus-canvas",
         canvasSurface: "spatial-cards",
         agentSwitcher: "context-chrome",
-        railWidthPx: 236,
+        railBehavior: "resizable-and-collapsible",
+        railWidthPx: 232,
+        railMinPx: 208,
+        railMaxPx: 320,
+        railCollapsedPx: 68,
         workspaceDepthParam: "view=workspace",
         minTouchTargetPx: 44,
       }),

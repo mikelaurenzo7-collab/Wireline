@@ -1,6 +1,6 @@
 {
   "sidebar_action": {
-    "default_title": "Wireline Command",
+    "default_title": "BotBound Command",
     "default_panel": "panel/index.html",
     "open_at_install": false
   },

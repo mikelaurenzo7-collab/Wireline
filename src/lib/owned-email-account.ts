@@ -4,7 +4,7 @@ import { emailAccounts } from "../db/schema";
 import { drizzle } from "./server-context";
 
 export const EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE =
-  "This mailbox is already connected to another Wireline account. Disconnect it there or contact support before connecting it here.";
+  "This mailbox is already connected to another BotBound account. Disconnect it there or contact support before connecting it here.";
 
 export interface OwnedEmailAccountInput {
   userId: string;
@@ -14,6 +14,8 @@ export interface OwnedEmailAccountInput {
   refreshToken: string | null;
   expiresAt: bigint | null;
   oauthGrantedScopes: string | null;
+  /** Optional Bot ownership for platform-managed mailboxes. */
+  agentId?: string | null;
 }
 
 export async function upsertOwnedEmailAccount(
@@ -37,6 +39,7 @@ export async function upsertOwnedEmailAccount(
         refreshToken: refreshTokenUpdate,
         expiresAt: input.expiresAt,
         oauthGrantedScopes: input.oauthGrantedScopes,
+        ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
       },
       setWhere: eq(emailAccounts.userId, input.userId),
     })

@@ -630,7 +630,7 @@ async function handleNotifySlack(userId: string, action: ActionItem): Promise<Ac
   await postAgentNotification(
     userId,
     channel,
-    action.payload.message || action.reasoning || "Wireline action requires review.",
+    action.payload.message || action.reasoning || "BotBound action requires review.",
   );
   return { success: true };
 }

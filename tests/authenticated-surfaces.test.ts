@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { AUTHENTICATED_SURFACE_CONTRACT } from "../src/lib/authenticated-surface-contract";
 
 describe("authenticated surfaces", () => {
-  it("locks the single WIRELINE Design System and semantic doctrine", () => {
-    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toBe("WIRELINE Design System");
+  it("locks the single BotBound Design System and semantic doctrine", () => {
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toBe("BotBound Design System");
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/near-black canvas/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/violet/i);
-    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/platinum wire/i);
-    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(/only system name/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(/only customer-facing product name/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain(
       "Letterpress as a design-system name",
     );
@@ -15,13 +14,15 @@ describe("authenticated surfaces", () => {
       "Obsidian as a design-system name",
     );
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain("forest green primary");
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain(
+      "the pre-BotBound customer-facing company name",
+    );
   });
 
-  it("keeps settings and knowledge tabs on the Claude layout", () => {
+  it("keeps settings and knowledge tabs on the current task-first layout", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.settings.tabs).toEqual([
       "Account",
       "Billing",
-      "Phone",
       "Team",
       "Appearance",
       "Apps",
@@ -31,17 +32,13 @@ describe("authenticated surfaces", () => {
       "Business knowledge",
       "Reports",
     ]);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.settings.phoneOwnership).toContain("Calls → Lines");
   });
 
   it("defines navigation groups and mobile dock IA", () => {
-    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.groups).toEqual([
-      "Workspace",
-      "Agents",
-      "Operate",
-    ]);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.groups).toEqual(["Work", "Manage"]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobilePrimary).toEqual([
-      "Overview",
-      "Agent Studio",
+      "Studio",
       "Inbox",
       "Calls",
       "More",
@@ -56,6 +53,7 @@ describe("authenticated surfaces", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.sourceOfTruth).toBe(
       "src/constants/navigation.ts",
     );
+    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.doctrine).toContain("Studio is home");
   });
 
   it("defines page chrome modes for authenticated surfaces", () => {
@@ -71,13 +69,15 @@ describe("authenticated surfaces", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.statePrimitives.error).toMatch(/StatusNotice/);
   });
 
-  it("uses overview as the assistant roster and studio as the canvas", () => {
-    expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.overview).toMatch(
-      /agent roster|health summary|next-action home/i,
+  it("uses Studio as the canonical home and redirects retired competing roster/dashboard routes", () => {
+    expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.studio).toMatch(
+      /canonical home|Bot workspace|create|configure|test/i,
     );
-    expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.studio).toMatch(/canvas|studio|chat/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.overviewRoute).toMatch(
+      /compatibility redirect to Studio/i,
+    );
     expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.agentsRoute).toMatch(
-      /defensive redirect to overview/i,
+      /compatibility redirect to Studio/i,
     );
   });
 });

@@ -90,7 +90,7 @@ export default function SolutionsPage() {
   return (
     <MarketingPageFrame className="wl-solutions-page">
       <PageMeta
-        title={`${page.title} | Wireline`}
+        title={`${page.title} | BotBound`}
         description={page.description}
         path={`/solutions/${key}`}
       />

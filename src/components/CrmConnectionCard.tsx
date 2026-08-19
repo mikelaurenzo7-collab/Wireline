@@ -329,7 +329,7 @@ export default function CrmConnectionCard() {
       }, 500);
     } catch {
       setError(
-        `${providerLabel} connect failed to reach Wireline. Check your connection and try again.`,
+        `${providerLabel} connect failed to reach BotBound. Check your connection and try again.`,
       );
       setConnecting(null);
     }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -10,7 +10,7 @@ import { PageMeta } from "../lib/page-meta";
  * There is no Settings → API Access key minting surface today. Session-cookie
  * product APIs and the account-bound MCP connector are the real contracts.
  * Customer-facing product language is Bot. Technical MCP functions and records
- * retain agent for compatibility with the existing API and data model.
+ * retain agent where required by the existing API and data model.
  */
 
 const MCP_BOUNDARIES = [
@@ -22,7 +22,7 @@ const MCP_BOUNDARIES = [
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
     description:
-      "Coach the agent record behind a Bot: read owner-authored training, then persist a confirmed fact or rule into Wireline after the Apps toggle is on.",
+      "Coach the agent record behind a Bot: read owner-authored training, then persist a confirmed fact or rule into BotBound after the Apps toggle is on.",
   },
   {
     path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
@@ -44,7 +44,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create a Wireline account, then draft and privately rehearse your first Voice Bot.",
+      "Create a BotBound account, then draft and privately rehearse your first Voice Bot.",
     action: "Open ChatGPT Apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
@@ -52,7 +52,7 @@ const MCP_CLIENTS = [
   {
     title: "Claude",
     description:
-      "Add Wireline as a remote connector and build your first Voice Bot from Claude.",
+      "Add BotBound as a remote connector and build your first Voice Bot from Claude.",
     action: "Open Claude Connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
@@ -60,9 +60,9 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Install the Cursor Directory plugin or add https://trywireline.com/mcp. New users create a Wireline account, then build their first Voice Bot.",
+      "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Voice Bot.",
     action: "Add to Cursor",
-    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==",
+    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
     icon: Terminal,
   },
 ] as const;
@@ -70,16 +70,15 @@ const MCP_CLIENTS = [
 export default function Developers() {
   const [copied, setCopied] = useState(false);
 
-  const appOrigin =
-    typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
+  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.me";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
-  const mcpEndpoint = "https://trywireline.com/mcp";
+  const mcpEndpoint = `${appOrigin}/mcp`;
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     void navigator.clipboard.writeText(mcpEndpoint);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
-  };
+  }, [mcpEndpoint]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -87,13 +86,13 @@ export default function Developers() {
     const node = document.getElementById("mcp-endpoint");
     node?.scrollIntoView({ behavior: "smooth", block: "start" });
     handleCopy();
-  }, []);
+  }, [handleCopy]);
 
   return (
     <MarketingPageFrame>
       <PageMeta
-        title="DEVELOPER PORTAL | WIRELINE BOTS"
-        description="Connect Wireline to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same Wireline workspace. No public API keys."
+        title="DEVELOPER PORTAL | BOTBOUND"
+        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />
 
@@ -103,7 +102,7 @@ export default function Developers() {
       >
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Bring Wireline into the Tools You Already Use
+            Bring BotBound into the Tools You Already Use
           </h1>
           <div className="marketing-hero__actions mt-7">
             <a
@@ -162,14 +161,14 @@ export default function Developers() {
               </Button>
             </div>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Connected apps help new users create a Wireline account and build their first Voice
+              Connected apps help new users create a BotBound account and build their first Voice
               Bot. This connector cannot place calls, send messages, provision numbers, or launch
               a live Bot. Training writes land only after you enable them in Apps and confirm each
               change. There is no public API-key product and no repo voice SDK.
             </p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Wireline calls the customer-facing product a Bot. MCP and API function names, agent
-              records, and compatibility identifiers retain agent so integrations remain stable.
+              BotBound calls the customer-facing product a Bot. MCP and API function names and
+              agent records remain stable only where the existing integration contract requires it.
             </p>
           </div>
 

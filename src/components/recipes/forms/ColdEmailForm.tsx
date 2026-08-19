@@ -102,7 +102,7 @@ export function ColdEmailForm({
         <TextInput
           value={form.ourCompany}
           onChange={(v: string) => set("ourCompany", v)}
-          placeholder="Wireline"
+          placeholder="BotBound"
         />
       </Field>
       <Field label="Value Prop">

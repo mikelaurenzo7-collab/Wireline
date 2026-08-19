@@ -10,8 +10,8 @@ const humans = read("public/humans.txt");
 describe("public metadata privacy contract", () => {
   it("publishes the company rather than personal founder identity", () => {
     expect(indexHtml).not.toContain('"founder"');
-    expect(indexHtml).not.toContain('"@type": "Person"');
-    expect(humans).toContain("Team: Wireline");
+    expect(indexHtml).not.toMatch(/"@type"\s*:\s*"Person"/);
+    expect(humans).toContain("Team: BotBound");
     expect(humans).not.toMatch(/Founder\s*&\s*Engineer:/i);
   });
 

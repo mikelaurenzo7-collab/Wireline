@@ -63,24 +63,25 @@ export function desktopNavParentHref(pathname: string): string | null {
 }
 
 /**
- * Primary setup destinations. Knowledge remains available as a contextual deep
- * link from the agent workspace rather than competing in the main rail.
+ * The first desktop group answers one question: where does daily work happen?
+ * Studio is home, Inbox owns written conversations, and Calls owns voice work.
+ * Provider/setup concepts are deliberately not interleaved with these three.
  */
 export const WORKSPACE_NAV: ShellNavItem[] = [
-  {
-    href: "/overview",
-    label: "Overview",
-    shortLabel: "Home",
-    icon: "Home",
-    matches: ["/overview"],
-  },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
     icon: "Bot",
-    matches: ["/studio", "/agents"],
+    matches: ["/studio", "/agents", "/overview"],
   },
+  { href: "/inbox", label: "Inbox", icon: "Inbox" },
+  { href: "/phone", label: "Calls", icon: "Phone" },
+];
+
+/** Lower-frequency management/setup destinations stay visually secondary. */
+export const OPERATE_NAV: ShellNavItem[] = [
+  { href: "/insights", label: "Activity", icon: "BarChart3" },
   {
     href: "/connections",
     label: "Connections",
@@ -88,30 +89,21 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     icon: "Workflow",
     matches: ["/connections"],
   },
-];
-
-/** Daily operating destinations. Approvals and training are secondary tools. */
-export const OPERATE_NAV: ShellNavItem[] = [
-  { href: "/inbox", label: "Inbox", icon: "Inbox" },
-  { href: "/phone", label: "Calls", icon: "Phone" },
-  { href: "/insights", label: "Activity", icon: "BarChart3" },
   { href: "/settings", label: "Settings", icon: "Settings", matches: ["/settings", "/admin"] },
 ];
 
+/**
+ * Mobile has four primary destinations only. There is deliberately no Home:
+ * Studio is home. Inbox owns text/email work, Calls owns voice work, and More
+ * owns secondary/admin destinations.
+ */
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
-  {
-    href: "/overview",
-    label: "Overview",
-    shortLabel: "Home",
-    icon: "Home",
-    matches: ["/overview"],
-  },
   {
     href: "/studio",
     label: "Agent Studio",
     shortLabel: "Studio",
     icon: "Bot",
-    matches: ["/studio", "/agents"],
+    matches: ["/studio", "/agents", "/overview"],
   },
   { href: "/inbox", label: "Inbox", icon: "Inbox" },
   { href: "/phone", label: "Calls", icon: "Phone" },
@@ -150,12 +142,12 @@ function toLegacyItem(item: ShellNavItem, section: string): NavItem {
 
 export const NAV_GROUPS = [
   {
-    label: "Set up",
-    items: WORKSPACE_NAV.map((item) => toLegacyItem(item, "Workspace")),
+    label: "Work",
+    items: WORKSPACE_NAV.map((item) => toLegacyItem(item, "Work")),
   },
   {
-    label: "Work",
-    items: OPERATE_NAV.map((item) => toLegacyItem(item, "Run")),
+    label: "Manage",
+    items: OPERATE_NAV.map((item) => toLegacyItem(item, "Manage")),
   },
 ] as const;
 
@@ -183,6 +175,7 @@ export function isNavActive(pathname: string, href: string) {
       current === "/studio" ||
       current.startsWith("/studio/") ||
       current === "/agents" ||
+      current === "/overview" ||
       current === "/templates" ||
       current.startsWith("/templates/")
     );
@@ -213,10 +206,10 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/overview": "Overview",
+  "/overview": "Agent Studio",
   "/studio": "Agent Studio",
   "/studio/handoff": "Browser handoff",
-  "/studio/live-video": "Live video",
+  "/studio/live-video": "Agent Studio",
   "/templates": "Templates",
   "/knowledge": "Knowledge",
   "/connections": "Connections",
@@ -252,7 +245,7 @@ export function workspacePageTitle(pathname: string) {
 }
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
-  A: "/overview",
+  A: "/studio",
   S: "/studio",
   T: "/knowledge",
   W: "/connections",
@@ -262,7 +255,6 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 };
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
-  "/overview": "g a",
   "/studio": "g s",
   "/knowledge": "g t",
   "/connections": "g w",

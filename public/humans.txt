@@ -1,7 +1,7 @@
-/* humans.txt — the people behind Wireline */
+/* humans.txt — the people behind BotBound */
 
 /* TEAM */
-  Team: Wireline
+  Team: BotBound
   Site: https://trywireline.com
 
 /* THANKS */

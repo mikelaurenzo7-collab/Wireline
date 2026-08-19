@@ -201,7 +201,7 @@ export async function maybePublishCallRecap(
       kind: "call_recap",
       version: 1,
       agent: {
-        name: input.agentName?.trim() || "Wireline agent",
+        name: input.agentName?.trim() || "BotBound agent",
         role: input.agentRole ?? null,
       },
       outcome:

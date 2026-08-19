@@ -22,16 +22,6 @@ import { drizzle, log, quotaTracker } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { clearBudgetCache, evaluateSpend, recordDailySpend } from "./spend-guards";
 
-/**
- * Maximum pre-provider hold for one bounded website extraction.
- *
- * The route supplies at most 28,000 UTF-16 code units plus a 1,200-token
- * response. Twenty-five cents covers the most expensive eligible continuity
- * lane with substantial tokenization and failed-attempt headroom. The hold is
- * replaced by measured usage after a successful response, so ordinary imports
- * consume only their actual cost. Five concurrent burst-limit slots can reserve
- * at most $1.25 against Free Builder's $1.50 monthly allowance.
- */
 export const WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD = 0.25;
 
 type SpendDependencies = {
@@ -194,16 +184,10 @@ function reservationError(decision: Exclude<PlatformCostReservationDecision, { r
   return new AppError(
     503,
     "SPEND_GUARD_UNAVAILABLE",
-    "Wireline could not reserve this import against your managed AI allowance. Try again shortly.",
+    "BotBound could not reserve this import against your managed AI allowance. Try again shortly.",
   );
 }
 
-/**
- * Reserve the maximum bounded call cost before any provider work, then replace
- * that hold with measured tokens. Ambiguous provider failures keep the hold;
- * only a fetch rejection, a runtime with no callable provider, or an all-4xx
- * provider chain with no ambiguous attempt releases it.
- */
 export async function runWithWebsiteKnowledgeSpend<T>(
   input: {
     userId: string;
@@ -260,8 +244,6 @@ export async function runWithWebsiteKnowledgeSpend<T>(
         minimumCostUsd: auditContext.ambiguousProviderAttempts > 0 ? reservation.costUsd : 0,
       });
     } catch (error) {
-      // The original reservation is already durable. Keep and publish that
-      // conservative amount instead of deleting it or double-writing usage.
       log.error("Website import actual-cost settlement failed; retaining reserve", {
         userId: input.userId,
         hostname: input.hostname,
@@ -278,9 +260,6 @@ export async function runWithWebsiteKnowledgeSpend<T>(
     try {
       await dependencies.release(reservation);
     } catch (error) {
-      // Never turn a definitive pre-provider rejection into an unmetered retry.
-      // A failed cleanup leaves the conservative hold in place and is visible
-      // to operators; the original error remains the actionable response.
       log.error("Website import pre-provider reservation release failed", {
         userId: input.userId,
         hostname: input.hostname,
@@ -288,8 +267,6 @@ export async function runWithWebsiteKnowledgeSpend<T>(
       });
     }
   } else {
-    // A timeout/network/provider exception without a usage response is
-    // ambiguous: the provider may already have accepted billable work.
     await dependencies.commit(reservation);
   }
 

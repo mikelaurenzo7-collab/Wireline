@@ -237,7 +237,7 @@ router.post(
           success: false,
           code: uncertain ? "DIAL_STATUS_UNCERTAIN" : "ERROR",
           error: uncertain
-            ? "The carrier response was interrupted. Wireline is holding this number to prevent a duplicate call; check Phone before trying again."
+            ? "The carrier response was interrupted. BotBound is holding this number to prevent a duplicate call; check Phone before trying again."
             : result.error || "Voice carrier rejected the call.",
           doNotRetry: uncertain,
           operationId: operationKey,
@@ -347,7 +347,7 @@ router.post(
     if (!normalizedDestination) {
       return res.status(400).json({
         code: "NO_CALLBACK_NUMBER",
-        error: "Set a valid callback number first so Wireline knows where to send the call.",
+        error: "Set a valid callback number first so BotBound knows where to send the call.",
       });
     }
 

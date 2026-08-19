@@ -213,12 +213,12 @@ export function renderDailyBriefEmail(
     const sign = v >= 0 ? "+" : "";
     return `${sign}${v.toFixed(0)}%`;
   };
-  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/overview` : null;
+  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/insights` : null;
 
   // The subject is a plain-text MIME header, not markup: HTML-escaping it put
   // literal `&#39;`/`&amp;` in the operator's inbox. Collapse newlines instead,
   // which is the encoding that actually matters for a header.
-  const subject = `Wireline · ${String(headline)
+  const subject = `BotBound · ${String(headline)
     .replace(/\s*[\r\n]+\s*/g, " ")
     .trim()} · ${opts.dateLabel}`;
 
@@ -272,7 +272,7 @@ export function renderDailyBriefEmail(
   <div class="wrap">
     <div class="brand-header">
       <div class="brand-logo"></div>
-      <div class="brand-name">Wireline</div>
+      <div class="brand-name">BotBound</div>
     </div>
     
     <div class="card card-hero">
@@ -317,7 +317,7 @@ export function renderDailyBriefEmail(
         : ""
     }
     
-    ${link ? `<div style="text-align:center; padding:24px 0;"><a class="btn" href="${escapeHtml(link)}">Open Overview</a></div>` : ""}
+    ${link ? `<div style="text-align:center; padding:24px 0;"><a class="btn" href="${escapeHtml(link)}">Open Insights</a></div>` : ""}
     
     <div class="footer">
       This brief was generated from your real-time call data.<br>
@@ -329,7 +329,7 @@ export function renderDailyBriefEmail(
 
   // Plain-text fallback for clients that don't render HTML.
   const lines: string[] = [];
-  lines.push(`WIRELINE · Daily Brief · ${opts.dateLabel}`);
+  lines.push(`BotBound · Daily Brief · ${opts.dateLabel}`);
   lines.push(`Mood: ${mood}`);
   lines.push("");
   lines.push(headline);
@@ -354,7 +354,7 @@ export function renderDailyBriefEmail(
   }
   if (link) {
     lines.push("");
-    lines.push(`Open Wireline: ${link}`);
+    lines.push(`Open BotBound: ${link}`);
   }
   return { subject, html, text: lines.join("\n") };
 }

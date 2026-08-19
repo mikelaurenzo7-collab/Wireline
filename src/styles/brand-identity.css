@@ -1,154 +1,177 @@
-/* WIRELINE identity layer.
+/* BotBound identity layer.
  *
- * Brand rule: the visible company name is always WIRELINE. It behaves like a
- * wordmark even inside prose. Technical identifiers, URLs, domains, email
- * addresses, package names, analytics keys, and persistence fields keep their
- * native casing because they are data rather than brand presentation.
+ * Customer-visible identity is BotBound. The mark is intentionally compact and
+ * unmistakably telephonic: platinum Bot hardware, violet signal energy, and an
+ * obsidian equipment surface. Stable technical `wireline` identifiers can stay
+ * below the presentation layer without leaking into the product brand.
  */
 :root {
   --wireline-brand-violet: var(--wireline-color-action-primary-default);
   --wireline-brand-violet-light: var(--wireline-color-action-primary-hover);
   --wireline-brand-platinum: var(--wireline-color-action-secondary-default);
-  /* The app icon is a fixed brand artifact, so its obsidian does not invert in
-   * light appearance even though product surfaces do. */
   --wireline-brand-obsidian: #0a0a0e;
   --wireline-brand-obsidian-deeper: #050508;
-  --wl-wordmark-tracking: 0.095em;
-  --wl-wordmark-inline-tracking: 0.055em;
+  --bb-wordmark-tracking: -0.035em;
+  --bb-wordmark-inline-tracking: -0.025em;
+  --bb-brand-glow: color-mix(in srgb, var(--wireline-brand-violet) 22%, transparent);
+  --bb-brand-platinum-soft: color-mix(in srgb, var(--wireline-brand-platinum) 76%, white 24%);
 }
 
-/* Canonical wordmark ------------------------------------------------------ */
-.wl-wireline-wordmark {
-  display: inline-block;
+.bb-wordmark {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
   color: currentColor;
   font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 1em;
   font-weight: 700;
-  letter-spacing: var(--wl-wordmark-tracking);
-  line-height: 0.92;
-  text-transform: uppercase;
+  letter-spacing: var(--bb-wordmark-tracking);
+  line-height: 0.94;
+  text-transform: none;
   white-space: nowrap;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
   text-rendering: geometricPrecision;
 }
 
-/* In running copy, reduce the cap height and tracking slightly. The word still
- * interrupts the sentence deliberately, but it sits on the same optical line
- * as surrounding lowercase instead of ballooning above it. */
-.wl-wireline-wordmark[data-inline="true"] {
+.bb-wordmark__bot {
+  color: currentColor;
+}
+
+.bb-wordmark__bound {
+  color: var(--wireline-brand-violet-light);
+  background: linear-gradient(
+    112deg,
+    var(--wireline-brand-violet-light) 0%,
+    color-mix(in srgb, var(--wireline-brand-violet-light) 58%, var(--bb-brand-platinum-soft)) 52%,
+    var(--bb-brand-platinum-soft) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 1.15rem color-mix(in srgb, var(--wireline-brand-violet) 13%, transparent);
+}
+
+.bb-wordmark[data-inline="true"] {
   position: relative;
-  top: -0.015em;
-  font-size: 0.92em;
-  font-weight: 700;
-  letter-spacing: var(--wl-wordmark-inline-tracking);
+  top: -0.01em;
+  font-size: 0.96em;
+  letter-spacing: var(--bb-wordmark-inline-tracking);
   line-height: inherit;
 }
 
-/* Canonical folded-W + wordmark lockup ------------------------------------ */
-.wl-wireline-lockup {
-  --wl-lockup-mark-width: 2rem;
-  --wl-lockup-mark-height: 1.333rem;
-  --wl-lockup-wordmark-size: 0.9rem;
-  --wl-lockup-gap: 0.62rem;
-
+.bb-lockup {
+  --bb-lockup-mark: 2rem;
+  --bb-lockup-wordmark-size: 1rem;
+  --bb-lockup-gap: 0.58rem;
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: var(--wl-lockup-gap);
+  gap: var(--bb-lockup-gap);
   color: var(--wireline-color-text-primary);
   line-height: 1;
 }
 
-.wl-wireline-lockup[data-size="compact"] {
-  --wl-lockup-mark-width: 1.65rem;
-  --wl-lockup-mark-height: 1.1rem;
-  --wl-lockup-wordmark-size: 0.76rem;
-  --wl-lockup-gap: 0.5rem;
+.bb-lockup[data-size="compact"] {
+  --bb-lockup-mark: 1.58rem;
+  --bb-lockup-wordmark-size: 0.84rem;
+  --bb-lockup-gap: 0.48rem;
 }
 
-.wl-wireline-lockup[data-size="large"] {
-  --wl-lockup-mark-width: 2.5rem;
-  --wl-lockup-mark-height: 1.667rem;
-  --wl-lockup-wordmark-size: 1.08rem;
-  --wl-lockup-gap: 0.72rem;
+.bb-lockup[data-size="large"] {
+  --bb-lockup-mark: 2.55rem;
+  --bb-lockup-wordmark-size: 1.22rem;
+  --bb-lockup-gap: 0.7rem;
 }
 
-.wl-wireline-lockup__mark {
+.bb-lockup__mark {
+  position: relative;
   display: inline-grid;
-  width: var(--wl-lockup-mark-width);
-  height: var(--wl-lockup-mark-height);
-  flex: 0 0 var(--wl-lockup-mark-width);
+  width: var(--bb-lockup-mark);
+  height: var(--bb-lockup-mark);
+  flex: 0 0 var(--bb-lockup-mark);
   place-items: center;
   color: var(--wireline-brand-violet);
+  filter: drop-shadow(0 0.3rem 0.72rem color-mix(in srgb, var(--wireline-brand-violet) 14%, transparent));
 }
 
-.wl-wireline-lockup__mark > svg {
+.bb-lockup__mark > svg {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.wl-wireline-lockup__wordmark {
+.bb-lockup__wordmark {
   min-width: 0;
-  font-size: var(--wl-lockup-wordmark-size);
-  line-height: 0.9;
+  font-size: var(--bb-lockup-wordmark-size);
 }
 
-/* Tile is a surface treatment, not a different logo. The geometry and wordmark
- * ratio stay identical; only the mark's carrier gains the fixed obsidian icon
- * material used by authenticated/native chrome. */
-.wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark {
-  width: calc(var(--wl-lockup-mark-width) + 0.42rem);
-  height: calc(var(--wl-lockup-mark-height) + 0.42rem);
-  flex-basis: calc(var(--wl-lockup-mark-width) + 0.42rem);
+.bb-lockup[data-surface="tile"] .bb-lockup__mark {
+  isolation: isolate;
+  width: calc(var(--bb-lockup-mark) + 0.48rem);
+  height: calc(var(--bb-lockup-mark) + 0.48rem);
+  flex-basis: calc(var(--bb-lockup-mark) + 0.48rem);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 18%, transparent);
-  border-radius: var(--wireline-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 22%, transparent);
+  border-radius: calc(var(--wireline-radius-sm) + 0.12rem);
   background:
-    radial-gradient(
-      circle at 38% 24%,
-      color-mix(in srgb, var(--wireline-brand-violet) 20%, transparent),
-      transparent 52%
-    ),
+    radial-gradient(circle at 32% 18%, color-mix(in srgb, white 8%, transparent), transparent 32%),
+    radial-gradient(circle at 40% 28%, color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent), transparent 55%),
     linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--wireline-brand-obsidian) 86%, var(--wireline-brand-platinum) 14%) 0%,
-      var(--wireline-brand-obsidian) 58%,
+      148deg,
+      color-mix(in srgb, var(--wireline-brand-obsidian) 82%, var(--wireline-brand-platinum) 18%) 0%,
+      var(--wireline-brand-obsidian) 54%,
       var(--wireline-brand-obsidian-deeper) 100%
     );
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wireline-brand-platinum) 14%, transparent),
-    0 7px 18px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--wireline-brand-violet) 5%, transparent),
+    0 0.55rem 1.45rem rgba(0, 0, 0, 0.24),
+    0 0 1.8rem var(--bb-brand-glow);
 }
 
-.wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark > svg {
-  width: 78%;
-  height: 78%;
+.bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 12%;
+  border: 1px solid color-mix(in srgb, var(--wireline-brand-violet-light) 12%, transparent);
+  border-radius: 50%;
+  opacity: 0.82;
+  box-shadow: 0 0 1rem color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent);
+  pointer-events: none;
 }
 
-/* Compatibility lockups ---------------------------------------------------
- * A few large legacy surfaces still render the folded-W and text separately.
- * Until those files are mechanically migrated, force their visible brand text
- * through the exact same optical wordmark treatment so the product never shows
- * a mixed-case logo in the meantime. */
+.bb-lockup[data-surface="tile"] .bb-lockup__mark > svg {
+  width: 84%;
+  height: 84%;
+}
+
+/* Compatibility selectors keep older component imports visually identical to
+ * the canonical BotBound lockup while source modules are retired incrementally. */
+.wl-wireline-wordmark {
+  text-transform: none !important;
+  letter-spacing: var(--bb-wordmark-tracking) !important;
+}
+
 :is(
     .wl-auth-entry-mark > span:last-child,
     .landing-console__brand > span:last-child,
-    .wl-workspace-shell a[aria-label="Wireline"] > span:last-child,
-    .wl-workspace-shell a[aria-label="WIRELINE"] > span:last-child,
+    .wl-workspace-shell a[aria-label="BotBound"] > span:last-child,
     .wl-transition-brand > .wl-overline
   ) {
   font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: var(--wl-wordmark-tracking) !important;
-  line-height: 0.92;
-  text-transform: uppercase !important;
+  letter-spacing: var(--bb-wordmark-tracking) !important;
+  line-height: 0.94;
+  text-transform: none !important;
   white-space: nowrap;
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
 }
 
-/* Inline links and interactive lockups inherit one focus language instead of
- * each surface inventing a logo-specific ring. */
+a:has(> .bb-lockup):focus-visible,
+button:has(> .bb-lockup):focus-visible,
 a:has(> .wl-wireline-lockup):focus-visible,
 button:has(> .wl-wireline-lockup):focus-visible {
   outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
@@ -157,13 +180,27 @@ button:has(> .wl-wireline-lockup):focus-visible {
 }
 
 @media (forced-colors: active) {
+  .bb-lockup__mark,
   .wl-wireline-lockup__mark {
     color: CanvasText;
+    filter: none;
   }
 
+  .bb-wordmark__bound {
+    color: currentColor;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    text-shadow: none;
+  }
+
+  .bb-lockup[data-surface="tile"] .bb-lockup__mark,
   .wl-wireline-lockup[data-surface="tile"] .wl-wireline-lockup__mark {
     border: 1px solid CanvasText;
     background: Canvas;
     box-shadow: none;
+  }
+
+  .bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
+    display: none;
   }
 }

@@ -53,7 +53,7 @@ export async function reserveRealtimeSessionSpend(
   throw new AppError(
     503,
     "SPEND_GUARD_UNAVAILABLE",
-    "Wireline could not reserve this session against your spend guard. Try again shortly.",
+    "BotBound could not reserve this session against your spend guard. Try again shortly.",
   );
 }
 
@@ -63,11 +63,6 @@ export async function commitRealtimeSessionSpend(
   await commitPlatformCostReservation(reservation);
 }
 
-/**
- * A 502 represents an ambiguous upstream/network outcome, so its conservative
- * reserve stays in place. All validation, local, and explicit provider 4xx
- * failures prove that no usable session reached the browser and are refunded.
- */
 export async function releaseRealtimeSessionSpendAfterFailure(
   req: Request,
   reservation: PlatformCostReservation,

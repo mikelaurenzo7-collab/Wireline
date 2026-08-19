@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
-import { WirelineWordmark } from "../components/brand/WirelineBrand";
+import { BotBoundWordmark } from "../components/brand/BotBoundBrand";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const DOWNLOADS = [
@@ -16,7 +16,7 @@ const DOWNLOADS = [
       "Unzip the package on your computer.",
       "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
       "Click Load unpacked and select the unzipped folder (the one that contains manifest.json).",
-      "Pin WIRELINE Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
+      "Pin BotBound Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
     ],
   },
   {
@@ -44,7 +44,7 @@ export default function BrowserCommandInstallPage() {
           </Button>
         </div>
         <WorkspacePageIntro
-          title="Install WIRELINE Command"
+          title="Install BotBound Command"
           description={`${CLIENT_SURFACE_POSTURE.browser.status}. Explicit page context only. No background browsing, no token storage, no outbound from the extension.`}
         />
 
@@ -60,14 +60,14 @@ export default function BrowserCommandInstallPage() {
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Send the active tab (title, URL, selection, tel: links) into Studio as reference
-                  context. <WirelineWordmark inline /> still owns dialing, texts, Knowledge, billing,
+                  context. <BotBoundWordmark inline /> still owns dialing, texts, Knowledge, billing,
                   and launch.
                 </p>
               </div>
             </div>
             <ul className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
               <li>No host permissions and no silent page harvesting.</li>
-              <li>You must be signed in to WIRELINE for Studio handoff to complete.</li>
+              <li>You must be signed in to BotBound for Studio handoff to complete.</li>
               <li>Store listings stay deferred until this in-product path is the default.</li>
             </ul>
           </article>

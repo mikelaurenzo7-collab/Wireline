@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 import AuthAccessPanel from "../auth/AuthAccessPanel";
 import BotMark from "../BotMark";
-import { WirelineLockup } from "../brand/WirelineBrand";
+import { BotBoundLockup } from "../brand/BotBoundBrand";
 import LandingFooter from "./LandingFooter";
 import { BOT_CHANNELS, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
@@ -12,7 +12,7 @@ import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
-const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;
+const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;
 const HERO_CHANNELS = HERO_CHANNEL_ORDER.map((key) => {
   const channel = BOT_CHANNELS.find((candidate) => candidate.key === key);
   if (!channel) throw new Error(`Missing Bot channel: ${key}`);
@@ -31,13 +31,11 @@ const FEATURED_TEMPLATES = FEATURED_TEMPLATE_KEYS.map((key) => {
   if (!template) throw new Error(`Missing Bot template: ${key}`);
   return template;
 });
-
 const DIRECTION_LABELS = {
   inbound: "Inbound",
   outbound: "Outbound",
   hybrid: "Inbound + outbound",
 } as const;
-
 const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
@@ -45,7 +43,6 @@ const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   team: "Starter Plus",
   business: "Pro",
 };
-
 const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
   const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
   if (!plan) throw new Error(`Missing public plan: ${id}`);
@@ -61,38 +58,33 @@ export default function WireAgentLanding() {
     });
   }, []);
 
-  const trackSignupIntent = (source: string, label: string) => {
+  const trackSignupIntent = (source: string, label: string) =>
     emitProductEvent({
       event: "landing_primary_cta_clicked",
       surface: "marketing_web",
       metadata: { source, label },
     });
-  };
 
   return (
     <div className="marketing-surface landing-prestige bg-background text-foreground">
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
-          <div className="landing-prestige__hero" aria-label="WIRELINE Phone Bot">
+          <div className="landing-prestige__hero" aria-label="BotBound Phone Bot">
             <div className="landing-prestige__hero-brand">
-              <WirelineLockup size="standard" />
+              <BotBoundLockup size="large" surface="tile" />
             </div>
-
             <div className="landing-prestige__hero-copy">
               <h1 id="landing-prestige-title">
-                <span>WIRE YOUR</span>
-                <span>PHONE BOT</span>
+                <span>PUT YOUR BOT</span>
+                <span>ON THE LINE</span>
               </h1>
-
-              <div className="landing-prestige__channels" aria-label="Phone Bot channels">
+              <div className="landing-prestige__channels" aria-label="BotBound channels">
                 {HERO_CHANNELS.map((label) => (
                   <span key={label}>{label}</span>
                 ))}
               </div>
-
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.subline}</p>
             </div>
-
             <Link
               to="/showcase"
               className="landing-prestige__demo-link"
@@ -114,7 +106,6 @@ export default function WireAgentLanding() {
                 <ArrowRight aria-hidden="true" />
               </span>
             </Link>
-
             <p className="landing-prestige__hero-footnote">
               Build free. Put it on a number when it is ready.
             </p>
@@ -138,7 +129,6 @@ export default function WireAgentLanding() {
                 <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
                 <span>Start with a proven playbook. Rewrite every rule.</span>
               </header>
-
               <div className="landing-prestige__role-grid">
                 {FEATURED_TEMPLATES.map((template) => (
                   <article key={template.key} className="landing-prestige__role-card">
@@ -159,7 +149,7 @@ export default function WireAgentLanding() {
                       to={`/signup?plan=personal&template=${template.key}`}
                       onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
-                      Wire this role
+                      Build this role
                       <ArrowRight aria-hidden="true" />
                     </Link>
                   </article>
@@ -174,7 +164,6 @@ export default function WireAgentLanding() {
                 <p>PRICING</p>
                 <h2>BUILD FREE. GO LIVE WHEN IT EARNS THE LINE.</h2>
               </header>
-
               <div className="landing-prestige__price-grid">
                 {PUBLIC_PLANS.map(({ id, plan }) => {
                   const free = id === "personal";
@@ -197,11 +186,7 @@ export default function WireAgentLanding() {
                             ? "1 private Bot"
                             : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
                         </li>
-                        <li>
-                          {free
-                            ? "Private simulation"
-                            : `${plan.voice_minutes_monthly} call minutes`}
-                        </li>
+                        <li>{free ? "Private simulation" : `${plan.voice_minutes_monthly} call minutes`}</li>
                         <li>
                           {free
                             ? "Activate when ready"
@@ -222,7 +207,7 @@ export default function WireAgentLanding() {
             </div>
           </section>
 
-          <section className="landing-prestige__trust" aria-label="WIRELINE trust and control">
+          <section className="landing-prestige__trust" aria-label="BotBound trust and control">
             <div className="landing-prestige__rail landing-prestige__trust-inner">
               <div>
                 <ShieldCheck aria-hidden="true" />
@@ -235,7 +220,6 @@ export default function WireAgentLanding() {
               </nav>
             </div>
           </section>
-
           <LandingFooter />
         </div>
       </main>

@@ -42,11 +42,13 @@ describe("native unified Bot workspace surfaces", () => {
     expect(`${app}\n${setup}`).not.toMatch(mojibake);
   });
 
-  it("keeps Android Ask Wireline selectable chips buildable and operationally worded", () => {
+  it("keeps Android Ask BotBound selectable chips buildable and operationally worded", () => {
     const ask = read("android/app/src/main/java/com/wireline/app/ui/ask/AskWirelineScreen.kt");
-    expect(ask).toContain("val isSelected = agent.id == selectedAgentId");
-    expect(ask).toContain("Review them in Calls.");
-    expect(ask).toContain("Try these commands:");
+    expect(ask).toContain("selectedAgentId");
+    expect(ask).toContain("onClick = { selectedAgentId = bot.id }");
+    expect(ask).toContain("containerColor = if (bot.id == selectedAgent?.id)");
+    expect(ask).toContain("Open Calls to review them.");
+    expect(ask).toContain("ASK BOTBOUND");
     expect(ask).not.toContain("main console");
     expect(ask).not.toMatch(mojibake);
   });

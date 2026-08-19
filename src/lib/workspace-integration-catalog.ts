@@ -1,4 +1,5 @@
 import type { ToolIntegration } from "./agent-capabilities";
+import { BOTBOUND_BRAND_NAME } from "./brand";
 
 export type WorkspaceIntegrationReadiness = "live" | "beta" | "planned" | "platform";
 
@@ -24,7 +25,7 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     family: "Device integration",
     purpose: "Native Account Holder entrypoint for asking an agent to act from iOS.",
     detail: "Trigger agents via iOS Intents, Action Button, and Lock Screen.",
-    capabilities: ["Ask Wireline", "Place calls", "Summarize recent", "Follow-ups"],
+    capabilities: [`Ask ${BOTBOUND_BRAND_NAME}`, "Place calls", "Summarize recent", "Follow-ups"],
     agentScope: "Account Holder-owned device actions and approved mobile handoffs.",
     guardrail:
       "Not included in customer-facing default agents; each native action remains user-owned.",
@@ -68,19 +69,19 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
   },
   {
     id: "twilio",
-    label: "Twilio Messaging",
-    family: "Messaging",
-    purpose: "SMS, phone intelligence, and imported number support behind voice agents.",
+    label: "BotBound Calling & Messaging",
+    family: "Communication infrastructure",
+    purpose: "Managed phone numbers, PSTN transport, SMS, and phone intelligence for Bots.",
     detail:
-      "Text follow-ups and phone-number checks while Twilio and xAI Direct SIP own live PSTN. WhatsApp stays private beta until an ONLINE Twilio sender and approved templates are live.",
-    capabilities: ["SMS", "Phone lookup", "Number import"],
+      "BotBound provisions the carrier layer automatically. OpenAI Realtime owns managed live-voice intelligence; Twilio carries phone and SMS traffic. WhatsApp stays private beta until an approved sender and templates are live.",
+    capabilities: ["Managed phone numbers", "SMS", "Phone lookup", "Number import"],
     agentScope:
-      "Send consented follow-ups, validate phone numbers, and support call-line provisioning.",
+      "Carry consented calls and texts, validate phone numbers, and support managed line provisioning.",
     guardrail:
-      "Messaging actions require consent context, DNC enforcement, and carrier-compliant copy.",
+      "Calling and messaging remain behind consent, DNC, spend, entitlement, and carrier-compliance controls.",
     readiness: "platform",
     nextStep:
-      "Keep Twilio as the messaging and fallback telephony substrate; do not move live voice off Vapi yet.",
+      "Keep Twilio as BotBound's carrier substrate while OpenAI Realtime remains the managed voice runtime.",
     toolIntegrations: ["twilio"],
     connection: "platform",
   },
@@ -273,23 +274,6 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     readiness: "live",
     nextStep:
       "Add deliverability diagnostics and mailbox-health copy before adding another consumer mail provider.",
-    connection: "workspace",
-  },
-  {
-    id: "agentmail",
-    label: "AgentMail",
-    family: "Email",
-    purpose:
-      "Dedicated API inbox for agent send and receive without a human Gmail or Outlook grant.",
-    detail: "Tenant-owned AgentMail org key stored encrypted on the mailbox row.",
-    capabilities: ["Mailbox connection", "Follow-up"],
-    agentScope:
-      "Fetch and send mail through AgentMail IMAP/SMTP after the Account Holder pastes an org API key. Inbound delivery is subscribed automatically on connect.",
-    guardrail:
-      "Never store a shared AgentMail org key or webhook secret in platform env. Each tenant pastes their own key in Connections.",
-    readiness: "live",
-    nextStep:
-      "Keep custom-domain DNS on the tenant AgentMail org; do not route founder mail through a platform key.",
     connection: "workspace",
   },
 ];

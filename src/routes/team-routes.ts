@@ -91,10 +91,6 @@ router.post(
       throw AppError.fromHttpStatus(400, "You already own this workspace.");
     }
 
-    // Role-grant hierarchy: the invite enum already caps at admin, but the
-    // SOC2 grant rule (granter strictly above target) was never enforced
-    // here, an admin could mint peer admins. requirePermission cached the
-    // granter's resolved role on req.role.
     const granterRole = (req as { role?: AccessRole }).role;
     const targetRole = resolveStoredRole(role || "member");
     if (!granterRole || !canGrantRole(granterRole, targetRole)) {
@@ -162,15 +158,20 @@ router.post(
       const acceptPath = `/accept-invite#token=${encodeURIComponent(plaintextToken)}`;
       const inviteUrl = `${appUrl}${acceptPath}`;
       const invitedBy = req.user.email || "A colleague";
-      const subject = `Invitation to join ${invitedBy} on Wireline`;
+      const subject = `${invitedBy} invited you to BotBound`;
       const html = `
-        <h1>You've been invited</h1>
-        <p>${escapeHtml(invitedBy)} has invited you to a shared Wireline workspace.</p>
-        <p><a href="${escapeAttribute(inviteUrl)}" style="padding: 10px 20px; background: #5B4CFF; color: #fff; text-decoration: none; border-radius: 5px;">Accept invitation</a></p>
-        <p>This invitation expires in seven days and only works for ${escapeHtml(email)}.</p>
+        <div style="margin:0;padding:32px;background:#0A0A0E;color:#F5F4F8;font-family:Inter,Arial,sans-serif;">
+          <div style="max-width:560px;margin:0 auto;padding:28px;border:1px solid #262430;border-radius:16px;background:#141319;">
+            <div style="font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:24px;">Bot<span style="color:#C4B5FD;">Bound</span></div>
+            <h1 style="margin:0 0 12px;font-size:26px;line-height:1.12;letter-spacing:-.03em;">Join the workspace</h1>
+            <p style="margin:0 0 24px;color:#B6B1C6;line-height:1.6;">${escapeHtml(invitedBy)} invited you to a shared BotBound workspace.</p>
+            <p style="margin:0 0 24px;"><a href="${escapeAttribute(inviteUrl)}" style="display:inline-block;padding:12px 18px;background:#A78BFA;color:#0E0B16;text-decoration:none;border-radius:10px;font-weight:700;">Accept invitation</a></p>
+            <p style="margin:0;color:#8B87A0;font-size:13px;line-height:1.55;">This invitation expires in seven days and only works for ${escapeHtml(email)}.</p>
+          </div>
+        </div>
       `;
       const text = [
-        "You've been invited to a shared Wireline workspace.",
+        "You've been invited to a shared BotBound workspace.",
         "",
         `Accept invitation: ${inviteUrl}`,
         "",

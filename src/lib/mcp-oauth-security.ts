@@ -21,7 +21,7 @@ export function mcpResourceUrl(req?: Request): string {
 export function mcpTokenPepper(): string {
   const pepper = process.env.MCP_OAUTH_TOKEN_PEPPER?.trim();
   if (!pepper || pepper.length < 32) {
-    throw AppError.fromHttpStatus(503, "Wireline account linking is not configured.");
+    throw AppError.fromHttpStatus(503, "BotBound account linking is not configured.");
   }
   return pepper;
 }
@@ -30,7 +30,6 @@ export function hashMcpOAuthToken(value: string): string {
   return createHmac("sha256", mcpTokenPepper()).update(value, "utf8").digest("hex");
 }
 
-/** Reject legacy rows issued before RFC 9728 resource binding shipped. */
 export function isMcpResourceBound(resource: string | null | undefined, req?: Request): boolean {
   return resource === mcpResourceUrl(req);
 }
@@ -45,22 +44,6 @@ export async function revokeMcpAccessTokensForClient(
   `);
 }
 
-/**
- * Drop every MCP grant this account holds — access tokens, refresh tokens, and
- * any authorization code still in flight.
- *
- * Nothing in the MCP bearer path consults the session fence: a request is
- * authorized by the token row's `expires_at` alone. That is correct for normal
- * operation (signing out of the web app should not unplug someone's ChatGPT
- * connector, exactly as it does not unplug a Google OAuth app) but it means the
- * grants are a second, independent set of credentials that a session-version
- * bump cannot reach. Password reset therefore has to reach them explicitly, or
- * the one action a customer takes when they believe they are compromised leaves
- * the attacker's connector holding the account's full tool surface.
- *
- * Refresh tokens go too. Deleting only the access token would leave the holder
- * able to mint a fresh one within seconds.
- */
 export async function revokeAllMcpGrantsForUser(userId: string): Promise<void> {
   await Promise.all([
     drizzle.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE user_id = ${userId}::uuid`),
@@ -69,11 +52,6 @@ export async function revokeAllMcpGrantsForUser(userId: string): Promise<void> {
   ]);
 }
 
-/**
- * Delete expired OAuth rows so codes, access tokens, and refresh tokens do
- * not accumulate forever. Called opportunistically on token issuance; the
- * expires_at indexes keep each sweep cheap.
- */
 export async function pruneExpiredMcpOAuthRows(): Promise<void> {
   await Promise.all([
     drizzle.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()`),
@@ -109,7 +87,7 @@ export async function assertMcpDraftWriteRateLimit(userId: string): Promise<void
   });
   if (!limit.allowed) {
     throw AppError.tooManyRequests(
-      "Wireline agent draft changes are temporarily rate-limited. Try again in a few minutes.",
+      "BotBound Bot draft changes are temporarily rate-limited. Try again in a few minutes.",
     );
   }
 }

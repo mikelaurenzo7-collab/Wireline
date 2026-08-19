@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { googleApis } from "../../lib/google-apis";
+import { BOTBOUND_BRAND_NAME } from "../../lib/brand";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -20,10 +21,6 @@ import {
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 
 const router = express.Router();
-
-// ────────────────────────────────────────────────────────────────────
-//  Google OAuth
-// ────────────────────────────────────────────────────────────────────
 
 router.get(
   "/api/oauth/google/url",
@@ -72,7 +69,6 @@ router.get(
       oauth2Client.setCredentials(tokens);
 
       const google = await googleApis();
-
       const oauth2 = google.oauth2({ auth: oauth2Client, version: "v2" });
       const userInfo = await oauth2.userinfo.get();
       const emailAddress = userInfo.data.email?.trim().toLowerCase();
@@ -84,7 +80,7 @@ router.get(
         return res
           .status(401)
           .send(
-            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Google again from Settings.",
+            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google again from Settings.`,
           );
       }
 
@@ -95,10 +91,6 @@ router.get(
             ? (tokens as any).scope.join(" ")
             : "";
 
-      // Persist tokens via Drizzle. The previous code used `db.from('table')`
-      // Supabase-client syntax against a Drizzle handle, which throws
-      // `db.from is not a function` at runtime — every Google OAuth callback
-      // was silently failing before this fix.
       if (!tokens.access_token) throw new Error("Google token response omitted access_token.");
       const accessTokenGoogle = encryptSecret(tokens.access_token);
       const refreshTokenGoogle = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
@@ -146,8 +138,6 @@ router.get(
       const safeOrigin = JSON.stringify(targetOrigin);
       const cspNonce = generateCspNonce();
 
-      // Note: CSP_CONNECT_SRCS should ideally be in server-context or passed.
-      // For now, we'll hardcode or use the default.
       res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
       res.send(`
       <html><body><script nonce="${cspNonce}">

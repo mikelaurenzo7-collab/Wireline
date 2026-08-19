@@ -14,23 +14,23 @@ export const BRAND_SYSTEM = {
   proofLoop: ["Build", "Configure", "Launch", "Improve"],
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
-    "Use Phone Bot as the public acquisition wedge; Call, Email, and Text are the compact channel proof.",
+    "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
     "Treat workspace architecture as product proof, never as a marketing headline.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
-    "Make clear only when useful that one Bot can call, email, and text with shared context.",
+    "Make clear only when useful that one Bot can call, text, and email with shared context.",
     "Let customers configure the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
-    "State that the included WIRELINE number applies to paid plans so the free builder is never misrepresented.",
+    "State that the included BotBound number applies to paid plans so the free builder is never misrepresented.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after calls, texts, emails, handoffs, campaigns, and follow-up when proof helps the decision.",
     "Never require customers to classify a Bot as personal or business before describing the work.",
     "Public headlines must create desire, tension, leverage, or curiosity before they explain architecture.",
     "Leave room for curiosity; do not explain every capability before account entry.",
-    "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase.",
-    "Render the WIRELINE brand name in uppercase everywhere it is customer-visible, including prose, metadata, and legal copy.",
+    "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase when the design system calls for cased controls.",
+    "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
-    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case apart from the WIRELINE brand name.",
+    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
     "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, repetitive descriptor copy, and stacked claims on public buying surfaces.",
@@ -97,25 +97,25 @@ export const AGENT_DIRECTION_MODES = {
     eyebrow: "Bot for inbound demand",
     loop: ["Answer", "Qualify", "Act", "Log"],
     promise:
-      "Answers live demand by phone, continues by email or text when useful, and routes only what needs a person.",
+      "Answers live demand by phone, continues by text or email when useful, and routes only what needs a person.",
   },
   hybrid: {
     label: "All-Purpose Bot",
     eyebrow: "Bot for flexible operations",
     loop: ["Answer", "Act", "Follow Up", "Sync"],
     promise:
-      "Keeps calls, email, text, sales, service, scheduling, and follow-through moving under your direction.",
+      "Keeps calls, text, email, sales, service, scheduling, and follow-through moving under your direction.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid Bot includes a WIRELINE number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Every paid Bot includes a BotBound number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
   headline: "A Bot That Moves Growth Work Forward",
   subline:
-    "Start with a Sales Associate Bot that researches leads, calls, handles the conversation, emails, texts, books, follows up, and logs proof. Change the role or add another Bot only when the work calls for it.",
+    "Start with a Sales Associate Bot that researches leads, calls, handles the conversation, texts, emails, books, follows up, and logs proof. Change the role or add another Bot only when the work calls for it.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -125,9 +125,9 @@ export const OUTBOUND_WEDGE = {
     "Inbound conversion",
   ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Researches", "Calls", "Emails", "Texts", "Books", "Reports"],
+  proof: ["Researches", "Calls", "Texts", "Emails", "Books", "Reports"],
   differentiator:
-    "WIRELINE turns calls, email, and text into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
+    "BotBound turns calls, text, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
     "Build one capable Bot or a coordinated roster. Configure each role, connect the right channels, and improve from logged outcomes.",
 } as const;
@@ -137,7 +137,7 @@ export const MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   primaryCta: "Start Free",
   subline: BOT_BRAND.promise,
-  channelProof: ["Call", "Email", "Text"],
+  channelProof: ["Call", "Text", "Email"],
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
@@ -159,17 +159,17 @@ export const CLIENT_SURFACE_POSTURE = {
 
 /** Retained export name for compatibility with older marketing modules. */
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "PHONE BOTS FOR CALLS, EMAIL, AND TEXT",
-  proof: ["Answers calls", "Makes calls", "Sends email", "Continues by text", "Logs outcomes"],
+  eyebrow: "PHONE BOTS FOR CALLS, TEXT, AND EMAIL",
+  proof: ["Answers calls", "Makes calls", "Sends texts", "Continues by email", "Logs outcomes"],
   differentiator:
-    "WIRELINE keeps valuable conversations moving across calls, email, and text.",
+    "BotBound keeps valuable conversations moving across calls, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
 export const WORKSPACE_VOICE = {
   createHeadline: "Build Your Bot",
   runHeadline: "Your Bot Is Live",
-  emptyCue: "Describe the job. Connect calls, email, text, knowledge, and tools.",
+  emptyCue: "Describe the job. Connect calls, text, email, knowledge, and tools.",
   configurePrompts: ["Adjust the greeting", "Change the tone", "Add a rule"],
   testPrompts: [
     "What can you help with?",
@@ -184,7 +184,7 @@ export const PRODUCT_VERSATILITY = {
   tagline:
     "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
-    "Bots for calling, email, texting, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
+    "Bots for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
   hero: "Give the work a Bot. Step in only when you want to.",
 } as const;
 
@@ -195,14 +195,14 @@ export const PRODUCT_POSTURE = {
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, email, text, tools, and outcomes under one Bot.",
+    emptyBody: "Calls, text, email, tools, and outcomes under one Bot.",
   },
   business: {
     badge: "Bot",
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, email, text, tools, and outcomes under one Bot.",
+    emptyBody: "Calls, text, email, tools, and outcomes under one Bot.",
   },
 } as const;
 
@@ -213,7 +213,7 @@ export function formatAgentRoleLabel(role?: string | null): string {
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
-  "WIRELINE Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, WIRELINE logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
+  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const total = personalCount + businessCount;

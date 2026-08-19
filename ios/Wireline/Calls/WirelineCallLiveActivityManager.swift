@@ -17,7 +17,7 @@ final class WirelineCallLiveActivityManager {
         let assistant = assistantName?.trimmingCharacters(in: .whitespacesAndNewlines)
         let attributes = WirelineCallActivityAttributes(
             callId: callId,
-            assistantName: (assistant?.isEmpty == false) ? assistant! : "Wireline"
+            assistantName: (assistant?.isEmpty == false) ? assistant! : "BotBound"
         )
         let content = ActivityContent(
             state: WirelineCallActivityAttributes.ContentState(

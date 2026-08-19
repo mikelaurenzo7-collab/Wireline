@@ -150,7 +150,7 @@ function safeFileName(value: string): string {
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
-  return (cleaned || `Wireline Report ${Date.now()}`).slice(0, 180);
+  return (cleaned || `BotBound Report ${Date.now()}`).slice(0, 180);
 }
 
 async function uploadToGoogleDrive(input: {

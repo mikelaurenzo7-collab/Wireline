@@ -242,7 +242,7 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
   }
 
   const unhealthy = run.lines.filter((l) => !l.numberOk || !l.assistantOk);
-  const subject = `🚨 Wireline Demo Line Alert, ${unhealthy.length} line${unhealthy.length !== 1 ? "s" : ""} degraded`;
+  const subject = `🚨 BotBound Demo Line Alert, ${unhealthy.length} line${unhealthy.length !== 1 ? "s" : ""} degraded`;
 
   const textLines = [
     "Demo-Line Canary detected issues:",

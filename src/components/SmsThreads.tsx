@@ -1,49 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
-import { AnimatePresence, motion } from "motion/react";
-import {
-  ArrowLeft,
-  Check,
-  Copy,
-  Loader2,
-  MessageSquare,
-  Phone,
-  RefreshCw,
-  Send,
-  Sparkles,
-} from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint. */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ChevronDown, Loader2, MessageSquare, RefreshCw, Send } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
-import { cn } from "../lib/utils";
-import {
-  OPS_CHANNEL_EMPTY,
-  OPS_CHANNEL_TOOLBAR,
-  WL_CHANNEL_CLASSES,
-} from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import { Button, EmptyState, Input, Skeleton } from "./atoms";
-import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
-import ClientToolbar from "./layout/ClientToolbar";
-import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import SmsOutcomePanel from "./SmsOutcomePanel";
-import {
-  ChannelInboxDetailPane,
-  ChannelInboxGrid,
-  ChannelInboxListPane,
-  resolveChannelListNavigationIndex,
-} from "./layout/ChannelInbox";
 
 interface SmsThread {
   id: string;
   customer_number: string;
   status: string;
-  summary?: string | null;
   unread_count: number;
   last_message_at: string;
-  created_at: string;
 }
 
 interface SmsMessage {
@@ -51,105 +23,88 @@ interface SmsMessage {
   direction: "in" | "out";
   body: string;
   created_at: string;
-  twilio_sid?: string | null;
 }
 
 function formatSmsTime(value: string) {
-  return formatDate(value, { hour: "numeric", minute: "2-digit" }, "N/A", "en-US");
-}
-
-function SmsLoadingState() {
-  return (
-    <div className="space-y-3 p-4" aria-busy="true" aria-live="polite">
-      <Skeleton shape="text" className="h-4 w-28" />
-      <Skeleton shape="surface" className="h-16 w-full" />
-      <Skeleton shape="surface" className="h-16 w-5/6" />
-      <Skeleton shape="surface" className="h-16 w-full" />
-    </div>
+  return formatDate(
+    value,
+    { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
+    "",
+    "en-US",
   );
 }
 
-/** Two-way SMS inbox. Delivery semantics stay server-owned; this surface renders their state clearly. */
-export default function SmsThreads({ embedded = false }: { embedded?: boolean }) {
+export default function SmsThreads({
+  embedded = false,
+  agentId,
+}: {
+  embedded?: boolean;
+  agentId?: string | null;
+}) {
   const { success, error: toastError } = useToast();
   const [threads, setThreads] = useState<SmsThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
   const [threadErr, setThreadErr] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [messagesLoading, setMessagesLoading] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const autoSelectedDesktopRef = useRef(false);
-  // Controller for whatever thread is currently open. Switching threads aborts
-  // it, which is what lets the post-send refresh below be superseded too.
   const activeThreadFetchRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef(true);
-  const threadButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [toastError]);
 
   const fetchThreads = useCallback(async () => {
     setFetchErr(null);
+    setLoading(true);
     try {
-      const response = await authFetch("/api/sms/threads");
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
-      if (!mountedRef.current) return;
+      const endpoint = agentId
+        ? `/api/sms/threads?agent_id=${encodeURIComponent(agentId)}`
+        : "/api/sms/threads";
+      const response = await authFetch(endpoint);
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Could not load texts.");
       const rows = (body.threads || []) as Record<string, unknown>[];
-      setThreads(
-        rows.map((row) => ({
-          id: String(apiField(row, "id") ?? ""),
-          customer_number: apiStr(row, "customer_number", "Unknown number"),
-          status: apiStr(row, "status", "open"),
-          summary: apiStr(row, "summary") || null,
-          unread_count: apiNum(row, "unread_count"),
-          last_message_at: String(apiField(row, "last_message_at") ?? ""),
-          created_at: String(apiField(row, "created_at") ?? ""),
-        })),
+      const next = rows.map((row) => ({
+        id: String(apiField(row, "id") ?? ""),
+        customer_number: apiStr(row, "customer_number", "Unknown number"),
+        status: apiStr(row, "status", "open"),
+        unread_count: apiNum(row, "unread_count"),
+        last_message_at: String(apiField(row, "last_message_at") ?? ""),
+      }));
+      setThreads(next);
+      setActiveId((current) =>
+        current && next.some((thread) => thread.id === current) ? current : null,
       );
-    } catch (error: any) {
-      if (!mountedRef.current) return;
-      const message = error?.message || "Could not load SMS threads.";
+    } catch (reason: any) {
+      const message = reason?.message || "Could not load texts.";
       setFetchErr(message);
-      toastError("Failed to load SMS inbox", message);
+      toastError("Texts unavailable", message);
     } finally {
-      if (mountedRef.current) setLoading(false);
+      setLoading(false);
     }
-  }, [toastError]);
+  }, [agentId, toastError]);
 
-  // Same race the email inbox carried: switching threads fires overlapping
-  // requests, and last-writer-wins means an older response can paint its
-  // messages under the newer thread's header. The signal makes a superseded
-  // request drop its result instead.
   const fetchMessages = useCallback(
     async (threadId: string, signal?: AbortSignal) => {
       setMessagesLoading(true);
       setThreadErr(null);
       try {
         const response = await authFetch(`/api/sms/threads/${threadId}/messages`, { signal });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Could not load this conversation.");
-        const rows = (body.messages || []) as Record<string, unknown>[];
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Could not load this text thread.");
         if (signal?.aborted) return;
+        const rows = (body.messages || []) as Record<string, unknown>[];
         setMessages(
           rows.map((row) => ({
             id: String(apiField(row, "id") ?? ""),
             direction: apiField<string>(row, "direction") === "out" ? "out" : "in",
             body: apiStr(row, "body"),
             created_at: String(apiField(row, "created_at") ?? ""),
-            twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
           })),
         );
+
         const markReadResponse = await authFetch(`/api/sms/threads/${threadId}/mark-read`, {
           method: "POST",
           signal,
@@ -165,19 +120,15 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           const markReadBody = await markReadResponse.json().catch(() => ({}));
           toastError(
             "Unread status not updated",
-            markReadBody.error ||
-              "The conversation is open, but its unread badge could not be cleared.",
+            markReadBody.error || "This thread is open, but its unread badge could not be cleared.",
           );
         }
-      } catch (error: any) {
-        // A superseded request rejects with AbortError; surfacing it would put an
-        // error banner and a toast over the thread the reader actually opened.
+      } catch (reason: any) {
         if (signal?.aborted) return;
-        const message = error?.message || "Could not load this conversation.";
+        const message = reason?.message || "Could not load this text thread.";
         setThreadErr(message);
-        toastError("Failed to load thread", message);
+        toastError("Thread unavailable", message);
       } finally {
-        // The newer request already set this true.
         if (!signal?.aborted) setMessagesLoading(false);
       }
     },
@@ -185,19 +136,18 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   );
 
   useEffect(() => {
+    setActiveId(null);
+    setMessages([]);
     void fetchThreads();
   }, [fetchThreads]);
 
   useEffect(() => {
-    if (loading || !threads.length || autoSelectedDesktopRef.current) return;
-    if (!window.matchMedia("(min-width: 1024px)").matches) return;
-    autoSelectedDesktopRef.current = true;
-    setActiveId(threads[0].id);
-  }, [loading, threads]);
-
-  useEffect(() => {
-    setMessages([]);
-    if (!activeId) return;
+    activeThreadFetchRef.current?.abort();
+    if (!activeId) {
+      setMessages([]);
+      setThreadErr(null);
+      return;
+    }
     const controller = new AbortController();
     activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
@@ -209,21 +159,22 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   useEffect(() => {
     if (!messagesEndRef.current || !messages.length) return;
-    try {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    } catch {
-      /* route transition */
-    }
+    messagesEndRef.current.scrollIntoView({ block: "end" });
   }, [messages]);
 
-  const handleSend = async () => {
+  const visibleThreads = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    if (!normalized) return threads;
+    return threads.filter((thread) =>
+      `${thread.customer_number} ${thread.status}`.toLowerCase().includes(normalized),
+    );
+  }, [search, threads]);
+
+  const activeThread = threads.find((thread) => thread.id === activeId) || null;
+
+  async function sendReply() {
     if (!activeId || !reply.trim() || sending) return;
     const threadId = activeId;
-    // Captured NOW, while the ref still holds the controller for the thread
-    // being replied to. Reading the ref after the await would hand this refresh
-    // whichever thread the reader has since opened — a live, un-aborted signal
-    // belonging to a different conversation, which is the exact cross-thread
-    // paint this guard exists to prevent.
     const sentThreadController = activeThreadFetchRef.current;
     const body = reply.trim();
     const optimistic: SmsMessage = {
@@ -231,26 +182,21 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       direction: "out",
       body,
       created_at: new Date().toISOString(),
-      twilio_sid: null,
     };
 
     setSending(true);
     setThreadErr(null);
     setReply("");
     setMessages((current) => [...current, optimistic]);
+
     try {
       const response = await authFetch(`/api/sms/threads/${threadId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
       });
-      const result = await response.json().catch(() => ({}) as Record<string, string>);
-      // The server always explains WHY a reply did not go out, on one of two
-      // envelopes: a carrier/provider rejection rides `reason` on a 200, while
-      // a compliance stop — number on DNC, federal DNC not configured — throws
-      // an AppError and rides `error`. Reading only `reason` collapsed every
-      // compliance block into a bare "Send failed", so the account holder had
-      // no way to tell "this number opted out" from "try again".
+      const result = await response.json().catch(() => ({}));
+
       if (
         result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS" ||
         result.provider_outcome_ambiguous === true
@@ -258,357 +204,217 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         const warning =
           result.reason ||
           "Delivery status is unknown. The carrier may have accepted this message. Do not resend it; contact support.";
-        // The optimistic bubble is not evidence of carrier acceptance. Remove
-        // it, but deliberately leave the composer empty: restoring the text
-        // would turn the natural next click into a duplicate customer message.
         setMessages((current) => current.filter((message) => message.id !== optimistic.id));
         setThreadErr(warning);
         toastError("SMS status unknown. Do not resend", warning);
         return;
       }
+
       if (!response.ok || !result.ok) {
-        throw new Error(result.reason || result.error || "Send failed");
+        throw new Error(result.reason || result.error || "Text could not be sent.");
       }
+
       success("SMS queued", "The carrier accepted the message for delivery.");
-      // Carry the sent thread's own signal, so switching threads aborts this
-      // refresh instead of letting it paint thread A's messages under thread
-      // B's header and mark A read.
-      await Promise.all([fetchMessages(threadId, sentThreadController?.signal), fetchThreads()]);
-    } catch (error: any) {
+      await Promise.all([
+        fetchMessages(threadId, sentThreadController?.signal),
+        fetchThreads(),
+      ]);
+    } catch (reason: any) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
       setReply(body);
-      const message = error?.message || "Try again.";
+      const message = reason?.message || "Try again.";
       setThreadErr(message);
       toastError("SMS send failed", message);
     } finally {
       setSending(false);
     }
-  };
+  }
 
-  const activeThread = threads.find((thread) => thread.id === activeId);
-  const query = search.trim().toLowerCase();
-  const visibleThreads = query
-    ? threads.filter(
-        (thread) =>
-          thread.customer_number.toLowerCase().includes(query) ||
-          (thread.summary || "").toLowerCase().includes(query),
-      )
-    : threads;
-  const activeThreadIndex = visibleThreads.findIndex((thread) => thread.id === activeId);
-
-  const copyNumber = async (value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      toastError("Copy failed", "Clipboard is unavailable in this browser.");
-    }
-  };
-
-  const refreshAction = (
-    <Button
-      type="button"
-      variant="secondary"
-      size="sm"
-      onClick={() => void fetchThreads()}
-      disabled={loading}
-    >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-      {OPS_CHANNEL_TOOLBAR.sms.refresh}
-    </Button>
-  );
-
-  const showInitialLoad = loading && !threads.length;
-
-  const listContent = () => {
-    if (loading) return <SmsLoadingState />;
-    if (fetchErr)
-      return (
-        <StatusNotice
-          tone="destructive"
-          title="Inbox unavailable"
-          action={
-            <Button type="button" variant="link" size="sm" onClick={() => void fetchThreads()}>
-              Retry
-            </Button>
-          }
-        >
-          {fetchErr}
-        </StatusNotice>
-      );
-    if (!threads.length)
-      return (
-        <EmptyState
-          icon={<MessageSquare className="size-5" />}
-          title={OPS_CHANNEL_EMPTY.sms.title}
-          description="SMS conversations will appear here after messaging is connected."
-          action={
-            <Button asChild>
-              <Link to="/settings/phone">Review SMS setup</Link>
-            </Button>
-          }
-          density="compact"
-        />
-      );
-    if (!visibleThreads.length)
-      return (
-        <EmptyState
-          icon={<Sparkles className="size-5" />}
-          title="No matches"
-          action={
-            <Button type="button" variant="secondary" onClick={() => setSearch("")}>
-              Clear search
-            </Button>
-          }
-          density="compact"
-        />
-      );
-
-    return (
-      <div className="space-y-1.5" role="listbox" aria-label="SMS threads">
-        <AnimatePresence>
-          {visibleThreads.map((thread, index) => (
-            <motion.button
-              key={thread.id}
-              type="button"
-              role="option"
-              aria-selected={activeId === thread.id}
-              aria-controls="sms-thread-detail"
-              aria-label={`SMS thread with ${thread.customer_number}`}
-              tabIndex={activeId === thread.id || (!activeId && index === 0) ? 0 : -1}
-              ref={(node) => {
-                threadButtonRefs.current[index] = node;
-              }}
-              onClick={() => setActiveId(thread.id)}
-              onKeyDown={(event) => {
-                const currentIndex = activeThreadIndex >= 0 ? activeThreadIndex : index;
-                const nextIndex = resolveChannelListNavigationIndex(
-                  currentIndex,
-                  event.key,
-                  visibleThreads.length,
-                );
-                if (nextIndex == null) return;
-                event.preventDefault();
-                const nextThread = visibleThreads[nextIndex];
-                if (!nextThread) return;
-                setActiveId(nextThread.id);
-                threadButtonRefs.current[nextIndex]?.focus();
-              }}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                WL_CHANNEL_CLASSES.threadRow,
-                "text-left transition-colors hover:bg-[var(--wireline-color-surface-subtle)]",
-                activeId === thread.id && WL_CHANNEL_CLASSES.threadRowActive,
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm text-foreground truncate">
-                    {thread.customer_number}
-                  </p>
-                  {thread.summary ? (
-                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                      {thread.summary}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {formatDate(
-                      thread.last_message_at,
-                      { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
-                      "N/A",
-                      "en-US",
-                    )}
-                  </p>
-                </div>
-                {thread.unread_count > 0 ? (
-                  <span className="grid min-w-6 min-h-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
-                    {thread.unread_count}
-                  </span>
-                ) : null}
-              </div>
-            </motion.button>
-          ))}
-        </AnimatePresence>
-      </div>
-    );
-  };
+  const frameClass = embedded
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+    : "wl-paper flex min-h-[620px] flex-1 flex-col overflow-hidden";
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-background text-foreground">
-      {!embedded ? (
-        <ClientToolbar
-          left={
-            <span className="app-toolbar-stat">
-              {showInitialLoad
-                ? OPS_CHANNEL_TOOLBAR.sms.loading
-                : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
-            </span>
-          }
-          actions={refreshAction}
+    <section className={frameClass} aria-label="Text inbox">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 sm:px-4">
+        <SearchField
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onClear={() => setSearch("")}
+          placeholder="Search texts"
+          aria-label="Search text conversations"
+          className="min-w-0 flex-1"
         />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => void fetchThreads()}
+          disabled={loading}
+          aria-label="Refresh texts"
+        >
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+        </Button>
+      </div>
+
+      {fetchErr ? (
+        <StatusNotice tone="destructive" title="Texts unavailable" className="m-3 sm:m-4">
+          {fetchErr}
+        </StatusNotice>
       ) : null}
-      {showInitialLoad ? (
-        <ClientRouteLoading
-          icon={<MessageSquare className="size-7" />}
-          label={OPS_CHANNEL_TOOLBAR.sms.loading}
-          className="flex-1 min-h-0"
-        />
-      ) : (
-        <div className="flex-1 min-h-0">
-          <div className="h-full min-h-0">
-            <ChannelInboxGrid>
-              <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
-                {!loading && !fetchErr && threads.length > 0 ? (
-                  <div className="sticky top-0 z-10 bg-card/95 px-1 pb-3 backdrop-blur">
-                    <SearchField
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      onClear={() => setSearch("")}
-                      placeholder="Search number or summary"
-                      aria-label="Search SMS threads"
-                    />
-                  </div>
-                ) : null}
-                {listContent()}
-              </ChannelInboxListPane>
 
-              <ChannelInboxDetailPane detailOpen={!!activeId} label="Selected SMS conversation">
-                {!activeThread ? (
-                  <EmptyState
-                    icon={<MessageSquare className="size-5" />}
-                    title={OPS_CHANNEL_EMPTY.inboxDetail.title}
-                    density="compact"
-                  />
-                ) : (
-                  <motion.div
-                    id="sms-thread-detail"
-                    key={activeThread.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex h-full min-h-0 flex-col p-4 sm:p-5"
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
+        <div
+          className={`${activeId ? "hidden lg:block" : "block"} min-h-0 overflow-y-auto border-r border-border`}
+        >
+          {loading && !threads.length ? (
+            <div className="space-y-2 p-3" aria-busy="true">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="rounded-xl border border-border p-3">
+                  <Skeleton shape="text" className="h-4 w-32" />
+                  <Skeleton shape="text" className="mt-2 h-3 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : !visibleThreads.length && !fetchErr ? (
+            <EmptyState
+              icon={<MessageSquare className="size-5" aria-hidden="true" />}
+              title={agentId ? "No texts for this Bot" : "No texts yet"}
+              density="compact"
+            />
+          ) : (
+            <ul className="divide-y divide-border">
+              {visibleThreads.map((thread) => (
+                <li key={thread.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveId(thread.id)}
+                    aria-pressed={activeId === thread.id}
+                    className={`w-full px-4 py-3.5 text-left transition-colors ${
+                      activeId === thread.id ? "bg-primary/7" : "hover:bg-muted/45"
+                    }`}
                   >
-                    <header className="flex shrink-0 items-center gap-2 border-b border-border pb-3">
-                      <Phone className="size-4 text-primary" />
-                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
-                        {activeThread.customer_number}
+                    <div className="flex items-center justify-between gap-3">
+                      <strong className="truncate font-mono text-sm font-semibold text-foreground">
+                        {thread.customer_number}
+                      </strong>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {formatSmsTime(thread.last_message_at)}
                       </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => void copyNumber(activeThread.customer_number)}
-                        aria-label={copied ? "Number copied" : "Copy customer number"}
-                      >
-                        {copied ? (
-                          <Check className="size-4 text-[var(--wireline-color-status-success)]" />
-                        ) : (
-                          <Copy className="size-4" />
-                        )}
-                      </Button>
-                      <span className="text-xs font-medium uppercase tracking-[.08em] text-muted-foreground">
-                        Two-way
-                      </span>
-                    </header>
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      onClick={() => setActiveId(null)}
-                      className="mt-2 self-start px-0 lg:hidden"
-                    >
-                      <ArrowLeft className="size-3" /> Back
-                    </Button>
-
-                    <div
-                      className="flex-1 min-h-0 space-y-3 overflow-y-auto py-4"
-                      aria-live="polite"
-                      aria-label="SMS conversation"
-                    >
-                      {messagesLoading && !messages.length ? (
-                        <SmsLoadingState />
-                      ) : (
-                        messages.map((message) => (
-                          <ConversationMessage
-                            key={message.id}
-                            author={message.direction === "out" ? "assistant" : "customer"}
-                            channel="text"
-                            label={message.direction === "out" ? "You" : "Customer"}
-                            timestamp={formatSmsTime(message.created_at)}
-                          >
-                            {message.body}
-                          </ConversationMessage>
-                        ))
-                      )}
-                      <div ref={messagesEndRef} />
                     </div>
-
-                    <div className="shrink-0 border-t border-border pt-3">
-                      <SmsOutcomePanel
-                        threadId={activeThread.id}
-                        initialStatus={activeThread.status}
-                      />
-                      {sending ? (
-                        <ConversationActivity
-                          className="mb-3"
-                          state="active"
-                          title="Sending text message"
-                          detail="The message is queued while Wireline confirms delivery."
-                        />
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{thread.status || "Open"}</span>
+                      {thread.unread_count > 0 ? (
+                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                          {thread.unread_count}
+                        </span>
                       ) : null}
-                      {threadErr ? (
-                        <StatusNotice
-                          tone="destructive"
-                          className="mb-3"
-                          title="Message delivery needs attention"
-                        >
-                          {threadErr}
-                        </StatusNotice>
-                      ) : null}
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          value={reply}
-                          onChange={(event) => setReply(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" && !event.shiftKey) {
-                              event.preventDefault();
-                              void handleSend();
-                            }
-                          }}
-                          placeholder="Type a reply…"
-                          disabled={sending}
-                          aria-label="SMS reply"
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          onClick={() => void handleSend()}
-                          disabled={sending || !reply.trim()}
-                          aria-label="Send SMS reply"
-                        >
-                          {sending ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <Send className="size-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                        Sent from your Wireline number · TCPA opt-out applies · STOP keyword
-                        auto-honored.
-                      </p>
                     </div>
-                  </motion.div>
-                )}
-              </ChannelInboxDetailPane>
-            </ChannelInboxGrid>
-          </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
-    </div>
+
+        <div className={`${activeId ? "block" : "hidden lg:block"} min-h-0`}>
+          {!activeThread ? (
+            <EmptyState title="Select a conversation" density="compact" />
+          ) : (
+            <div className="flex h-full min-h-0 flex-col">
+              <header className="border-b border-border px-4 py-3 sm:px-5">
+                <button
+                  type="button"
+                  onClick={() => setActiveId(null)}
+                  className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary lg:hidden"
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  Texts
+                </button>
+                <h2 className="font-mono text-base font-semibold text-foreground">
+                  {activeThread.customer_number}
+                </h2>
+              </header>
+
+              {threadErr ? (
+                <StatusNotice tone="destructive" title="Conversation unavailable" className="m-3 sm:m-4">
+                  {threadErr}
+                </StatusNotice>
+              ) : null}
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                {messagesLoading ? (
+                  <div className="grid h-full place-items-center text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {messages.map((message) => (
+                      <ConversationMessage
+                        key={message.id}
+                        author={message.direction === "out" ? "assistant" : "customer"}
+                        label={message.direction === "out" ? "Agent" : activeThread.customer_number}
+                        channel="text"
+                        timestamp={formatSmsTime(message.created_at)}
+                      >
+                        {message.body}
+                      </ConversationMessage>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
+
+              <details className="group shrink-0 border-t border-border bg-card/35">
+                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
+                  <span>Outcome</span>
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <span className="max-w-28 truncate font-normal capitalize">
+                      {activeThread.status || "open"}
+                    </span>
+                    <ChevronDown
+                      className="size-3.5 transition-transform group-open:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </summary>
+                <div className="border-t border-border px-3 pt-3 sm:px-4">
+                  <SmsOutcomePanel
+                    threadId={activeThread.id}
+                    initialStatus={activeThread.status}
+                    onStatusChange={(status) =>
+                      setThreads((current) =>
+                        current.map((thread) =>
+                          thread.id === activeThread.id ? { ...thread, status } : thread,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              </details>
+
+              <form
+                className="flex gap-2 border-t border-border p-3 sm:p-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void sendReply();
+                }}
+              >
+                <Input
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value)}
+                  placeholder="Message"
+                  aria-label="Text reply"
+                  className="min-w-0 flex-1"
+                />
+                <Button type="submit" disabled={sending || !reply.trim()} aria-label="Send text">
+                  {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                </Button>
+              </form>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

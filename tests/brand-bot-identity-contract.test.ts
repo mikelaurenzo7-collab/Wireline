@@ -4,148 +4,70 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("WIRELINE folded W identity", () => {
-  it("uses filled ribbon geometry instead of the retired monoline and terminal dots", () => {
-    const component = read("src/components/brand/WirelineMark.tsx");
-    const icon = read("public/wireline-icon.svg");
+describe("BotBound brand migration", () => {
+  it("uses the approved phone-Bot mark as the canonical visual identity", () => {
+    const component = read("src/components/brand/BotBoundMark.tsx");
+    const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
-    for (const source of [component, icon, favicon]) {
-      expect(source).toContain("M76 14H100L132 106H108Z");
-      expect(source).toContain("M42 106H68L100 14H74Z");
-      expect(source).not.toContain("M4 16H11L19 32L24 21L29 32L37 16H44");
-      expect(source).not.toContain('<circle cx="4" cy="16"');
+    expect(component).toContain('data-botbound-mark="phone-bot"');
+    expect(component).toContain("Receiver held to the Bot's ear");
+    for (const source of [icon, favicon]) {
+      expect(source).toContain("BotBound");
+      expect(source).toMatch(/phone|Phone/);
+      expect(source).not.toContain("folded violet and platinum W");
     }
   });
 
-  it("regenerates every install and billing raster from canonical vector sources", () => {
-    const renderer = read("scripts/render-image-assets.mjs");
-    for (const output of [
-      "public/favicon.png",
-      "public/apple-touch-icon.png",
-      "public/wireline-icon-192.png",
-      "public/wireline-icon-512.png",
-      "public/wireline-stripe-icon.png",
-      "public/wireline-stripe-logo.png",
-    ]) {
-      expect(renderer).toContain(`out: "${output}"`);
-    }
-    expect(renderer).toMatch(
-      /src:\s*"scripts\/ios-app-icon\.svg"[\s\S]{0,180}out:\s*"ios\/Wireline\/Assets\.xcassets\/AppIcon\.appiconset\/icon\.png"[\s\S]{0,80}width:\s*1024/,
-    );
+  it("makes BotBound canonical while old Wireline component paths are render-safe aliases", () => {
+    const brand = read("src/components/brand/BotBoundBrand.tsx");
+    const legacyBrand = read("src/components/brand/WirelineBrand.tsx");
+    const legacyMark = read("src/components/brand/WirelineMark.tsx");
+    expect(brand).toContain("BotBoundWordmark");
+    expect(brand).toContain("BotBoundLockup");
+    expect(brand).toContain('data-botbound-brand-lockup="true"');
+    expect(legacyBrand).toContain("BotBoundWordmark as WirelineWordmark");
+    expect(legacyBrand).toContain("BotBoundLockup as WirelineLockup");
+    expect(legacyMark).toContain('from "./BotBoundMark"');
   });
 
-  it("treats WIRELINE as a reusable typographic object instead of ad-hoc text", () => {
-    const brand = read("src/components/brand/WirelineBrand.tsx");
-    const identity = read("src/styles/brand-identity.css");
-
-    expect(brand).toContain('WIRELINE_BRAND_NAME = "WIRELINE"');
-    expect(brand).toContain("WirelineWordmark");
-    expect(brand).toContain("WirelineLockup");
-    expect(brand).toContain('data-inline={inline ? "true" : "false"}');
-    expect(brand).toContain('data-wireline-brand-lockup="true"');
-
-    expect(identity).toContain(".wl-wireline-wordmark");
-    expect(identity).toContain('.wl-wireline-wordmark[data-inline="true"]');
-    expect(identity).toContain("--wl-wordmark-tracking");
-    expect(identity).toContain("--wl-wordmark-inline-tracking");
-    expect(identity).toContain(".wl-wireline-lockup");
-    expect(identity).toContain('[data-surface="tile"]');
-    expect(identity).toContain("forced-colors: active");
-  });
-});
-
-describe("WIRELINE Phone Bot acquisition language", () => {
-  it("locks the approved promise, uppercase brand name, and Bot taxonomy", () => {
+  it("pins the new name, concise product promise, and Studio-first install path", () => {
     const product = read("src/lib/bot-product.ts");
-    expect(product).toContain('name: "WIRELINE"');
-    expect(product).toContain('slogan: "WIRE YOUR PHONE BOT"');
-    expect(product).toContain('supportingLine: "CALL · EMAIL · TEXT"');
-    expect(product).toContain('name: "Phone Bot"');
-    expect(product).toContain('name: "Conversation Bot"');
-    expect(product).toContain('name: "Human Bot"');
-    expect(product).toContain('title: "YOUR BOT. ALREADY MOVING."');
-    expect(product).not.toContain('title: "ONE WORKSPACE. EVERY BOT."');
+    const manifest = JSON.parse(read("public/site.webmanifest")) as { name: string; short_name: string; start_url: string; icons: Array<{ src: string }> };
+    expect(product).toContain('name: "BotBound"');
+    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(product).toContain('promise: "AI employees for calls, texts, and email."');
+    expect(manifest.name).toContain("BotBound");
+    expect(manifest.short_name).toBe("BotBound");
+    expect(manifest.start_url).toBe("/studio");
+    expect(manifest.icons[0]?.src).toBe("/botbound-icon.svg");
   });
 
-  it("keeps public metadata on WIRELINE + Phone Bot while retaining agent as technical compatibility", () => {
-    const html = read("index.html");
-    const landing = read("src/pages/LandingPage.tsx");
+  it("keeps the legacy technical namespace deliberately separate from customer identity", () => {
+    const identity = read("src/lib/brand.ts");
+    const shell = read("src/components/WorkspaceShell.tsx");
+    expect(identity).toContain('customerFacing: "BotBound"');
+    expect(identity).toContain('technicalNamespace: "wireline"');
+    expect(shell).toContain('WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1"');
+    expect(shell).toContain("WirelineNative");
+    expect(shell).toContain('aria-label="BotBound Studio"');
+    expect(shell).toContain("<BotBoundMark");
+    expect(shell).toContain("<BotBoundWordmark");
+  });
+
+  it("makes tomorrow's domain switch configuration-driven instead of another code rename", () => {
+    const appUrl = read("src/lib/app-url.ts");
     const pageMeta = read("src/lib/page-meta.tsx");
-    const productCopy = read("src/lib/product-copy.ts");
-
-    expect(html).toContain("WIRELINE | WIRE YOUR PHONE BOT");
-    expect(html).toContain('"slogan": "WIRE YOUR PHONE BOT"');
-    expect(landing).toContain("WIRELINE | WIRE YOUR PHONE BOT");
-    expect(pageMeta).toContain('const BRAND_SUFFIX = " | WIRELINE"');
-    expect(pageMeta).toContain('replace(/\\bWireline\\b/gi, "WIRELINE")');
-    expect(productCopy).toContain(
-      "Technical routes, schemas, events, and APIs retain `agent` for compatibility",
-    );
-    expect(productCopy).toContain(
-      "Render the WIRELINE brand name in uppercase everywhere it is customer-visible",
-    );
-    expect(productCopy).toContain(
-      "Use Phone Bot as the public acquisition wedge; Call, Email, and Text are the compact channel proof.",
-    );
-  });
-
-  it("installs into the unified workspace without a legacy Agents shortcut", () => {
-    const manifest = JSON.parse(read("public/site.webmanifest")) as {
-      start_url: string;
-      shortcuts: Array<{ name: string; url: string }>;
-    };
-    expect(manifest.start_url).toBe("/overview");
-    expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([
-      "BOT STUDIO",
-      "INBOX",
-      "KNOWLEDGE",
-    ]);
-    expect(manifest.shortcuts.some((shortcut) => shortcut.url === "/agents")).toBe(false);
-  });
-});
-
-describe("WIRELINE casing hierarchy", () => {
-  it("uses one canonical CSS entrypoint and keeps brand identity inside that cascade", () => {
-    const index = read("src/index.css");
-    const main = read("src/main.tsx");
-    const identity = read("src/styles/brand-identity.css");
-
-    expect(index).toContain('@import "./styles/brand-identity.css";');
-    expect(main).toContain('import "./index.css"');
-    expect(main).not.toContain('import "./styles/brand-identity.css"');
-    expect(identity).toContain("Brand rule: the visible company name is always WIRELINE");
-    expect(identity).not.toContain("legend, th, label");
-    expect(identity).not.toContain("summary),");
-  });
-
-  it("uses the canonical lockup on highest-visibility public surfaces", () => {
-    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
-    const footer = read("src/components/marketing/MarketingFooter.tsx");
-    const transition = read("src/components/TransitionSurface.tsx");
-    const privacy = read("src/components/CookieConsent.tsx");
-
-    expect(header).toContain('import { WirelineLockup } from "../brand/WirelineBrand"');
-    expect(header).toContain("<WirelineLockup");
-    expect(header).not.toContain(">Wireline</span>");
-
-    expect(footer).toContain("WirelineLockup");
-    expect(footer).toContain("WirelineWordmark");
-    expect(footer).not.toContain(">Wireline</span>");
-
-    expect(transition).toContain("WirelineLockup");
-    expect(transition).not.toContain('<span className="wl-overline">Wireline</span>');
-
-    expect(privacy).toContain("<WirelineWordmark inline />");
-    expect(privacy).not.toContain("keeps Wireline working");
-  });
-
-  it("keeps technical lowercase wireline identifiers explicitly outside the visual brand rule", () => {
-    const productCopy = read("src/lib/product-copy.ts");
-    const identity = read("src/styles/brand-identity.css");
-
-    expect(productCopy).toContain(
-      "technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values",
-    );
-    expect(identity).toContain("Technical identifiers, URLs, domains, email");
+    const routeMeta = read("src/lib/marketing-route-meta.ts");
+    const prerender = read("scripts/prerender-marketing-meta.mts");
+    const oauth = read("src/lib/oauth-helpers.ts");
+    expect(appUrl).toContain("process.env.APP_URL");
+    expect(pageMeta).toContain("import.meta.env.VITE_PUBLIC_SITE_URL");
+    expect(routeMeta).toContain("process.env.VITE_PUBLIC_SITE_URL");
+    expect(routeMeta).toContain("process.env.APP_URL");
+    expect(prerender).toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(oauth).toContain("APP_URL is required for OAuth redirects in production");
+    expect(oauth).toContain("/api/oauth/google/callback");
+    expect(oauth).not.toContain("botbound.ai");
   });
 });

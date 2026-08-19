@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Home Screen + Lock Screen widget that launches the Ask Wireline surface.
+/// Home Screen + Lock Screen widget that launches the Ask BotBound surface.
 struct AskWirelineWidget: Widget {
     let kind = "AskWirelineWidget"
 
@@ -11,8 +11,8 @@ struct AskWirelineWidget: Widget {
                 .widgetURL(URL(string: "wireline://ask"))
                 .containerBackground(WidgetColors.panel, for: .widget)
         }
-        .configurationDisplayName("Ask Wireline")
-        .description("Start a Wireline request from your Home or Lock Screen.")
+        .configurationDisplayName("Ask BotBound")
+        .description("Start a BotBound request from your Home or Lock Screen.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 
@@ -47,7 +47,7 @@ private struct AskWirelineWidgetView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Ask Wireline").font(Brand.h1)
+                    Text("Ask BotBound").font(Brand.h1)
                     Text("Tap to start").font(Brand.caption).foregroundStyle(.secondary)
                 }
             }
@@ -59,7 +59,7 @@ private struct AskWirelineWidgetView: View {
                     .frame(width: 44, height: 44)
                     .background(WidgetColors.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ask Wireline").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
+                    Text("Ask BotBound").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
                     Text("Hand off a call, the wait, and the follow-up.")
                         .font(Brand.caption)
                         .foregroundStyle(WidgetColors.text2)
@@ -73,7 +73,7 @@ private struct AskWirelineWidgetView: View {
             .padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Ask Wireline, tap to start")
+            .accessibilityLabel("Ask BotBound, tap to start")
         default:
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "mic.fill")
@@ -82,7 +82,7 @@ private struct AskWirelineWidgetView: View {
                     .frame(width: 40, height: 40)
                     .background(WidgetColors.accentSoft, in: Circle())
                 Spacer()
-                Text("Ask Wireline")
+                Text("Ask BotBound")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(WidgetColors.text)
                     .minimumScaleFactor(0.8)
@@ -94,7 +94,7 @@ private struct AskWirelineWidgetView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Ask Wireline, tap to start")
+            .accessibilityLabel("Ask BotBound, tap to start")
         }
     }
 }

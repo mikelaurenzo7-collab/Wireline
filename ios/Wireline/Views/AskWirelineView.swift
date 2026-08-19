@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The in-app Ask surface mirrors Siri and widget entry points with native,
-/// concise actions that hand a request directly into real Wireline flows.
+/// concise actions that hand a request directly into real BotBound flows.
 struct AskWirelineView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var agents: [Agent] = []
@@ -15,7 +15,7 @@ struct AskWirelineView: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 10) {
                         Medallion(systemImage: "mic.fill", size: 60)
-                        Text("What can Wireline help with?")
+                        Text("What can BotBound help with?")
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(Brand.text)
                         Text("Dispatch a call, review live work, or clear follow-ups across the account.")
@@ -47,7 +47,7 @@ struct AskWirelineView: View {
                 .padding(.bottom, 32)
             }
             .background(Brand.canvas.ignoresSafeArea())
-            .navigationTitle("Ask Wireline")
+            .navigationTitle("Ask BotBound")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
@@ -86,7 +86,7 @@ struct AskWirelineView: View {
         isWorking = true
         defer { isWorking = false }
         do { answer = try await work() }
-        catch { answer = "Couldn't reach Wireline just now." }
+        catch { answer = "Couldn't reach BotBound just now." }
     }
 
     private func summary() async throws -> String {

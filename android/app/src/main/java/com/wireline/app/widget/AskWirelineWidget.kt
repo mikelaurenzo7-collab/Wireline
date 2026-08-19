@@ -51,11 +51,11 @@ class AskWirelineWidget : GlanceAppWidget() {
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_mic),
-                contentDescription = "Ask Wireline",
+                contentDescription = "Ask BotBound",
             )
             Spacer(modifier = GlanceModifier.height(8.dp))
             Text(
-                text = "Ask Wireline",
+                text = "Ask BotBound",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize,

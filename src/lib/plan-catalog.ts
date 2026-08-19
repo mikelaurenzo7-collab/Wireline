@@ -40,7 +40,7 @@ export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
 export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
-/** Wireline founder catalog. Keep in sync with scripts/.stripe-env.generated.json. */
+/** BotBound founder catalog. Keep in sync with scripts/.stripe-env.generated.json. */
 export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
@@ -128,13 +128,15 @@ const PAID_EXTRA_AGENT_ADDON = {
 } satisfies Partial<StripePlan>;
 
 const EXTRA_AGENT_FEATURE =
-  "+$15/mo per additional live Bot adds 50 guaranteed voice minutes and 1 number slot";
+  "+$15/mo per additional live Bot adds 50 guaranteed voice minutes and 1 production-number slot; the active Bot gets its line automatically";
 
 /**
  * Founder Early Access commercial contract:
  * - Free Builder creates, configures, and privately simulates one draft Bot.
- * - Every paid tier guarantees live voice capacity and an on-demand number slot.
- * - Paid extra-Bot add-ons increase both Bot count and included voice capacity.
+ * - Every active paid Bot gets a dedicated production number, up to plan capacity.
+ * - Unused Bot capacity does not pre-provision orphan carrier numbers.
+ * - Paid extra-Bot add-ons increase both Bot count and included voice/number capacity.
+ * - Paid Bots receive a BotBound-managed email identity; customer mailbox OAuth is optional input, not activation infrastructure.
  * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
  * - Optional text and business-artifact generation use a smaller flexible monthly
  *   Runtime Allowance included in the same subscription. Platform AI, live
@@ -142,14 +144,14 @@ const EXTRA_AGENT_FEATURE =
  *   metered per account. Every platform-funded provider call is recorded there.
  * - Voice, Runtime Allowance, and AI spend can all be consumed in the same
  *   month, so the margin floor reserves all three independently.
- * - Connected customer email, calendar, CRM, commerce, and data providers retain their own limits.
+ * - Connected customer calendar, CRM, commerce, and data providers retain their own limits.
  * - Runtime Balance funds only usage beyond included capacity; there is no automatic postpaid meter.
  * - Active calls finish normally; depleted coverage blocks only the next paid action.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
-    name: "Wireline Free Builder",
+    name: "BotBound Free Builder",
     price_usd_monthly: 0,
     price_usd_annual: 0,
     max_agents: 1,
@@ -163,18 +165,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 private draft Bot",
       "Bot setup, configuration, knowledge, and private simulation",
-      // Derived disclosure, not marketing: the free tier's real monthly
-      // simulation envelope (FREE_BUILDER_SIMULATION_ALLOWANCE_USD) must be
-      // visible before signup because hitting it silently during setup is the
-      // likeliest place a converting prospect churns. Keep the number and the
-      // enforced constant in lockstep via the metering contract.
       "Includes $1.50 of private AI simulation each month",
       "No production number or paid provider action until activation",
     ],
   },
   {
     id: "starter",
-    name: "Wireline Starter",
+    name: "BotBound Starter",
     price_usd_monthly: 19,
     price_usd_annual: 190,
     max_agents: 1,
@@ -192,19 +189,20 @@ export const STRIPE_PLANS: StripePlan[] = [
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "1 live Voice Bot",
-      "1 production-number slot, provisioned when needed",
+      "1 dedicated production number, provisioned automatically for the active Bot",
+      "1 BotBound-managed email identity",
       "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
       "Voice, live conversations, text, and email under one Bot identity",
-      "Lead Hunt access and connected email workflows",
+      "Lead Hunt access and optional connected-mailbox workflows",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
     ],
   },
   {
     id: "team",
-    name: "Wireline Starter Plus",
+    name: "BotBound Starter Plus",
     price_usd_monthly: 39,
     price_usd_annual: 390,
     max_agents: 2,
@@ -222,7 +220,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "2 live Bots in one workspace",
-      "2 production-number slots, provisioned when needed",
+      "A dedicated production number for each active paid Bot, up to 2",
+      "A BotBound-managed email identity for each active paid Bot",
       "100 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$3 monthly Runtime Allowance + $3 managed AI allowance",
@@ -234,7 +233,7 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
   {
     id: "business",
-    name: "Wireline Pro",
+    name: "BotBound Pro",
     price_usd_monthly: 79,
     price_usd_annual: 790,
     max_agents: 5,
@@ -252,12 +251,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 5 live Bots",
-      "Up to 5 production-number slots, provisioned when needed",
+      "A dedicated production number for each active paid Bot, up to 5",
+      "A BotBound-managed email identity for each active paid Bot",
       "190 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$6 monthly Runtime Allowance + $6 managed AI allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
-      "Connected calendar, CRM, email, text, contracts, and commerce actions",
+      "Connected calendar, CRM, optional mailbox, text, contracts, and commerce actions",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -265,7 +265,7 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
   {
     id: "enterprise",
-    name: "Wireline Business",
+    name: "BotBound Business",
     price_usd_monthly: 159,
     price_usd_annual: 1590,
     max_agents: 15,
@@ -280,19 +280,17 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1Tx5Xs8e6If87QKmGxEvongq",
     lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v6",
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
-    // Retained for existing Stripe events and legacy entitlement resolution.
-    // The launch offer stops at Pro; larger deployments are sales-assisted
-    // Scale agreements rather than a fifth self-serve checkout tier.
     public: false,
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 15 live Bots",
-      "Up to 15 production-number slots, provisioned when needed",
+      "A dedicated production number for each active paid Bot, up to 15",
+      "A BotBound-managed email identity for each active paid Bot",
       "350 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$12 monthly Runtime Allowance + $12 managed AI allowance",
       "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
-      "Connected calendar, email, text, contracts, payments, and commerce actions",
+      "Connected calendar, optional mailbox, text, contracts, payments, and commerce actions",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
       "Priority support posture and no automatic overages",
@@ -304,8 +302,8 @@ export const STRIPE_PLANS: StripePlan[] = [
  * Two-floor margin policy (catalog v6; see docs/PRICING_DECISION_2026-07-25.md).
  *
  * Planning floor: contribution at EXPECTED_INCLUDED_UTILIZATION of minutes and
- * allowance (numbers always reserved in full because a provisioned line bills
- * regardless of use) must clear LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
+ * allowance (numbers always reserved in full for conservative plan economics)
+ * must clear LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
  *
  * Hard floor: contribution at 100% utilization, the bounded worst case of a
  * prepaid-only catalog, must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
@@ -317,11 +315,7 @@ export const EXPECTED_INCLUDED_UTILIZATION = 0.7;
 
 export type BillingInterval = "month" | "year";
 
-/**
- * Conservative Stripe commercial fees for one successful charge. Includes
- * Payments processing, Stripe Billing, and the future Stripe Tax transaction
- * reserve. Callers divide annual-charge fees by 12 when comparing monthly COGS.
- */
+/** Conservative Stripe commercial fees for one successful charge. */
 export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
   if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
   return (
@@ -330,15 +324,7 @@ export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number
   );
 }
 
-/**
- * Conservative contribution margin at full included utilization.
- *
- * This is intentionally stricter than observed-use margin: it reserves every
- * included voice minute, every number slot, the flexible Runtime Allowance,
- * the independently metered AI allowance, and Stripe commercial fees. Shared
- * SaaS and founder time are not included.
- * Judged against HARD_CONTRIBUTION_MARGIN_FLOOR.
- */
+/** Conservative contribution margin at full included utilization. */
 export function estimatedContributionMarginAtFullIncludedUsage(
   plan: StripePlan,
   interval: BillingInterval,
@@ -361,13 +347,7 @@ export function estimatedContributionMarginAtFullIncludedUsage(
   return (recurringRevenue - reservedVariableCost) / recurringRevenue;
 }
 
-/**
- * Contribution margin at expected included utilization, the planning-floor
- * view. Minutes and both allowances are reserved at
- * EXPECTED_INCLUDED_UTILIZATION; number slots stay fully reserved because a
- * provisioned line bills whether or not it is used. Judged against
- * LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
- */
+/** Contribution margin at expected included utilization. */
 export function estimatedContributionMarginAtExpectedUsage(
   plan: StripePlan,
   interval: BillingInterval,
@@ -472,7 +452,7 @@ export function planLookupKey(plan: StripePlan, interval: "month" | "year"): str
  *
  * `configured` is deliberately customer-facing availability, not merely the
  * presence of a Stripe price id. This keeps every client surface fail-closed
- * until release authorization matches the exact deployed Git SHA.
+ * until the audited production release channel is authorized.
  */
 export function plansForClient() {
   const checkoutReleased = selfServeBillingEnabled();

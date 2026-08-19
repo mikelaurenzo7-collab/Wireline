@@ -229,7 +229,7 @@ router.post(
             success: false,
             code: "DIAL_STATUS_UNCERTAIN",
             error:
-              "The carrier response was interrupted. Wireline is holding this number to prevent a duplicate call; check Phone before trying again.",
+              "The carrier response was interrupted. BotBound is holding this number to prevent a duplicate call; check Phone before trying again.",
             operationId: operationKey,
             leadId: nativeLeadId,
           });
@@ -296,7 +296,7 @@ router.post(
           leadId: nativeLeadId,
           operationId: operationKey,
           warning:
-            "The call is being reconciled. Wireline is holding this number; do not retry it.",
+            "The call is being reconciled. BotBound is holding this number; do not retry it.",
         });
       }
 

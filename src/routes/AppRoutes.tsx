@@ -8,7 +8,6 @@ const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
-const OverviewPage = lazy(() => import("../pages/OverviewPage"));
 const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
 const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
@@ -20,15 +19,13 @@ const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
 const BrowserCommandInstallPage = lazy(() => import("../pages/BrowserCommandInstallPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
-const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = <RouteFallback />;
 
-/** Preserve query/hash when legacy /agents deep-links redirect into Studio. */
-function AgentsToStudioRedirect() {
+function ToStudioRedirect() {
   const location = useLocation();
   return <Navigate to={`/studio${location.search}${location.hash}`} replace />;
 }
@@ -61,15 +58,16 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
       <Routes>
-        <Route path="/" element={<Navigate to="/overview" replace />} />
+        <Route path="/" element={<Navigate to="/studio" replace />} />
+        {/* Overview is retired as a separate command center. Studio is home. */}
+        <Route path="/overview" element={<ToStudioRedirect />} />
 
-        <Route path="/overview" element={<OverviewPage />} />
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         {/* Historical deep links land in Studio; Live Video is not an active product surface. */}
         <Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
-        <Route path="/agents" element={<AgentsToStudioRedirect />} />
+        <Route path="/agents" element={<ToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
@@ -89,7 +87,8 @@ export default function AppRoutes() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
-        <Route path="/settings/phone" element={<PhoneSettings />} />
+        {/* Phone lines are operational work; keep old settings links compatible. */}
+        <Route path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />} />
         <Route path="/settings/team" element={<TeamSettings />} />
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />

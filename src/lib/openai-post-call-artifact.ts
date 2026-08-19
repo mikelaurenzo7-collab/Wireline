@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { recordUsage } from "./ai-audit";
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import { BOTBOUND_BRAND_NAME } from "./brand";
 import {
   uploadArtifactToConnectedStorage,
   type ConnectedArtifactDestination,
@@ -51,13 +52,10 @@ export interface GeneratedPostCallArtifact extends ConnectedArtifactUpload {
   openaiResponseId: string | null;
 }
 
-// eslint-disable-next-line no-control-regex -- strips null bytes before persisting generated text.
-const NULL_BYTE_PATTERN = /\u0000/g;
+const NULL_BYTE = String.fromCharCode(0);
 
 function bounded(value: string | null | undefined, max: number): string {
-  const text = String(value || "")
-    .replace(NULL_BYTE_PATTERN, "")
-    .trim();
+  const text = String(value || "").split(NULL_BYTE).join("").trim();
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
@@ -78,9 +76,9 @@ function fileName(input: PostCallArtifactInput): string {
   const date = new Date().toISOString().slice(0, 10);
   const key = recordKey(input);
   if (input.purpose === "operating_report") {
-    return `Wireline-${date}-${slug(input.reportTitle, "Operating-Report")}-${key}.${input.format}`;
+    return `${BOTBOUND_BRAND_NAME}-${date}-${slug(input.reportTitle, "Operating-Report")}-${key}.${input.format}`;
   }
-  return `Wireline-${date}-${slug(input.customerName || input.customerNumber, "customer")}-${input.outcomeTag}-${key}.${input.format}`;
+  return `${BOTBOUND_BRAND_NAME}-${date}-${slug(input.customerName || input.customerNumber, "customer")}-${input.outcomeTag}-${key}.${input.format}`;
 }
 
 function formatDirection(input: PostCallArtifactInput): string {
@@ -106,7 +104,7 @@ function promptFor(input: PostCallArtifactInput, brand: Record<string, string | 
   const evidence =
     input.purpose === "operating_report"
       ? {
-          report_title: input.reportTitle || "Wireline operating report",
+          report_title: input.reportTitle || `${BOTBOUND_BRAND_NAME} operating report`,
           period: input.periodLabel || null,
           executive_summary_and_data: bounded(input.summary, 12_000) || null,
           supporting_records: bounded(input.transcript, 28_000) || null,
@@ -129,7 +127,7 @@ function promptFor(input: PostCallArtifactInput, brand: Record<string, string | 
     formatDirection(input),
     "The native file is required; do not substitute Markdown or plain text.",
     "Use only the supplied evidence. Clearly distinguish measured facts from recommendations and do not invent revenue or outcomes.",
-    `Brand name: ${bounded(brand.brandName || brand.businessName, 100) || "Wireline customer"}.`,
+    `Brand name: ${bounded(brand.brandName || brand.businessName, 100) || `${BOTBOUND_BRAND_NAME} customer`}.`,
     brand.primaryColor ? `Preferred accent: ${bounded(brand.primaryColor, 30)}.` : "",
     JSON.stringify(evidence, null, 2),
     "Inspect the generated file before finishing and fix obvious overflow, clipping, missing sections, broken formulas, or unreadable formatting.",
@@ -199,13 +197,6 @@ export async function generateAndStorePostCallArtifact(
     id?: string;
     error?: { message?: string };
   };
-  // Raw fetch, so nothing here passes through ai-structured's recordUsage. The
-  // artifact is sold at a FIXED reserve per format, which makes measurement more
-  // important rather than less: code_interpreter plus 8k output tokens is the
-  // most expensive single call in the product, and without a cost record there
-  // is no way to notice the flat price has stopped covering it.
-  //
-  // Recorded before the ok-check so a failed-but-billed response still lands.
   recordUsage(
     artifactModel,
     payload as { model?: string; usage?: unknown },

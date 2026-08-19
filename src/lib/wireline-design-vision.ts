@@ -1,16 +1,18 @@
 /**
- * WIRELINE Design System — canonical design vision for web, extension, MCP, and native.
+ * BotBound Design System — canonical design vision for web, extension, MCP, and native.
+ * Historical export/file names remain for source compatibility while the visible
+ * product and design doctrine use BotBound.
  * Contracts: tests/wireline-design-vision-contract.test.ts (manifest),
  * tests/studio-canvas-vision-contract.test.ts (studio IA), design:check.
  * Studio behavioral invariants live in studio-canvas-contract.ts.
  */
 
 export const WIRELINE_DESIGN_VISION = {
-  system: "WIRELINE Design System",
+  system: "BotBound Design System",
   naming: {
-    designSystem: "WIRELINE Design System",
+    designSystem: "BotBound Design System",
     rule:
-      "WIRELINE Design System is the only system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+      "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
   },
   appearance: {
     default: "light",
@@ -18,22 +20,23 @@ export const WIRELINE_DESIGN_VISION = {
     lightCanvas: "#F6F5FA",
     darkCanvas: "#0A0A0E",
     rule:
-      "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same WIRELINE Design System, never separate visual systems.",
+      "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
   },
   tone: ["clean", "precise", "confident"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
     "Off-white light canvas is the first-visit default; near-black dark remains a first-class appearance.",
     "Electric violet is action. Platinum is the wire. Ink gives information structure.",
-    "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
+    "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
     "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
     "Wire carries structure and signal; it never becomes decoration for its own sake.",
-    "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
-    "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
-    "Bot identity is a role-agnostic WIRELINE signal signature; status colors communicate state only.",
+    "BotBound is mixed case whenever the brand name is visibly presented; lowercase wireline remains reserved for stable technical data such as URLs, identifiers, events, APIs, and persistence keys during migration.",
+    "The phone-Bot mark and BotBound wordmark keep one optical ratio and scale only as a complete lockup.",
+    "Bot identity is a role-agnostic BotBound signal signature; status colors communicate state only.",
     "One composer dock, one elevation language, one interaction language.",
+    "Authenticated desktop panels may fold and resize, but their state must be obvious, persistent, keyboard operable, and never change the user's information hierarchy silently.",
     "Marketing earns attention with restraint; authenticated work stays left-aligned and task-first.",
-    "Inter Tight carries big ideas and the WIRELINE wordmark; Inter carries work; IBM Plex Mono carries labels and technical metadata.",
+    "Inter Tight carries big ideas and the BotBound wordmark; Inter carries work; IBM Plex Mono carries labels and technical metadata.",
     "No decorative green, orange, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
     "Surface depth uses restrained inset highlights and elevation; glow is reserved for active affordances and signal motion.",
@@ -156,7 +159,11 @@ export const WIRELINE_DESIGN_VISION = {
     defaultSurface: "chat-plus-canvas",
     canvasSurface: "spatial-cards",
     agentSwitcher: "context-chrome",
-    railWidthPx: 236,
+    railBehavior: "resizable-and-collapsible",
+    railWidthPx: 232,
+    railMinPx: 208,
+    railMaxPx: 320,
+    railCollapsedPx: 68,
     workspaceDepthParam: "view=workspace",
     minTouchTargetPx: 44,
   },

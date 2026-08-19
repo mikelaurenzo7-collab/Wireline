@@ -305,7 +305,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "pwned-passwords",
     "Have I Been Pwned Pwned Passwords",
-    "K-anonymity breach screening for Wireline's custom password auth.",
+    "K-anonymity breach screening for BotBound's custom password auth.",
     "security",
     false,
     [],

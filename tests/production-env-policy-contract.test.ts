@@ -143,11 +143,18 @@ describe("production environment launch policy", () => {
     expect(vercelBuild).not.toContain("runtime will disable");
   });
 
-  it("binds self-serve billing authorization to the exact production Git SHA", () => {
-    expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_SHA")');
-    expect(deploymentBoundary).toContain('value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA")');
-    expect(deploymentBoundary).toContain("releaseSha !== deploymentSha");
-    expect(deploymentBoundary).toContain("will remain runtime-closed");
-    expect(deploymentBoundary).toContain("is authorized for exact production SHA");
+  it("binds self-serve billing to the audited main production release channel", () => {
+    expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_REF")');
+    expect(deploymentBoundary).toContain('gitRef !== "main"');
+    expect(deploymentBoundary).toContain(
+      "self-serve billing may only ship from the audited main production release channel",
+    );
+    expect(deploymentBoundary).toContain(
+      "per-commit release-SHA rotation is retired",
+    );
+    expect(deploymentBoundary).toContain(
+      "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA is legacy configuration",
+    );
+    expect(deploymentBoundary).not.toContain("releaseSha !== deploymentSha");
   });
 });

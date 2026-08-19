@@ -145,7 +145,7 @@ export async function releaseNativeTenantNumber(
     return {
       ok: false,
       error:
-        "The carrier released the number, but Wireline could not finish local cleanup. Retry release to reconcile the workspace.",
+        "The carrier released the number, but BotBound could not finish local cleanup. Retry release to reconcile the workspace.",
     };
   }
 }

@@ -79,7 +79,7 @@ export async function createInstantVoiceClone(args: {
   const form = new FormData();
   const bytes = new Uint8Array(args.audioBytes);
   form.append("name", args.name);
-  form.append("description", "Private voice created and governed by Wireline");
+  form.append("description", "Private voice created and governed by BotBound");
   form.append("remove_background_noise", String(args.removeBackgroundNoise));
   form.append(
     "files",
@@ -136,7 +136,7 @@ export async function generateElevenLabsProof(args: {
     voiceId: args.voiceId,
     text:
       args.text ||
-      "Hi, this is your Wireline agent. I can answer clearly, take action, and bring in a person whenever you need one.",
+      "Hi, this is your BotBound agent. I can answer clearly, take action, and bring in a person whenever you need one.",
   });
   return result.audio;
 }

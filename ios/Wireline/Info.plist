@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>WIRELINE</string>
+	<string>BotBound</string>
 	<key>CFBundleName</key>
-	<string>WIRELINE</string>
+	<string>BotBound</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
@@ -27,12 +27,9 @@
 	<key>UILaunchScreen</key>
 	<dict/>
 
-	<!-- Enables the active-call Live Activity / Dynamic Island surface. -->
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 
-	<!-- Wake on inbound-call VoIP push, finish call audio in background, and
-	     receive non-call alerts. -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>voip</string>
@@ -40,27 +37,23 @@
 		<string>remote-notification</string>
 	</array>
 
-	<!-- Permission prompts (App Store rejects missing usage strings). -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>WIRELINE needs the microphone so you can speak on calls your agents place or hand to you.</string>
+	<string>BotBound needs the microphone so you can speak on calls your Bots place or hand to you.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>WIRELINE adds reminders to your calendar when an agent schedules a follow-up.</string>
+	<string>BotBound adds reminders to your calendar when a Bot schedules a follow-up.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>WIRELINE adds events to your calendar when an agent books an appointment or follow-up for you.</string>
+	<string>BotBound adds events to your calendar when a Bot books an appointment or follow-up for you.</string>
 	<key>NSSiriUsageDescription</key>
-	<string>WIRELINE lets you ask Siri to place or hand off calls through your agents.</string>
+	<string>BotBound lets you ask Siri to place or hand off calls through your Bots.</string>
 	<key>NSAppleMusicUsageDescription</key>
-	<string>WIRELINE can open Apple Music to play songs your agent recommends during a call.</string>
+	<string>BotBound can open Apple Music to play songs your Bot recommends during a call.</string>
 	<key>NSRemindersUsageDescription</key>
-	<string>WIRELINE adds reminders to your list when an agent schedules a follow-up.</string>
+	<string>BotBound adds reminders to your list when a Bot schedules a follow-up.</string>
 
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
-		<!-- CarPlay Communication scene. The phone UI stays on SwiftUI's
-		     default scene; this only adds the CarPlay template surface, and it
-		     activates once Apple grants the carplay-communication entitlement. -->
 		<key>UISceneConfigurations</key>
 		<dict>
 			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
@@ -75,8 +68,7 @@
 		</dict>
 	</dict>
 
-	<!-- Deep-link scheme used by widgets / Control Center to open the app at a
-	     specific surface (e.g. wireline://ask, wireline://call/&lt;id&gt;). -->
+	<!-- The legacy wireline:// scheme remains for installed-version deep-link compatibility. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -89,7 +81,6 @@
 		</dict>
 	</array>
 
-	<!-- Allow checking whether the Shortcuts app is installed. -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>shortcuts</string>

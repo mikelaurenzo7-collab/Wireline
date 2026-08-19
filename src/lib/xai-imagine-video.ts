@@ -1,20 +1,18 @@
 /**
  * xAI Imagine — documented, not offered.
  *
- * Wireline does not generate Imagine photos or video files and does not
+ * BotBound does not generate Imagine photos or video files and does not
  * substitute a script. Official image and video REST have no watermark field.
  * Generated files include a Grok watermark. xAI's FAQ says there is no setting
  * to remove it from images or videos. The Acceptable Use Policy forbids
  * stripping, altering, or circumventing watermarks.
  *
- * Grok 4.6 can take an image as *input* for structured reasoning. That is not
- * Imagine generation. Phone, email, and text stay on the agent.
+ * Grok 4.6 can take an image as input for structured reasoning. That is not
+ * Imagine generation. Phone, email, and text stay on the Bot.
  */
 import { AppError } from "./api-error";
 
-/** Retired vendor video id. Not a priced runtime model. */
 export const XAI_IMAGINE_VIDEO_MODEL = "grok-imagine-video-1.5";
-/** Retired vendor image ids. Not priced and not generated. */
 export const XAI_IMAGINE_IMAGE_MODELS = [
   "grok-imagine-image",
   "grok-imagine-image-2.0",
@@ -39,7 +37,7 @@ export const IMAGINE_VIDEO_GENERATION_OFFERED = false;
 export const IMAGINE_IMAGE_GENERATION_OFFERED = false;
 export const IMAGINE_WATERMARK_NOT_OFFERED_CODE = "IMAGINE_WATERMARK_NOT_OFFERED";
 export const IMAGINE_WATERMARK_NOT_OFFERED_MESSAGE =
-  "Wireline does not generate Imagine photos or video files. Those files include a Grok watermark that cannot be turned off. Phone, email, and text are unaffected.";
+  "BotBound does not generate Imagine photos or video files. Those files include a Grok watermark that cannot be turned off. Phone, email, and text are unaffected.";
 
 export function imagineVideoGenerationOffered(): boolean {
   return IMAGINE_VIDEO_GENERATION_OFFERED;
@@ -84,7 +82,7 @@ export function normalizeImaginePrompt(value: unknown): string {
   return value.trim().slice(0, 4_000);
 }
 
-/** Documents the public REST body. Wireline does not POST this. */
+/** Documents the public REST body. BotBound does not POST this. */
 export function buildImagineGenerationBody(input: {
   prompt: string;
   duration?: number;

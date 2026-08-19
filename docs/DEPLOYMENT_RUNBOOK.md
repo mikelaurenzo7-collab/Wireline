@@ -33,7 +33,7 @@ The repository is pinned to Node 22 through `.nvmrc`, `package.json`, and Vercel
 Preview builds must:
 
 - pass `scripts/check-deployment-boundaries.mjs` before other release work;
-- reject inherited production credentials, provider configuration, and exact-head billing authorization;
+- reject inherited production credentials, provider configuration, and self-serve paid checkout;
 - derive `APP_URL` from the preview host only after credential isolation passes;
 - run source-control and documentation integrity checks;
 - run the focused security, billing, runtime, product, and repository contracts;
@@ -55,7 +55,7 @@ The canonical production build must, in order:
 5. apply the exact committed Drizzle migration journal only after the code and live Stripe read-only gates pass;
 6. verify the resulting production schema effects;
 7. build the production client/server and ChatGPT MCP bundles, enforce client bundle budgets, reject public source maps, and pass server import smoke;
-8. report whether self-serve billing is authorized for the exact `VERCEL_GIT_COMMIT_SHA` or will remain runtime-closed;
+8. report whether self-serve billing is authorized for the audited `main` production release channel or will remain runtime-closed;
 9. finish READY with no alias error and own `trywireline.com`.
 
 Canonical production fails closed when the portal verification switch is absent or the live configuration cannot be verified. Artifact construction must never mutate Stripe Customer Portal state.
@@ -105,29 +105,22 @@ Preview builds must log that migrations were skipped. Production builds run the 
 
 ## Self-serve billing release control
 
-Self-serve billing has three independent, fail-closed production controls:
+Self-serve billing is fail-closed and is authorized only on the audited canonical production release channel. Two operator controls and two Vercel-managed runtime identity checks must align:
 
 1. `WIRELINE_SELF_SERVE_BILLING_ENABLED=true` expresses the operator's intent to offer paid checkout.
 2. `WIRELINE_LAUNCH_DEMO_MODE=false` ensures paid activity is classified as real customer evidence rather than demo/test evidence.
-3. `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA=<full 40-character production Git SHA>` authorizes only the exact deployment whose Vercel-provided `VERCEL_GIT_COMMIT_SHA` matches it.
+3. `VERCEL_ENV=production` proves the request is running in a Production deployment.
+4. `VERCEL_GIT_COMMIT_REF=main` binds billing to the reviewed Git release channel.
 
-Checkout remains closed unless all three controls align. The release SHA is production-only, must never be available to Preview or Development, and must be updated deliberately for each new production artifact. A boolean project-level switch surviving from an older release is never sufficient to authorize a different commit.
+`WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` is retired legacy configuration. It no longer authorizes checkout and no longer needs to be rotated for every safe production deploy. It may be removed from Production after the new channel-bound gate is live. Preview continues to reject that legacy variable if it is accidentally widened to Preview.
 
-`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. The
-historical name is retained for environment compatibility, but canonical Production builds use it
-as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter
-Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice
-history, and legal/return URLs before any production migration runs. Preview and Development must
-leave it false/unset.
+This change is deliberately paired with the mandatory canonical-production pipeline: every production artifact from `main` must pass the complete clean-room TypeScript/ESLint/security/Vitest audit, environment validation, live Stripe read-only verification, migrations, schema-effect assertions, build, and server smoke before Vercel can make it READY. A surviving boolean alone cannot authorize Preview, a feature branch, or another Vercel environment.
 
-Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure,
-production-configured operator context. When drift is confirmed, run
-`npm run stripe:portal:reconcile` deliberately from that context, inspect the resulting managed
-configuration, then redeploy so the production artifact independently re-verifies the live state.
-The repair command is write-capable; it must not be embedded in a build, preview, or automatic
-retry loop.
+`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. The historical name is retained for environment compatibility, but canonical Production builds use it as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice history, and legal/return URLs before any production migration runs. Preview and Development must leave it false/unset.
 
-Before opening an exact-SHA certification window, verify all of the following against the live Wireline Stripe account and the deployed artifact:
+Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure, production-configured operator context. When drift is confirmed, run `npm run stripe:portal:reconcile` deliberately from that context, inspect the resulting managed configuration, then redeploy so the production artifact independently re-verifies the live state. The repair command is write-capable; it must not be embedded in a build, preview, or automatic retry loop.
+
+Before opening a controlled certification window, verify all of the following against the live Wireline Stripe account and the deployed artifact:
 
 - Public business identity, support email/URL, statement descriptor, and tax posture display Wireline rather than a historical product identity.
 - `STRIPE_AUTOMATIC_TAX_ENABLED` remains `false` unless Stripe Tax settings and at least one applicable live registration are active. Registration and nexus decisions require qualified tax advice; the application must never infer them.
@@ -136,24 +129,24 @@ Before opening an exact-SHA certification window, verify all of the following ag
 - The exact production deployment SHA, migrations, aliases, health response, affected routes, and runtime-error stream are recorded and clean.
 - Broad invitations, paid media, cold outbound, and non-founder customer onboarding remain off during certification.
 
-The controlled checkout lifecycle necessarily requires the gate to be open for the founder-controlled account performing it. Exact-head authorization is therefore a narrow certification window, not proof by itself. A successful window must still demonstrate checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund or reversal, and ledger reconciliation.
+The controlled checkout lifecycle necessarily requires the gate to be open for the founder-controlled account performing it. Channel authorization is therefore a release boundary, not proof by itself. A successful certification must still demonstrate checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund or reversal, and ledger reconciliation.
 
-Valid Stripe credentials, a verified portal, and a previously enabled boolean never authorize a new deployment by themselves.
+Valid Stripe credentials, a verified portal, and a previously enabled boolean never authorize a Preview or non-`main` deployment by themselves.
 
 ### Opening a controlled certification window
 
-1. Promote the reviewed commit through the normal `main` production build with the release SHA absent or mismatched.
-2. Verify the exact production SHA, migrations, aliases, health endpoint, affected routes, runtime logs, and the customer-safe pre-auth 503 `BILLING_LAUNCH_NOT_APPROVED` response.
-3. Set `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` to that deployment's full `VERCEL_GIT_COMMIT_SHA` and redeploy Production without changing source.
-4. Verify the redeployment uses the same Git SHA, launch readiness reports `self_serve_billing_enabled: true`, and a founder-controlled authenticated checkout creates the intended post-branding Stripe session.
-5. Complete the full live lifecycle and reconcile the Stripe, subscription, allowance, checkout-operation, usage, cancellation, and refund/reversal records.
-6. On any failure, revoke the release SHA immediately and complete the closing procedure. On success, retain the exact authorization only for the bounded design-partner cohort and preserve redacted evidence.
+1. Merge the reviewed exact head to `main` through the normal production path.
+2. Verify the production SHA, comprehensive build audit, migrations, aliases, health endpoint, affected routes, Stripe portal verification, and runtime logs.
+3. Set `WIRELINE_SELF_SERVE_BILLING_ENABLED=true` and `WIRELINE_LAUNCH_DEMO_MODE=false` for Production if they are not already set, then redeploy Production without changing source.
+4. Verify the redeployment is `VERCEL_ENV=production`, originates from `main`, launch readiness reports `self_serve_billing_enabled: true`, and a founder-controlled authenticated checkout creates the intended post-branding Stripe session.
+5. Complete the live lifecycle and reconcile the Stripe, subscription, allowance, checkout-operation, usage, cancellation, and refund/reversal records.
+6. On any failure, set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, redeploy, verify the paid route is closed, and complete incident/rollback handling. On success, keep billing enabled for the approved cohort and preserve redacted evidence.
 
-Do not send acquisition traffic merely because the exact-head gate is open. Public acquisition remains a separate business decision after repeated use and observed contribution are demonstrated.
+Do not send acquisition traffic merely because the billing gate is open. Public acquisition remains a separate business decision after repeated use and observed contribution are demonstrated.
 
 ### Closing paid checkout
 
-Remove or change `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA`, or set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, then create a production redeployment. Verify the exact deployment SHA and confirm a pre-auth paid route returns the customer-safe 503 `BILLING_LAUNCH_NOT_APPROVED` response before considering rollback complete. Rotating the release SHA is the fastest narrow close; disabling the boolean is the broader operational stop.
+Set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false` and create a Production redeployment. Verify the exact deployment SHA and confirm a pre-auth paid route returns the customer-safe 503 `BILLING_LAUNCH_NOT_APPROVED` response before considering the operational stop complete. No release-SHA rotation is required.
 
 ## Provider and integration releases
 

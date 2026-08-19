@@ -12,12 +12,7 @@ type CallsProbeResponse = {
   calls?: unknown[];
 };
 
-/**
- * Lightweight guard around the full call-ops console. When the workspace has no
- * calls yet, render the same framed empty primitive used by Inbox/Appointments
- * instead of letting the heavier console settle into an empty black pane.
- */
-export default function PhoneCallHistoryPanel() {
+export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | null }) {
   const {
     agents,
     loading: agentsLoading,
@@ -34,7 +29,10 @@ export default function PhoneCallHistoryPanel() {
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    authFetch("/api/calls?limit=1")
+    const endpoint = agentId
+      ? `/api/agents/${encodeURIComponent(agentId)}/calls?limit=1`
+      : "/api/calls?limit=1";
+    authFetch(endpoint)
       .then((response) => {
         if (!response.ok) throw new Error(`Call history request failed (${response.status})`);
         return response.json();
@@ -55,14 +53,14 @@ export default function PhoneCallHistoryPanel() {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [agentId, attempt]);
 
   if (loading || agentsLoading) {
     return (
       <div className="flex w-full items-center justify-center px-4 py-10 text-sm text-muted-foreground sm:px-6">
         <span className="inline-flex items-center gap-2">
           <Loader2 className="size-4 animate-spin" aria-hidden />
-          Loading call history…
+          Loading calls…
         </span>
       </div>
     );
@@ -73,7 +71,7 @@ export default function PhoneCallHistoryPanel() {
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="destructive"
-          title="Call history unavailable"
+          title="Calls unavailable"
           action={
             <Button
               type="button"
@@ -85,32 +83,30 @@ export default function PhoneCallHistoryPanel() {
             </Button>
           }
         >
-          We could not load calls. Nothing has been erased; retry when the connection recovers.
+          Nothing has been erased. Retry when the connection recovers.
         </StatusNotice>
       </div>
     );
   }
 
-  // Only mount the heavy console when we positively know there is at least one call.
-  // Probe failure (null) and empty workspaces both get the framed empty state — never
-  // the black CallLogsClaude void that previously shipped on first paint.
-  if (hasCalls === true) return <CallLogsClaude />;
+  if (hasCalls === true) return <CallLogsClaude agentId={agentId} />;
 
-  const hasAgents = agents.length > 0;
+  const scopedAgent = agentId ? agents.find((agent) => agent.id === agentId) : null;
+  const relevantAgents = scopedAgent ? [scopedAgent] : agents;
+  const hasAgents = relevantAgents.length > 0;
   if (agentsDegraded && !hasAgents) {
     return (
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Voice agent readiness unavailable"
+          title="Bot status unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
             </Button>
           }
         >
-          Wireline could not confirm your voice agent or phone setup. Existing configuration is
-          unchanged.
+          Existing configuration is unchanged.
         </StatusNotice>
       </div>
     );
@@ -121,62 +117,50 @@ export default function PhoneCallHistoryPanel() {
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Phone readiness unavailable"
+          title="Line status unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
             </Button>
           }
         >
-          Wireline could not confirm the phone numbers connected to your voice agents. Existing
-          configuration is unchanged.
+          Existing configuration is unchanged.
         </StatusNotice>
       </div>
     );
   }
 
-  const livePhone = agents.find((agent) => agent.phone_number)?.phone_number ?? null;
+  const livePhone = relevantAgents.find((agent) => agent.phone_number)?.phone_number ?? null;
   const emptyState = !hasAgents
     ? {
-        title: "Create your first voice agent",
-        description:
-          "Call history starts after you create a voice agent, connect its number, and handle the first customer conversation.",
+        title: "Create a Bot",
+        description: undefined,
         action: (
           <Button asChild>
-            <Link to="/studio?create=1">Create voice agent</Link>
+            <Link to="/studio?create=1">New Bot</Link>
           </Button>
         ),
       }
     : !livePhone
       ? {
-          title: "Connect a phone number",
-          description:
-            "Your voice agent is ready for setup. Connect its customer line before expecting call history here.",
+          title: "Connect a line",
+          description: undefined,
           action: (
-            <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-              <Button asChild>
-                <Link to="/settings/phone">Connect phone</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/studio?section=setup">Review voice agent</Link>
-              </Button>
-            </div>
+            <Button asChild>
+              <Link to="/phone?tab=setup">Lines</Link>
+            </Button>
           ),
         }
       : {
-          title: "No call history yet",
-          description:
-            "Your customer line is connected. Place one real call to verify audio and populate the first summary, outcome, and follow-up.",
+          title: agentId ? "No calls for this Bot" : "No calls yet",
+          description: undefined,
           action: (
             <Button asChild>
-              <a href={`tel:${livePhone}`}>Call your Wireline number</a>
+              <a href={`tel:${livePhone}`}>Call the line</a>
             </Button>
           ),
         };
 
-  // Top-align the framed empty inside the operate panel. Vertical centering
-  // against a scrollable/unbounded height chain parks the card below the fold
-  // (the classic Phone History black void).
   return (
     <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
       <EmptyState

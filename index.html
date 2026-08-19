@@ -7,180 +7,70 @@
         try {
           var stored = localStorage.getItem("wireline-theme");
           var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          // Dark is the first-visit WIRELINE appearance. Explicit Light and
-          // System choices still apply before first paint to avoid theme flash.
           var useLight = stored === "light" || (stored === "system" && !systemDark);
           if (useLight) document.documentElement.classList.add("light");
-        } catch (e) {
-          /* Storage can be unavailable; dark remains the deterministic default. */
-        }
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/app-shell.css" />
-
-    <!-- Fonts are self-hosted (public/fonts.css + public/fonts/*.woff2), a
-         verbatim mirror of the Google Fonts css2 response with the gstatic URLs
-         rewritten. Previously this was a render-blocking cross-origin request
-         chain (preconnect → Google CSS → gstatic woff2), which meant the entire
-         WIRELINE identity degraded to system fonts whenever Google Fonts was
-         slow, blocked by a privacy extension, or unreachable. First-party also
-         removes the EU IP-disclosure question and lets the CSP drop both hosts. -->
     <link rel="preload" as="style" href="/fonts.css" />
     <link rel="stylesheet" href="/fonts.css" />
-
-    <!-- Preload the three Latin faces every page actually renders with (Inter
-         Tight display, Inter body, IBM Plex Mono labels). Without these the
-         browser cannot discover a single woff2 until it has fetched AND parsed
-         fonts.css, a serial hop that leaves brand text in the fallback face
-         and forces a visible re-layout when the real font swaps in. Preloading
-         starts them in parallel with the stylesheet instead. Keep this list to
-         faces used above the fold: a preload that goes unused is wasted
-         bandwidth and a console warning. -->
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      crossorigin
-      href="/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"
-    />
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      crossorigin
-      href="/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"
-    />
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      crossorigin
-      href="/fonts/-F6qfjptAgt5VM-kVkqdyU8n3pQPwlBFgg.woff2"
-    />
-
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/-F6qfjptAgt5VM-kVkqdyU8n3pQPwlBFgg.woff2" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />
     <meta name="format-detection" content="date=no" />
     <meta name="format-detection" content="address=no" />
 
-    <title>WIRELINE | WIRE YOUR PHONE BOT</title>
-    <meta
-      name="description"
-      content="A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready."
-    />
-    <meta
-      name="keywords"
-      content="WIRELINE, phone bot, phone bots, AI phone bot, AI calling bot, AI receptionist, AI front desk, AI sales bot, AI support bot, call bot, email bot, SMS bot, conversation bot, inbound calls, outbound calls, lead qualification, appointment setting, follow-up automation"
-    />
+    <title>BotBound | Put Your Bot on the Line</title>
+    <meta name="description" content="AI employees for calls, texts, and email." />
+    <meta name="keywords" content="BotBound, phone bot, AI employee, AI phone bot, AI receptionist, AI sales bot, call bot, email bot, SMS bot, conversation bot, inbound calls, outbound calls, lead qualification, appointment setting, follow-up automation" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large" />
-    <meta name="author" content="WIRELINE" />
-    <meta name="publisher" content="WIRELINE" />
-    <meta
-      name="domain-verification"
-      content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
-    />
+    <meta name="author" content="BotBound" />
+    <meta name="publisher" content="BotBound" />
+    <meta name="domain-verification" content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61" />
     <meta name="theme-color" content="#0A0A0E" />
     <meta name="msapplication-TileColor" content="#0A0A0E" />
-    <meta name="apple-mobile-web-app-title" content="WIRELINE" />
+    <meta name="apple-mobile-web-app-title" content="BotBound" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="color-scheme" content="dark light" />
 
+    <!-- Legacy origin is intentionally the fallback until BotBound domain cutover. The build replaces it from VITE_PUBLIC_SITE_URL/APP_URL. -->
     <link rel="canonical" href="https://trywireline.com/" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="mask-icon" href="/favicon.svg" color="#7C3AED" />
+    <link rel="mask-icon" href="/favicon.svg" color="#8B5CF6" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-
-    <!--
-      The Plausible stub queues every call in `plausible.q` and the real script
-      flushes that queue on arrival, so the analytics bundle is injected
-      dynamically (async) from /marketing-measurement.js instead of sitting here
-      as a static tag.
-
-      This is load-bearing, not cosmetic: a static `defer` script blocks
-      DOMContentLoaded AND every deferred script after it, including the app's
-      own module bundle. Whenever plausible.io was slow, blocked by an ad
-      blocker that blackholes rather than refuses, or unreachable behind a
-      corporate proxy, the whole site stayed blank until that connection timed
-      out. Measured locally against a blocked host: FCP 12,936ms -> 280ms.
-    -->
-    <script>
-      window.plausible =
-        window.plausible ||
-        function () {
-          (window.plausible.q = window.plausible.q || []).push(arguments);
-        };
-    </script>
+    <script>window.plausible = window.plausible || function(){(window.plausible.q=window.plausible.q||[]).push(arguments);};</script>
     <script defer src="/marketing-measurement.js"></script>
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />
-    <meta property="og:site_name" content="WIRELINE" />
-    <meta property="og:title" content="WIRELINE | WIRE YOUR PHONE BOT" />
-    <meta
-      property="og:description"
-      content="A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready."
-    />
+    <meta property="og:site_name" content="BotBound" />
+    <meta property="og:title" content="BotBound | Put Your Bot on the Line" />
+    <meta property="og:description" content="AI employees for calls, texts, and email." />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="WIRELINE. Wire your Phone Bot for calls, email, and text." />
+    <meta property="og:image:alt" content="BotBound. AI employees for calls, texts, and email." />
     <meta property="og:locale" content="en_US" />
-
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="WIRELINE | WIRE YOUR PHONE BOT" />
-    <meta
-      name="twitter:description"
-      content="A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready."
-    />
+    <meta name="twitter:title" content="BotBound | Put Your Bot on the Line" />
+    <meta name="twitter:description" content="AI employees for calls, texts, and email." />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
-    <meta name="twitter:image:alt" content="WIRELINE. Wire your Phone Bot for calls, email, and text." />
+    <meta name="twitter:image:alt" content="BotBound. AI employees for calls, texts, and email." />
 
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://trywireline.com/#organization",
-            "name": "WIRELINE",
-            "url": "https://trywireline.com/",
-            "logo": "https://trywireline.com/wireline-icon.svg",
-            "image": "https://trywireline.com/og-image.png",
-            "description": "Phone Bots for calls, email, and text.",
-            "slogan": "WIRE YOUR PHONE BOT",
-            "email": "support@trywireline.com"
-          },
-          {
-            "@type": "SoftwareApplication",
-            "@id": "https://trywireline.com/#software",
-            "name": "WIRELINE",
-            "applicationCategory": "CommunicationApplication",
-            "operatingSystem": "Web",
-            "url": "https://trywireline.com/",
-            "description": "WIRELINE lets customers build Phone Bots that handle calls, email, and text, then connect role-specific knowledge, tools, approvals, and follow-through.",
-            "publisher": { "@id": "https://trywireline.com/#organization" }
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://trywireline.com/#website",
-            "url": "https://trywireline.com/",
-            "name": "WIRELINE",
-            "publisher": { "@id": "https://trywireline.com/#organization" }
-          }
-        ]
-      }
+      {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://trywireline.com/#organization","name":"BotBound","url":"https://trywireline.com/","logo":"https://trywireline.com/botbound-icon.svg","image":"https://trywireline.com/og-image.png","description":"AI employees for calls, texts, and email.","slogan":"Put Your Bot on the Line","email":"support@trywireline.com"},{"@type":"SoftwareApplication","@id":"https://trywireline.com/#software","name":"BotBound","applicationCategory":"CommunicationApplication","operatingSystem":"Web","url":"https://trywireline.com/","description":"BotBound lets customers build Bots that handle calls, texts, and email, then connect role-specific knowledge, tools, approvals, and follow-through.","publisher":{"@id":"https://trywireline.com/#organization"}},{"@type":"WebSite","@id":"https://trywireline.com/#website","url":"https://trywireline.com/","name":"BotBound","publisher":{"@id":"https://trywireline.com/#organization"}}]}
     </script>
   </head>
-  <body data-wireline-viewport="document">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <body data-wireline-viewport="document"><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
 </html>

@@ -1,5 +1,5 @@
 /**
- * Subscription-funded Wireline Runtime Allowance.
+ * Subscription-funded BotBound Runtime Allowance.
  *
  * Voice minutes remain separately guaranteed by the plan. This grant funds
  * optional SMS and generated business artifacts without allowing those
@@ -40,7 +40,7 @@ export async function grantSubscriptionRuntimeAllowance(
     entryKind: "grant",
     source: "stripe",
     provider: "stripe",
-    customerReason: "Included Wireline Runtime Allowance",
+    customerReason: "Included BotBound Runtime Allowance",
     metadata: {
       plan_id: planId,
       billing_interval: interval,
@@ -60,30 +60,12 @@ export async function grantSubscriptionRuntimeAllowance(
   }
 }
 
-/**
- * Claw the Runtime Allowance back when the subscription payment behind it is
- * refunded or disputed.
- *
- * Credit top-ups have been protected against this since round 4, but the
- * subscription path was not: charge.refunded / charge.dispute.created check for
- * `purpose === "credit_topup"` on the PaymentIntent, and a subscription invoice
- * PaymentIntent carries no such marker, so the handler simply broke out. A
- * refunded annual Business plan kept its $144 of Runtime Balance (v6 catalog:
- * $12/mo x 12) to spend as real provider work — ~7,200 SMS segments — on top
- * of the $1,590 already reversed.
- *
- * The reversal is keyed on the refund/dispute id rather than on the grant's own
- * period reference. That id is unique per event, so the (user, ref) ledger index
- * makes a redelivery idempotent, and a second partial refund reverses under its
- * own key instead of colliding with the first and being silently dropped.
- */
 export async function reverseSubscriptionRuntimeAllowance(
   userId: string,
   reversalReference: string,
   planId: string | null | undefined,
   interval: SubscriptionBillingInterval = "month",
   reason: "refund" | "dispute" = "refund",
-  /** Fraction of the charge actually refunded/disputed (0–1). */
   portion = 1,
   provenance?: {
     providerEventId?: string;
@@ -137,10 +119,6 @@ export async function reverseSubscriptionRuntimeAllowance(
   }
 }
 
-/**
- * Backward-compatible export for older call sites. It now grants the first period's
- * included runtime rather than a separate promotional credit.
- */
 export async function grantWelcomeSubscriptionCredit(
   userId: string,
   subscriptionId: string,

@@ -167,8 +167,8 @@ export async function bootstrapDefaultChannel(userId: string): Promise<string | 
 function buildSlackBlocks(text: string, ctx?: SlackNotifyContext): unknown[] {
   const header =
     ctx?.urgency === "high"
-      ? ":rotating_light: *Wireline, urgent*"
-      : ":robot_face: *Wireline agent*";
+      ? ":rotating_light: *BotBound, urgent*"
+      : ":robot_face: *BotBound agent*";
   const fields: string[] = [];
   if (ctx?.agentName) fields.push("*Agent:* " + ctx.agentName);
   if (ctx?.caller) fields.push("*Caller:* " + ctx.caller);

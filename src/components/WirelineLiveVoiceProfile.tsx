@@ -70,7 +70,7 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
           <Sparkles size={17} />
         </span>
         <div>
-          <p className="wl-stitch-label">Wireline voice</p>
+          <p className="wl-stitch-label">BotBound voice</p>
           <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
             Pick the live voice character
           </h3>

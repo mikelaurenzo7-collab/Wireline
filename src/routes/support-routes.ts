@@ -83,32 +83,19 @@ const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com"
 const SUPPORT_RATE_WINDOW_MS = 15 * 60_000;
 const SUPPORT_RATE_MAX = 5;
 
-// TWO public forms post here with different category vocabularies.
-// Both sets must stay accepted — dropping either silently 400s every
-// submission from that page (the /contact set was missing in production,
-// which broke the "Talk to Wireline" sales channel with
-// "Pick a valid issue type." on every submit).
 const ISSUE_TYPES = new Set([
-  // /support — src/components/SupportPage.tsx
   "billing",
   "tech",
   "feature",
   "agent",
   "account",
   "other",
-  // /contact — src/components/ContactPage.tsx
   "personal",
   "sales",
   "partnership",
   "general",
 ]);
 
-/**
- * The support form creates real email-provider work, so unlike ordinary public
- * read paths it may not fall back to per-instance memory in production. The
- * explicit status preflight catches missing Redis configuration; the
- * failClosedOnError option catches an Upstash/network failure after that check.
- */
 async function ticketRateLimiter(req: Request, res: Response, next: NextFunction) {
   const distributed = distributedLimiterStatus();
   if (!distributed.ok) {
@@ -165,8 +152,6 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     const cleanSubject = subject.trim();
     const cleanBody = body.trim();
 
-    // Tight server-side validation so direct POSTs cannot bypass either public
-    // form's client validation or pad whitespace around minimum lengths.
     if (!ISSUE_TYPES.has(cleanIssueType)) {
       throw AppError.fromHttpStatus(400, "Pick a valid issue type.");
     }
@@ -181,9 +166,9 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     }
 
     const ts = new Date().toISOString();
-    const emailSubject = `[Wireline Support / ${cleanIssueType}] ${cleanSubject}`;
+    const emailSubject = `[BotBound Support / ${cleanIssueType}] ${cleanSubject}`;
     const emailBody = [
-      `Wireline support ticket, ${ts}`,
+      `BotBound support ticket, ${ts}`,
       ``,
       `From:        ${cleanEmail}`,
       `Issue type:  ${cleanIssueType}`,
@@ -205,11 +190,8 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
       return res.status(503).json({
         ok: false,
         sent: false,
-        // Same value normalize-api-error-response would backfill for a 503;
-        // stating it inline keeps the api-error ratchet at zero legacy shapes.
         code: "SERVICE_UNAVAILABLE",
-        error:
-          "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
+        error: "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
       });
     }
 

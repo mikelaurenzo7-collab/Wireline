@@ -149,6 +149,11 @@ export function validateAgentRoleForCreate(role: string): string | null {
   return null;
 }
 
+/** Principal-facing roles use privacy-first identity, escalation, and quiet-hours behavior. */
+export function isPrincipalVoiceRole(role: string | undefined | null): boolean {
+  return normalizeAgentRoleId(role) === "personal_assistant";
+}
+
 /** Canonical role id for persistence after validation passes. */
 export function canonicalizeAgentRoleForCreate(role: string): AgentRoleId {
   return normalizeAgentRoleId(role.trim()) ?? AGENT_CREATE_DEFAULT_ROLE_ID;

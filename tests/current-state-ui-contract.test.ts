@@ -61,23 +61,24 @@ describe("current-state UI contract", () => {
     const developers = read("src/pages/Developers.tsx");
     expect(developers).toContain("Connect Once");
     expect(developers).toContain("View MCP Endpoint");
-    expect(developers).toContain("https://trywireline.com/mcp");
+    expect(developers).toContain("https://botbound.me");
     expect(developers).toContain("Add to Cursor");
     expect(developers.replace(/\s+/g, " ")).toContain(
       "This connector cannot place calls, send messages, provision numbers, or launch a live Bot",
     );
     expect(developers).not.toContain("wl_YOUR_API_KEY");
+    expect(developers).not.toContain("https://trywireline.com");
   });
 
-  it("ships an in-product WIRELINE Command install path", () => {
+  it("ships an in-product BotBound Command install path", () => {
     const install = read("src/pages/BrowserCommandInstallPage.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
     expect(routes).toContain("BrowserCommandInstallPage");
     expect(routes).toContain('path="/settings/apps/command"');
-    expect(install).toContain("Install WIRELINE Command");
-    expect(install).toContain("/downloads/wireline-command-chromium.zip");
-    expect(install).toContain("/downloads/wireline-command-firefox.zip");
+    expect(install).toContain("Install BotBound Command");
+    expect(install).toContain("Pin BotBound Command");
     expect(install).toContain("Load unpacked");
+    expect(install).not.toContain("WIRELINE Command");
   });
 
   it("keeps public conversion routes on the explicit selected plan", () => {
@@ -105,7 +106,7 @@ describe("current-state UI contract", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Calls, email, text, tools, and outcomes under one Bot.",
+      "Calls, text, email, tools, and outcomes under one Bot.",
     );
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain("under your direction");

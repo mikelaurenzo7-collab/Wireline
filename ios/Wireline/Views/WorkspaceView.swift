@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Native overview for one Wireline workspace: dispatch calls, monitor live
+/// Native overview for one BotBound workspace: dispatch calls, monitor live
 /// work, review follow-ups, and manage every Bot from mobile.
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
@@ -34,7 +34,7 @@ struct WorkspaceView: View {
                 } else if let error {
                     BrandEmptyState(title: "COULDN'T LOAD", message: error, systemImage: "wifi.exclamationmark")
                 } else {
-                    ProgressView("Loading Wireline...").tint(Brand.accent)
+                    ProgressView("Loading BotBound...").tint(Brand.accent)
                 }
             }
             .navigationTitle("OVERVIEW")
@@ -71,7 +71,7 @@ struct WorkspaceView: View {
                     .frame(width: 48, height: 48)
                     .background(Brand.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("ASK WIRELINE").font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
+                    Text("ASK BOTBOUND").font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
                     Text("Dispatch calls, waits, approvals, and follow-ups.").font(.subheadline).foregroundStyle(Brand.text2)
                 }
                 Spacer(minLength: 0)
@@ -81,7 +81,7 @@ struct WorkspaceView: View {
             .brandGlowCard()
         }
         .buttonStyle(TouchPressStyle())
-        .accessibilityHint("Opens a request for Wireline to handle")
+        .accessibilityHint("Opens a request for BotBound to handle")
     }
 
     private var callbackNumberPromptCard: some View {
@@ -168,7 +168,7 @@ struct WorkspaceView: View {
         VStack(spacing: 0) {
             NavigationLink { WalletView() } label: { Label("WALLET & CREDITS", systemImage: "creditcard").foregroundStyle(Brand.text).padding(16) }
             Divider().padding(.leading, 48)
-            NavigationLink { ActivationSetupView() } label: { Label("ACTIVATE WIRELINE EVERYWHERE", systemImage: "wand.and.stars").foregroundStyle(Brand.text).padding(16) }
+            NavigationLink { ActivationSetupView() } label: { Label("ACTIVATE BOTBOUND EVERYWHERE", systemImage: "wand.and.stars").foregroundStyle(Brand.text).padding(16) }
         }
         .brandGlowCard()
     }

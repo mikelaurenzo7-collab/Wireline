@@ -368,7 +368,7 @@ export default function IntakeKeysManager() {
             <p className="text-sm font-medium text-foreground">No intake keys yet</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Create a key when a website form, partner, or internal tool should send leads into
-              Wireline. Auto-dial stays off until an agent is explicitly assigned.
+              BotBound. Auto-dial stays off until an agent is explicitly assigned.
             </p>
           </div>
         )}
