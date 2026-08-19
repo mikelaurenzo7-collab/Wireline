@@ -43,7 +43,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/browser-extension-contract.test.ts",
   "tests/stripe-brand-asset-contract.test.ts",
   "tests/stripe-account-identity.test.ts",
-] as const;
+];
 
 const releaseAuditNoArgs =
   extraArgs.length === 0 && (productionTarget || explicitPreviewAudit);
