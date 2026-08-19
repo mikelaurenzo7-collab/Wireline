@@ -33,12 +33,15 @@ describe("auth journey hardening contract", () => {
   });
 
   it("keeps paid signup intent prices currency-qualified and uses shared notices", () => {
+    const panel = read("src/components/auth/AuthAccessPanel.tsx");
     const portal = read("src/components/AuthPortal.tsx");
-    expect(portal).toContain('import { isAllowedOAuthUrl } from "../lib/oauth-url";');
-    expect(portal).toContain("if (!isAllowedOAuthUrl(url))");
-    expect(portal).toContain('`${name} · $${plan.price_usd_annual}/year`');
-    expect(portal).toContain('`${name} · $${plan.price_usd_monthly}/month`');
-    expect(portal).toContain('<StatusNotice tone="success" title={message} />');
-    expect(portal).not.toContain("startsWith(\"http\")");
+
+    expect(panel).toContain('import { isAllowedOAuthUrl } from "../../lib/oauth-url";');
+    expect(panel).toContain("if (!isAllowedOAuthUrl(payload?.url))");
+    expect(panel).toContain('`${name} · $${plan.price_usd_annual}/year`');
+    expect(panel).toContain('`${name} · $${plan.price_usd_monthly}/month`');
+    expect(panel).toContain('<StatusNotice tone="success" title={message} />');
+    expect(panel).not.toContain('startsWith("http")');
+    expect(portal).toContain("<AuthAccessPanel");
   });
 });
