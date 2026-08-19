@@ -49,8 +49,10 @@ describe("WIRELINE public iPhone prestige contract", () => {
     expect(portal).toContain("AuthAccessPanel");
     expect(access).toContain("/api/auth/signin");
     expect(access).toContain("/api/auth/signup");
-    expect(access).toContain("/api/auth/google/url");
-    expect(access).toContain("/api/auth/microsoft/url");
+    expect(access).toContain('id: "google"');
+    expect(access).toContain('id: "microsoft"');
+    expect(access).toContain('id: "yahoo"');
+    expect(access).toContain('/api/auth/${provider}/url');
     expect(access).not.toContain("WorkspaceSelector");
     expect(access).not.toMatch(/>Personal<|>Business</);
   });
