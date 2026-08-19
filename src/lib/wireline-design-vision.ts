@@ -10,14 +10,23 @@ export const WIRELINE_DESIGN_VISION = {
   naming: {
     designSystem: "WIRELINE Design System",
     rule:
-      "WIRELINE Design System is the only system name. Describe visual decisions by function: canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+      "WIRELINE Design System is the only system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+  },
+  appearance: {
+    default: "light",
+    modes: ["light", "dark", "system"] as const,
+    lightCanvas: "#F6F5FA",
+    darkCanvas: "#0A0A0E",
+    rule:
+      "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same WIRELINE Design System, never separate visual systems.",
   },
   tone: ["clean", "precise", "confident"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
-    "Near-black canvas creates calm. Electric violet is action. Platinum is the wire.",
+    "Off-white light canvas is the first-visit default; near-black dark remains a first-class appearance.",
+    "Electric violet is action. Platinum is the wire. Ink gives information structure.",
     "There is one WIRELINE visual language across public, authenticated, extension, MCP, and native surfaces.",
-    "Visual vocabulary is semantic, not thematic: canvas, surface, elevation, ink, action, wire, signal, and status.",
+    "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
     "Wire carries structure and signal; it never becomes decoration for its own sake.",
     "WIRELINE is always uppercase when the brand name is visibly presented; lowercase wireline is reserved for technical data such as URLs, identifiers, events, APIs, and persistence keys.",
     "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
@@ -141,7 +150,7 @@ export const WIRELINE_DESIGN_VISION = {
     "wl-overview-greeting",
     "wl-operate-surface",
   ],
-  retiredDesignNames: ["Letterpress", "Obsidian", "Aurora"],
+  retiredDesignNames: ["Letterpress", "Obsidian", "Aurora", "Paper"],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {
     defaultSurface: "chat-plus-canvas",
