@@ -127,6 +127,7 @@ describe("WIRELINE public iPhone prestige contract", () => {
     const vision = read("src/lib/wireline-design-vision.ts");
     const surfaceContract = read("src/lib/surface-contract.ts");
     const designCss = read("src/styles/design-system.css");
+    const identity = read("src/lib/bot-mark.ts");
 
     expect(vision).toContain('system: "WIRELINE Design System"');
     expect(surfaceContract).toContain('system: "WIRELINE Design System"');
@@ -134,5 +135,6 @@ describe("WIRELINE public iPhone prestige contract", () => {
     expect(vision).not.toMatch(/system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/);
     expect(surfaceContract).not.toMatch(/system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/);
     expect(designCss).not.toMatch(/Letterpress design system|Obsidian canvas|Aurora palette|Paper appearance/i);
+    expect(identity).not.toMatch(/\bobsidian\b/i);
   });
 });
