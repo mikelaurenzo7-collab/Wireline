@@ -24,6 +24,12 @@ const FEATURED_TEMPLATES = FEATURED_TEMPLATE_KEYS.map((key) => {
   return template;
 });
 
+const DIRECTION_LABELS = {
+  inbound: "Inbound",
+  outbound: "Outbound",
+  hybrid: "Inbound + outbound",
+} as const;
+
 const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
@@ -63,7 +69,11 @@ export default function WireAgentLanding() {
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.subline}</p>
             </div>
 
-            <Link to="/showcase" className="landing-prestige__demo-link" aria-label={`Hear ${HERO_DEMO.name} live`}>
+            <Link
+              to="/showcase"
+              className="landing-prestige__demo-link"
+              aria-label={`Hear ${HERO_DEMO.name} live`}
+            >
               <BotMark
                 seed={`public-demo:${HERO_DEMO.name}`}
                 name={HERO_DEMO.name}
@@ -101,8 +111,8 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
                 <p>STARTERS</p>
-                <h2>WIRE A JOB WORTH OWNING.</h2>
-                <span>Pick the playbook. Change every rule.</span>
+                <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
+                <span>Start with a proven playbook. Rewrite every rule.</span>
               </header>
 
               <div className="landing-prestige__role-grid">
@@ -110,7 +120,7 @@ export default function WireAgentLanding() {
                   <article key={template.key} className="landing-prestige__role-card">
                     <div className="landing-prestige__role-topline">
                       <h3>{template.name}</h3>
-                      <span>{template.direction}</span>
+                      <span>{DIRECTION_LABELS[template.direction]}</span>
                     </div>
                     <p>{template.summary}</p>
                     <ul>
@@ -155,11 +165,26 @@ export default function WireAgentLanding() {
                         </div>
                       </div>
                       <ul>
-                        <li>{free ? "1 private Bot" : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}</li>
-                        <li>{free ? "Private simulation" : `${plan.voice_minutes_monthly} call minutes`}</li>
-                        <li>{free ? "Activate when ready" : `${plan.included_phone_numbers} number${plan.included_phone_numbers === 1 ? "" : "s"} included`}</li>
+                        <li>
+                          {free
+                            ? "1 private Bot"
+                            : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
+                        </li>
+                        <li>
+                          {free
+                            ? "Private simulation"
+                            : `${plan.voice_minutes_monthly} call minutes`}
+                        </li>
+                        <li>
+                          {free
+                            ? "Activate when ready"
+                            : `${plan.included_phone_numbers} number${plan.included_phone_numbers === 1 ? "" : "s"} included`}
+                        </li>
                       </ul>
-                      <Link to={`/signup?plan=${id}`} className={featured ? "is-primary" : undefined}>
+                      <Link
+                        to={`/signup?plan=${id}`}
+                        className={featured ? "is-primary" : undefined}
+                      >
                         {free ? "Start free" : `Choose ${PLAN_NAMES[id]}`}
                       </Link>
                     </article>
