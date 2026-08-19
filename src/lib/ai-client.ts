@@ -1,8 +1,8 @@
-/* Provider-neutral structured runtime adapter. Direct xAI Grok 4.6 is the
- * managed primary, OpenAI provides the first continuity fallback, Gemini is
- * next, and the Vercel AI Gateway is the governed multi-model route.
- * Eligibility and ordering are owned by `reasoning-provider-policy.ts`; this
- * module owns transport only. */
+/* Provider-neutral structured runtime adapter. OpenAI is the managed
+ * structured default, the Vercel AI Gateway is the governed continuity route,
+ * xAI remains an optional structured continuity lane and voice provider, and
+ * Gemini is the final structured fallback. Eligibility and ordering are owned
+ * by `reasoning-provider-policy.ts`; this module owns transport only. */
 import { log } from "./server-logger";
 import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
@@ -635,14 +635,8 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
 };
 
 function configuredProviders(): RuntimeProvider[] {
-  // Production structured work stays on the Gateway so its model fallbacks,
-  // provider credentials, budgets, and observability govern the entire turn.
-  // Direct vendor lanes remain only as a safe degraded-mode path if Gateway
-  // authentication is unavailable, and xAI direct remains required for voice.
-  if (RUNTIME_PROVIDER_REGISTRY.gateway.available())
-    return [RUNTIME_PROVIDER_REGISTRY.gateway.provider];
   const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter(
-    (id) => id !== "gateway" && RUNTIME_PROVIDER_REGISTRY[id].available(),
+    (id) => RUNTIME_PROVIDER_REGISTRY[id].available(),
   );
   return orderReasoningProviders(available, resolveReasoningPreference()).map(
     (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,
@@ -654,16 +648,6 @@ function nextAvailableProvider(
   currentIndex: number,
 ): RuntimeProvider | undefined {
   return providers.slice(currentIndex + 1).find((provider) => !provider.breaker?.isOpen());
-}
-
-function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): string {
-  if (from === "xAI" && to === "OpenAI") return "xAI request failed; trying OpenAI fallback";
-  if (from === "OpenAI" && to === "Gemini") return "OpenAI request failed; trying Gemini fallback";
-  if (from === "Gemini" && to === "AI Gateway")
-    return "Gemini request failed; trying AI Gateway fallback";
-  if (from === "AI Gateway" && to === "xAI")
-    return "AI Gateway request failed; trying configured xAI fallback";
-  return `${from} request failed; trying ${to} fallback`;
 }
 
 export class RuntimeUnavailableError extends Error {
@@ -711,7 +695,9 @@ async function createWithFallbacks(
       lastError = providerError;
       const next = nextAvailableProvider(providers, index);
       if (next)
-        log.warn(`[ai-runtime] ${fallbackMessage(provider.name, next.name)}`, {
+        log.warn("[ai-runtime] provider request failed; trying fallback", {
+          provider: provider.name,
+          nextProvider: next.name,
           error: errorMessage(providerError),
           breakerState: provider.breaker?.getState() || "NONE",
         });
