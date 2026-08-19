@@ -52,6 +52,7 @@ describe("authenticated workspace design architecture", () => {
       "src/pages/EmailPage.tsx",
       "src/pages/PhonePage.tsx",
       "src/pages/KnowledgePage.tsx",
+      "src/pages/InsightsPage.tsx",
       "src/components/settings/SettingsTabs.tsx",
     ]) {
       expect(read(path), path).toContain("WorkspaceControlBand");
@@ -96,6 +97,14 @@ describe("authenticated workspace design architecture", () => {
     expect(calls).toContain('aria-label="Open call list"');
     expect(calls).toContain('aria-label="Collapse call list"');
     expect(calls).toContain('className={`${selected ? "hidden" : "block"} h-full');
+  });
+
+  it("flattens Activity to one category strip plus one compact subview control", () => {
+    const activity = read("src/pages/InsightsPage.tsx");
+    expect(activity).toContain("WorkspaceControlBand");
+    expect(activity).toContain('aria-label="Activity view"');
+    expect(activity).toContain("chrome.secondary.tabs.map");
+    expect(activity).not.toContain("AppChromeSubTabs");
   });
 
   it("keeps phone line management canonical in Calls rather than duplicated in Settings", () => {
