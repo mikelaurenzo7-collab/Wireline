@@ -1,24 +1,60 @@
 package com.wireline.app.ui.ask
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Summarize
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.BorderStroke as MaterialBorderStroke
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -28,32 +64,25 @@ import com.wireline.app.ui.WirelineViewModel
 import com.wireline.app.ui.theme.Brand
 import com.wireline.app.ui.theme.WirelineTheme
 
-/**
- * High-Fidelity "Ask Wireline" Screen for Android
- * Perfectly mirrors the premium iOS AskWirelineView experience and layout.
- * Provides actual functional actions, place-call mechanisms, and query processing.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AskWirelineScreen(
     model: WirelineViewModel,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
 ) {
     val state = model.state
-    var inputText by remember { mutableStateOf("") }
-    var answerText by remember { mutableStateOf<String?>(null) }
-    var isLocalWorking by remember { mutableStateOf(false) }
-    
-    // Outbound state
-    var expandOutbound by remember { mutableStateOf(false) }
-    var outboundNumber by remember { mutableStateOf("") }
-    var outboundConsent by remember { mutableStateOf(false) }
-    var outboundContext by remember { mutableStateOf("") }
-    var outboundCallPurpose by remember { mutableStateOf("service_or_requested") }
+    var query by remember { mutableStateOf("") }
+    var answer by remember { mutableStateOf<String?>(null) }
+    var showCall by remember { mutableStateOf(false) }
+    var number by remember { mutableStateOf("") }
+    var context by remember { mutableStateOf("") }
+    var purpose by remember { mutableStateOf("service_or_requested") }
+    var consent by remember { mutableStateOf(false) }
     var selectedAgentId by remember { mutableStateOf("") }
+
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId }
         ?: state.agents.firstOrNull()
-    val requiresMarketingConsent = outboundCallPurpose == "marketing_or_sales"
+    val requiresConsent = purpose == "marketing_or_sales"
 
     LaunchedEffect(state.agents, selectedAgentId) {
         if (selectedAgentId.isBlank() || state.agents.none { it.id == selectedAgentId }) {
@@ -61,492 +90,308 @@ fun AskWirelineScreen(
         }
     }
 
-    // Functions mirroring iOS logic
-    val onSummarizeLastCall: () -> Unit = {
-        isLocalWorking = true
-        val lastCall = state.recentCalls.firstOrNull()
-        if (lastCall == null) {
-            answerText = "You don't have any calls yet."
+    fun summarizeLastCall() {
+        val call = state.recentCalls.firstOrNull()
+        answer = if (call == null) {
+            "No calls yet."
         } else {
-            val who = lastCall.customerNumber ?: "an unknown number"
-            val direction = lastCall.direction ?: "incoming"
-            val summary = lastCall.summary ?: "No summary available."
-            answerText = "Last $direction call with $who:\n\n$summary"
+            val who = call.customerNumber ?: "an unknown number"
+            val summary = call.summary ?: "No summary is available yet."
+            "Last call with $who\n\n$summary"
         }
-        isLocalWorking = false
     }
 
-    val onCheckAttention: () -> Unit = {
-        isLocalWorking = true
-        val totalRecent = state.recentCalls.size
-        val needsFollowUp = state.recentCalls.count { it.outcomeTag == "followup" }
-        if (totalRecent == 0) {
-            answerText = "No recent calls to report."
-        } else if (needsFollowUp == 0) {
-            answerText = "You're all caught up - $totalRecent recent calls, none flagged for follow-up."
+    fun attentionSummary() {
+        val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
+        answer = if (followUps == 0) {
+            "You're caught up. No recent calls are flagged for follow-up."
         } else {
-            answerText = "$needsFollowUp of your $totalRecent recent calls need follow-up. Review them in Calls."
+            "$followUps recent call${if (followUps == 1) "" else "s"} need follow-up. Open Calls to review them."
         }
-        isLocalWorking = false
     }
 
-    val onSendCustomQuery: (String) -> Unit = { query ->
-        if (query.isNotBlank()) {
-            isLocalWorking = true
-            val cleanQuery = query.lowercase().trim()
-            
-            answerText = when {
-                cleanQuery.contains("wallet") || cleanQuery.contains("credit") || cleanQuery.contains("balance") || cleanQuery.contains("money") -> {
-                    val balance = state.wallet?.balanceUsd ?: 0.0
-                    val planSummary = state.me?.account?.let { account ->
-                        val status = account.subscriptionStatus.replace('_', ' ')
-                        "Your ${account.planName} plan status is $status."
-                    } ?: "Plan status is still loading."
-                    "Your current prepaid balance is $${"%.2f".format(balance)}. $planSummary"
-                }
-                cleanQuery.contains("agent") || cleanQuery.contains("roster") || cleanQuery.contains("bot") || cleanQuery.contains("bots") -> {
-                    if (state.agents.isEmpty()) {
-                        "You don't have any agents on your roster currently."
-                    } else {
-                        val names = state.agents.joinToString("\n") { "• ${it.name} (${it.role ?: "Support"})" }
-                        "Here are your active voice agents:\n\n$names"
-                    }
-                }
-                cleanQuery.contains("summary") || cleanQuery.contains("last call") || cleanQuery.contains("summarize") -> {
-                    val lastCall = state.recentCalls.firstOrNull()
-                    if (lastCall == null) {
-                        "You don't have any calls yet."
-                    } else {
-                        val who = lastCall.customerNumber ?: "an unknown number"
-                        val summary = lastCall.summary ?: "No summary available."
-                        "Last call with $who: $summary"
-                    }
-                }
-                cleanQuery.contains("attention") || cleanQuery.contains("follow-up") || cleanQuery.contains("todo") -> {
-                    val totalRecent = state.recentCalls.size
-                    val needsFollowUp = state.recentCalls.count { it.outcomeTag == "followup" }
-                    if (needsFollowUp == 0) {
-                        "All caught up! $totalRecent recent calls, none flagged."
-                    } else {
-                        "$needsFollowUp of your $totalRecent recent calls need follow-up."
-                    }
-                }
-                else -> {
-                    "I can verify ${state.agents.size} configured agents and ${state.activeCalls.size} live calls right now. Try asking me 'Summarize last call', 'Show my agent roster', or 'What is my wallet balance?'."
-                }
+    fun answerQuery(raw: String) {
+        val normalized = raw.trim().lowercase()
+        if (normalized.isBlank()) return
+        answer = when {
+            normalized.contains("balance") || normalized.contains("wallet") || normalized.contains("credit") ->
+                "Runtime Balance: $${"%.2f".format(state.wallet?.balanceUsd ?: 0.0)}"
+            normalized.contains("bot") || normalized.contains("agent") ->
+                if (state.agents.isEmpty()) "No Bots yet." else state.agents.joinToString("\n") { "• ${it.name}" }
+            normalized.contains("call") || normalized.contains("summary") -> {
+                val call = state.recentCalls.firstOrNull()
+                call?.summary ?: "No recent call summary is available yet."
             }
-            inputText = ""
-            isLocalWorking = false
+            normalized.contains("attention") || normalized.contains("follow") -> {
+                val count = state.recentCalls.count { it.outcomeTag == "followup" }
+                if (count == 0) "Nothing is flagged for follow-up." else "$count call${if (count == 1) "" else "s"} need follow-up."
+            }
+            else -> "I can check your Bots, recent calls, follow-ups, and Runtime Balance here."
         }
+        query = ""
     }
 
     WirelineTheme {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Brand.Canvas)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Header medallion & title
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "ASK BOTBOUND",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Brand.Text3,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "What do you need?",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Brand.Text,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                TextButton(onClick = onBack) { Text("Done") }
+            }
+
+            answer?.let { value ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+                    shape = RoundedCornerShape(Brand.RadiusMd),
+                    border = BorderStroke(1.dp, Brand.Border),
                 ) {
-                    Box(
-                        modifier = Modifier.size(68.dp),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Text(
+                            value,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Brand.Text,
+                        )
+                        IconButton(onClick = { answer = null }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Brand.Text3)
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                QuickAction(
+                    title = "Last call",
+                    icon = Icons.Default.Summarize,
+                    onClick = ::summarizeLastCall,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickAction(
+                    title = "Needs attention",
+                    icon = Icons.Default.Notifications,
+                    onClick = ::attentionSummary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+                shape = RoundedCornerShape(Brand.RadiusMd),
+                border = BorderStroke(1.dp, Brand.Border),
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showCall = !showCall }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(56.dp)
-                                .background(Brand.Accent, CircleShape),
-                            contentAlignment = Alignment.Center
+                                .size(36.dp)
+                                .background(Brand.AccentSoft, CircleShape),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "Wireline",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
+                            Icon(Icons.Default.Call, contentDescription = null, tint = Brand.Accent)
                         }
+                        Spacer(Modifier.size(12.dp))
+                        Text(
+                            "Place a call",
+                            modifier = Modifier.weight(1f),
+                            color = Brand.Text,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Icon(
+                            if (showCall) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (showCall) "Collapse" else "Expand",
+                            tint = Brand.Text3,
+                        )
                     }
-                    
-                    Spacer(Modifier.height(12.dp))
-                    
-                    Text(
-                        text = "What can Wireline do?",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Brand.Text
-                    )
-                }
 
-                // Dynamic Answer Card with Purple Ambient Glow
-                answerText?.let { answer ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
-                        shape = RoundedCornerShape(Brand.RadiusLg),
-                        border = BorderStroke(1.dp, Brand.Border)
-                    ) {
+                    AnimatedVisibility(showCall) {
                         Column(
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Row(
+                            HorizontalDivider(color = Brand.Border)
+
+                            if (state.agents.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    state.agents.take(3).forEach { bot ->
+                                        AssistChip(
+                                            onClick = { selectedAgentId = bot.id },
+                                            label = { Text(bot.name) },
+                                            colors = AssistChipDefaults.assistChipColors(
+                                                containerColor = if (bot.id == selectedAgent?.id) Brand.AccentSoft else Brand.Raised,
+                                                labelColor = Brand.Text,
+                                            ),
+                                        )
+                                    }
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = number,
+                                onValueChange = { number = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "Wireline response",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = Brand.Text2,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Dismiss",
-                                    tint = Brand.Text3,
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clickable { answerText = null }
-                                )
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                text = answer,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Brand.Text
+                                label = { Text("Phone number") },
+                                singleLine = true,
+                                colors = fieldColors(),
                             )
-                        }
-                    }
-                }
+                            OutlinedTextField(
+                                value = context,
+                                onValueChange = { context = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("What should the Bot handle?") },
+                                maxLines = 3,
+                                colors = fieldColors(),
+                            )
 
-                // Loading Indicator
-                if (isLocalWorking || state.isWorking) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Brand.Accent, strokeWidth = 3.dp)
-                    }
-                }
-
-                // Action Menu Cards
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    // Action 1: Place a call (Expandable)
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
-                        shape = RoundedCornerShape(Brand.RadiusLg),
-                        border = BorderStroke(1.dp, Brand.Border)
-                    ) {
-                        Column {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { expandOutbound = !expandOutbound }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(Brand.AccentSoft, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Phone,
-                                        contentDescription = "Place a call",
-                                        tint = Brand.Accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                                Spacer(Modifier.width(14.dp))
-                                Text(
-                                    "Place a call",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Brand.Text
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FilterChip(
+                                    selected = purpose == "service_or_requested",
+                                    onClick = { purpose = "service_or_requested"; consent = false },
+                                    label = { Text("Service") },
                                 )
-                                Spacer(Modifier.weight(1f))
-                                Icon(
-                                    imageVector = if (expandOutbound) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = if (expandOutbound) "Collapse" else "Expand",
-                                    tint = Brand.Text3
+                                FilterChip(
+                                    selected = purpose == "callback",
+                                    onClick = { purpose = "callback"; consent = false },
+                                    label = { Text("Callback") },
+                                )
+                                FilterChip(
+                                    selected = purpose == "marketing_or_sales",
+                                    onClick = { purpose = "marketing_or_sales"; consent = false },
+                                    label = { Text("Sales") },
                                 )
                             }
 
-                            AnimatedVisibility(visible = expandOutbound) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp)
-                                        .padding(bottom = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Divider(color = Brand.Border)
-                                    
-                                    Text("Select agent", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        state.agents.take(3).forEach { agent ->
-                                            val isSelected = agent.id == selectedAgentId
-                                            val containerColor = if (isSelected) Brand.Accent else Brand.Raised
-                                            val contentColor = if (isSelected) Color.White else Brand.Text
-                                            
-                                            AssistChip(
-                                                onClick = { selectedAgentId = agent.id },
-                                                label = { Text(agent.name) },
-                                                colors = AssistChipDefaults.assistChipColors(
-                                                    containerColor = containerColor,
-                                                    labelColor = contentColor
-                                                ),
-                                                border = BorderStroke(1.dp, Brand.Border)
-                                            )
-                                        }
-                                    }
+                            if (requiresConsent) {
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Checkbox(checked = consent, onCheckedChange = { consent = it })
+                                    OutboundConsentFields()
+                                }
+                            }
 
-                                    OutlinedTextField(
-                                        value = outboundNumber,
-                                        onValueChange = { outboundNumber = it },
-                                        label = { Text("Customer phone number") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true,
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Brand.Accent,
-                                            unfocusedBorderColor = Brand.Border
+                            Button(
+                                onClick = {
+                                    selectedAgent?.let { bot ->
+                                        val destination = number
+                                        model.placeCall(
+                                            bot.id,
+                                            destination,
+                                            context,
+                                            purpose,
+                                            requiresConsent && consent,
                                         )
+                                        answer = "Call requested with ${bot.name} for $destination."
+                                        number = ""
+                                        context = ""
+                                        purpose = "service_or_requested"
+                                        consent = false
+                                        showCall = false
+                                    }
+                                },
+                                enabled = selectedAgent != null && number.isNotBlank() && (!requiresConsent || consent) && !state.isWorking,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
+                            ) {
+                                if (state.isWorking) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color.White,
                                     )
-
-                                    OutlinedTextField(
-                                        value = outboundContext,
-                                        onValueChange = { outboundContext = it },
-                                        label = { Text("Context or topic") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true,
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Brand.Accent,
-                                            unfocusedBorderColor = Brand.Border
-                                        )
-                                    )
-
-                                    Text("Call type", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        FilterChip(
-                                            selected = outboundCallPurpose == "service_or_requested",
-                                            onClick = {
-                                                outboundCallPurpose = "service_or_requested"
-                                                outboundConsent = false
-                                            },
-                                            label = { Text("Service") }
-                                        )
-                                        FilterChip(
-                                            selected = outboundCallPurpose == "callback",
-                                            onClick = {
-                                                outboundCallPurpose = "callback"
-                                                outboundConsent = false
-                                            },
-                                            label = { Text("Callback") }
-                                        )
-                                        FilterChip(
-                                            selected = outboundCallPurpose == "marketing_or_sales",
-                                            onClick = {
-                                                outboundCallPurpose = "marketing_or_sales"
-                                                outboundConsent = false
-                                            },
-                                            label = { Text("Marketing") }
-                                        )
-                                    }
-
-                                    if (requiresMarketingConsent) {
-                                        Row(
-                                            verticalAlignment = Alignment.Top,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            Checkbox(
-                                                checked = outboundConsent,
-                                                onCheckedChange = { outboundConsent = it },
-                                            )
-                                            OutboundConsentFields()
-                                        }
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            selectedAgent?.let {
-                                                val requestedNumber = outboundNumber
-                                                model.placeCall(
-                                                    it.id,
-                                                    requestedNumber,
-                                                    outboundContext,
-                                                    outboundCallPurpose,
-                                                    requiresMarketingConsent && outboundConsent
-                                                )
-                                                answerText = "Outbound call request submitted with ${it.name} for $requestedNumber."
-                                                outboundNumber = ""
-                                                outboundContext = ""
-                                                outboundConsent = false
-                                                outboundCallPurpose = "service_or_requested"
-                                                expandOutbound = false
-                                            }
-                                        },
-                                        enabled = selectedAgent != null && outboundNumber.isNotBlank() && (!requiresMarketingConsent || outboundConsent) && !state.isWorking,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
-                                        shape = RoundedCornerShape(Brand.RadiusMd)
-                                    ) {
-                                        Text("Place call", fontWeight = FontWeight.SemiBold)
-                                    }
+                                } else {
+                                    Text("Place call", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
                     }
-
-                    // Action 2: Summarize my last call
-                    ActionRowCard(
-                        title = "Summarize my last call",
-                        icon = Icons.Default.Comment,
-                        onClick = onSummarizeLastCall
-                    )
-
-                    // Action 3: What needs my attention
-                    ActionRowCard(
-                        title = "What needs my attention",
-                        icon = Icons.Default.Notifications,
-                        onClick = onCheckAttention
-                    )
                 }
-
-                Spacer(Modifier.height(32.dp))
-
-                // Custom Query Section
-                Text(
-                    text = "Or ask a custom question:",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Brand.Text2,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = { Text("Ask about agents, wallet balance, or call digests...", color = Brand.Text3) },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1,
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { onSendCustomQuery(inputText) },
-                                enabled = inputText.isNotBlank()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Send,
-                                    contentDescription = "Send",
-                                    tint = if (inputText.isNotBlank()) Brand.Accent else Brand.Text3
-                                )
-                            }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Brand.Text,
-                            unfocusedTextColor = Brand.Text,
-                            focusedContainerColor = Brand.Panel,
-                            unfocusedContainerColor = Brand.Panel,
-                            focusedBorderColor = Brand.Accent,
-                            unfocusedBorderColor = Brand.Border
-                        ),
-                        shape = RoundedCornerShape(Brand.RadiusMd)
-                    )
-                }
-
-                Spacer(Modifier.height(24.dp))
-
-                // Example Tips
-                Text(
-                    text = "Try these commands:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Brand.Text2,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(Modifier.height(8.dp))
-                
-                Text("• \"Which agents do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
-                Text("• \"What is my wallet credit balance?\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
-                Text("• \"Show me which calls need attention\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
             }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Ask about Bots, calls, follow-ups, or balance") },
+                maxLines = 3,
+                trailingIcon = {
+                    IconButton(onClick = { answerQuery(query) }, enabled = query.isNotBlank()) {
+                        Icon(Icons.Default.Send, contentDescription = "Send", tint = Brand.Accent)
+                    }
+                },
+                colors = fieldColors(),
+            )
         }
     }
 }
 
 @Composable
-private fun ActionRowCard(
+private fun QuickAction(
     title: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Brand.Panel),
-        shape = RoundedCornerShape(Brand.RadiusLg),
-        border = BorderStroke(1.dp, Brand.Border)
+        border = BorderStroke(1.dp, Brand.Border),
+        shape = RoundedCornerShape(Brand.RadiusMd),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(Brand.AccentSoft, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = Brand.Accent,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Text(
-                title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = Brand.Text
-            )
-            Spacer(Modifier.weight(1f))
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Brand.Text3,
-                modifier = Modifier.size(16.dp)
-            )
+            Icon(icon, contentDescription = null, tint = Brand.Accent, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.size(8.dp))
+            Text(title, modifier = Modifier.weight(1f), color = Brand.Text, fontWeight = FontWeight.Medium)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Brand.Text3, modifier = Modifier.size(16.dp))
         }
     }
 }
+
+@Composable
+private fun fieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Brand.Text,
+    unfocusedTextColor = Brand.Text,
+    focusedContainerColor = Brand.Panel,
+    unfocusedContainerColor = Brand.Panel,
+    focusedBorderColor = Brand.Accent,
+    unfocusedBorderColor = Brand.Border,
+)
