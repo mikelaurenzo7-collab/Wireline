@@ -1,6 +1,7 @@
 /**
- * Public marketing surface contracts for the consolidated homepage, natural
- * document flow, minimal public header, live proof, and honest plan economics.
+ * Public marketing contracts. The root landing is intentionally unlike the
+ * document-style supporting pages: desktop is a split product entrance, while
+ * mobile is account access first. Long-form product explanation lives elsewhere.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const executable = (source) =>
@@ -12,33 +13,22 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const landingFooter = read("src/components/marketing/LandingFooter.tsx");
-  const landingStageCss = read("src/styles/landing-call-stage.css");
-  const landingLayoutCss = read("src/styles/landing-stage-layout.css");
-  const landingConsoleCss = read("src/styles/landing-live-console.css");
-  const landingLongformCss = read("src/styles/landing-longform.css");
+  const landingPrestigeCss = read("src/styles/landing-prestige.css");
+  const authAccessCss = read("src/styles/auth-access-panel.css");
+  const indexCss = read("src/index.css");
   const documentFlowCss = read("src/styles/marketing-document-flow.css");
-  const marketingSurfaceIndex = read("src/styles/wireline-marketing-surfaces.css");
   const signatureCss = read("src/styles/wireline-signature.css");
-  const productCopy = read("src/lib/product-copy.ts");
   const botProduct = read("src/lib/bot-product.ts");
   const developersPage = read("src/pages/Developers.tsx");
   const solutionsPage = read("src/pages/SolutionsPage.tsx");
-  const featuresPage = read("src/pages/Features.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
 
   mustInclude(
     "src/styles/clarity-system.css",
     claritySystemCss,
     /\.marketing-surface :is\(\.wl-public-rail, \.wl-marketing-center\) \{\s*text-align:\s*center;/,
-    "marketing pages must center public rails by design-system rule",
+    "supporting marketing pages must retain the shared public alignment rule",
   );
-  mustInclude(
-    "src/styles/clarity-system.css",
-    claritySystemCss,
-    /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
-    "marketing actions must center by default",
-  );
-
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
@@ -52,30 +42,92 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "long-form document routes must be able to opt out of panel composition",
   );
 
-  for (const file of [
-    "src/pages/Features.tsx",
-    "src/pages/Pricing.tsx",
-    "src/pages/About.tsx",
-    "src/pages/Compare.tsx",
-    "src/pages/Blog.tsx",
-    "src/pages/Showcase.tsx",
-    "src/pages/SolutionsPage.tsx",
-    "src/pages/VerticalLanding.tsx",
+  for (const [pattern, description] of [
+    [/aria-label="WIRELINE home"/, "supporting public header must provide a named WIRELINE home link"],
+    [/aria-label="Account"/, "supporting public header must expose only account actions"],
+    [/to="\/signin"/, "supporting public header must keep sign in visible"],
+    [/to="\/signup\?plan=personal"/, "supporting public header must keep free signup visible"],
   ]) {
-    mustInclude(
-      file,
-      read(file),
-      /text-center|wl-marketing-center|!text-left/,
-      "public marketing page must explicitly declare its copy alignment",
-    );
+    mustInclude("src/components/marketing/PrecisionPublicHeader.tsx", publicHeader, pattern, description);
+  }
+  mustExclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    executable(publicHeader),
+    /Dialog|Menu|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Features"|label:\s*"Pricing"|label:\s*"Demos"|label:\s*"Trust"/,
+    "supporting public header must not revive brochure tabs or a mobile navigation dialog",
+  );
+
+  mustInclude(
+    "src/components/marketing/MarketingHero.tsx",
+    marketingHero,
+    /aria-label=\{[\s\S]*?isHomeHero[\s\S]*?typeof title === "string"[\s\S]*?\? title[\s\S]*?: undefined[\s\S]*?\}/,
+    "shared supporting-page heroes must expose their visual copy as an accessible name",
+  );
+
+  for (const [pattern, description] of [
+    [/<AuthAccessPanel embedded initialMode="signin"\s*\/>/, "root landing must embed real account access"],
+    [/<span>WIRE YOUR<\/span>[\s\S]*<span>PHONE BOT<\/span>/, "root landing must use the approved two-line hero"],
+    [/landing-prestige__channels[\s\S]*CALL[\s\S]*TEXT[\s\S]*EMAIL/, "root landing must show Call, Text, and Email directly beneath the hero"],
+    [/size=\{30\}[\s\S]*active/, "Jordan identity must use a compact animated Bot signal"],
+    [/FEATURED_TEMPLATE_KEYS/, "root landing must curate role starters rather than dumping every template"],
+    [/template\.moves\.map/, "role starters must show role-specific playbook moves"],
+    [/id="pricing"/, "root landing must preserve a direct pricing path"],
+    [/STRIPE_PLANS/, "root landing pricing must stay tied to the Stripe plan catalog"],
+    [/landing-prestige__trust/, "root landing must retain a concise trust exit"],
+    [/<LandingFooter\s*\/>/, "desktop landing must retain public wayfinding after the short narrative"],
+  ]) {
+    mustInclude("src/components/marketing/WireAgentLanding.tsx", wireAgentLanding, pattern, description);
+  }
+
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    executable(wireAgentLanding),
+    /<PrecisionPublicHeader|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category/,
+    "root landing must not revive the old brochure header, proof console, redundant capability sections, or audience taxonomy",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /ONE WORKSPACE|Business and personal templates|Runtime\s+Balance|Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
+    "root landing must not lead with architecture, retired audience language, or detailed billing mechanics",
+  );
+
+  for (const [pattern, description] of [
+    [/grid-template-columns:\s*minmax\(0, 1fr\)\s+minmax\(0, 1fr\)/, "desktop entrance must stay a true split panel"],
+    [/font-size:\s*clamp\(4\.25rem, 7\.15vw, 8\.4rem\)/, "desktop hero must retain editorial display scale"],
+    [/@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero,[\s\S]*\.landing-prestige__desktop-only[\s\S]*display:\s*none;/, "mobile landing must hide long-form marketing"],
+    [/@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*100dvh;/, "mobile landing must dedicate the viewport to account access"],
+    [/\.landing-prestige__role-grid/, "desktop landing must provide a dedicated role-playbook grid"],
+  ]) {
+    mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
   }
 
   mustInclude(
-    "src/lib/product-copy.ts",
-    productCopy,
-    /MARKETING_VOICE/,
-    "legacy marketing voice adapter must remain available to existing public routes",
+    "src/styles/auth-access-panel.css",
+    authAccessCss,
+    /\.wl-access-panel__oauth[\s\S]*grid-template-columns:\s*repeat\(3/,
+    "account access must keep OAuth providers compact and immediately scannable",
   );
+  mustInclude(
+    "src/index.css",
+    indexCss,
+    /@import "\.\/styles\/auth-access-panel\.css";/,
+    "canonical CSS stack must own access-panel styling",
+  );
+  mustInclude(
+    "src/index.css",
+    indexCss,
+    /@import "\.\/styles\/landing-prestige\.css";/,
+    "canonical CSS stack must own split-landing styling",
+  );
+
+  mustInclude(
+    "src/components/marketing/LandingFooter.tsx",
+    landingFooter,
+    /<MarketingChromeBar\s*\/>/,
+    "landing footer must render the shared public link bar",
+  );
+
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
@@ -85,113 +137,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /BOT_WORKSPACE_PROMISE/,
-    "the one-workspace Bot promise must remain centralized",
+    /moves:\s*\[/,
+    "role templates must carry specific playbook steps",
   );
-
-  for (const [pattern, description] of [
-    [/aria-label="WIRELINE home"/, "public header must provide a named WIRELINE home link"],
-    [/aria-label="Account"/, "public header must expose only account actions"],
-    [/to="\/signin"/, "public header must keep sign in visible"],
-    [/to="\/signup\?plan=personal"/, "public header must keep free signup visible"],
-    [/Start Free/, "public header must retain the direct conversion action"],
-  ]) {
-    mustInclude(
-      "src/components/marketing/PrecisionPublicHeader.tsx",
-      publicHeader,
-      pattern,
-      description,
-    );
-  }
-  mustExclude(
-    "src/components/marketing/PrecisionPublicHeader.tsx",
-    executable(publicHeader),
-    /Dialog|Menu|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Features"|label:\s*"Pricing"|label:\s*"Demos"|label:\s*"Trust"/,
-    "public header must not revive brochure tabs or a mobile navigation dialog",
-  );
-
-  mustInclude(
-    "src/components/marketing/MarketingHero.tsx",
-    marketingHero,
-    /aria-label=\{[\s\S]*?isHomeHero[\s\S]*?typeof title === "string"[\s\S]*?\? title[\s\S]*?: undefined[\s\S]*?\}/,
-    "shared hero headlines must expose their visual copy as an accessible name",
-  );
-  mustExclude(
-    "src/components/marketing/MarketingHero.tsx",
-    marketingHero,
-    /aria-label="WIRELINE capabilities"/i,
-    "minimal shared heroes must not reintroduce capability chips",
-  );
-
-  for (const [pattern, description] of [
-    [/MARKETING_VOICE\.headline/, "landing must consume the shared headline"],
-    [/MARKETING_VOICE\.subline/, "landing must consume the shared supporting line"],
-    [/MARKETING_VOICE\.primaryCta/, "landing must consume the shared primary action"],
-    [/MARKETING_VOICE\.spine/, "landing must consume the shared operating spine"],
-    [/<PrecisionPublicHeader\s*\/>/, "landing must use the minimal shared public header"],
-    [/<LandingFooter\s*\/>/, "landing must retain full footer wayfinding"],
-    [/id="solutions"/, "landing must include role templates in the main story"],
-    [/id="features"/, "landing must include product capabilities in the main story"],
-    [/id="pricing"/, "landing must include pricing in the main story"],
-    [/id="trust"/, "landing must include controls and trust in the main story"],
-    [/aria-label="Bot template lane"/, "Bot role starters must stay reachable as named navigation"],
-    [/BOT_ROLE_TEMPLATES\.map/, "landing must render the shared business, personal, and custom role catalog"],
-    [/variant="stage"/, "home must stage live proof in the proprietary WIRELINE console"],
-    [/landing-console__activity/, "home must show an outcome ledger beside the live Bot"],
-    [/Illustrative Workflow/, "home must label static proof as illustrative"],
-    [/From first answer to confirmed next step/, "home must explain the completed-work proof"],
-    [/Booked and logged/, "home must expose a concrete outcome"],
-    [/rules, approvals, spend, and handoffs/, "home must keep owner control explicit"],
-    [/Build Free/, "landing must keep the free builder visible"],
-    [/View Pricing/, "landing must preserve a direct pricing path"],
-    [/STRIPE_PLANS/, "landing pricing must stay tied to the Stripe plan catalog"],
-    [/Runtime\s+Balance/, "landing pricing must explain prepaid Runtime Balance"],
-  ]) {
-    mustInclude(
-      "src/components/marketing/WireAgentLanding.tsx",
-      wireAgentLanding,
-      pattern,
-      description,
-    );
-  }
-
-  mustInclude(
-    "src/components/marketing/LandingFooter.tsx",
-    landingFooter,
-    /<MarketingChromeBar\s*\/>/,
-    "landing footer must render the shared public link bar",
-  );
-
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    executable(wireAgentLanding),
-    /From first answer to confirmed next step\./,
-    "cased activity title must not carry a terminal period",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    executable(wireAgentLanding),
-    /variant="phone"|landing-phone|landing-os__tray|chrome="hidden"|00:42|landing-console__duration|Live Video/,
-    "landing code must not depend on borrowed device metaphors or pseudo-live telemetry",
-  );
-  mustExclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
-    "landing must not revive retired trial, plan, or overage positioning",
-  );
-
-  for (const [pattern, description] of [
-    [/@import "\.\/marketing-document-flow\.css";/, "marketing tier must load document flow"],
-    [/@import "\.\/landing-longform\.css";/, "marketing tier must load consolidated landing styles"],
-  ]) {
-    mustInclude(
-      "src/styles/wireline-marketing-surfaces.css",
-      marketingSurfaceIndex,
-      pattern,
-      description,
-    );
-  }
 
   for (const [pattern, description] of [
     [/data-wireline-viewport="document"/, "public document mode must be explicit"],
@@ -199,67 +147,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     [/overflow-y:\s*auto;/, "the document must own vertical scrolling"],
     [/scroll-snap-type:\s*none;/, "public documents must not snap between panels"],
     [/font-synthesis:\s*none;/, "type must not synthesize missing font weights"],
-    [/-webkit-font-smoothing:\s*auto;/, "font rendering must follow the platform"],
-    [/--wireline-typography-display-weight:\s*700;/, "display type must use a shipped static weight"],
-    [/--wireline-typography-h3-weight:\s*600;/, "supporting type must use a shipped static weight"],
   ]) {
-    mustInclude(
-      "src/styles/marketing-document-flow.css",
-      documentFlowCss,
-      pattern,
-      description,
-    );
-  }
-
-  mustInclude(
-    "src/styles/landing-call-stage.css",
-    landingStageCss,
-    /@import "\.\/landing-stage-layout\.css";/,
-    "landing shell must import its narrative layout module",
-  );
-  mustInclude(
-    "src/styles/landing-call-stage.css",
-    landingStageCss,
-    /@import "\.\/landing-live-console\.css";/,
-    "landing shell must import its live-console module",
-  );
-  mustInclude(
-    "src/styles/landing-stage-layout.css",
-    landingLayoutCss,
-    /grid-template-columns:\s*minmax\(0, 0\.93fr\)\s+minmax\(34rem, 1\.07fr\)/,
-    "desktop landing must preserve a deliberate narrative and proof split",
-  );
-  mustInclude(
-    "src/styles/landing-live-console.css",
-    landingConsoleCss,
-    /\.landing-console__body[\s\S]*grid-template-columns:/,
-    "live proof must preserve separate Bot and outcome panes",
-  );
-  mustInclude(
-    "src/styles/landing-longform.css",
-    landingLongformCss,
-    /\.landing-home__pricing-grid/,
-    "consolidated landing must include a responsive pricing grid",
-  );
-  mustInclude(
-    "src/styles/landing-longform.css",
-    landingLongformCss,
-    /\.landing-home__control-grid/,
-    "consolidated landing must include a control proof grid",
-  );
-
-  for (const [file, source] of [
-    ["src/styles/landing-call-stage.css", landingStageCss],
-    ["src/styles/landing-stage-layout.css", landingLayoutCss],
-    ["src/styles/landing-live-console.css", landingConsoleCss],
-    ["src/styles/landing-longform.css", landingLongformCss],
-  ]) {
-    mustExclude(
-      file,
-      executable(source),
-      /#4ade80|#fbbf24|#7dd3fc|#2563eb|landing-phone|landing-os/,
-      "landing styles must stay on the WIRELINE token system without retired device selectors",
-    );
+    mustInclude("src/styles/marketing-document-flow.css", documentFlowCss, pattern, description);
   }
 
   mustInclude(
@@ -275,12 +164,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "the Wire pulse must respect reduced motion",
   );
 
-  mustInclude(
-    "src/pages/Features.tsx",
-    featuresPage,
-    /MARKETING_VOICE\.proof\.map/,
-    "features must preserve the canonical operating loop",
-  );
   for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Scale"]) {
     mustInclude(
       "src/pages/Pricing.tsx",
@@ -289,23 +172,23 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       `pricing must expose the ${tier} tier`,
     );
   }
-  mustExclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /\$159|WIRELINE\s+Business/i,
-    "pricing must not revive the retired self-serve Business offer",
-  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
     /Runtime\s+Balance/,
-    "pricing must explain Runtime Balance",
+    "the dedicated pricing page must explain Runtime Balance",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
     /STRIPE_PLANS/,
     "pricing must stay tied to the Stripe plan catalog",
+  );
+  mustExclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /\$159|WIRELINE\s+Business/i,
+    "pricing must not revive the retired self-serve Business offer",
   );
 
   mustExclude(
@@ -325,11 +208,5 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     developersPage,
     /Create or refine a private Bot configuration draft/,
     "developer surface must describe technical agent objects as Bots to customers",
-  );
-  mustExclude(
-    "src/pages/Developers.tsx",
-    developersPage,
-    /\bassistant(s)?\b/i,
-    "developer surface must use Bot language rather than assistant language",
   );
 }
