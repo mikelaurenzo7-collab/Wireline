@@ -21,12 +21,12 @@
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 
 const SITE_URL = "https://trywireline.com";
-const BRAND_SUFFIX = " | Wireline";
+const BRAND_SUFFIX = " | WIRELINE";
 
 /** Exact static strings in `index.html` that carry the homepage defaults. */
-export const HOME_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE";
+export const HOME_TITLE = "WIRELINE | WIRE YOUR PHONE BOT";
 export const HOME_DESCRIPTION =
-  "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.";
+  "A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready.";
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
 const HOME_OG_URL_TAG = '<meta property="og:url" content="https://trywireline.com/" />';
 const HOME_ROBOTS_TAG =
@@ -48,9 +48,10 @@ type StaticRouteMeta = {
   noIndex?: boolean;
 };
 
-/** Mirror `PageMeta`'s brand-suffix rule so server + client titles match. */
+/** Mirror `PageMeta`'s WIRELINE casing and brand-suffix rule so server + client titles match. */
 function withBrand(title: string): string {
-  return /\bWireline\b/i.test(title) ? title : `${title}${BRAND_SUFFIX}`;
+  const branded = title.replace(/\bWireline\b/gi, "WIRELINE");
+  return /\bWIRELINE\b/.test(branded) ? branded : `${branded}${BRAND_SUFFIX}`;
 }
 
 /**
