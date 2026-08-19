@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("authenticated workspace design architecture", () => {
-  it("keeps adjustable desktop panels accessible and persistent", () => {
+  it("keeps adjustable desktop panels accessible, persistent, and cleanup-safe", () => {
     const panel = read("src/components/layout/WorkspaceResizablePanel.tsx");
     expect(panel).toContain('role="separator"');
     expect(panel).toContain('aria-orientation="vertical"');
@@ -14,6 +14,7 @@ describe("authenticated workspace design architecture", () => {
     expect(panel).toContain("ArrowRight");
     expect(panel).toContain("localStorage.setItem");
     expect(panel).toContain("onDoubleClick={resetSize}");
+    expect(panel).toContain("if (cleanupRef.current === cleanup) cleanupRef.current = null");
   });
 
   it("makes the global rail foldable and resizable instead of a fixed desktop column", () => {
