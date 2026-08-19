@@ -1,8 +1,9 @@
 /**
- * Design tokens and brand geometry. The Wireline dark system runs on the
- * Aurora violet action token, while the folded W uses its own violet-to-
- * platinum identity palette on an obsidian field. Retired purple/blue palette
- * values must not reappear on active design surfaces.
+ * WIRELINE Design System tokens and brand geometry. The semantic base token
+ * source carries the dark appearance, while Light overrides it at runtime for
+ * first visits. Electric violet is action, platinum is wire, and the folded W
+ * keeps its own dark-field asset treatment. Retired palette values must not
+ * reappear on active design surfaces.
  */
 const OLD_PALETTE = /#5D3FD3|#451EBB|#F8F9FF|#EFF4FF|#E5EEFF|#0B1C30|rgba\(93,\s*63,\s*211/i;
 const FOLDED_W_PATH = /M42[ ,]106H68L100[ ,]14H74Z/;
@@ -32,13 +33,13 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "design-tokens/wireline.tokens.json",
     tokenSource,
     /"\$description"\s*:\s*"Wireline dark design tokens/,
-    "token source must describe the Wireline dark system",
+    "token source must identify the semantic dark appearance it generates",
   );
   mustInclude(
     "design-tokens/wireline.tokens.json",
     tokenSource,
     /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#A78BFA"\s*\}/,
-    "token source primary action must be the Aurora electric violet #A78BFA",
+    "token source primary action must be electric violet #A78BFA",
   );
   mustInclude(
     "design-tokens/wireline.tokens.json",
@@ -50,56 +51,56 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "src/styles/tokens.generated.css",
     webTokens,
     /--wireline-color-action-primary-default:\s*#A78BFA/,
-    "web tokens must carry the Aurora violet token",
+    "web tokens must carry the WIRELINE violet action token",
   );
   mustInclude(
     "apps/browser-extension/panel/tokens.generated.css",
     browserTokens,
     /--wireline-color-action-primary-default:\s*#A78BFA/,
-    "browser tokens must carry the Aurora violet token",
+    "browser tokens must carry the WIRELINE violet action token",
   );
   mustInclude(
     "src/constants/generated-design-tokens.ts",
     tokenConstants,
     /"color\.action\.primary\.default": "#A78BFA"/,
-    "TS tokens must carry the Aurora violet token",
+    "TS tokens must carry the WIRELINE violet action token",
   );
   mustInclude(
     "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
     androidTokens,
     /colorActionPrimaryDefault = Color\(0xFFA78BFA\)/,
-    "Android tokens must carry the Aurora violet token",
+    "Android tokens must carry the WIRELINE violet action token",
   );
   mustInclude(
     "ios/Wireline/Theme/WirelineDesignTokens.generated.swift",
     iosTokens,
     /colorActionPrimaryDefault = Color\(hex: 0xA78BFA\)/,
-    "iOS tokens must carry the Aurora violet token",
+    "iOS tokens must carry the WIRELINE violet action token",
   );
   mustInclude(
     "ios/WirelineShared/WirelineWidgetSnapshot.swift",
     iosWidget,
     /public static let accent = "A78BFA"/,
-    "iOS widget snapshot must carry the Aurora violet token",
+    "iOS widget snapshot must carry the WIRELINE violet action token",
   );
 
   mustInclude(
     "public/static-legal.css",
     legalCss,
     /--wireline-color-action-primary-default: #A78BFA/,
-    "static legal pages must use the Wireline dark tokens",
+    "static legal pages must use the WIRELINE semantic tokens",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"theme_color": "#0A0A0E"/,
-    "manifest must use the dark theme color",
+    /"theme_color": "#F6F5FA"/,
+    "manifest must use the Light first-visit theme color",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"background_color": "#0A0A0E"/,
-    "manifest must use the dark canvas background",
+    /"background_color": "#F6F5FA"/,
+    "manifest must use the Light first-visit canvas",
   );
   mustInclude(
     "public/wireline-icon.svg",
@@ -129,13 +130,13 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "public/og-image.svg",
     ogImage,
     /fill="#0A0A0E"/,
-    "OG image must use the dark canvas",
+    "OG image may use the dark brand field for contrast",
   );
   mustInclude(
     "public/og-image.svg",
     ogImage,
     /C7CCD6/,
-    "OG image must carry the silver wire signature",
+    "OG image must carry the platinum wire signature",
   );
   mustInclude(
     "apps/browser-extension/assets/icon.svg",
@@ -147,13 +148,13 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "apps/browser-extension/assets/icon.svg",
     extensionIcon,
     /#0A0A0E|#0D0D12/,
-    "browser extension icon must use the obsidian brand field",
+    "browser extension icon must preserve the dark brand field",
   );
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_background.xml",
     androidLauncherBg,
     /android:fillColor="#0A0A0E"/,
-    "Android launcher background must use the obsidian brand field",
+    "Android launcher background must preserve the dark brand field",
   );
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
