@@ -38,20 +38,20 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).not.toContain(":nth-child(n + 7):not(:last-child)");
   });
 
-  it("keeps the Overview header short, left-aligned, and free of salutations", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
+  it("keeps Studio home task-first, compact, and free of a separate dashboard greeting", () => {
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+    const routes = read("src/routes/AppRoutes.tsx");
 
-    expect(overview).not.toContain("dayGreeting");
-    expect(overview).not.toContain("Good morning");
-    expect(overview).not.toContain("Let's put your first");
-    expect(overview).toContain(
-      '<header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">',
-    );
-    expect(overview).toContain('className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}');
-    expect(overview).toContain("<FirstRunWorkspace />");
-    expect(firstRun).toContain("Build Your Bot");
-    expect(firstRun).toContain("Create Your Own");
+    expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
+    expect(studio).toContain('title="Start With One Job"');
+    expect(studio).toContain("Create Bot");
+    expect(studio).not.toContain("Good morning");
+    expect(studio).not.toContain("dayGreeting");
+    expect(chrome).toContain('aria-label="Switch Bot"');
+    expect(chrome).toContain("/inbox?agent=");
+    expect(chrome).toContain("/phone?agent=");
   });
 
   it("removes decorative ledger treatment from authenticated task surfaces", () => {
@@ -68,7 +68,7 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
   });
 
-  it("keeps Insights category tabs inside a real horizontal scroller on phones", () => {
+  it("keeps authenticated category tabs inside a real horizontal scroller on phones", () => {
     const css = read("src/styles/system-refinement-pass-two.css");
     const tabs = read("src/components/layout/ClientSubTabs.tsx");
     const rule =
