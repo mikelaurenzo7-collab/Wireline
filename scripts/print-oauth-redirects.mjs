@@ -33,7 +33,7 @@ const signInCallbacks = [
 
 const integrationCallbacks = [
   ["Google", "/api/oauth/google/callback"],
-  ["Google Sheets", "/api/oauth/google-sheets/callback"],
+  ["Google Sheets", "/api/oauth/google_sheets/callback"],
   ["Microsoft", "/api/oauth/microsoft/callback"],
   ["Yahoo", "/api/oauth/yahoo/callback"],
   ["Salesforce", "/api/oauth/salesforce/callback"],
@@ -42,7 +42,8 @@ const integrationCallbacks = [
   ["Meta", "/api/oauth/meta/callback"],
   ["Shopify", "/api/oauth/shopify/callback"],
   ["Square", "/api/oauth/square/callback"],
-  ["Microsoft Graph", "/api/oauth/microsoft-graph/callback"],
+  ["Microsoft Teams", "/api/oauth/microsoft_teams/callback"],
+  ["Microsoft Excel", "/api/oauth/microsoft_excel/callback"],
   ["Slack", "/api/oauth/slack/callback"],
   ["X", "/api/oauth/x/callback"],
   ["Zoom", "/api/oauth/zoom/callback"],
