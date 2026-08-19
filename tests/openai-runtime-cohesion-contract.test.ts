@@ -28,7 +28,8 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const managedRuntime = read("src/lib/managed-voice-runtime.ts");
     expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "xai"');
     expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3");
-    expect(factory).toContain("isBusinessAgent");
+    expect(factory).toContain("isPrincipalVoiceRole(configured.role)");
+    expect(factory).not.toContain("const isBusinessAgent = configured.isBusinessAgent !== false");
     expect(factory).toContain("buildManagedVoiceRuntime");
     expect(managedRuntime).toContain('provider: "xai" as const');
     expect(managedRuntime).toContain('provider: "vapi" as const');
