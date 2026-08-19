@@ -126,16 +126,23 @@ function verifyStripePortalIfRequested() {
   if (process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true") {
     console.error(
       "Refusing canonical production build without WIRELINE_RECONCILE_STRIPE_PORTAL=true. " +
-        "The managed customer portal must be verified on every production release.",
+        "The managed customer portal must be reconciled and verified on every production release.",
     );
     process.exit(1);
   }
 
-  // Preserve the historical environment-variable name for deployed compatibility,
-  // but keep artifact construction read-only with respect to Stripe. Drift must be
-  // repaired explicitly through the operator command and then re-verified here.
-  console.log("Verifying the canonical Stripe customer portal before live migration.");
-  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
+  // This is an explicit production-only provider mutation. The reconciler is
+  // independently pinned to the canonical Vercel project, APP_URL, live Stripe
+  // key, exact founder catalog, managed metadata, and one active configuration.
+  // Running it with --apply makes the named reconciliation flag truthful and
+  // lets a brand/catalog release repair bounded portal drift before migrations.
+  console.log("Reconciling and verifying the canonical Stripe customer portal before live migration.");
+  run("node", [
+    "--import",
+    "tsx",
+    "scripts/reconcile-stripe-customer-portal.mts",
+    "--apply",
+  ]);
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
@@ -251,9 +258,6 @@ run("node", [
   "tests/billing-release-gate-contract.test.ts",
   "tests/job-queue-priority-contract.test.ts",
   "tests/showcase-truth-sync-contract.test.ts",
-  // These are direct financial, tenant, external-delivery, secure-ingestion,
-  // and durable-work boundaries. They must run on every preview and
-  // production-equivalent build, not only in the one-shot full suite.
   "tests/checkout-customer-recovery-contract.test.ts",
   "tests/shared-workspace-readiness-contract.test.ts",
   "tests/webhook-delivery-literal-ssrf-contract.test.ts",
