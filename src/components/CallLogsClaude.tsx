@@ -191,7 +191,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                       <strong className="block truncate font-mono text-sm font-semibold text-foreground">
                         {formatPhone(call.customer_number, "Unknown caller")}
                       </strong>
-                      <span className="mt-1 block truncate text-xs text-muted-foreground">
+                      <span className="wl-preserve-case mt-1 block truncate text-xs text-muted-foreground">
                         {meta || humanize(call.direction, "Call")}
                       </span>
                     </div>
@@ -233,7 +233,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <h3 className="mt-1 font-mono text-xl font-semibold text-foreground">
           {formatPhone(selected.customer_number, "Unknown caller")}
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
           {[selected.agent_name, formatTime(selected.created_at), formatDuration(selected.duration_seconds)]
             .filter(Boolean)
             .join(" · ")}
@@ -245,7 +245,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Summary
           </h4>
-          <p className="mt-2 text-sm leading-6 text-foreground">
+          <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {selected.summary || "No summary is available for this call yet."}
           </p>
         </section>
@@ -273,7 +273,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Follow-up
             </h4>
-            <p className="mt-2 text-sm leading-6 text-foreground">{selected.coaching_note}</p>
+            <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
+              {selected.coaching_note}
+            </p>
           </section>
         ) : null}
 
@@ -282,7 +284,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
               Transcript
             </summary>
-            <div className="whitespace-pre-wrap border-t border-border px-4 py-4 text-sm leading-6 text-muted-foreground">
+            <div className="wl-preserve-case whitespace-pre-wrap border-t border-border px-4 py-4 text-sm leading-6 text-muted-foreground">
               {selected.transcript}
             </div>
           </details>
