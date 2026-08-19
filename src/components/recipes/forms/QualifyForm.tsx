@@ -25,7 +25,7 @@ export function QualifyForm({
       {!callId && (
         <Field
           label="Transcript or Email Body"
-          hint="Paste the conversation text. Wireline AI scores it against BANT with evidence."
+          hint="Paste the conversation text. BotBound AI scores it against BANT with evidence."
         >
           <TextArea
             value={transcript}
