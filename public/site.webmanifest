@@ -1,7 +1,7 @@
 {
   "name": "WIRELINE | WIRE YOUR PHONE BOT",
   "short_name": "WIRELINE",
-  "description": "A Phone Bot for calls, text, and email. Build free, then put it on a number when you're ready.",
+  "description": "A Phone Bot for calls, email, and text. Build free, then put it on a number when you're ready.",
   "id": "/",
   "start_url": "/overview",
   "scope": "/",
@@ -50,7 +50,7 @@
     {
       "name": "INBOX",
       "short_name": "INBOX",
-      "description": "Review calls, text, and email conversations in one place.",
+      "description": "Review calls, email, and text conversations in one place.",
       "url": "/inbox"
     },
     {
