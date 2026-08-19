@@ -84,6 +84,10 @@ async function persistAgentMailDeliverySubscription(input: {
     });
     if (!ensured) return;
 
+    // AgentMail may not re-expose a signing secret when an existing webhook is
+    // already valid. In that case the encrypted stored secret is authoritative.
+    if (!ensured.secret && stored?.refreshToken) return;
+
     try {
       let signingSecret = ensured.secret;
       if (!signingSecret) {
@@ -293,6 +297,25 @@ router.post(
       )
       .limit(1);
     if (existingManaged?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
+      try {
+        const inbox = await resolveAgentMailInbox(apiKey, existingManaged.emailAddress);
+        await verifyAgentMailCredentials(inbox.email, apiKey);
+        await persistAgentMailDeliverySubscription({
+          apiKey,
+          inboxId: inbox.inboxId,
+          accountId: existingManaged.id,
+          userId,
+          emailAddress: existingManaged.emailAddress,
+        });
+      } catch (err) {
+        log.warn("Existing managed Bot mailbox reconciliation failed", {
+          userId,
+          agentId,
+          email: existingManaged.emailAddress,
+          error: getErrorMessage(err),
+        });
+        throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+      }
       res.json({
         ok: true,
         email: existingManaged.emailAddress,
