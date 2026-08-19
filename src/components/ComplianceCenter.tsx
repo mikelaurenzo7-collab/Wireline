@@ -83,7 +83,7 @@ export default function ComplianceCenter() {
               Prove what happened on every call
             </h2>
             <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-              Wireline helps you prove who was called, why they were callable, what was disclosed,
+              BotBound helps you prove who was called, why they were callable, what was disclosed,
               and what action was taken.
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function ComplianceCenter() {
               </p>
               {!summary.federal_dnc_configured ? (
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Marketing dials stay blocked until Wireline completes federal DNC setup. Studio
+                  Marketing dials stay blocked until BotBound completes federal DNC setup. Studio
                   non-marketing dials still use your workspace DNC list and TCPA consent.{" "}
                   <Link to="/security" className="text-primary underline underline-offset-2">
                     Open Trust / Security
