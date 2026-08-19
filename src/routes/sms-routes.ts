@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * SMS Inbox API — list threads, fetch messages, send replies.
  *
@@ -24,19 +24,23 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-/**
- * GET /api/sms/threads — list threads sorted by recency.
- * Read-only. Empty result means no threads — never mask outages as [].
- */
 router.get(
   "/api/sms/threads",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const requestedAgentId =
+        typeof req.query.agent_id === "string" ? req.query.agent_id.trim() : "";
+      const where = requestedAgentId
+        ? and(
+            eq(schema.smsThreads.userId, req.user.id),
+            eq(schema.smsThreads.agentId, requestedAgentId),
+          )
+        : eq(schema.smsThreads.userId, req.user.id);
       const threads = await drizzle
         .select()
         .from(schema.smsThreads)
-        .where(eq(schema.smsThreads.userId, req.user.id))
+        .where(where)
         .orderBy(desc(schema.smsThreads.lastMessageAt))
         .limit(200);
       res.json({ threads: mapObjectToSnake(threads || []) });
@@ -48,16 +52,12 @@ router.get(
   },
 );
 
-/**
- * GET /api/sms/threads/:id/messages — chronological message history.
- */
 router.get(
   "/api/sms/threads/:id/messages",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const threadId = req.params.id;
-      // Ownership check before exposing messages.
       const [thread] = await drizzle
         .select({ id: schema.smsThreads.id })
         .from(schema.smsThreads)
@@ -79,10 +79,6 @@ router.get(
   },
 );
 
-/**
- * POST /api/sms/threads/:id/reply — Account Holder manual reply.
- * Body: { body: string }
- */
 router.post(
   "/api/sms/threads/:id/reply",
   authenticateUser,
@@ -104,10 +100,6 @@ router.post(
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
 
-      // Manual inbox replies are ongoing service SMS on an existing thread —
-      // not cold dials. Use live-session follow-up so dial-only 24h duplicate
-      // and quiet-hours guards do not block a normal reply after a recent call;
-      // tenant + federal DNC still apply.
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
         phone: thread.customerNumber!,
@@ -115,12 +107,6 @@ router.post(
         isLiveSessionFollowUp: true,
       });
       if (!gate.allowed) {
-        // The specific compliance code must ride the top-level `code` field —
-        // fromHttpStatus's third argument is `details`, which buried it as
-        // details.code under a generic FORBIDDEN, so the client could not
-        // distinguish "federal DNC not configured" (operator action, 503)
-        // from "number is on DNC" (permanent). Mirrors gateResponse in
-        // outbound-dial-atomic-routes.
         if (gate.reason === "federal_dnc_unconfigured") {
           throw new AppError(
             503,
@@ -159,9 +145,6 @@ router.post(
         });
         return;
       }
-      // sendTenantMessage owns accepted-message persistence and unread cleanup.
-      // Any local failure is queued for reconciliation, so this route can
-      // acknowledge carrier acceptance without inviting a duplicate retry.
       res.json({
         ok: true,
         reason: null,
@@ -176,9 +159,6 @@ router.post(
   },
 );
 
-/**
- * POST /api/sms/threads/:id/mark-read — clear the unread badge.
- */
 router.post(
   "/api/sms/threads/:id/mark-read",
   authenticateUser,
