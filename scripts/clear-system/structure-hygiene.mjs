@@ -5,6 +5,9 @@
 export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDeleted }) {
   const packageJson = read("package.json");
   const mainTsx = read("src/main.tsx");
+  const indexHtml = read("index.html");
+  const appShellCss = read("public/app-shell.css");
+  const manifest = read("public/site.webmanifest");
   const foundationCss = read("src/styles/foundation.css");
   const designSystemCss = read("src/styles/design-system.css");
   const compatibilityPolish = read("src/styles/letterpress-polish.css");
@@ -58,11 +61,14 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "root CSS must protect legacy mobile editors from Safari focus zoom",
   );
 
+  // The generated base tokens stay dark so an explicit dark preference remains
+  // a first-class appearance. First-visit ownership is enforced separately at
+  // the runtime/bootstrap/install boundaries below.
   mustInclude(
     "src/styles/foundation.css",
     foundationCss,
     /color-scheme:\s*dark/,
-    "the default WIRELINE appearance must declare dark color-scheme",
+    "base semantic tokens must retain a valid dark appearance fallback",
   );
   mustInclude(
     "src/styles/foundation.css",
@@ -80,7 +86,13 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/styles/theme-light.css",
     lightTheme,
     /:root\.light[\s\S]*color-scheme:\s*light/,
-    "optional Light appearance must declare light color-scheme",
+    "Light appearance must declare light color-scheme",
+  );
+  mustInclude(
+    "src/styles/theme-light.css",
+    lightTheme,
+    /--wireline-color-canvas-default:\s*#f6f5fa/i,
+    "Light appearance must use the audited off-white WIRELINE canvas",
   );
   mustInclude(
     "src/styles/theme-light.css",
@@ -92,19 +104,55 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/contexts/ThemeContext.tsx",
     themeContext,
     /export type Theme = "light" \| "dark" \| "system"/,
-    "theme architecture must preserve Dark, Light, and System appearances",
+    "theme architecture must preserve Light, Dark, and System appearances",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",
     themeContext,
-    /return "dark"/,
-    "first-visit appearance must remain dark unless the customer explicitly chose otherwise",
+    /if \(typeof window === "undefined"\) return "light";[\s\S]*return "light";/,
+    "runtime first-visit appearance must resolve to Light when no preference exists",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",
     themeContext,
     /classList\.toggle\("light"/,
     "resolved appearance must be reflected on the document root",
+  );
+  mustInclude(
+    "index.html",
+    indexHtml,
+    /var useLight = stored === "dark" \? false : stored === "system" \? !systemDark : true;/,
+    "pre-hydration bootstrap must resolve a no-preference first visit to Light",
+  );
+  mustInclude(
+    "index.html",
+    indexHtml,
+    /name="theme-color" content="#F6F5FA"/,
+    "browser chrome must start on the same off-white Light canvas",
+  );
+  mustInclude(
+    "public/app-shell.css",
+    appShellCss,
+    /:root \{[\s\S]*#F6F5FA[\s\S]*color-scheme:\s*light;/,
+    "first-paint shell must render Light before React hydrates",
+  );
+  mustInclude(
+    "public/app-shell.css",
+    appShellCss,
+    /:root:not\(\.light\) \{[\s\S]*#0A0A0E[\s\S]*color-scheme:\s*dark;/,
+    "first-paint shell must preserve explicit Dark preferences",
+  );
+  mustInclude(
+    "public/site.webmanifest",
+    manifest,
+    /"theme_color"\s*:\s*"#F6F5FA"[\s\S]*"background_color"\s*:\s*"#F6F5FA"/,
+    "installed app shell must agree with the Light first-visit appearance",
+  );
+  mustInclude(
+    "src/lib/wireline-design-vision.ts",
+    designVisionSource,
+    /appearance:\s*\{[\s\S]*default:\s*"light"[\s\S]*lightCanvas:\s*"#F6F5FA"[\s\S]*darkCanvas:\s*"#0A0A0E"/,
+    "canonical design vision must own the Light-first appearance decision",
   );
 
   mustInclude(
@@ -154,7 +202,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustExclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+    /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora|Paper)"/,
     "canonical vision must not declare a themed sub-system",
   );
   mustInclude(
@@ -185,7 +233,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/styles/letterpress-polish.css",
     compatibilityPolish,
     /\.wl-paper\s*\{[\s\S]*var\(--wireline-elevation-inset\)/,
-    "legacy paper alias must remain behaviorally stable during semantic migration",
+    "legacy surface alias must remain behaviorally stable during semantic migration",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
@@ -220,8 +268,8 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /retiredDesignNames:\s*\[[\s\S]*"Letterpress"[\s\S]*"Obsidian"[\s\S]*"Aurora"/,
-    "design vision must explicitly retire competing design-system codenames",
+    /retiredDesignNames:\s*\[[\s\S]*"Letterpress"[\s\S]*"Obsidian"[\s\S]*"Aurora"[\s\S]*"Paper"/,
+    "design vision must explicitly retire competing design-system and appearance codenames",
   );
 
   for (const [path, reason] of [
