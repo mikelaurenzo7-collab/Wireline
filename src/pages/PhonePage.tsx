@@ -6,6 +6,7 @@ import OutboundHub from "../components/outbound/OutboundHub";
 import AppointmentsPanel from "../components/AppointmentsPanel";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
+import { useAgents } from "../contexts/AgentsContext";
 import {
   OUTBOUND_VIEW_TABS,
   resolveAppPageSecondaryTabId,
@@ -26,6 +27,7 @@ const PHONE_TABS = [
 
 export default function PhonePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { agents } = useAgents();
   const tabParam = searchParams.get("tab");
   const legacyOutboundView = OUTBOUND_VIEW_TABS.some((tab) => tab.id === tabParam)
     ? tabParam
@@ -44,6 +46,10 @@ export default function PhonePage() {
     { tabs: OUTBOUND_VIEW_TABS, defaultView: "dispatch" },
     searchParams.get("view") || legacyOutboundView,
   ) as (typeof OUTBOUND_VIEW_TABS)[number]["id"];
+  const requestedAgentId = searchParams.get("agent")?.trim() || "";
+  const activeAgentId = agents.some((agent) => agent.id === requestedAgentId)
+    ? requestedAgentId
+    : "";
 
   function setPrimaryTab(id: string) {
     setSearchParams(
@@ -63,6 +69,17 @@ export default function PhonePage() {
         prev.set("tab", "outbound");
         if (id === "dispatch") prev.delete("view");
         else prev.set("view", id);
+        return prev;
+      },
+      { replace: true },
+    );
+  }
+
+  function setAgentScope(agentId: string) {
+    setSearchParams(
+      (prev) => {
+        if (agentId) prev.set("agent", agentId);
+        else prev.delete("agent");
         return prev;
       },
       { replace: true },
@@ -90,8 +107,25 @@ export default function PhonePage() {
             />
           }
         />
+        {primaryTab === "logs" && (agents.length > 1 || activeAgentId) ? (
+          <div className="flex justify-end border-b border-border px-3 py-2 sm:px-6">
+            <select
+              value={activeAgentId}
+              onChange={(event) => setAgentScope(event.target.value)}
+              aria-label="Filter call history by Bot"
+              className="h-9 max-w-[11rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+            >
+              <option value="">All Bots</option>
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-          {primaryTab === "logs" && <PhoneCallHistoryPanel />}
+          {primaryTab === "logs" && <PhoneCallHistoryPanel agentId={activeAgentId || null} />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
