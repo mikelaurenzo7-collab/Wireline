@@ -10,19 +10,16 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the voice-first Bot promise", () => {
+  it("keeps static and runtime fallback metadata aligned to the Phone Bot promise", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("WIRELINE | VOICE BOTS THAT GET THE WORK DONE");
-    expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "WIRELINE | VOICE BOTS THAT GET THE WORK DONE"',
-    );
+    expect(staticHead).toContain("WIRELINE | WIRE YOUR PHONE BOT");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "WIRELINE | WIRE YOUR PHONE BOT"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("Build a voice-first Bot");
-      expect(source).toContain("answers and makes calls");
-      expect(source).toContain("text and email");
-      expect(source).toContain("one workspace");
+      expect(source).toContain("A Phone Bot for calls, email, and text");
+      expect(source).not.toContain("one workspace");
+      expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");
     }
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
@@ -67,15 +64,6 @@ describe("marketing metadata contract", () => {
   });
 
   it("never quotes a public price the catalog does not charge", () => {
-    // The plan cards read `price_usd_monthly` straight from the catalog, so the
-    // table can never lie. The prose around it is written by hand — hero lines,
-    // CTA labels, SEO descriptions, section copy — and a reprice touches the
-    // catalog and one or two of those, leaving the rest advertising the old
-    // number. Quoting a price we do not charge is the kind of mistake that
-    // costs trust at exactly the moment someone reaches for a card.
-    //
-    // Only surfaces that quote Wireline's own pricing belong here. Compare.tsx
-    // is deliberately excluded: its rows carry competitors' published prices.
     const surfaces = [
       "src/pages/Pricing.tsx",
       "src/components/marketing/WireAgentLanding.tsx",
@@ -111,19 +99,12 @@ describe("marketing metadata contract", () => {
     const contact = read("src/components/ContactPage.tsx");
     const features = read("src/pages/Features.tsx");
     const solutions = read("src/pages/SolutionsPage.tsx");
-    // Assert catalog capacity through the module, not raw substrings: a bare
-    // `included_phone_numbers: 1` matches whichever plan happens to own it and
-    // silently passes after a reprice.
+
     expect(planById("team")?.price_usd_monthly).toBe(39);
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
 
-    // The money line follows the launch source of truth verbatim, so pricing
-    // can never drift into a second phrasing. It is no longer carried by a
-    // hero headline (the plan cards state every number exactly, so a display
-    // line above them could only restate and delay them) but by the page
-    // description and the catalog-driven card prices.
     expect(pricing).toContain("launch from $19/month");
     expect(pricing).toContain("plan.price_usd_monthly");
     expect(contact).toContain('planById("starter")');
