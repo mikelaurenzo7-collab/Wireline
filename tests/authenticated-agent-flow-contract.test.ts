@@ -45,23 +45,25 @@ describe("authenticated Bot flow", () => {
 
   it("routes every fresh signup into the same real Bot create flow", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
+    const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
     const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
     const appShell = read("src/components/layout/AppShell.tsx");
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
-    expect(authPortal).toContain("function signupPlanLabel(");
-    expect(authPortal).toContain("STRIPE_PLANS.find");
-    expect(authPortal).toContain("plan.price_usd_annual");
-    expect(authPortal).toContain("plan.price_usd_monthly");
-    expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
-    expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
-    expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
+    expect(authPortal).toContain("AuthAccessPanel");
+    expect(authAccess).toContain("function signupPlanLabel(");
+    expect(authAccess).toContain("STRIPE_PLANS.find");
+    expect(authAccess).toContain("plan.price_usd_annual");
+    expect(authAccess).toContain("plan.price_usd_monthly");
+    expect(authAccess).not.toContain("const SIGNUP_PLAN_LABELS");
+    expect(authAccess).toContain("WirelineLockup");
+    expect(authAccess).not.toContain('<span className="wl-auth-brand-badge">W</span>');
     expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain('return "/studio?create=1"');
     expect(authRedirect).not.toContain("create=1&posture=");
-    expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
+    expect(authAccess.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("language.createCta");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
@@ -124,7 +126,7 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build Your Bot"');
-    expect(productCopy).toContain("Describe the job. Connect voice, text, email");
+    expect(productCopy).toContain("Describe the job. Connect calls, email, text, knowledge, and tools.");
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
