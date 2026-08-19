@@ -115,7 +115,7 @@ fun LiveCallScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("ACTIVE CALL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-                    Text("Wireline is handling this", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                    Text("BotBound is handling this", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
                 }
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Brand.Text2)
