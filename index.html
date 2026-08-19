@@ -7,13 +7,13 @@
         try {
           var stored = localStorage.getItem("wireline-theme");
           var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          // Paper is the first-visit default. Saved dark/system preferences
+          // Light is the first-visit default. Saved dark/system preferences
           // still win before first paint so there is no appearance flash.
           var useLight = stored === "dark" ? false : stored === "system" ? !systemDark : true;
           if (useLight) document.documentElement.classList.add("light");
         } catch (e) {
           // Storage can be unavailable in private browsing. First visit still
-          // resolves to Paper rather than silently falling back to Obsidian.
+          // resolves to the light appearance rather than silently changing mode.
           document.documentElement.classList.add("light");
         }
       })();
@@ -25,7 +25,7 @@
          verbatim mirror of the Google Fonts css2 response with the gstatic URLs
          rewritten. Previously this was a render-blocking cross-origin request
          chain (preconnect → Google CSS → gstatic woff2), which meant the entire
-         Letterpress identity degraded to system fonts whenever Google Fonts was
+         WIRELINE identity degraded to system fonts whenever Google Fonts was
          slow, blocked by a privacy extension, or unreachable. First-party also
          removes the EU IP-disclosure question and lets the CSP drop both hosts. -->
     <link rel="preload" as="style" href="/fonts.css" />
