@@ -1,17 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
-import { Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import ActivationNudge from "./ActivationNudge";
 import EmailVerifyBanner from "./layout/EmailVerifyBanner";
 import SkipToContentLink from "./layout/SkipToContentLink";
 import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
+import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
-import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
-import { useAgents } from "../contexts/AgentsContext";
-import { agentReadinessLabel } from "../lib/agent-readiness";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -26,7 +24,6 @@ import {
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
 import { isRouteAvailableForAccount } from "../lib/account-type";
-import BotMark from "./BotMark";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import WirelineMark from "./brand/WirelineMark";
 
@@ -36,6 +33,8 @@ const BOT_LANGUAGE = {
   navLabel: "Bot Studio",
   navShort: "Studio",
 } as const;
+
+const WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1";
 
 type NativeWindow = Window & {
   WirelineNative?: unknown;
@@ -69,10 +68,12 @@ function RailLink({
   item,
   pathname,
   activeOverride,
+  collapsed = false,
 }: {
   item: ShellNavItem;
   pathname: string;
   activeOverride?: boolean;
+  collapsed?: boolean;
 }) {
   const active = activeOverride ?? isNavActive(pathname, item.href);
   const Icon = navIcon(item.icon);
@@ -80,16 +81,17 @@ function RailLink({
   return (
     <Link
       to={item.href}
+      aria-label={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
-      title={hint ? `Shortcut ${hint}` : undefined}
+      title={collapsed ? item.label : hint ? `Shortcut ${hint}` : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
-      className="wl-rail-link"
+      className={`wl-rail-link ${collapsed ? "justify-center !px-0" : ""}`}
     >
-      <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      {hint ? (
-        <kbd className="shrink-0 font-mono text-[10px] uppercase tracking-wide opacity-60">
+      <Icon size={17} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+      {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
+      {!collapsed && hint ? (
+        <kbd className="shrink-0 font-mono text-[10px] uppercase tracking-wide opacity-50">
           {hint}
         </kbd>
       ) : null}
@@ -161,53 +163,86 @@ function MobileDockLink({
   );
 }
 
-function DesktopRail({ pathname }: { pathname: string }) {
+function DesktopRail({
+  pathname,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  pathname: string;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
   const { user } = useAuth();
   const { accountType } = useAccount();
-  const { agents, resolvedId } = useStudioActiveAgentId();
-  const { phoneLookupDegraded } = useAgents();
-  const language = BOT_LANGUAGE;
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
-  const orderedAgents = activeAgent
-    ? [activeAgent, ...agents.filter((agent) => agent.id !== activeAgent.id)]
-    : agents;
-  const visibleAgents = orderedAgents.slice(0, 3);
-  const hiddenAgentCount = Math.max(orderedAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (
     <aside
       aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-hidden border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
+      data-wireline-rail-collapsed={collapsed ? "true" : undefined}
+      className={`hidden h-full w-full min-w-0 flex-col overflow-hidden border-r border-border/70 bg-[color:var(--wireline-color-surface-default)] lg:flex ${
+        collapsed ? "px-2 py-4" : "px-3 py-4"
+      }`}
     >
-      <Link
-        to="/overview"
-        aria-label="Wireline"
-        className="mb-1.5 flex items-center gap-2.5 px-1.5"
-      >
-        <span className="grid size-7 place-items-center rounded-[var(--wireline-radius-sm)] bg-primary text-primary-foreground">
-          <WirelineMark className="size-7" />
-        </span>
-        <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
-          Wireline
-        </span>
-      </Link>
+      <div className={`flex h-10 shrink-0 items-center ${collapsed ? "justify-center" : "gap-2 px-1"}`}>
+        <Link
+          to="/studio"
+          aria-label="Wireline Studio"
+          className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "flex-1 gap-2.5"}`}
+        >
+          <span className="grid size-7 shrink-0 place-items-center rounded-[var(--wireline-radius-sm)] bg-primary text-primary-foreground">
+            <WirelineMark className="size-7" />
+          </span>
+          {!collapsed ? (
+            <span className="truncate font-[var(--wireline-font-family-display)] text-[18px] leading-none tracking-[-0.01em] text-foreground">
+              Wireline
+            </span>
+          ) : null}
+        </Link>
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+          title={collapsed ? "Expand navigation" : "Collapse navigation"}
+          className={`grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo ${
+            collapsed ? "absolute left-[50px] top-5 z-20 bg-card shadow-sm" : ""
+          }`}
+        >
+          {collapsed ? (
+            <ChevronsRight className="size-4" aria-hidden="true" />
+          ) : (
+            <ChevronsLeft className="size-4" aria-hidden="true" />
+          )}
+        </button>
+      </div>
 
       <button
         type="button"
         aria-label="Open command palette"
-        className="mb-3 flex min-h-[44px] w-full items-center gap-2 rounded-[var(--wireline-radius-md)] border border-border bg-muted/40 px-2.5 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+        title={collapsed ? "Search · ⌘K" : undefined}
+        className={`mt-2.5 flex min-h-[40px] w-full items-center rounded-[var(--wireline-radius-md)] border border-border/80 bg-muted/35 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo ${
+          collapsed ? "justify-center px-0" : "gap-2 px-2.5 text-left"
+        }`}
         onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
       >
         <Search size={14} strokeWidth={2} aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate">Search</span>
-        <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-          ⌘K
-        </kbd>
+        {!collapsed ? (
+          <>
+            <span className="min-w-0 flex-1 truncate">Search</span>
+            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
+              ⌘K
+            </kbd>
+          </>
+        ) : null}
       </button>
 
-      <nav className="mt-2 flex flex-col gap-0.5" aria-label="Workspace">
+      <nav className="mt-4 flex flex-col gap-0.5" aria-label="Work">
+        {!collapsed ? (
+          <div className="px-2.5 pb-1.5">
+            <WiredEyebrow>Work</WiredEyebrow>
+          </div>
+        ) : null}
         {WORKSPACE_NAV.map((rawItem) => {
           const item = contextualNavItem(rawItem);
           return (
@@ -215,78 +250,24 @@ function DesktopRail({ pathname }: { pathname: string }) {
               key={item.href}
               item={item}
               pathname={pathname}
+              collapsed={collapsed}
               activeOverride={secondaryRouteParent === item.href ? true : undefined}
             />
           );
         })}
       </nav>
 
-      {agents.length ? (
-        <div className="shrink-0 pt-3">
-          <div className="flex items-center justify-between px-2.5 pb-2">
-            <WiredEyebrow>Bots</WiredEyebrow>
-            <Link
-              to="/studio?create=1"
-              aria-label={`New ${language.singular}`}
-              className="text-[11px] font-semibold text-primary hover:underline"
-            >
-              New
-            </Link>
+      <nav
+        className={`mt-3 flex shrink-0 flex-col gap-0.5 border-t border-border/60 pt-3 ${
+          collapsed ? "" : ""
+        }`}
+        aria-label="Manage"
+      >
+        {!collapsed ? (
+          <div className="px-2.5 pb-1.5">
+            <WiredEyebrow>Manage</WiredEyebrow>
           </div>
-          <nav className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5" aria-label={language.plural}>
-            {visibleAgents.map((agent) => {
-              const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
-              return (
-                <Link
-                  key={agent.id}
-                  to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                  aria-current={active ? "page" : undefined}
-                  data-wireline-bot-selected={active ? "true" : undefined}
-                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[var(--wireline-radius-md)] px-2 py-1.5 ${
-                    active
-                      ? "border border-primary/25 bg-primary/10 text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <BotMark
-                    seed={agent.id}
-                    name={agent.name}
-                    size={24}
-                    title={`${agent.name} Bot mark`}
-                    className="shrink-0"
-                  />
-                  <span className="min-w-0">
-                    <span className="wl-preserve-case block truncate text-[12px] font-semibold">
-                      {agent.name}
-                    </span>
-                    <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
-                      {agentReadinessLabel(agent, phoneLookupDegraded)}
-                    </span>
-                  </span>
-                </Link>
-              );
-            })}
-            {hiddenAgentCount > 0 ? (
-              <Link
-                to="/studio"
-                className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[var(--wireline-radius-md)] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <span>All {language.plural}</span>
-                <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                  {agents.length}
-                </span>
-              </Link>
-            ) : null}
-          </nav>
-        </div>
-      ) : null}
-
-      <div className="min-h-3 max-h-20 flex-1" />
-
-      <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        <div className="px-2.5 pb-2">
-          <WiredEyebrow>Operate</WiredEyebrow>
-        </div>
+        ) : null}
         {OPERATE_NAV.filter(
           (item) => item.href !== "/settings" && isRouteAvailableForAccount(accountType, item.href),
         ).map((item) => (
@@ -294,24 +275,31 @@ function DesktopRail({ pathname }: { pathname: string }) {
             key={item.href}
             item={item}
             pathname={pathname}
+            collapsed={collapsed}
             activeOverride={secondaryRouteParent === item.href ? true : undefined}
           />
         ))}
       </nav>
 
+      <div className="min-h-4 flex-1" />
+
       <Link
         to="/settings"
-        className="mt-3 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
+        className={`flex min-h-[44px] shrink-0 items-center border-t border-border/70 transition-colors hover:text-foreground ${
+          collapsed ? "justify-center pt-3 text-muted-foreground" : "gap-2.5 px-1 pt-3 text-foreground"
+        }`}
         aria-label="Account settings"
+        title={collapsed ? "Account settings" : undefined}
       >
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
           {userInitial(user?.full_name, user?.email)}
         </span>
-        <span className="min-w-0">
-          <span className="block truncate text-[13px] font-medium text-foreground">
-            {displayName}
+        {!collapsed ? (
+          <span className="min-w-0">
+            <span className="block truncate text-[13px] font-medium">{displayName}</span>
+            <span className="block text-[10px] text-muted-foreground">Settings</span>
           </span>
-        </span>
+        ) : null}
       </Link>
     </aside>
   );
@@ -375,16 +363,33 @@ export default function WorkspaceShell({
   const showHeader = Boolean(title || eyebrow || action);
   const mainSpacing = fullBleed
     ? "p-0 lg:pb-0"
-    : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
+    : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6 xl:px-9 2xl:px-12 2xl:pt-5";
   const contentInner = fullBleed
     ? "wl-workspace-content-inner mx-0 flex h-full min-h-0 w-full max-w-none flex-col"
-    : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-1 flex-col";
+    : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1360px] flex-1 flex-col";
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <SkipToContentLink href="#workspace-main" />
-      <div className="wl-workspace-frame grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
-        <DesktopRail pathname={location.pathname} />
+      <div className="wl-workspace-frame grid h-full min-h-0 w-full grid-cols-1 overflow-hidden lg:grid-cols-[auto_minmax(0,1fr)]">
+        <WorkspaceResizablePanel
+          storageKey={WORKSPACE_RAIL_STORAGE_KEY}
+          side="left"
+          defaultSize={232}
+          minSize={208}
+          maxSize={320}
+          collapsedSize={68}
+          resizeHandleLabel="Resize workspace navigation"
+          className="hidden lg:block"
+        >
+          {({ collapsed, toggleCollapsed }) => (
+            <DesktopRail
+              pathname={location.pathname}
+              collapsed={collapsed}
+              onToggleCollapsed={toggleCollapsed}
+            />
+          )}
+        </WorkspaceResizablePanel>
         <main
           id="workspace-main"
           data-wireline-route={location.pathname}
@@ -392,7 +397,7 @@ export default function WorkspaceShell({
         >
           {showHeader ? (
             <div className="relative mb-4 pb-3 lg:mb-5">
-              <div className="wl-workspace-content-inner mx-auto grid w-full max-w-[1480px] grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:gap-6">
+              <div className="wl-workspace-content-inner mx-auto grid w-full max-w-[1360px] grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:gap-6">
                 <div className="wl-task-header flex min-w-0 flex-col items-start text-left">
                   {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
                   {title ? (
