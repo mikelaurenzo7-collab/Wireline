@@ -61,7 +61,7 @@ describe("company identity pack", () => {
       phoneNumber: null,
     });
 
-    expect(readiness.voice.missing).toContain("dedicated Wireline number");
+    expect(readiness.voice.missing).toContain("dedicated BotBound number");
     expect(readiness.voice.missing).toContain("15-character caller ID fallback name");
     expect(readiness.sms.missing).toContain("support email");
     expect(readiness.email.missing).toContain("support email on the company domain");
@@ -162,9 +162,11 @@ describe("company identity pack", () => {
     expect(routes).toContain("desc(schema.phoneNumbers.id)");
     expect(routes).toContain("channelSelectionChanged");
     expect(identity).toContain('createHash("sha256")');
-    expect(identity).toContain("must fail closed");
-    expect(identity).toContain("Requested channel selection is deliberately excluded");
-    expect(routes).toContain("final display follow supported Wireline workflows");
+    // Fail-closed semantics are behavioral: invalid channel values collapse to
+    // an empty selection and canRequestCompanyIdentityReview requires >0 ready channels.
+    expect(identity).toContain("COMPANY_IDENTITY_CHANNELS.includes");
+    expect(identity).toContain("args.requestedChannels.length > 0");
+    expect(routes).toContain("final display follow supported BotBound workflows");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
 
     expect(guard).toContain("Canonical preference writer");
@@ -213,11 +215,6 @@ describe("company identity pack", () => {
     expect(settingsGuard).toContain('runCompanyIdentityMutation(req.user.id, "branding_changed"');
     expect(settingsGuard).toContain("delete downstreamBody[key]");
 
-    // The branding commit is durable middleware state — it must be provably
-    // impossible for downstream validation to 400/403 after it lands. The
-    // guard preflights the exact downstream pipeline (schema parse, writable
-    // allowlist, telecom ownership) BEFORE the mutation, and the phone guard
-    // registers before this guard so malformed provider values reject first.
     const preflight = settingsGuard.indexOf("SettingsSchema.partial().safeParse");
     const ownership = settingsGuard.indexOf("await assertTelecomIdentityOwned(req.user.id");
     const commit = settingsGuard.indexOf("await runCompanyIdentityMutation(");
@@ -232,8 +229,6 @@ describe("company identity pack", () => {
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
-    // Manual POST /api/phone-numbers is retired (410). Remaining carrier
-    // mutations are DELETE and pool claim — both still invalidate review.
     expect(
       carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
     ).toHaveLength(2);
@@ -250,8 +245,6 @@ describe("company identity pack", () => {
 
   it("keeps the customer surface explicit, fail-closed, and touch accessible", () => {
     const surface = read("src/components/settings/CompanyIdentityPack.tsx");
-    // The company-identity surface renders inside the self-serve PhoneSetupPanel,
-    // which now owns the per-number remount key (PhoneSettings is a thin wrapper).
     const phoneSetupPanel = read("src/components/PhoneSetupPanel.tsx");
     const normalizedSurface = surface.replace(/\s+/g, " ");
 
@@ -272,6 +265,8 @@ describe("company identity pack", () => {
     expect(surface).toContain("Request verification review");
     expect(surface).toContain("md:grid-cols-2 xl:grid-cols-3");
     expect(surface).toContain("flex flex-wrap items-start justify-between");
-    expect(phoneSetupPanel).toContain('key={activeNumber?.id ?? "no-number"}');
+    expect(phoneSetupPanel).toContain('<CompanyIdentityPack />');
+    expect(phoneSetupPanel).toContain('id="company-identity"');
+    expect(phoneSetupPanel).toContain("activeNumber ? (");
   });
 });
