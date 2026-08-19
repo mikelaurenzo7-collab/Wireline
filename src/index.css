@@ -101,10 +101,12 @@
 @import "./styles/bot-mark.css";
 @import "./styles/typography-prose.css";
 @import "./styles/components.css";
+@import "./styles/auth-access-panel.css";
 @import "./styles/stitch-patterns.css";
 @import "./styles/wireline-layout-passes.css";
 @import "./styles/wireline-product-surfaces.css";
 @import "./styles/wireline-marketing-surfaces.css";
+@import "./styles/landing-prestige.css";
 @import "./styles/letterpress-polish.css";
 @import "./styles/visual-qa-hotfix.css";
 @import "./styles/theme-light.css";
