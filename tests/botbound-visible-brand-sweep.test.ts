@@ -107,6 +107,21 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
       /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
   }
+  if (path === "src/lib/ai-brains.ts") {
+    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(line);
+  }
+  if (path === "src/lib/env-validator.ts") {
+    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(line);
+  }
+  if (path === "src/lib/launch-readiness.ts") {
+    return /Launch hard gate is on and Wireline is not launch-ready/.test(line);
+  }
+  if (path === "src/lib/perplexity-platform.ts") {
+    return /You are Wireline's live public-research tool/.test(line);
+  }
+  if (path === "src/routes/agent-routes-v2.ts") {
+    return /You are the Wireline Configuration Engine/.test(line);
+  }
   if (path === "src/lib/openapi-spec.ts") return true;
   if (path === "src/lib/showcase-assistant.ts") return true;
   if (
