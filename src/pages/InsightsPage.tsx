@@ -10,44 +10,45 @@ export default function InsightsPage() {
   const { agents, loading, degraded } = useAgents();
   const chrome = useAppChromeTabs();
   const firstRun = !loading && agents.length === 0 && !degraded;
+  const hasActivityTabs =
+    !firstRun && !chrome.showAdminTabs && "ariaLabel" in chrome && chrome.tabs.length > 0;
 
-  const controls =
-    !firstRun && !chrome.showAdminTabs && "tabs" in chrome && chrome.tabs.length > 0 ? (
-      <WorkspaceControlBand
-        embedded
-        ariaLabel="Activity controls"
-        primary={
-          <WorkspaceTabStrip
-            ariaLabel={chrome.ariaLabel}
-            tabs={chrome.tabs}
-            activeId={chrome.activeId}
-            onSelect={chrome.setActiveId}
-            density="compact"
-            align="start"
-            className="mb-0 border-b-0 pb-0"
-          />
-        }
-        secondary={
-          chrome.secondary && chrome.secondary.tabs.length > 1 ? (
-            <label className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="hidden sm:inline">View</span>
-              <select
-                value={chrome.secondary.activeId}
-                onChange={(event) => chrome.secondary?.setActiveId(event.target.value)}
-                aria-label="Activity view"
-                className="h-9 max-w-[12rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
-              >
-                {chrome.secondary.tabs.map((tab) => (
-                  <option key={tab.id} value={tab.id}>
-                    {tab.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : undefined
-        }
-      />
-    ) : undefined;
+  const controls = hasActivityTabs ? (
+    <WorkspaceControlBand
+      embedded
+      ariaLabel="Activity controls"
+      primary={
+        <WorkspaceTabStrip
+          ariaLabel={chrome.ariaLabel}
+          tabs={chrome.tabs}
+          activeId={chrome.activeId}
+          onSelect={chrome.setActiveId}
+          density="compact"
+          align="start"
+          className="mb-0 border-b-0 pb-0"
+        />
+      }
+      secondary={
+        chrome.secondary && chrome.secondary.tabs.length > 1 ? (
+          <label className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
+            <span className="hidden sm:inline">View</span>
+            <select
+              value={chrome.secondary.activeId}
+              onChange={(event) => chrome.secondary?.setActiveId(event.target.value)}
+              aria-label="Activity view"
+              className="h-9 max-w-[12rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+            >
+              {chrome.secondary.tabs.map((tab) => (
+                <option key={tab.id} value={tab.id}>
+                  {tab.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : undefined
+      }
+    />
+  ) : undefined;
 
   return (
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
