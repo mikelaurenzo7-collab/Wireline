@@ -48,13 +48,55 @@ const compatibilityLinePatterns = [
   /X-Wireline-Key/,
   /X-Wireline-Token/,
   /X-Wireline-Signature/,
+  /X-Wireline-Demo-Max-Seconds/,
   /command@wireline\.com/,
   /https:\/\/github\.com\/mikelaurenzo7-collab\/Wireline/,
   /trywireline\.com/i,
 ] as const;
 
-function isCompatibilityOnlyLine(line: string): boolean {
-  return compatibilityLinePatterns.some((pattern) => pattern.test(line));
+/**
+ * Existing provider/catalog resource identities are deliberately frozen during
+ * the brand migration. They are not presentation strings: code uses them to
+ * reconcile already-created Stripe/Twilio/Vapi/xAI resources. BotBound must be
+ * layered above them rather than reprovisioning or losing linkage.
+ */
+function isPathScopedCompatibility(path: string, line: string): boolean {
+  if (path === "src/lib/plan-catalog.ts") {
+    return /name:\s*"Wireline (?:Free Builder|Starter|Starter Plus|Pro|Business)"/.test(line);
+  }
+  if (path === "src/lib/voice-pricing-display.ts") {
+    return /plan\.name\.replace\("Wireline ", ""\)/.test(line);
+  }
+  if (path === "src/lib/voice/xai-sip-config.ts") {
+    return /XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
+  }
+  if (path === "src/lib/voice/xai-sip-provisioning.ts") {
+    return /name:\s*`Wireline(?: voice)? · \$\{input\.phoneNumber\}`/.test(line);
+  }
+  if (path === "src/lib/voice/native-phone-carrier.ts") {
+    return /friendlyName\s*=\s*`Wireline native /.test(line);
+  }
+  if (path === "src/lib/vapi-phone-numbers.ts") {
+    return /name:\s*opts\.name \|\| "Wireline-managed"/.test(line);
+  }
+  if (path === "src/lib/studio-canvas-contract.ts") {
+    return /pattern:\s*\/Wireline/.test(line);
+  }
+  if (path === "src/lib/soc2-controls.ts") {
+    return /Wireline encrypted key prefix/.test(line);
+  }
+  if (path === "src/lib/stripe-helpers.ts") {
+    return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
+      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
+  }
+  return false;
+}
+
+function isCompatibilityOnlyLine(path: string, line: string): boolean {
+  return (
+    compatibilityLinePatterns.some((pattern) => pattern.test(line)) ||
+    isPathScopedCompatibility(path, line)
+  );
 }
 
 function visibleWirelineLeaks(path: string): string[] {
@@ -64,7 +106,7 @@ function visibleWirelineLeaks(path: string): string[] {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     if (!/\bWireline\b/.test(line)) continue;
-    if (isCompatibilityOnlyLine(line)) continue;
+    if (isCompatibilityOnlyLine(path, line)) continue;
     leaks.push(`${path}:${index + 1} ${line.trim().replace(/\s+/g, " ").slice(0, 210)}`);
   }
   return leaks;
@@ -75,6 +117,9 @@ describe("BotBound visible-brand sweep", () => {
     const files = customerSurfacePatterns
       .flatMap((pattern) => globSync(pattern, { cwd: root }))
       .map((file) => file.replaceAll("\\", "/"))
+      // Contract tests are evidence, not customer-delivery surfaces. They may
+      // explicitly mention legacy identifiers to prove compatibility behavior.
+      .filter((file) => !/\.(?:test|spec)\.(?:ts|tsx)$/.test(file))
       .filter((file, index, all) => all.indexOf(file) === index)
       .sort();
     const leaks = files.flatMap(visibleWirelineLeaks);
@@ -91,6 +136,7 @@ describe("BotBound visible-brand sweep", () => {
     const nativeSip = read("src/lib/voice/xai-sip-config.ts");
     const webhooks = read("src/components/WebhooksManager.tsx");
     const firefox = read("apps/browser-extension/manifest.firefox.json");
+    const catalog = read("src/lib/plan-catalog.ts");
 
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
@@ -98,6 +144,7 @@ describe("BotBound visible-brand sweep", () => {
     expect(nativeSip).toContain('XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token"');
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
+    expect(catalog).toContain('name: "Wireline Starter"');
   });
 
   it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {
