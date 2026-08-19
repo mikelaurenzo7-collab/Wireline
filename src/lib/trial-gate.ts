@@ -267,7 +267,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       503,
       "BILLING_STATE_UNAVAILABLE",
-      "Wireline could not verify live-work access. No provider action was started; try again shortly.",
+      "BotBound could not verify live-work access. No provider action was started; try again shortly.",
       { retryable: true },
     );
     return null;
@@ -277,7 +277,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       402,
       "EMAIL_UNVERIFIED",
-      "Verify your email to continue. Check your inbox for a link from Wireline.",
+      "Verify your email to continue. Check your inbox for a link from BotBound.",
     );
     return null;
   }
@@ -288,7 +288,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       503,
       "BILLING_STATE_UNAVAILABLE",
-      "Wireline could not verify subscription access. No provider action was started; try again shortly.",
+      "BotBound could not verify subscription access. No provider action was started; try again shortly.",
       { retryable: true },
     );
     return null;
@@ -326,7 +326,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       503,
       "BILLING_STATE_UNAVAILABLE",
-      "Wireline could not confirm live-work access. No provider action was started; try again shortly.",
+      "BotBound could not confirm live-work access. No provider action was started; try again shortly.",
       { retryable: true },
     );
     return null;
@@ -368,7 +368,7 @@ export async function assertLiveWorkEntitlementForUser(
       httpStatus: 503,
       code: "BILLING_STATE_UNAVAILABLE",
       error:
-        "Wireline could not verify live-work access. No provider action was started; try again shortly.",
+        "BotBound could not verify live-work access. No provider action was started; try again shortly.",
       retryable: true,
     };
   }
@@ -377,7 +377,7 @@ export async function assertLiveWorkEntitlementForUser(
       ok: false,
       httpStatus: 402,
       code: "EMAIL_UNVERIFIED",
-      error: "Verify your email to continue. Check your inbox for a link from Wireline.",
+      error: "Verify your email to continue. Check your inbox for a link from BotBound.",
     };
   }
 
@@ -388,7 +388,7 @@ export async function assertLiveWorkEntitlementForUser(
       httpStatus: 503,
       code: "BILLING_STATE_UNAVAILABLE",
       error:
-        "Wireline could not verify subscription access. No provider action was started; try again shortly.",
+        "BotBound could not verify subscription access. No provider action was started; try again shortly.",
       retryable: true,
     };
   }
