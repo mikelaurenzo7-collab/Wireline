@@ -21,9 +21,10 @@ describe("WIRELINE public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?<span>WIRE YOUR<\/span>[\s\S]*?<span>PHONE BOT<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toMatch(
-      /landing-prestige__channels[\s\S]*?<span>CALL<\/span>[\s\S]*?<span>EMAIL<\/span>[\s\S]*?<span>TEXT<\/span>/,
+    expect(landing).toContain(
+      "const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase());",
     );
+    expect(landing).toContain("{HERO_CHANNELS.map((label) => (");
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
 
@@ -57,6 +58,8 @@ describe("WIRELINE public iPhone prestige contract", () => {
     expect(access).toContain('/api/auth/${provider}/url');
     expect(access).not.toContain("WorkspaceSelector");
     expect(access).not.toMatch(/>Personal<|>Business</);
+    expect(access).toContain("aria-labelledby={termsLabelId}");
+    expect(access).toContain("aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}");
   });
 
   it("renders Jordan as a compact animated letterless signal, not a portrait or monogram", () => {
