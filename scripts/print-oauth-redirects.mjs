@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * Prints Wireline OAuth redirect URIs and env var names for a given public origin.
+ * Prints the exact BotBound OAuth redirect inventory for a public origin.
+ *
  * Usage:
  *   node scripts/print-oauth-redirects.mjs
- *   node scripts/print-oauth-redirects.mjs https://your-app.vercel.app
- *   set APP_URL=https://... && node scripts/print-oauth-redirects.mjs
+ *   node scripts/print-oauth-redirects.mjs https://your-preview.vercel.app
+ *   APP_URL=https://your-production-origin.example node scripts/print-oauth-redirects.mjs
  *
- * Set APP_URL to the same value you use in production (or Vercel) so tokens match
- * the redirect_uri used in code (see src/lib/oauth-helpers.ts, oauth-routes.ts).
+ * The BotBound brand migration intentionally does not rename callback paths.
+ * Provider registrations change hostname when APP_URL changes; stable path
+ * contracts stay compatible with existing sessions, routes, and integration code.
  */
 const raw = process.env.APP_URL || process.argv[2] || "http://localhost:3000";
 let url;
@@ -19,75 +21,72 @@ try {
   );
   process.exit(1);
 }
+
 const origin = url.origin.replace(/\/$/, "");
 const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url.host);
 
-const paths = {
-  Google: "/api/oauth/google/callback",
-  Microsoft: "/api/oauth/microsoft/callback",
-  Salesforce: "/api/oauth/salesforce/callback",
-  HubSpot: "/api/oauth/hubspot/callback",
-  Slack: "/api/oauth/slack/callback",
-  X: "/api/oauth/x/callback",
-  Zoom: "/api/oauth/zoom/callback",
-};
+const signInCallbacks = [
+  ["Google sign-in", "/api/auth/google/callback"],
+  ["Microsoft sign-in", "/api/auth/microsoft/callback"],
+  ["Yahoo sign-in", "/api/auth/yahoo/callback"],
+];
+
+const integrationCallbacks = [
+  ["Google", "/api/oauth/google/callback"],
+  ["Google Sheets", "/api/oauth/google-sheets/callback"],
+  ["Microsoft", "/api/oauth/microsoft/callback"],
+  ["Yahoo", "/api/oauth/yahoo/callback"],
+  ["Salesforce", "/api/oauth/salesforce/callback"],
+  ["HubSpot", "/api/oauth/hubspot/callback"],
+  ["Apollo", "/api/oauth/apollo/callback"],
+  ["Meta", "/api/oauth/meta/callback"],
+  ["Shopify", "/api/oauth/shopify/callback"],
+  ["Square", "/api/oauth/square/callback"],
+  ["Microsoft Graph", "/api/oauth/microsoft-graph/callback"],
+  ["Slack", "/api/oauth/slack/callback"],
+  ["X", "/api/oauth/x/callback"],
+  ["Zoom", "/api/oauth/zoom/callback"],
+];
+
+function printGroup(title, callbacks) {
+  console.log(`\n${title}`);
+  for (const [label, path] of callbacks) {
+    console.log(`  ${label.padEnd(20)} ${origin}${path}`);
+  }
+}
 
 console.log(`
 ══════════════════════════════════════════════════════════════════
- Wireline — OAuth console setup (origin: ${origin})
+ BotBound OAuth cutover inventory
+ Origin: ${origin}
 ══════════════════════════════════════════════════════════════════
 
-1) .env (same origin as below)
-   APP_URL="${origin}"
-   (Required so the server builds the same redirect_uri as the provider console.)
-
-2) Google Cloud Console — APIs & Services → Credentials → OAuth 2.0 Client (Web)
-   https://console.cloud.google.com/apis/credentials
-   • Authorized JavaScript origins (add each you use):
-     - ${origin}
-   • Authorized redirect URIs (must match exactly, including trailing path):
-     - ${origin}${paths.Google}
-   Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-
-3) Microsoft Entra — App registrations → your app → Authentication
-   https://entra.microsoft.com/ (or Azure portal → Microsoft Entra ID)
-   • Platform: Web
-   • Redirect URI:
-     - ${origin}${paths.Microsoft}
-   • Enable "Access tokens" and "ID tokens" if prompted for SPA vs Web; use Web.
-   Env: MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET
-   (API permissions: delegated as required by your tenant for Mail + Calendar; see .env.example)
-
-4) Salesforce — Connected App → Callback URL
-   ${origin}${paths.Salesforce}
-   Env: SALESFORCE_CLIENT_ID, SALESFORCE_CLIENT_SECRET
-
-5) HubSpot — App → Redirect URL
-   ${origin}${paths.HubSpot}
-   Env: HUBSPOT_CLIENT_ID, HUBSPOT_CLIENT_SECRET
-
-6) Slack — Your App → OAuth & Permissions → Redirect URLs
-   https://api.slack.com/apps
-   ${origin}${paths.Slack}
-   Env: SLACK_CLIENT_ID, SLACK_CLIENT_SECRET
-   (Bot scopes: chat:write, channels:read, groups:read, team:read — see src/lib/slack-service.ts)
-
-7) X (Twitter) — Developer Portal → your app → User authentication settings
-   https://developer.x.com/
-   Callback / Redirect URI:
-   ${origin}${paths.X}
-   Env: X_CLIENT_ID, X_CLIENT_SECRET
-   (OAuth 2.0 scopes: tweet.read tweet.write users.read offline.access — see src/lib/x-service.ts)
-
-8) Zoom — App Marketplace → your OAuth app → Redirect URL for OAuth
-   https://marketplace.zoom.us/
-   ${origin}${paths.Zoom}
-   Env: ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET
+Set APP_URL="${origin}" in the target Vercel environment before validating OAuth.
+The server derives redirect_uri from that canonical origin. Do not rename the
+/api/auth/* or /api/oauth/* callback paths during the brand/domain cutover.
 `);
+
+printGroup("ACCOUNT SIGN-IN CALLBACKS", signInCallbacks);
+printGroup("CONNECTED-INTEGRATION CALLBACKS", integrationCallbacks);
+
+console.log(`
+CUTOVER ORDER
+  1. Add and verify the BotBound domain in Vercel.
+  2. Set APP_URL to the canonical BotBound origin.
+  3. Set VITE_PUBLIC_SITE_URL to the same public origin.
+  4. Set CORS_ORIGINS to include the canonical origin and any deliberate transition origin.
+  5. Add the applicable callback URLs above in each provider console before removing old-host callbacks.
+  6. Redeploy the BotBound feature branch and complete sign-in + integration connect/disconnect smoke tests.
+  7. Remove retired-host callback registrations only after the new origin is proven.
+
+Provider credentials remain the existing environment variables. This script
+prints callback contracts only and never reads or displays client secrets.
+`);
+
 if (isLocal) {
-  console.log(`
-── Note: For production, re-run this script with your deployed APP_URL and add
-   the same callback paths on that origin in every provider. You can register
-   both localhost and production URLs in Google / Azure / Slack / Zoom.
+  console.log(`LOCAL NOTE
+  Re-run this command with the purchased BotBound origin tomorrow. Providers
+  that allow multiple callbacks can retain localhost and the legacy production
+  origin during validation, then remove the retired host after cutover proof.
 `);
 }
