@@ -26,7 +26,11 @@ describe("Studio Canvas vision contract", () => {
     expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
     expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
     expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("context-chrome");
-    expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(236);
+    expect(STUDIO_CANVAS_VISION.railBehavior).toBe("resizable-and-collapsible");
+    expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(232);
+    expect(STUDIO_CANVAS_VISION.railMinPx).toBe(208);
+    expect(STUDIO_CANVAS_VISION.railMaxPx).toBe(320);
+    expect(STUDIO_CANVAS_VISION.railCollapsedPx).toBe(68);
     expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("view=workspace");
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
   });
@@ -45,7 +49,7 @@ describe("Studio Canvas vision contract", () => {
     }
   });
 
-  it("requires the neutral Studio shell, context chrome, setup, test, review, and unified Overview", () => {
+  it("requires the neutral Studio shell, context chrome, setup, test, review, and adjustable panes", () => {
     const sources = loadSurfaces();
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_REQUIRED) as Array<
       [
@@ -73,24 +77,26 @@ describe("Studio Canvas vision contract", () => {
     expect(studioHome).not.toContain("StudioAgentBar");
   });
 
-  it("keeps deploy-time Overview rules in lockstep with the TypeScript manifest", () => {
+  it("keeps deploy-time adjustable-workspace rules in lockstep with the TypeScript manifest", () => {
     const tsManifest = read("src/lib/studio-canvas-contract.ts");
     const deployManifest = read("scripts/lib/studio-canvas-contract.mjs");
 
     for (const id of [
-      "overview-title",
-      "unified-inbox",
-      "bot-roster",
-      "configuration-surface",
-      "create-entry",
-      "template-entry",
-      "operating-metrics",
-      "recent-conversations",
+      "resizable-rail",
+      "rail-default",
+      "rail-range",
+      "rail-collapse",
+      "persistent-panel",
+      "pointer-resize",
+      "keyboard-resize",
+      "bot-switcher",
+      "scoped-inbox",
+      "scoped-calls",
     ]) {
       expect(tsManifest, id).toContain(`id: "${id}"`);
       expect(deployManifest, id).toContain(`id: "${id}"`);
     }
-    for (const retired of ["agent-preview-cap", "agent-overflow-link"]) {
+    for (const retired of ["overview-title", "unified-inbox", "bot-roster", "agent-preview-cap", "agent-overflow-link"]) {
       expect(tsManifest).not.toContain(retired);
       expect(deployManifest).not.toContain(retired);
     }
