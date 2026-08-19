@@ -17,11 +17,6 @@ function withoutComments(source: string): string {
     .replace(/<!--([\s\S]*?)-->/g, "");
 }
 
-/**
- * Broad source coverage is intentional. The classifier below decides whether
- * a standalone legacy name is customer-delivery debt or a frozen technical
- * compatibility identity.
- */
 const customerSurfacePatterns = [
   "src/components/**/*.tsx",
   "src/pages/**/*.tsx",
@@ -41,7 +36,6 @@ const customerSurfacePatterns = [
   "server.ts",
 ] as const;
 
-/** Stable compatibility strings whose rename can break installed clients or today's origin. */
 const compatibilityLinePatterns = [
   /legacyName:\s*"Wireline"/,
   /X-Wireline-Key/,
@@ -57,18 +51,9 @@ function isInternalLogLine(line: string): boolean {
   return /\b(?:log|logger|auditLogger)\.(?:debug|info|warn|error)\s*\(/.test(line);
 }
 
-/**
- * Existing provider/catalog/resource identities are frozen when code uses the
- * literal to reconcile or rediscover already-created external state. Visible
- * product copy must be layered above these rather than renaming the key in
- * place and risking duplicate resources.
- */
 function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/plan-catalog.ts") {
     return /name:\s*"Wireline (?:Free Builder|Starter|Starter Plus|Pro|Business)"/.test(line);
-  }
-  if (path === "src/lib/voice-pricing-display.ts") {
-    return line.includes("plan.name.replace") && line.includes("BotBound") && line.includes("Wireline");
   }
   if (path === "src/lib/google-sheets-service.ts") {
     return /const SHEET_TITLE = "Wireline Call Log"/.test(line);
@@ -164,6 +149,7 @@ describe("BotBound visible-brand sweep", () => {
     expect(brand).toContain('legacyName: "Wireline"');
     expect(openapi).toContain('name: "X-Wireline-Key"');
     expect(nativeSip).toContain('XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token"');
+    expect(nativeSip).toContain('XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP"');
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "Wireline Starter"');
@@ -189,5 +175,20 @@ describe("BotBound visible-brand sweep", () => {
     ]) {
       expect(read(path), path).toContain("BotBound");
     }
+  });
+
+  it("uses real shipped Inter Tight weights for the BotBound display hierarchy", () => {
+    const fonts = read("public/fonts.css");
+    const typography = withoutComments(read("src/styles/typography-prose.css"));
+    const identity = withoutComments(read("src/styles/brand-identity.css"));
+
+    for (const weight of [500, 600, 700]) {
+      expect(fonts).toContain(`font-family: 'Inter Tight';\n  font-style: normal;\n  font-weight: ${weight};`);
+    }
+    expect(typography).not.toMatch(/\.wl-display-[1-4]\s*\{[^}]*font-weight:\s*400/s);
+    expect(typography).toMatch(/\.wl-display-1\s*\{[^}]*font-weight:\s*500/s);
+    expect(typography).toMatch(/\.wl-display-3\s*\{[^}]*font-weight:\s*600/s);
+    expect(typography).toMatch(/\.wl-page-title\s*\{[^}]*font-weight:\s*700/s);
+    expect(identity).toMatch(/\.bb-wordmark\s*\{[^}]*font-weight:\s*700/s);
   });
 });
