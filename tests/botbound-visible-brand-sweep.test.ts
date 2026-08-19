@@ -62,6 +62,9 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/microsoft-graph-service.ts") {
     return /const EXCEL_FILE_NAME = "Wireline Call Log\.xlsx"/.test(line);
   }
+  if (path === "src/lib/agent-capabilities.ts" || path === "src/lib/vapi-helpers.ts") {
+    return /Wireline Call Log/.test(line);
+  }
   if (path === "src/lib/voice/xai-sip-config.ts") {
     return /XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
   }
@@ -79,6 +82,14 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   }
   if (path === "src/lib/vapi-phone-numbers.ts") {
     return /name:\s*opts\.name \|\| "Wireline-managed"/.test(line);
+  }
+  if (path === "src/lib/voice/xai-sip-session.ts") {
+    return /ws\.close\(1000, "Wireline (?:transferred|line suspended|caller DNC|maximum duration reached)"\)/.test(
+      line,
+    );
+  }
+  if (path === "android/app/src/main/res/values/themes.xml") {
+    return /Theme\.Wireline/.test(line);
   }
   if (path === "src/lib/studio-canvas-contract.ts") {
     return /pattern:\s*\/Wireline/.test(line);
@@ -153,6 +164,7 @@ describe("BotBound visible-brand sweep", () => {
     const catalog = read("src/lib/plan-catalog.ts");
     const sheets = read("src/lib/google-sheets-service.ts");
     const graph = read("src/lib/microsoft-graph-service.ts");
+    const androidTheme = read("android/app/src/main/res/values/themes.xml");
 
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
@@ -164,6 +176,7 @@ describe("BotBound visible-brand sweep", () => {
     expect(catalog).toContain('name: "Wireline Starter"');
     expect(sheets).toContain('const SHEET_TITLE = "Wireline Call Log"');
     expect(graph).toContain('const EXCEL_FILE_NAME = "Wireline Call Log.xlsx"');
+    expect(androidTheme).toContain('name="Theme.Wireline"');
   });
 
   it("normalizes the raw partner OpenAPI document to BotBound without renaming its API-key header", () => {
