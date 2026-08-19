@@ -7,7 +7,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   const mainTsx = read("src/main.tsx");
   const foundationCss = read("src/styles/foundation.css");
   const designSystemCss = read("src/styles/design-system.css");
-  const letterpressPolish = read("src/styles/letterpress-polish.css");
+  const compatibilityPolish = read("src/styles/letterpress-polish.css");
   const indexCss = read("src/index.css");
   const responsiveCss = read("src/styles/responsive.css");
   const safeAreaOwnership = read("src/styles/safe-area-ownership.css");
@@ -18,15 +18,11 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   const textarea = read("src/components/atoms/Textarea.tsx");
   const radixSelect = read("src/components/ui/shadcn/Select.tsx");
   const designVisionSource = read("src/lib/wireline-design-vision.ts");
+  const surfaceContract = read("src/lib/surface-contract.ts");
 
   mustInclude(
     "package.json",
     packageJson,
-    // The contract is now three scripts, not one: the clear-system modules, the
-    // command palette, and the marketing viewport frame. The pattern is
-    // open-ended on the right so adding a fourth gate does not require editing
-    // the gate that checks the gates -- but the clear-system check stays
-    // anchored first, because it is the one that fails loudest.
     /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/[\w-]+\.mjs)*"/,
     "design:check must run the executable design contract",
   );
@@ -66,7 +62,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/styles/foundation.css",
     foundationCss,
     /color-scheme:\s*dark/,
-    "the default Ink appearance must declare dark color-scheme",
+    "the default WIRELINE appearance must declare dark color-scheme",
   );
   mustInclude(
     "src/styles/foundation.css",
@@ -84,19 +80,25 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/styles/theme-light.css",
     lightTheme,
     /:root\.light[\s\S]*color-scheme:\s*light/,
-    "optional Paper appearance must declare light color-scheme",
+    "optional Light appearance must declare light color-scheme",
   );
   mustInclude(
     "src/styles/theme-light.css",
     lightTheme,
     /--wireline-color-text-tertiary:\s*#706b84/i,
-    "Paper tertiary text must retain the audited AA-safe value",
+    "Light tertiary text must retain the audited AA-safe value",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",
     themeContext,
     /export type Theme = "light" \| "dark" \| "system"/,
-    "theme architecture must preserve Ink, Paper, and system modes",
+    "theme architecture must preserve Dark, Light, and System appearances",
+  );
+  mustInclude(
+    "src/contexts/ThemeContext.tsx",
+    themeContext,
+    /return "dark"/,
+    "first-visit appearance must remain dark unless the customer explicitly chose otherwise",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",
@@ -138,10 +140,22 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   );
 
   mustInclude(
-    "src/styles/design-system.css",
-    designSystemCss,
-    /Wireline — Letterpress design system/,
-    "name the current Letterpress system",
+    "src/lib/wireline-design-vision.ts",
+    designVisionSource,
+    /system:\s*"WIRELINE Design System"/,
+    "canonical vision must name the single WIRELINE Design System",
+  );
+  mustInclude(
+    "src/lib/surface-contract.ts",
+    surfaceContract,
+    /system:\s*"WIRELINE Design System"/,
+    "authenticated surface contract must use the same single system name",
+  );
+  mustExclude(
+    "src/lib/wireline-design-vision.ts",
+    designVisionSource,
+    /system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/,
+    "canonical vision must not declare a themed sub-system",
   );
   mustInclude(
     "src/styles/design-system.css",
@@ -165,43 +179,49 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/index.css",
     indexCss,
     /@import\s+"\.\/styles\/letterpress-polish\.css"/,
-    "index.css must import Letterpress polish",
+    "index.css must retain the legacy polish compatibility layer until aliases are migrated",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
-    letterpressPolish,
+    compatibilityPolish,
     /\.wl-paper\s*\{[\s\S]*var\(--wireline-elevation-inset\)/,
-    "Letterpress must define the paper surface primitive",
+    "legacy paper alias must remain behaviorally stable during semantic migration",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
-    letterpressPolish,
+    compatibilityPolish,
     /\.wl-focus-ring:focus-visible\s*\{[\s\S]*var\(--wireline-color-focus-default\)/,
-    "Letterpress must define the on-brand focus ring",
+    "shared focus ring must remain on the WIRELINE action token",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
-    letterpressPolish,
+    compatibilityPolish,
     /\.wl-metric-tile[\s\S]*var\(--wireline-font-family-display\)/,
-    "Letterpress must define metric tiles in display type",
+    "shared metric tiles must retain display hierarchy",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
-    letterpressPolish,
+    compatibilityPolish,
     /\.wl-empty[\s\S]*var\(--wireline-color-surface-subtle\)/,
-    "Letterpress must define the empty-state primitive",
+    "shared empty state must remain on semantic surfaces",
   );
   mustInclude(
     "src/styles/letterpress-polish.css",
-    letterpressPolish,
+    compatibilityPolish,
     /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,
-    "Letterpress eyebrows must use the silver wire",
+    "wired eyebrows must use the platinum wire token",
   );
   mustInclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /"wl-paper"[\s\S]*"wl-metric-tile"[\s\S]*"wl-empty"/,
-    "design vision manifest must list the shared polish primitives",
+    /"wl-panel"[\s\S]*"wl-panel-elevated"[\s\S]*"wl-metric-tile"[\s\S]*"wl-empty"/,
+    "design vision manifest must list canonical shared surface and layout primitives",
+  );
+  mustInclude(
+    "src/lib/wireline-design-vision.ts",
+    designVisionSource,
+    /retiredDesignNames:\s*\[[\s\S]*"Letterpress"[\s\S]*"Obsidian"[\s\S]*"Aurora"/,
+    "design vision must explicitly retire competing design-system codenames",
   );
 
   for (const [path, reason] of [
