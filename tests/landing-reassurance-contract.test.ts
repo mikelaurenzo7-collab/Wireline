@@ -15,8 +15,8 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("Illustrative Workflow");
     expect(landing).not.toContain("Booked and logged");
     expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
-    expect(landing).toContain("WIRE YOUR");
-    expect(landing).toContain("PHONE BOT");
+    expect(landing).toContain("PUT YOUR BOT");
+    expect(landing).toContain("ON THE LINE");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");
