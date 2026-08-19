@@ -1,8 +1,8 @@
 @import "./lib/typography.css";
 
-/* Wireline — Letterpress design system (Aurora palette).
+/* WIRELINE Design System.
  * Inter Tight for display. Inter for body. IBM Plex Mono for system labels.
- * Electric violet is action. Obsidian canvas is calm. Silver is the wire accent. */
+ * Electric violet is action. Near-black canvas is calm. Platinum is the wire. */
 
 :root {
   --wireline-page: var(--wireline-color-canvas-default);
