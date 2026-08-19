@@ -236,8 +236,11 @@ describe("Phone Bot product voice", () => {
     ]) {
       expect(routes).toContain(`path="${path}"`);
     }
+    expect(routes).toContain('path="/" element={<Navigate to="/studio" replace />}');
     expect(routes).toContain('to="/phone?tab=logs"');
-    expect(routes).toContain("AgentsToStudioRedirect");
+    expect(routes).toContain("ToStudioRedirect");
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
+    expect(routes).toContain('path="/agents" element={<ToStudioRedirect />}');
     for (const retiredPath of [
       "/actions",
       "/dashboard",
