@@ -13,15 +13,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { BOTBOUND_BRAND_NAME } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
-/**
- * Name -> component, kept here rather than in the wedge data so that module
- * stays free of lucide-react. See the note on PainIconName: the data module is
- * reachable from server.ts, and importing icon components there put the whole
- * icon barrel into every serverless cold start.
- */
 const PAIN_ICONS: Record<PainIconName, LucideIcon> = {
   Calendar,
   Clock,
@@ -100,15 +95,12 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           {
             "@type": "ListItem",
             position: 1,
-            name: "Wireline",
+            name: BOTBOUND_BRAND_NAME,
             item: "https://trywireline.com/",
           },
           {
             "@type": "ListItem",
             position: 2,
-            // metaTitles use either an em-dash or a pipe to separate the crumb
-            // from the SEO tail — split on both so pipe-titled verticals don't
-            // emit the entire title as the breadcrumb name.
             name: cfg.metaTitle.split(/\s*[\u2014|]\s*/)[0].trim() || slug,
             item: `https://trywireline.com/for/${slug}`,
           },
@@ -126,9 +118,6 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      {/* Headline, actions, and the pains they answer, on one screen. A wedge
-          page's headline names a problem; making the reader scroll past an
-          empty viewport to reach the problem is the wrong first move. */}
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl">
         <div className="mb-9 text-center">
           <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
