@@ -17,6 +17,9 @@ type WorkspaceBrandEditorProps = {
   isSaving?: boolean;
 };
 
+/**
+ * Letterpress owner brand editor — live color preview, no Admin chrome.
+ */
 export default function WorkspaceBrandEditor({
   settings,
   onUpdate,
