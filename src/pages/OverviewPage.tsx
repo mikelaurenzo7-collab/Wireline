@@ -1,23 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  CalendarCheck2,
-  Inbox,
-  Phone,
-  Plus,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { CalendarCheck2, Inbox, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 
 import ActivationChecklist from "../components/ActivationChecklist";
-import OutboundDialDialog from "../components/OutboundDialDialog";
-import OutcomeLedger from "../components/OutcomeLedger";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { Button, Skeleton } from "../components/atoms";
 import FirstRunWorkspace from "../components/overview/FirstRunWorkspace";
-import { BotRoster, ConfigureCard } from "../components/overview/OverviewRail";
-import UnifiedInbox from "../components/overview/UnifiedInbox";
+import RecentActivity from "../components/overview/RecentActivity";
 import {
   EMPTY_OVERVIEW_METRICS,
   type OverviewMetrics,
@@ -31,8 +21,8 @@ import { authFetch } from "../lib/api";
 function MetricSkeleton() {
   return (
     <div className="wl-metric-tile wl-metric-tile--compact" aria-hidden="true">
-      <Skeleton shape="text" className="h-3 w-28" />
-      <Skeleton shape="text" className="mt-5 h-8 w-12" />
+      <Skeleton shape="text" className="h-3 w-20" />
+      <Skeleton shape="text" className="mt-4 h-8 w-10" />
     </div>
   );
 }
@@ -40,21 +30,21 @@ function MetricSkeleton() {
 function metricRows(metrics: OverviewMetrics) {
   return [
     {
-      label: "Customer conversations today",
+      label: "Conversations",
       value: metrics.conversationsToday,
       href: "/inbox",
       icon: Inbox,
       tone: metrics.conversationsToday > 0 ? ("success" as const) : ("neutral" as const),
     },
     {
-      label: "High-intent today",
+      label: "High intent",
       value: metrics.highIntentToday,
       href: "/insights",
       icon: Sparkles,
       tone: metrics.highIntentToday > 0 ? ("primary" as const) : ("neutral" as const),
     },
     {
-      label: "Appointments booked",
+      label: "Appointments",
       value: metrics.appointmentsBooked,
       href: "/phone?tab=appointments",
       icon: CalendarCheck2,
@@ -72,51 +62,31 @@ function metricRows(metrics: OverviewMetrics) {
 
 function DashboardLoadingState() {
   return (
-    <section
-      className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.65fr)]"
-      aria-busy="true"
-      aria-label="Loading unified workspace overview"
-    >
-      <div className="wl-paper wl-paper-elevated min-h-[520px] p-5" aria-hidden="true">
-        <div className="flex items-center justify-between gap-3">
-          <Skeleton shape="text" className="h-5 w-40" />
-          <Skeleton shape="text" className="h-9 w-24" />
-        </div>
-        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(15rem,0.82fr)_minmax(0,1.18fr)]">
-          <div className="grid gap-2">
-            {Array.from({ length: 5 }, (_, index) => (
-              <div key={index} className="rounded-xl border border-border p-3">
-                <Skeleton shape="text" className="h-4 w-32" />
-                <Skeleton shape="text" className="mt-2 h-3 w-48" />
-              </div>
-            ))}
-          </div>
-          <div className="rounded-xl border border-border p-5">
-            <Skeleton shape="text" className="h-4 w-24" />
-            <Skeleton shape="text" className="mt-4 h-7 w-48" />
-            <Skeleton shape="text" className="mt-3 h-3 w-full" />
-            <Skeleton shape="text" className="mt-2 h-3 w-4/5" />
-          </div>
-        </div>
-      </div>
-      <div className="grid content-start gap-4">
-        {Array.from({ length: 3 }, (_, index) => (
-          <div key={index} className="wl-paper wl-paper-elevated p-5" aria-hidden="true">
-            <Skeleton shape="text" className="h-4 w-32" />
-            <Skeleton shape="text" className="mt-5 h-24 w-full" />
+    <div className="grid gap-4" aria-busy="true" aria-label="Loading Home">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        {Array.from({ length: 4 }, (_, index) => (
+          <MetricSkeleton key={index} />
+        ))}
+      </section>
+      <div className="wl-paper wl-paper-elevated p-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className="flex min-h-16 items-center gap-3 border-b border-border/60 last:border-0">
+            <Skeleton shape="surface" className="size-9 shrink-0 rounded-full" />
+            <div className="min-w-0 flex-1">
+              <Skeleton shape="text" className="h-4 w-32" />
+              <Skeleton shape="text" className="mt-2 h-3 w-44" />
+            </div>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
 export default function OverviewPage() {
   const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
-  const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [metrics, setMetrics] = useState<OverviewMetrics>(EMPTY_OVERVIEW_METRICS);
   const [conversations, setConversations] = useState<RecentConversation[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [recentUnavailable, setRecentUnavailable] = useState(false);
   const [metricsUnavailable, setMetricsUnavailable] = useState(false);
@@ -148,7 +118,7 @@ export default function OverviewPage() {
       const since = dayBoundary.toISOString();
 
       const [recentResponse, metricsResponse] = await Promise.all([
-        authFetch("/api/overview/recent-conversations").catch(() => null),
+        authFetch("/api/overview/recent-conversations?limit=4").catch(() => null),
         authFetch(`/api/overview/operating-metrics?since=${encodeURIComponent(since)}`).catch(
           () => null,
         ),
@@ -158,14 +128,11 @@ export default function OverviewPage() {
 
       if (recentResponse?.ok) {
         const body = await recentResponse.json().catch(() => null);
-        const nextConversations = Array.isArray(body?.conversations)
-          ? (body.conversations as RecentConversation[]).slice(0, 8)
-          : [];
-        setConversations(nextConversations);
-        setSelectedConversationId((current) => {
-          if (current && nextConversations.some((item) => item.id === current)) return current;
-          return nextConversations[0]?.id ?? null;
-        });
+        setConversations(
+          Array.isArray(body?.conversations)
+            ? (body.conversations as RecentConversation[]).slice(0, 4)
+            : [],
+        );
       } else {
         setRecentUnavailable(true);
       }
@@ -192,65 +159,26 @@ export default function OverviewPage() {
     };
   }, [refreshTick]);
 
-  const primaryBot = agents[0];
   const hasBots = agents.length > 0;
-  const hasLiveLine = agents.some((bot) => Boolean(bot.phone_number));
   const isFirstRun = !loading && !degraded && !hasBots;
-  const primaryStudioHref = primaryBot
-    ? `/studio?agent=${encodeURIComponent(primaryBot.id)}&section=setup`
-    : "/studio?create=1";
 
   return (
     <WorkspaceShell contentClassName="pt-3 pb-5 lg:pt-4">
-      <WorkspacePageFrame mode="operate" className="wl-overview">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-              One Workspace
-            </p>
-            <h1 className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}>Overview</h1>
-            {!isFirstRun ? (
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Build and operate Bots for business roles, personal work, or any custom workflow.
-                Voice, text, email, knowledge, tools, and outcomes stay together.
-              </p>
-            ) : null}
-          </div>
+      <WorkspacePageFrame mode="operate" className="wl-overview gap-4">
+        <header className="flex items-center justify-between gap-3">
+          <h1 className={isFirstRun ? "sr-only" : "wl-app-page-title"}>Home</h1>
           {!isFirstRun ? (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button asChild variant="secondary" className="justify-center">
-                <Link to="/templates">Browse Templates</Link>
-              </Button>
-              {hasLiveLine ? (
-                <Button
-                  type="button"
-                  className="justify-center"
-                  onClick={() => setShowOutboundDial(true)}
-                >
-                  <Phone size={15} aria-hidden="true" />
-                  Start a Call
-                </Button>
-              ) : (
-                <Button asChild className="justify-center">
-                  <Link to={hasBots ? primaryStudioHref : "/studio?create=1"}>
-                    {hasBots ? (
-                      <Sparkles size={15} aria-hidden="true" />
-                    ) : (
-                      <Plus size={15} aria-hidden="true" />
-                    )}
-                    {hasBots ? "Configure Bot" : "Create Bot"}
-                  </Link>
-                </Button>
-              )}
-            </div>
+            <Button asChild size="sm">
+              <Link to="/studio?create=1">
+                <Plus size={15} aria-hidden="true" />
+                New Bot
+              </Link>
+            </Button>
           ) : null}
         </header>
 
         {isFirstRun ? (
-          <>
-            <span className="sr-only">Create Your Own or Browse Templates</span>
-            <FirstRunWorkspace />
-          </>
+          <FirstRunWorkspace />
         ) : degraded && !hasBots ? (
           <WorkspaceRecovery onRetry={refresh} />
         ) : loading && !hasBots ? (
@@ -260,92 +188,53 @@ export default function OverviewPage() {
             <ActivationChecklist className="mb-0" />
 
             {degraded ? (
-              <StatusNotice tone="warning" title="Bot Roster Partial">
-                Wireline is showing the last safe Bot roster while account data recovers.
+              <StatusNotice tone="warning" title="Bots unavailable">
+                Showing the last safe workspace state while Wireline reconnects.
               </StatusNotice>
             ) : null}
             {phoneLookupDegraded ? (
-              <StatusNotice tone="warning" title="Line Status Unavailable">
-                We could not verify attached phone numbers. Your lines and Bots are unchanged.
-              </StatusNotice>
-            ) : null}
-            {recentUnavailable ? (
-              <StatusNotice tone="warning" title="Conversation Preview Partial">
-                Recent customer conversations could not be refreshed. Open Inbox for the full record.
-              </StatusNotice>
-            ) : null}
-            {metricsUnavailable ? (
-              <StatusNotice tone="warning" title="Metrics Partial">
-                Today&apos;s operating metrics could not be refreshed. Existing conversations and outcomes are unchanged.
+              <StatusNotice tone="warning" title="Line status unavailable">
+                Your bots and lines are unchanged.
               </StatusNotice>
             ) : null}
 
             <section
-              className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.65fr)]"
-              aria-label="Customer demand and outcomes"
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
+              aria-label="Today"
+              aria-busy={loadingDashboard}
             >
-              <span className="sr-only">Voice · Text · Email. Recent customer conversations.</span>
-              <UnifiedInbox
-                conversations={conversations}
-                selectedId={selectedConversationId}
-                onSelect={setSelectedConversationId}
-                loading={loadingDashboard}
-                unavailable={recentUnavailable && conversations.length === 0}
-              />
-              <aside className="grid content-start gap-4" aria-label="Workspace summary">
-                <section
-                  className="grid grid-cols-2 gap-2 sm:gap-3"
-                  aria-label="Today’s operating metrics"
-                  aria-busy={loadingDashboard}
-                >
-                  {loadingDashboard
-                    ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
-                    : metricRows(metrics).map(({ label, value, href, icon: Icon, tone }, index) => (
-                        <Link
-                          key={label}
-                          to={href}
-                          className={`wl-metric-tile wl-metric-tile--compact wl-press wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
-                          data-tone={tone}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="wl-metric-tile__label">{label}</p>
-                            <Icon
-                              className="wl-metric-tile__icon size-4 shrink-0 text-primary"
-                              aria-hidden="true"
-                            />
-                          </div>
-                          <div className="wl-metric-tile__value">{value}</div>
-                        </Link>
-                      ))}
-                </section>
-                <p className="sr-only" role="status">
-                  {loadingDashboard
-                    ? "Loading today's numbers."
-                    : `${metrics.conversationsToday} conversations today, ${metrics.highIntentToday} high intent, ${metrics.appointmentsBooked} appointments booked, ${metrics.activeWork} needing attention.`}
-                </p>
-                <BotRoster bots={agents} phoneLookupDegraded={phoneLookupDegraded} />
-                <ConfigureCard bot={primaryBot} />
-              </aside>
+              {loadingDashboard
+                ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
+                : metricRows(metrics).map(({ label, value, href, icon: Icon, tone }) => (
+                    <Link
+                      key={label}
+                      to={href}
+                      className="wl-metric-tile wl-metric-tile--compact wl-press wl-focus-ring-halo group"
+                      data-tone={tone}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="wl-metric-tile__label">{label}</p>
+                        <Icon className="wl-metric-tile__icon size-4 shrink-0 text-primary" aria-hidden="true" />
+                      </div>
+                      <div className="wl-metric-tile__value">{value}</div>
+                    </Link>
+                  ))}
             </section>
 
-            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Proof of Work
-                  </p>
-                  <h2 className="mt-1 text-base font-semibold text-foreground">Outcomes</h2>
-                </div>
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/insights">Open Analytics</Link>
-                </Button>
-              </div>
-              <OutcomeLedger limit={5} showViewAll followUpsHref="/approvals" />
-            </section>
+            {metricsUnavailable ? (
+              <p className="text-xs text-muted-foreground" role="status">
+                Today&apos;s totals could not refresh.
+              </p>
+            ) : null}
+
+            <RecentActivity
+              conversations={conversations}
+              loading={loadingDashboard}
+              unavailable={recentUnavailable && conversations.length === 0}
+            />
           </>
         )}
       </WorkspacePageFrame>
-      <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </WorkspaceShell>
   );
 }
