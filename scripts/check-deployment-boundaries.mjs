@@ -5,7 +5,6 @@ const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
-const fullGitSha = /^[a-f0-9]{40}$/i;
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -81,18 +80,20 @@ if (isProduction) {
   }
 
   if (affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED")) {
-    const deploymentSha = value("VERCEL_GIT_COMMIT_SHA").toLowerCase();
-    const releaseSha = value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA").toLowerCase();
-    if (!fullGitSha.test(deploymentSha)) {
-      notices.push(
-        "Self-serve billing will remain runtime-closed because VERCEL_GIT_COMMIT_SHA is not a full deployed Git SHA.",
-      );
-    } else if (!fullGitSha.test(releaseSha) || releaseSha !== deploymentSha) {
-      notices.push(
-        `Self-serve billing will remain runtime-closed until WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA=${deploymentSha}.`,
+    const gitRef = value("VERCEL_GIT_COMMIT_REF").toLowerCase();
+    if (gitRef !== "main") {
+      failures.push(
+        "WIRELINE_SELF_SERVE_BILLING_ENABLED: self-serve billing may only ship from the audited main production release channel",
       );
     } else {
-      notices.push(`Self-serve billing is authorized for exact production SHA ${deploymentSha}.`);
+      notices.push(
+        "Self-serve billing is authorized for the audited main production release channel; per-commit release-SHA rotation is retired.",
+      );
+    }
+    if (value("WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA")) {
+      notices.push(
+        "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA is legacy configuration and no longer controls runtime billing authorization.",
+      );
     }
   }
 }
