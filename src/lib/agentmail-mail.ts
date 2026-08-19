@@ -237,7 +237,7 @@ export async function fetchAgentMailInbox(
     try {
       const since = opts.sinceIso ? new Date(opts.sinceIso) : undefined;
       const uids = await client.search(since ? { since } : { all: true }, { uid: true });
-      if (!uids?.length) return [];
+      if (!Array.isArray(uids) || uids.length === 0) return [];
       const recentUids = uids.slice(-limit).reverse();
       const messages: AgentMailInboxMessage[] = [];
       for await (const msg of client.fetch(recentUids, { envelope: true }, { uid: true })) {
