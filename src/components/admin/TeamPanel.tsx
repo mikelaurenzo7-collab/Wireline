@@ -336,7 +336,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 Access Revocation
               </p>
               <p className="text-[length:var(--wireline-typography-caption-size)] text-rose-600/80 leading-relaxed font-medium">
-                Revoking access signs that person out of Wireline everywhere within seconds and
+                Revoking access signs that person out of BotBound everywhere within seconds and
                 closes any live sessions they have open.
               </p>
             </div>
