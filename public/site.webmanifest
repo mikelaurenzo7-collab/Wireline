@@ -1,7 +1,7 @@
 {
-  "name": "WIRELINE | VOICE BOTS THAT GET THE WORK DONE",
+  "name": "WIRELINE | WIRE YOUR PHONE BOT",
   "short_name": "WIRELINE",
-  "description": "Build a voice-first Bot that answers and makes calls, carries conversations into text and email, books next steps, and follows through from one workspace.",
+  "description": "A Phone Bot for calls, text, and email. Build free, then put it on a number when you're ready.",
   "id": "/",
   "start_url": "/overview",
   "scope": "/",
@@ -44,13 +44,13 @@
     {
       "name": "BOT STUDIO",
       "short_name": "STUDIO",
-      "description": "Build and configure any Bot in the shared WIRELINE workspace.",
+      "description": "Build and configure any Bot in WIRELINE.",
       "url": "/studio"
     },
     {
       "name": "INBOX",
       "short_name": "INBOX",
-      "description": "Review voice, text, and email conversations in one place.",
+      "description": "Review calls, text, and email conversations in one place.",
       "url": "/inbox"
     },
     {
