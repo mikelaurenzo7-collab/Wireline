@@ -2,7 +2,7 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-/// Live Activity / Dynamic Island view for a real active Wireline call. The
+/// Live Activity / Dynamic Island view for a real active BotBound call. The
 /// main app supplies factual call state; this extension renders the compact
 /// Smart Route affordance and never fabricates a transcript or action result.
 @available(iOS 16.1, *)
@@ -97,7 +97,7 @@ private struct LockScreenCallActivityView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 PulseMark(size: 22)
-                Text("Wireline is handling this")
+                Text("BotBound is handling this")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                 Spacer()
@@ -143,6 +143,6 @@ private struct PulseMark: View {
                 .foregroundStyle(WidgetColors.accent)
         }
         .frame(width: size, height: size)
-        .accessibilityLabel("Wireline active call")
+        .accessibilityLabel("BotBound active call")
     }
 }
