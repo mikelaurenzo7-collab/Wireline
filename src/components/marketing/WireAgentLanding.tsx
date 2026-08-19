@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
@@ -8,6 +9,7 @@ import LandingFooter from "./LandingFooter";
 import { BOT_CHANNELS, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
+import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
 const HERO_CHANNELS = BOT_CHANNELS.map(({ label }) => label.toUpperCase());
@@ -46,6 +48,22 @@ const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
 });
 
 export default function WireAgentLanding() {
+  useEffect(() => {
+    emitProductEventOnce({
+      event: "landing_viewed",
+      surface: "marketing_web",
+      metadata: { path: window.location.pathname || "/", scope: "prestige_access_home" },
+    });
+  }, []);
+
+  const trackSignupIntent = (source: string, label: string) => {
+    emitProductEvent({
+      event: "landing_primary_cta_clicked",
+      surface: "marketing_web",
+      metadata: { source, label },
+    });
+  };
+
   return (
     <div className="marketing-surface landing-prestige bg-background text-foreground">
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
@@ -132,7 +150,10 @@ export default function WireAgentLanding() {
                         </li>
                       ))}
                     </ul>
-                    <Link to={`/signup?plan=personal&template=${template.key}`}>
+                    <Link
+                      to={`/signup?plan=personal&template=${template.key}`}
+                      onClick={() => trackSignupIntent("role_starter", template.name)}
+                    >
                       Wire this role
                       <ArrowRight aria-hidden="true" />
                     </Link>
@@ -185,6 +206,7 @@ export default function WireAgentLanding() {
                       <Link
                         to={`/signup?plan=${id}`}
                         className={featured ? "is-primary" : undefined}
+                        onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
                       >
                         {free ? "Start free" : `Choose ${PLAN_NAMES[id]}`}
                       </Link>
