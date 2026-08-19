@@ -2,6 +2,7 @@ import express, { Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { validateBody, spendBudgetSchema } from "../lib/api-validation";
+import { BOTBOUND_BRAND_NAME, LEGACY_WIRELINE_NAME } from "../lib/brand";
 import { clearBudgetCache, getBudgetSnapshot, isHardSpendCapExceeded } from "../lib/spend-guards";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -38,16 +39,16 @@ async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendB
   return budget ?? null;
 }
 
-/**
- * Repair legacy/demo accounts that predate spend-budget seeding. Runtime
- * provider work still fails closed independently; this read path restores the
- * plan default so the Account Holder can view and edit a real persisted guard.
- *
- * Free Builder receives an explicit private-simulation allowance but no live
- * voice or external paid-provider work. Paid plans expose their catalog-funded
- * provider envelope. An unknown active plan fails closed instead of silently
- * inheriting the Free Builder allowance.
- */
+function customerPlanName(name: string | null | undefined): string {
+  const normalized = String(name || "").trim();
+  if (!normalized) return "";
+  const legacyPrefix = `${LEGACY_WIRELINE_NAME} `;
+  if (normalized.startsWith(legacyPrefix)) {
+    return `${BOTBOUND_BRAND_NAME} ${normalized.slice(legacyPrefix.length)}`;
+  }
+  return normalized;
+}
+
 async function ensurePersistedSpendBudget(
   userId: string,
   email?: string | null,
@@ -61,14 +62,15 @@ async function ensurePersistedSpendBudget(
     log.error("Spend guard could not resolve active plan", { userId, planId });
     throw AppError.fromHttpStatus(
       503,
-      "Wireline could not resolve the active plan for provider spend controls.",
+      `${BOTBOUND_BRAND_NAME} could not resolve the active plan for provider spend controls.`,
     );
   }
 
   const liveProviderWorkEnabled = tier !== "free";
   const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(tier);
   const planName =
-    resolvedPlan?.name ?? (liveProviderWorkEnabled ? "Wireline Business" : "Wireline Free Builder");
+    customerPlanName(resolvedPlan?.name) ||
+    `${BOTBOUND_BRAND_NAME} ${liveProviderWorkEnabled ? "Business" : "Free Builder"}`;
   const guardScope: SpendGuardScope = liveProviderWorkEnabled
     ? "plan_funded"
     : "free_simulation_allowance";
@@ -91,11 +93,6 @@ async function ensurePersistedSpendBudget(
   };
 }
 
-/**
- * This router intentionally mounts before the legacy billing router. It keeps
- * the request shape compatible while making a user-selected hard cap real for
- * new provider-funded work instead of silently coercing it to false.
- */
 router.get(
   "/api/spend/budget",
   authenticateUser,
