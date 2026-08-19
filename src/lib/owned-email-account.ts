@@ -4,7 +4,7 @@ import { emailAccounts } from "../db/schema";
 import { drizzle } from "./server-context";
 
 export const EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE =
-  "This mailbox is already connected to another Wireline account. Disconnect it there or contact support before connecting it here.";
+  "This mailbox is already connected to another BotBound account. Disconnect it there or contact support before connecting it here.";
 
 export interface OwnedEmailAccountInput {
   userId: string;
