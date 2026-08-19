@@ -272,7 +272,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /Present one WIRELINE workspace/,
+    /Treat workspace architecture as product proof, never as a marketing headline\./,
     "shared product copy may document architecture internally even though marketing does not lead with it",
   );
   mustInclude(
@@ -291,13 +291,13 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/lib/wireline-mcp-widget-styles.ts",
     mcpWidgetStyles,
     /canvas: "#0A0A0E"/,
-    "MCP widgets must use the WIRELINE dark canvas",
+    "MCP widgets must use the WIRELINE obsidian canvas",
   );
   mustInclude(
     "src/lib/wireline-mcp-widget-styles.ts",
     mcpWidgetStyles,
     /action: "#A78BFA"/,
-    "MCP widgets must use the Aurora action token",
+    "MCP widgets must use the Letterpress action token",
   );
   mustInclude(
     "src/lib/chatgpt-mcp-account.ts",
