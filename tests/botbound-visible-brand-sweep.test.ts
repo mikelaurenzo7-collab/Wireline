@@ -12,65 +12,39 @@ function read(path: string) {
 function withoutComments(source: string): string {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/^\s*\/\/\/.*$/gm, "")
+    .replace(/<!--([\s\S]*?)-->/g, "");
 }
 
+/**
+ * Customer-delivery surfaces, not implementation identifiers. The regex below
+ * intentionally matches only standalone `Wireline`, so names such as
+ * WirelineAndroidApp, com.wireline.app, data-wireline-*, WIRELINE_* env vars,
+ * and wireline_* database identifiers remain compatible without whitelisting.
+ */
 const customerSurfacePatterns = [
   "src/components/**/*.tsx",
   "src/pages/**/*.tsx",
+  "src/data/**/*.ts",
+  "src/lib/**/*.ts",
+  "src/routes/**/*.ts",
+  "api/**/*.ts",
   "apps/browser-extension/**/*.{html,js,json}",
+  "android/app/src/main/**/*.kt",
+  "android/app/src/main/AndroidManifest.xml",
+  "android/app/src/main/res/values/*.xml",
+  "ios/Wireline/**/*.swift",
+  "ios/Wireline/Info.plist",
+  "ios/WirelineWidgets/**/*.{swift,plist}",
+  "public/**/*.{html,json,svg,xml,txt}",
+  "index.html",
+  "server.ts",
 ] as const;
 
-const customerDeliveryFiles = [
-  "src/lib/chatgpt-mcp-account.ts",
-  "src/lib/company-identity.ts",
-  "src/lib/daily-brief.ts",
-  "src/lib/demo-funnel.ts",
-  "src/lib/email-compliance.ts",
-  "src/lib/email-service.ts",
-  "src/lib/integration-playbooks.ts",
-  "src/lib/mcp-agent-coaching.ts",
-  "src/lib/mcp-app-metadata.ts",
-  "src/lib/mcp-oauth-security.ts",
-  "src/lib/mcp-transport.ts",
-  "src/lib/mobile-push.ts",
-  "src/lib/openai-post-call-artifact.ts",
-  "src/lib/openapi-spec.ts",
-  "src/lib/owned-email-account.ts",
-  "src/lib/phone-provisioning.ts",
-  "src/lib/post-call-digest.ts",
-  "src/lib/provider-http-error.ts",
-  "src/lib/realtime-spend-reservation.ts",
-  "src/lib/safe-public-text-fetch.ts",
-  "src/lib/shared-workspace-readiness.ts",
-  "src/lib/slack-service.ts",
-  "src/lib/spend-guards.ts",
-  "src/lib/stripe-checkout-branding.ts",
-  "src/lib/stripe-portal-policy.ts",
-  "src/lib/trial-gate.ts",
-  "src/lib/twilio-webhook-privacy.ts",
-  "src/lib/vapi-assistant-factory-v2.ts",
-  "src/lib/vapi-tool-handlers.ts",
-  "src/lib/voice-catalog.ts",
-  "src/lib/voice-spend-control.ts",
-  "src/lib/voice/native-phone-carrier.ts",
-  "src/lib/voice/native-phone-release.ts",
-  "src/lib/voice/openai-live-agent-service.ts",
-  "src/lib/voice/openai-realtime-config.ts",
-  "src/lib/voice/openai-realtime-service.ts",
-  "src/lib/voice/openai-realtime-tools.ts",
-  "src/lib/voice/xai-agent-runtime.ts",
-  "src/lib/voice/xai-public-demo-session.ts",
-  "src/lib/website-knowledge-spend.ts",
-  "src/lib/xai-imagine-video.ts",
-  "src/lib/shareable-artifact/brand.ts",
-  "src/lib/shareable-artifact/publish-call-recap.ts",
-  "src/lib/shareable-artifact/template/render-not-found.ts",
-  "src/lib/shareable-artifact/template/shell.ts",
-] as const;
-
-/** Stable protocol/resource identifiers whose rename would break existing clients. */
+/** Stable compatibility strings whose rename would break installed clients or today's origin. */
 const compatibilityLinePatterns = [
+  /legacyName:\s*"Wireline"/,
   /X-Wireline-Key/,
   /X-Wireline-Token/,
   /X-Wireline-Signature/,
@@ -91,21 +65,18 @@ function visibleWirelineLeaks(path: string): string[] {
     const line = lines[index];
     if (!/\bWireline\b/.test(line)) continue;
     if (isCompatibilityOnlyLine(line)) continue;
-    leaks.push(`${path}:${index + 1} ${line.trim().replace(/\s+/g, " ").slice(0, 190)}`);
+    leaks.push(`${path}:${index + 1} ${line.trim().replace(/\s+/g, " ").slice(0, 210)}`);
   }
   return leaks;
 }
 
 describe("BotBound visible-brand sweep", () => {
-  it("does not leak the retired standalone Wireline customer name through UI or delivered customer text", () => {
-    const uiFiles = customerSurfacePatterns
+  it("does not leak the retired standalone Wireline customer name through web, native, static, API, or delivered text", () => {
+    const files = customerSurfacePatterns
       .flatMap((pattern) => globSync(pattern, { cwd: root }))
       .map((file) => file.replaceAll("\\", "/"))
       .filter((file, index, all) => all.indexOf(file) === index)
       .sort();
-    const files = [...uiFiles, ...customerDeliveryFiles].filter(
-      (file, index, all) => all.indexOf(file) === index,
-    );
     const leaks = files.flatMap(visibleWirelineLeaks);
 
     expect(
@@ -129,16 +100,21 @@ describe("BotBound visible-brand sweep", () => {
     expect(firefox).toContain('"id": "command@wireline.com"');
   });
 
-  it("keeps BotBound explicit in the canonical brand, metadata, shell, and install surfaces", () => {
+  it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {
     for (const path of [
       "src/lib/brand.ts",
       "src/lib/page-meta.tsx",
       "src/components/WorkspaceShell.tsx",
       "src/components/brand/BotBoundBrand.tsx",
       "src/components/brand/BotBoundMark.tsx",
+      "src/lib/resend-config.ts",
       "index.html",
       "public/site.webmanifest",
       "public/botbound-icon.svg",
+      "public/botbound-stripe-logo.svg",
+      "android/app/src/main/res/values/strings.xml",
+      "ios/Wireline/Info.plist",
+      "ios/WirelineWidgets/Info.plist",
     ]) {
       expect(read(path), path).toContain("BotBound");
     }
