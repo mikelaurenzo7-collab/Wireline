@@ -12,7 +12,7 @@ struct WalletWidget: Widget {
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("Wallet Balance")
-        .description("View your current Wireline credit balance at a glance.")
+        .description("View your current BotBound credit balance at a glance.")
         .supportedFamilies([
             .systemSmall,
             .accessoryCircular,
@@ -131,12 +131,12 @@ private struct WalletWidgetView: View {
     private var signedOutView: some View {
         switch family {
         case .accessoryInline:
-            Text("Open Wireline to sign in")
+            Text("Open BotBound to sign in")
         case .accessoryCircular:
             Image(systemName: "person.crop.circle.badge.questionmark")
                 .font(.title2)
         case .accessoryRectangular:
-            Text("Sign in to Wireline").font(.headline)
+            Text("Sign in to BotBound").font(.headline)
         default:
             VStack {
                 Image(systemName: "person.crop.circle.badge.questionmark")
