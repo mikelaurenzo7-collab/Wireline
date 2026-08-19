@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import {
-  AGENTMAIL_FREE_DOMAIN,
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   agentmailGrantedScopes,
   createAgentMailInbox,
