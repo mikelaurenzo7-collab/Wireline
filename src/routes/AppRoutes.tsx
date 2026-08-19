@@ -65,7 +65,7 @@ export default function AppRoutes() {
 
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         {/* Historical deep links land in Studio; Live Video is not an active product surface. */}
-        <Route path="/studio/live-video" element={<ToStudioRedirect />} />
+        <Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<ToStudioRedirect />} />
