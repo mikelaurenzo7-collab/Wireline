@@ -12,6 +12,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const navigation = read("src/constants/navigation.ts");
   const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
   const authPortal = read("src/components/AuthPortal.tsx");
+  const authAccessPanel = read("src/components/auth/AuthAccessPanel.tsx");
   const authRedirect = read("src/lib/auth-redirect.ts");
   const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
   const settingsPage = read("src/pages/SettingsPage.tsx");
@@ -128,7 +129,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/CreateAgentDialog.tsx",
     createDialog,
     /BOT_ROLE_TEMPLATES\.map/,
-    "create flow must expose shared business, personal, and custom role starters",
+    "create flow must expose shared role starters",
   );
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
@@ -142,30 +143,44 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /setPosture|rolesForPosture|business\?: boolean|posture === "business"/,
     "create flow must not ask customers to choose a personal or business workspace",
   );
+
   mustInclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /current\?\.preferredPlanId[\s\S]*current\.preferredPlanId !== "personal"[\s\S]*statedPaidPlan \?\? "starter"/,
-    "paid signup intent must remain truthful even though the workspace is unified",
+    /<AuthAccessPanel initialMode=\{isSignupRoute \? "signup" : "signin"\}\s*\/>/,
+    "dedicated auth routes must use the same access panel as the landing entrance",
   );
   mustInclude(
-    "src/components/AuthPortal.tsx",
-    authPortal,
-    /WirelineMark/,
-    "account entry must use the canonical WIRELINE mark",
+    "src/components/auth/AuthAccessPanel.tsx",
+    authAccessPanel,
+    /function defaultFreeIntent\(current:[\s\S]*if \(current\) return current;/,
+    "explicit paid signup intent must survive the default-free landing path",
   );
   mustInclude(
-    "src/components/AuthPortal.tsx",
-    authPortal,
+    "src/components/auth/AuthAccessPanel.tsx",
+    authAccessPanel,
     /signupPlanLabel[\s\S]*price_usd_annual[\s\S]*price_usd_monthly/,
-    "account entry must display truthful plan labels for the selected billing interval",
+    "shared account entry must display truthful plan labels for the selected billing interval",
+  );
+  mustInclude(
+    "src/components/auth/AuthAccessPanel.tsx",
+    authAccessPanel,
+    /<WirelineLockup/,
+    "shared account entry must use the canonical WIRELINE lockup",
+  );
+  mustExclude(
+    "src/components/auth/AuthAccessPanel.tsx",
+    authAccessPanel,
+    /WorkspaceSelector|Building2|title:\s*"Personal"|title:\s*"Business"/,
+    "account entry must not ask visitors to classify themselves as Personal or Business",
   );
   mustExclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /AuthBrandPanel|wl-auth-brand-badge">W/,
-    "account entry must not revive the retired split panel or boxed W",
+    /AuthBrandPanel|WorkspaceSelector|WirelineMark|wl-auth-brand-badge">W/,
+    "route chrome must not revive the retired split brand panel, audience selector, or boxed W",
   );
+
   mustInclude(
     "src/lib/auth-redirect.ts",
     authRedirect,
@@ -258,7 +273,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/lib/product-copy.ts",
     productCopy,
     /Present one WIRELINE workspace/,
-    "shared product copy must document the one-workspace rule with canonical brand casing",
+    "shared product copy may document architecture internally even though marketing does not lead with it",
   );
   mustInclude(
     "src/lib/wireline-design-vision.ts",
@@ -300,6 +315,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   for (const file of [
     "src/components/CreateAgentDialog.tsx",
     "src/components/AuthPortal.tsx",
+    "src/components/auth/AuthAccessPanel.tsx",
     "src/components/layout/AppShell.tsx",
     "src/pages/OverviewPage.tsx",
     "src/pages/SettingsPage.tsx",
