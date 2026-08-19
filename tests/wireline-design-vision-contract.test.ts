@@ -54,6 +54,9 @@ describe("WIRELINE design vision", () => {
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "The folded-W and WIRELINE wordmark keep one optical ratio and scale only as a complete lockup.",
     );
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "Authenticated desktop panels may fold and resize, but their state must be obvious, persistent, keyboard operable, and never change the user's information hierarchy silently.",
+    );
     expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
       expect.objectContaining({
         surface: expect.arrayContaining(["wl-panel", "wl-panel-elevated"]),
@@ -121,12 +124,13 @@ describe("WIRELINE design vision", () => {
     expect(read("ios/WirelineShared/WirelineBrand.swift")).toContain("static let wire");
   });
 
-  it("centralizes workspace page intros and presence hooks", () => {
+  it("centralizes workspace page intros and adjustable-pane behavior", () => {
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
-    expect(read("src/components/CallLogsClaude.tsx")).toContain("usePresenceSignals");
+    expect(read("src/components/WorkspaceShell.tsx")).toContain("WorkspaceResizablePanel");
+    expect(read("src/components/CallLogsClaude.tsx")).toContain("WorkspaceResizablePanel");
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {
@@ -142,7 +146,7 @@ describe("WIRELINE design vision", () => {
     expect(WL_COMPOSER_CLASSES.starterChip).toContain("wl-chip-suggestion");
   });
 
-  it("documents studio canvas routing via the shared contract module", () => {
+  it("documents Studio routing and adjustable rail dimensions via the shared contract", () => {
     const contract = read("src/lib/studio-canvas-contract.ts");
     expect(contract).toContain("STUDIO_CANVAS_VISION");
     expect(contract).toContain("STUDIO_CANVAS_FORBIDDEN");
@@ -152,7 +156,11 @@ describe("WIRELINE design vision", () => {
         defaultSurface: "chat-plus-canvas",
         canvasSurface: "spatial-cards",
         agentSwitcher: "context-chrome",
-        railWidthPx: 236,
+        railBehavior: "resizable-and-collapsible",
+        railWidthPx: 232,
+        railMinPx: 208,
+        railMaxPx: 320,
+        railCollapsedPx: 68,
         workspaceDepthParam: "view=workspace",
         minTouchTargetPx: 44,
       }),
