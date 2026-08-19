@@ -6,7 +6,7 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("phone settings attach routing", () => {
-  it("attaches agents through the shared self-service calling setup", () => {
+  it("assigns Bots through the shared self-service line manager", () => {
     const settingsPage = read("src/pages/PhoneSettings.tsx");
     const setup = read("src/components/PhoneSetupPanel.tsx");
 
@@ -14,9 +14,12 @@ describe("phone settings attach routing", () => {
     expect(setup).toContain("attachAgent");
     expect(setup).toContain('method: "PATCH"');
     expect(setup).toContain("`/api/phone-numbers/${activeNumber.id}`");
-    expect(setup).toContain('aria-label="Attach voice agent to this number"');
+    expect(setup).toContain('aria-label="Assigned Bot"');
+    expect(setup).toContain("Assigned Bot");
+    expect(setup).toContain("Unassigned");
+    expect(setup).toContain("Open {attachedAgent.name}");
     expect(setup).not.toContain("Attach in Studio");
-    expect(setup).toContain("Select voice agent");
-    expect(setup).toContain("Create voice agent");
+    expect(setup).not.toContain("Select voice agent");
+    expect(setup).not.toContain("Create voice agent");
   });
 });
