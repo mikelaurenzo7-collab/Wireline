@@ -21,13 +21,6 @@ const customerSurfacePatterns = [
   "apps/browser-extension/**/*.{html,js,json}",
 ] as const;
 
-/**
- * Server-side files in this list produce text a customer, prospect, caller,
- * recipient, connected-client reviewer, or buyer can actually receive. Internal
- * provider resource names, telemetry, database identifiers, protocol headers,
- * migration names, and historical operational IDs are intentionally excluded
- * from this brand-presentational contract.
- */
 const customerDeliveryFiles = [
   "src/lib/chatgpt-mcp-account.ts",
   "src/lib/company-identity.ts",
@@ -76,13 +69,11 @@ const customerDeliveryFiles = [
   "src/lib/shareable-artifact/template/shell.ts",
 ] as const;
 
-/**
- * Exact technical compatibility strings that may be rendered on developer or
- * admin surfaces because changing the identifier itself would break clients.
- */
+/** Stable protocol/resource identifiers whose rename would break existing clients. */
 const compatibilityLinePatterns = [
   /X-Wireline-Key/,
   /X-Wireline-Token/,
+  /X-Wireline-Signature/,
   /command@wireline\.com/,
   /https:\/\/github\.com\/mikelaurenzo7-collab\/Wireline/,
   /trywireline\.com/i,
@@ -127,12 +118,14 @@ describe("BotBound visible-brand sweep", () => {
     const brand = read("src/lib/brand.ts");
     const openapi = read("src/lib/openapi-spec.ts");
     const nativeSip = read("src/lib/voice/xai-sip-config.ts");
+    const webhooks = read("src/components/WebhooksManager.tsx");
     const firefox = read("apps/browser-extension/manifest.firefox.json");
 
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
     expect(openapi).toContain('name: "X-Wireline-Key"');
     expect(nativeSip).toContain('XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token"');
+    expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
   });
 
