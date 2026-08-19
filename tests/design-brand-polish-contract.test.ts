@@ -196,9 +196,9 @@ describe("E2E design and brand polish", () => {
 
     expect(executableLanding).toContain('<AuthAccessPanel embedded initialMode="signin" />');
     expect(executableLanding).toMatch(/<span>WIRE YOUR<\/span>[\s\S]*<span>PHONE BOT<\/span>/);
-    expect(executableLanding).toMatch(
-      /landing-prestige__channels[\s\S]*<span>CALL<\/span>[\s\S]*<span>EMAIL<\/span>[\s\S]*<span>TEXT<\/span>/,
-    );
+    expect(executableLanding).toContain('const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;');
+    expect(executableLanding).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
+    expect(executableLanding).toContain("{HERO_CHANNELS.map((label) => (");
     expect(executableLanding).toContain("FEATURED_TEMPLATE_KEYS");
     expect(executableLanding).toContain("FEATURED_TEMPLATES.map");
     expect(executableLanding).toContain("template.moves.map");
