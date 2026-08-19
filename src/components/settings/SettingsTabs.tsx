@@ -5,7 +5,6 @@ import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 const settingsTabs = [
   { id: "account", href: "/settings", label: "Account" },
   { id: "billing", href: "/settings/billing", label: "Billing" },
-  { id: "phone", href: "/settings/phone", label: "Phone" },
   { id: "team", href: "/settings/team", label: "Team" },
   {
     id: "customization",
