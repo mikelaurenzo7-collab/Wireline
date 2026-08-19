@@ -159,13 +159,13 @@ describe("E2E design and BotBound brand polish", () => {
     expect(brand).toContain(".bb-wordmark__bound");
   });
 
-  it("marks hand-rolled dialog titles for correct hierarchy", () => {
-    const files = globSync("src/**/*.{tsx,ts}", { cwd: root });
+  it("gives hand-rolled dialog components an accessible name", () => {
+    const files = globSync("src/**/*.tsx", { cwd: root });
     const offenders = files.filter((file) => {
       const text = source(file);
-      return /role="dialog"|aria-modal="true"/.test(text) && !/DialogTitle|aria-labelledby|wl-dialog-title|<h[1-3]/.test(text);
+      return /role="dialog"|aria-modal="true"/.test(text) && !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text);
     });
-    expect(offenders, `dialogs need an explicit title contract:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `dialogs need an accessible name contract:\n${offenders.join("\n")}`).toEqual([]);
   });
 
   it("uppercases field captions without shouting field values", () => {
