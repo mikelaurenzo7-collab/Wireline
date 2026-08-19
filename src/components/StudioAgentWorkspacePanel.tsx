@@ -17,6 +17,7 @@ type StudioAgentWorkspacePanelProps = {
   isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
+  compact?: boolean;
 };
 
 type AgentSetupResponse = {
@@ -57,6 +58,7 @@ export default function StudioAgentWorkspacePanel({
   isBusinessAgent = true,
   onTestVoiceInChat,
   className = "",
+  compact = false,
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
     () =>
@@ -197,22 +199,35 @@ export default function StudioAgentWorkspacePanel({
     }
   }
 
+  const contentClass = compact
+    ? "mx-auto w-full max-w-none space-y-3 px-3 py-3"
+    : "mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-7";
+  const sectionClass = compact
+    ? "rounded-xl border border-border bg-card p-4"
+    : "rounded-2xl border border-border bg-card p-5 sm:p-6";
+
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
-      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-7">
-        <header>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+    <div
+      data-wireline-studio-setup-density={compact ? "inspector" : "page"}
+      className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
+    >
+      <div className={contentClass}>
+        <header className={compact ? "px-1 pt-1" : ""}>
+          <h2
+            className={
+              compact
+                ? "text-lg font-semibold leading-tight tracking-tight text-foreground"
+                : "text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+            }
+          >
             Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="essentials-heading"
-        >
+        <section className={sectionClass} aria-labelledby="essentials-heading">
           <h3
             id="essentials-heading"
-            className="mb-4 text-lg font-semibold tracking-tight text-foreground"
+            className={`${compact ? "mb-3 text-base" : "mb-4 text-lg"} font-semibold tracking-tight text-foreground`}
           >
             Essentials
           </h3>
@@ -240,7 +255,7 @@ export default function StudioAgentWorkspacePanel({
               {setupLoadError} Your saved setup was not changed.
             </StatusNotice>
           ) : (
-            <div className="space-y-5">
+            <div className={compact ? "space-y-4" : "space-y-5"}>
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="grid grid-cols-2 gap-2">
@@ -284,10 +299,7 @@ export default function StudioAgentWorkspacePanel({
 
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label
-                    className="text-sm font-semibold text-foreground"
-                    htmlFor="setup-knowledge"
-                  >
+                  <label className="text-sm font-semibold text-foreground" htmlFor="setup-knowledge">
                     {isBusinessAgent ? "Business facts" : "Personal facts"}{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
@@ -302,7 +314,7 @@ export default function StudioAgentWorkspacePanel({
                   id="setup-knowledge"
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
-                  className="min-h-24 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
+                  className={`${compact ? "min-h-20" : "min-h-24"} w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50`}
                   placeholder={
                     isBusinessAgent
                       ? "Hours, services, pricing, policies, and handoff rules…"
@@ -318,7 +330,7 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
 
-              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
+              <Button type="button" size={compact ? "sm" : undefined} onClick={() => void applySetup()} disabled={applyingSetup}>
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -330,25 +342,22 @@ export default function StudioAgentWorkspacePanel({
           )}
         </section>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="voice-heading"
-        >
+        <section className={sectionClass} aria-labelledby="voice-heading">
           <h3
             id="voice-heading"
-            className="mb-3 text-lg font-semibold tracking-tight text-foreground"
+            className={`${compact ? "mb-2 text-base" : "mb-3 text-lg"} font-semibold tracking-tight text-foreground`}
           >
             Phone voice
           </h3>
-          <SimpleVoicePicker
-            agentId={agentId}
-            agentName={agentName}
-            onTest={onTestVoiceInChat}
-          />
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <details className="group rounded-2xl border border-border bg-card">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
+        <details className={`${compact ? "rounded-xl" : "rounded-2xl"} group border border-border bg-card`}>
+          <summary
+            className={`flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-foreground ${
+              compact ? "min-h-12 px-4" : "min-h-14 px-5 sm:px-6"
+            }`}
+          >
             Tools
             <ChevronDown
               className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
@@ -360,16 +369,17 @@ export default function StudioAgentWorkspacePanel({
           </div>
         </details>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <div className={`flex gap-2 ${compact ? "flex-wrap" : "flex-col sm:flex-row sm:justify-end"}`}>
           <Button
             type="button"
+            size={compact ? "sm" : undefined}
             variant="secondary"
             onClick={onTestVoiceInChat}
             className="justify-center"
           >
             Test
           </Button>
-          <Button asChild className="justify-center">
+          <Button asChild size={compact ? "sm" : undefined} className="justify-center">
             <Link to="/connections">
               <PlugZap className="size-4" aria-hidden="true" />
               Connections
