@@ -2,9 +2,18 @@ import { describe, expect, it } from "vitest";
 import { AUTHENTICATED_SURFACE_CONTRACT } from "../src/lib/authenticated-surface-contract";
 
 describe("authenticated surfaces", () => {
-  it("locks Aurora Letterpress as the live brand doctrine", () => {
-    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toMatch(/Aurora/i);
+  it("locks the single WIRELINE Design System and semantic doctrine", () => {
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toBe("WIRELINE Design System");
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/near-black canvas/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/violet/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/platinum wire/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(/only system name/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain(
+      "Letterpress as a design-system name",
+    );
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain(
+      "Obsidian as a design-system name",
+    );
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain("forest green primary");
   });
 
