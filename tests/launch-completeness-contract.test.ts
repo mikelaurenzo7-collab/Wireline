@@ -122,7 +122,7 @@ describe("launch completeness contracts", () => {
     expect(probe).toContain('fetch("https://api.openai.com/v1/responses"');
     expect(probe).toContain("store: false");
     expect(status).toContain("Provider checks operational");
-    expect(status).toContain("Managed voice access");
+    expect(status).toContain("Managed call access");
     expect(status).toContain("Reasoning model access");
     expect(status).toContain("end-to-end customer call");
     expect(status).not.toContain("All systems operational");
