@@ -17,9 +17,6 @@ type WorkspaceBrandEditorProps = {
   isSaving?: boolean;
 };
 
-/**
- * Letterpress owner brand editor — live color preview, no Admin chrome.
- */
 export default function WorkspaceBrandEditor({
   settings,
   onUpdate,
@@ -32,7 +29,7 @@ export default function WorkspaceBrandEditor({
   const colorId = `${baseId}-color`;
   const colorTextId = `${baseId}-color-text`;
   const primary = settings.primary_color || BRAND.colors.primary;
-  const name = settings.brand_name.trim() || "Wireline";
+  const name = settings.brand_name.trim() || "BotBound";
 
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">

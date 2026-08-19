@@ -43,7 +43,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
               <Input
                 id={nameId}
                 type="text"
-                placeholder="Wireline OS"
+                placeholder="BotBound OS"
                 className="app-input-soft py-3 h-auto"
                 value={settings.brand_name || ""}
                 onChange={(e) => onUpdate({ ...settings, brand_name: e.target.value })}
@@ -109,7 +109,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                   <Zap className="w-6 h-6 wl-brand-text" />
                 )}
                 <span className="font-display uppercase tracking-widest text-sm wl-brand-text">
-                  {settings.brand_name || "WIRELINE"}
+                  {settings.brand_name || "BOTBOUND"}
                 </span>
               </div>
               <div className="space-y-2">

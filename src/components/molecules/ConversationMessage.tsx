@@ -36,7 +36,7 @@ function defaultIcon(author: NonNullable<ConversationMessageProps["author"]>) {
 
 const defaultLabel: Record<NonNullable<ConversationMessageProps["author"]>, string> = {
   customer: "Customer",
-  assistant: "Wireline agent",
+  assistant: "BotBound Bot",
   system: "System record",
 };
 
