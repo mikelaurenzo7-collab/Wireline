@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Cadence engine — fires scheduled call, SMS, and email steps. Every call step
- * routes through Wireline's native Twilio + xAI placement service and carries
+ * routes through BotBound's native Twilio + xAI placement service and carries
  * the existing lead id so carrier, realtime, transcript, and settlement state
  * remain attached to one authoritative record.
  */
@@ -197,7 +197,7 @@ async function executeStep(
 
   if (step.type === "sms") {
     if (!lead.customerNumber) return { ok: false, result: "no phone number on lead" };
-    const body = applyVars(step.template || `Hi {{name}}, checking back in. Wireline`, lead);
+    const body = applyVars(step.template || `Hi {{name}}, checking back in. BotBound`, lead);
     const result = await sendTenantMessage(cadence.userId, {
       to: lead.customerNumber,
       body,
@@ -213,7 +213,7 @@ async function executeStep(
 
   if (step.type === "email") {
     if (!lead.email) return { ok: false, result: "no email on lead" };
-    const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up. Wireline`, lead);
+    const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up. BotBound`, lead);
     const integration = new IntegrationService(cadence.userId);
     const ok = await integration.sendEmail({
       to: lead.email,
