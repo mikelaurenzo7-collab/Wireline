@@ -5,17 +5,17 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("public live demo contract", () => {
-  it("keeps the homepage on the canonical Phone Bot product truth", () => {
+  it("keeps the homepage on the canonical BotBound product truth", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("WIRE YOUR");
-    expect(landing).toContain("PHONE BOT");
+    expect(landing).toContain("PUT YOUR BOT");
+    expect(landing).toContain("ON THE LINE");
     expect(landing).toContain("BOT_MARKETING_VOICE.subline");
-    expect(landing).toContain('aria-label="Phone Bot channels"');
+    expect(landing).toContain('aria-label="BotBound channels"');
     expect(landing).toContain("HERO_CHANNELS.map");
-    expect(botProduct).toContain('slogan: "WIRE YOUR PHONE BOT"');
-    expect(botProduct).toContain('supportingLine: "CALL · EMAIL · TEXT"');
+    expect(botProduct).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
   });
 
   it("keeps a real protected browser demo and an honest phone fallback on Showcase", () => {
@@ -37,7 +37,7 @@ describe("public live demo contract", () => {
     expect(widget).not.toContain("Agent speaking");
   });
 
-  it("keeps demo sessions bounded, measured, and Bot-branded", () => {
+  it("keeps demo sessions bounded, measured, and BotBound-branded", () => {
     const demo = read("src/hooks/useProtectedPublicDemo.ts");
     const provider = read("src/lib/voice/xai-public-demo-session.ts");
 
@@ -48,7 +48,7 @@ describe("public live demo contract", () => {
     expect(demo).toContain('event: "landing_demo_clicked"');
     expect(demo).toContain('surface: "marketing_web"');
     expect(demo).toContain("endTimerRef.current");
-    expect(provider).toContain("Wireline Voice Bot");
+    expect(provider).toContain("BotBound Voice Bot");
     expect(provider).not.toMatch(/Wireline voice agent/i);
   });
 
