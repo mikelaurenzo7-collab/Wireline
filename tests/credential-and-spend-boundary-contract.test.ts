@@ -252,7 +252,6 @@ describe("a transient webhook DNS failure retries like any other transient failu
       source.indexOf("statusCode = response.statusCode;"),
     );
     expect(arm).toContain("if (blockIsPermanent(response.reason))");
-    // nextAttemptAt: null belongs inside the permanent branch only.
     expect(arm.indexOf("if (blockIsPermanent(response.reason))")).toBeLessThan(
       arm.indexOf("nextAttemptAt: null"),
     );
@@ -272,16 +271,12 @@ describe("the enrichment SLO reports the window, not the lifetime", () => {
   });
 
   it("never feeds the all-time queue.dead count into the windowed dimension", () => {
-    // queue.dead is lifetime; past six it pinned the dimension to critical
-    // forever and fired the same webhook on every evaluation.
     expect(source).not.toContain("deadEnrichmentWindow: queue.dead");
   });
 
   it("windows the per-tenant enrichment dead count too", () => {
     const perTenant = source.slice(source.indexOf('eq(schema.jobs.type, "post_call_enrichment")'));
     const deadQuery = perTenant.slice(perTenant.indexOf('eq(schema.jobs.status, "dead")'));
-    // Bounded to this one .where(...) clause so the assertion cannot be
-    // satisfied by the "done" count that follows it.
     expect(deadQuery.slice(0, deadQuery.indexOf("),\n      ),"))).toContain(
       "gte(schema.jobs.finishedAt, since)",
     );
@@ -292,8 +287,6 @@ describe("Studio only clears the essentials box when something was stored", () =
   const source = read("src/components/StudioAgentWorkspacePanel.tsx");
 
   it("reads the readiness counts rather than trusting the 200", () => {
-    // /api/train/extract answers 200 whether it extracted ten facts or none —
-    // its own prompt tells it to return empty arrays when unclear.
     expect(source).toContain("extractionPersistedSomething");
     const check = source.slice(source.indexOf("async function extractionPersistedSomething"));
     expect(check).toContain("readiness");
@@ -315,14 +308,24 @@ describe("Studio only clears the essentials box when something was stored", () =
   });
 });
 
-describe("the Live Video SDK is not downloaded by people who never start a session", () => {
+describe("retired Live Video does not load a presenter SDK or session path", () => {
   const page = read("src/pages/LiveVideoStudioPage.tsx");
+  const presenter = read("src/components/LiveVideoPresenter.tsx");
 
-  it("does not load a LiveAvatar SDK after talking-head retirement", () => {
+  it("is redirect-only and leaves talking-head runtime code unreachable", () => {
+    expect(page).toContain('<Navigate to="/studio" replace />');
     expect(page).not.toContain("@heygen/liveavatar-web-sdk");
     expect(page).not.toContain('lazy(() => import("../components/LiveVideoPresenter"))');
-    expect(page).toContain("AgentFace");
+    expect(page).not.toContain('import AgentFace from');
+    expect(page).not.toContain("<AgentFace");
+    expect(page).not.toContain("/video-presenter/session");
     expect(page).not.toContain("Draft clip script");
+
+    expect(presenter).toContain('import BotMark from "./BotMark"');
+    expect(presenter).toContain("<BotMark");
+    expect(presenter).not.toContain("@heygen/liveavatar-web-sdk");
+    expect(presenter).not.toContain("AgentFace");
+    expect(presenter).not.toContain("/video-presenter/session");
   });
 });
 
