@@ -47,6 +47,7 @@ import companyIdentityRouter from "../routes/company-identity-routes";
 import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
+import inboxRecentRouter from "../routes/inbox-recent-routes";
 import dashboardRouter from "../routes/dashboard-routes";
 import callRecordingRouter from "../routes/call-recording-routes";
 import agentCallRouter from "../routes/agent-call-routes";
@@ -168,6 +169,7 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api", billingRouter);
 
   app.use(emailRouter);
+  app.use(inboxRecentRouter);
   app.use(callRecordingRouter);
   app.use(agentCallRouter);
   app.use(callOpsMetricsRouter);
