@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Full-screen active-call surface presented after a CallKit answer or from
-/// Recaps. It is intentionally high-glanceability: Wireline's current state,
+/// Recaps. It is intentionally high-glanceability: BotBound's current state,
 /// the person or service on the line, elapsed time, and two clear choices.
 struct LiveCallView: View {
     @EnvironmentObject private var router: WirelineRouter
@@ -60,7 +60,7 @@ struct LiveCallView: View {
                     .font(.mono(.caption2, weight: .semibold))
                     .tracking(0.6)
                     .foregroundStyle(Brand.text3)
-                Text("Wireline is handling this")
+                Text("BotBound is handling this")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Brand.text)
             }
@@ -96,7 +96,7 @@ struct LiveCallView: View {
                 .overlay(Circle().stroke(Brand.border, lineWidth: 1))
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Active Wireline call")
+        .accessibilityLabel("Active BotBound call")
     }
 
     private var callSummary: some View {
@@ -204,7 +204,7 @@ struct LiveCallView: View {
                     )
             }
             .buttonStyle(TouchPressStyle())
-            .accessibilityHint("Closes this view and lets Wireline continue the call")
+            .accessibilityHint("Closes this view and lets BotBound continue the call")
         }
     }
 
@@ -218,7 +218,7 @@ struct LiveCallView: View {
                 .background(Brand.accent, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
         }
         .buttonStyle(TouchPressStyle())
-        .accessibilityHint("Transfers the active Wireline call to your callback number")
+        .accessibilityHint("Transfers the active BotBound call to your callback number")
     }
 
     private var timerLabel: String {
@@ -281,8 +281,6 @@ struct LiveCallView: View {
     }
 }
 
-/// Expanding, low-contrast pulse for an active call. It deliberately uses the
-/// semantic ametrine action token rather than the retired purple live treatment.
 private struct CallRing: View {
     let scale: CGFloat
     let delay: Double
