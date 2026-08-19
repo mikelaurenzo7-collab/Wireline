@@ -187,7 +187,7 @@ export default function UnifiedInbox({
                 <div className="grid gap-2 sm:grid-cols-3">
                   {[
                     ["Channel", conversationChannelLabel(selected.channel)],
-                    ["Handled By", selected.agent_name || "Wireline Bot"],
+                    ["Handled By", selected.agent_name || "BotBound Bot"],
                     ["Status", "Recorded"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl border border-border bg-muted/25 p-3">
