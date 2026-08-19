@@ -7,25 +7,26 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("WIRELINE public iPhone prestige contract", () => {
-  it("makes Phone Bot the public wedge and keeps channel proof in CALL · EMAIL · TEXT order", () => {
+describe("BotBound public iPhone prestige contract", () => {
+  it("makes Phone Bot the public wedge and keeps channel proof in CALL · TEXT · EMAIL order", () => {
     const product = read("src/lib/bot-product.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
-    expect(product).toContain('slogan: "WIRE YOUR PHONE BOT"');
-    expect(product).toContain('supportingLine: "CALL · EMAIL · TEXT"');
+    expect(product).toContain('name: "BotBound"');
+    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toMatch(
-      /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"/,
+      /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>WIRE YOUR<\/span>[\s\S]*?<span>PHONE BOT<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>PUT YOUR BOT<\/span>[\s\S]*?<span>ON THE LINE<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain(
-      'const HERO_CHANNEL_ORDER = ["voice", "email", "text"] as const;',
+      'const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;',
     );
     expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain("{HERO_CHANNELS.map((label) => (");
+    expect(landing).toContain("{HERO_CHANNELS.map((label) =>");
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
 
@@ -113,16 +114,16 @@ describe("WIRELINE public iPhone prestige contract", () => {
     );
   });
 
-  it("keeps one canonical WIRELINE design-system name", () => {
+  it("keeps one canonical BotBound design-system name", () => {
     const vision = read("src/lib/wireline-design-vision.ts");
     const surfaceContract = read("src/lib/surface-contract.ts");
     const designCss = read("src/styles/design-system.css");
 
-    expect(vision).toContain('system: "WIRELINE Design System"');
-    expect(surfaceContract).toContain('system: "WIRELINE Design System"');
-    expect(designCss).toContain("WIRELINE Design System");
-    expect(vision).not.toMatch(/system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/);
-    expect(surfaceContract).not.toMatch(/system:\s*"WIRELINE (?:Letterpress|Obsidian|Aurora)"/);
+    expect(vision).toContain('system: "BotBound Design System"');
+    expect(surfaceContract).toContain('system: "BotBound Design System"');
+    expect(designCss).toContain("BotBound Design System");
+    expect(vision).not.toMatch(/system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora)"/);
+    expect(surfaceContract).not.toMatch(/system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora)"/);
     expect(designCss).not.toMatch(/Letterpress design system|Obsidian canvas|Aurora palette/i);
   });
 });
