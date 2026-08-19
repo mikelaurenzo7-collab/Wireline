@@ -69,7 +69,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jul 13, 2026",
     tag: "feature",
     title: "Fast Start turns a blank workspace into a first working agent",
-    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, Wireline guides the owner through review, number connection, and one real test call instead of dropping them into an empty workspace.",
+    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, BotBound guides the owner through review, number connection, and one real test call instead of dropping them into an empty workspace.",
   },
   {
     date: "Jul 13, 2026",
@@ -165,8 +165,8 @@ export default function PublicChangelog() {
   return (
     <>
       <PageMeta
-        title="Changelog | Wireline"
-        description="Every shipped improvement to Wireline: features, infrastructure, polish, security. Updated when we ship."
+        title="Changelog | BotBound"
+        description="Every shipped improvement to BotBound: features, infrastructure, polish, security. Updated when we ship."
         path="/changelog"
       />
       <MarketingChrome stickyCta={false}>
