@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
@@ -210,7 +210,10 @@ export default function StudioAgentWorkspacePanel({
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
           aria-labelledby="essentials-heading"
         >
-          <h3 id="essentials-heading" className="mb-4 text-lg font-semibold tracking-tight text-foreground">
+          <h3
+            id="essentials-heading"
+            className="mb-4 text-lg font-semibold tracking-tight text-foreground"
+          >
             Essentials
           </h3>
 
@@ -281,7 +284,10 @@ export default function StudioAgentWorkspacePanel({
 
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-sm font-semibold text-foreground" htmlFor="setup-knowledge">
+                  <label
+                    className="text-sm font-semibold text-foreground"
+                    htmlFor="setup-knowledge"
+                  >
                     {isBusinessAgent ? "Business facts" : "Personal facts"}{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
@@ -324,17 +330,43 @@ export default function StudioAgentWorkspacePanel({
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
-          <h3 id="voice-heading" className="mb-3 text-lg font-semibold tracking-tight text-foreground">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="voice-heading"
+        >
+          <h3
+            id="voice-heading"
+            className="mb-3 text-lg font-semibold tracking-tight text-foreground"
+          >
             Phone voice
           </h3>
-          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
+          <SimpleVoicePicker
+            agentId={agentId}
+            agentName={agentName}
+            onTest={onTestVoiceInChat}
+          />
         </section>
 
-        <AgentToolPermissions agentId={agentId} />
+        <details className="group rounded-2xl border border-border bg-card">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
+            Tools
+            <ChevronDown
+              className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <div className="border-t border-border p-3 sm:p-4">
+            <AgentToolPermissions agentId={agentId} />
+          </div>
+        </details>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={onTestVoiceInChat} className="justify-center">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onTestVoiceInChat}
+            className="justify-center"
+          >
             Test
           </Button>
           <Button asChild className="justify-center">
