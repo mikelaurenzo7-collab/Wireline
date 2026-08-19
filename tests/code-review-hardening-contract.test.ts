@@ -273,16 +273,25 @@ describe("code review hardening contracts", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const terms = read("src/components/LegalPage.tsx");
     const auth = read("src/components/AuthPortal.tsx");
+    const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const marketingCss = read("src/styles/public-marketing-polish.css");
 
     expect(pricing).toContain("within 30 days of your first paid invoice");
     expect(pricing).not.toContain("within 14 days of a first paid charge");
     expect(terms).toContain("30-day money-back guarantee");
-    expect(auth).toContain('aria-labelledby="auth-terms-label"');
-    expect(auth).toContain('<span id="auth-terms-label">');
-    expect(auth).toContain("<AuthShell compact={isSignUp}>");
-    expect(auth).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
-    expect(auth).toContain('isSignUp ? "mt-4 gap-3" : "mt-6 gap-5"');
+    expect(auth).toContain(
+      '<AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />',
+    );
+    expect(authAccess).toContain(
+      'const termsId = embedded ? "landing-auth-terms" : "auth-terms";',
+    );
+    expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");
+    expect(authAccess).toContain("aria-labelledby={termsLabelId}");
+    expect(authAccess).toContain("<span id={termsLabelId}>");
+    expect(authAccess).toContain("if (isSignUp && !agreedToTerms)");
+    expect(authAccess).toContain("TERMS_CONSENT_ERROR");
+    expect(auth).toContain("min-h-[100dvh]");
+    expect(auth).toContain("overflow-y-auto");
     expect(marketingCss).toContain(".marketing-footer-above-sticky");
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
