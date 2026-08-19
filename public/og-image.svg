@@ -1,22 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="title desc">
-  <title id="title">Wireline. Bots That Get the Work Done.</title>
-  <desc id="desc">Voice-first Bots for calls, live conversations, text, and email in one workspace.</desc>
+  <title id="title">WIRELINE. Wire Your Phone Bot.</title>
+  <desc id="desc">WIRELINE Phone Bots for calls, email, and text.</desc>
   <defs>
-    <radialGradient id="bg-glow" cx="78%" cy="20%" r="68%">
-      <stop offset="0" stop-color="#3B1C73" stop-opacity="0.42"/>
-      <stop offset="0.42" stop-color="#191226" stop-opacity="0.28"/>
+    <radialGradient id="bg-glow" cx="78%" cy="18%" r="72%">
+      <stop offset="0" stop-color="#4A2687" stop-opacity="0.34"/>
+      <stop offset="0.44" stop-color="#21162F" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#0A0A0E" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="card-surface" cx="42%" cy="24%" r="78%">
-      <stop offset="0" stop-color="#201B2B"/>
-      <stop offset="0.58" stop-color="#0E0D13"/>
-      <stop offset="1" stop-color="#07070A"/>
-    </radialGradient>
-    <linearGradient id="card-edge" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.2"/>
-      <stop offset="0.56" stop-color="#7C3AED" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0.7"/>
-    </linearGradient>
     <linearGradient id="purple-down" x1="14" y1="14" x2="68" y2="106" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#C8B5FF"/>
       <stop offset="0.38" stop-color="#8B5CF6"/>
@@ -37,6 +27,11 @@
       <stop offset="0.48" stop-color="#E4E6ED"/>
       <stop offset="1" stop-color="#FFFFFF"/>
     </linearGradient>
+    <radialGradient id="signal-core" cx="35%" cy="24%" r="82%">
+      <stop offset="0" stop-color="#4B3576"/>
+      <stop offset="0.52" stop-color="#21172F"/>
+      <stop offset="1" stop-color="#09090D"/>
+    </radialGradient>
     <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#A78BFA"/>
       <stop offset="0.55" stop-color="#C7CCD6" stop-opacity="0.55"/>
@@ -54,28 +49,21 @@
     <path d="M42 106H68L100 14H74Z" fill="url(#purple-up)"/>
     <path d="M108 106H134L166 14H140Z" fill="url(#silver)"/>
   </g>
-  <text x="174" y="84" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="34" font-weight="800" letter-spacing="1" fill="#F5F4F8">Wireline</text>
+  <text x="174" y="84" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="34" font-weight="800" letter-spacing="1.6" fill="#F5F4F8">WIRELINE</text>
 
-  <text x="70" y="200" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="17" font-weight="700" letter-spacing="4" fill="#A78BFA">VOICE-FIRST / CALLS / LIVE CONVERSATIONS / TEXT / EMAIL</text>
-  <text x="68" y="306" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="76" font-weight="800" letter-spacing="-2.5" fill="#F5F4F8">BOTS THAT GET</text>
-  <text x="68" y="392" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="76" font-weight="800" letter-spacing="-2.5" fill="#F5F4F8">THE WORK DONE</text>
-  <text x="72" y="438" font-family="Inter, system-ui, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">Answer and make calls. Continue by text and email.</text>
-  <text x="72" y="472" font-family="Inter, system-ui, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">Book next steps, follow through, and log the outcome.</text>
-  <rect x="70" y="506" width="590" height="2" rx="1" fill="url(#rule)"/>
-  <text x="70" y="572" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="18" font-weight="700" letter-spacing="3.4" fill="#A78BFA">ONE WORKSPACE / TRYWIRELINE.COM</text>
+  <text x="70" y="194" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="18" font-weight="700" letter-spacing="4" fill="#A78BFA">CALL / EMAIL / TEXT</text>
+  <text x="68" y="314" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="88" font-weight="800" letter-spacing="-3.2" fill="#F5F4F8">WIRE YOUR</text>
+  <text x="68" y="410" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="88" font-weight="800" letter-spacing="-3.2" fill="#F5F4F8">PHONE BOT</text>
+  <text x="72" y="462" font-family="Inter, system-ui, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">Put a Bot on the line. Let the work start moving.</text>
+  <rect x="70" y="505" width="560" height="2" rx="1" fill="url(#rule)"/>
+  <text x="70" y="572" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="18" font-weight="700" letter-spacing="3.4" fill="#C7CCD6">TRYWIRELINE.COM</text>
 
-  <g transform="translate(842 150)">
-    <rect width="288" height="288" rx="68" fill="url(#card-surface)" stroke="url(#card-edge)" stroke-width="4"/>
-    <g transform="translate(11 71) scale(1.48)">
-      <path d="M76 14H100L132 106H108Z" fill="url(#fold)"/>
-      <path d="M14 14H40L68 106H42Z" fill="url(#purple-down)"/>
-      <path d="M42 106H68L100 14H74Z" fill="url(#purple-up)"/>
-      <path d="M108 106H134L166 14H140Z" fill="url(#silver)"/>
-    </g>
-  </g>
-  <g transform="translate(842 465)">
-    <rect width="288" height="46" rx="23" fill="#17131F" stroke="#2C2440"/>
-    <circle cx="26" cy="23" r="6" fill="#4ADE9A"/>
-    <text x="46" y="29" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="14" font-weight="700" letter-spacing="1.3" fill="#C4B5FD">VOICE / TEXT / EMAIL</text>
+  <g transform="translate(850 178)">
+    <circle cx="132" cy="132" r="118" fill="url(#signal-core)" stroke="#4E3B68" stroke-width="2"/>
+    <circle cx="132" cy="132" r="96" fill="none" stroke="#A78BFA" stroke-opacity="0.18" stroke-width="1"/>
+    <path d="M72 150C84 101 132 76 176 98C203 111 208 145 187 164C167 181 142 161 120 174C99 186 84 178 76 166" fill="none" stroke="#E8E0FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M85 107C114 87 148 89 171 111" fill="none" stroke="#A78BFA" stroke-width="4" stroke-linecap="round" stroke-dasharray="18 12"/>
+    <circle cx="187" cy="164" r="7" fill="#C4B5FD" stroke="#F1ECFF" stroke-width="2"/>
+    <circle cx="132" cy="132" r="126" fill="none" stroke="#C7CCD6" stroke-opacity="0.12" stroke-width="1"/>
   </g>
 </svg>
