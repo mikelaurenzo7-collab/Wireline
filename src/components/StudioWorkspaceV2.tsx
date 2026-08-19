@@ -23,7 +23,7 @@ const SECTIONS: Array<{
   label: string;
   icon: typeof Settings2;
 }> = [
-  { id: "setup", label: "Set Up", icon: Settings2 },
+  { id: "setup", label: "Setup", icon: Settings2 },
   { id: "test", label: "Test", icon: MessageCircle },
   { id: "review", label: "Review", icon: CheckCircle2 },
 ];
@@ -237,16 +237,16 @@ export default function StudioWorkspaceV2() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <nav
-        className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5"
-        aria-label="Studio steps"
+        className="shrink-0 border-b border-border bg-card/55 px-3 py-2 sm:px-5"
+        aria-label="Bot workspace"
       >
         <div
-          className="mx-auto grid w-full max-w-2xl grid-cols-3 gap-1.5 sm:gap-2"
+          className="mx-auto grid w-full max-w-xl grid-cols-3 gap-1"
           role="tablist"
-          aria-label={`${BOT_LANGUAGE.singular} setup steps`}
+          aria-label={`${BOT_LANGUAGE.singular} workspace`}
           onKeyDown={handleSectionKeyDown}
         >
-          {SECTIONS.map((item, index) => {
+          {SECTIONS.map((item) => {
             const selected = section === item.id;
             const Icon = item.icon;
             return (
@@ -259,34 +259,15 @@ export default function StudioWorkspaceV2() {
                 aria-controls={studioPanelId(item.id)}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setSection(item.id)}
-                aria-label={item.label}
-                className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
+                className={`min-w-0 rounded-lg px-2.5 py-2.5 text-center transition-colors wl-focus-ring-halo ${
                   selected
-                    ? "border-primary/35 bg-primary/5 text-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
-                <span className="flex items-center justify-center gap-2 sm:justify-start">
-                  <span
-                    className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
-                      selected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                  <Icon
-                    className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`}
-                    aria-hidden="true"
-                  />
-                  <span
-                    className={`truncate text-xs font-semibold sm:text-sm ${
-                      selected ? "" : "hidden sm:block"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
+                <span className="flex items-center justify-center gap-1.5">
+                  <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
                 </span>
               </button>
             );
