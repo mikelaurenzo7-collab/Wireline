@@ -18,10 +18,10 @@ const serviceWorker = read("apps/browser-extension/background/service-worker.js"
 const studioSource = read("src/pages/AgentStudioHome.tsx");
 const contextSource = read("src/lib/browser-command-context.ts");
 
-describe("WIRELINE Command extension contract", () => {
+describe("BotBound Command extension contract", () => {
   it("uses Manifest V3 with user-initiated active-tab permissions only", () => {
     expect(baseManifest.manifest_version).toBe(3);
-    expect(baseManifest.name).toBe("WIRELINE Command");
+    expect(baseManifest.name).toBe("BotBound Command");
     expect(baseManifest).not.toHaveProperty("host_permissions");
     expect(baseManifest.permissions).toEqual(
       expect.arrayContaining(["activeTab", "scripting", "contextMenus"]),
@@ -70,13 +70,13 @@ describe("WIRELINE Command extension contract", () => {
     expect(studioSource).not.toContain("handoff=");
   });
 
-  it("presents modern WIRELINE Bot IA while retaining compatible route keys", () => {
+  it("presents modern BotBound Bot IA while retaining compatible route keys and transition origin", () => {
     const panel = read("apps/browser-extension/panel/index.html");
     const panelJs = read("apps/browser-extension/panel/panel.js");
     const worker = read("apps/browser-extension/background/service-worker.js");
 
-    expect(panel).toContain("<title>WIRELINE Command</title>");
-    expect(panel).toContain('aria-label="WIRELINE"');
+    expect(panel).toContain("<title>BotBound Command</title>");
+    expect(panel).toContain('aria-label="BotBound"');
     expect(panel).toContain(">Bot task</button>");
     expect(panel).toContain(">Bots</button>");
     expect(panel).toContain(">Connections</button>");
@@ -97,7 +97,9 @@ describe("WIRELINE Command extension contract", () => {
     expect(panelJs).toContain('route: "inbox"');
     expect(panelJs).toContain('route: "training"');
     expect(panelJs).toContain('route: "studio"');
-    expect(panelJs).toContain("WIRELINE Bot");
+    expect(panelJs).toContain("BotBound Bot");
+    // The stable extension route bridge stays on the proven transition origin
+    // until botbound.me is attached and verified on the Vercel project.
     expect(worker).toContain('["phone", "https://trywireline.com/phone"]');
     expect(worker).toContain('["inbox", "https://trywireline.com/inbox"]');
   });
