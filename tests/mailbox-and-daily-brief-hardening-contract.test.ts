@@ -204,16 +204,17 @@ describe("daily brief status contracts", () => {
   });
 });
 
-describe("Android Ask Wireline truthfulness", () => {
-  it("derives plan status from loaded account data instead of inventing billing health", () => {
-    expect(androidAsk).toContain("account.subscriptionStatus");
-    expect(androidAsk).toContain("account.planName");
+describe("Android Ask BotBound truthfulness", () => {
+  it("shows only live data it actually has and never invents billing health", () => {
+    expect(androidAsk).toContain("state.wallet?.balanceUsd");
+    expect(androidAsk).toContain('"Runtime Balance:');
     expect(androidAsk).not.toContain("All subscription plans are active");
     expect(androidAsk).not.toContain("your billing subscription is active");
   });
 
   it("does not claim an outbound call succeeded before the async API result", () => {
-    expect(androidAsk).toContain("Outbound call request submitted");
+    expect(androidAsk).toContain('answer = "Call requested with');
     expect(androidAsk).not.toContain("Outbound call placed with agent");
+    expect(androidAsk).not.toContain("Call placed successfully");
   });
 });
