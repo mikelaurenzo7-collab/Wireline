@@ -4,6 +4,7 @@ import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import OutboundHub from "../components/outbound/OutboundHub";
 import AppointmentsPanel from "../components/AppointmentsPanel";
+import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import { useAgents } from "../contexts/AgentsContext";
@@ -87,6 +88,21 @@ export default function PhonePage() {
   }
 
   const showAgentScope = primaryTab === "logs" && (agents.length > 1 || activeAgentId);
+  const agentScope = showAgentScope ? (
+    <select
+      value={activeAgentId}
+      onChange={(event) => setAgentScope(event.target.value)}
+      aria-label="Filter call history by Bot"
+      className="h-9 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+    >
+      <option value="">All Bots</option>
+      {agents.map((agent) => (
+        <option key={agent.id} value={agent.id}>
+          {agent.name}
+        </option>
+      ))}
+    </select>
+  ) : undefined;
 
   return (
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
@@ -98,32 +114,22 @@ export default function PhonePage() {
           title="Calls"
           titleHidden
           tabs={
-            <div className="flex min-w-0 items-center gap-2">
-              <WorkspaceTabStrip
-                tabs={[...PHONE_TABS]}
-                activeId={primaryTab}
-                onSelect={setPrimaryTab}
-                ariaLabel="Call sections"
-                density="compact"
-                align="start"
-                className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
-              />
-              {showAgentScope ? (
-                <select
-                  value={activeAgentId}
-                  onChange={(event) => setAgentScope(event.target.value)}
-                  aria-label="Filter call history by Bot"
-                  className="h-9 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
-                >
-                  <option value="">All Bots</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
-            </div>
+            <WorkspaceControlBand
+              embedded
+              ariaLabel="Call controls"
+              primary={
+                <WorkspaceTabStrip
+                  tabs={[...PHONE_TABS]}
+                  activeId={primaryTab}
+                  onSelect={setPrimaryTab}
+                  ariaLabel="Call sections"
+                  density="compact"
+                  align="start"
+                  className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
+                />
+              }
+              secondary={agentScope}
+            />
           }
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
