@@ -25,11 +25,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func loadingTemplate() -> CPListTemplate {
         if KeychainStore.loadToken() == nil {
-            let item = CPListItem(text: "OPEN WIRELINE ON YOUR PHONE TO SIGN IN", detailText: nil)
-            return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
+            let item = CPListItem(text: "OPEN BOTBOUND ON YOUR PHONE TO SIGN IN", detailText: nil)
+            return CPListTemplate(title: "BotBound", sections: [CPListSection(items: [item])])
         }
         let item = CPListItem(text: "LOADING YOUR CALLS…", detailText: nil)
-        return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
+        return CPListTemplate(title: "BotBound", sections: [CPListSection(items: [item])])
     }
 
     @MainActor
@@ -100,12 +100,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
 
         if !buttons.isEmpty {
-            let title = me.map { $0.account.businessName ?? $0.user.fullName ?? "Wireline" } ?? "Wireline"
+            let title = me.map { $0.account.businessName ?? $0.user.fullName ?? "BotBound" } ?? "BotBound"
             return CPGridTemplate(title: title, gridButtons: Array(buttons.prefix(8)))
         }
 
-        let item = CPListItem(text: "NO CALLS RIGHT NOW", detailText: "ASK WIRELINE ON YOUR PHONE")
-        return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
+        let item = CPListItem(text: "NO CALLS RIGHT NOW", detailText: "ASK BOTBOUND ON YOUR PHONE")
+        return CPListTemplate(title: "BotBound", sections: [CPListSection(items: [item])])
     }
 
     private func showBots(_ agents: [Agent]) {
