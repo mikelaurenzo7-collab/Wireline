@@ -135,7 +135,7 @@ export async function fulfillStripeCheckoutSession(
         if (!settingsRows[0]) {
           // A paid add-on without a durable workspace projection must stay
           // retryable; acknowledging it here would strand the entitlement.
-          throw new Error(`Settled live-video Checkout ${session.id} has no Wireline workspace.`);
+          throw new Error(`Settled live-video Checkout ${session.id} has no BotBound workspace.`);
         }
         if (!current.enabled) {
           await drizzle
@@ -151,7 +151,7 @@ export async function fulfillStripeCheckoutSession(
 
     const subscriptionId = checkoutSubscriptionId(session);
     if (!subscriptionId) {
-      throw new Error(`Wireline subscription Checkout ${session.id} has no subscription.`);
+      throw new Error(`BotBound subscription Checkout ${session.id} has no subscription.`);
     }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
