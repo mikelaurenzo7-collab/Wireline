@@ -1,11 +1,11 @@
 import { wirelineTokenValues as token } from "./generated-design-tokens";
 
 /*
- * Wireline Letterpress compatibility manifest.
+ * WIRELINE Design System compatibility manifest.
  *
  * Runtime source of truth: generated semantic token artifacts.
- * This object keeps older imports alive while redirecting visual decisions
- * to the generated Letterpress token system.
+ * This object keeps older imports alive while redirecting every visual decision
+ * to the same generated WIRELINE token system.
  */
 export const BRAND = {
   colors: {
@@ -62,7 +62,7 @@ export const BRAND = {
 
   elevation: {
     strategy:
-      "Subtle paper layering. Avoid glassmorphism, noisy gradients, and decorative shadow color.",
+      "Subtle surface layering. Avoid glassmorphism, noisy gradients, and decorative shadow color.",
     card: token["elevation.sm"],
     panel: token["elevation.md"],
     modal: token["elevation.lg"],
@@ -82,7 +82,7 @@ export const BRAND = {
     lg: token["radius.lg"],
     xl: token["radius.xl"],
     pill: token["radius.pill"],
-    note: "Letterpress geometry sourced from generated Wireline tokens.",
+    note: "WIRELINE geometry sourced from generated semantic tokens.",
   },
 
   accessibility: {
@@ -95,7 +95,7 @@ export const BRAND = {
   },
 
   theming: {
-    current: "Dark-by-default Wireline Letterpress with an optional token-equivalent light appearance",
+    current: "Dark-by-default WIRELINE Design System with a token-equivalent light appearance",
     planned: "High-contrast mode plus density variants via semantic token sets",
   },
 
