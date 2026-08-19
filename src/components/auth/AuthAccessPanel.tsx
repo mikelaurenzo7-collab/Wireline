@@ -363,6 +363,9 @@ export default function AuthAccessPanel({
 
   const title = isReset ? "Reset password" : isSignUp ? "Create account" : "Sign in";
   const disabled = loading || Boolean(oauthPending);
+  const termsId = embedded ? "landing-auth-terms" : "auth-terms";
+  const termsLabelId = `${termsId}-label`;
+  const termsErrorId = `${termsId}-error`;
 
   return (
     <section className={cn("wl-access-panel", embedded && "is-embedded", className)} aria-label="Account access">
@@ -394,15 +397,17 @@ export default function AuthAccessPanel({
           <div className="wl-access-panel__terms">
             <Checkbox
               ref={termsRef}
-              id={embedded ? "landing-auth-terms" : "auth-terms"}
+              id={termsId}
               checked={agreedToTerms}
+              aria-labelledby={termsLabelId}
               aria-invalid={error === TERMS_CONSENT_ERROR}
+              aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}
               onChange={(event) => {
                 setAgreedToTerms(event.target.checked);
                 if (event.target.checked && error === TERMS_CONSENT_ERROR) setError(null);
               }}
             />
-            <span>
+            <span id={termsLabelId}>
               I agree to the <Link to="/terms" target="_blank" rel="noopener">Terms</Link> and{" "}
               <Link to="/privacy" target="_blank" rel="noopener">Privacy Policy</Link>.
             </span>
@@ -510,7 +515,11 @@ export default function AuthAccessPanel({
           ) : null}
 
           {error ? (
-            <StatusNotice tone="destructive" title={error}>
+            <StatusNotice
+              id={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}
+              tone="destructive"
+              title={error}
+            >
               {isSignUp && /already exists/i.test(error) ? (
                 <button type="button" onClick={() => changeMode("signin")}>
                   Sign in instead
