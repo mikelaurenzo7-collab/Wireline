@@ -89,18 +89,18 @@ describe("mcp transport contract", () => {
       mcpOAuthChallenge(
         "https://trywireline.com/.well-known/oauth-protected-resource",
         "agents.read",
-        "Connect a Wireline account to continue.",
+        "Connect a BotBound account to continue.",
         "invalid_token",
       ),
     ).toContain('error="invalid_token"');
-    expect(challenge).toContain('error_description="Connect a Wireline account to continue."');
+    expect(challenge).toContain('error_description="Connect a BotBound account to continue."');
     expect(challenge).toContain('scope="agents.write"');
     expect(
-      mcpToolErrorResult("Connect a Wireline account to continue.", {
+      mcpToolErrorResult("Connect a BotBound account to continue.", {
         "mcp/www_authenticate": [challenge],
       }),
     ).toEqual({
-      content: [{ type: "text", text: "Connect a Wireline account to continue." }],
+      content: [{ type: "text", text: "Connect a BotBound account to continue." }],
       isError: true,
       _meta: { "mcp/www_authenticate": [challenge] },
     });
