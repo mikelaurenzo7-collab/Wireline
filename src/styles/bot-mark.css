@@ -1,8 +1,9 @@
-/* Wireline Bot Mark --------------------------------------------------------
- * Proprietary identity primitive for Bots. Identity is intentionally separate
- * from operational status: no success/warning/error color enters this system.
- * The mark remains legible at 24px, gains a micro-monogram at 28px+, and uses
- * motion only when the caller explicitly marks it active/speaking.
+/* WIRELINE Bot Mark --------------------------------------------------------
+ * Compact, proprietary identity primitive for Bots. Identity is intentionally
+ * separate from operational status: no success/warning/error color enters this
+ * system. The mark is designed to read at 24–48px with no initials, avatars, or
+ * role iconography. Motion suggests signal flow; active state only increases
+ * energy, never changes identity color.
  */
 
 .wl-bot-mark {
@@ -18,14 +19,36 @@
     inset 0 -5px 12px color-mix(in srgb, black 24%, transparent);
 }
 
+.wl-bot-mark__core::before,
 .wl-bot-mark__core::after {
   content: "";
   position: absolute;
-  inset: 0;
   pointer-events: none;
   border-radius: inherit;
+}
+
+.wl-bot-mark__core::before {
+  inset: -34%;
+  background: conic-gradient(
+    from 20deg,
+    transparent 0deg 238deg,
+    color-mix(in srgb, var(--wl-bot-mark-accent) 18%, transparent) 268deg,
+    color-mix(in srgb, white 10%, transparent) 286deg,
+    transparent 316deg 360deg
+  );
+  opacity: 0.68;
+  animation: wl-bot-mark-sweep 8.5s linear infinite;
+  animation-delay: var(--wl-bot-mark-phase);
+}
+
+.wl-bot-mark__core::after {
+  inset: 0;
   background:
-    radial-gradient(circle at 72% 74%, color-mix(in srgb, var(--wl-bot-mark-accent) 18%, transparent), transparent 38%),
+    radial-gradient(
+      circle at 72% 74%,
+      color-mix(in srgb, var(--wl-bot-mark-accent) 18%, transparent),
+      transparent 38%
+    ),
     linear-gradient(135deg, color-mix(in srgb, white 6%, transparent), transparent 45%);
   mix-blend-mode: screen;
 }
@@ -50,8 +73,17 @@
   stroke-width: 1.75;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.92;
+  opacity: 0.94;
   filter: drop-shadow(0 0 2px color-mix(in srgb, var(--wl-bot-mark-wire) 34%, transparent));
+  animation: wl-bot-mark-drift 6.8s ease-in-out infinite alternate;
+  animation-delay: var(--wl-bot-mark-phase);
+}
+
+.wl-bot-mark__glyph path {
+  stroke-dasharray: 62 38;
+  stroke-dashoffset: 0;
+  animation: wl-bot-mark-flow 7.2s linear infinite;
+  animation-delay: var(--wl-bot-mark-phase);
 }
 
 .wl-bot-mark__anchor {
@@ -59,23 +91,6 @@
   stroke: color-mix(in srgb, var(--wl-bot-mark-wire) 78%, transparent);
   stroke-width: 0.55;
   filter: drop-shadow(0 0 2px color-mix(in srgb, var(--wl-bot-mark-accent) 58%, transparent));
-}
-
-.wl-bot-mark__monogram {
-  position: absolute;
-  right: 12%;
-  bottom: 9%;
-  z-index: 2;
-  display: grid;
-  min-width: 0.9em;
-  place-items: center;
-  color: var(--wl-bot-mark-ink);
-  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.06em;
-  opacity: 0.66;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
 }
 
 .wl-bot-mark__rim {
@@ -104,6 +119,36 @@
     drop-shadow(0 0 5px color-mix(in srgb, var(--wl-bot-mark-accent) 22%, transparent));
 }
 
+.wl-bot-mark[data-active="true"] .wl-bot-mark__glyph path {
+  animation-duration: 2.8s;
+}
+
+.wl-bot-mark[data-active="true"] .wl-bot-mark__core::before {
+  opacity: 0.92;
+  animation-duration: 4.2s;
+}
+
+@keyframes wl-bot-mark-flow {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes wl-bot-mark-drift {
+  from {
+    transform: translate3d(-0.35px, 0.2px, 0) rotate(-0.8deg);
+  }
+  to {
+    transform: translate3d(0.45px, -0.3px, 0) rotate(0.9deg);
+  }
+}
+
+@keyframes wl-bot-mark-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes wl-bot-mark-signal {
   0%,
   100% {
@@ -117,8 +162,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .wl-bot-mark__core::before,
+  .wl-bot-mark__glyph,
+  .wl-bot-mark__glyph path,
   .wl-bot-mark__pulse {
     animation: none;
+  }
+
+  .wl-bot-mark__pulse {
     opacity: 0.55;
     transform: scale(1.08);
   }
@@ -129,6 +180,12 @@
     background: Canvas !important;
   }
 
+  .wl-bot-mark__core::before,
+  .wl-bot-mark__core::after,
+  .wl-bot-mark__sheen {
+    display: none;
+  }
+
   .wl-bot-mark__glyph,
   .wl-bot-mark__anchor,
   .wl-bot-mark__rim,
@@ -136,9 +193,5 @@
     stroke: CanvasText;
     border-color: CanvasText;
     filter: none;
-  }
-
-  .wl-bot-mark__monogram {
-    color: CanvasText;
   }
 }
