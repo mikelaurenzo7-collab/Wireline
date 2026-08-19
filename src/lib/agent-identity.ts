@@ -130,7 +130,7 @@ export const AGENT_IDENTITY_PERSONAS: Record<AgentIdentityPersonaId, AgentIdenti
 /**
  * `label` is the internal provider name — for admin, logs, and config only.
  * NEVER render `label` in customer-facing UI. Customer surfaces read
- * `surfaceLabel`, which stays in Wireline terms so swapping the underlying
+ * `surfaceLabel`, which stays in BotBound terms so swapping the underlying
  * engine never changes what a customer sees.
  */
 export const VIDEO_PRESENTER_PROVIDERS: Record<
@@ -179,7 +179,7 @@ export const VIDEO_PRESENTER_PROVIDERS: Record<
     fallback: "agent_face",
   },
   synthetic: {
-    label: "Wireline SVG",
+    label: "BotBound SVG",
     surfaceLabel: "Identity badge",
     supportsLive: false,
     consentRequired: false,
