@@ -25,10 +25,6 @@ import {
 
 const router = express.Router();
 
-// ────────────────────────────────────────────────────────────────────
-//  Slack OAuth
-// ────────────────────────────────────────────────────────────────────
-
 router.get(
   "/api/oauth/slack/url",
   oauthRateLimiter,
@@ -84,7 +80,7 @@ router.get(
       if (!userId) {
         return res
           .status(401)
-          .send("Complete this connection in the same browser and Wireline account that started it.");
+          .send("Complete this connection in the same browser and BotBound account that started it.");
       }
 
       const slackInstanceUrl = `https://${tokens.team.name}.slack.com`;
