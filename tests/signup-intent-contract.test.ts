@@ -53,11 +53,11 @@ describe("signup intent contract", () => {
       undefined,
     );
 
-    const portal = read("src/components/AuthPortal.tsx");
-    expect(portal).toContain("plan.price_usd_annual");
-    expect(portal).toContain("candidate.public !== false");
-    expect(portal).toContain("preferredBillingInterval: attribution.preferredBillingInterval");
-    expect(portal).toContain("billing_interval: attribution?.preferredBillingInterval ?? null");
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    expect(access).toContain("plan.price_usd_annual");
+    expect(access).toContain("candidate.public !== false");
+    expect(access).toContain("preferredBillingInterval: effectiveIntent.preferredBillingInterval");
+    expect(access).toContain("billing_interval: effectiveIntent?.preferredBillingInterval ?? null");
 
     const validation = read("src/lib/api-validation.ts");
     expect(validation).toContain('preferredBillingInterval: z.enum(["month", "year"]).optional()');

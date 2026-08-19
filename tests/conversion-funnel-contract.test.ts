@@ -12,23 +12,16 @@ describe("a signed-in customer can reach Stripe", () => {
   const billing = read("src/pages/BillingSettings.tsx");
 
   it("mounts the real checkout card on the billing settings page", () => {
-    // StripeBillingCard owns POST /api/billing/checkout. Its only other mount
-    // is admin/SubscriptionPanel under /admin, which nothing links to.
     expect(billing).toContain("StripeBillingCard");
     expect(read("src/components/StripeBillingCard.tsx")).toContain('"/api/billing/checkout"');
   });
 
   it("never sends an authenticated user to the public pricing page to buy", () => {
-    // /pricing plan cards all point at /signup?plan=..., and AuthPortal
-    // redirects an already-authenticated visitor straight to /overview — so
-    // any in-product link to /pricing is a loop back to the dashboard.
     expect(billing).not.toContain('to="/pricing"');
     expect(billing).not.toContain('href = "/pricing"');
   });
 
   it("keeps every public pricing CTA pointed at signup", () => {
-    // Guards the assumption above: if these ever became direct-checkout links
-    // the loop would be gone and the rule could relax.
     const pricing = read("src/pages/Pricing.tsx");
     const ctaPaths = Array.from(pricing.matchAll(/ctaPath:\s*"([^"]+)"/g), (m) => m[1]);
     expect(ctaPaths.length).toBeGreaterThanOrEqual(3);
@@ -38,10 +31,6 @@ describe("a signed-in customer can reach Stripe", () => {
 
 describe("the paywall is visible when it fires", () => {
   it("stacks the trial gate above the first-run activation wizard", () => {
-    // Both are fixed siblings with no intervening stacking context. At the old
-    // z-[100] the gate painted under the wizard's opaque backdrop (z-1050)
-    // while the focus trap moved keyboard focus into it — an invisible dialog
-    // at the highest-intent moment in the funnel.
     const gate = read("src/components/TrialGateModal.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
@@ -49,15 +38,12 @@ describe("the paywall is visible when it fires", () => {
     expect(gateZ).not.toBeNull();
     const gateZIndex = Number(gateZ![1]);
 
-    // The wizard uses the modal token, which resolves to 1050.
     expect(wizard).toContain("z-[var(--wireline-zIndex-modal,1050)]");
     const modalToken = Number(
       read("src/styles/tokens.generated.css").match(/--wireline-zIndex-modal:\s*(\d+)/)![1],
     );
     expect(gateZIndex).toBeGreaterThan(modalToken);
 
-    // Still below popover/tooltip so overlays raised from inside the dialog
-    // render on top of it rather than behind.
     const popoverToken = Number(
       read("src/styles/tokens.generated.css").match(/--wireline-zIndex-popover:\s*(\d+)/)![1],
     );
@@ -67,10 +53,6 @@ describe("the paywall is visible when it fires", () => {
 
 describe("email verification confirms itself", () => {
   it("lands in the workspace, where the verify banner is actually mounted", () => {
-    // EmailVerifyBanner is the only reader of ?verified and is mounted inside
-    // WorkspaceShell, which never renders on the public marketing homepage.
-    // Redirecting to "/" dropped the confirmation and, on the expired path,
-    // the resend affordance too.
     const routes = read("src/routes/auth-routes.ts");
     expect(routes).toContain('const VERIFY_EMAIL_LANDING_PATH = "/overview"');
     expect(routes).not.toMatch(/\$\{baseUrl\}\/\?verified=/);
@@ -83,19 +65,15 @@ describe("email verification confirms itself", () => {
 
 describe("OAuth signups get the same onboarding as email signups", () => {
   it("carries signup intent across the provider round-trip", () => {
-    // OAuthComplete resolves the post-auth destination with no knowledge of
-    // how the session started, so without this the three OAuth buttons at the
-    // top of the signup card skipped Fast Start and the activation wizard.
-    const portal = read("src/components/AuthPortal.tsx");
-    const oauthBlock = portal.slice(
-      portal.indexOf("function OAuthSignInButtons("),
-      portal.indexOf("export default function"),
-    );
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    const oauthStart = access.indexOf("const startOAuth = async");
+    const oauthEnd = access.indexOf("const handleAuth = async", oauthStart);
+    const oauthBlock = access.slice(oauthStart, oauthEnd);
+
     expect(oauthBlock).toContain("markFreshSignupSession()");
-    expect(oauthBlock).toMatch(/if \(isSignUp\)[\s\S]{0,600}markFreshSignupSession\(\)/);
-    // And the marker must be set BEFORE navigating away to the provider.
+    expect(oauthBlock).toMatch(/if \(isSignUp\) markFreshSignupSession\(\)/);
     const markIdx = oauthBlock.indexOf("markFreshSignupSession()");
-    const assignIdx = oauthBlock.indexOf("window.location.assign(url)");
+    const assignIdx = oauthBlock.indexOf("window.location.assign(payload.url)");
     expect(markIdx).toBeGreaterThan(-1);
     expect(assignIdx).toBeGreaterThan(markIdx);
   });
@@ -109,16 +87,19 @@ describe("signup consent recovers at the control that needs attention", () => {
   });
 
   it("points OAuth users to the consent control and clears the error after acceptance", () => {
-    const portal = read("src/components/AuthPortal.tsx");
-    expect(portal).toContain(
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    expect(access).toContain(
       'const TERMS_CONSENT_ERROR = "Accept the Terms and Privacy Policy above to continue.";',
     );
-    expect(portal).not.toContain("Privacy Policy below to continue");
-    expect(portal).toContain("termsRef.current?.focus()");
-    expect(portal).toContain("aria-invalid={error === TERMS_CONSENT_ERROR}");
-    expect(portal).toContain('error === TERMS_CONSENT_ERROR ? "auth-consent-error" : undefined');
-    expect(portal).toMatch(
-      /e\.target\.checked && error === TERMS_CONSENT_ERROR\) setError\(null\)/,
+    expect(access).not.toContain("Privacy Policy below to continue");
+    expect(access).toContain("termsRef.current?.focus()");
+    expect(access).toContain("aria-labelledby={termsLabelId}");
+    expect(access).toContain("aria-invalid={error === TERMS_CONSENT_ERROR}");
+    expect(access).toContain(
+      "aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}",
+    );
+    expect(access).toMatch(
+      /event\.target\.checked && error === TERMS_CONSENT_ERROR\) setError\(null\)/,
     );
   });
 });
@@ -126,7 +107,7 @@ describe("signup consent recovers at the control that needs attention", () => {
 describe("account entry recognizes an existing session without blocking first paint", () => {
   it("hydrates auth routes in the background while keeping marketing routes probe-free", () => {
     const auth = read("src/contexts/AuthContext.tsx");
-    const portal = read("src/components/AuthPortal.tsx");
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
     expect(auth).toContain(
       'import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";',
     );
@@ -138,8 +119,8 @@ describe("account entry recognizes an existing session without blocking first pa
     const hydrate = auth.indexOf("await migrateLegacyLocalStorage();");
     expect(backgroundGate).toBeGreaterThan(-1);
     expect(hydrate).toBeGreaterThan(backgroundGate);
-    expect(portal).toContain("if (authLoading || !user) return;");
-    expect(portal).toContain("navigate(resolvePostAuthDestination(workspaceMode, location.search)");
+    expect(access).toContain("if (authLoading || !user) return;");
+    expect(access).toContain("navigate(resolvePostAuthDestination(workspaceMode, location.search)");
   });
 });
 
@@ -166,15 +147,10 @@ describe("password recovery keeps reset credentials out of request and browser h
   });
 });
 
-describe("signup states the whole password policy up front", () => {
+describe("signup states the whole password policy before submission", () => {
   it("mirrors every rule getPasswordPolicyError enforces", () => {
-    // getPasswordPolicyError returns only the FIRST failure, so without a
-    // checklist the only way to discover the rules was to submit repeatedly:
-    // "mypassword" is rejected for the uppercase, then again for the digit.
-    // A rule added to the policy but not to the checklist silently
-    // reintroduces that loop, so the two are pinned together.
     const policy = read("src/lib/password-policy.ts");
-    const portal = read("src/components/AuthPortal.tsx");
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
 
     const policyChecks = [
       { policy: "password.length < 8", label: "8+ characters" },
@@ -184,25 +160,21 @@ describe("signup states the whole password policy up front", () => {
     ];
     for (const { policy: check, label } of policyChecks) {
       expect(policy, `policy should enforce ${label}`).toContain(check);
-      expect(portal, `signup should surface ${label}`).toContain(`"${label}"`);
+      expect(access, `signup should surface ${label}`).toContain(`"${label}"`);
     }
 
-    // The placeholder must not understate the policy either.
-    expect(portal).not.toContain('"At least 8 characters"');
-    expect(portal).toContain("PASSWORD_RULES");
-    expect(portal).toContain(
-      'aria-describedby={isSignUp ? "auth-password-requirements" : undefined}',
-    );
-    expect(portal).toContain('<p id="auth-password-requirements" className="sr-only">');
+    expect(access).not.toContain('"At least 8 characters"');
+    expect(access).toContain("PASSWORD_RULES");
+    expect(access).toContain('aria-label="Password requirements"');
+    expect(access).toContain("minLength={isSignUp ? 8 : undefined}");
   });
 
   it("offers a way out of a duplicate-email signup", () => {
-    // The server copy says "Try signing in instead" — the UI has to provide it.
     expect(read("src/routes/auth-routes.ts")).toContain(
       "An account with this email already exists. Try signing in instead.",
     );
-    const portal = read("src/components/AuthPortal.tsx");
-    expect(portal).toContain("Sign in instead");
-    expect(portal).toMatch(/already exists\/i\.test\(error\)/);
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    expect(access).toContain("Sign in instead");
+    expect(access).toMatch(/already exists\/i\.test\(error\)/);
   });
 });

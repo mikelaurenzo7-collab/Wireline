@@ -129,9 +129,10 @@ describe("product event taxonomy", () => {
   it("emits every activation-spine and wallet milestone from a real product surface", () => {
     const surfaces = [
       read("src/main.tsx"),
+      read("src/components/marketing/WireAgentLanding.tsx"),
       read("src/components/marketing/MarketingHero.tsx"),
       read("src/components/marketing/MarketingStickyCta.tsx"),
-      read("src/components/AuthPortal.tsx"),
+      read("src/components/auth/AuthAccessPanel.tsx"),
       read("src/components/CreateAgentDialog.tsx"),
       read("src/components/onboarding/PostCreateActivationWizard.tsx"),
       read("src/components/StripeBillingCard.tsx"),
