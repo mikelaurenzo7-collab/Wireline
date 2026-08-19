@@ -61,7 +61,7 @@ describe("sales trust copy contract", () => {
   it("keeps the sales wedge governed, Bot-native, and tied to canonical disclosure guidance", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     const product = read("src/lib/bot-product.ts");
-    expect(wedges).toContain('metaTitle: "WIRELINE FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"');
+    expect(wedges).toContain('metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"');
     expect(wedges).toContain('headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"');
     expect(wedges).toContain("Fast, Governed Speed to Lead");
     expect(wedges).toContain("Approved actions sync");
@@ -73,8 +73,8 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("WIRE YOUR");
-    expect(landing).toContain("PHONE BOT");
+    expect(landing).toContain("PUT YOUR BOT");
+    expect(landing).toContain("ON THE LINE");
     expect(landing).toContain("BOT_MARKETING_VOICE.subline");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
