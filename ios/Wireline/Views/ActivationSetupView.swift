@@ -1,19 +1,19 @@
 import SwiftUI
 
-/// "Activate Wireline everywhere" — explains the regular-iPhone entry points and
-/// how to wire the physical ones. Honest by design: apps can't claim the Action
-/// button or Back Tap programmatically, so this screen guides the user to do it
-/// in Settings. Siri phrases and widgets are auto-registered by App Shortcuts.
+/// Explains the regular-iPhone entry points and how to wire the physical ones.
+/// Apps cannot claim the Action button or Back Tap programmatically, so this
+/// screen guides the user to Settings. Siri phrases and widgets are registered
+/// by App Shortcuts.
 struct ActivationSetupView: View {
     var body: some View {
         List {
             Section {
-                row("mic.fill", "Siri", "Say “Ask Wireline”, or “Ask Wireline what needs my attention.” Works the moment the app is installed. No extra setup.")
+                row("mic.fill", "Siri", "Say “Ask BotBound”, or “Ask BotBound what needs my attention.” Works the moment the app is installed. No extra setup.")
             } header: { Text("Hands-free") }
 
             Section {
-                row("button.horizontal.top.press", "Action button", "On iPhone 15 Pro and later, set the Action button to run the “Ask Wireline” shortcut for a walkie-talkie feel.")
-                row("hand.tap.fill", "Back Tap", "Double- or triple-tap the back of your iPhone to ask Wireline or start a call.")
+                row("button.horizontal.top.press", "Action button", "On iPhone 15 Pro and later, set the Action button to run the “Ask BotBound” shortcut for a walkie-talkie feel.")
+                row("hand.tap.fill", "Back Tap", "Double- or triple-tap the back of your iPhone to ask BotBound or start a call.")
                 Button { openSettings() } label: {
                     Label("Open Settings to assign them", systemImage: "gear")
                 }
@@ -21,12 +21,12 @@ struct ActivationSetupView: View {
             } header: {
                 Text("Physical triggers")
             } footer: {
-                Text("Action button: Settings → Action Button → Shortcut → Ask Wireline.\nBack Tap: Settings → Accessibility → Touch → Back Tap.")
+                Text("Action button: Settings → Action Button → Shortcut → Ask BotBound.\nBack Tap: Settings → Accessibility → Touch → Back Tap.")
             }
 
             Section {
-                row("rectangle.stack.fill", "Home & Lock Screen widgets", "Add a Wireline widget to start a request or review what needs attention at a glance.")
-                row("slider.horizontal.3", "Control Center", "Add the Wireline control for one-tap access from anywhere.")
+                row("rectangle.stack.fill", "Home & Lock Screen widgets", "Add a BotBound widget to start a request or review what needs attention at a glance.")
+                row("slider.horizontal.3", "Control Center", "Add the BotBound control for one-tap access from anywhere.")
                 Button { openShortcuts() } label: {
                     Label("Open the Shortcuts app", systemImage: "square.2.layers.3d")
                 }
