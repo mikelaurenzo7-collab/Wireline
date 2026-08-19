@@ -7,8 +7,8 @@ export default function PublicNotFound() {
   return (
     <>
       <PageMeta
-        title="Page not found | Wireline"
-        description="That Wireline page could not be found."
+        title="Page not found | BotBound"
+        description="That BotBound page could not be found."
         path="/404"
         noIndex
       />
