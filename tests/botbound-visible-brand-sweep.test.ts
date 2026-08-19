@@ -95,6 +95,10 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
       /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
   }
+  // openapi-spec.ts is a large raw compatibility document. The public route
+  // always passes it through normalizeOpenApiForManagedRuntime, which performs
+  // a deep BotBound normalization while preserving X-Wireline-Key exactly.
+  if (path === "src/lib/openapi-spec.ts") return true;
   return false;
 }
 
@@ -155,6 +159,14 @@ describe("BotBound visible-brand sweep", () => {
     expect(catalog).toContain('name: "Wireline Starter"');
     expect(sheets).toContain('const SHEET_TITLE = "Wireline Call Log"');
     expect(graph).toContain('const EXCEL_FILE_NAME = "Wireline Call Log.xlsx"');
+  });
+
+  it("normalizes the raw partner OpenAPI document to BotBound without renaming its API-key header", () => {
+    const runtime = read("src/lib/openapi-managed-runtime.ts");
+    const routes = read("src/routes/openapi-routes.ts");
+    expect(runtime).toContain('import { normalizeCustomerBrandDeep } from "./brand-text"');
+    expect(runtime).toContain('preserve: ["X-Wireline-Key"]');
+    expect(routes).toContain("normalizeOpenApiForManagedRuntime(getOpenApiSpec(");
   });
 
   it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {
