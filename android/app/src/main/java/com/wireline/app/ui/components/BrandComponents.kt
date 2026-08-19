@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wireline.app.ui.theme.Brand
 
-/** Compact native components derived from the mobile Stitch delivery. */
+/** Compact native components derived from the mobile design system. */
 
 @Composable
 fun Medallion(
@@ -57,7 +57,7 @@ fun Medallion(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = "Wireline",
+            contentDescription = "BotBound",
             tint = Brand.Accent,
             modifier = Modifier.size(size * 0.42f),
         )
@@ -70,7 +70,7 @@ fun StitchMeshSurface(modifier: Modifier = Modifier) {
     Box(modifier = modifier.background(Brand.Canvas))
 }
 
-/** Copper-to-patina cap — shared Letterpress signature on native cards. */
+/** Violet signal cap — shared BotBound signature on native cards. */
 @Composable
 private fun WirelineLetterpressCap(modifier: Modifier = Modifier) {
     Box(
@@ -91,10 +91,7 @@ private fun WirelineLetterpressCap(modifier: Modifier = Modifier) {
     )
 }
 
-/**
- * AssistantCard displays information inside a flat card matching the Wireline Precision design system:
- * warm paper surface, copper cap, 1dp border, 16dp internal spacing.
- */
+/** Flat information card shared across the native BotBound surface. */
 @Composable
 fun AssistantCard(
     modifier: Modifier = Modifier,
@@ -118,7 +115,7 @@ fun AssistantCard(
     }
 }
 
-/** 200ms 0.98 press response required by the Wireline Precision system. */
+/** 200ms 0.98 press response required by the shared interaction system. */
 @Composable
 private fun Modifier.tactileScale(interactionSource: MutableInteractionSource): Modifier {
     val pressed = interactionSource.collectIsPressedAsState().value
@@ -147,32 +144,32 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
             WirelineLetterpressCap(modifier = Modifier.padding(top = 1.dp))
             Row(
                 modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Brand.AccentSoft),
-                contentAlignment = Alignment.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Icon(Icons.Default.Mic, contentDescription = "Ask Wireline", tint = Brand.Accent)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Brand.AccentSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = "Ask BotBound", tint = Brand.Accent)
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Ask BotBound",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Brand.Text,
+                    )
+                    Text(
+                        text = "Hand off a call, the wait, and the follow-up.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Brand.Text2,
+                    )
+                }
             }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Ask Wireline",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Brand.Text,
-                )
-                Text(
-                    text = "Hand off a call, the wait, and the follow-up.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Brand.Text2,
-                )
-            }
-        }
         }
     }
 }
@@ -229,7 +226,7 @@ fun CallbackNumberPromptCard(onClick: () -> Unit, modifier: Modifier = Modifier)
                 Icon(
                     imageVector = Icons.Default.PhoneInTalk,
                     contentDescription = "Set callback number",
-                    tint = Brand.Accent
+                    tint = Brand.Accent,
                 )
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
