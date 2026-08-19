@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import {
-  CheckCircle2,
-  Clock3,
-  Loader2,
-  Mail,
-  RefreshCw,
-  Route,
-  Sparkles,
-  UserRoundCheck,
-} from "lucide-react";
+import { CheckCircle2, Loader2, Mail, RefreshCw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
@@ -102,12 +93,14 @@ function formatTimestamp(value: string) {
   }).format(date);
 }
 
-function senderInitial(sender: string) {
-  return sender.trim().slice(0, 1).toUpperCase() || "?";
-}
-
 function isAssistantMessage(role: string) {
   return role === "ai" || role === "assistant" || role === "out";
+}
+
+function activityState(status: OutcomeStatus): "pending" | "active" | "complete" {
+  if (status === "resolved" || status === "booked") return "complete";
+  if (status === "escalated") return "active";
+  return "pending";
 }
 
 function InboxLoadingState({ frameClass }: { frameClass: string }) {
@@ -311,7 +304,8 @@ export default function EmailInbox({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
         <SearchField
           value={query}
-          onChange={setQuery}
+          onChange={(event) => setQuery(event.target.value)}
+          onClear={() => setQuery("")}
           placeholder="Search email"
           aria-label="Search email conversations"
           className="min-w-0 flex-1"
@@ -448,22 +442,20 @@ export default function EmailInbox({
               <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
                 {detail?.messages.length ? (
                   <div className="space-y-3">
-                    {detail.messages.map((message) => (
-                      <ConversationMessage
-                        key={message.id}
-                        direction={isAssistantMessage(message.role) ? "out" : "in"}
-                        avatar={
-                          isAssistantMessage(message.role) ? (
-                            <Sparkles className="size-4" />
-                          ) : (
-                            senderInitial(selected.sender)
-                          )
-                        }
-                        timestamp={formatTimestamp(message.createdAt)}
-                      >
-                        {message.content}
-                      </ConversationMessage>
-                    ))}
+                    {detail.messages.map((message) => {
+                      const assistant = isAssistantMessage(message.role);
+                      return (
+                        <ConversationMessage
+                          key={message.id}
+                          author={assistant ? "assistant" : "customer"}
+                          label={assistant ? "Agent" : selected.sender}
+                          timestamp={formatTimestamp(message.createdAt)}
+                          channel="email"
+                        >
+                          {message.content}
+                        </ConversationMessage>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -473,23 +465,25 @@ export default function EmailInbox({
               </div>
 
               <footer className="border-t border-border p-3 sm:p-4">
-                <ConversationActivity
-                  items={[
-                    {
-                      icon: Clock3,
-                      label: "Last activity",
-                      value: formatTimestamp(selected.lastMessageAt),
-                    },
-                    {
-                      icon: UserRoundCheck,
-                      label: "Status",
-                      value: OUTCOME_META[selected.status].label,
-                    },
-                    ...(detail?.handoff
-                      ? [{ icon: Route, label: "Handoff", value: detail.handoff.status }]
-                      : []),
-                  ]}
-                />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <ConversationActivity
+                    state="complete"
+                    title="Last activity"
+                    detail={formatTimestamp(selected.lastMessageAt)}
+                  />
+                  <ConversationActivity
+                    state={activityState(selected.status)}
+                    title="Status"
+                    detail={OUTCOME_META[selected.status].label}
+                  />
+                  {detail?.handoff ? (
+                    <ConversationActivity
+                      state="active"
+                      title="Handoff"
+                      detail={detail.handoff.status}
+                    />
+                  ) : null}
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(["waiting", "booked", "resolved"] as OutcomeStatus[]).map((status) => (
                     <Button
@@ -517,9 +511,7 @@ export default function EmailInbox({
                   >
                     {outcomeBusy === "handoff" ? (
                       <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Route className="size-3.5" />
-                    )}
+                    ) : null}
                     Handoff
                   </Button>
                 </div>
