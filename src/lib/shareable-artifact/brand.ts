@@ -68,7 +68,7 @@ export async function resolveWorkspaceBrand(
   userId: string,
   plan: StripePlan | null,
 ): Promise<WorkspaceBrand> {
-  const fallbackDisplayName = "Wireline Workspace";
+  const fallbackDisplayName = "BotBound Workspace";
   const fallback: WorkspaceBrand = {
     displayName: fallbackDisplayName,
     accentHex: null,
