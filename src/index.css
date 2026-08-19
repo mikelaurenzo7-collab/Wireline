@@ -4,20 +4,18 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Wireline is dark-by-default: ThemeProvider (src/contexts/ThemeContext.tsx)
+/* WIRELINE is dark-by-default: ThemeProvider (src/contexts/ThemeContext.tsx)
  * only ever toggles a `.light` class on <html> for the light/system-resolved-
- * light theme; there is no `.dark` class and dark is simply the absence of
- * `.light`. Without this override, Tailwind's `dark:` variant defaults to
+ * light appearance; there is no `.dark` class and dark is simply the absence
+ * of `.light`. Without this override, Tailwind's `dark:` variant defaults to
  * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
- * instead of the theme the user actually picked in-app. Registering it here
- * makes every existing `dark:*` utility track the real resolved theme. */
+ * instead of the appearance the user actually picked in-app. */
 @custom-variant dark (&:where(:not(.light *)));
 
-/* Register the legacy brand/ink/paper and status color names as Tailwind
- * utilities so `text-brand`, `bg-brand`, `border-ink`, `text-paper`,
- * `text-on-brand`, `bg-destructive`, `text-success`, `bg-surface`, etc.
- * resolve to the live Letterpress tokens instead of being dropped at build
- * time. Inline so they track the same tokens as `primary`/`card`/`border`. */
+/* Register legacy brand/ink/paper utility aliases plus status names so mature
+ * Tailwind call sites keep resolving while visual decisions come from the same
+ * WIRELINE semantic token system. The aliases are compatibility vocabulary,
+ * not separate themes or design-system names. */
 @theme inline {
   --color-brand: var(--wireline-color-action-primary-default);
   --color-brand-deep: var(--wireline-color-action-primary-pressed);
@@ -35,10 +33,8 @@
 
   /* shadcn-style semantic tokens — register here so Tailwind v4 actually
      generates `bg-primary`, `text-primary-foreground`, `bg-card`,
-     `text-foreground`, `border-border`, etc. These were defined in `:root`
-     (foundation.css) but never reached @theme, so the utilities were
-     silently dropped — `wl-eyebrow text-primary-foreground` on the dark
-     pricing badge rendered with no color override and no green background. */
+     `text-foreground`, `border-border`, etc. These are defined in `:root`
+     (foundation.css), but Tailwind utilities need the @theme bridge. */
   --color-background: var(--wireline-color-canvas-default);
   --color-foreground: var(--wireline-color-text-primary);
   --color-card: var(--wireline-color-surface-default);
@@ -57,15 +53,9 @@
   --color-input: var(--wireline-color-border-default);
   --color-ring: var(--wireline-color-focus-default);
 
-  /* Redirect raw Tailwind rose/amber status utilities to the Wireline
-   * status tokens so every error/danger surface (DNC, usage overage,
-   * delete actions, status pills) and every warning surface (low credit,
-   * usage threshold) reads as the single canonical Wireline error/warning
-   * color — not Tailwind's generic rose/amber ramp. Opacity modifiers
-   * (rose-500/10, amber-500/8) still create lightness variation via
-   * color-mix, so backgrounds and borders keep their depth. This fixes
-   * 300+ raw rose/amber usages across 8+ components without touching a
-   * single component file. */
+  /* Redirect raw Tailwind rose/amber status utilities to WIRELINE status
+   * tokens so error/warning surfaces share one semantic language. Opacity
+   * modifiers still create depth via color-mix. */
   --color-rose-300: var(--wireline-color-status-error);
   --color-rose-400: var(--wireline-color-status-error);
   --color-rose-500: var(--wireline-color-status-error);
@@ -77,24 +67,16 @@
   --color-amber-600: var(--wireline-color-status-warning);
   --color-amber-800: var(--wireline-color-status-warning);
 
-  /* The same omission the color tokens above document, for the type families.
-   * Wireline defines three faces — Inter Tight for display, Inter for body,
-   * IBM Plex Mono for labels and metadata — and CSS that names them via
-   * `var(--wireline-font-mono)` gets them. But `font-mono` is a Tailwind
-   * utility, and Tailwind v4 resolves it from `--font-mono` in @theme, which
-   * was never registered. So every `font-mono` label in the product — the
-   * Overview eyebrows, the metric-tile labels, the rail state, the presence
-   * chips — rendered in whatever monospace the OS happens to ship, not in the
-   * typeface the design system specifies. Registering the three families here
-   * makes `font-sans`, `font-serif`, and `font-mono` mean what the brand says
-   * they mean, with the same fallback stacks the CSS variables already carry. */
+  /* WIRELINE defines three faces — Inter Tight for display, Inter for body,
+   * IBM Plex Mono for labels and metadata. Register them here so Tailwind's
+   * font utilities resolve to the same canonical families as raw CSS. */
   --font-sans: var(--wireline-font-sans);
   --font-serif: var(--wireline-font-display);
   --font-mono: var(--wireline-font-mono);
 }
 
-/* Wireline — Letterpress design system. This is the sole application CSS
- * entrypoint; tier order below is part of the executable design contract. */
+/* WIRELINE Design System. This is the sole application CSS entrypoint; tier
+ * order below is part of the executable design contract. */
 @import "./styles/tokens.generated.css";
 @import "./styles/foundation.css";
 @import "./styles/design-system.css";
@@ -107,6 +89,7 @@
 @import "./styles/wireline-product-surfaces.css";
 @import "./styles/wireline-marketing-surfaces.css";
 @import "./styles/landing-prestige.css";
+/* Legacy selector compatibility layer. New/touched surfaces use semantic WIRELINE primitives. */
 @import "./styles/letterpress-polish.css";
 @import "./styles/visual-qa-hotfix.css";
 @import "./styles/theme-light.css";
@@ -124,11 +107,11 @@
 @import "./styles/brand-identity.css";
 @import "./styles/system-aesthetic-refinement.css";
 @import "./styles/safe-area-ownership.css";
+@import "./styles/public-mobile-refinement.css";
 
 body {
-  /* `background-color`, not the `background` shorthand: this rule sits after the
-     prestige-polish import, and the shorthand reset its ambient gradient to
-     `none`, so that presentation layer silently did nothing. */
+  /* `background-color`, not the `background` shorthand: this rule sits after
+     presentation tiers and must not erase their intentional ambient layers. */
   background-color: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
@@ -161,7 +144,7 @@ body {
   overflow: hidden;
 }
 
-/* Current-production auth QA: keep compact CTA labels readable instead of novelty-spaced. */
+/* Keep compact CTA labels readable instead of novelty-spaced. */
 .studio-card button[class*="tracking-[0.22em]"],
 button[class*="tracking-[0.25em]"],
 button[class*="tracking-[0.3em]"] {
