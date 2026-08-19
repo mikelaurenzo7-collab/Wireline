@@ -15,6 +15,7 @@ export const AGENTMAIL_FREE_DOMAIN = "agentmail.to";
 const AGENTMAIL_MAIL_SCOPE = "imap smtp api-key webhook";
 const WIRELINE_INBOX_CLIENT_ID = "wireline-mailbox";
 export const AGENTMAIL_WEBHOOK_CLIENT_ID = "wireline-mailbox-webhook";
+export const AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1";
 export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
   "message.received",
   "message.sent",
@@ -50,12 +51,28 @@ export type AgentMailInboxMessage = {
   provider: "agentmail";
 };
 
+type AgentMailInboxCreateOptions = {
+  domain?: string;
+  clientId?: string;
+  metadata?: Record<string, string | number | boolean>;
+};
+
+function resolveAgentMailCredential(value: string): string {
+  const supplied = String(value || "").replace(/\s+/g, "");
+  if (supplied !== AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL) return supplied;
+  const managed = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
+  if (!managed) {
+    throw new AgentMailConnectError("BotBound managed email is temporarily unavailable.");
+  }
+  return managed;
+}
+
 function createImapClient(email: string, apiKey: string) {
   return new ImapFlow({
     host: AGENTMAIL_IMAP_HOST,
     port: AGENTMAIL_IMAP_PORT,
     secure: true,
-    auth: { user: email, pass: apiKey },
+    auth: { user: email, pass: resolveAgentMailCredential(apiKey) },
     logger: false,
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
@@ -114,10 +131,11 @@ async function agentMailJson(
   path: string,
   init: RequestInit = {},
 ): Promise<{ status: number; body: unknown }> {
+  const credential = resolveAgentMailCredential(apiKey);
   const response = await fetchWithTimeout(`${AGENTMAIL_API_BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${credential}`,
       Accept: "application/json",
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...(init.headers ?? {}),
@@ -167,13 +185,16 @@ export async function createAgentMailInbox(
   apiKey: string,
   username: string,
   displayName = "BotBound",
+  options: AgentMailInboxCreateOptions = {},
 ): Promise<AgentMailInbox> {
   const { status, body } = await agentMailJson(apiKey, "/inboxes", {
     method: "POST",
     body: JSON.stringify({
       username,
+      ...(options.domain ? { domain: options.domain } : {}),
       display_name: displayName,
-      client_id: WIRELINE_INBOX_CLIENT_ID,
+      client_id: options.clientId || WIRELINE_INBOX_CLIENT_ID,
+      ...(options.metadata ? { metadata: options.metadata } : {}),
     }),
   });
   if (status === 401 || status === 403) {
@@ -183,7 +204,9 @@ export async function createAgentMailInbox(
   }
   if (status < 200 || status >= 300) {
     throw new AgentMailConnectError(
-      "Could not create that AgentMail inbox. Check the username is free and the org still has inbox capacity.",
+      options.domain
+        ? `Could not create that AgentMail inbox on ${options.domain}. Confirm the domain is verified in the AgentMail organization.`
+        : "Could not create that AgentMail inbox. Check the username is free and the org still has inbox capacity.",
     );
   }
   const created = normalizeAgentMailInbox(body) ?? normalizeAgentMailInbox(asRecord(body)?.inbox);
@@ -195,7 +218,8 @@ export async function createAgentMailInbox(
 
 /**
  * Resolve an existing inbox, or create `local@agentmail.to` when the org is on
- * the free domain. Custom domains must already exist in the AgentMail org.
+ * the free domain. Custom domains must already exist and be verified in the
+ * AgentMail org before a managed inbox can be created on them.
  */
 export async function resolveAgentMailInbox(
   apiKey: string,
@@ -208,7 +232,7 @@ export async function resolveAgentMailInbox(
 
   if (!isAgentMailManagedAddress(wanted)) {
     throw new AgentMailConnectError(
-      "That address is not in this AgentMail org. Free-tier inboxes are @agentmail.to. Custom domains such as botbound.me need AgentMail Developer, then an inbox on that domain.",
+      "That address is not in this AgentMail org. Free-tier inboxes are @agentmail.to. Custom domains must be verified before inbox creation.",
     );
   }
   const username = agentmailLocalPart(wanted);
@@ -297,7 +321,7 @@ export async function sendAgentMail(
     host: AGENTMAIL_SMTP_HOST,
     port: AGENTMAIL_SMTP_PORT,
     secure: true,
-    auth: { user: email, pass: apiKey },
+    auth: { user: email, pass: resolveAgentMailCredential(apiKey) },
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
     socketTimeout: 30_000,
@@ -477,10 +501,10 @@ export async function deleteAgentMailWebhooksForAccount(input: {
   accountId: string;
 }): Promise<void> {
   const url = publicAgentMailWebhookUrl(input.accountId);
-  const webhooks = await listAgentMailWebhooks(input.apiKey);
+  const webhooks = await listAgentMailWebhooks(apiKey);
   for (const webhook of webhooks) {
     if (webhookOwnedByAccount(webhook, input.accountId, url)) {
-      await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
+      await deleteAgentMailWebhook(apiKey, webhook.webhookId);
     }
   }
 }
