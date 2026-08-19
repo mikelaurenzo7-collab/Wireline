@@ -26,14 +26,15 @@ const MOBILE_MORE_LABELS = [
 
 export const AUTHENTICATED_SURFACE_CONTRACT = {
   brand: {
-    system: "WIRELINE Letterpress",
-    material: "obsidian",
-    doctrine: "obsidian canvas, electric violet action, silver wire",
+    system: "WIRELINE Design System",
+    doctrine: "near-black canvas, electric violet action, platinum wire, semantic status",
     namingRule:
-      "WIRELINE Letterpress is the design system. obsidian names the canvas material only.",
+      "WIRELINE Design System is the only system name. Use functional visual terms only: canvas, surface, raised, recessed, ink, violet, wire, signal, and status.",
     retired: [
-      "Aurora as a design-system name",
+      "Letterpress as a design-system name",
       "Obsidian as a design-system name",
+      "Aurora as a design-system name",
+      "named material themes",
       "warm cream paper",
       "forest green primary",
       "copper wire rule",
