@@ -168,12 +168,14 @@ describe("Resend delivery-feedback contract", () => {
     expect(processor.slice(duplicateCheckAt, observabilityAt)).toContain("duplicate: true");
   });
 
-  it("blocks launch when signed delivery feedback is unavailable", () => {
+  it("blocks launch when managed AgentMail or signed delivery feedback is unavailable", () => {
     const saved = {
+      agentmailKey: process.env.AGENTMAIL_API_KEY,
       resendKey: process.env.RESEND_API_KEY,
       webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     };
     try {
+      process.env.AGENTMAIL_API_KEY = "am_botbound_readiness_test";
       process.env.RESEND_API_KEY = "re_wireline_readiness_test";
       delete process.env.RESEND_WEBHOOK_SECRET;
 
@@ -183,7 +185,7 @@ describe("Resend delivery-feedback contract", () => {
       expect(
         missingFeedback.capabilities.find((capability) => capability.id === "email_ready"),
       ).toMatchObject({
-        label: "Platform email + delivery feedback",
+        label: "Managed AgentMail + transactional delivery",
         level: "degraded",
         blockers: ["RESEND_WEBHOOK_SECRET"],
       });
@@ -200,7 +202,20 @@ describe("Resend delivery-feedback contract", () => {
         restoredFeedback.capabilities.find((capability) => capability.id === "email_ready"),
       ).toMatchObject({ level: "ready", blockers: [] });
       expect(restoredFeedback.launch_blockers).not.toContain("RESEND_WEBHOOK_SECRET");
+
+      delete process.env.AGENTMAIL_API_KEY;
+      const missingManagedMailbox = evaluateLaunchReadiness();
+      expect(
+        missingManagedMailbox.capabilities.find((capability) => capability.id === "email_ready"),
+      ).toMatchObject({
+        label: "Managed AgentMail + transactional delivery",
+        level: "degraded",
+        blockers: ["AGENTMAIL_API_KEY"],
+      });
+      expect(missingManagedMailbox.campaign_ready).toBe(false);
     } finally {
+      if (saved.agentmailKey === undefined) delete process.env.AGENTMAIL_API_KEY;
+      else process.env.AGENTMAIL_API_KEY = saved.agentmailKey;
       if (saved.resendKey === undefined) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = saved.resendKey;
       if (saved.webhookSecret === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
