@@ -104,6 +104,16 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   // boundary, which recognizes both generations and rewrites delivered prompt,
   // assistant-name, and at-capacity greeting identity before JSON leaves.
   if (path === "src/lib/showcase-assistant.ts") return true;
+  // The MCP account + OAuth route files contain stable tool names and a large
+  // legacy description corpus. registerMcpRoutes owns a scoped JSON/HTML brand
+  // normalizer before those routers, so clients receive BotBound while tool IDs,
+  // callback paths, scopes, and protocol identifiers remain untouched.
+  if (
+    path === "src/routes/chatgpt-mcp-account-routes.ts" ||
+    path === "src/routes/chatgpt-mcp-routes.ts"
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -172,6 +182,18 @@ describe("BotBound visible-brand sweep", () => {
     expect(runtime).toContain('import { normalizeCustomerBrandDeep } from "./brand-text"');
     expect(runtime).toContain('preserve: ["X-Wireline-Key"]');
     expect(routes).toContain("normalizeOpenApiForManagedRuntime(getOpenApiSpec(");
+  });
+
+  it("keeps connected-app MCP responses BotBound without renaming tool or protocol identifiers", () => {
+    const registry = read("src/server/register-mcp-routes.ts");
+    expect(registry).toContain('import { normalizeCustomerBrandDeep, normalizeCustomerBrandText } from "../lib/brand-text"');
+    expect(registry).toContain("function mcpBrandResponseNormalizer");
+    expect(registry).toContain("normalizeCustomerBrandDeep(body)");
+    expect(registry).toContain("normalizeCustomerBrandText(body)");
+    expect(registry).toContain("app.use(mcpBrandResponseNormalizer)");
+    expect(registry.indexOf("app.use(mcpBrandResponseNormalizer)")).toBeLessThan(
+      registry.indexOf("app.use(chatgptMcpAccountRouter)"),
+    );
   });
 
   it("keeps long-lived showcase provider payloads brand-safe throughout the rename", () => {
