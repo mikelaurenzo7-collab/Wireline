@@ -24,7 +24,7 @@ export function publishedVoiceRates(): VoiceRateRow[] {
   return STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
     (plan) => ({
       planId: plan.id,
-      label: plan.name.replace("Wireline ", ""),
+      label: plan.name.replace(/^(?:BotBound|Wireline)\s+/i, ""),
       rateUsd: plan.overage_per_min_usd,
       includedMinutes: plan.voice_minutes_monthly,
       detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Runtime Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
