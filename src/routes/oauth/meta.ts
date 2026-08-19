@@ -24,14 +24,6 @@ import {
 
 const router = express.Router();
 
-// ────────────────────────────────────────────────────────────────────
-//  Meta OAuth (placeholder — connect button shows, data flows are
-//  future work). Routes return 503 until META_APP_ID + META_APP_SECRET
-//  land in env. When configured, the OAuth dance + token storage work
-//  end-to-end; the Lead Ads webhook + CAPI export ship in a later
-//  phase, at which point the stored token is already there to use.
-// ────────────────────────────────────────────────────────────────────
-
 router.get(
   "/api/oauth/meta/url",
   oauthRateLimiter,
@@ -87,19 +79,13 @@ router.get(
       if (!userId) {
         return res
           .status(401)
-          .send("Complete this connection in the same browser and Wireline account that started it.");
+          .send("Complete this connection in the same browser and BotBound account that started it.");
       }
 
       const info = await getMetaUserInfo(tokens.access_token);
       const accessTokenM = encryptSecret(tokens.access_token);
       const expiresAtM = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null;
 
-      // Pull the pages the user manages so the Lead Ads webhook can
-      // route incoming events to this tenant. The /me/accounts call
-      // returns each page's own access_token (needed to subscribe
-      // that page to leadgen events). Fail closed on a non-OK / network
-      // error — empty-success left a "connected" CRM with no page_ids
-      // and Lead Ads never routed.
       let pageRows: { data?: { id: string; name: string; access_token?: string }[] };
       try {
         const pageRes = await fetch(
@@ -129,9 +115,6 @@ router.get(
       const pages: { id: string; name: string; access_token?: string }[] = pageRows.data || [];
       const pageIds = pages.map((p) => p.id);
 
-      // Best-effort: subscribe every managed page to leadgen events.
-      // Failures don't block the OAuth flow — Account Holder can re-trigger
-      // later via a reconnect.
       await Promise.all(
         pages.map((p) =>
           p.access_token
@@ -143,10 +126,6 @@ router.get(
       const metaMetadata = {
         page_ids: pageIds,
         page_names: pages.map((p) => p.name),
-        // Stored so the Data Deletion Callback can map an incoming
-        // revocation event (signed_request.user_id) back to this
-        // tenant. Without this, the callback can ack Meta but can't
-        // disconnect the right account.
         facebook_user_id: info?.id || null,
       };
 
