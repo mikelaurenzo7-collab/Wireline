@@ -52,12 +52,10 @@ export interface GeneratedPostCallArtifact extends ConnectedArtifactUpload {
   openaiResponseId: string | null;
 }
 
-const NULL_BYTE_PATTERN = /\u0000/g;
+const NULL_BYTE = String.fromCharCode(0);
 
 function bounded(value: string | null | undefined, max: number): string {
-  const text = String(value || "")
-    .replace(NULL_BYTE_PATTERN, "")
-    .trim();
+  const text = String(value || "").split(NULL_BYTE).join("").trim();
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
