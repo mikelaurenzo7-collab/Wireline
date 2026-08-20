@@ -21,11 +21,11 @@ describe("E2E cleanliness contracts", () => {
     expect(developers).toContain("/api/openapi.json");
   });
 
-  it("keeps xAI Grok 4.3 as the managed Vapi live-call model with OpenAI continuity intact", () => {
+  it("keeps the rollback Vapi pair valid and OpenAI structured primary explicit", () => {
     const models = read("src/lib/ai-models.ts");
 
-    expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "xai"');
-    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3");
+    expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "openai"');
+    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O");
     expect(models).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(models).toContain("process.env.WIRELINE_OPENAI_STRUCTURED_MODEL");
   });

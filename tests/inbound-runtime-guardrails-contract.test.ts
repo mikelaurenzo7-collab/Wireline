@@ -66,7 +66,7 @@ describe("inbound/outbound runtime parity contract", () => {
 
   it("outbound respects the per-agent brain as a coherent pair, then tenant defaults", () => {
     // Rollback Vapi still uses resolveCoherentVoiceModel. Native PSTN is one
-    // Speech-to-Speech roster; Studio and phone share grok-voice-think-fast-2.0.
+    // Speech-to-Speech roster remains native PSTN; Studio uses OpenAI Realtime.
     expect(factory).toContain("resolveCoherentVoiceModel(configured, userSettings)");
     expect(nativeRuntime).toContain("resolveWirelineGrokVoice(runtime.agent.role, profile)");
     expect(read("src/lib/vapi-client.ts")).not.toContain("resolveCoherentVoiceModel");

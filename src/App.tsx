@@ -49,7 +49,7 @@ const PublicNotFound = lazy(() => import("./pages/PublicNotFound"));
 function RouteLoading() {
   return (
     <div className="fixed inset-0 z-[9999]">
-      <TransitionSurface eyebrow="Wireline" title="Loading" busyLabel="Loading" />
+      <TransitionSurface eyebrow="BotBound" title="Loading" busyLabel="Loading" />
     </div>
   );
 }

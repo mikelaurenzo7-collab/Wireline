@@ -836,10 +836,10 @@ const record = {
   production: vercel,
   live_checks: { readiness, canonical_runtime: canonicalRuntime, stripe, database, twilio },
   runtime_policy: {
-    managed_structured_chain: ["xAI", "OpenAI", "Gemini", "Vercel AI Gateway"],
+    managed_structured_chain: ["OpenAI", "Vercel AI Gateway", "xAI", "Gemini"],
     openai:
-      "continuity structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT/guest demos",
-    xai: "managed primary; Grok 4.6 structured chat and native Twilio + xAI Direct SIP Speech-to-Speech whenever XAI_API_KEY is configured",
+      "managed structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT browser simulations",
+    xai: "native Twilio + xAI Direct SIP Speech-to-Speech plus optional Grok 4.6 structured continuity whenever XAI_API_KEY is configured",
   },
   surface_posture: {
     web: "public self-serve candidate",

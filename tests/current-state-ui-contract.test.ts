@@ -161,6 +161,6 @@ describe("current-state UI contract", () => {
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain("evaluateOutboundConsent");
-    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
   });
 });

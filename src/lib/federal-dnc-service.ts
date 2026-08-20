@@ -1,10 +1,11 @@
 /**
  * Federal DNC registry lookup behind optional vendor configuration.
  *
- * Missing vendor credentials are an operations/readiness item, not a global
- * outbound kill switch. Tenant DNC, opt-out, calling-hours, consent, duplicate,
- * approval, and audit controls remain authoritative. When a federal provider is
- * configured, its listed results still block and provider errors fail closed.
+ * Missing vendor credentials are an operations/readiness item and a hard stop
+ * for marketing outbound. Non-marketing service calls retain their applicable
+ * tenant DNC, opt-out, calling-hours, consent, duplicate, approval, and audit
+ * controls. When a federal provider is configured, its listed results still
+ * block and provider errors fail closed.
  */
 import { log } from "./server-context";
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
@@ -124,30 +125,28 @@ async function lookupFederalDncGenericPost(
   return { listed: data.listed, source: "vendor", checked_at };
 }
 
-export type FederalDncMarketingGate = {
-  allowed: true;
-  configured: boolean;
-  advisory?: "FEDERAL_DNC_DEFERRED";
-  /** Compatibility alias used by older campaign logging/response branches. */
-  code?: "FEDERAL_DNC_DEFERRED";
-  message?: string;
-};
+export type FederalDncMarketingGate =
+  | { allowed: true; configured: true }
+  | {
+      allowed: false;
+      configured: false;
+      code: "FEDERAL_DNC_NOT_CONFIGURED";
+      message: string;
+    };
 
 /**
- * Missing Federal DNC credentials no longer disable outbound globally. The
- * readiness report continues to surface the integration as deferred. Callers
- * still run the shared tenant DNC/TCPA/quiet-hours/duplicate gate, and a
- * configured federal provider remains authoritative through lookupFederalDnc.
+ * Federal DNC configuration is mandatory for marketing outbound. Readiness may
+ * keep registration on the deferred operations checklist, but no tenant or
+ * environment-wide bypass can turn missing credentials into permission to dial.
+ * Non-marketing service calls do not call this marketing-only assertion.
  */
 export function assertFederalDncForMarketing(): FederalDncMarketingGate {
   if (isFederalDncVendorConfigured()) return { allowed: true, configured: true };
   return {
-    allowed: true,
+    allowed: false,
     configured: false,
-    advisory: "FEDERAL_DNC_DEFERRED",
-    code: "FEDERAL_DNC_DEFERRED",
-    message:
-      "Federal DNC screening is not configured. Continue only under the workspace's applicable consent, purpose, tenant DNC, calling-hours, and approval controls.",
+    code: "FEDERAL_DNC_NOT_CONFIGURED",
+    message: "Federal DNC screening must be configured before marketing outbound can run.",
   };
 }
 

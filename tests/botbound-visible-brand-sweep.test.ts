@@ -18,6 +18,7 @@ function withoutComments(source: string): string {
 }
 
 const customerSurfacePatterns = [
+  "src/*.tsx",
   "src/components/**/*.tsx",
   "src/pages/**/*.tsx",
   "src/data/**/*.ts",
@@ -32,7 +33,10 @@ const customerSurfacePatterns = [
   "ios/Wireline/Info.plist",
   "ios/WirelineWidgets/**/*.{swift,plist}",
   "public/**/*.{html,json,svg,xml,txt}",
+  "chatgpt-app-submission.json",
+  "claude-connector-submission.json",
   "index.html",
+  "plugin.json",
   "server.ts",
 ] as const;
 

@@ -465,7 +465,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
           baseUrl,
           {} as any,
           "",
-          "For your security, sign in with the method you used to create your Wireline account. Google couldn't verify current ownership of this email.",
+          "For your security, sign in with the method you used to create your BotBound account. Google couldn't verify current ownership of this email.",
         ),
       );
     }
@@ -573,7 +573,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
           baseUrl,
           {} as any,
           "",
-          "For your security, sign in with the method you used to create your Wireline account. Microsoft couldn't verify ownership of this email.",
+          "For your security, sign in with the method you used to create your BotBound account. Microsoft couldn't verify ownership of this email.",
         ),
       );
     }

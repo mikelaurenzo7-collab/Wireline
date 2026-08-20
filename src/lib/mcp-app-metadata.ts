@@ -8,9 +8,9 @@ export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.4.0";
 
-export const MCP_DOCUMENTATION_URL = "https://trywireline.com/claude-connector.html";
-export const MCP_PRIVACY_URL = "https://trywireline.com/mcp-privacy.html";
-export const MCP_ICON_URL = "https://trywireline.com/wireline-chatgpt-app-icon.svg";
+export const MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html";
+export const MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html";
+export const MCP_ICON_URL = "https://botbound.me/botbound-icon.svg";
 export const MCP_SUPPORT_EMAIL = "support@trywireline.com";
 
 export function claudeMcpAppDomain(resourceUrl: string): string {
@@ -35,7 +35,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     "openai/widgetCSP": {
       connect_domains: ["https://api.openai.com"],
       resource_domains: [],
-      redirect_domains: ["https://trywireline.com"],
+      redirect_domains: ["https://botbound.me", "https://trywireline.com"],
     },
   };
 }

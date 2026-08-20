@@ -189,10 +189,13 @@ describe("Stripe customer portal reconciliation", () => {
     expect(build).toContain('process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true"');
     expect(build).toContain("isCanonicalVercelProject");
     expect(build).toContain("function verifyStripePortalIfRequested()");
+    expect(build).toContain("Builds must never repair provider state");
     expect(build).toContain(
-      "Running it with --apply makes the named reconciliation flag truthful",
+      'run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"])',
     );
-    expect(build).toContain('"scripts/reconcile-stripe-customer-portal.mts",\n    "--apply",');
+    expect(build).not.toContain(
+      '"scripts/reconcile-stripe-customer-portal.mts",\n    "--apply",',
+    );
     expect(packageJson.scripts?.["stripe:portal:verify"]).toBe(
       "node --import tsx scripts/reconcile-stripe-customer-portal.mts",
     );
@@ -215,18 +218,22 @@ describe("Stripe customer portal reconciliation", () => {
     expect(webhookSecretSync).not.toContain("console.log(secret");
   });
 
-  it("runs the complete production audit and portal reconciliation before live migration", () => {
+  it("certifies local artifacts, then verifies the portal read-only before live migration", () => {
     const build = read("scripts/vercel-build.mjs");
-    const auditCall = "runComprehensiveReleaseAudit();";
+    const auditCall = "runCanonicalReleaseAudit();";
+    const productBuildCall = 'run("npm", ["run", "build"]);';
+    const mcpBundle = '"src/entrypoints/chatgpt-mcp-api.ts"';
     const portalCall = "verifyStripePortalIfRequested();";
     const migrationBranch = "if (shouldMigrate) {";
 
-    expect(build).toContain("function runComprehensiveReleaseAudit()");
+    expect(build).toContain("function runCanonicalReleaseAudit()");
     expect(build).toContain('commitMessage.includes("[launch-deep-audit]")');
     expect(build).toContain("if (!isCanonicalProduction && !explicitlyRequested) return;");
-    expect(build).toContain('run("node", ["scripts/run-test-estate.mjs"])');
+    expect(build).toContain("--canonical-release-second-pass");
     expect(build.indexOf(auditCall)).toBeGreaterThanOrEqual(0);
-    expect(build.indexOf(portalCall)).toBeGreaterThan(build.indexOf(auditCall));
+    expect(build.indexOf(productBuildCall)).toBeGreaterThan(build.indexOf(auditCall));
+    expect(build.indexOf(mcpBundle)).toBeGreaterThan(build.indexOf(productBuildCall));
+    expect(build.indexOf(portalCall)).toBeGreaterThan(build.indexOf(mcpBundle));
     expect(build.indexOf(migrationBranch)).toBeGreaterThan(build.indexOf(portalCall));
   });
 });

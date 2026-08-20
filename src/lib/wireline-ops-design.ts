@@ -344,7 +344,7 @@ export function directorPromptHref(prompt: string): string {
 /** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
   title: "Help and demos",
-  subtitle: "Team lines, demos, and shortcuts back into Wireline.",
+  subtitle: "Team lines, demos, and shortcuts back into BotBound.",
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [

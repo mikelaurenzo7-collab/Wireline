@@ -17,7 +17,7 @@ describe("marketing centering contract", () => {
     expect(claritySystem).not.toContain("left-aligned reading rail");
   });
 
-  it("keeps the compact account header balanced and delays duplicate sticky actions", () => {
+  it("keeps the public account header balanced and delays duplicate sticky actions", () => {
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
     const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
 
@@ -27,7 +27,7 @@ describe("marketing centering contract", () => {
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to="/signup?plan=personal"');
-    expect(header).toContain('<WirelineLockup size="compact" />');
+    expect(header).toContain('<BotBoundLockup size="standard" />');
     expect(header).toContain('aria-label="Start Free"');
     expect(header).not.toContain("DialogTrigger");
     expect(header).not.toContain("wl-public-nav-overlay");
@@ -77,17 +77,17 @@ describe("marketing centering contract", () => {
     expect(hero).toContain("w-full min-w-0 max-w-[70rem]");
   });
 
-  it("keeps the public folded mark violet-to-platinum from first ribbon to finish", () => {
-    const mark = read("src/components/brand/WirelineMark.tsx");
+  it("keeps the canonical phone Bot mark and legacy import alias aligned", () => {
+    const mark = read("src/components/brand/BotBoundMark.tsx");
+    const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
-    expect(mark).toContain('viewBox="0 0 180 120"');
-    expect(mark).toContain('<stop offset="0" stopColor="#C8B5FF" />');
-    expect(mark).toContain('<stop offset="0.38" stopColor="#8B5CF6" />');
-    expect(mark).toContain('<stop offset="0.48" stopColor="#E4E6ED" />');
-    expect(mark).toContain('<stop offset="1" stopColor="#FFFFFF" />');
-    expect(mark).toContain('d="M14 14H40L68 106H42Z"');
-    expect(mark).toContain('d="M108 106H134L166 14H140Z"');
-    expect(mark).not.toContain("M4 16H11L19 32L24 21L29 32L37 16H44");
+    expect(mark).toContain('viewBox="0 0 128 128"');
+    expect(mark).toContain('data-botbound-mark="phone-bot"');
+    expect(mark).toContain('<stop offset="0" stopColor="#FFFFFF" />');
+    expect(mark).toContain('<stop offset="0.42" stopColor="#8B5CF6" />');
+    expect(mark).toContain('d="M24 34c-5 7-8 16-8 27 0 12 3 22 9 29"');
+    expect(mark).not.toContain('viewBox="0 0 180 120"');
+    expect(legacyMark).toContain('export { default } from "./BotBoundMark"');
   });
 
   it("gives every public route one browser-document scroll owner", () => {

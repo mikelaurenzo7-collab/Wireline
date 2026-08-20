@@ -1,9 +1,9 @@
-import { GROK_VOICE_DEFAULT_MODEL } from "./grok-voice-config";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "./openai-realtime-config";
 
 /**
- * Studio live tests must use the same managed default as live phone calls.
- * Users do not pick a separate test brain. OpenAI Realtime is the ChatGPT App
- * widget only — never a Studio default or automatic browser backup.
+ * Studio browser tests use OpenAI Realtime over an authenticated WebRTC
+ * exchange. Production phone calls remain on the separate Twilio + xAI Direct
+ * SIP lane; changing this browser default must never reconfigure PSTN.
  */
 export const STUDIO_BROWSER_TEST_MAX_SECONDS = 180 as const;
 export const STUDIO_VAPI_WEB_TICKET_TTL_SECONDS = 120 as const;
@@ -14,21 +14,20 @@ export function isStudioVapiWebConfigured(): boolean {
   return Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
 }
 
-export function isStudioXAIRealtimeConfigured(): boolean {
-  return Boolean(process.env.XAI_API_KEY?.trim());
+export function isStudioOpenAIRealtimeConfigured(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 
 export function getStudioLiveVoiceStatus() {
-  const xaiConfigured = isStudioXAIRealtimeConfigured();
+  const openaiConfigured = isStudioOpenAIRealtimeConfigured();
   return {
-    configured: xaiConfigured,
-    defaultProvider: "xai_realtime",
+    configured: openaiConfigured,
+    defaultProvider: "openai_realtime",
     fallbackProvider: null,
-    provider: "xai",
-    model: GROK_VOICE_DEFAULT_MODEL,
-    sessionMode: "authenticated_browser_websocket_ephemeral_token",
+    provider: "openai",
+    model: OPENAI_REALTIME_DEFAULT_MODEL,
+    sessionMode: "authenticated_browser_webrtc_ephemeral_token",
     transcriptionEnabled: true,
     phoneRuntimeProvider: "xai_sip",
-    openaiFallbackConfigured: false,
   } as const;
 }

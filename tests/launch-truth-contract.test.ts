@@ -64,7 +64,7 @@ describe("launch truth contract", () => {
     expect(security).toContain("Last updated · August 17, 2026");
     expect(security).toContain("Twilio for PSTN and xAI Direct SIP Speech-to-Speech");
     expect(security).toContain("Vapi is optional rollback and public-showcase PSTN only");
-    expect(security).toContain("OpenAI remains continuity inference");
+    expect(security).toContain("OpenAI provides managed structured inference");
     expect(security).toContain("ElevenLabs is managed text-to-speech");
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");

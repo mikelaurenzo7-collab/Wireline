@@ -499,7 +499,7 @@ router.post("/api/twilio-webhook/usage-alert", async (req: Request, res: Respons
     try {
       const { sendEmail } = await import("../lib/email-service");
       const text = [
-        "Wireline's Twilio account reached a configured usage threshold.",
+        "BotBound's Twilio account reached a configured usage threshold.",
         `Window: ${recurring}`,
         `Threshold: ${triggerValue}`,
         `Current value: ${currentValue}`,
@@ -513,7 +513,7 @@ router.post("/api/twilio-webhook/usage-alert", async (req: Request, res: Respons
         .replace(/\n/g, "<br>");
       const sent = await sendEmail({
         to: alertEmail,
-        subject: `[Wireline] Twilio ${recurring} usage threshold reached`,
+        subject: `[BotBound] Twilio ${recurring} usage threshold reached`,
         text,
         html: `<p>${safeHtml}</p>`,
       });

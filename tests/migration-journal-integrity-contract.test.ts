@@ -150,10 +150,12 @@ describe("migration journal integrity contract", () => {
   });
 
   it("journals and materializes the hot-path knowledge and jobs indexes", () => {
-    expect(journal.entries.at(-1)).toMatchObject({
-      idx: 53,
-      tag: "0155_hot_path_knowledge_and_jobs_indexes",
-    });
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 53,
+        tag: "0155_hot_path_knowledge_and_jobs_indexes",
+      }),
+    );
     const materializer = readFileSync(
       resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
       "utf8",
@@ -161,6 +163,22 @@ describe("migration journal integrity contract", () => {
     expect(materializer).toContain("TARGET_0053_PATH");
     expect(materializer).toContain("buildHotPathIndexSnapshot");
     expect(materializer).not.toContain('TARGET_0053_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes the OpenAI runtime-cohesion defaults", () => {
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 54,
+      tag: "0156_openai_runtime_cohesion",
+    });
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0054_PATH");
+    expect(materializer).toContain("buildOpenAIRuntimeCohesionSnapshot");
+    expect(materializer).toContain("settings.voice_llm_provider.default = \"'openai'\"");
+    expect(materializer).toContain("settings.voice_llm_model.default = \"'gpt-4o'\"");
+    expect(materializer).not.toContain('TARGET_0054_SHA256 = "PENDING_COMPUTE"');
   });
 
   it("documents the split so the journal is not read as the whole history", () => {

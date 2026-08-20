@@ -18,7 +18,18 @@ describe("Claude Connector Directory contract", () => {
   const privacy = read("public/mcp-privacy.html");
   const publicDocs = read("public/claude-connector.html");
   const listing = JSON.parse(read("claude-connector-submission.json")) as {
-    listing: { name: string; tagline: string; slug: string; description: string };
+    listing: {
+      name: string;
+      tagline: string;
+      slug: string;
+      description: string;
+      icon_url: string;
+      website_url: string;
+      documentation_url: string;
+      privacy_policy_url: string;
+      support_email: string;
+      company_website: string;
+    };
     server: { url: string; allowed_link_uris: string[]; authentication: string[] };
     prerequisites?: string[];
     use_cases?: string[];
@@ -87,7 +98,7 @@ describe("Claude Connector Directory contract", () => {
     expect(widget).not.toContain("xai-client-secret.");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain("claudemcpcontent.com");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain(
-      'redirect_domains: ["https://trywireline.com"]',
+      'redirect_domains: ["https://botbound.me", "https://trywireline.com"]',
     );
     expect(read("src/lib/mcp-app-metadata.ts")).not.toContain('"openai/widgetDomain": domain');
     expect(claudeMcpAppDomain("https://trywireline.com/mcp")).toBe(
@@ -98,15 +109,26 @@ describe("Claude Connector Directory contract", () => {
   it("publishes directory listing copy within Anthropic length limits", () => {
     expect(listing.listing.name.length).toBeGreaterThan(0);
     expect(listing.listing.name.length).toBeLessThanOrEqual(100);
+    expect(listing.listing.name).toBe("BotBound");
     expect(listing.listing.tagline.length).toBeLessThanOrEqual(55);
     expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
     expect(listing.listing.slug).toBe("wireline");
+    expect(listing.listing.icon_url).toBe("https://botbound.me/botbound-icon.svg");
+    expect(listing.listing.website_url).toBe("https://botbound.me");
+    expect(listing.listing.documentation_url).toBe(
+      "https://botbound.me/claude-connector.html",
+    );
+    expect(listing.listing.privacy_policy_url).toBe("https://botbound.me/mcp-privacy.html");
+    expect(listing.listing.company_website).toBe("https://botbound.me");
+    // The connected MCP issuer remains on the registered legacy origin during
+    // callback migration; directory links themselves are already canonical.
     expect(listing.server.url).toBe("https://trywireline.com/mcp");
-    expect(listing.server.allowed_link_uris).toEqual(["https://trywireline.com"]);
+    expect(listing.server.allowed_link_uris).toEqual(["https://botbound.me"]);
+    expect(listing.listing.support_email).toBe("support@trywireline.com");
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
     expect(listing.listing.tagline).toBe("Build your first voice agent");
     expect(packet).toContain("Build your first voice agent");
-    expect(listing.prerequisites?.some((item) => /create a Wireline account/i.test(item))).toBe(
+    expect(listing.prerequisites?.some((item) => /create a BotBound account/i.test(item))).toBe(
       true,
     );
     expect(listing.use_cases?.some((item) => /rehearse/i.test(item))).toBe(true);
@@ -114,6 +136,8 @@ describe("Claude Connector Directory contract", () => {
 
   it("publishes public docs and privacy pages required by the portal", () => {
     expect(publicDocs).toContain("https://trywireline.com/mcp");
+    expect(publicDocs).toContain('href="/contact">contact BotBound</a>');
+    expect(publicDocs).not.toContain("mailto:support@trywireline.com");
     expect(privacy).toContain("Information returned to the connecting client");
     expect(privacy).toContain("not included in the model-visible conversation");
     expect(docs).toContain("401");

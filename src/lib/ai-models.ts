@@ -1,26 +1,26 @@
 /**
- * Wireline model policy.
+ * BotBound model policy.
  *
  * These are different xAI products and must not be collapsed into one id:
  *
- * - **Structured reasoning** uses the xAI Responses API model `grok-4.6`
- *   (text/image in, text out). That is not a voice model.
+ * - **Structured reasoning** uses the OpenAI Responses API model
+ *   `gpt-5.6-terra` by default. xAI Grok 4.6 remains an optional continuity
+ *   lane; neither structured model is a live-voice model.
  * - **Live PSTN** uses Twilio Elastic SIP plus xAI Direct SIP Speech-to-Speech
  *   (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo). Chat and voice share
  *   one `XAI_API_KEY`; they are different models, not different credentials.
- * - **Vapi rollback** still uses Vapi's published xAI *language* models
+ * - **Vapi rollback** can use Vapi's published xAI *language* models
  *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
  *   Grok 4.6 is not in that catalog. That path is not the launch runtime.
- * - **Studio browser tests** use the same native Speech-to-Speech brain as
- *   PSTN. OpenAI Realtime is ChatGPT-widget simulation only.
+ * - **Studio browser tests** use OpenAI Realtime over WebRTC. This browser
+ *   path is deliberately independent from the production PSTN lane.
  * - **Imagine** image and video models exist at xAI. Wireline does not
  *   generate those files: they include a Grok watermark that cannot be
  *   turned off. That is not Grok Bot, not live PSTN, and not a priced
  *   runtime model in this catalog.
  *
- * OpenAI is the first automatic structured continuity lane, then Gemini, then
- * the Vercel AI Gateway. `reasoning-provider-policy.ts` owns eligibility and
- * ordering.
+ * `reasoning-provider-policy.ts` owns structured eligibility and ordering:
+ * OpenAI first, then the governed Gateway, xAI, and Gemini continuity lanes.
  */
 export const XAI_MODELS = {
   GROK_4_6: "grok-4.6",
@@ -48,18 +48,18 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
-/** Managed structured default through the direct xAI Responses API. */
+/** Optional structured continuity model through the direct xAI Responses API. */
 export const XAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_6;
-/** First automatic continuity lane through the direct OpenAI Responses API. */
+/** Managed structured default through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
-/** Continuity fallback if direct OpenAI is unavailable. */
+/** Final direct-vendor continuity fallback. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_6;
 
 /** The managed structured default the runtime asks for first. */
-export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL;
+export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
 
 export type VapiVoiceProvider = "xai" | "google" | "openai";
 export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
@@ -82,10 +82,15 @@ export interface VoiceModelOption {
   acceptsCustomModelId?: boolean;
 }
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = "xai" as const;
+/**
+ * Workspace `voice_llm_*` settings feed the rollback-only Vapi assistant
+ * payload. They are not the structured-runtime policy and must therefore use
+ * a provider/model pair supported by Vapi's voice-language-model catalog.
+ */
+export const VAPI_TENANT_DEFAULT_PROVIDER = "openai" as const;
 export const VAPI_SHOWCASE_PROVIDER = "xai" as const;
 /** Vapi's published xAI live-call language model. Not Grok 4.6. */
-export const VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3;
+export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_SHOWCASE_MODEL = XAI_MODELS.GROK_4_3;
 export const VAPI_PREMIUM_MODEL = XAI_MODELS.GROK_4_3;
 /**
@@ -201,7 +206,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     label: "Grok 4.3",
     speed: "fast",
     envKey: "XAI_API_KEY",
-    note: "Vapi live-call default. Vapi's XaiModel DTO does not accept fallbackModels; OpenAI retries at the application layer. Structured work uses Grok 4.6 on the xAI API, not this id.",
+    note: "Supported Vapi rollback option. Vapi's XaiModel DTO does not accept fallbackModels; OpenAI retries at the application layer. Structured xAI continuity uses Grok 4.6 on the xAI API, not this id.",
   },
   {
     provider: "openai",
@@ -209,7 +214,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     label: "OpenAI GPT-4o",
     speed: "fast",
     envKey: "OPENAI_API_KEY",
-    note: "Continuity lane and Studio Realtime. Vapi retries through a same-provider OpenAI fallback.",
+    note: "Vapi rollback default and Studio Realtime provider. Vapi retries through a same-provider OpenAI fallback.",
   },
   {
     provider: "google",
@@ -217,7 +222,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     label: "Gemini Flash",
     speed: "fastest",
     envKey: "GEMINI_API_KEY",
-    note: "Native alternative. A rejected Gemini request is retried by Wireline through OpenAI.",
+    note: "Native alternative. A rejected Gemini request is retried by BotBound through OpenAI.",
   },
 ] as const;
 
@@ -388,9 +393,9 @@ export function pricingForModel(model: string, totalInputTokens = 0): ModelPrici
 }
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
- * AI Gateway owns availability routing for structured work. Complexity remains
- * product metadata for prompts and budgets, but it must not silently select an
- * OpenAI model ahead of the Gateway policy.
+ * Complexity remains product metadata for prompts and budgets. Every workload
+ * starts with the governed OpenAI structured default; provider continuity is
+ * applied by `reasoning-provider-policy.ts`.
  */
 export function selectModelForTask(_complexity: TaskComplexity): string {
   return STRUCTURED_PRIMARY_MODEL;

@@ -13,8 +13,19 @@ const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
 const privacyNotice = read("public/chatgpt-app-privacy.html");
 const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
-  app_info: { logo_url: string; subtitle?: string };
-  oauth: { client_url: string };
+  app_info: {
+    display_name: string;
+    logo_url: string;
+    website_url: string;
+    contact_email: string;
+    privacy_policy_url: string;
+    subtitle?: string;
+  };
+  oauth: {
+    client_url: string;
+    authorization_url: string;
+    token_url: string;
+  };
   test_cases?: unknown;
   tools: Record<
     string,
@@ -119,14 +130,22 @@ describe("BotBound ChatGPT App production contract", () => {
   });
 
   it("keeps submission identity and OAuth metadata aligned with production", () => {
-    // Transition origin remains until botbound.me is attached to the Vercel project.
-    expect(submission.app_info.logo_url).toBe(
-      "https://trywireline.com/wireline-chatgpt-app-icon.svg",
+    // Keep the established integration origin while callback registrations migrate.
+    expect(submission.app_info.display_name).toBe("BotBound");
+    expect(submission.app_info.logo_url).toBe("https://botbound.me/botbound-icon.svg");
+    expect(submission.app_info.website_url).toBe("https://botbound.me");
+    expect(submission.app_info.privacy_policy_url).toBe(
+      "https://botbound.me/chatgpt-app-privacy.html",
     );
+    expect(submission.app_info.contact_email).toBe("support@trywireline.com");
     expect(submission.oauth.client_url).toBe(
       "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
     );
-    expect(read("public/wireline-chatgpt-app-icon.svg")).toContain("<title id=\"title\">BotBound</title>");
+    expect(submission.oauth.authorization_url).toBe(
+      "https://trywireline.com/mcp/oauth/authorize",
+    );
+    expect(submission.oauth.token_url).toBe("https://trywireline.com/mcp/oauth/token");
+    expect(read("public/botbound-icon.svg")).toContain('<title id="title">BotBound</title>');
   });
 
   it("publishes explicit, complete tool annotations in the submission packet", () => {

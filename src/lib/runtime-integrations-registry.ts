@@ -49,16 +49,16 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai",
     "OpenAI",
-    "Continuity structured runtime and ChatGPT OpenAI Realtime widget. Native PSTN uses Twilio + xAI SIP.",
+    "Managed structured runtime plus Studio and ChatGPT OpenAI Realtime browser voice. Native PSTN uses Twilio + xAI SIP.",
     "ai",
     true,
     ["OPENAI_API_KEY"],
-    "Gemini and the Vercel AI Gateway continue the ordered chain.",
+    "Vercel AI Gateway, xAI, and Gemini continue the ordered structured chain.",
   ),
   item(
     "gemini",
     "Google Gemini",
-    "First automatic continuity fallback for managed AI work and grounded search.",
+    "Final direct-vendor structured continuity lane and grounded search.",
     "ai",
     false,
     ["GEMINI_API_KEY"],
@@ -92,11 +92,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "xai",
     "xAI Grok",
-    "Grok 4.6 structured primary, native Twilio SIP Speech-to-Speech, and browser realtime.",
+    "Native Twilio SIP Speech-to-Speech for PSTN plus an optional Grok 4.6 structured continuity lane.",
     "ai",
     true,
     ["XAI_API_KEY"],
-    "One api.x.ai key covers chat, preview TTS, and native SIP. OpenAI remains continuity and Realtime. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable the structured lane.",
+    "One api.x.ai key covers optional structured continuity, preview TTS, and native SIP. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable only the structured lane.",
   ),
   item(
     "vapi",
@@ -134,7 +134,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai-realtime",
     "OpenAI Realtime",
-    "ChatGPT App private simulation only. Studio tests and PSTN use native xAI Speech-to-Speech.",
+    "Authenticated Studio and ChatGPT App private browser simulations over WebRTC. PSTN remains native xAI Speech-to-Speech.",
     "voice",
     false,
     ["OPENAI_API_KEY"],

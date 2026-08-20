@@ -1156,7 +1156,7 @@ router.post(
       if (!plan || plan.id === "personal" || !stripeActive || !settingsActive) {
         return res.status(402).json({
           code: "LIVE_VIDEO_BASE_PLAN_REQUIRED",
-          error: "Activate a paid Wireline plan before adding live video.",
+          error: "Activate a paid BotBound plan before adding live video.",
         });
       }
 
@@ -1417,7 +1417,7 @@ router.post(
           return res.json({
             url: createdSession.url,
             operation_id: operationId,
-            warning: "Checkout is ready; Wireline is reconciling its local billing record.",
+            warning: "Checkout is ready; BotBound is reconciling its local billing record.",
           });
         }
 

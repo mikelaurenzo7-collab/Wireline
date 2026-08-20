@@ -116,7 +116,7 @@ const SAMPLE_APPOINTMENT_TYPES = [
 const SAMPLE_EMAIL_SUBJECTS = [
   "Pricing for 5-seat plan?",
   "Re: invoice overage line item",
-  "HIPAA + Wireline for our practice",
+  "HIPAA + BotBound for our practice",
   "Follow-up from yesterday's call",
   "Demo request: outbound playbook",
   "Business tier supervisor cockpit",
@@ -681,7 +681,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
               userId,
               threadId,
               direction: "out",
-              body: `Hi ${cust.name.split(" ")[0]}, Avery from Wireline. Happy to help with that. Reply anytime.`,
+              body: `Hi ${cust.name.split(" ")[0]}, Avery from BotBound. Happy to help with that. Reply anytime.`,
               twilioSid: `seed-sms-${userPrefix}-${i}-out`,
               agentId,
               createdAt: randomCreatedAt(4),

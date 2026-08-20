@@ -729,7 +729,7 @@ export const VAPI_TOOL_DEFS = {
   list_x_ad_campaigns: {
     name: "list_x_ad_campaigns",
     description:
-      "List X Ads campaigns for the Wireline ads account. Requires platform Ads API credentials.",
+      "List X Ads campaigns for the BotBound ads account. Requires platform Ads API credentials.",
     parameters: { type: "object", properties: {} },
   },
   get_x_ad_campaign_stats: {

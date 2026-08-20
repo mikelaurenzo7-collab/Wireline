@@ -4,24 +4,23 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("native xAI + OpenAI widget voice architecture", () => {
-  it("keeps xAI Grok 4.6 as the managed structured default", () => {
+describe("OpenAI browser + native xAI PSTN voice architecture", () => {
+  it("keeps OpenAI GPT-5.6 Terra as the managed structured default", () => {
     const models = read("src/lib/ai-models.ts");
-    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(models).not.toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
   });
 
-  it("routes Studio live tests through native xAI Speech-to-Speech", () => {
+  it("routes Studio live tests through OpenAI Realtime WebRTC", () => {
     const routes = read("src/routes/grok-voice-routes.ts");
     const entry = read("src/components/LiveVoiceSandbox.tsx");
-    const sandbox = read("src/components/XAILiveVoiceSandbox.tsx");
-    expect(routes).toContain("createXAILiveVoiceSession");
-    expect(routes).toContain("createOpenAIProtocolXAILiveVoiceSession");
+    const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    expect(routes).toContain("createOpenAILiveVoiceCall");
     expect(routes).toContain("xaiOutboundRouter");
     expect(routes).not.toContain("createGrokVoiceClientSession");
-    expect(entry).toContain('from "./XAILiveVoiceSandbox"');
+    expect(entry).toContain('from "./OpenAILiveVoiceSandbox"');
     expect(sandbox).toContain("/api/voice/live/session");
-    expect(sandbox).toContain("xai-client-secret.");
+    expect(sandbox).toContain("new RTCPeerConnection()");
+    expect(sandbox).not.toContain("xai-client-secret.");
   });
 
   it("keeps ChatGPT private simulation on OpenAI Realtime WebRTC", () => {

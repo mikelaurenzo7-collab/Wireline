@@ -16,7 +16,8 @@ export type VoiceOption = {
  * (`grok-voice-think-fast-2.0`). Browser previews still render through direct
  * xAI TTS (`xai-tts-service.ts`), which is not the live-call engine.
  *
- * Studio and public browser live conversations use the same native xAI voices.
+ * These voices are for native xAI PSTN and direct preview surfaces. Studio
+ * browser tests use the separate curated OpenAI Realtime profile roster.
  */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
   { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },
@@ -45,26 +46,121 @@ export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
 
 /** Curated low-latency studio catalog of ElevenLabs premade voices. */
 export const ELEVENLABS_CURATED_VOICES: readonly VoiceOption[] = [
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah · Mature & Reassuring", provider: "11labs", gender: "female" },
-  { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica · Bright & Playful", provider: "11labs", gender: "female" },
-  { id: "pNInz6obpgDQGcFmaJgB", name: "Adam · Firm & Confident", provider: "11labs", gender: "male" },
-  { id: "JBFqnCBsd6RMkjVDRZzb", name: "George · Warm & Captivating", provider: "11labs", gender: "male" },
-  { id: "nPczCjzI2devNBz1zQrb", name: "Brian · Deep & Comforting", provider: "11labs", gender: "male" },
-  { id: "hpp4J3VqNfWAUOO0d1Us", name: "Bella · Professional & Warm", provider: "11labs", gender: "female" },
-  { id: "Xb7hH8MSUJpSbSDYk0k2", name: "Alice · Clear & Engaging", provider: "11labs", gender: "female" },
-  { id: "FGY2WhTYpPnrIDTdsKH5", name: "Laura · Upbeat & Spirited", provider: "11labs", gender: "female" },
-  { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily · Smooth & Confident", provider: "11labs", gender: "female" },
-  { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda · Warm & Professional", provider: "11labs", gender: "female" },
+  {
+    id: "EXAVITQu4vr4xnSDxMaL",
+    name: "Sarah · Mature & Reassuring",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "cgSgspJ2msm6clMCkdW9",
+    name: "Jessica · Bright & Playful",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "pNInz6obpgDQGcFmaJgB",
+    name: "Adam · Firm & Confident",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "JBFqnCBsd6RMkjVDRZzb",
+    name: "George · Warm & Captivating",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "nPczCjzI2devNBz1zQrb",
+    name: "Brian · Deep & Comforting",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "hpp4J3VqNfWAUOO0d1Us",
+    name: "Bella · Professional & Warm",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "Xb7hH8MSUJpSbSDYk0k2",
+    name: "Alice · Clear & Engaging",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "FGY2WhTYpPnrIDTdsKH5",
+    name: "Laura · Upbeat & Spirited",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "pFZP5JQG7iQjIQuC4Bku",
+    name: "Lily · Smooth & Confident",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "XrExE9yKIg1WjnnlVkGX",
+    name: "Matilda · Warm & Professional",
+    provider: "11labs",
+    gender: "female",
+  },
   { id: "SAz9YHcvj6GT2YYXdXww", name: "River · Relaxed & Neutral", provider: "11labs" },
-  { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel · Steady Broadcaster", provider: "11labs", gender: "male" },
-  { id: "cjVigY5qzO86Huf0OWal", name: "Eric · Smooth & Trustworthy", provider: "11labs", gender: "male" },
-  { id: "iP95p4xoKVk53GoZ742B", name: "Chris · Charming & Down-to-Earth", provider: "11labs", gender: "male" },
-  { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Roger · Laid-Back & Resonant", provider: "11labs", gender: "male" },
-  { id: "bIHbv24MWmeRgasZH58o", name: "Will · Relaxed & Optimistic", provider: "11labs", gender: "male" },
-  { id: "pqHfZKP75CvOlQylNhV4", name: "Bill · Wise & Balanced", provider: "11labs", gender: "male" },
-  { id: "IKne3meq5aSn9XLyUdCD", name: "Charlie · Confident & Energetic", provider: "11labs", gender: "male" },
-  { id: "N2lVS1w4EtoT3dr4eOWO", name: "Callum · Characterful & Husky", provider: "11labs", gender: "male" },
-  { id: "TX3LPaxmHKxFdv7VOQHJ", name: "Liam · Energetic & Confident", provider: "11labs", gender: "male" },
+  {
+    id: "onwK4e9ZLuTAKqWW03F9",
+    name: "Daniel · Steady Broadcaster",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "cjVigY5qzO86Huf0OWal",
+    name: "Eric · Smooth & Trustworthy",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "iP95p4xoKVk53GoZ742B",
+    name: "Chris · Charming & Down-to-Earth",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "CwhRBWXzGAHq8TQ4Fs17",
+    name: "Roger · Laid-Back & Resonant",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "bIHbv24MWmeRgasZH58o",
+    name: "Will · Relaxed & Optimistic",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "pqHfZKP75CvOlQylNhV4",
+    name: "Bill · Wise & Balanced",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "IKne3meq5aSn9XLyUdCD",
+    name: "Charlie · Confident & Energetic",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "N2lVS1w4EtoT3dr4eOWO",
+    name: "Callum · Characterful & Husky",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "TX3LPaxmHKxFdv7VOQHJ",
+    name: "Liam · Energetic & Confident",
+    provider: "11labs",
+    gender: "male",
+  },
 ] as const;
 
 export const ELEVENLABS_CORE_VOICE_IDS: readonly string[] = [

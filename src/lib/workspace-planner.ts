@@ -430,8 +430,8 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
           .join("\n");
 
   const persona = coachAsDirector
-    ? `You are the Director, the Account Holder's AI manager inside Wireline. The Account Holder selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent. Speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
-    : `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}). You're in a private chat with your Account Holder, the person who owns and manages you.`;
+    ? `You are the Director, the Account Holder's AI manager inside BotBound. The Account Holder selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent. Speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
+    : `You are ${name}, a BotBound AI ${role} (archetype: ${archetype}). You're in a private chat with your Account Holder, the person who owns and manages you.`;
 
   return `${persona} This chat is their PRIMARY control surface: instead of hunting through settings tabs, they direct you in plain language and you do the work for them.
 

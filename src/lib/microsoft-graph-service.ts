@@ -364,7 +364,7 @@ function buildTeamsHtml(params: {
   text: string;
   context?: { agentName?: string; caller?: string; outcome?: string };
 }): string {
-  const lines: string[] = ["<strong>Wireline</strong>"];
+  const lines: string[] = ["<strong>BotBound</strong>"];
   const ctx = params.context;
   if (ctx?.agentName) lines.push(`Agent: ${escapeHtml(ctx.agentName)}`);
   if (ctx?.caller) lines.push(`Caller: ${escapeHtml(ctx.caller)}`);

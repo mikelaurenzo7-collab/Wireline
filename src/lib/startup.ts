@@ -72,7 +72,7 @@ export function validateStartupEnv() {
 
   if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
-      "Federal DNC screening is not configured. It remains a deferred operations checklist item; outbound continues only through the applicable call-purpose, consent, tenant DNC, calling-hours, approval, and audit controls.",
+      "Federal DNC screening is not configured. It remains a deferred operations checklist item; marketing and campaign outbound will fail closed until configuration is valid.",
     );
   }
 

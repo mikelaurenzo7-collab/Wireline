@@ -70,7 +70,7 @@ async function syncCallActivityToCrm(input: {
   const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
   const activityId = await crm.logCall({
     crmType: input.crmType as SupportedCrmType,
-    subject: `Wireline ${input.direction} call${subjectSuffix}`,
+    subject: `BotBound ${input.direction} call${subjectSuffix}`,
     description: buildCrmCallDescription(input),
     to_number: input.customerNumber,
     duration_minutes: input.durationSeconds
@@ -169,7 +169,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       if (!claudeBrain.isBrainAvailable() || !p.transcript) return;
       const capture = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
-          agentName: p.agentName || "Wireline Agent",
+          agentName: p.agentName || "BotBound Bot",
           archetype: p.archetype || "Receptionist",
           role: p.role,
           customerNumber: p.customerNumber,
@@ -933,7 +933,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       .join("\n");
     const result = await sendEmail({
       to: ownerEmail,
-      subject: `[Wireline] ${count} tenant(s) at margin risk`,
+      subject: `[BotBound] ${count} tenant(s) at margin risk`,
       text: `${count} tenant(s) are below the margin safety threshold this month.\n\n${lines}`,
       html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
       idempotencyKey: `margin-at-risk/${job.id}`,

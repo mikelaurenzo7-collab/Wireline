@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
-  it("keeps personal and business create paths on the xAI structured primary", () => {
+describe("OpenAI-first runtime cohesion across agent postures", () => {
+  it("keeps personal and business create paths on the OpenAI structured primary", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
     const defaults = read("src/lib/agent-create-defaults.ts");
     const models = read("src/lib/ai-models.ts");
 
-    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
-    // Create/extract paths use the shared structured runtime (xAI primary),
+    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
+    // Create/extract paths use the shared structured runtime (OpenAI primary),
     // not a route-local OPENAI_STRUCTURED_PRIMARY_MODEL import.
     expect(routes).toContain("runStructured");
     expect(routes).not.toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
@@ -22,12 +22,13 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(defaults).not.toContain("createGrokVoiceClientSession");
   });
 
-  it("keeps rollback Vapi phone payloads xAI-default while native SIP owns production", () => {
+  it("keeps rollback Vapi defaults valid while native xAI SIP owns production", () => {
     const models = read("src/lib/ai-models.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const managedRuntime = read("src/lib/managed-voice-runtime.ts");
-    expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "xai"');
-    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3");
+    expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "openai"');
+    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O");
+    expect(models).toContain("They are not the structured-runtime policy");
     expect(factory).toContain("isPrincipalVoiceRole(configured.role)");
     expect(factory).not.toContain("const isBusinessAgent = configured.isBusinessAgent !== false");
     expect(factory).toContain("buildManagedVoiceRuntime");
@@ -44,18 +45,21 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     const sandbox = read("src/components/LiveVoiceSandbox.tsx");
 
     expect(product).toContain("hybrid:");
-    expect(liveRoutes).toContain("createXAILiveVoiceSession");
-    expect(liveRoutes).toContain("createOpenAIProtocolXAILiveVoiceSession");
+    expect(liveRoutes).toContain("createOpenAILiveVoiceCall");
+    expect(liveRoutes).toContain("runOpenAILiveVoiceTool");
+    expect(liveRoutes).not.toContain("createXAILiveVoiceSession");
     expect(liveRoutes).not.toContain("createGrokVoiceClientSession");
-    expect(sandbox).toContain('from "./XAILiveVoiceSandbox"');
+    expect(sandbox).toContain('from "./OpenAILiveVoiceSandbox"');
   });
 
-  it("keeps active architecture docs on the managed xAI Grok 4.6 primary and native SIP PSTN", () => {
+  it("keeps active architecture docs on OpenAI defaults and native xAI SIP PSTN", () => {
     const architecture = read("ARCHITECTURE.md");
     const grokDoc = read("docs/GROK_LIVE_VOICE.md");
     const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
 
-    expect(architecture).toContain("Primary: direct xAI Responses API using Grok 4.6 by default");
+    expect(architecture).toContain(
+      "Primary: direct OpenAI Responses API using GPT-5.6 Terra by default",
+    );
     expect(architecture).toContain(
       "Personal agents, business agents, and hybrid direction all share this same managed chain",
     );
@@ -65,8 +69,11 @@ describe("xAI Grok 4.6 runtime cohesion across agent postures", () => {
     expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
     expect(grokDoc).toContain("xAI rate limits are per team and per model");
     expect(grokDoc).toContain("ChatGPT Apps iframes may only connect");
-    expect(grokDoc).toContain("Studio has no OpenAI fallback");
-    expect(vendor).toContain("Structured reasoning | xAI Grok 4.6 managed structured runtime");
-    expect(vendor).toContain("OpenAI, then Gemini, then Vercel AI Gateway");
+    expect(grokDoc).toContain("Studio fails closed when `OPENAI_API_KEY`");
+    expect(grokDoc).toContain("PSTN independently fails closed");
+    expect(vendor).toContain(
+      "Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime",
+    );
+    expect(vendor).toContain("Vercel AI Gateway, then xAI Grok 4.6, then Gemini");
   });
 });

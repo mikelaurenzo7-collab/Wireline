@@ -49,6 +49,16 @@ describe("marketing metadata contract", () => {
     expect(trustPack).not.toContain("</main>");
   });
 
+  it("publishes BotBound's canonical vulnerability disclosure contact", () => {
+    const security = read("public/.well-known/security.txt");
+
+    expect(security).toContain("# BotBound security disclosure policy");
+    expect(security).toContain("Contact: https://botbound.me/contact");
+    expect(security).toContain("Canonical: https://botbound.me/.well-known/security.txt");
+    expect(security).toContain("Policy: https://botbound.me/security");
+    expect(security).not.toMatch(/Wireline|trywireline\.com|trywireline@yahoo\.com/);
+  });
+
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
     expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);

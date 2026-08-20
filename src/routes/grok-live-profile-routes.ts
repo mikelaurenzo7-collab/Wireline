@@ -5,14 +5,14 @@ import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { validateBody } from "../lib/api-validation";
 import {
-  getXAILiveVoiceProfile,
-  setXAILiveVoiceProfile,
-} from "../lib/voice/xai-live-agent-service";
-import type { WirelineVoiceProfile } from "../lib/voice/grok-voice-config";
+  getOpenAILiveVoiceProfile,
+  setOpenAILiveVoiceProfile,
+  type WirelineLiveVoiceProfile,
+} from "../lib/voice/openai-live-agent-service";
 import type { AuthenticatedRequest } from "../types/auth";
 
 /**
- * Studio live-voice profiles select the native xAI Speech-to-Speech roster.
+ * Studio live-voice profiles select BotBound's curated OpenAI Realtime roster.
  * Custom cloned voices are not enabled on this browser path. Phone voice
  * cloning remains a Vapi-supported streaming voice-library workflow on the
  * rollback path only after consent, rights, latency, fallback, and telephony
@@ -37,7 +37,7 @@ router.get(
     const agentId = typeof req.query.agentId === "string" ? req.query.agentId.slice(0, 200) : "";
     if (!agentId)
       return res.status(400).json({ error: "agentId is required", code: "AGENT_ID_REQUIRED" });
-    const selected = await getXAILiveVoiceProfile(req.user.id, agentId);
+    const selected = await getOpenAILiveVoiceProfile(req.user.id, agentId);
     res.setHeader("Cache-Control", "no-store");
     res.json(selected);
   },
@@ -49,10 +49,10 @@ router.patch(
   limiter,
   validateBody(profileSchema),
   async (req: AuthenticatedRequest, res) => {
-    const selected = await setXAILiveVoiceProfile(
+    const selected = await setOpenAILiveVoiceProfile(
       req.user.id,
       req.body.agentId,
-      req.body.profile as WirelineVoiceProfile,
+      req.body.profile as WirelineLiveVoiceProfile,
     );
     res.json(selected);
   },

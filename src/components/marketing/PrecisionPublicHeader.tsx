@@ -13,7 +13,7 @@ export default function PrecisionPublicHeader() {
           className="min-w-0 shrink rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
           aria-label="BotBound home"
         >
-          <BotBoundLockup size="compact" />
+          <BotBoundLockup size="standard" />
         </Link>
 
         <nav

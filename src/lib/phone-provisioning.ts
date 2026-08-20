@@ -52,10 +52,10 @@ import {
  * was not one the customer owns.
  */
 const NUMBER_PROVISIONING_UNAVAILABLE =
-  "Wireline could not activate a number right now. This is on our side and the team has been notified, your agent still works for texts, email, and follow-up in the meantime.";
+  "BotBound could not activate a number right now. This is on our side and the team has been notified, your agent still works for texts, email, and follow-up in the meantime.";
 
 const NUMBER_RELEASE_UNAVAILABLE =
-  "Wireline could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
+  "BotBound could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
 
 function isAutoProvisioningEnabled(): boolean {
   const flag = process.env.WIRELINE_AUTO_PROVISION_NUMBERS?.toLowerCase().trim();

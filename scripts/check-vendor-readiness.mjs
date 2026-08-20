@@ -263,15 +263,17 @@ const openaiModelIds = new Set(
 const openaiStructuredModelReady = openai?.ok && openaiModelIds.has("gpt-5.6-terra");
 const openaiRealtimeModelReady = openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
 const openaiTranscriberReady = openai?.ok && openaiModelIds.has("gpt-4o-mini-transcribe");
+const openaiRuntimeReady =
+  openaiStructuredModelReady && openaiRealtimeModelReady && openaiTranscriberReady;
 
 record(
   "openai",
   true,
-  openaiStructuredModelReady ? "ready" : "blocked",
-  openaiStructuredModelReady
-    ? "OpenAI key accepted and the required gpt-5.6-terra model is available."
+  openaiRuntimeReady ? "ready" : "blocked",
+  openaiRuntimeReady
+    ? "OpenAI key accepted and the required structured, realtime, and transcription models are available."
     : openai?.ok
-      ? "OpenAI key accepted, but the required gpt-5.6-terra model is unavailable."
+      ? "OpenAI key accepted, but one or more required structured, realtime, or transcription models are unavailable."
       : "OpenAI key missing or rejected.",
   "Keep a payment method, project budget, and usage alerts enabled.",
   {
@@ -307,13 +309,13 @@ record(
   true,
   xai?.ok ? "ready" : "blocked",
   xai?.ok
-    ? "xAI key accepted; Grok 4.6 structured and native grok-voice-think-fast-2.0 SIP are reachable."
-    : "xAI key missing or rejected; native PSTN and the structured primary cannot launch.",
-  "Fund Grok 4.6 as the structured default and grok-voice-think-fast-2.0 as native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the structured lane out.",
+    ? "xAI key accepted; native grok-voice-think-fast-2.0 SIP and optional Grok 4.6 continuity are reachable."
+    : "xAI key missing or rejected; native PSTN cannot launch.",
+  "Fund grok-voice-think-fast-2.0 for native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the Grok 4.6 structured continuity lane out.",
   {
-    structured_primary_model: "grok-4.6",
+    structured_continuity_model: "grok-4.6",
     native_sip_model: "grok-voice-think-fast-2.0",
-    xai_role: "managed_primary",
+    xai_role: "native_pstn_and_optional_structured_continuity",
   },
 );
 

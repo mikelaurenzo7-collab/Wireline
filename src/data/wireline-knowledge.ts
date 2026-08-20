@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "WIRELINE runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use that same voice brain. OpenAI Realtime is only the ChatGPT App preview, not the phone Bot.";
+  "Live phone calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Private Studio and ChatGPT browser tests use OpenAI Realtime. Browser tests never take over the phone Bot runtime.";
 
 export const WIRELINE_PLANS = [
   {

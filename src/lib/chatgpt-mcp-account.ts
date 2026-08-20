@@ -9,8 +9,8 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  *
  * Private voice in this hosted widget uses OpenAI Realtime WebRTC because
  * ChatGPT iframes may only connect to `https://api.openai.com`. That is not
- * the Studio or PSTN brain. Tenant tests and phone calls use xAI
- * Speech-to-Speech (`grok-voice-think-fast-2.0`).
+ * the PSTN brain. Studio uses the same OpenAI Realtime WebRTC posture; phone
+ * calls remain on xAI Speech-to-Speech (`grok-voice-think-fast-2.0`).
  *
  * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
  * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling

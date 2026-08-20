@@ -11,7 +11,7 @@ describe("Cursor Directory plugin contract", () => {
     description: string;
     homepage: string;
     repository: string;
-    author?: { email?: string };
+    author?: { name?: string; email?: string; url?: string };
   };
   const openPlugins = JSON.parse(read("mcp.json")) as {
     mcpServers: { wireline: { type: string; url: string } };
@@ -30,8 +30,12 @@ describe("Cursor Directory plugin contract", () => {
 
   it("publishes a closed Open Plugins manifest without secrets", () => {
     expect(plugin.name).toBe("wireline");
-    expect(plugin.homepage).toBe("https://trywireline.com/cursor-plugin.html");
+    expect(plugin.homepage).toBe("https://botbound.me/cursor-plugin.html");
     expect(plugin.repository).toBe("https://github.com/mikelaurenzo7-collab/Wireline");
+    expect(plugin.author?.name).toBe("BotBound");
+    expect(plugin.author?.url).toBe("https://botbound.me");
+    // Directory schemas require an email; retain the verified legacy mailbox
+    // until support@botbound.me is delivery-proven.
     expect(plugin.author?.email).toBe("support@trywireline.com");
     expect(Object.keys(plugin).sort()).toEqual(
       [
@@ -71,7 +75,8 @@ describe("Cursor Directory plugin contract", () => {
   });
 
   it("teaches first-agent acquisition, not a repo voice SDK", () => {
-    for (const source of [plugin.description, skill, rule, agent, docs, packet, publicDocs]) {
+    expect(plugin.description).toMatch(/Create a BotBound account/i);
+    for (const source of [skill, rule, agent, docs, packet, publicDocs]) {
       expect(source).toMatch(/Wireline account|create an account|Create a Wireline account/i);
       expect(source).toMatch(/first voice agent|first agent|first-agent/i);
       expect(source.toLowerCase()).not.toContain("embed wireline voice agents in another repo");

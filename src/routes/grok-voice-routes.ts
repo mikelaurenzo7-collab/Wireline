@@ -17,24 +17,19 @@ import {
   isCuratedPreviewProvider,
 } from "../lib/voice/voice-preview-service";
 import {
-  createXAILiveVoiceSession,
-  getXAILiveVoiceStatus,
-  runXAILiveVoiceTool,
-} from "../lib/voice/xai-live-agent-service";
+  createOpenAILiveVoiceCall,
+  getOpenAILiveVoiceStatus,
+  runOpenAILiveVoiceTool,
+} from "../lib/voice/openai-live-agent-service";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./grok-live-profile-routes";
 import xaiOutboundRouter from "./xai-outbound-routes";
 import xaiPhoneRouter from "./xai-voice-routes";
 
-// Stable route family for Wireline live voice. Browser sessions connect
-// directly to xAI Realtime with server-minted ephemeral credentials. Production
-// phone calls use the same model family through xAI SIP; no outside orchestrator
-// participates in this path.
+// Stable route family for BotBound voice. Browser Studio sessions use OpenAI
+// Realtime WebRTC with a server-minted ephemeral secret. The nested phone
+// routers remain the independent Twilio + xAI Direct SIP production lane.
 const router = express.Router();
-// The function name is protocol, not provider. xAI Speech-to-Speech reuses
-// OpenAI-shaped realtime events (`session.update`, audio deltas) on api.x.ai
-// with grok-voice-think-fast-2.0. This mint is not OpenAI Realtime.
-const createOpenAIProtocolXAILiveVoiceSession = createXAILiveVoiceSession;
 const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
   windowMs: 60_000,
@@ -59,6 +54,7 @@ const previewLimiter = createRateLimiter({
 });
 const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),
+  sdp: z.string().min(100).max(60_000),
 });
 const toolSchema = z.object({
   agentId: z.string().min(1).max(200),
@@ -96,7 +92,7 @@ router.get(
   statusLimiter,
   async (_req: AuthenticatedRequest, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
-    res.json(getXAILiveVoiceStatus());
+    res.json(getOpenAILiveVoiceStatus());
   },
 );
 
@@ -113,9 +109,10 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "live_voice_session");
     try {
-      const session = await createOpenAIProtocolXAILiveVoiceSession({
+      const session = await createOpenAILiveVoiceCall({
         userId: req.user.id,
         agentId: req.body.agentId,
+        sdp: req.body.sdp,
       });
       await commitRealtimeSessionSpend(reservation);
       res.setHeader("Cache-Control", "no-store");
@@ -133,7 +130,7 @@ router.post(
   toolLimiter,
   validateBody(toolSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    const result = await runXAILiveVoiceTool({
+    const result = await runOpenAILiveVoiceTool({
       userId: req.user.id,
       agentId: req.body.agentId,
       name: req.body.name,

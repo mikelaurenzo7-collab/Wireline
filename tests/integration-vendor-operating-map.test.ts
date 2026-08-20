@@ -108,16 +108,13 @@ describe("integration vendor operating map", () => {
     expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
     expect(envValidator).toContain('name: "ELEVENLABS_API_KEY"');
     expect(envValidator).toContain("const managedRuntime");
-    expect(envValidator).toContain(
-      "Continuity structured reasoning and OpenAI Realtime credential",
-    );
-    // xAI is the managed primary; OpenAI must stay documented as continuity
-    // in the same breath the xAI key is described.
-    expect(envValidator).toContain("OpenAI remains continuity and Realtime");
+    expect(envValidator).toContain("Managed structured reasoning and OpenAI Realtime credential");
+    expect(envValidator).toContain("Studio browser voice and structured primary use OpenAI");
+    expect(envValidator).toContain("managed OpenAI GPT-5.6 Terra default");
     expect(envValidator).toContain('name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER"');
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
-    expect(launchReadiness).toContain("PSTN voice + number stack");
+    expect(launchReadiness).toContain("PSTN voice + Twilio number stack");
   });
 
   it("refuses to report federal DNC configured on credential shape the runtime rejects", () => {

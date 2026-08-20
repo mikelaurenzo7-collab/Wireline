@@ -510,7 +510,7 @@ export async function handleCoreToolCall(
       const gate = await evaluateOutboundDialGate({
         userId: agent.user_id,
         phone: targetNumber,
-        isMarketingCall: false,
+        isMarketingCall: !isLiveCounterpart,
         hasExpressWrittenConsent: isLiveCounterpart,
         isLiveSessionFollowUp: isLiveCounterpart,
       });

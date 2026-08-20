@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0155_hot_path_knowledge_and_jobs_indexes.sql`.
+ * Latest committed migration: `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,
@@ -77,8 +77,9 @@ export const settings = pgTable("wireline_settings", {
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  voiceLlmProvider: text("voice_llm_provider").default("xai"),
-  voiceLlmModel: text("voice_llm_model").default("grok-4.6"),
+  /** Rollback-only Vapi language-model pair; not the structured-runtime default. */
+  voiceLlmProvider: text("voice_llm_provider").default("openai"),
+  voiceLlmModel: text("voice_llm_model").default("gpt-4o"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),

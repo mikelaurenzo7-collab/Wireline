@@ -24,8 +24,8 @@ Every paid agent includes a **production-number slot**. Wireline provisions the 
 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and a Vercel-capable server bundle.
 - **Design:** the **Wireline Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android.
-- **Managed reasoning:** xAI Grok 4.6 primary with OpenAI, Gemini, and Vercel AI Gateway continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
-- **Voice/PSTN:** Twilio plus xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) own production calling and Studio live tests. OpenAI Realtime is ChatGPT App private simulation only. Vapi is rollback-only. Realtime test surfaces never take over customer PSTN calls.
+- **Managed reasoning:** OpenAI GPT-5.6 Terra primary with Vercel AI Gateway, xAI Grok 4.6, and Gemini continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
+- **Voice/PSTN:** OpenAI Realtime owns authenticated Studio and ChatGPT browser simulations. Twilio plus xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) independently own production calling; Vapi is rollback-only. Browser test surfaces never take over customer PSTN calls.
 - **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
 - **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
 - **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.

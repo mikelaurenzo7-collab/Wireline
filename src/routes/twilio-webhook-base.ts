@@ -106,7 +106,7 @@ function failoverVoicemailTwiml(
   compliance: FailoverCompliance = { complianceMode: null, businessName: null },
 ): string {
   const context = includeOutageContext
-    ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
+    ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
     : "";
 
   const recordingEnabled =
@@ -473,7 +473,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   if (fallbackNumber) {
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
+    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
     twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
     twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
@@ -595,7 +595,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         });
         const notification = await sendEmail({
           to: owner.email,
-          subject: "Wireline: voicemail left during call failover",
+          subject: "BotBound: voicemail left during call failover",
           ...voicemailEmail,
           idempotencyKey: `voicemail-failover/${recordingKey}`,
         });
@@ -739,7 +739,7 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     // into an unbounded Twilio + Vapi session.
     twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
-    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
   }
   twiml += `</Response>`;

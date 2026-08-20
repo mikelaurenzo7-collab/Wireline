@@ -233,7 +233,7 @@ async function resolveBridgeContext(
     const callPurpose = nativeCallPurposeFromMetadata(nativeVoice.call_purpose);
     const telemarketing = isMarketingCallPurpose(callPurpose);
     const amdAction = resolveNativeAmdBridgeAction({ answeredBy, callPurpose });
-    const agentName = agent?.name?.trim() || "Wireline";
+    const agentName = agent?.name?.trim() || "BotBound";
     const businessName = settings?.businessName?.trim() || null;
     const voicemailMessage = buildOutboundVoicemailMessage(
       agentName,

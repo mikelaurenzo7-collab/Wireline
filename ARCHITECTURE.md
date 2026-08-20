@@ -69,15 +69,15 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
   - Production PSTN calls: Twilio buys and owns the number, then registers it with xAI Direct SIP (`sip.voice.x.ai`). Inbound `realtime.call.incoming` webhooks and outbound Twilio `<Sip>` bridges join `wss://api.x.ai/v1/realtime?call_id=…`.
-  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live call brain. Grok 4.6 is the structured-reasoning model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
+  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live PSTN brain. Grok 4.6 is an optional structured-continuity model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
   - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - Studio live tests use the same native xAI Speech-to-Speech model family as PSTN, via server-minted ephemeral client secrets. OpenAI Realtime still powers ChatGPT private simulation (and an isolated ChatGPT spend credential when configured).
+  - Studio live tests and ChatGPT private simulation use OpenAI Realtime (`gpt-realtime-2.1`) over WebRTC. The server mints short-lived credentials and exchanges Studio SDP; the browser never receives a platform key. This does not alter the separate PSTN lane.
   - Direct `/v1/tts` is preview and marketing-audio only. It is not the PSTN engine.
   - Neither OpenAI Realtime nor Vapi is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
-  - Primary: direct xAI Responses API using Grok 4.6 by default (`WIRELINE_XAI_STRUCTURED_MODEL` overrides).
-  - Continuity: OpenAI GPT-5.6 Terra, then Gemini, then Vercel AI Gateway as the governed final multi-model route. Direct xAI can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false`.
+  - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides).
+  - Continuity: Vercel AI Gateway, then direct xAI Grok 4.6, then Gemini. Direct xAI continuity can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false` without disabling native PSTN.
   - Personal agents, business agents, and hybrid direction all share this same managed chain — posture changes tools/copy/presenters, not the provider default.
   - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or tenant PSTN default.
 - **Video presenters:**

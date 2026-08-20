@@ -6,8 +6,8 @@ Status: **Active launch policy**
 
 | Surface              | Production path                                                                                        | Policy                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Phone calls          | Twilio carrier → xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) | Native Eve/Ara/Rex/Sal/Leo voices. Direct `/v1/tts` is not the PSTN engine. Grok 4.6 is structured-only. Vapi is rollback-only. |
-| Browser/mobile voice | Native xAI Speech-to-Speech using the same model as PSTN | ChatGPT widget stays OpenAI Realtime. No separate test brain. |
+| Phone calls          | Twilio carrier → xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) | Native Eve/Ara/Rex/Sal/Leo voices. Direct `/v1/tts` is not the PSTN engine. Grok 4.6 is structured-continuity only. Vapi is rollback-only. |
+| Browser/mobile voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Private Studio/ChatGPT simulation only; never automatic PSTN failover. |
 | Video presenter      | LiveAvatar/HeyGen catalog                                                                              | Presenter identity does not silently become the phone voice.                                          |
 | Marketing audio      | Approved generation tools                                                                              | Rendered assets are not a live-call runtime.                                                          |
 

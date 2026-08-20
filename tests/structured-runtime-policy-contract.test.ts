@@ -40,11 +40,12 @@ describe("structured runtime policy", () => {
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
     expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(aiModels).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
+      "export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
     );
     expect(aiModels).toContain("export const XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("xai")');
-    expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("grok-4.6")');
+    expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("openai")');
+    expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("gpt-4o")');
+    expect(schema).toContain("Rollback-only Vapi language-model pair");
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_MODEL");
     expect(adminSettings).not.toContain('"anthropic"');
@@ -84,6 +85,7 @@ describe("structured runtime policy", () => {
     expect(migrationCorpus).toContain("claude-haiku-4-5");
     expect(migrationJournal).toContain("0151_xai_grok_46_runtime_defaults");
     expect(migrationJournal).toContain("0154_xai_grok_46_persisted_defaults");
+    expect(migrationJournal).toContain("0156_openai_runtime_cohesion");
     expect(existsSync(resolve(root, "src/routes/admin-migrate"))).toBe(false);
     expect(existsSync(resolve(root, "src/routes/admin-operating-routes.ts"))).toBe(false);
     expect(existsSync(resolve(root, "src/routes/admin-purge-accounts-routes.ts"))).toBe(false);

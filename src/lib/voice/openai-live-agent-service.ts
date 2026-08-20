@@ -468,10 +468,13 @@ export async function runOpenAILiveVoiceTool(input: {
 export function getOpenAILiveVoiceStatus() {
   return {
     configured: Boolean(process.env.OPENAI_API_KEY?.trim()),
+    defaultProvider: "openai_realtime" as const,
+    provider: "openai" as const,
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     sessionMode: "authenticated_browser_and_mobile_webrtc",
     transcriptionEnabled: true,
     phoneRuntimeProvider: "xai_sip",
+    fallbackProvider: null,
   };
 }
 

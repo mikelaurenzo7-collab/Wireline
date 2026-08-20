@@ -18,8 +18,8 @@ import {
 
 const router = express.Router();
 
-// ChatGPT App private simulation mint. Not Studio and not PSTN. Studio uses
-// `/api/voice/live/session` on xAI Speech-to-Speech.
+// ChatGPT App private simulation mint. Studio uses its own account-bound
+// `/api/voice/live/session` OpenAI WebRTC exchange; neither route is PSTN.
 
 const openaiRealtimeLimiter = createRateLimiter({
   bucket: "api:openai-realtime",

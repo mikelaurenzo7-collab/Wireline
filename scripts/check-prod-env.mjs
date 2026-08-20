@@ -65,12 +65,12 @@ const required = [
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   [
     "OPENAI_API_KEY",
-    "Continuity structured runtime and OpenAI Realtime sessions",
+    "Managed GPT-5.6 Terra structured runtime and OpenAI Realtime browser sessions",
     process.env.OPENAI_API_KEY,
   ],
   [
     "XAI_API_KEY",
-    "Managed xAI credential for Grok 4.6 structured primary and native Twilio SIP Speech-to-Speech",
+    "Native Twilio SIP Speech-to-Speech and optional Grok 4.6 structured continuity",
     process.env.XAI_API_KEY,
   ],
   [

@@ -9,11 +9,11 @@ This document records Wireline's intended production provider roles and the evid
 
 | Plane | Primary | Continuity / boundary |
 | --- | --- | --- |
-| Structured reasoning | xAI Grok 4.6 managed structured runtime | OpenAI, then Gemini, then Vercel AI Gateway |
+| Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime | Vercel AI Gateway, then xAI Grok 4.6, then Gemini |
 | PSTN orchestration | Native Twilio + xAI Direct SIP | `grok-voice-think-fast-2.0`; Vapi is rollback-only |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | Native xAI Eve/Ara/Rex/Sal/Leo | ElevenLabs remains Studio TTS / cloning, not the PSTN engine |
-| Live browser voice | Native xAI Speech-to-Speech, same model as PSTN | ChatGPT widget stays OpenAI Realtime (OpenAI-hosted iframe; not a Studio backup) |
+| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio and ChatGPT are private simulations; PSTN remains Twilio + xAI Direct SIP |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |

@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "listing": {
-    "name": "Wireline",
+    "name": "BotBound",
     "slug": "wireline",
     "tagline": "Build your first voice agent",
-    "description": "Wireline lets a new Claude user create a Wireline account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in Wireline.",
+    "description": "BotBound lets a new Claude user create a BotBound account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "categories": ["business", "productivity"],
-    "icon_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
-    "website_url": "https://trywireline.com",
-    "documentation_url": "https://trywireline.com/claude-connector.html",
-    "privacy_policy_url": "https://trywireline.com/mcp-privacy.html",
+    "icon_url": "https://botbound.me/botbound-icon.svg",
+    "website_url": "https://botbound.me",
+    "documentation_url": "https://botbound.me/claude-connector.html",
+    "privacy_policy_url": "https://botbound.me/mcp-privacy.html",
     "support_email": "support@trywireline.com",
-    "company_name": "Wireline",
-    "company_website": "https://trywireline.com"
+    "company_name": "BotBound",
+    "company_website": "https://botbound.me"
   },
   "server": {
     "url": "https://trywireline.com/mcp",
@@ -20,7 +20,7 @@
     "url_mode": "same_url_for_all_users",
     "authentication": ["oauth_dcr", "oauth_cimd"],
     "lazy_authentication": true,
-    "allowed_link_uris": ["https://trywireline.com"]
+    "allowed_link_uris": ["https://botbound.me"]
   },
   "capabilities": {
     "reads_data": true,
@@ -30,7 +30,7 @@
     "sponsored_content": false
   },
   "use_cases": [
-    "Create a Wireline account and a confirmed first voice-agent draft from a conversation.",
+    "Create a BotBound account and a confirmed first voice-agent draft from a conversation.",
     "Refine a saved draft's tone, prohibited topics, and handoff policy.",
     "Inspect aggregate workspace status without exposing customer content.",
     "Run a short private, tool-free voice simulation of a saved draft.",
@@ -38,45 +38,45 @@
     "Read owner-authored Training and, after the Apps toggle, save a confirmed fact or rule."
   ],
   "prerequisites": [
-    "New users create a Wireline account during OAuth. Existing users sign in.",
+    "New users create a BotBound account during OAuth. Existing users sign in.",
     "OAuth consent for agents.read, agents.write, and demo.voice."
   ],
   "reviewer_prompts": [
     {
-      "prompt": "Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
+      "prompt": "Use BotBound to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
       "tools": ["create_agent_draft"],
       "screenshot_subject": "Inline agent-draft card after confirmed creation"
     },
     {
-      "prompt": "Update my Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+      "prompt": "Update my BotBound draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a BotBound handoff path is configured.",
       "tools": ["update_agent_draft"],
       "screenshot_subject": "Updated draft card with refined boundaries"
     },
     {
-      "prompt": "Give me a Wireline workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
+      "prompt": "Give me a BotBound workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
       "tools": ["get_wireline_workspace_summary"],
       "screenshot_subject": "Workspace summary card with aggregate counts only"
     },
     {
-      "prompt": "Let me privately try the voice simulation for this Wireline draft.",
+      "prompt": "Let me privately try the voice simulation for this BotBound draft.",
       "tools": ["start_private_voice_simulation"],
       "screenshot_subject": "Private voice controls on the draft card"
     },
     {
-      "prompt": "Privately rehearse this Wireline agent answering: Do you have Saturday appointments?",
+      "prompt": "Privately rehearse this BotBound agent answering: Do you have Saturday appointments?",
       "tools": ["run_private_agent_turn"],
       "screenshot_subject": "Private rehearsal reply with live_call false"
     },
     {
-      "prompt": "Show me the coaching brief for this Wireline agent, then save a confirmed Training fact if Apps writes are on.",
+      "prompt": "Show me the coaching brief for this BotBound agent, then save a confirmed Training fact if Apps writes are on.",
       "tools": ["get_agent_coaching_brief", "train_wireline_agent"],
       "screenshot_subject": "Coaching brief and fail-closed Training write guidance"
     }
   ],
   "negative_prompts": [
     "Write a cold email for my plumbing company.",
-    "Use my Wireline agent to call the lead, book the appointment, and text them a confirmation now.",
-    "Make whatever changes you think are best to my Wireline agent."
+    "Use my BotBound agent to call the lead, book the appointment, and text them a confirmation now.",
+    "Make whatever changes you think are best to my BotBound agent."
   ],
   "escalation": "mcp-review@anthropic.com",
   "submission_portal": "https://claude.ai/admin-settings/directory/submissions/new"

@@ -501,7 +501,7 @@ router.post(
         return res.json({
           url: createdSession.url,
           operation_id: operationId,
-          warning: "Checkout is ready; Wireline is reconciling its local billing record.",
+          warning: "Checkout is ready; BotBound is reconciling its local billing record.",
         });
       }
 
@@ -520,7 +520,7 @@ router.post(
         return res.status(202).json({
           code: "CHECKOUT_RECONCILING",
           error:
-            "Your billing profile is ready, but Wireline is reconciling local checkout state. Retry the same plan safely.",
+            "Your billing profile is ready, but BotBound is reconciling local checkout state. Retry the same plan safely.",
           operation_id: operationId,
         });
       }
