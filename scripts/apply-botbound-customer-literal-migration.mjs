@@ -82,6 +82,13 @@ const replacements = {
     ["a paid Wireline plan", "a paid BotBound plan"],
     ["Wireline is reconciling its local billing record.", "BotBound is reconciling its local billing record."],
   ],
+  "src/routes/chatgpt-mcp-account-routes.ts": [
+    // Customer/model-visible MCP prose still carries the retired brand in this
+    // large protocol owner. Replacing only the token followed by whitespace
+    // preserves stable tool names, schema fields, camelCase properties, and
+    // technical protocol identifiers such as open_in_wireline_url.
+    ["Wireline ", "BotBound "],
+  ],
   "src/routes/company-identity-routes.ts": [
     ["Wireline records a verified business profile", "BotBound records a verified business profile"],
     ["supported Wireline workflows", "supported BotBound workflows"],
