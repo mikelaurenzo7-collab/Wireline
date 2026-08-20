@@ -1,15 +1,14 @@
 import { randomBytes } from "node:crypto";
 
-// Hashes for the inline <script> blocks in index.html: theme bootstrap,
-// Plausible stub, and JSON-LD structured data. Advertising measurement lives in
-// a same-origin external loader so it can remain off until explicit consent.
+// Exact hashes for the two executable inline <script> blocks in index.html.
+// JSON-LD is non-executable data and is intentionally excluded from script-src.
+// Advertising measurement lives in a same-origin external loader so it can
+// remain off until explicit consent.
 export const INLINE_SCRIPT_HASHES = [
-  // Theme-init boot script.
-  "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
-  // Plausible analytics stub.
-  "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  // schema.org JSON-LD structured-data block (non-executable).
-  "'sha256-2CeqyV3zA6ZMpVmB4HrPXKhAe1s1SccoYditH6KMhJE='",
+  // Theme-init bootstrap.
+  "'sha256-rYWQCFq+3047ZWkDO1YafD8wzUpLv9aVQVarfGpJ1y4='",
+  // Plausible analytics queue stub.
+  "'sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc='",
 ] as const;
 
 /**
