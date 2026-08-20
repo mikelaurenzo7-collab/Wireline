@@ -21,6 +21,7 @@ import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
+import { stripeCheckoutExpirationPreflight } from "../middleware/stripe-checkout-expiration-preflight";
 import { enforceSelfServeBillingRelease } from "../middleware/launch-hard-gate";
 import { showcasePromptTruthGuard } from "../lib/showcase-prompt-truth-guard";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
@@ -156,6 +157,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
+  app.use("/api/stripe-webhook", stripeCheckoutExpirationPreflight);
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
   // Live Video is retired. Keep the old checkout path terminal so stale clients
   // cannot fall through to legacy billing code and reactivate the product.
