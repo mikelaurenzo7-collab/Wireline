@@ -79,7 +79,7 @@ async function sendSupportEmail(args: {
 
 const router = Router();
 
-const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com";
+const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@botbound.me";
 const SUPPORT_RATE_WINDOW_MS = 15 * 60_000;
 const SUPPORT_RATE_MAX = 5;
 
@@ -100,7 +100,7 @@ async function ticketRateLimiter(req: Request, res: Response, next: NextFunction
   const distributed = distributedLimiterStatus();
   if (!distributed.ok) {
     return res.status(503).json({
-      error: "Support intake is temporarily unavailable. Email support@trywireline.com directly.",
+      error: "Support intake is temporarily unavailable. Email support@botbound.me directly.",
       code: distributed.code || "RATE_LIMITER_UNAVAILABLE",
     });
   }
@@ -129,7 +129,7 @@ async function ticketRateLimiter(req: Request, res: Response, next: NextFunction
   } catch (err) {
     log.error("Support ticket rate limiter failed closed", { error: getErrorMessage(err) });
     return res.status(503).json({
-      error: "Support intake is temporarily unavailable. Email support@trywireline.com directly.",
+      error: "Support intake is temporarily unavailable. Email support@botbound.me directly.",
       code: "RATE_LIMITER_ERROR",
     });
   }
@@ -191,7 +191,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
         ok: false,
         sent: false,
         code: "SERVICE_UNAVAILABLE",
-        error: "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
+        error: "Couldn't deliver your message just now. Email support@botbound.me or try again.",
       });
     }
 
@@ -202,7 +202,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     log.error("Support ticket route failed", { error: getErrorMessage(e) });
     return res
       .status(500)
-      .json({ error: "Couldn't submit ticket, please email support@trywireline.com directly." });
+      .json({ error: "Couldn't submit ticket, please email support@botbound.me directly." });
   }
 });
 
