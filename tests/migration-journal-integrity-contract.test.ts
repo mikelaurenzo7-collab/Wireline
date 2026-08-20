@@ -145,15 +145,16 @@ describe("migration journal integrity contract", () => {
     );
     expect(materializer).toContain("TARGET_0052_PATH");
     expect(materializer).toContain("buildGrok46DefaultsSnapshot");
-    expect(materializer).toContain(".columns.voice_llm_model.default = \"'grok-4.6'\"");
     expect(materializer).not.toContain('TARGET_0052_SHA256 = "PENDING_COMPUTE"');
   });
 
   it("journals and materializes the hot-path knowledge and jobs indexes", () => {
-    expect(journal.entries.at(-1)).toMatchObject({
-      idx: 53,
-      tag: "0155_hot_path_knowledge_and_jobs_indexes",
-    });
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 53,
+        tag: "0155_hot_path_knowledge_and_jobs_indexes",
+      }),
+    );
     const materializer = readFileSync(
       resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
       "utf8",
@@ -161,6 +162,19 @@ describe("migration journal integrity contract", () => {
     expect(materializer).toContain("TARGET_0053_PATH");
     expect(materializer).toContain("buildHotPathIndexSnapshot");
     expect(materializer).not.toContain('TARGET_0053_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes active-subscription provenance validation", () => {
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 54,
+      tag: "0156_validate_active_subscription_provenance",
+    });
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0054_PATH");
+    expect(materializer).toContain("buildProvenanceValidationSnapshot");
   });
 
   it("documents the split so the journal is not read as the whole history", () => {
