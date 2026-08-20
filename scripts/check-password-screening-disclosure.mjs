@@ -25,6 +25,11 @@ assert(
   "Pwned Passwords range requests must retain response padding.",
 );
 assert(
+  implementation.includes('PASSWORD_CHECK_USER_AGENT = "BotBound-password-security/1.0 (+https://botbound.me)"') &&
+    !implementation.includes("Wireline-password-security"),
+  "Pwned Passwords requests must identify the active BotBound brand without a retired Wireline customer identity.",
+);
+assert(
   implementation.includes('env.NODE_ENV === "production" || env.VERCEL === "1"') &&
     implementation.includes('return "enforce"'),
   "Production and Vercel password screening must remain fail-closed.",
