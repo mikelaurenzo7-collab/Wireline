@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { HOME_DESCRIPTION, HOME_TITLE, PRERENDERED_ROUTE_SHELLS, SITE_URL, escapeHtml, injectMarketingMeta, resolveRouteMeta } from "../src/lib/marketing-route-meta";
-import { LEGACY_PRODUCTION_ORIGIN } from "../src/lib/brand";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../src/lib/brand";
 
 const dist = path.join(process.cwd(), "dist");
 const shellPath = path.join(dist, "index.html");
@@ -13,11 +13,11 @@ if (!shell.includes(`<title>${HOME_TITLE}</title>`)) {
   process.exit(1);
 }
 
-// Domain cutover is configuration, not source churn. The checked-in shell uses
-// the still-live legacy origin as a safe fallback; production builds replace
-// every static JSON-LD/OG/canonical occurrence from VITE_PUBLIC_SITE_URL/APP_URL.
-if (SITE_URL !== LEGACY_PRODUCTION_ORIGIN) {
-  shell = shell.split(LEGACY_PRODUCTION_ORIGIN).join(SITE_URL);
+// Public metadata has its own BotBound origin. APP_URL remains free to stay on
+// a compatibility host until external OAuth/provider callback registrations
+// are cut over. VITE_PUBLIC_SITE_URL is the only supported metadata override.
+if (SITE_URL !== BOTBOUND_PRODUCTION_ORIGIN) {
+  shell = shell.split(BOTBOUND_PRODUCTION_ORIGIN).join(SITE_URL);
 }
 writeFileSync(shellPath, shell);
 
