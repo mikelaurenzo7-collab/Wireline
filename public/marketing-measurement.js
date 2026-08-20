@@ -4,21 +4,21 @@
   var CONSENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
   var CONSENT_EVENT = "wireline:marketing-measurement-consent";
   var META_PIXEL_ID = "1683492795830248";
-  var PLAUSIBLE_DOMAIN = "trywireline.com";
+  var PLAUSIBLE_DOMAIN = "botbound.me";
   var PLAUSIBLE_SRC = "https://plausible.io/js/script.tagged-events.js";
 
   function noop() {}
 
   function isProductionHost() {
+    var host = window.location.hostname.toLowerCase();
     return (
-      window.location.hostname === "trywireline.com" ||
-      window.location.hostname === "www.trywireline.com"
+      host === "botbound.me" ||
+      host === "www.botbound.me" ||
+      // Keep measurement on the legacy alias while old links and provider
+      // callbacks still reach it. All reporting is attributed to BotBound.
+      host === "trywireline.com" ||
+      host === "www.trywireline.com"
     );
-  }
-
-  function isLocalHost() {
-    var host = window.location.hostname;
-    return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "";
   }
 
   /**
@@ -32,11 +32,11 @@
    * 12,936ms against a blocked host, versus 280ms without the tag). Injecting
    * it here keeps analytics identical — the inline stub in index.html queues
    * calls and the real script flushes `plausible.q` when it lands — while
-   * making the request non-blocking. Skipped on localhost so local dev and
-   * capture runs never wait on (or pollute) production analytics.
+   * making the request non-blocking. Previews/local hosts are excluded so they
+   * cannot pollute BotBound production acquisition metrics.
    */
   function loadPrivacyAnalytics() {
-    if (isLocalHost()) return;
+    if (!isProductionHost()) return;
     if (window.__wirelinePlausibleLoaded) return;
     window.__wirelinePlausibleLoaded = true;
 
