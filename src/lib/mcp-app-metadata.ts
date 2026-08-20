@@ -8,10 +8,11 @@ export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.4.0";
 
-export const MCP_DOCUMENTATION_URL = "https://trywireline.com/claude-connector.html";
-export const MCP_PRIVACY_URL = "https://trywireline.com/mcp-privacy.html";
-export const MCP_ICON_URL = "https://trywireline.com/wireline-chatgpt-app-icon.svg";
-export const MCP_SUPPORT_EMAIL = "support@trywireline.com";
+export const MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html";
+export const MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html";
+// The asset filename is a stable compatibility path; the public host is BotBound.
+export const MCP_ICON_URL = "https://botbound.me/wireline-chatgpt-app-icon.svg";
+export const MCP_SUPPORT_EMAIL = "support@botbound.me";
 
 export function claudeMcpAppDomain(resourceUrl: string): string {
   return `${createHash("sha256").update(resourceUrl).digest("hex").slice(0, 32)}.claudemcpcontent.com`;
@@ -35,7 +36,9 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     "openai/widgetCSP": {
       connect_domains: ["https://api.openai.com"],
       resource_domains: [],
-      redirect_domains: ["https://trywireline.com"],
+      // botbound.me is the forward public identity. Keep the legacy callback
+      // host until external OAuth/provider registrations complete their cutover.
+      redirect_domains: ["https://botbound.me", "https://trywireline.com"],
     },
   };
 }
