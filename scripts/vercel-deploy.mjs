@@ -4,9 +4,9 @@
  *
  * Keep the project build command short while preserving one ordered release
  * pipeline: sanitize retired client configuration, migrate the final approved
- * customer-facing BotBound literals, prove the sanitizer contract, run the
- * application gate, build the public health function, and smoke the resulting
- * handler.
+ * customer-facing BotBound literals, prove the sanitizer contract, verify the
+ * static Vercel CSP matches the canonical runtime policy, run the application
+ * gate, build the public health function, and smoke the resulting handler.
  */
 import "./sanitize-retired-client-env.mjs";
 import "./apply-botbound-customer-literal-migration.mjs";
@@ -38,6 +38,11 @@ run(process.execPath, [
   "scripts/run-test-estate.mjs",
   "tests/retired-client-env-sanitizer-contract.test.ts",
 ]);
+// Static Vercel responses bypass Express, so their CSP must stay byte-for-byte
+// equivalent to the canonical runtime policy. This catches provider additions
+// (for example Daily media transport for browser voice) before a deploy can
+// silently ship a browser-only outage.
+run(process.execPath, ["scripts/check-csp-drift.mjs"]);
 run(process.execPath, ["scripts/vercel-build.mjs"]);
 run("npx", [
   "esbuild",
