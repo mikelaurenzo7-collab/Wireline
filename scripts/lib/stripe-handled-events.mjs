@@ -26,6 +26,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const OWNERS = [
   "src/routes/billing-routes.ts",
   "src/middleware/stripe-runtime-allowance-retry.ts",
+  "src/middleware/stripe-checkout-expiration-preflight.ts",
 ];
 
 function extractHandledEvents(source) {
