@@ -55,6 +55,23 @@ assert(
   "measurement loader must listen for the canonical consent event.",
 );
 assert(
+  loader.includes('var PLAUSIBLE_DOMAIN = "botbound.me";'),
+  "Plausible production attribution must use the canonical BotBound domain.",
+);
+assert(
+  loader.includes('host === "botbound.me"') && loader.includes('host === "www.botbound.me"'),
+  "measurement runtime must recognize the BotBound production hostname.",
+);
+assert(
+  loader.includes('host === "trywireline.com"') &&
+    loader.includes('host === "www.trywireline.com"'),
+  "measurement runtime must preserve attribution for the live legacy compatibility alias.",
+);
+assert(
+  (loader.match(/if \(!isProductionHost\(\)\) return;/g) || []).length >= 2,
+  "both aggregate analytics and Meta measurement must stay off preview/local hosts.",
+);
+assert(
   loader.includes('readConsent() !== "granted"'),
   "measurement loader must default off without an explicit grant.",
 );
@@ -80,7 +97,7 @@ assert(
 );
 assert(
   loader.includes("window.fbq = noop") && loader.includes("window._fbq = noop"),
-  "measurement revocation must stop future Wireline-triggered Meta events.",
+  "measurement revocation must stop future BotBound-triggered Meta events.",
 );
 assert(
   loader.includes('event.detail === "granted"') &&
