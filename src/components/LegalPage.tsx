@@ -238,8 +238,11 @@ export function TermsOfService() {
           messaging is enabled. Unregistered or misrepresented traffic may be blocked.
         </p>
         <p>
-          Report messaging complaints or ask a question about SMS from a BotBound number by emailing{" "}
-          <strong>support@trywireline.com</strong>.
+          Report messaging complaints or ask a question about SMS from a BotBound number through{" "}
+          <Link to="/support" className="text-brand underline hover:text-brand/80">
+            BotBound Support
+          </Link>
+          .
         </p>
       </Section>
 
@@ -252,12 +255,15 @@ export function TermsOfService() {
         </p>
         <p>
           <strong>30-day money-back guarantee.</strong> If BotBound isn't working for your business
-          for any reason within 30 days of your first paid invoice, email{" "}
-          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
-          refund that month's charge in full. No forms, no escalation, no questions about your
-          reason. The 30-day window starts on the date of your first paid invoice. Outbound call
-          minutes consumed prior to the refund request are not separately deducted. The refund is on
-          the subscription line item.
+          for any reason within 30 days of your first paid invoice, submit a{" "}
+          <Link to="/support" className="text-brand underline hover:text-brand/80">
+            BotBound Support
+          </Link>{" "}
+          request with the subject "Refund request" and we'll refund that month's charge in full.
+          No forms beyond the support request, no escalation, and no questions about your reason.
+          The 30-day window starts on the date of your first paid invoice. Outbound call minutes
+          consumed prior to the refund request are not separately deducted. The refund is on the
+          subscription line item.
         </p>
         <p>
           After the 30-day window, no refunds are issued for partial periods, but you can cancel
@@ -337,7 +343,11 @@ export function TermsOfService() {
 
       <Section title="15. Contact">
         <p>
-          Legal notices: <strong>support@trywireline.com</strong>
+          Legal notices may be submitted through{" "}
+          <Link to="/support" className="text-brand underline hover:text-brand/80">
+            BotBound Support
+          </Link>
+          .
         </p>
       </Section>
     </LegalLayout>
