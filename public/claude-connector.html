@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
   <title>BotBound Claude Connector</title>
+  <link rel="canonical" href="https://botbound.me/claude-connector.html" />
   <link rel="stylesheet" href="/static-legal.css" />
 </head>
 <body>
@@ -16,7 +17,8 @@
     <section class="card">
       <strong>MCP endpoint:</strong> <code>https://trywireline.com/mcp</code><br />
       <strong>Transport:</strong> Streamable HTTP<br />
-      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Claude.ai uses dynamic client registration. Claude Code uses Anthropic’s Client ID Metadata Document.
+      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Claude.ai uses dynamic client registration. Claude Code uses Anthropic’s Client ID Metadata Document.<br />
+      <strong>Compatibility:</strong> the MCP protocol endpoint remains on the legacy service host while existing OAuth registrations complete their BotBound domain transition.
     </section>
 
     <h2>What you can do from Claude</h2>
@@ -40,13 +42,13 @@
     </ul>
 
     <h2>Add as a custom connector</h2>
-    <p>In Claude, open <a href="https://claude.ai/settings/connectors">Settings → Connectors</a>, add a custom connector, and enter <code>https://trywireline.com/mcp</code>. Create a BotBound account if you do not have one, then allow the connection. Directory listing, when published, appears at Claude’s Connectors Directory under the legacy technical slug <code>wireline</code>.</p>
+    <p>In Claude, open <a href="https://claude.ai/settings/connectors">Settings → Connectors</a>, add a custom connector, and enter the compatibility MCP service URL shown above. Create a BotBound account if you do not have one, then allow the connection. Directory listing, when published, appears at Claude’s Connectors Directory under the stable technical slug <code>wireline</code>.</p>
 
     <h2>Claude Code</h2>
     <p>Claude Code connects with Anthropic’s published client metadata and a loopback callback. BotBound accepts <code>http://localhost/callback</code> and <code>http://127.0.0.1/callback</code> with the port ignored, as required for native clients.</p>
 
     <h2>Privacy and support</h2>
-    <p>Read the <a href="/mcp-privacy.html">MCP Connector Privacy Notice</a> and the <a href="/privacy">BotBound Privacy Policy</a>. Support: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
+    <p>Read the <a href="/mcp-privacy.html">MCP Connector Privacy Notice</a> and the <a href="/privacy">BotBound Privacy Policy</a>. For help, use <a href="https://botbound.me/support">BotBound Support</a>.</p>
 
     <p><small>Last updated: August 19, 2026</small></p>
   </main>
