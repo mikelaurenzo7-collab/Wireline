@@ -50,16 +50,19 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain('"publisher":{"@id":"https://botbound.me/#organization"}');
   });
 
-  it("keeps runtime landing metadata aligned to the same BotBound entrance", () => {
+  it("keeps runtime and hydrated landing metadata pinned to the same BotBound entrance", () => {
     const landing = read("src/pages/LandingPage.tsx");
     const pageMeta = read("src/lib/page-meta.tsx");
 
     expect(landing).toContain('title="BotBound | Put Your Bot on the Line"');
     expect(landing).toContain("BOT_MARKETING_VOICE.subline");
-    expect(landing).toContain("VITE_PUBLIC_SITE_URL");
+    expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
     expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "AI employees for calls, texts, and email."');
-    expect(pageMeta).toContain("VITE_PUBLIC_SITE_URL");
+    expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
