@@ -24,6 +24,18 @@ describe("BotBound static marketing metadata", () => {
     expect(index).not.toContain("—");
   });
 
+  it("keeps crawler discovery canonical to BotBound", () => {
+    const robots = read("public/robots.txt");
+    const sitemap = read("public/sitemap.xml");
+
+    expect(robots).toContain("Sitemap: https://botbound.me/sitemap.xml");
+    expect(robots).not.toContain("trywireline.com");
+    expect(sitemap).toContain("<loc>https://botbound.me/</loc>");
+    expect(sitemap).toContain("<loc>https://botbound.me/pricing</loc>");
+    expect(sitemap).not.toContain("trywireline.com");
+    expect(sitemap).not.toMatch(/\bWireline\b/);
+  });
+
   it("keeps install, icon, analytics, and WebSite identity assets in the HTML shell", () => {
     const index = read("index.html");
 
