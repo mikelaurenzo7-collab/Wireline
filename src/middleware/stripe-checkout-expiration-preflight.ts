@@ -42,7 +42,10 @@ export async function stripeCheckoutExpirationPreflight(
     return next();
   }
 
-  if (event.type !== "checkout.session.expired") return next();
+  // Keep the positive comparison explicit: the shared webhook-inventory parser
+  // derives enabled_events from exact `event.type === ...` handler ownership.
+  const isCheckoutExpiration = event.type === "checkout.session.expired";
+  if (!isCheckoutExpiration) return next();
 
   const session = event.data.object as Stripe.Checkout.Session;
   const operationId = session.metadata?.wireline_checkout_operation_id?.trim() || "";
