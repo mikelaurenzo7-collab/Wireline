@@ -172,7 +172,11 @@ export default function PrivacyPolicyPage() {
             <p>
               <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for
               business conversations across voice, SMS, and email. Questions about this policy can
-              be sent to <strong>support@trywireline.com</strong>.
+              be submitted through{" "}
+              <Link to="/support" className="text-brand underline hover:text-brand/80">
+                BotBound Support
+              </Link>
+              .
             </p>
           </Section>
 
@@ -300,9 +304,12 @@ export default function PrivacyPolicyPage() {
             <p>
               Depending on where you live, you may have rights to access, correct, delete, restrict
               or object to processing, withdraw consent, and receive a portable copy of personal
-              data. To exercise a right, use Delete Account in Settings or contact
-              <strong> support@trywireline.com</strong>. Where processing relies on consent,
-              withdrawing consent does not affect processing completed before withdrawal.
+              data. To exercise a right, use Delete Account in Settings or submit a request through{" "}
+              <Link to="/support" className="text-brand underline hover:text-brand/80">
+                BotBound Support
+              </Link>
+              . Where processing relies on consent, withdrawing consent does not affect processing
+              completed before withdrawal.
             </p>
           </Section>
 
@@ -315,9 +322,11 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               California residents may also request access, correction, deletion, or information
-              about categories of data collected and disclosed by contacting
-              <strong> support@trywireline.com</strong>. We respond to verified requests within the
-              period required by applicable law.
+              about categories of data collected and disclosed through{" "}
+              <Link to="/support" className="text-brand underline hover:text-brand/80">
+                BotBound Support
+              </Link>
+              . We respond to verified requests within the period required by applicable law.
             </p>
           </Section>
 
@@ -363,7 +372,11 @@ export default function PrivacyPolicyPage() {
 
           <Section title="12. Contact">
             <p>
-              Privacy questions or requests: <strong>support@trywireline.com</strong>
+              Privacy questions or requests may be submitted through{" "}
+              <Link to="/support" className="text-brand underline hover:text-brand/80">
+                BotBound Support
+              </Link>
+              .
             </p>
           </Section>
         </div>
