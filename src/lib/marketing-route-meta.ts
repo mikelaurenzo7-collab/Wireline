@@ -2,9 +2,12 @@ import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 function configuredSiteUrl(): string {
+  // Public marketing metadata must resolve to the BotBound brand origin even
+  // while APP_URL remains on the legacy host for provider callback continuity.
+  // VITE_PUBLIC_SITE_URL is the only supported override for public metadata.
   const configured =
     typeof process !== "undefined"
-      ? process.env.VITE_PUBLIC_SITE_URL?.trim() || process.env.APP_URL?.trim()
+      ? process.env.VITE_PUBLIC_SITE_URL?.trim()
       : "";
   return (configured || BOTBOUND_PRODUCTION_ORIGIN).replace(/\/+$/, "");
 }
