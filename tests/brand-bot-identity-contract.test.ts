@@ -55,17 +55,23 @@ describe("BotBound brand migration", () => {
     expect(shell).toContain("<BotBoundWordmark");
   });
 
-  it("makes tomorrow's domain switch configuration-driven instead of another code rename", () => {
+  it("keeps public BotBound identity immutable while callback origins remain configuration-driven", () => {
     const appUrl = read("src/lib/app-url.ts");
     const pageMeta = read("src/lib/page-meta.tsx");
     const routeMeta = read("src/lib/marketing-route-meta.ts");
+    const landing = read("src/pages/LandingPage.tsx");
     const prerender = read("scripts/prerender-marketing-meta.mts");
     const oauth = read("src/lib/oauth-helpers.ts");
+
     expect(appUrl).toContain("process.env.APP_URL");
-    expect(pageMeta).toContain("import.meta.env.VITE_PUBLIC_SITE_URL");
-    expect(routeMeta).toContain("process.env.VITE_PUBLIC_SITE_URL");
-    expect(routeMeta).toContain("process.env.APP_URL");
-    expect(prerender).toContain("LEGACY_PRODUCTION_ORIGIN");
+    for (const source of [pageMeta, routeMeta, landing]) {
+      expect(source).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+      expect(source).not.toContain("VITE_PUBLIC_SITE_URL");
+      expect(source).not.toContain("LEGACY_PRODUCTION_ORIGIN");
+    }
+    expect(routeMeta).not.toContain("process.env.APP_URL");
+    expect(prerender).not.toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(prerender).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(oauth).toContain("APP_URL is required for OAuth redirects in production");
     expect(oauth).toContain("/api/oauth/google/callback");
     expect(oauth).not.toContain("botbound.ai");
