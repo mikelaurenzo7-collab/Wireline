@@ -5,12 +5,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("double-pass residual hardening", () => {
-  it("falls back to direct email on any support/contact service 5xx", () => {
+  it("handles support/contact service 5xx without advertising an unverified or legacy mailbox", () => {
     for (const path of ["src/components/SupportPage.tsx", "src/components/ContactPage.tsx"]) {
       const source = read(path);
       expect(source).toContain("responseStatus = response.status");
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
-      expect(source).toContain("mailto:support@trywireline.com");
+      expect(source).toContain("Call BotBound at ${");
+      expect(source).not.toContain("mailto:support@trywireline.com");
+      expect(source).not.toContain("mailto:support@botbound.me");
     }
   });
 
