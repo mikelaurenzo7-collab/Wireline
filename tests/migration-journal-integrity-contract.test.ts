@@ -175,6 +175,10 @@ describe("migration journal integrity contract", () => {
     );
     expect(materializer).toContain("TARGET_0054_PATH");
     expect(materializer).toContain("buildProvenanceValidationSnapshot");
+    expect(materializer).not.toContain('TARGET_0054_SHA256 = "PENDING_COMPUTE"');
+    expect(materializer).toContain(
+      'TARGET_0054_SHA256 = "bb8927015dc64dc6048186dbfa83d36aaaa5165e219ebe78a2abfb37767147e6"',
+    );
   });
 
   it("documents the split so the journal is not read as the whole history", () => {
