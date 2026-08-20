@@ -47,23 +47,24 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(brand).toContain('legacyOrigin: LEGACY_PRODUCTION_ORIGIN');
   });
 
-  it("keeps public BotBound metadata independent from the deferred callback origin", () => {
+  it("keeps public BotBound metadata immutable and independent from the deferred callback origin", () => {
     const appUrl = read("src/lib/app-url.ts");
     const pageMeta = read("src/lib/page-meta.tsx");
     const marketingMeta = read("src/lib/marketing-route-meta.ts");
+    const landing = read("src/pages/LandingPage.tsx");
     const prerender = read("scripts/prerender-marketing-meta.mts");
     const index = read("index.html");
 
     expect(appUrl).toContain("process.env.APP_URL");
     expect(appUrl).toContain('throw new Error("APP_URL is required in production")');
-    expect(pageMeta).toContain("import.meta.env.VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
-    expect(pageMeta).not.toContain("LEGACY_PRODUCTION_ORIGIN");
-    expect(marketingMeta).toContain("process.env.VITE_PUBLIC_SITE_URL");
-    expect(marketingMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    for (const source of [pageMeta, marketingMeta, landing]) {
+      expect(source).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+      expect(source).not.toContain("LEGACY_PRODUCTION_ORIGIN");
+      expect(source).not.toContain("VITE_PUBLIC_SITE_URL");
+    }
     expect(marketingMeta).not.toContain("process.env.APP_URL");
-    expect(prerender).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(prerender).not.toContain("LEGACY_PRODUCTION_ORIGIN");
+    expect(prerender).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(index).toContain('href="https://botbound.me/"');
     expect(index).not.toContain("https://trywireline.com");
   });
