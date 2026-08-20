@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { HOME_DESCRIPTION, HOME_TITLE, PRERENDERED_ROUTE_SHELLS, SITE_URL, escapeHtml, injectMarketingMeta, resolveRouteMeta } from "../src/lib/marketing-route-meta";
-import { BOTBOUND_PRODUCTION_ORIGIN } from "../src/lib/brand";
+import { HOME_TITLE, PRERENDERED_ROUTE_SHELLS, escapeHtml, injectMarketingMeta, resolveRouteMeta } from "../src/lib/marketing-route-meta";
 
 const dist = path.join(process.cwd(), "dist");
 const shellPath = path.join(dist, "index.html");
@@ -13,12 +12,8 @@ if (!shell.includes(`<title>${HOME_TITLE}</title>`)) {
   process.exit(1);
 }
 
-// Public metadata has its own BotBound origin. APP_URL remains free to stay on
-// a compatibility host until external OAuth/provider callback registrations
-// are cut over. VITE_PUBLIC_SITE_URL is the only supported metadata override.
-if (SITE_URL !== BOTBOUND_PRODUCTION_ORIGIN) {
-  shell = shell.split(BOTBOUND_PRODUCTION_ORIGIN).join(SITE_URL);
-}
+// Public crawl/social metadata always stays canonical to botbound.me. APP_URL
+// remains independently configurable for provider callback continuity.
 writeFileSync(shellPath, shell);
 
 let written = 0;
