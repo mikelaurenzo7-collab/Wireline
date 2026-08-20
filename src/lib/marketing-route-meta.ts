@@ -1,15 +1,9 @@
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
-function configuredSiteUrl(): string {
-  const configured =
-    typeof process !== "undefined"
-      ? process.env.VITE_PUBLIC_SITE_URL?.trim() || process.env.APP_URL?.trim()
-      : "";
-  return (configured || BOTBOUND_PRODUCTION_ORIGIN).replace(/\/+$/, "");
-}
-
-export const SITE_URL = configuredSiteUrl();
+// Public crawl/social metadata is permanently canonical to the BotBound brand
+// origin. APP_URL remains independently configurable for provider callbacks.
+export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
 export const HOME_DESCRIPTION = "AI employees for calls, texts, and email.";

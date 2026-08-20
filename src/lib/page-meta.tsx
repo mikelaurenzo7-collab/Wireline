@@ -11,7 +11,7 @@ interface PageMetaProps {
 }
 
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-const SITE_URL = (import.meta.env.VITE_PUBLIC_SITE_URL?.trim() || BOTBOUND_PRODUCTION_ORIGIN).replace(/\/+$/, "");
+const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line";
 const DEFAULT_DESCRIPTION = "AI employees for calls, texts, and email.";

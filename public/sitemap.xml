@@ -1,189 +1,189 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!--
-    Wireline is a single-page app. Only routes that render meaningful
+    BotBound is a single-page app. Only routes that render meaningful
     content without an auth session are indexable. Authenticated dashboard
     routes (/admin, /agents, /logs, etc.) sit behind JWT and are excluded.
     <lastmod> is set conservatively so crawlers re-prioritize after each
     marketing push; bump the date below when copy or schema changes.
   -->
   <url>
-    <loc>https://trywireline.com/</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/features</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/features</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/pricing</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/pricing</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/compare</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/compare</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/about</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/about</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/showcase</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/showcase</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/blog</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/blog</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/support</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/support</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/contact</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/contact</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/status</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://botbound.me/status</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/security</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://botbound.me/security</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/trust</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://botbound.me/trust</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/trust/medical</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/trust/medical</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/trust/legal</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/trust/legal</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/trust/insurance</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/trust/insurance</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/trust/enterprise</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/trust/enterprise</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/home-services</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/home-services</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/medical</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/medical</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/legal</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/legal</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/real-estate</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/real-estate</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/personal</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/personal</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/insurance</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/insurance</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/restaurants</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/for/restaurants</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/for/sales</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/for/sales</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/solutions/sales</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/solutions/sales</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/solutions/support</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/solutions/support</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/developers</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/developers</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/changelog</loc>
-    <lastmod>2026-08-15</lastmod>
+    <loc>https://botbound.me/changelog</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/privacy</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/privacy</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://trywireline.com/terms</loc>
-    <lastmod>2026-08-01</lastmod>
+    <loc>https://botbound.me/terms</loc>
+    <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>

@@ -23,7 +23,8 @@ describe("marketing metadata contract", () => {
       expect(source).not.toContain("—");
     }
     expect(staticHead).toContain('content="BotBound"');
-    expect(runtimeMeta).toContain("VITE_PUBLIC_SITE_URL");
+    expect(runtimeMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(runtimeMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
@@ -42,7 +43,7 @@ describe("marketing metadata contract", () => {
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
     expect(security).toContain("How BotBound earns live calls");
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
-    expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
+    expect(sitemap).toContain("<loc>https://botbound.me/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
     expect(trustPack).not.toMatch(/<main\b/);
     expect(trustPack).not.toContain("</main>");

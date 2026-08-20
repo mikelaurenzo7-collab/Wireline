@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { PageMeta } from "../lib/page-meta";
 import { BOT_MARKETING_VOICE } from "../lib/bot-product";
-import { LEGACY_PRODUCTION_ORIGIN } from "../lib/brand";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
 const PUBLIC_DESCRIPTION = BOT_MARKETING_VOICE.subline;
-const PUBLIC_ORIGIN = (import.meta.env.VITE_PUBLIC_SITE_URL?.trim() || LEGACY_PRODUCTION_ORIGIN).replace(/\/+$/, "");
+const PUBLIC_ORIGIN = BOTBOUND_PRODUCTION_ORIGIN;
 
 export default function LandingPage() {
   useEffect(() => { captureSignupIntentFromLocation(); captureDemoSourceFromLocation(); }, []);
