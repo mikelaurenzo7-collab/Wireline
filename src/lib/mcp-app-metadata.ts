@@ -8,11 +8,12 @@ export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.4.0";
 
+export const MCP_WEBSITE_URL = "https://botbound.me";
 export const MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html";
 export const MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html";
 // The asset filename is a stable compatibility path; the public host is BotBound.
 export const MCP_ICON_URL = "https://botbound.me/wireline-chatgpt-app-icon.svg";
-export const MCP_SUPPORT_EMAIL = "support@botbound.me";
+export const MCP_SUPPORT_URL = "https://botbound.me/support";
 
 export function claudeMcpAppDomain(resourceUrl: string): string {
   return `${createHash("sha256").update(resourceUrl).digest("hex").slice(0, 32)}.claudemcpcontent.com`;
@@ -54,7 +55,9 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
     version: MCP_SERVER_VERSION,
     description:
       "Create a BotBound account, build your first Bot from Cursor, ChatGPT, or Claude, privately rehearse it, and continue in BotBound. Live calls, numbers, and launch stay in BotBound.",
-    websiteUrl: issuer,
+    // Public company/product navigation is independent of the temporarily
+    // compatibility-pinned OAuth issuer and MCP resource endpoints below.
+    websiteUrl: MCP_WEBSITE_URL,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
     icons: [{ src: MCP_ICON_URL, mimeType: "image/svg+xml" }],
     remotes: [
@@ -74,6 +77,7 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
     _meta: {
       "com.trywireline/docs": MCP_DOCUMENTATION_URL,
       "com.trywireline/privacy": MCP_PRIVACY_URL,
+      "com.trywireline/support": MCP_SUPPORT_URL,
     },
   };
 }
