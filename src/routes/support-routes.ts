@@ -6,7 +6,7 @@
  *   2. Fail-closed rate-limit per IP so the form cannot become a spam relay
  *   3. Honor provider delivery suppression before attempting Resend
  *   4. Email the staffed support inbox with Reply-To set to the submitter
- *   5. Return an actionable failure so the page can fall back to direct email
+ *   5. Return an actionable failure without advertising an unverified mailbox
  *
  * Auth not required — pre-signup visitors with a billing question
  * need to reach us too.
@@ -79,7 +79,10 @@ async function sendSupportEmail(args: {
 
 const router = Router();
 
-const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@botbound.me";
+// Keep the proven compatibility inbox as the operational default until a
+// BotBound mailbox is explicitly provisioned and SUPPORT_INBOX is configured.
+// This value is never rendered to customers.
+const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com";
 const SUPPORT_RATE_WINDOW_MS = 15 * 60_000;
 const SUPPORT_RATE_MAX = 5;
 
@@ -100,7 +103,7 @@ async function ticketRateLimiter(req: Request, res: Response, next: NextFunction
   const distributed = distributedLimiterStatus();
   if (!distributed.ok) {
     return res.status(503).json({
-      error: "Support intake is temporarily unavailable. Email support@botbound.me directly.",
+      error: "Support intake is temporarily unavailable. Please call BotBound or try again shortly.",
       code: distributed.code || "RATE_LIMITER_UNAVAILABLE",
     });
   }
@@ -129,7 +132,7 @@ async function ticketRateLimiter(req: Request, res: Response, next: NextFunction
   } catch (err) {
     log.error("Support ticket rate limiter failed closed", { error: getErrorMessage(err) });
     return res.status(503).json({
-      error: "Support intake is temporarily unavailable. Email support@botbound.me directly.",
+      error: "Support intake is temporarily unavailable. Please call BotBound or try again shortly.",
       code: "RATE_LIMITER_ERROR",
     });
   }
@@ -191,7 +194,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
         ok: false,
         sent: false,
         code: "SERVICE_UNAVAILABLE",
-        error: "Couldn't deliver your message just now. Email support@botbound.me or try again.",
+        error: "Couldn't deliver your message just now. Please call BotBound or try again shortly.",
       });
     }
 
@@ -200,9 +203,9 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
   } catch (e) {
     if (e instanceof AppError) throw e;
     log.error("Support ticket route failed", { error: getErrorMessage(e) });
-    return res
-      .status(500)
-      .json({ error: "Couldn't submit ticket, please email support@botbound.me directly." });
+    return res.status(500).json({
+      error: "Couldn't submit the ticket. Please call BotBound or try again shortly.",
+    });
   }
 });
 
