@@ -6,7 +6,7 @@
 # within one business day and credit reporters in our changelog
 # unless asked to stay anonymous.
 
-Contact: mailto:support@botbound.me
+Contact: https://botbound.me/support
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: en
 Canonical: https://botbound.me/.well-known/security.txt
