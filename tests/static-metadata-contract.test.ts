@@ -1,3 +1,4 @@
+// Exact-head public-brand cutover release contract.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
