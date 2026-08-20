@@ -88,6 +88,15 @@ const replacements = {
     // preserves stable tool names, schema fields, camelCase properties, and
     // technical protocol identifiers such as open_in_wireline_url.
     ["Wireline ", "BotBound "],
+    ["Wireline.", "BotBound."],
+    ["Wireline,", "BotBound,"],
+    ["Wireline:", "BotBound:"],
+  ],
+  "src/routes/chatgpt-mcp-routes.ts": [
+    // This router's uppercase Wireline occurrences are OAuth errors/consent
+    // prose only. Its compatibility tables, scopes, endpoints, and token fields
+    // are all lowercase wireline_* or imported protocol values.
+    ["Wireline", "BotBound"],
   ],
   "src/routes/company-identity-routes.ts": [
     ["Wireline records a verified business profile", "BotBound records a verified business profile"],
