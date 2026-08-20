@@ -55,9 +55,9 @@ export function SupportPage() {
         /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
         message.includes("(5");
       if (isTransport) {
-        const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
-        window.location.href = fallback;
-        setError("The ticket service did not respond, so your email client has opened with everything filled in.");
+        setError(
+          `The ticket service is temporarily unavailable. Call BotBound at ${supportAgent.display} or try again shortly.`,
+        );
       } else {
         setError(message);
       }
@@ -88,10 +88,10 @@ export function SupportPage() {
             <h2 className="mt-5 text-sm font-semibold text-foreground">Call BotBound</h2>
             <p className="mt-2 text-sm text-muted-foreground">{supportAgent.display}</p>
           </a>
-          <a href="mailto:support@trywireline.com" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <a href="#support-ticket" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Send a ticket</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Use the secure form below</p>
           </a>
           <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
@@ -99,7 +99,7 @@ export function SupportPage() {
           </Link>
         </section>
 
-        <section className="mt-8 wl-stitch-card p-6 sm:p-8">
+        <section id="support-ticket" className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Open a ticket</h2>
           {submitted ? (
             <div className="py-10 text-center">
