@@ -83,6 +83,50 @@ describe("deeper launch audit hardening", () => {
     }
   });
 
+  it("covers authenticated, legal, plugin, and agent-knowledge surfaces the old sweep missed", () => {
+    const terms = read("src/components/LegalPage.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const settings = read("src/pages/SettingsPage.tsx");
+    const apps = read("src/pages/ClientAppsPage.tsx");
+    const plugin = read("plugin.json");
+    const knowledge = read("src/data/wireline-knowledge.ts");
+
+    for (const source of [terms, privacy, settings, apps, plugin, knowledge]) {
+      expect(source).not.toContain("support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
+    }
+    for (const source of [terms, privacy, settings, plugin, knowledge]) {
+      expect(source).not.toContain("https://trywireline.com");
+    }
+
+    expect(terms).toContain('to="/support"');
+    expect(privacy).toContain('to="/support"');
+    expect(settings).toContain('to="/support"');
+
+    expect(apps).toContain('title: "BotBound Command"');
+    expect(apps).toContain("BotBoundWordmark");
+    expect(apps).not.toContain("mailto:");
+    expect(apps).toContain("compatibility MCP service endpoint");
+    expect(apps).toContain("https://trywireline.com/mcp");
+
+    const manifest = JSON.parse(plugin) as {
+      name: string;
+      description: string;
+      author: { name: string; url: string; email?: string };
+      homepage: string;
+    };
+    expect(manifest.name).toBe("wireline");
+    expect(manifest.description).toContain("BotBound");
+    expect(manifest.description).not.toContain("Wireline");
+    expect(manifest.author).toEqual({ name: "BotBound", url: "https://botbound.me" });
+    expect(manifest.homepage).toBe("https://botbound.me/cursor-plugin.html");
+
+    expect(knowledge).toContain('WIRELINE_URL = "https://botbound.me"');
+    expect(knowledge).toContain('WIRELINE_SUPPORT_URL = "https://botbound.me/support"');
+    expect(knowledge).toContain('"BotBound runs calls, texts, follow-up');
+    expect(knowledge).not.toMatch(/"WIRELINE\b/);
+  });
+
   it("keeps MCP public metadata on BotBound while preserving protocol and callback compatibility", () => {
     const mcp = read("src/lib/mcp-app-metadata.ts");
     const cursor = read("public/cursor-plugin.html");
