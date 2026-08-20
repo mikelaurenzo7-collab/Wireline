@@ -9,6 +9,7 @@ const TARGET = resolve(ROOT, "drizzle/migrations/meta/0050_snapshot.json");
 const TARGET_0051_PATH = resolve(ROOT, "drizzle/migrations/meta/0051_snapshot.json");
 const TARGET_0052_PATH = resolve(ROOT, "drizzle/migrations/meta/0052_snapshot.json");
 const TARGET_0053_PATH = resolve(ROOT, "drizzle/migrations/meta/0053_snapshot.json");
+const TARGET_0054_PATH = resolve(ROOT, "drizzle/migrations/meta/0054_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -17,6 +18,8 @@ const TARGET_0052_ID = "96da4f2e-8d80-46e0-834f-ac2d20306fb5";
 const TARGET_0052_SHA256 = "2057ac0cd45cd55bcb39e2edb27615bb6c571dbd6ed9d754cf4af4d0eadd9713";
 const TARGET_0053_ID = "f8a73de7-740c-4d49-b5eb-cdcaab8c03ce";
 const TARGET_0053_SHA256 = "75a6916995f0e973998e4c170b6da445acb00add28b1133a4a01114e33e41b20";
+const TARGET_0054_ID = "c3ddc84a-72f2-4d8d-91a2-79f8f4c5ad16";
+const TARGET_0054_SHA256 = "PENDING_COMPUTE";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -203,6 +206,20 @@ export function buildHotPathIndexSnapshot(grok46Snapshot) {
   return snapshot;
 }
 
+export function buildProvenanceValidationSnapshot(hotPathSnapshot) {
+  if (!hotPathSnapshot || hotPathSnapshot.id !== TARGET_0053_ID || hotPathSnapshot.version !== "7") {
+    throw new Error("0053 snapshot identity changed; refusing to synthesize 0054.");
+  }
+  // 0156 only validates an existing NOT VALID CHECK constraint. Drizzle's
+  // schema snapshot has no representation for pg_constraint.convalidated, so
+  // the schema shape is intentionally unchanged; only the snapshot identity
+  // advances to stay aligned with the journal head.
+  const snapshot = structuredClone(hotPathSnapshot);
+  snapshot.id = TARGET_0054_ID;
+  snapshot.prevId = hotPathSnapshot.id;
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -225,12 +242,16 @@ export function materializeDrizzleMeta() {
   const preservedSerialized = `${JSON.stringify(preservedSnapshot, null, 2)}\n`;
   const grok46Snapshot = buildGrok46DefaultsSnapshot(preservedSnapshot);
   const grok46Serialized = `${JSON.stringify(grok46Snapshot, null, 2)}\n`;
-  const hotPathSerialized = `${JSON.stringify(buildHotPathIndexSnapshot(grok46Snapshot), null, 2)}\n`;
+  const hotPathSnapshot = buildHotPathIndexSnapshot(grok46Snapshot);
+  const hotPathSerialized = `${JSON.stringify(hotPathSnapshot, null, 2)}\n`;
+  const provenanceSnapshot = buildProvenanceValidationSnapshot(hotPathSnapshot);
+  const provenanceSerialized = `${JSON.stringify(provenanceSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
   const hotPath = writeSnapshot(TARGET_0053_PATH, hotPathSerialized, TARGET_0053_SHA256);
-  return { native, preserved, grok46, hotPath };
+  const provenance = writeSnapshot(TARGET_0054_PATH, provenanceSerialized, TARGET_0054_SHA256);
+  return { native, preserved, grok46, hotPath, provenance };
 }
 
 const result = materializeDrizzleMeta();
@@ -245,4 +266,9 @@ if (result.grok46.changed) {
 }
 if (result.hotPath.changed) {
   console.log(`Materialized Drizzle snapshot 0053 (${result.hotPath.sha256.slice(0, 12)}…).`);
+}
+if (result.provenance.changed) {
+  // The full hash is intentionally logged while TARGET_0054_SHA256 is pending;
+  // the next commit pins it and removes the bootstrap state before merge.
+  console.log(`Materialized Drizzle snapshot 0054 (${result.provenance.sha256}).`);
 }
