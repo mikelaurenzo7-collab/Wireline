@@ -10,13 +10,32 @@ describe("deeper launch audit hardening", () => {
       headers: Array<{ headers: Array<{ key: string; value: string }> }>;
     };
     const deploy = read("scripts/vercel-deploy.mjs");
+    const canonical = read("src/lib/csp.ts");
     const csp = vercel.headers
       .flatMap((rule) => rule.headers)
       .find((header) => header.key === "Content-Security-Policy")?.value;
 
     expect(csp).toContain("https://*.daily.co");
     expect(csp).toContain("wss://*.daily.co");
+    expect(csp).toContain("sha256-rYWQCFq+3047ZWkDO1YafD8wzUpLv9aVQVarfGpJ1y4=");
+    expect(csp).toContain("sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc=");
+    expect(canonical).not.toContain("sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w=");
     expect(deploy).toContain('run(process.execPath, ["scripts/check-csp-drift.mjs"]);');
+  });
+
+  it("keeps static legal and ChatGPT App surfaces on the BotBound identity", () => {
+    const deletion = read("public/legal/data-deletion.html");
+    const chatgptPrivacy = read("public/chatgpt-app-privacy.html");
+
+    expect(deletion).toContain('href="https://botbound.me/legal/data-deletion"');
+    expect(chatgptPrivacy).toContain(
+      'href="https://botbound.me/chatgpt-app-privacy.html"',
+    );
+    for (const source of [deletion, chatgptPrivacy]) {
+      expect(source).toContain("support@botbound.me");
+      expect(source).not.toContain("trywireline.com");
+      expect(source).not.toContain("support@trywireline.com");
+    }
   });
 
   it("terminalizes provider-expired Checkout operations before the broad billing router", async () => {
