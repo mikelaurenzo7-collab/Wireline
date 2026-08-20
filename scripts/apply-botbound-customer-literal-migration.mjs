@@ -83,14 +83,11 @@ const replacements = {
     ["Wireline is reconciling its local billing record.", "BotBound is reconciling its local billing record."],
   ],
   "src/routes/chatgpt-mcp-account-routes.ts": [
-    // Customer/model-visible MCP prose still carries the retired brand in this
-    // large protocol owner. Replacing only the token followed by whitespace
-    // preserves stable tool names, schema fields, camelCase properties, and
-    // technical protocol identifiers such as open_in_wireline_url.
+    // These are the only two standalone uppercase customer-name shapes in the
+    // account-bound protocol owner. Lowercase/camel technical identifiers such
+    // as list_wireline_agents and open_in_wireline_url remain untouched.
     ["Wireline ", "BotBound "],
     ["Wireline.", "BotBound."],
-    ["Wireline,", "BotBound,"],
-    ["Wireline:", "BotBound:"],
   ],
   "src/routes/chatgpt-mcp-routes.ts": [
     // This router's uppercase Wireline occurrences are OAuth errors/consent
