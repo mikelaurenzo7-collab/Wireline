@@ -19,7 +19,7 @@ const TARGET_0052_SHA256 = "2057ac0cd45cd55bcb39e2edb27615bb6c571dbd6ed9d754cf4a
 const TARGET_0053_ID = "f8a73de7-740c-4d49-b5eb-cdcaab8c03ce";
 const TARGET_0053_SHA256 = "75a6916995f0e973998e4c170b6da445acb00add28b1133a4a01114e33e41b20";
 const TARGET_0054_ID = "c3ddc84a-72f2-4d8d-91a2-79f8f4c5ad16";
-const TARGET_0054_SHA256 = "PENDING_COMPUTE";
+const TARGET_0054_SHA256 = "bb8927015dc64dc6048186dbfa83d36aaaa5165e219ebe78a2abfb37767147e6";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -222,7 +222,7 @@ export function buildProvenanceValidationSnapshot(hotPathSnapshot) {
 
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
-  if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
+  if (actualHash !== expectedHash) {
     throw new Error(`Generated snapshot hash mismatch for ${path}: expected ${expectedHash}, got ${actualHash}.`);
   }
   if (existsSync(path) && hash(readFileSync(path, "utf8")) === actualHash) {
@@ -268,7 +268,5 @@ if (result.hotPath.changed) {
   console.log(`Materialized Drizzle snapshot 0053 (${result.hotPath.sha256.slice(0, 12)}…).`);
 }
 if (result.provenance.changed) {
-  // The full hash is intentionally logged while TARGET_0054_SHA256 is pending;
-  // the next commit pins it and removes the bootstrap state before merge.
-  console.log(`Materialized Drizzle snapshot 0054 (${result.provenance.sha256}).`);
+  console.log(`Materialized Drizzle snapshot 0054 (${result.provenance.sha256.slice(0, 12)}…).`);
 }
