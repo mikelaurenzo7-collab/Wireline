@@ -121,11 +121,10 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   }
   if (path === "src/lib/openapi-spec.ts") return true;
   if (path === "src/lib/showcase-assistant.ts") return true;
-  // The legacy broad exemption for chatgpt-mcp-account-routes.ts was unsafe:
-  // tool titles, descriptions, prompts, error messages, and resource text are
-  // model/customer-visible. Its stable protocol fields are lowercase/camelCase
-  // and therefore do not need an exemption from the standalone-name sweep.
-  if (path === "src/routes/chatgpt-mcp-routes.ts") return true;
+  // Neither account-bound MCP route receives a blanket compatibility exemption:
+  // tool/consent titles, descriptions, prompts, errors, and resource text are
+  // customer/model-visible. Stable protocol fields are lowercase/camelCase and
+  // naturally do not match the retired standalone customer-name pattern.
   return false;
 }
 
