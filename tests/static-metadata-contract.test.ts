@@ -12,7 +12,12 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain("AI employees for calls, texts, and email.");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Put Your Bot on the Line"');
-    expect(index).toContain('"logo":"https://trywireline.com/botbound-icon.svg"');
+    expect(index).toContain('"logo":"https://botbound.me/botbound-icon.svg"');
+    expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
+    expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
+    expect(index).toContain('<meta property="og:image" content="https://botbound.me/og-image.png" />');
+    expect(index).not.toContain("https://trywireline.com");
+    expect(index).not.toContain("support@trywireline.com");
     expect(index).not.toContain("WIRE YOUR PHONE BOT");
     expect(index).not.toContain("folded violet and platinum W");
     expect(index).not.toContain("VOICE-FIRST");
@@ -29,8 +34,8 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />');
     expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(index).toContain('"@type":"WebSite"');
-    expect(index).toContain('"@id":"https://trywireline.com/#website"');
-    expect(index).toContain('"publisher":{"@id":"https://trywireline.com/#organization"}');
+    expect(index).toContain('"@id":"https://botbound.me/#website"');
+    expect(index).toContain('"publisher":{"@id":"https://botbound.me/#organization"}');
   });
 
   it("keeps runtime landing metadata aligned to the same BotBound entrance", () => {
