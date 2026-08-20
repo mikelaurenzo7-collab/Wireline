@@ -26,4 +26,4 @@ Disallow: /reset-password
 Disallow: /auth/
 
 # Sitemap of public marketing surfaces
-Sitemap: https://trywireline.com/sitemap.xml
+Sitemap: https://botbound.me/sitemap.xml
