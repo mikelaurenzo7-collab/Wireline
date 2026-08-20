@@ -1,4 +1,5 @@
-import { Mail } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
+import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import WireSignalArt from "../components/marketing/WireSignalArt";
@@ -10,7 +11,7 @@ import WireSignalArt from "../components/marketing/WireSignalArt";
 const POSITIONS = [
   {
     heading: "Independent",
-    copy: "No reseller in the middle, and no account manager between you and the people who build it. Support goes to the same inbox we read.",
+    copy: "No reseller in the middle, and no account manager between you and the people who build it. Support goes to the same queue we read.",
   },
   {
     heading: "Trained, Not Templated",
@@ -47,16 +48,16 @@ export default function About() {
           <div>
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
             <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              BUILT BY THE PEOPLE WHO ANSWER THE SUPPORT EMAIL
+              BUILT BY THE PEOPLE WHO ANSWER SUPPORT
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
-            <a
-              href="mailto:support@botbound.me"
+            <Link
+              to="/support"
               className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
-              <Mail className="h-4 w-4" aria-hidden="true" />
-              <span className="wl-preserve-case">support@botbound.me</span>
-            </a>
+              <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+              Contact BotBound support
+            </Link>
           </div>
 
           <ol className="grid content-center gap-px overflow-hidden rounded-[16px] border border-border bg-border">
