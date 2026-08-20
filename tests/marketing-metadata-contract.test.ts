@@ -23,7 +23,8 @@ describe("marketing metadata contract", () => {
       expect(source).not.toContain("—");
     }
     expect(staticHead).toContain('content="BotBound"');
-    expect(runtimeMeta).toContain("VITE_PUBLIC_SITE_URL");
+    expect(runtimeMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(runtimeMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
