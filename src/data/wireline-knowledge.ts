@@ -1,24 +1,27 @@
 /**
- * Canonical WIRELINE product knowledge - the single source of truth that gets:
- *   1. Injected into every Vapi agent system prompt as a "WIRELINE KNOWLEDGE" block.
+ * Canonical BotBound product knowledge - the single source of truth that gets:
+ *   1. Injected into every voice-agent system prompt as the product knowledge block.
  *   2. Rendered in the in-app /help route so signed-in account holders see the same story.
  *   3. Referenced by public-facing demo and marketing surfaces.
+ *
+ * Exported WIRELINE_* identifiers are retained as technical compatibility names;
+ * every customer/model-visible value is BotBound.
  */
 
-export const WIRELINE_URL = "https://trywireline.com";
-export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
+export const WIRELINE_URL = "https://botbound.me";
+export const WIRELINE_SUPPORT_URL = "https://botbound.me/support";
 
 export const WIRELINE_ONE_LINER =
-  "WIRELINE runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
+  "BotBound runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
   "Live calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Studio live tests use that same voice brain. OpenAI Realtime is only the ChatGPT App preview, not the phone Bot.";
 
 export const WIRELINE_PLANS = [
   {
-    name: "WIRELINE Free Builder",
+    name: "BotBound Free Builder",
     price: "Free to create, train, and privately simulate",
-    bestFor: "Trying WIRELINE before going live.",
+    bestFor: "Trying BotBound before going live.",
     includes: [
       "One private draft Bot",
       "Full setup, training, and knowledge tools unlocked",
@@ -26,7 +29,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "WIRELINE Starter",
+    name: "BotBound Starter",
     price: "$19/mo",
     bestFor: "Solo or founder use going live for the first time.",
     includes: [
@@ -37,7 +40,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "WIRELINE Starter Plus",
+    name: "BotBound Starter Plus",
     price: "$39/mo",
     bestFor: "Founders who want two distinct Bots live in the same workspace.",
     includes: [
@@ -48,7 +51,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "WIRELINE Pro",
+    name: "BotBound Pro",
     price: "$79/mo",
     bestFor: "Revenue, support, front desk, and multi-role operations.",
     includes: [
@@ -59,7 +62,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "WIRELINE Scale & Enterprise",
+    name: "BotBound Scale & Enterprise",
     price: "Custom committed usage",
     bestFor: "Governed rollout for organizations that need 25 or more Bots.",
     includes: [
@@ -110,15 +113,15 @@ export const WIRELINE_FEATURES = [
 ] as const;
 
 /**
- * The growth-engine story - WIRELINE's autonomous outbound and follow-up stack,
+ * The growth-engine story - BotBound's autonomous outbound and follow-up stack,
  * framed as the answer to "I need more leads" or "my pipeline is dry."
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "WIRELINE's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
+  "BotBound's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should
- * surface the matching WIRELINE capability without being asked.
+ * surface the matching BotBound capability without being asked.
  */
 export const WIRELINE_PAIN_SOLUTIONS = [
   {
@@ -173,7 +176,7 @@ export const WIRELINE_INTEGRATIONS = [
   "Zoom when connected",
   "Meta (Facebook + Instagram Ads) when connected",
   "X (Twitter) when connected",
-  "Stripe for WIRELINE billing",
+  "Stripe for BotBound billing",
   "bring-your-own carrier where supported",
 ] as const;
 
@@ -194,8 +197,8 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "Account deletion with a delayed hard-delete workflow",
   ],
   inProgress: [
-    "SOC 2 readiness work is in progress; WIRELINE is not SOC 2 certified today",
-    "HIPAA and BAA support are not currently available; do not present WIRELINE as HIPAA-certified",
+    "SOC 2 readiness work is in progress; BotBound is not SOC 2 certified today",
+    "HIPAA and BAA support are not currently available; do not present BotBound as HIPAA-certified",
     "Database policy and exposure reviews continue as the product surface expands",
     "EU data residency is not currently available",
   ],
