@@ -120,9 +120,8 @@ export function ContactPage() {
         ) ||
         message.includes("(5");
       if (isTransport) {
-        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
         setError(
-          "The message service did not respond, so your email client has opened with the note prepared.",
+          `The message service is temporarily unavailable. Call BotBound at ${salesAgent.display} or try again shortly.`,
         );
       } else {
         setError(message);
@@ -163,12 +162,12 @@ export function ContactPage() {
             <p className="mt-2 text-sm text-muted-foreground">{salesAgent.display}</p>
           </a>
           <a
-            href="mailto:support@trywireline.com"
+            href="#contact-form"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
+            <h2 className="mt-5 font-semibold text-foreground">Send a note</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Use the secure form below</p>
           </a>
           <Link
             to="/pricing"
@@ -183,7 +182,7 @@ export function ContactPage() {
           </Link>
         </section>
 
-        <section className="mt-8 wl-stitch-card p-6 sm:p-8">
+        <section id="contact-form" className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
           {submitted ? (
             <div className="py-10 text-center">
