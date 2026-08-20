@@ -23,43 +23,93 @@ describe("deeper launch audit hardening", () => {
     expect(deploy).toContain('run(process.execPath, ["scripts/check-csp-drift.mjs"]);');
   });
 
+  it("attributes launch measurement to BotBound and excludes previews", () => {
+    const measurement = read("public/marketing-measurement.js");
+
+    expect(measurement).toContain('var PLAUSIBLE_DOMAIN = "botbound.me";');
+    expect(measurement).toContain('host === "botbound.me"');
+    expect(measurement).toContain('host === "www.botbound.me"');
+    expect(measurement).toContain('host === "trywireline.com"');
+    expect(measurement).toContain('host === "www.trywireline.com"');
+    expect((measurement.match(/if \(!isProductionHost\(\)\) return;/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect(measurement).toContain('readConsent() !== "granted"');
+    expect(measurement).toContain("navigator.globalPrivacyControl === true");
+  });
+
   it("keeps public legal, security, support, About, and machine metadata on BotBound", () => {
     const deletion = read("public/legal/data-deletion.html");
     const chatgptPrivacy = read("public/chatgpt-app-privacy.html");
+    const mcpPrivacy = read("public/mcp-privacy.html");
     const security = read("public/.well-known/security.txt");
     const humans = read("public/humans.txt");
     const about = read("src/pages/About.tsx");
-    const support = read("src/routes/support-routes.ts");
+    const supportRoute = read("src/routes/support-routes.ts");
+    const supportPage = read("src/components/SupportPage.tsx");
 
     expect(deletion).toContain('href="https://botbound.me/legal/data-deletion"');
-    expect(chatgptPrivacy).toContain(
-      'href="https://botbound.me/chatgpt-app-privacy.html"',
-    );
+    expect(chatgptPrivacy).toContain('href="https://botbound.me/chatgpt-app-privacy.html"');
+    expect(mcpPrivacy).toContain('href="https://botbound.me/mcp-privacy.html"');
+    expect(security).toContain("Contact: https://botbound.me/support");
     expect(security).toContain("Canonical: https://botbound.me/.well-known/security.txt");
     expect(security).toContain("Policy: https://botbound.me/security");
     expect(humans).toContain("Site: https://botbound.me");
-    expect(about).toContain('href="mailto:support@botbound.me"');
-    expect(support).toContain('SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@botbound.me"');
+    expect(about).toContain('to="/support"');
+    expect(about).not.toContain("mailto:");
+    expect(supportPage).toContain('href="#support-ticket"');
+    expect(supportPage).not.toContain("mailto:");
 
-    for (const source of [deletion, chatgptPrivacy, security, humans, about, support]) {
+    // The old staffed inbox is an internal compatibility recipient only until
+    // SUPPORT_INBOX is explicitly provisioned for BotBound. It must never leak
+    // through public UI/error copy, and the unverified new mailbox must not be
+    // claimed anywhere in these launch surfaces.
+    expect(supportRoute).toContain(
+      'SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com"',
+    );
+    expect((supportRoute.match(/support@trywireline\.com/g) || []).length).toBe(1);
+    expect(supportRoute).not.toContain("support@botbound.me");
+
+    for (const source of [
+      deletion,
+      chatgptPrivacy,
+      mcpPrivacy,
+      security,
+      humans,
+      about,
+      supportPage,
+    ]) {
       expect(source).toContain("BotBound");
       expect(source).not.toContain("support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
     }
   });
 
   it("keeps MCP public metadata on BotBound while preserving protocol and callback compatibility", () => {
     const mcp = read("src/lib/mcp-app-metadata.ts");
+    const cursor = read("public/cursor-plugin.html");
+    const claude = read("public/claude-connector.html");
 
     expect(mcp).toContain('MCP_SERVER_NAME = "wireline"');
     expect(mcp).toContain('name: "com.trywireline/mcp"');
     expect(mcp).toContain('MCP_SERVER_TITLE = "BotBound"');
+    expect(mcp).toContain('MCP_WEBSITE_URL = "https://botbound.me"');
     expect(mcp).toContain('MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html"');
     expect(mcp).toContain('MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html"');
     expect(mcp).toContain('MCP_ICON_URL = "https://botbound.me/wireline-chatgpt-app-icon.svg"');
-    expect(mcp).toContain('MCP_SUPPORT_EMAIL = "support@botbound.me"');
+    expect(mcp).toContain('MCP_SUPPORT_URL = "https://botbound.me/support"');
+    expect(mcp).toContain("websiteUrl: MCP_WEBSITE_URL");
     expect(mcp).toContain(
       'redirect_domains: ["https://botbound.me", "https://trywireline.com"]',
     );
+
+    // trywireline.com is still intentionally visible only as the compatibility
+    // MCP service endpoint until the user's external OAuth/provider cutover.
+    for (const source of [cursor, claude]) {
+      expect(source).toContain("https://trywireline.com/mcp");
+      expect(source).toContain("legacy service host");
+      expect(source).toContain("https://botbound.me/support");
+      expect(source).not.toContain("support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
+    }
   });
 
   it("terminalizes provider-expired Checkout operations before the broad billing router", async () => {
