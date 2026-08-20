@@ -379,6 +379,13 @@
       "when": 1787031000000,
       "tag": "0155_hot_path_knowledge_and_jobs_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1787186000000,
+      "tag": "0156_validate_active_subscription_provenance",
+      "breakpoints": true
     }
   ]
 }
