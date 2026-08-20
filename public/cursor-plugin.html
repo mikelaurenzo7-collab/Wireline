@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
   <title>BotBound for Cursor</title>
+  <link rel="canonical" href="https://botbound.me/cursor-plugin.html" />
   <link rel="stylesheet" href="/static-legal.css" />
 </head>
 <body>
@@ -16,7 +17,8 @@
     <section class="card">
       <strong>MCP endpoint:</strong> <code>https://trywireline.com/mcp</code><br />
       <strong>Transport:</strong> Streamable HTTP<br />
-      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Cursor registers dynamically against Cursor-operated callbacks. No API keys in the plugin.
+      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Cursor registers dynamically against Cursor-operated callbacks. No API keys in the plugin.<br />
+      <strong>Compatibility:</strong> the MCP protocol endpoint remains on the legacy service host while existing OAuth registrations complete their BotBound domain transition.
     </section>
 
     <p>
@@ -26,13 +28,13 @@
 
     <h2>Install in Cursor</h2>
     <ol>
-      <li>Click <strong>Add BotBound to Cursor</strong>, install from <a href="https://cursor.directory">Cursor Directory</a> when listed, or add a remote MCP server with URL <code>https://trywireline.com/mcp</code>.</li>
+      <li>Click <strong>Add BotBound to Cursor</strong>, install from <a href="https://cursor.directory">Cursor Directory</a> when listed, or add the compatibility MCP service URL shown above.</li>
       <li>Complete OAuth. Create a BotBound account if you do not have one, then allow Cursor.</li>
       <li>Ask Cursor to create your first receptionist, scheduler, sales, or support voice agent, then privately rehearse a customer line.</li>
     </ol>
 
     <h2>Manual config</h2>
-    <p>Paste this into Cursor MCP settings. Do not add headers, API keys, or an <code>auth</code> client secret. Cursor discovers OAuth from BotBound's well-known metadata. The legacy technical server key remains <code>wireline</code> during the migration.</p>
+    <p>Paste this into Cursor MCP settings. Do not add headers, API keys, or an <code>auth</code> client secret. Cursor discovers OAuth from BotBound's well-known metadata. The stable technical server key remains <code>wireline</code> for connected-client compatibility.</p>
     <pre><code>{
   "mcpServers": {
     "wireline": {
@@ -60,7 +62,7 @@
     </ul>
 
     <h2>Privacy and support</h2>
-    <p>Read the <a href="/mcp-privacy.html">MCP Connector Privacy Notice</a> and the <a href="/privacy">BotBound Privacy Policy</a>. Support: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
+    <p>Read the <a href="/mcp-privacy.html">MCP Connector Privacy Notice</a> and the <a href="/privacy">BotBound Privacy Policy</a>. For help, use <a href="https://botbound.me/support">BotBound Support</a>.</p>
 
     <p><small>Last updated: August 19, 2026</small></p>
   </main>
