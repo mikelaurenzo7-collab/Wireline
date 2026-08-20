@@ -91,7 +91,7 @@ function DangerZone() {
       setRenewalStopNeedsAttention(renewalNeedsAttention);
       setDeletionScheduled(true);
       const renewalDetail = renewalNeedsAttention
-        ? " We could not confirm that subscription renewal stopped. Contact support@trywireline.com now so we can resolve billing without delaying deletion."
+        ? " We could not confirm that subscription renewal stopped. Open BotBound Support now so we can resolve billing without delaying deletion."
         : " Future subscription renewal is stopped. Paid access may remain available through the current billing period.";
       setMessage(
         data?.already_pending
@@ -195,6 +195,11 @@ function DangerZone() {
         >
           {message}
         </StatusNotice>
+      ) : null}
+      {renewalStopNeedsAttention ? (
+        <Button asChild variant="secondary" size="sm" className="mt-3">
+          <Link to="/support">Open BotBound Support</Link>
+        </Button>
       ) : null}
       {deletionScheduled ? (
         <Button
