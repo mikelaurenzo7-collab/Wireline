@@ -2,7 +2,7 @@
 
 /* TEAM */
   Team: BotBound
-  Site: https://trywireline.com
+  Site: https://botbound.me
 
 /* THANKS */
   Every early customer who picked up the phone and trusted an AI
