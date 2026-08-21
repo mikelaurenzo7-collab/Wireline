@@ -34,6 +34,10 @@ import {
 import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
 import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./account-deletion-fence";
 import {
+  hangupOpenAIRealtimeCall,
+  type OpenAIRealtimeKeyPurpose,
+} from "./voice/openai-realtime-call-control";
+import {
   isPausableProviderSpendJobType,
   ProviderSpendPausedError,
   runtimeReservationReferenceForJob,
@@ -53,6 +57,7 @@ const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "post_call_digest",
   "purge_deleted_account",
+  "openai_realtime_hangup",
 ]);
 
 /** Carrier acceptance predates deletion, so finish its accounting/history
@@ -294,6 +299,17 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 
 /** Global durable-job dispatcher including launch reporting extensions. */
 async function dispatchJob(job: JobRow): Promise<void> {
+  if (job.type === "openai_realtime_hangup") {
+    const payload =
+      job.payload && typeof job.payload === "object"
+        ? (job.payload as Record<string, unknown>)
+        : {};
+    const callId = typeof payload.callId === "string" ? payload.callId : "";
+    const keyPurpose: OpenAIRealtimeKeyPurpose =
+      payload.keyPurpose === "chatgpt_demo" ? "chatgpt_demo" : "runtime";
+    await hangupOpenAIRealtimeCall({ callId, keyPurpose });
+    return;
+  }
   if (job.type === "twilio_message_reconciliation") {
     await handleTwilioMessageReconciliationJob(job);
     return;

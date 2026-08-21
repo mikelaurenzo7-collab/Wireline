@@ -20,6 +20,7 @@ describe("OpenAI browser + native xAI PSTN voice architecture", () => {
     expect(entry).toContain('from "./OpenAILiveVoiceSandbox"');
     expect(sandbox).toContain("/api/voice/live/session");
     expect(sandbox).toContain("new RTCPeerConnection()");
+    expect(sandbox).toContain("session.maxDurationSeconds");
     expect(sandbox).not.toContain("xai-client-secret.");
   });
 
@@ -31,6 +32,23 @@ describe("OpenAI browser + native xAI PSTN voice architecture", () => {
     expect(widgetMeta).toContain('connectDomains: ["https://api.openai.com"]');
     expect(widget).toContain("new RTCPeerConnection()");
     expect(widget).not.toContain("xai-client-secret.");
+  });
+
+  it("keeps the public guest demo on server-mediated OpenAI WebRTC", () => {
+    const routes = read("src/routes/marketing-runtime-routes.ts");
+    const service = read("src/lib/voice/openai-public-demo-session.ts");
+    const hook = read("src/hooks/useProtectedPublicDemo.ts");
+    expect(routes).toContain('"/api/public/demo-call"');
+    expect(routes).toContain("createPublicOpenAILiveDemoCall");
+    expect(service).toContain("OPENAI_REALTIME_DEFAULT_MODEL");
+    expect(service).toContain("tools: []");
+    expect(service).toContain('tool_choice: "none"');
+    expect(service).toContain("runInBackground");
+    expect(service).toContain("hangupOpenAIRealtimeCall");
+    expect(hook).toContain("new RTCPeerConnection()");
+    expect(hook).toContain("JSON.stringify({ sdp })");
+    expect(hook).not.toContain("xai-client-secret");
+    expect(hook).not.toContain("api.x.ai");
   });
 
   it("keeps custom browser voices unsupported and phone customization documented", () => {
@@ -49,9 +67,15 @@ describe("OpenAI browser + native xAI PSTN voice architecture", () => {
 
   it("signals OpenAI Realtime with ephemeral client secret + application/sdp", () => {
     const service = read("src/lib/voice/openai-live-agent-service.ts");
-    expect(service).toContain("realtime/client_secrets");
-    expect(service).toContain('"Content-Type": "application/sdp"');
-    expect(service).not.toContain("new FormData()");
+    const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
+    expect(service).toContain("createServerManagedOpenAIRealtimeCall");
+    expect(service).toContain("OPENAI_LIVE_VOICE_MAX_SECONDS = 300");
+    expect(service).toContain("runInBackground");
+    expect(service).toContain("hangupOpenAIRealtimeCall");
+    expect(callControl).toContain("realtime/client_secrets");
+    expect(callControl).toContain('"Content-Type": "application/sdp"');
+    expect(callControl).toContain("openai_realtime_hangup");
+    expect(callControl).not.toContain("new FormData()");
   });
 
   it("does not advertise tools on the generic OpenAI session mint", () => {

@@ -70,7 +70,9 @@ describe("AI cost-protection contract", () => {
       const block = qaRoutes.slice(start, qaRoutes.indexOf("async (req", start));
       expect(block, path).toContain("enforceSpendCap");
       expect(block, path).toContain('withAudit("qa")');
-      expect(block.indexOf("authenticateUser"), path).toBeLessThan(block.indexOf("enforceSpendCap"));
+      expect(block.indexOf("authenticateUser"), path).toBeLessThan(
+        block.indexOf("enforceSpendCap"),
+      );
       expect(block.indexOf("enforceSpendCap"), path).toBeLessThan(block.indexOf('withAudit("qa")'));
     }
     expect(qaRoutes).toContain("failClosedOnError: true");
@@ -136,7 +138,7 @@ describe("AI cost-protection contract", () => {
     );
     expect(imagePath).toContain("recordUsage(");
     expect(imagePath).toContain("AI_GATEWAY_BASE_URL");
-    expect(imagePath).toContain('"xai/grok-4.5"');
+    expect(imagePath).toContain("gatewayModelId(");
   });
 
   it("records the fixed-price business artifact against the tenant that ordered it", () => {

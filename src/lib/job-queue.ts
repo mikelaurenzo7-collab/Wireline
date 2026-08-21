@@ -33,7 +33,8 @@ export type JobType =
   | "post_call_artifact"
   | "post_call_digest"
   | "scheduled_report"
-  | "twilio_message_reconciliation";
+  | "twilio_message_reconciliation"
+  | "openai_realtime_hangup";
 export interface JobRow extends Omit<base.JobRow, "type"> {
   type: JobType;
 }

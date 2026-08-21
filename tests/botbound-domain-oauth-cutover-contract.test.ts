@@ -35,6 +35,38 @@ const MICROSOFT_GRAPH_CALLBACKS = [
 ] as const;
 
 describe("BotBound domain and OAuth cutover boundary", () => {
+  it("permanently redirects both legacy hosts to the canonical host without dropping path or query", () => {
+    const source = read("vercel.json");
+    const vercel = JSON.parse(source) as {
+      redirects?: Array<{
+        source?: string;
+        destination?: string;
+        permanent?: boolean;
+        has?: Array<{ type?: string; value?: string }>;
+      }>;
+    };
+    const redirects = vercel.redirects ?? [];
+
+    for (const host of ["trywireline.com", "www.trywireline.com"]) {
+      const redirect = redirects.find((candidate) =>
+        candidate.has?.some((condition) => condition.type === "host" && condition.value === host),
+      );
+      expect(redirect, `${host} must have a top-level Vercel host redirect`).toMatchObject({
+        source: "/:path*",
+        destination: "https://botbound.me/:path*",
+        permanent: true,
+      });
+
+      const request = new URL(`https://${host}/pricing/starter?interval=year&coupon=founder`);
+      const carriedPath = redirect?.destination?.replace(":path*", request.pathname.slice(1));
+      expect(`${carriedPath}${request.search}`).toBe(
+        "https://botbound.me/pricing/starter?interval=year&coupon=founder",
+      );
+    }
+
+    expect(source.indexOf('"redirects"')).toBeLessThan(source.indexOf('"rewrites"'));
+  });
+
   it("keeps brand identity separate from the stable technical namespace", () => {
     const brand = read("src/lib/brand.ts");
     expect(brand).toContain('name: "BotBound"');

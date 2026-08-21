@@ -35,9 +35,11 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { outboundDialReservations } from "../db/security-schema";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { transferLiveCall } from "../lib/vapi-client";
@@ -692,14 +694,22 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const claimedExpressConsent = normalizedExpressConsent({
+        callPurpose,
+        hasExpressWrittenConsent,
+      });
+      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+        consentSource,
+        consentLeadId,
+      });
+      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
       const marketing = isMarketingCallPurpose(callPurpose);
 
-      if (marketing && expressConsent && !consentSource && !consentLeadId) {
+      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
           code: "CONSENT_ARTIFACT_REQUIRED",
           error:
-            "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+            "Marketing calls with express written consent require an auditable consent source or lead reference; manual attestation alone is not sufficient.",
         });
       }
 
@@ -707,6 +717,7 @@ router.post(
         userId: req.user.id,
         phone: customerNumber,
         isMarketingCall: marketing,
+        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -840,7 +851,7 @@ router.post(
         metadata: {
           ...outboundConsentMetadata({
             callPurpose,
-            hasExpressWrittenConsent,
+            hasExpressWrittenConsent: expressConsent,
             source: "mobile",
             consentSource,
             consentLeadId,

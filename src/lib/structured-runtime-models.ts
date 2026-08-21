@@ -2,7 +2,7 @@ import { STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 
 /**
  * Structured planning model policy.
- * Wireline-owned structured turns run through the managed xAI-first runtime
+ * BotBound-owned structured turns run through the managed OpenAI-first runtime
  * (Grok 4.6 via the direct xAI Responses API), with OpenAI, Gemini, and then
  * the Vercel AI Gateway as ordered continuity.
  */

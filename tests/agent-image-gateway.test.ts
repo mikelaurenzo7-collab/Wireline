@@ -23,7 +23,7 @@ describe("agent image training through AI Gateway", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const fetchMock = vi.fn(async () =>
       response(200, {
-        model: "xai/grok-4.5",
+        model: "openai/gpt-5.6-terra",
         output_text: JSON.stringify({ directives: [], knowledge: [], personality: "Warm" }),
         usage: { input_tokens: 10, output_tokens: 2 },
       }),
@@ -39,7 +39,7 @@ describe("agent image training through AI Gateway", () => {
     expect(url).toBe("https://ai-gateway.vercel.sh/v1/responses");
     expect(init.headers).toMatchObject({ Authorization: "Bearer gateway-test-key" });
     expect(JSON.parse(String(init.body))).toMatchObject({
-      model: "xai/grok-4.5",
+      model: "openai/gpt-5.6-terra",
       input: [
         {
           role: "user",
@@ -60,5 +60,25 @@ describe("agent image training through AI Gateway", () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
     await expect(extractImageAsset("menu.png", image)).rejects.toMatchObject({ status: 503 });
+  });
+
+  it("honors an explicit governed Gateway vision-model override", async () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
+    vi.stubEnv("VERCEL_OIDC_TOKEN", "");
+    vi.stubEnv("WIRELINE_GATEWAY_VISION_MODEL", "google/gemini-3.1-pro-preview");
+    const fetchMock = vi.fn(async () =>
+      response(200, {
+        model: "google/gemini-3.1-pro-preview",
+        output_text: JSON.stringify({ directives: [], knowledge: [], personality: "" }),
+        usage: { input_tokens: 8, output_tokens: 1 },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await extractImageAsset("menu.png", image);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      model: "google/gemini-3.1-pro-preview",
+    });
   });
 });

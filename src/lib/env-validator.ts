@@ -500,7 +500,7 @@ export function validateEnv(): EnvValidationResult {
   }
 
   // This credential used to be intentionally browser-exposed. Public voice
-  // now uses server-minted one-use tickets and native ephemeral sessions, so
+  // now uses server-minted one-use tickets and server-mediated OpenAI WebRTC, so
   // accepting the retired key here would contradict the deployment boundary
   // and could make a leaked configuration look healthy.
   if (process.env.VITE_VAPI_PUBLIC_KEY?.trim()) {
@@ -511,7 +511,7 @@ export function validateEnv(): EnvValidationResult {
       var: "VITE_VAPI_PUBLIC_KEY",
       group: "voice",
       message:
-        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and native ephemeral sessions",
+        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and server-mediated OpenAI WebRTC",
     });
   }
 

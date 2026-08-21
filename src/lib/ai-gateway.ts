@@ -1,4 +1,5 @@
 import { gatewayAuthorizationHeaders, isGatewayCredentialAvailable } from "./ai-gateway-auth";
+import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import { log } from "./server-logger";
 
 const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1";
@@ -46,7 +47,10 @@ export function isAIGatewayConfigured() {
 export function gatewayModelId(model: string) {
   const selected = model.trim();
   if (!selected)
-    return process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() || "openai/gpt-5.6-terra";
+    return (
+      process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() ||
+      `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`
+    );
   if (selected.includes("/")) return selected;
   if (/grok/i.test(selected)) return `xai/${selected}`;
   if (/^gpt-/i.test(selected)) return `openai/${selected}`;

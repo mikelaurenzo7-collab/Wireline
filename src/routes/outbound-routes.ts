@@ -12,9 +12,11 @@ import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -142,14 +144,22 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const claimedExpressConsent = normalizedExpressConsent({
+        callPurpose,
+        hasExpressWrittenConsent,
+      });
+      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+        consentSource,
+        consentLeadId,
+      });
+      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
       const marketing = isMarketingCallPurpose(callPurpose);
 
-      if (marketing && expressConsent && !consentSource && !consentLeadId) {
+      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
           code: "CONSENT_ARTIFACT_REQUIRED",
           error:
-            "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+            "Marketing calls with express written consent require an auditable consent source or lead reference; manual attestation alone is not sufficient.",
         });
       }
 
@@ -157,6 +167,7 @@ router.post(
         userId: req.user.id,
         phone: customerNumber,
         isMarketingCall: marketing,
+        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -212,7 +223,7 @@ router.post(
 
       const consentMetadata = outboundConsentMetadata({
         callPurpose,
-        hasExpressWrittenConsent,
+        hasExpressWrittenConsent: expressConsent,
         source: "web",
         consentSource,
         consentLeadId,
@@ -228,9 +239,7 @@ router.post(
       });
       if (!result.ok) {
         return res.status(result.status).json({
-          code: result.providerOutcomeAmbiguous
-            ? "OUTBOUND_CALL_OUTCOME_UNCERTAIN"
-            : "ERROR",
+          code: result.providerOutcomeAmbiguous ? "OUTBOUND_CALL_OUTCOME_UNCERTAIN" : "ERROR",
           error: result.error,
           doNotRetry: result.doNotRetry === true,
           leadId: result.leadId ?? null,

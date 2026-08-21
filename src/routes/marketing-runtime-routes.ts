@@ -1,4 +1,5 @@
 import { Router, type Request, type Response as ExpressResponse } from "express";
+import { z } from "zod";
 
 import { AppError, asyncHandler } from "../lib/api-error";
 import {
@@ -24,9 +25,9 @@ import {
 } from "../lib/public-demo-ticket";
 import { rateLimit } from "../lib/rate-limit";
 import {
-  createPublicXAILiveDemoSession,
-  publicXAIDemoConfigured,
-} from "../lib/voice/xai-public-demo-session";
+  createPublicOpenAILiveDemoCall,
+  publicOpenAIDemoConfigured,
+} from "../lib/voice/openai-public-demo-session";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
@@ -37,6 +38,9 @@ const assistantRateLimit = createIpRateLimiter({
 });
 
 const ALL_PUBLIC_AGENTS = [...WIRELINE_DEMO_AGENTS, ...WIRELINE_CONTACT_AGENTS] as const;
+const publicDemoCallSchema = z.object({
+  sdp: z.string().min(100).max(60_000),
+});
 
 const PUBLIC_MARKETING_STATS = {
   agents_online: 120,
@@ -144,7 +148,7 @@ router.post(
   "/api/public/demo-session",
   asyncHandler(async (req, res) => {
     const host = requireSameOrigin(req);
-    if (!publicDemoTicketingReady() || !publicXAIDemoConfigured()) {
+    if (!publicDemoTicketingReady() || !publicOpenAIDemoConfigured()) {
       throw AppError.fromHttpStatus(503, "The protected live demo is temporarily unavailable.");
     }
 
@@ -166,7 +170,7 @@ router.post(
     res.setHeader("Cache-Control", "no-store");
     res.json({
       token,
-      providerSessionEndpoint: "/api/public/demo-xai-session",
+      providerSessionEndpoint: "/api/public/demo-call",
       expiresAt: new Date(claims.exp * 1_000).toISOString(),
       maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS,
     });
@@ -174,11 +178,15 @@ router.post(
 );
 
 router.post(
-  "/api/public/demo-xai-session",
+  "/api/public/demo-call",
   asyncHandler(async (req, res) => {
     const host = requireSameOrigin(req);
     const token = bearerToken(req);
     if (!token) throw AppError.fromHttpStatus(401, "A protected demo ticket is required.");
+    const parsedBody = publicDemoCallSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      throw AppError.fromHttpStatus(400, "A valid WebRTC offer is required.");
+    }
 
     const ip = requestIp(req);
     const verification = verifyPublicDemoTicket({ token, ip, host });
@@ -201,7 +209,11 @@ router.post(
     const agent = publicAgent(verification.claims.agent);
     if (!agent) throw AppError.fromHttpStatus(404, "That live demo Bot is unavailable.");
 
-    const session = await createPublicXAILiveDemoSession(agent);
+    const session = await createPublicOpenAILiveDemoCall({
+      agent,
+      guestFingerprint: verification.claims.ip,
+      sdp: parsedBody.data.sdp,
+    });
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Wireline-Demo-Max-Seconds", String(PUBLIC_BROWSER_DEMO_MAX_SECONDS));
     res.json(session);

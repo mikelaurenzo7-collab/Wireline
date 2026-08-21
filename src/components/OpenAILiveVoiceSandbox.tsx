@@ -8,6 +8,7 @@ import { ConversationActivity, ConversationMessage, StatusNotice } from "./molec
 type SignalResponse = {
   sdp: string;
   greeting?: string;
+  maxDurationSeconds?: number;
 };
 type Line = { id: string; role: "You" | "Agent"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
@@ -111,6 +112,7 @@ export default function OpenAILiveVoiceSandbox({
   const reportedStarted = useRef(false);
   const reportedCompleted = useRef(false);
   const generation = useRef(0);
+  const deadlineTimer = useRef<number | null>(null);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
     if (!text) return;
@@ -142,6 +144,8 @@ export default function OpenAILiveVoiceSandbox({
   };
 
   const release = useCallback(() => {
+    if (deadlineTimer.current !== null) window.clearTimeout(deadlineTimer.current);
+    deadlineTimer.current = null;
     channel.current?.close();
     peer.current?.close();
     microphone.current?.getTracks().forEach((track) => track.stop());
@@ -370,6 +374,13 @@ export default function OpenAILiveVoiceSandbox({
         );
       }
       await connection.setRemoteDescription({ type: "answer", sdp: session.sdp });
+      const maxDurationSeconds = Math.max(15, Math.min(300, session.maxDurationSeconds || 300));
+      deadlineTimer.current = window.setTimeout(() => {
+        if (currentGeneration !== generation.current) return;
+        generation.current += 1;
+        release();
+        setState("idle");
+      }, maxDurationSeconds * 1_000);
       const greeting = session.greeting?.trim();
       if (greeting) {
         const sendGreeting = () => {

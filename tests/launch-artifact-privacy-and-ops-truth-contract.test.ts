@@ -41,7 +41,8 @@ describe("launch artifact privacy and operations truth", () => {
   it("makes unauthenticated native browser proof short, tool-free, and non-retained", () => {
     const policy = read("src/lib/public-browser-demo.ts");
     const route = read("src/routes/marketing-runtime-routes.ts");
-    const session = read("src/lib/voice/xai-public-demo-session.ts");
+    const session = read("src/lib/voice/openai-public-demo-session.ts");
+    const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
     const hook = read("src/hooks/useProtectedPublicDemo.ts");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     const budget = read("src/lib/public-demo-budget.ts");
@@ -50,15 +51,22 @@ describe("launch artifact privacy and operations truth", () => {
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("loggingEnabled: false");
     expect(policy).toContain("transcriptPlan: { enabled: false }");
-    expect(route).toContain("publicXAIDemoConfigured");
-    expect(route).toContain('"/api/public/demo-xai-session"');
-    expect(route).toContain("createPublicXAILiveDemoSession");
+    expect(route).toContain("publicOpenAIDemoConfigured");
+    expect(route).toContain('"/api/public/demo-call"');
+    expect(route).toContain("createPublicOpenAILiveDemoCall");
     expect(route).not.toContain("process.env.VAPI_PRIVATE_KEY");
     expect(route).not.toContain('router.post("/api/public/demo-vapi/call/web"');
     expect(session).toContain("tools: []");
     expect(session).toContain('tool_choice: "none"');
     expect(session).not.toContain("recording");
+    expect(session).toContain("runInBackground");
+    expect(session).toContain("hangupOpenAIRealtimeCall");
+    expect(callControl).toContain("openai_realtime_hangup");
+    expect(callControl).toContain("/hangup");
     expect(hook).toContain('fetch("/api/public/demo-session"');
+    expect(hook).toContain("new RTCPeerConnection()");
+    expect(hook).not.toContain("xai-client-secret");
+    expect(hook).not.toContain("api.x.ai");
     expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
     expect(widget).not.toContain("/api/public/assistant/");
     expect(budget).toContain("distributedLimiterStatus");

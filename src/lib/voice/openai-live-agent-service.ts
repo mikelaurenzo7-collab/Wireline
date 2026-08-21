@@ -1,8 +1,7 @@
-import { createHash } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { AppError } from "../api-error";
-import { drizzle, fetchWithTimeout, log, serialQueryBatch } from "../server-context";
-import { getErrorMessage } from "../server-utils";
+import { runInBackground } from "../background-work";
+import { drizzle, log, serialQueryBatch } from "../server-context";
 import * as schema from "../../db/schema";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
@@ -11,9 +10,16 @@ import {
   type OpenAIRealtimeToolDefinition,
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
+import {
+  createServerManagedOpenAIRealtimeCall,
+  hangupOpenAIRealtimeCall,
+} from "./openai-realtime-call-control";
 
-const OPENAI_REALTIME_CLIENT_SECRETS_URL = "https://api.openai.com/v1/realtime/client_secrets";
-const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
+export const OPENAI_LIVE_VOICE_MAX_SECONDS = 300 as const;
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
 
@@ -235,21 +241,11 @@ async function loadAgentRuntime(agentId: string, userId: string) {
   };
 }
 
-function safetyIdentifierForUser(userId: string): string {
-  return createHash("sha256").update(`wireline:${userId}`).digest("hex");
-}
-
 export async function createOpenAILiveVoiceCall(input: {
   userId: string;
   agentId: string;
   sdp: string;
 }) {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) throw AppError.fromHttpStatus(503, "Live voice is not configured yet.");
-  const sdp = input.sdp.trim();
-  if (sdp.length < 100 || sdp.length > 60_000 || !sdp.startsWith("v="))
-    throw AppError.fromHttpStatus(400, "A valid WebRTC offer is required.");
-
   const runtime = await loadAgentRuntime(input.agentId, input.userId);
   const profile = resolveLiveVoiceProfile(
     runtime.agent.role,
@@ -286,104 +282,41 @@ export async function createOpenAILiveVoiceCall(input: {
       },
     },
   };
-  try {
-    const secretResponse = await fetchWithTimeout(
-      OPENAI_REALTIME_CLIENT_SECRETS_URL,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "OpenAI-Safety-Identifier": safetyIdentifierForUser(input.userId),
-        },
-        body: JSON.stringify({ session }),
-      },
-      15_000,
-    );
-    const secretText = await secretResponse.text();
-    let secretPayload: { value?: string } = {};
-    if (secretText) {
-      try {
-        secretPayload = JSON.parse(secretText) as { value?: string };
-      } catch {
-        secretPayload = {};
-      }
-    }
-    const ephemeralKey = secretPayload.value?.trim() || "";
-    if (!secretResponse.ok || !ephemeralKey) {
-      log.warn("OpenAI Realtime client secret mint failed", {
-        userId: input.userId,
-        agentId: input.agentId,
-        status: secretResponse.status,
-        body: secretText.slice(0, 500),
-      });
-      throw AppError.fromHttpStatus(
-        secretResponse.status || 502,
-        "Live voice session could not be created. Check OpenAI model access and billing.",
-      );
-    }
-
-    const response = await fetchWithTimeout(
-      OPENAI_REALTIME_CALLS_URL,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
-          "Content-Type": "application/sdp",
-          "OpenAI-Safety-Identifier": safetyIdentifierForUser(input.userId),
-        },
-        body: sdp,
-      },
-      20_000,
-    );
-    const answer = await response.text();
-    if (!response.ok || !answer.startsWith("v=")) {
-      log.warn("OpenAI Realtime WebRTC call creation failed", {
-        userId: input.userId,
-        agentId: input.agentId,
-        status: response.status,
-        body: answer.slice(0, 500),
-      });
-      throw AppError.fromHttpStatus(
-        response.status || 502,
-        "Live voice session could not be created. Check OpenAI model access and billing.",
-      );
-    }
-    const location = response.headers.get("location") || "";
-    const callId = location.split("/").filter(Boolean).pop() || null;
-    log.info("OpenAI live voice call created", {
-      userId: input.userId,
-      agentId: input.agentId,
-      model: OPENAI_REALTIME_DEFAULT_MODEL,
-      voice,
+  const call = await createServerManagedOpenAIRealtimeCall({
+    userId: input.userId,
+    sdp: input.sdp,
+    session,
+    maxDurationSeconds: OPENAI_LIVE_VOICE_MAX_SECONDS,
+    logContext: { userId: input.userId, agentId: input.agentId },
+  });
+  runInBackground(`OpenAI Studio Realtime deadline ${call.callId}`, async () => {
+    await delay(call.maxDurationSeconds * 1_000);
+    await hangupOpenAIRealtimeCall({ callId: call.callId });
+  });
+  log.info("OpenAI live voice call created", {
+    userId: input.userId,
+    agentId: input.agentId,
+    model: OPENAI_REALTIME_DEFAULT_MODEL,
+    voice,
+    profile,
+    callId: call.callId,
+    maxDurationSeconds: call.maxDurationSeconds,
+  });
+  return {
+    ...call,
+    model: OPENAI_REALTIME_DEFAULT_MODEL,
+    voice,
+    greeting:
+      runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+    wireline: {
+      provider: "openai_realtime",
+      agentId: runtime.agent.id,
       profile,
-      callId,
-    });
-    return {
-      sdp: answer,
-      callId,
-      model: OPENAI_REALTIME_DEFAULT_MODEL,
       voice,
-      greeting:
-        runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
-      wireline: {
-        provider: "openai_realtime",
-        agentId: runtime.agent.id,
-        profile,
-        voice,
-        tools: LIVE_DEMO_TOOLS.map((tool) => tool.name),
-        phoneRuntimeProvider: "xai_sip",
-      },
-    };
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    log.error("OpenAI Realtime WebRTC signaling failed", {
-      userId: input.userId,
-      agentId: input.agentId,
-      error: getErrorMessage(error),
-    });
-    throw AppError.fromHttpStatus(502, "Live voice session request failed.");
-  }
+      tools: LIVE_DEMO_TOOLS.map((tool) => tool.name),
+      phoneRuntimeProvider: "xai_sip",
+    },
+  };
 }
 
 function tokens(value: string): string[] {

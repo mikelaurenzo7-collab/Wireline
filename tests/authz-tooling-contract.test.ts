@@ -84,7 +84,7 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     expect(matrix).toMatch(
       /\| xai-outbound-routes\.ts \| POST \| `\/api\/twilio-webhook\/xai-outbound-bridge` \|.*\| Public \(allowlisted\) \|/,
     );
-    expect(matrix).toContain("`POST /api/public/demo-xai-session`");
+    expect(matrix).toContain("`POST /api/public/demo-call`");
     expect(matrix).not.toContain("`POST /api/public/demo-vapi/call/web`");
   });
 

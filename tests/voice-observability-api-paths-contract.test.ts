@@ -20,6 +20,8 @@ describe("voice observability production paths", () => {
     expect(csp).not.toContain("https://api.liveavatar.com");
     expect(csp).not.toContain("https://*.livekit.cloud");
     expect(csp).not.toContain("wss://*.livekit.cloud");
-    expect(csp).toContain("https://api.x.ai");
+    expect(csp).not.toContain("https://api.x.ai");
+    expect(csp).not.toContain("wss://api.x.ai");
+    expect(csp).not.toContain("https://api.openai.com");
   });
 });

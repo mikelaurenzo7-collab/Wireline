@@ -49,7 +49,7 @@
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/public/demo-session` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/public/demo-xai-session` | Aggregated, no-PII marketing counters; rate-limited |
+| `POST /api/public/demo-call` | Same-origin, signed one-use ticket + IP/global budget; tool-free server-mediated OpenAI WebRTC |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
@@ -307,7 +307,7 @@
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
-| marketing-runtime-routes.ts | POST | `/api/public/demo-xai-session` | — | — | yes | Public (allowlisted) |
+| marketing-runtime-routes.ts | POST | `/api/public/demo-call` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
 | mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |

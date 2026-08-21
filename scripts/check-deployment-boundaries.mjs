@@ -60,7 +60,7 @@ if (isProduction) {
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(
-      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and native xAI ephemeral sessions",
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use BotBound tickets and server-mediated OpenAI WebRTC",
     );
   }
 
@@ -145,7 +145,7 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  * xAI:
  * - XAI_API_KEY may be present on Preview when it is a dedicated sandbox key
  *   provisioned by the operator. Preview runtime uses that same env var for
- *   structured chat, TTS, and ephemeral browser sessions.
+ *   optional structured continuity and server-proxied TTS.
  * - Native PSTN still requires Twilio production-only credentials, so preview
  *   xAI spend cannot place carrier calls.
  */

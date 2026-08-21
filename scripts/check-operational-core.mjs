@@ -217,10 +217,10 @@ requirePattern(
   /CREATING_RESERVATION_TTL_MS[\s\S]*rejectionReason:\s*"reservation_expired"/,
   "Timed-out clone reservations must recover before a new provider spend.",
 );
-requirePattern(
+forbidPattern(
   "src/lib/csp.ts",
-  /api\.x\.ai/,
-  "Optional xAI experiment hosts remain allowlisted in the browser CSP boundary.",
+  /(?:https|wss):\/\/api\.x\.ai|https:\/\/api\.openai\.com/,
+  "Server-mediated realtime must not expose provider signaling origins to the browser CSP.",
 );
 forbidPattern(
   "src/lib/csp.ts",

@@ -26,7 +26,12 @@ import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 import { AI_TOOLS } from "../lib/ai-tools";
 import { isGeminiModelId, isOpenAIModelId } from "../lib/ai-models";
-import { AI_GATEWAY_BASE_URL, gatewayHeaders, isAIGatewayConfigured } from "../lib/ai-gateway";
+import {
+  AI_GATEWAY_BASE_URL,
+  gatewayHeaders,
+  gatewayModelId,
+  isAIGatewayConfigured,
+} from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
@@ -179,14 +184,17 @@ function responseText(payload: Record<string, unknown>) {
   return chunks.join("\n");
 }
 
-export async function extractImageAsset(fileName: string, dataUrl: string): Promise<ExtractedConfig> {
+export async function extractImageAsset(
+  fileName: string,
+  dataUrl: string,
+): Promise<ExtractedConfig> {
   if (!isAIGatewayConfigured()) {
     throw AppError.fromHttpStatus(503, "Image intake requires AI Gateway configuration.");
   }
-  // Grok 4.5 accepts images through AI Gateway. Keep this separate from the
-  // text route because uploaded-image content must not be flattened by the
-  // text-only structured-runtime adapter.
-  const visionModel = process.env.WIRELINE_GATEWAY_VISION_MODEL?.trim() || "xai/grok-4.5";
+  // Keep multimodal extraction separate from the text-only structured adapter,
+  // but preserve the same OpenAI-first managed default. Operators can still
+  // select another Gateway vision model explicitly through the environment.
+  const visionModel = gatewayModelId(process.env.WIRELINE_GATEWAY_VISION_MODEL?.trim() || "");
   const schemaDefinition = {
     type: "object",
     additionalProperties: false,
@@ -674,8 +682,7 @@ router.patch(
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
-    const providerRaw =
-      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "xai" : null);
+    const providerRaw = cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "xai" : null);
     const allowedProviders = new Set(["xai", "vapi", "11labs", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");

@@ -23,6 +23,29 @@ export function normalizedExpressConsent(input: {
   return isMarketingCallPurpose(input.callPurpose) && input.hasExpressWrittenConsent === true;
 }
 
+/**
+ * Direct-dial clients may describe where consent was captured, but a bare
+ * manual attestation is not evidence of express written consent. Keep this
+ * check centralized so web and mobile adapters cannot drift.
+ */
+export function hasAuditableExpressConsentArtifact(input: {
+  consentSource?: string;
+  consentLeadId?: string;
+}): boolean {
+  if (input.consentSource === "manual_attestation") {
+    return Boolean(input.consentLeadId?.trim());
+  }
+  return Boolean(input.consentSource?.trim() || input.consentLeadId?.trim());
+}
+
+/**
+ * A direct-dial classification originates at an untrusted client boundary, so
+ * its Federal DNC obligation is invariant rather than purpose-dependent.
+ */
+export function requiresFederalDncScreeningForDirectDial(): true {
+  return true;
+}
+
 export function outboundConsentMetadata(input: {
   callPurpose: OutboundCallPurpose;
   hasExpressWrittenConsent?: boolean;

@@ -51,7 +51,7 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/marketing/BrowserCallWidget.tsx",
   "src/hooks/useProtectedPublicDemo.ts",
   "src/lib/private-agent-test.ts",
-  "src/lib/voice/xai-public-demo-session.ts",
+  "src/lib/voice/openai-public-demo-session.ts",
   "src/pages/CustomizationSettings.tsx",
   "src/routes/agent-test-routes.ts",
   "src/routes/chatgpt-mcp-account-routes.ts",
