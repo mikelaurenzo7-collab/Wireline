@@ -89,11 +89,11 @@ describe("current-state UI contract", () => {
 
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("price_usd_monthly");
-    expect(landing).toContain('to={`/signup?plan=${id}`}');
-    expect(landing).toContain('/signup?plan=personal&template=${template.key}');
+    expect(landing).toContain("to={signupHrefForPlan(id)}");
+    expect(landing).toContain('signupHrefForPlan("personal", { template: template.key })');
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
-    expect(authPortal).toContain('location.pathname === "/signup" || location.pathname === "/get-started"');
+    expect(authPortal).toContain('location.pathname.startsWith("/signup/")');
     expect(authPortal).toContain("AuthAccessPanel");
     expect(authAccess).toContain("STRIPE_PLANS.find");
     expect(authAccess).toContain("plan.price_usd_annual");
@@ -106,7 +106,7 @@ describe("current-state UI contract", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Calls, text, email, tools, and outcomes under one Bot.",
+      "Calls, text, email, tools, and outcomes with your Bot.",
     );
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain("under your direction");
@@ -161,6 +161,6 @@ describe("current-state UI contract", () => {
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain("evaluateOutboundConsent");
-    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
   });
 });

@@ -34,13 +34,21 @@ describe("plan-catalog", () => {
     expect(personal?.name).toBe("BotBound Free Builder");
     expect(personal?.public).toBe(true);
     expect(personal?.price_usd_monthly).toBe(0);
+
+    const clientPersonal = plansForClient().find((plan) => plan.id === "personal");
+    expect(clientPersonal).toMatchObject({
+      is_free: true,
+      configured: false,
+      annual_configured: false,
+      contact_sales: false,
+    });
   });
 
   it("maps the Founder Early Access tiers to their BotBound public names", () => {
     expect(planById("starter")?.name).toBe("BotBound Starter");
     expect(planById("team")?.name).toBe("BotBound Starter Plus");
     expect(planById("business")?.name).toBe("BotBound Pro");
-    expect(planById("enterprise")?.name).toBe("BotBound Business");
+    expect(planById("enterprise")?.name).toBe("BotBound Scale");
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
@@ -54,9 +62,9 @@ describe("plan-catalog", () => {
     ]);
   });
 
-  it("keeps the legacy Business tier resolvable but out of self-serve launch", () => {
+  it("keeps the legacy Scale tier resolvable but out of self-serve launch", () => {
     const enterprise = planById("enterprise");
-    expect(enterprise?.name).toBe("BotBound Business");
+    expect(enterprise?.name).toBe("BotBound Scale");
     expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
     expect(enterprise?.public).toBe(false);

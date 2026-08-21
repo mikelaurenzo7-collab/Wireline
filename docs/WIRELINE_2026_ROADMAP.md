@@ -1,8 +1,16 @@
-# Wireline 2026: Product Audit & Roadmap
+# Wireline 2026: Historical Product Audit & Roadmap
 
-**Status:** Active (July 2026)  
+**Status:** Historical July 2026 planning snapshot
 **Audience:** Engineering, design, product, growth  
 **Related:** [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md), [business-usage-pricing-decision.md](./business-usage-pricing-decision.md), [ARCHITECTURE.md](../ARCHITECTURE.md)
+
+> Do not use this document as current product, packaging, onboarding, or launch
+> authority. Its Wireline/AI-employee language, Personal/Team/Business packages,
+> and presenter roadmap are preserved as decision history and superseded by
+> `LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`, `CUSTOMER_TERMINOLOGY.md`,
+> `PRODUCT_SHOWCASE_MATRIX.md`, and `src/lib/plan-catalog.ts`. The current model
+> is one BotBound product and workspace for every role; live talking-head video
+> is retired.
 
 ---
 
@@ -14,13 +22,13 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 
 **This quarter (0–30 days):** Repo hygiene (done baseline), **appearance system** (Ink default + optional Paper), **post-create wizard** (Train → Channels → Wire → Test), **pricing positioning**, presenter PSTN honesty, verification discipline.
 
-**Next quarters:** Avatar/video MVP hardening, channel integrations, analytics, GTM — see [30/90/180 roadmap](#roadmap-3090180-days) and [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md).
+**Superseded next-quarter note:** Avatar/video MVP work was retired. Current planning follows the active research operating system and launch source of truth.
 
 ---
 
 ## 1. Codebase & infrastructure audit
 
-### Repository hygiene (current state)
+### Repository hygiene (state at time of snapshot)
 
 | Item                                   | Status | Notes                                    |
 | -------------------------------------- | ------ | ---------------------------------------- |
@@ -49,6 +57,9 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 
 ### Billing
 
+The audience-based packaging below is superseded. Current billing follows one
+catalog for every use case; internal legacy IDs may remain for compatibility.
+
 - **Personal:** Free create/train; live work via Conversation Balance.
 - **Team / Business:** Capacity tiers in `src/lib/plan-catalog.ts` + Stripe catalog contract tests.
 - **Usage:** Meter call minutes; webhook-driven subscription state in DB.
@@ -74,6 +85,9 @@ The primary axis Wireline competes on is the **voice + chat AI-employee operatin
 Public comparison table: `/pricing` → **Why Wireline** section.
 
 ### Pricing strategy (Wireline-native)
+
+This Personal/Team/Business packaging proposal is superseded by the current
+BotBound plan catalog. It remains here only as historical pricing context.
 
 1. **Personal (Free):** Unlimited draft agents; pay for live minutes via Conversation Balance.
 2. **Team / Business:** Monthly capacity — agents, lines, routing, approvals, integrations.
@@ -154,8 +168,8 @@ See [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) for xAI live path.
 | Horizon     | Engineering                                                            | Product / UX                            | GTM                           |
 | ----------- | ---------------------------------------------------------------------- | --------------------------------------- | ----------------------------- |
 | **0–30d**   | Roadmap doc, theme toggle, wizard channels, pricing table, verify:full | Letterpress polish, presenter PSTN copy | Pricing page narrative        |
-| **30–90d**  | Avatar MVP, Twilio/connections hardening, a11y pass                    | Studio presenter UX, beta checklist     | Teaser campaign, early access |
-| **90–180d** | Analytics dashboard, scaling, multilingual                             | Advanced video, script library          | Public launch, partnerships   |
+| **30–90d**  | ~~Avatar MVP~~ (retired), Twilio/connections hardening, a11y pass      | Shared Bot activation and trust         | Teaser campaign, early access |
+| **90–180d** | Analytics dashboard, scaling, multilingual                             | Role starters and outcome review        | Public launch, partnerships   |
 
 Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md).
 
@@ -184,7 +198,7 @@ Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEA
 | Technical debt          | `verify:full` on merge; contract tests on activation funnel      |
 | Latency                 | Streaming STT/LLM/TTS; WebRTC; graceful “agent thinking” UI      |
 | Accessibility           | Ink/Paper contrast audit; focus rings; reduced-motion respect    |
-| Competition             | Own the voice+chat AI-employee operating loop (Create→Train→Wire→Run); presenter is a secondary, later-stage differentiator; community + fast iteration |
+| Competition             | Historical framing superseded; current differentiation is the trained Bot operating loop across calls, texts, and email. Live presenter is retired. |
 | Compliance              | Encryption in transit (WebRTC); retention controls; consent copy |
 | Presenter PSTN mismatch | Explicit routing hint + future: block or dual-voice config       |
 

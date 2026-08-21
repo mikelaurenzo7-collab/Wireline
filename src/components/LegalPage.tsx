@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 import { FileText, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { ACCOUNT_TERMS_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const LAST_UPDATED = "August 1, 2026";
+const LAST_UPDATED = ACCOUNT_TERMS_LAST_UPDATED;
 
 function LegalLayout({
   title,
@@ -124,9 +125,9 @@ export function TermsOfService() {
 
       <Section title="2. Service Description">
         <p>
-          BotBound provides voice, SMS, and email agent infrastructure for personal and business
-          use. The service includes agent configuration tools, call routing, email triage, outbound
-          dialing campaigns, a DNC manager, and analytics.
+          BotBound provides voice, SMS, and email Bot infrastructure for conversations and
+          workflows. The service includes Bot configuration tools, call routing, email triage,
+          outbound dialing campaigns, a DNC manager, and analytics.
         </p>
       </Section>
 
@@ -251,8 +252,8 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          <strong>30-day money-back guarantee.</strong> If BotBound isn't working for your business
-          for any reason within 30 days of your first paid invoice, email{" "}
+          <strong>30-day money-back guarantee.</strong> If BotBound isn't working for you for any
+          reason within 30 days of your first paid invoice, email{" "}
           <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
           refund that month's charge in full. No forms, no escalation, no questions about your
           reason. The 30-day window starts on the date of your first paid invoice. Outbound call

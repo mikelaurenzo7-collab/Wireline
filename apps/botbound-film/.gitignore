@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/*.mp4
+out/*.mov
+out/*.wav
+out/*.jpg
+out/*.png
+!.gitkeep
+public/audio/botbound-score.wav
+public/brand/hands-full-opening.png

@@ -284,7 +284,7 @@ function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
     }),
     review_state_invalidated: state.staleReviewState,
     guarantee:
-      "Wireline records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.",
+      "BotBound records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.",
   };
 }
 
@@ -576,7 +576,7 @@ router.post(
       res.status(202).json({
         ok: true,
         message:
-          "Identity review request recorded. Provider submission, timing, and final display follow supported Wireline workflows and are not guaranteed.",
+          "Identity review request recorded. Provider submission, timing, and final display follow supported BotBound workflows and are not guaranteed.",
         ...publicPayload(await loadIdentityState(req.user.id)),
       });
     } catch (error) {

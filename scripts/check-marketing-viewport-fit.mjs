@@ -10,11 +10,9 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
-const executable = (source) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+const executable = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 const PUBLIC_SURFACES = [
-  "src/components/marketing/WireAgentLanding.tsx",
   "src/components/layout/MarketingPageFrame.tsx",
   "src/pages/Features.tsx",
   "src/pages/Pricing.tsx",
@@ -102,33 +100,40 @@ for (const [needle, description] of [
   }
 }
 
-for (const forbidden of [
-  "scroll-snap-type: y proximity;",
-  "scroll-snap-type: y mandatory;",
-]) {
+for (const forbidden of ["scroll-snap-type: y proximity;", "scroll-snap-type: y mandatory;"]) {
   if (executable(documentCss).includes(forbidden)) {
-    failures.push(`src/styles/marketing-document-flow.css: forbidden public scroll rule ${forbidden}`);
+    failures.push(
+      `src/styles/marketing-document-flow.css: forbidden public scroll rule ${forbidden}`,
+    );
   }
 }
 
 const frameSource = read("src/components/layout/MarketingPageFrame.tsx");
 if (!frameSource.includes("marketing-frame-stack")) {
-  failures.push("src/components/layout/MarketingPageFrame.tsx: public content must keep one frame stack");
+  failures.push(
+    "src/components/layout/MarketingPageFrame.tsx: public content must keep one frame stack",
+  );
 }
 if (frameSource.includes("resp-adaptive-grid")) {
-  failures.push("src/components/layout/MarketingPageFrame.tsx: page-level responsive grid is forbidden");
+  failures.push(
+    "src/components/layout/MarketingPageFrame.tsx: page-level responsive grid is forbidden",
+  );
 }
 
 const home = read("src/components/marketing/WireAgentLanding.tsx");
 const executableHome = executable(home);
 for (const [needle, description] of [
-  ["<PrecisionPublicHeader />", "home must keep the shared public header"],
-  ['variant="stage"', "home must render the live-console stage"],
-  ["landing-console", "home must render proprietary live proof"],
+  ["marketing-surface", "home must keep the public marketing surface"],
+  ["landing-prestige__entrance", "home must keep the prestige entrance"],
+  [
+    '<BotBoundLockup size="display" surface="tile" />',
+    "home must lead with the canonical display lockup",
+  ],
+  ['<AuthAccessPanel embedded initialMode="signin" />', "home must keep direct account access"],
+  ["landing-prestige__demo-link", "home must keep a clear live-demo path"],
   ['id="solutions"', "home must include solutions"],
-  ['id="features"', "home must include features"],
   ['id="pricing"', "home must include pricing"],
-  ['id="trust"', "home must include trust controls"],
+  ["landing-prestige__trust", "home must include trust controls"],
   ["<LandingFooter />", "home must retain footer wayfinding"],
 ]) {
   if (!executableHome.includes(needle)) {
@@ -136,7 +141,9 @@ for (const [needle, description] of [
   }
 }
 if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(executableHome)) {
-  failures.push("src/components/marketing/WireAgentLanding.tsx: retired device markers must stay removed");
+  failures.push(
+    "src/components/marketing/WireAgentLanding.tsx: retired device markers must stay removed",
+  );
 }
 
 const landingFooter = read("src/components/marketing/LandingFooter.tsx");
@@ -146,10 +153,14 @@ if (!landingFooter.includes("<MarketingChromeBar />")) {
 
 const header = executable(read("src/components/marketing/PrecisionPublicHeader.tsx"));
 if (/Dialog|Menu|SITE_NAV|aria-label="Site"/.test(header)) {
-  failures.push("src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain brochure navigation");
+  failures.push(
+    "src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain brochure navigation",
+  );
 }
 if (!header.includes('aria-label="Account"')) {
-  failures.push("src/components/marketing/PrecisionPublicHeader.tsx: account actions must remain named");
+  failures.push(
+    "src/components/marketing/PrecisionPublicHeader.tsx: account actions must remain named",
+  );
 }
 
 const landingLongform = read("src/styles/landing-longform.css");

@@ -1,0 +1,135 @@
+[
+  {
+    "text": "[Phone ringing]",
+    "startMs": 0,
+    "endMs": 850,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Your hands are full. The phone still rings.",
+    "startMs": 850,
+    "endMs": 1400,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "[Second phone ring; connection chime]",
+    "startMs": 1400,
+    "endMs": 2600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The second ring. That’s where BotBound begins.",
+    "startMs": 2600,
+    "endMs": 5000,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound answers.",
+    "startMs": 5200,
+    "endMs": 6500,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "On-brand. On the second ring. Ready to help.",
+    "startMs": 6500,
+    "endMs": 8250,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "“Thanks for calling Northstar Bakery. How can I help?”",
+    "startMs": 8250,
+    "endMs": 9400,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "A real conversation. Not a voicemail maze.",
+    "startMs": 9400,
+    "endMs": 10400,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Caller: “Can you fit in a cake pickup Friday?”",
+    "startMs": 10400,
+    "endMs": 11600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound: “Absolutely. I can hold 4:30. Does that work?”",
+    "startMs": 11600,
+    "endMs": 12800,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Caller: “Perfect.”",
+    "startMs": 12800,
+    "endMs": 13500,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound: “You’re booked. I just texted the details.”",
+    "startMs": 13500,
+    "endMs": 14900,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Booked. Confirmed. Logged.",
+    "startMs": 15200,
+    "endMs": 16800,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Appointment booked. Confirmation sent. Owner updated.",
+    "startMs": 16800,
+    "endMs": 19000,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The customer moves forward. You never leave the work.",
+    "startMs": 19000,
+    "endMs": 20800,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Better every call.",
+    "startMs": 22200,
+    "endMs": 23600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Build. Train. Launch. Improve.",
+    "startMs": 23600,
+    "endMs": 25600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound. Never miss the call that matters.",
+    "startMs": 26400,
+    "endMs": 28200,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "botbound.me",
+    "startMs": 28200,
+    "endMs": 29800,
+    "timestampMs": null,
+    "confidence": null
+  }
+]

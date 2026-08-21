@@ -11,6 +11,7 @@ export type AuditEventType =
   | "auth.failed_login"
   | "auth.password_reset"
   | "auth.session_expired"
+  | "auth.terms_accepted"
 
   // Agent operations
   | "agent.created"

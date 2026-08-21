@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Point all Vapi assistants + phone numbers at trywireline.com and attach
+ * Point all rollback Vapi assistants + phone numbers at BotBound's canonical
+ * webhook and attach
  * the webhook secret that matches Vercel's VAPI_WEBHOOK_SECRET.
  *
  * Usage:
@@ -9,8 +10,10 @@
  *   node scripts/patch-vapi-prod-webhooks.mjs
  */
 
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
+
 const VAPI_BASE = "https://api.vapi.ai";
-const WEBHOOK_URL = "https://trywireline.com/api/vapi-webhook";
+const WEBHOOK_URL = `${CANONICAL_PRODUCTION_URL}/api/vapi-webhook`;
 
 const key = process.env.VAPI_PRIVATE_KEY?.trim();
 const secret = process.env.VAPI_WEBHOOK_SECRET?.trim();

@@ -34,6 +34,6 @@ describe("static icon integrity", () => {
   it("index.html points at both icon formats", () => {
     const html = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
     expect(html).toContain('rel="icon" type="image/svg+xml" href="/favicon.svg"');
-    expect(html).toContain('rel="icon" type="image/png" href="/favicon.png"');
+    expect(html).toContain('rel="icon" type="image/png" sizes="64x64" href="/favicon.png"');
   });
 });

@@ -3,7 +3,7 @@ import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(
   /\/$/,
   "",
 );
@@ -25,7 +25,7 @@ const marketingRoutes = [
   "/compare",
   "/solutions/support",
   "/solutions/sales",
-  "/for/personal",
+  "/for/everyday",
   "/for/home-services",
   "/for/medical",
   "/for/legal",
@@ -147,7 +147,7 @@ async function settle(page) {
 async function assertStudioComposer(page, viewportName, issues) {
   const studioBrief = page.locator("textarea#studio-brief").first();
   const workroomComposer = page.locator("textarea#studio-workroom-message").first();
-  const emptyCreate = page.getByRole("link", { name: /Create personal agent/i }).first();
+  const emptyCreate = page.getByRole("link", { name: /Create Bot/i }).first();
   const composer = (await studioBrief.isVisible().catch(() => false))
     ? studioBrief
     : (await workroomComposer.isVisible().catch(() => false))
@@ -735,7 +735,7 @@ try {
 
       const emailInput = signupPage.locator("input[placeholder*='colleague@']").first();
       if (await emailInput.isVisible().catch(() => false)) {
-        await emailInput.fill("engineering.test@trywireline.com");
+        await emailInput.fill("engineering.test@botbound.me");
         console.log("Populated the team roster invitation input successfully.");
       } else {
         issues.push({

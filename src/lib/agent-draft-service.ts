@@ -193,7 +193,7 @@ export async function createAgentDraft(
         enabledTools: [],
         firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
         personalityVibe: profile.identity.tone,
-        isBusinessAgent: profile.identity.businessName !== "Your business",
+        isBusinessAgent: profile.identity.businessName !== "Your work",
         businessVariables: persistedBusinessVariables(profile),
         systemPromptOverride: compileAgentRuntimeInstructions(profile),
         disallowedTopics: profile.behavior.prohibitedTopics,

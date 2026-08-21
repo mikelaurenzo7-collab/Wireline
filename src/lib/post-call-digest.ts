@@ -22,6 +22,7 @@ import { BRAND } from "../constants/brand-colors";
 import * as schema from "../db/schema";
 import { withAccountDeletionFence } from "./account-deletion-fence";
 import { executeAction } from "./action-engine";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import { CRMService } from "./crm-service";
 import { sendEmail } from "./email-service";
 import { type JobRow, writeTransactionConfig } from "./job-queue";
@@ -41,6 +42,8 @@ import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
+
+const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`;
 
 export function classifyCallOutcome(input: {
   summary?: string | null;
@@ -980,7 +983,7 @@ async function deliverOwnerDigest(
       crmQueuedForApproval: core.crmQueuedForApproval,
       recapUrl: core.recapUrl,
     };
-    const subject = `[Wireline · ${core.outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
+    const subject = `[BotBound · ${core.outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
     const sent = await sendEmail({
       to: recipient,
       subject,
@@ -1360,19 +1363,19 @@ export function renderDigestEmail(d: {
   const recapBlock = d.recapUrl
     ? `<p style="margin:0 0 24px;">
         <a href="${escapeHtml(d.recapUrl)}" style="display:inline-block;background:${BRAND.colors.primary};color:#ffffff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:0.02em;">Open the recap →</a>
-        <span style="display:block;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8B87A0;">Shareable Wireline recap · private link</span>
+        <span style="display:block;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8B87A0;">Shareable BotBound recap · private link</span>
       </p>`
     : "";
   return [
     `<div style="font-family:-apple-system,system-ui,sans-serif;max-width:560px;line-height:1.55;color:#1a1a1a;">`,
-    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:${BRAND.colors.primary};margin:0 0 4px;">Wireline · Post-call digest</p>`,
+    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:${BRAND.colors.primary};margin:0 0 4px;">BotBound · Post-call digest</p>`,
     `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${escapeHtml(identity)}</h2>`,
     `<p style="margin:0 0 16px;font-size:13px;color:#666;">${escapeHtml(metadata)}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${escapeHtml(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     recapBlock,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
-    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
+    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="${CALL_LOGS_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">in BotBound →</a></p>`,
     `</div>`,
   ].join("");
 }
@@ -1393,7 +1396,7 @@ export function renderDigestEmailText(d: {
 }): string {
   const durationMinutes = Math.round((d.durationSeconds || 0) / 60);
   return [
-    "Wireline · Post-call digest",
+    "BotBound · Post-call digest",
     "",
     `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`,
     `${d.direction || "Call"} · ${durationMinutes} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`,
@@ -1403,7 +1406,7 @@ export function renderDigestEmailText(d: {
     `Next action: ${nextActionFromOutcome(d.outcomeTag)}`,
     crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false),
     d.recapUrl ? `Recap: ${d.recapUrl}` : null,
-    "Open the call: https://trywireline.com/phone?tab=logs",
+    `Open the call: ${CALL_LOGS_URL}`,
   ]
     .filter((line): line is string => line !== null)
     .join("\n");

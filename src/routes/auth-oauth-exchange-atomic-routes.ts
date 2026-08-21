@@ -12,9 +12,9 @@ import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 import { sessionUsers } from "../db/security-schema";
 import * as schema from "../db/schema";
+import { isNewUserOAuthBridgeCode, isOAuthBridgeCode } from "../lib/oauth-bridge-code";
 
 const router = Router();
-const BRIDGE_CODE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function oauthBridgeSecret(): string {
   const secret =
@@ -40,7 +40,7 @@ router.post(
 
     const code = req.body?.code;
     const bridgeState = readOAuthBridgeStateCookie(req);
-    if (typeof code !== "string" || !BRIDGE_CODE_PATTERN.test(code) || !bridgeState) {
+    if (!isOAuthBridgeCode(code) || !bridgeState) {
       throw AppError.fromHttpStatus(400, "Invalid or expired code");
     }
 
@@ -103,6 +103,7 @@ router.post(
       email: entry.email,
       name: entry.full_name ?? "",
       is_owner: entry.is_owner ? "1" : "0",
+      is_new_user: isNewUserOAuthBridgeCode(code),
     });
   },
 );

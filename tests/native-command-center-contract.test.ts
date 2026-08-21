@@ -19,7 +19,10 @@ describe("native unified Bot workspace surfaces", () => {
     expect(tabs).toContain('Label("CALLS"');
     expect(workspace).toContain('.navigationTitle("OVERVIEW")');
     expect(workspace).toContain("Dispatch calls, waits, approvals, and follow-ups.");
-    expect(workspace).toContain("Build a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom Bot in the same workspace.");
+    expect(workspace).toContain(
+      "Start with a role or create your own. Every Bot lives in the same workspace.",
+    );
+    expect(workspace).not.toMatch(/business role|personal role/i);
     expect(calls).toContain('.navigationTitle("Calls")');
     expect(`${tabs}\n${workspace}\n${calls}`).not.toMatch(mojibake);
     expect(workspace).not.toContain("Consumer-first");
@@ -38,6 +41,7 @@ describe("native unified Bot workspace surfaces", () => {
     expect(app).toContain("BOTS THAT GET THE WORK DONE");
     expect(app).toContain("Voice-first Bots for calls, live conversations, text, and email.");
     expect(app).not.toMatch(/voice agents?|phone employees?/i);
+    expect(app).not.toMatch(/business role|personal role/i);
     expect(setup).toContain("Use mobile for fast approvals and core call workflows.");
     expect(`${app}\n${setup}`).not.toMatch(mojibake);
   });

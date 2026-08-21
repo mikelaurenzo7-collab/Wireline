@@ -38,20 +38,23 @@ describe("production build environment gate", () => {
   it("runs the fail-closed dependency audit in every canonical production certification", () => {
     const build = read("scripts/vercel-build.mjs");
     const audit = read("scripts/check-security-audit.mjs");
-    const releaseAuditStart = build.indexOf("function runComprehensiveReleaseAudit()");
+    const releaseAuditStart = build.indexOf("function runCanonicalReleaseAudit()");
     const nextFunction = build.indexOf("function syncShowcaseIfRequested()", releaseAuditStart);
     const releaseAudit = build.slice(releaseAuditStart, nextFunction);
 
     expect(releaseAuditStart).toBeGreaterThan(-1);
     expect(releaseAudit).toContain('commitMessage.includes("[launch-deep-audit]")');
     expect(releaseAudit).toContain("if (!isCanonicalProduction && !explicitlyRequested) return;");
+    expect(releaseAudit).toContain('run("npm", ["run", "runtime:policy:check"])');
     expect(releaseAudit).toContain('run("npm", ["run", "security:audit"])');
-    expect(releaseAudit).toContain('run("node", ["scripts/run-test-estate.mjs"])');
+    expect(releaseAudit).toContain(
+      'run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"])',
+    );
     expect(releaseAudit.indexOf('run("npm", ["run", "lint:eslint"])')).toBeLessThan(
       releaseAudit.indexOf('run("npm", ["run", "security:audit"])'),
     );
     expect(releaseAudit.indexOf('run("npm", ["run", "security:audit"])')).toBeLessThan(
-      releaseAudit.indexOf('run("node", ["scripts/run-test-estate.mjs"])'),
+      releaseAudit.indexOf('run("node", ["scripts/run-test-estate.mjs"'),
     );
 
     expect(audit).toContain('execSync("npm audit --json --omit=dev"');
@@ -74,10 +77,15 @@ describe("production build environment gate", () => {
     expect(deploy).not.toContain(
       'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"])',
     );
-    expect(build).toContain('run("node", ["scripts/run-test-estate.mjs"])');
+    expect(build).toContain(
+      'run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"])',
+    );
     expect(build).toContain(
       'run("node", [\n  "scripts/run-test-estate.mjs",\n  "tests/runtime-provider-chain-contract.test.ts"',
     );
+    expect(build).toContain('"tests/federal-dnc-service.test.ts"');
+    expect(build).toContain('"tests/outbound-runtime-behavior.test.ts"');
+    expect(build).toContain('"tests/outbound-compliance-contract.test.ts"');
     expect(build).not.toContain('run("npx", [\n  "vitest",\n  "run"');
 
     expect(runner).toContain('import { buildTestEstateEnvironment }');
@@ -86,6 +94,9 @@ describe("production build environment gate", () => {
     expect(runner).toContain('writeFileSync(env.GIT_CONFIG_GLOBAL, ""');
     expect(runner).toContain("rmSync(isolatedHome, { recursive: true, force: true })");
     expect(runner).toContain('resolve(process.cwd(), "node_modules/vitest/vitest.mjs")');
+    expect(runner).toContain('extraArgs[0] === "--canonical-release-second-pass"');
+    expect(runner).not.toContain("releaseAuditNoArgs");
+    expect(runner).not.toContain("extraArgs.length === 0 && (productionTarget");
     expect(runner).not.toContain("const env = { ...source }");
 
     expect(environment).toContain("TEST_ESTATE_OS_PASSTHROUGH");

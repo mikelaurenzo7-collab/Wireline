@@ -3,12 +3,15 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   SIGNUP_PLAN_IDS,
+  PUBLIC_SIGNUP_PLAN_SLUGS,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
+  signupHrefForPlan,
 } from "../src/lib/signup-intent";
 import { signupSchema } from "../src/lib/api-validation";
+import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "../src/lib/legal-consent";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -16,6 +19,16 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("signup intent contract", () => {
   it("keeps retired pricing aliases aligned with the current public launch catalog", () => {
     expect(SIGNUP_PLAN_IDS).toEqual(["personal", "starter", "team", "business"]);
+    expect(PUBLIC_SIGNUP_PLAN_SLUGS).toEqual({
+      personal: "free",
+      starter: "starter",
+      team: "starter-plus",
+      business: "pro",
+    });
+    expect(signupHrefForPlan("personal")).toBe("/signup?plan=free");
+    expect(signupHrefForPlan("team", { interval: "year" })).toBe(
+      "/signup?plan=starter-plus&interval=year",
+    );
     expect(parseSignupIntent("?plan=free")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=builder")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
@@ -30,6 +43,9 @@ describe("signup intent contract", () => {
         email: "legacy@example.com",
         password: "ValidPass1",
         preferredPlanId: "enterprise",
+        termsAccepted: true,
+        termsVersion: ACCOUNT_TERMS_VERSION,
+        privacyVersion: ACCOUNT_PRIVACY_VERSION,
       }).preferredPlanId,
     ).toBe("business");
     expect(
@@ -37,8 +53,26 @@ describe("signup intent contract", () => {
         email: "scale@example.com",
         password: "ValidPass1",
         preferredPlanId: "scale",
+        termsAccepted: true,
+        termsVersion: ACCOUNT_TERMS_VERSION,
+        privacyVersion: ACCOUNT_PRIVACY_VERSION,
       }).preferredPlanId,
     ).toBe("business");
+  });
+
+  it("never emits legacy audience-shaped plan ids from public conversion surfaces", () => {
+    const publicSurfaces = [
+      "src/components/marketing/PrecisionPublicHeader.tsx",
+      "src/components/marketing/WireAgentLanding.tsx",
+      "src/components/marketing/MarketingStickyCta.tsx",
+      "src/pages/Pricing.tsx",
+      "src/pages/Features.tsx",
+      "src/pages/Compare.tsx",
+      "src/pages/Showcase.tsx",
+    ];
+    for (const path of publicSurfaces) {
+      expect(read(path), path).not.toMatch(/signup\?plan=(?:personal|team|business)\b/);
+    }
   });
 
   it("preserves an annual pricing choice through signup and server attribution", () => {

@@ -41,6 +41,7 @@ const outputPath = resolve(
     : "docs/LAUNCH_STATUS.generated.json",
 );
 const productionUrl = resolveCanonicalProductionUrl(process.env.WIRELINE_PRODUCTION_URL);
+const canonicalOrigin = new URL(productionUrl).origin;
 
 function git(...args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
@@ -71,7 +72,7 @@ function isCanonicalTwilioUsageAlertUrl(value) {
     const parsed = new URL(String(value || ""));
     return (
       parsed.protocol === "https:" &&
-      parsed.origin === "https://trywireline.com" &&
+      parsed.origin === canonicalOrigin &&
       parsed.pathname === "/api/twilio-webhook/usage-alert" &&
       !parsed.search &&
       !parsed.hash &&
@@ -285,8 +286,8 @@ async function stripeStatus() {
     publicName === STRIPE_PUBLIC_BRAND &&
     hasWirelineDescriptor(statementDescriptor) &&
     hasWirelineDescriptor(cardStatementDescriptor.value) &&
-    websiteOrigin === "https://trywireline.com" &&
-    supportOrigin === "https://trywireline.com" &&
+    websiteOrigin === canonicalOrigin &&
+    supportOrigin === canonicalOrigin &&
     supportUrl === STRIPE_PUBLIC_SUPPORT_URL &&
     supportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL &&
     brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR &&
@@ -360,18 +361,18 @@ async function stripeStatus() {
   }
   if (
     portalConfiguration &&
-    portalConfiguration.default_return_url !== "https://trywireline.com/settings/billing"
+    portalConfiguration.default_return_url !== `${canonicalOrigin}/settings/billing`
   ) {
     portalFindings.push("return_url_mismatch");
   }
   if (
     portalConfiguration &&
     (portalConfiguration.business_profile?.headline !==
-      "Manage your Wireline billing, invoices, and subscription." ||
+      "Manage your BotBound billing, invoices, and subscription." ||
       portalConfiguration.business_profile?.privacy_policy_url !==
-        "https://trywireline.com/privacy" ||
+        `${canonicalOrigin}/privacy` ||
       portalConfiguration.business_profile?.terms_of_service_url !==
-        "https://trywireline.com/terms")
+        `${canonicalOrigin}/terms`)
   ) {
     portalFindings.push("legal_urls_mismatch");
   }
@@ -441,7 +442,7 @@ async function stripeStatus() {
     (endpoint) =>
       endpoint?.status === "enabled" &&
       String(endpoint?.url || "").replace(/\/+$/, "") ===
-        "https://trywireline.com/api/stripe-webhook",
+        `${canonicalOrigin}/api/stripe-webhook`,
   );
   const webhook = canonicalWebhooks.length === 1 ? canonicalWebhooks[0] : null;
   const enabledWebhookEvents = Array.isArray(webhook?.enabled_events)
@@ -836,10 +837,10 @@ const record = {
   production: vercel,
   live_checks: { readiness, canonical_runtime: canonicalRuntime, stripe, database, twilio },
   runtime_policy: {
-    managed_structured_chain: ["xAI", "OpenAI", "Gemini", "Vercel AI Gateway"],
+    managed_structured_chain: ["OpenAI", "Vercel AI Gateway", "xAI", "Gemini"],
     openai:
-      "continuity structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT/guest demos",
-    xai: "managed primary; Grok 4.6 structured chat and native Twilio + xAI Direct SIP Speech-to-Speech whenever XAI_API_KEY is configured",
+      "managed structured runtime (GPT-5.6 Terra) and OpenAI Realtime for Studio/ChatGPT browser simulations",
+    xai: "native Twilio + xAI Direct SIP Speech-to-Speech plus optional Grok 4.6 structured continuity whenever XAI_API_KEY is configured",
   },
   surface_posture: {
     web: "public self-serve candidate",

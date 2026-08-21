@@ -49,7 +49,7 @@ const PublicNotFound = lazy(() => import("./pages/PublicNotFound"));
 function RouteLoading() {
   return (
     <div className="fixed inset-0 z-[9999]">
-      <TransitionSurface eyebrow="Wireline" title="Loading" busyLabel="Loading" />
+      <TransitionSurface eyebrow="BotBound" title="Loading" busyLabel="Loading" />
     </div>
   );
 }
@@ -101,7 +101,11 @@ function AppRouter() {
         <Route path="/use-cases" element={<Navigate to="/solutions/support" replace />} />
         <Route path="/use-cases/*" element={<Navigate to="/solutions/support" replace />} />
         <Route path="/solutions/:wedge" element={<SolutionsPage />} />
-        <Route path="/for/personal" element={<VerticalLanding slug="personal" />} />
+        <Route
+          path="/for/everyday"
+          element={<VerticalLanding slug="personal" canonicalPath="/for/everyday" />}
+        />
+        <Route path="/for/personal" element={<Navigate to="/for/everyday" replace />} />
         <Route path="/for/home-services" element={<VerticalLanding slug="home-services" />} />
         <Route path="/for/medical" element={<VerticalLanding slug="medical" />} />
         <Route path="/for/legal" element={<VerticalLanding slug="legal" />} />
@@ -109,7 +113,7 @@ function AppRouter() {
         <Route path="/for/insurance" element={<VerticalLanding slug="insurance" />} />
         <Route path="/for/restaurants" element={<VerticalLanding slug="restaurants" />} />
         <Route path="/for/sales" element={<VerticalLanding slug="sales" />} />
-        <Route path="/for/*" element={<Navigate to="/for/personal" replace />} />
+        <Route path="/for/*" element={<Navigate to="/for/everyday" replace />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />

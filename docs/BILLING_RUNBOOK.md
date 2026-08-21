@@ -1,14 +1,14 @@
 # Billing Runbook
 
-Status: **Active canonical runbook**. This is the operator proof path for Stripe checkout, server-owned entitlements, Runtime Balance, webhook idempotency, cancellation, Live Video, and usage reconciliation.
+Status: **Active canonical runbook**. This is the operator proof path for Stripe checkout, server-owned entitlements, Runtime Balance, webhook idempotency, cancellation, usage reconciliation, and retired-SKU compatibility.
 
 ## Source of truth
 
 - **Catalog:** `src/lib/plan-catalog.ts` owns canonical plan ids, public checkout eligibility, capacity limits, included phone numbers, included voice minutes, Runtime Allowance, and overflow rates.
-- **Stripe product manifest:** `scripts/lib/stripe-founder-catalog.mjs` owns managed Stripe product/price metadata, including the Live Video add-on.
+- **Stripe product manifest:** `scripts/lib/stripe-founder-catalog.mjs` owns active managed Stripe product/price metadata. Retired Live Video SKUs are intentionally excluded.
 - **Runtime Balance:** `src/lib/conversation-balance.ts` owns customer-facing top-up limits and preset amounts (module path retained; customer term is Runtime Balance).
 - **Stripe integration:** `src/lib/stripe-helpers.ts` owns Stripe client configuration and subscription-to-entitlement sync.
-- **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` owns `POST /api/billing/checkout`. `src/routes/billing-portal-readiness-routes.ts` owns `POST /api/billing/portal`. `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface, `/api/stripe-webhook`, and Live Video add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
+- **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` owns `POST /api/billing/checkout`. `src/routes/billing-portal-readiness-routes.ts` owns `POST /api/billing/portal`. `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface and `/api/stripe-webhook`; the legacy Live Video checkout path returns 410. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
 - **Wallet ledger:** `src/lib/credit-wallet.ts` is the append-only USD ledger for top-ups, burns, refunds, disputes, and grants.
 - **Voice usage:** `src/lib/voice-usage.ts` consumes included voice capacity first and Runtime Balance only for explicit funded overflow.
 - **Live Video:** talking-head is retired. Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed.
@@ -90,7 +90,7 @@ Do not change legal-entity, representative, bank, tax, address, or verification 
 2. Deliver the appropriate `customer.subscription.updated` / `deleted` event.
 3. Confirm billing status reports cancellation and current-period state accurately.
 4. Confirm capacity gates read server settings/subscriptions, not stale client state.
-5. Confirm a Live Video add-on cannot remain usefully entitled without an active paid base subscription; add-on cancellation/reconciliation must not strand a customer paying for unusable access.
+5. Confirm a historical Live Video record never grants access or mints a session; legacy cancellation and reconciliation remain safe and support-visible.
 
 ### 6. Runtime Balance top-up works
 
@@ -124,7 +124,7 @@ Talking-head checkout and session mint stay closed. Identity badges remain. Imag
 1. Confirm `POST /api/billing/live-video-checkout` returns catalog-unavailable / closed.
 2. Confirm `POST /api/agents/:id/video-presenter/session` returns 410.
 3. Confirm leftover Stripe Live Video price IDs still reconcile webhooks without authorizing a provider session.
-4. Confirm identity studio at `/studio/live-video` shows a badge, not a talking-head stage.
+4. Confirm `/studio/live-video` redirects to Studio and exposes no setup or talking-head stage.
 
 ## Verification commands
 

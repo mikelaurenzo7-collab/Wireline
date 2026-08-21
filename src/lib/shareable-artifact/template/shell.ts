@@ -566,7 +566,7 @@ ${themeVariables("obsidian", accents.obsidian)}
       }
       <div class="wl-footer-meta">
         <span class="wl-footer-meta-mark" aria-hidden="true">${WIRE_GLYPH_SVG}</span>
-        <span>${footerCredit ? "Wireline · " + escapeHtml(WIRELINE_SIGNATURE) : escapeHtml(WIRELINE_SIGNATURE)}</span>
+        <span>${footerCredit ? "BotBound · " + escapeHtml(WIRELINE_SIGNATURE) : escapeHtml(WIRELINE_SIGNATURE)}</span>
         <span aria-hidden="true">·</span>
         <span>${workspaceEyebrow}</span>
       </div>

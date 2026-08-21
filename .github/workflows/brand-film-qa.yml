@@ -1,0 +1,71 @@
+name: Brand and film QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - brand-work/**
+      - apps/botbound-film/**
+      - public/brand/**
+      - public/botbound-*.png
+      - public/favicon.png
+      - public/og-image.png
+      - scripts/render-botbound-launch-assets.mjs
+      - scripts/render-image-assets.mjs
+      - .github/workflows/brand-film-qa.yml
+  push:
+    branches: [main]
+    paths:
+      - brand-work/**
+      - apps/botbound-film/**
+      - public/brand/**
+      - public/botbound-*.png
+      - public/favicon.png
+      - public/og-image.png
+      - scripts/render-botbound-launch-assets.mjs
+      - scripts/render-image-assets.mjs
+      - .github/workflows/brand-film-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify source assets and Remotion package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/botbound-film/package-lock.json
+
+      - name: Verify compact source manifest
+        run: sha256sum -c brand-work/SOURCE-SHA256SUMS.txt
+
+      - name: Install film dependencies
+        working-directory: apps/botbound-film
+        run: npm ci
+
+      - name: Verify film types
+        working-directory: apps/botbound-film
+        run: npm run check
+
+      - name: Rebuild and verify captions
+        working-directory: apps/botbound-film
+        run: npm run captions:export
+
+      - name: Confirm caption sidecars are current
+        run: git diff --exit-code -- apps/botbound-film/public/captions
+
+      - name: Bundle film
+        working-directory: apps/botbound-film
+        run: npm run build
+
+      - name: Verify composition registry
+        working-directory: apps/botbound-film
+        run: npm run compositions

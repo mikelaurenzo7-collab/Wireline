@@ -25,6 +25,7 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const CAMPAIGN_DOC = "docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md";
 const KIT = "scripts/marketing-kit.mjs";
 const CERTIFIER = "scripts/run-marketing-kit.mjs";
+const SOURCE_VERIFIER = "scripts/lib/release-source-verification.mjs";
 const PUBLIC_HEALTH = "src/entrypoints/public-health-api.ts";
 
 /** Vendors the reel doctrine forbids putting on screen or in reel copy. */
@@ -35,20 +36,43 @@ describe("launch reel capture contract", () => {
   const certifier = source(CERTIFIER);
   const campaign = source(CAMPAIGN_DOC);
   const publicHealth = source(PUBLIC_HEALTH);
+  const sourceVerifier = source(SOURCE_VERIFIER);
 
   it("generates reel copy from the campaign document rather than restating it", () => {
     expect(kit, "the kit must name the campaign document as its source").toContain(CAMPAIGN_DOC);
     expect(kit, "the kit must read the Brand Spine").toMatch(/function readBrandSpine/);
     for (const key of ["North star", "Compact line", "Outcome line", "CTA", "Price"]) {
-      expect(campaign, `Brand Spine is missing "${key}"`).toContain(`| ${key} |`);
+      expect(campaign, `Brand Spine is missing "${key}"`).toMatch(
+        new RegExp(`\\|\\s*${key}\\s*\\|`),
+      );
     }
   });
 
   it("keeps competitor names out of the generated reel copy", () => {
-    const template = kit.slice(kit.indexOf("# Wireline marketing copy pack"));
+    const anchor = kit.indexOf("# BotBound marketing copy pack");
+    expect(anchor, "the BotBound copy-pack template is missing").toBeGreaterThan(-1);
+    const template = kit.slice(anchor);
+    expect(template).not.toMatch(/\bWireline\b|trywireline\.com/i);
+    expect(template).not.toContain("${resolvedEmail}");
     for (const vendor of VENDOR_MARKS) {
       expect(template, `reel copy must not name ${vendor}`).not.toContain(vendor);
     }
+  });
+
+  it("keeps mock captures and release manifests safe for the BotBound launch", () => {
+    for (const expected of [
+      'const MOCK_DEMO_EMAIL = "demo@botbound.test"',
+      'full_name: "BotBound Demo Showcase"',
+      'team: "BotBound Revenue"',
+      'brand_name: "BotBound"',
+      'captureAccount: useMocks ? "local-mock" : "configured-production-workspace"',
+    ]) {
+      expect(kit).toContain(expected);
+    }
+    expect(kit).not.toContain("demoEmail: resolvedEmail");
+    expect(kit).not.toContain('full_name: "Wireline Demo Showcase"');
+    expect(kit).not.toContain("@wireline.test");
+    expect(kit).toContain('const LEGACY_SEEDED_DEMO_EMAIL = "composer.demo@trywireline.com"');
   });
 
   it("does not film the competitor comparison table", () => {
@@ -77,34 +101,35 @@ describe("launch reel capture contract", () => {
     expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
   });
 
-  it("restricts publishable capture to Wireline-owned production hosts", () => {
-    expect(certifier).toContain("function isTrustedWirelineCaptureHost(hostname)");
-    expect(certifier).toContain('host === "trywireline.com"');
-    expect(certifier).toContain('host.endsWith(".trywireline.com")');
-    expect(certifier).toContain('host === "wireline-chi.vercel.app"');
-    expect(certifier).toContain("-revaluate\\.vercel\\.app");
-    expect(certifier).toContain("Launch-reel certification refuses untrusted capture host");
-    expect(certifier).toContain("does not allow credentials embedded in E2E_BASE_URL");
+  it("restricts publishable capture to the canonical BotBound production host", () => {
+    expect(sourceVerifier).toContain("function isTrustedBotBoundCaptureHost(hostname)");
+    expect(sourceVerifier).toContain("host === new URL(CANONICAL_PRODUCTION_URL).hostname");
+    expect(sourceVerifier).not.toContain('host === "trywireline.com"');
+    expect(sourceVerifier).not.toContain('host === "wireline-chi.vercel.app"');
+    expect(sourceVerifier).toContain("refuses untrusted capture host");
+    expect(sourceVerifier).toContain("does not allow credentials in its capture URL");
   });
 
   it("source-verifies every origin represented by a publishable manifest", () => {
     expect(certifier).toContain("async function verifyCaptureOrigins(sourceCommit)");
     expect(certifier).toContain(
-      'const origins = [...new Set([configuredBaseURL, "https://trywireline.com"])]',
+      "const origins = [...new Set([configuredBaseURL, CANONICAL_PRODUCTION_URL])]",
     );
-    expect(certifier).toContain("verified.push(await verifyRemoteSourceCommit(sourceCommit, origin))");
+    expect(certifier).toContain(
+      "verified.push(await verifyRemoteSourceCommit(sourceCommit, origin))",
+    );
     expect(certifier).toContain("function combineSourceVerification");
     expect(certifier).toContain("origins,");
   });
 
   it("proves every capture origin serves the checkout commit for the full capture window", () => {
     expect(publicHealth).toContain('res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT)');
-    expect(certifier).toContain('response.headers.get("x-wireline-source-commit")');
-    expect(certifier).toContain("deployedCommit !== sourceCommit");
-    expect(certifier).toContain("Do not certify footage when the deployed source cannot be proven.");
-    expect(certifier).toContain("source_commit_check");
+    expect(sourceVerifier).toContain('response.headers.get("x-wireline-source-commit")');
+    expect(sourceVerifier).toContain("deployedCommit !== sourceCommit");
+    expect(sourceVerifier).toContain("source_commit_check");
     expect(certifier).toContain("const beforeCapture = await verifyCaptureOrigins(sourceCommit)");
     expect(certifier).toContain("const afterCapture = await verifyCaptureOrigins(sourceCommit)");
+    expect(certifier).toContain("assertCleanCheckout(repoRoot, sourceCommit)");
     expect(certifier).toContain("verifiedBeforeCaptureAt");
     expect(certifier).toContain("verifiedAfterCaptureAt");
     expect(certifier).toContain("sourceVerification");
@@ -112,9 +137,22 @@ describe("launch reel capture contract", () => {
 
   it("invalidates stale and partial release output whenever certification cannot finish", () => {
     expect(certifier).toContain("rmSync(outputRoot, { recursive: true, force: true })");
-    expect(certifier).toContain("A certification attempt invalidates all prior generated output immediately");
+    expect(certifier).toContain(
+      "A certification attempt invalidates all prior generated output immediately",
+    );
     expect(certifier).toContain("Marketing-kit capture failed with exit code");
-    expect(certifier).toMatch(/catch \(error\) \{\s*rmSync\(outputRoot, \{ recursive: true, force: true \}\);/);
+    expect(certifier).toMatch(
+      /catch \(error\) \{\s*rmSync\(outputRoot, \{ recursive: true, force: true \}\);/,
+    );
+  });
+
+  it("retains authenticated paths, sizes, and hashes in the release record", () => {
+    expect(certifier).toContain("sizeBytes: statSync(resolveAssetPath(asset)).size");
+    expect(certifier).toContain("frames: records");
+    expect(certifier).toContain(
+      "authenticatedScreenshots: certifiedManifest.captureCertification.authenticatedScreenshots",
+    );
+    expect(certifier).not.toContain("({ layout, routes, uniqueFrames }) =>");
   });
 
   it("resolves a browser the same way in every capture script", () => {

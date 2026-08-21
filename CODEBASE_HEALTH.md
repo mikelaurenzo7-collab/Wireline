@@ -1,18 +1,18 @@
 # Codebase Health
 
-This file is Wireline's durable repository-health contract. It defines what belongs in source control, what must be deleted or ignored, and how canonical policy differs from dated audit evidence.
+This file is BotBound's durable repository-health contract. It defines what belongs in source control, what must be deleted or ignored, and how canonical policy differs from dated audit evidence.
 
 ## Current north star
 
-Wireline is a precise agent operating layer for calls, texts, follow-up, browser context, email, integrations, and optional video presenters. The product model is **Create -> Train -> Wire -> Run**.
+BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The product model is **Create -> Train -> Wire -> Run**.
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
 - **Wire** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
 - **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
-- **Video presenter** is an optional business-agent layer. Vendor names stay out of customer-facing copy; the Wireline face remains the fallback.
+- **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
 
-Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light themes must express one Wireline Letterpress system rather than separate products.
+Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light themes must express one BotBound Letterpress system rather than separate products.
 
 ## Active product boundary
 
@@ -56,7 +56,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 
 ## Design-system discipline
 
-Wireline Letterpress on the Aurora palette is the only active design system.
+BotBound Letterpress on the Aurora palette is the only active design system. Technical token and file identifiers retain the `wireline` namespace for compatibility.
 
 - Electric violet is action; ink is structure; silver is the restrained wire accent.
 - Dark mode uses a cool obsidian canvas. Light mode uses a cool near-white canvas with the same hierarchy and tokens.
@@ -68,11 +68,10 @@ Wireline Letterpress on the Aurora palette is the only active design system.
 
 `docs/CUSTOMER_TERMINOLOGY.md` is the active canonical language policy; the summary here must match it and the product-voice contracts that enforce it.
 
-- Broad public language: `voice agents` for personal and business conversations. Never pair `AI` with `agent` in copy — the contracts reject `AI voice agent` and `AI employee` on customer surfaces.
-- Personal context: `personal agent`.
-- Business context: `business voice agent`, or a specific truthful role (`sales agent`, `front desk agent`).
+- Broad public language: `Bot` or `Phone Bot` in one product and workspace model. Never split signup, setup, pricing, or navigation into Personal and Business lanes. Technical compatibility identifiers remain stable.
+- Context-specific examples use the actual job (`Personal Assistant`, `Sales Rep`, `Front Desk`) without creating audience lanes.
 - Technical contracts: `agent`.
-- Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, `included number`, `presenter`, and `live video add-on`.
+- Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`.
 - Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.
 
 ## Documentation taxonomy

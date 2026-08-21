@@ -21,7 +21,8 @@ describe("Vapi role identity polarity", () => {
 
     expect(factory).toContain("const principalFacing = isPrincipalVoiceRole(configured.role)");
     expect(factory).not.toContain("const isBusinessAgent = configured.isBusinessAgent !== false");
-    expect(factory).toContain("a personal BotBound Bot for your principal");
+    expect(factory).toContain("a BotBound Bot for your principal");
+    expect(factory).not.toContain("a personal BotBound Bot");
     expect(factory).toContain("## QUIET-HOURS MODE");
     expect(factory).toContain("## AFTER-HOURS MODE");
     expect(factory).toMatch(/configured\.escalationPhone \|\| configured\.escalationEmail[\s\S]*\? principalFacing/);

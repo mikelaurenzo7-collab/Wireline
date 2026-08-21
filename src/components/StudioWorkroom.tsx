@@ -63,7 +63,7 @@ function AgentAvatar({ agentName, speaking = false }: { agentName: string; speak
       seed={agentName || "agent"}
       size={24}
       speaking={speaking}
-      title={`${agentName || "Voice agent"} face`}
+      title={`${agentName || "Bot"} face`}
       className="mt-1 shrink-0"
     />
   );
@@ -136,7 +136,7 @@ const StudioWorkroom = forwardRef<
     backLabel = "Back",
     layout = "standalone",
     mode = "configure",
-    allowOutbound = true,
+    allowOutbound = false,
   },
   ref,
 ) {
@@ -485,7 +485,12 @@ const StudioWorkroom = forwardRef<
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
-                if (event.nativeEvent.isComposing || event.key !== "Enter" || event.shiftKey || sending)
+                if (
+                  event.nativeEvent.isComposing ||
+                  event.key !== "Enter" ||
+                  event.shiftKey ||
+                  sending
+                )
                   return;
                 const finePointer = window.matchMedia("(pointer: fine)").matches;
                 if (!finePointer && !event.metaKey && !event.ctrlKey) return;

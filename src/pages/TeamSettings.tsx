@@ -158,7 +158,7 @@ export default function TeamSettings() {
 
         {teamAccess === "restricted" ? (
           <StatusNotice tone="info" title="Solo workspace">
-            Team invites are available on Team and Business plans.{" "}
+            Team invites are available on Starter Plus and Pro plans.{" "}
             <Link
               to="/settings/billing"
               className="font-semibold text-primary underline underline-offset-2"

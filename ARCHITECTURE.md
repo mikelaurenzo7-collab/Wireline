@@ -1,19 +1,21 @@
-# Wireline Architecture
+# BotBound Architecture
 
-Wireline is an AI communications product with one operating loop: **Create -> Train -> Wire -> Run**.
+BotBound is one Bot product and workspace across calls, texts, email, tools, and
+outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**;
+this supports the public **Build -> Train -> Launch -> Improve** story.
 
-A customer builds an agent, trains it with durable knowledge and policy, wires it to numbers and tools, then runs work through Studio. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
+A customer builds a Bot, trains it with durable knowledge and policy, wires it to numbers and tools, then runs work through Studio. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
 
 ## Product boundary
 
-1. A person creates a focused agent.
-2. They train the agent with instructions, knowledge, tone, voice, escalation policy, and workflow behavior.
+1. A person creates a focused Bot.
+2. They train the Bot with instructions, knowledge, tone, voice, escalation policy, and workflow behavior.
 3. They wire calendars, email, contacts, CRM, numbers, billing, routing, approvals, and other launch controls when useful.
-4. Voice, messaging, browser context, email, and automation execution use the saved agent profile.
-5. Optional video presenter support gives business agents a live visual face while preserving a Wireline-owned fallback.
+4. Voice, messaging, browser context, email, and automation execution use the saved Bot profile.
+5. Live talking-head video is retired. Compatibility presenter code may support identity badges and fail-closed legacy webhooks, but it must not mint sessions or create a separate product surface.
 6. Outcomes feed review, coaching, analytics, and retraining.
 
-Historic workspace URLs should redirect into the active agent workflow rather than maintaining parallel management surfaces.
+Historic workspace URLs should redirect into the active Bot workflow rather than maintaining parallel management surfaces.
 
 ## Frontend surfaces
 
@@ -27,30 +29,30 @@ Historic workspace URLs should redirect into the active agent workflow rather th
 | Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
 | Wire                 | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |
 | Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                                                           |
-| Agent roster/state   | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
+| Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
 
-The visual layer is intentionally restrained: Wireline Letterpress (Aurora palette), dark/ink surfaces, a cool obsidian canvas, electric-violet action, a platinum-silver wire accent, accessible focus states, and no parallel palettes.
+The visual layer is intentionally restrained: BotBound Letterpress (Aurora palette), dark/ink surfaces, a cool obsidian canvas, electric-violet action, a platinum-silver wire accent, accessible focus states, and no parallel palettes.
 
 ## Core API flow
 
-### Agent creation
+### Bot creation
 
 `POST /api/agents`
 
 - Requires an authenticated user.
 - Enforces account entitlement and agent-cap rules.
-- Creates an agent and starting personality in one transaction.
+- Creates a Bot and starting personality in one transaction.
 - Records an audit event and invalidates account caches.
 - Does not silently provision phone numbers. Wiring happens deliberately after creation.
 
-### Agent training
+### Bot training
 
-Training endpoints extract clear user instructions into durable agent configuration.
+Training endpoints extract clear user instructions into durable Bot configuration.
 
 - Require an authenticated user and an owned agent ID.
 - Convert instructions, files, and source material into directives, knowledge, personality, and tool configuration.
-- Persist extracted configuration against the selected agent.
+- Persist extracted configuration against the selected Bot.
 - Return human-readable confirmation for the Studio conversation.
 
 ### Wiring and integrations
@@ -59,31 +61,29 @@ OAuth, CRM, telephony, billing, and connected-tool endpoints own authorization, 
 
 ### Runtime execution
 
-Runtime execution reads the saved agent profile, selected model/voice posture, connected tools, balance/entitlement state, and provider configuration. Calls, texts, follow-up, approvals, and handoffs must emit durable events and remain tenant-scoped.
+Runtime execution reads the saved Bot profile, selected model/voice posture, connected tools, balance/entitlement state, and provider configuration. Calls, texts, follow-up, approvals, and handoffs must emit durable events and remain tenant-scoped.
 
 ## Runtime services
 
-- **Auth and authorization:** Wireline-owned session middleware, scrypt password hashes, HIBP k-anonymous password screening, and user-scoped ownership checks. Supabase Auth is not the authentication authority.
+- **Auth and authorization:** BotBound-owned session middleware, scrypt password hashes, HIBP k-anonymous password screening, and user-scoped ownership checks. Supabase Auth is not the authentication authority.
 - **Launch readiness API:** the launch-readiness health endpoint is protected by a server-owned monitor credential rather than tenant session authentication; it exposes capability levels for operational monitors.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
   - Production PSTN calls: Twilio buys and owns the number, then registers it with xAI Direct SIP (`sip.voice.x.ai`). Inbound `realtime.call.incoming` webhooks and outbound Twilio `<Sip>` bridges join `wss://api.x.ai/v1/realtime?call_id=…`.
-  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live call brain. Grok 4.6 is the structured-reasoning model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
+  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live PSTN brain. Grok 4.6 is an optional structured-continuity model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
   - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - Studio live tests use the same native xAI Speech-to-Speech model family as PSTN, via server-minted ephemeral client secrets. OpenAI Realtime still powers ChatGPT private simulation (and an isolated ChatGPT spend credential when configured).
+  - Studio live tests and ChatGPT private simulation use OpenAI Realtime (`gpt-realtime-2.1`) over WebRTC. The server mints short-lived credentials and exchanges Studio SDP; the browser never receives a platform key. This does not alter the separate PSTN lane.
   - Direct `/v1/tts` is preview and marketing-audio only. It is not the PSTN engine.
   - Neither OpenAI Realtime nor Vapi is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
-  - Primary: direct xAI Responses API using Grok 4.6 by default (`WIRELINE_XAI_STRUCTURED_MODEL` overrides).
-  - Continuity: OpenAI GPT-5.6 Terra, then Gemini, then Vercel AI Gateway as the governed final multi-model route. Direct xAI can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false`.
-  - Personal agents, business agents, and hybrid direction all share this same managed chain — posture changes tools/copy/presenters, not the provider default.
+  - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides).
+  - Continuity: Vercel AI Gateway, then direct xAI Grok 4.6, then Gemini. Direct xAI continuity can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false` without disabling native PSTN.
+  - Every Bot and call direction shares this same managed chain; roles and use cases change configuration, not the provider default or product mode.
   - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or tenant PSTN default.
-- **Video presenters:**
-  - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.
-  - Customer surfaces should say presenter, face, or live video add-on, not vendor names.
-- **Browser extension:** Wireline Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
+- **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.
+- **Browser extension:** BotBound Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
 - **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.
 - **Webhooks:** signature verification and idempotent handling remain server-side.
 
@@ -95,7 +95,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.
 - CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
-- Supabase Auth advisor findings must not be represented as Wireline auth blockers unless Wireline adopts Supabase Auth. Wireline's custom password and HIBP controls remain the authoritative launch gate.
+- Supabase Auth advisor findings must not be represented as BotBound auth blockers unless BotBound adopts Supabase Auth. BotBound's custom password and HIBP controls remain the authoritative launch gate.
 
 ## Source-of-truth discipline
 
@@ -106,7 +106,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 | Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                     |
 | Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
 | Models               | `src/lib/ai-models.ts`                                                                                |
-| Video presenter copy | `src/lib/video-presenter/copy.ts`                                                                     |
+| Retired presenter compatibility | `docs/PRODUCT_SHOWCASE_MATRIX.md`, `src/lib/video-presenter/copy.ts`                                 |
 | Repo hygiene         | `CODEBASE_HEALTH.md`                                                                                  |
 
 ## Verification

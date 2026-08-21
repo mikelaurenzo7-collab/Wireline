@@ -14,11 +14,10 @@ const PRODUCT_LINKS = [
 
 // Every built wedge, symmetrically: these pages carry the sharpest pain-first
 // copy on the site and each has its own live demo line, yet seven of eight
-// were unlinked. Personal leads and no industry is privileged, preserving the
-// broad-entry posture the product-voice contract pins (signup CTAs and the
-// /for/* fallback stay personal-first).
+// were unlinked. Everyday calls lead and no industry is privileged, preserving
+// the broad-entry posture without turning use cases into separate products.
 const WHO_ITS_FOR_LINKS = [
-  { to: "/for/personal", label: "Personal" },
+  { to: "/for/everyday", label: "Everyday Calls" },
   { to: "/for/home-services", label: "Home Services" },
   { to: "/for/insurance", label: "Insurance" },
   { to: "/for/legal", label: "Legal" },
@@ -74,7 +73,7 @@ export default function MarketingFooter({
           <div className="marketing-footer-brand">
             <Link
               to="/"
-              aria-label="WIRELINE home"
+              aria-label="BotBound home"
               className="inline-flex rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
             >
               <WirelineLockup size="large" />

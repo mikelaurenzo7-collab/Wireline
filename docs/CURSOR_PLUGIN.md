@@ -1,27 +1,27 @@
-# Wireline Cursor plugin
+# BotBound Cursor plugin
 
 ## Product contract
 
-**Meet the user in Cursor, create a real Wireline account if they are new, then help them build their first voice agent.**
+**Meet the user in Cursor, create a real BotBound account if they are new, then help them build their first Bot.**
 
-Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://trywireline.com/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding Wireline voice agents in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
+Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://botbound.me/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding BotBound Bots in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
 
 ```text
 Cursor Agent
--> Wireline OAuth (signup or sign in)
+-> BotBound OAuth (signup or sign in)
 -> confirmed first agent draft
 -> private rehearsal (text or voice)
--> optional Training that lands in Wireline
--> live numbers, calling, messaging, and launch in Wireline
+-> optional Training that lands in BotBound
+-> live numbers, calling, messaging, and launch in BotBound
 ```
 
 ## What Cursor owns
 
 - Discovering the remote server from `.mcp.json` / `mcp.json`.
-- OAuth against Cursor-operated callbacks already allowlisted in `src/lib/mcp-client-registry.ts`: `cursor://anysphere.cursor-mcp/oauth/callback`, `https://www.cursor.com/agents/mcp/oauth/callback`, and desktop `http://localhost:8787/callback`. `https://trywireline.com` is the authorization server, not a Cursor client redirect.
+- OAuth against Cursor-operated callbacks already allowlisted in `src/lib/mcp-client-registry.ts`: `cursor://anysphere.cursor-mcp/oauth/callback`, `https://www.cursor.com/agents/mcp/oauth/callback`, and desktop `http://localhost:8787/callback`. `https://botbound.me` is the authorization server, not a Cursor client redirect.
 - Conversational first-agent drafting, confirmation, and private rehearsal prompts.
 
-## What Wireline owns
+## What BotBound owns
 
 - Account creation, tenant isolation, entitlements, and spend guards.
 - Agent profile normalization and prompt compilation.
@@ -46,10 +46,10 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 One-click install:
 
 ```text
-cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==
+cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9
 ```
 
-Public documentation: `https://trywireline.com/cursor-plugin.html`.
+Public documentation: `https://botbound.me/cursor-plugin.html`.
 
 ## Tool contract
 
@@ -63,7 +63,7 @@ Same tools as ChatGPT and Claude:
 | `start_private_voice_simulation` | `demo.voice` | Tool-free private voice rehearsal. |
 | `list_wireline_agents` | `agents.read` | Lists the connected user's agents. |
 | `get_wireline_workspace_summary` | `agents.read` | Aggregate counts only. |
-| `get_wireline_agent_status` | `agents.read` | Next step and Wireline links. No phone numbers or customer content. |
+| `get_wireline_agent_status` | `agents.read` | Next step and BotBound links. No phone numbers or customer content. |
 | `run_private_agent_turn` | `demo.voice` | Confirmed private text rehearsal. Not a live call. |
 | `get_agent_coaching_brief` | `agents.read` | Owner-authored Training facts and rules. |
 | `train_wireline_agent` | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
@@ -77,7 +77,7 @@ Same tools as ChatGPT and Claude:
 - No agent launch.
 - No repo-embedded voice SDK.
 
-Triggering an agent from Cursor means a private rehearsal of an agent the user owns. Live customer contact stays in Wireline.
+Triggering an agent from Cursor means a private rehearsal of an agent the user owns. Live customer contact stays in BotBound.
 
 ## Authentication
 
@@ -88,7 +88,9 @@ Users without a session are sent to `/signin?redirect=/mcp/oauth/authorize...`. 
 ## Verification
 
 ```bash
-node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
-The shared probe checks discovery, the tool inventory, privacy pages, and `https://trywireline.com/cursor-plugin.html`. It does not substitute for a real OAuth flow in Cursor.
+The shared probe checks discovery, the tool inventory, privacy pages, and `https://botbound.me/cursor-plugin.html`. It does not substitute for a real OAuth flow in Cursor.
+
+The `wireline` package, server, tool, and file identifiers are stable technical namespaces. `https://trywireline.com/mcp` remains a compatibility endpoint for existing registrations during the issuer migration; do not publish it for new installs.

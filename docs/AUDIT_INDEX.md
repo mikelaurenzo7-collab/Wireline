@@ -1,4 +1,4 @@
-# Wireline Audit Evidence Index
+# BotBound Audit Evidence Index
 
 Status: **Historical evidence index**
 
@@ -8,6 +8,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md](./BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md) | August 20 adversarial, evidence-backed launch-gap audit across public conversion, auth, workspace, billing, security, data, communications, companion clients, analytics, SEO, campaign delivery, and release operations. |
+| [BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md](./BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md) | August 20 surface-by-surface execution matrix for package gates, live public probes, CI, extension, native, media, accessibility, recovery, and unresolved release evidence. |
 | [reviews/2026-08-16-final-design-and-launch-readiness.md](./reviews/2026-08-16-final-design-and-launch-readiness.md) | August 16 final landing/design disposition, protected public-demo runtime, exact release-candidate evidence, live Vercel/Stripe/Supabase posture, production rollback/main mismatch, business operations, launch matrix, and ordered founder certification checklist. |
 | [reviews/2026-08-15-wireline-production-ops-review.md](./reviews/2026-08-15-wireline-production-ops-review.md) | August 15 review of Claude's anchored marketing work, exact merged-SHA production verification, live Stripe/Vercel/Supabase posture, exact-head billing control, product truth, pricing, launch strategy, and remaining carrier/real-customer proof. |
 | [reviews/2026-08-13-wireline-launch-decision.md](./reviews/2026-08-13-wireline-launch-decision.md) | August 13 code, architecture, billing, data, unit-economics, product, design, market, compliance, vendor, and production launch decision. |
@@ -41,6 +43,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 | [RUNNING_COSTS_AUDIT_2026-07-06.md](./RUNNING_COSTS_AUDIT_2026-07-06.md) | Historical cost evidence referenced by launch margin planning. |
 | [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | Supabase advisor evidence and custom-auth interpretation. Recheck live advisors before acting. |
 | [CLIENT_SURFACES_STRATEGY_2026-07-20.md](./CLIENT_SURFACES_STRATEGY_2026-07-20.md) | Strategy evidence behind current release tiers in `CLIENT_SURFACES.md`. |
+| [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | Historical Aurora implementation program; current BotBound language, one-workspace model, pricing, and retired-presenter posture supersede its earlier branches. |
+| [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md) | Retired presenter-vendor and paid-add-on planning evidence. Live talking-head video, checkout, and session minting are not current product work. |
 | [mobile-web-native-strategy-audit.md](./mobile-web-native-strategy-audit.md) | Earlier surface-split analysis. Verify every conclusion against `CLIENT_SURFACES.md`. |
 
 ## Surface, design, and launch-triage evidence

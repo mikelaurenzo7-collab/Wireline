@@ -30,19 +30,20 @@ describe("outbound compliance contract", () => {
     expect(gate).toContain("is_marketing_call: isMarketingCall");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain('reason: "outside_permitted_calling_hours"');
-    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
   });
 
-  it("defers missing Federal DNC credentials without disabling outbound globally", () => {
+  it("fails marketing outbound closed when Federal DNC credentials are missing", () => {
     const federal = read("src/lib/federal-dnc-service.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
     const readiness = read("src/lib/launch-readiness.ts");
 
-    expect(federal).toContain('advisory: "FEDERAL_DNC_DEFERRED"');
-    expect(federal).toContain("allowed: true");
+    expect(federal).toContain('code: "FEDERAL_DNC_NOT_CONFIGURED"');
+    expect(federal).toContain("allowed: false");
     expect(federal).toContain('source: "unconfigured"');
     expect(federal).toContain("return { listed: false, source: \"unconfigured\", checked_at }");
-    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain('reason: "federal_dnc_unconfigured"');
     expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("evaluateOutboundConsent");

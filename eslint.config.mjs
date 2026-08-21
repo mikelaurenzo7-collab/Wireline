@@ -23,7 +23,7 @@ export default [
   // ── Global ignores ──────────────────────────────────────────────────
   {
     ignores: [
-      "dist/**",
+      "**/dist/**",
       "node_modules/**",
       ".tmp/**",
       ".worktrees/**",
@@ -138,6 +138,7 @@ export default [
   {
     files: [
       "scripts/build-official-assets.mjs",
+      "scripts/capture-botbound-launch-proof.mjs",
       "scripts/capture-prod-visual-qa.mjs",
       "scripts/capture-visual-qa.mjs",
       "scripts/dogfood-marketing.mjs",

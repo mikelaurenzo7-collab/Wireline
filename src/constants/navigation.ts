@@ -2,7 +2,7 @@
  * Icons are NAMED here, not imported.
  *
  * This module is the single source of truth for navigation IA, which means it
- * is imported by `src/lib/account-type.ts` for account-mode filtering — and
+ * is imported by `src/lib/account-type.ts` for legacy account compatibility — and
  * that is reachable from `server.ts`. While the icons were component
  * references, every serverless cold start paid a `require("lucide-react")`:
  * measured at 62 ms and 7.2 MB of heap, to serve API traffic that never renders
@@ -32,7 +32,7 @@ export type ShellNavItem = {
   matches?: string[];
 };
 
-/** Legacy nav item shape for account-type filtering and deep links. */
+/** Legacy nav item shape retained for compatibility and deep links. */
 export type NavItem = {
   label: string;
   path: string;

@@ -325,7 +325,7 @@ async function executeAutonomousAction(
       const endTime = addMinutesToIso(startTime, 60);
       const calOk = await service.bookAppointment({
         title: action.payload.event_name || "Meeting",
-        description: `${action.reasoning || "Scheduled via Voice Agent"}\n\nConfirmed timezone: ${timeZone}.`,
+        description: `${action.reasoning || "Scheduled by your Bot"}\n\nConfirmed timezone: ${timeZone}.`,
         startTime,
         endTime,
         agentId: action.agentId,

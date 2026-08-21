@@ -36,7 +36,9 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps live calling gated behind a connected line", () => {
-    expect(workroom).toContain("allowOutbound={Boolean(active.phone_number)}");
+    expect(studio).toContain("allowOutbound={Boolean(active.phone_number)}");
+    expect(workroom).toContain("allowOutbound = false");
+    expect(workroom).toContain('mode === "test" && allowOutbound');
     expect(review).toContain("const hasPhone = Boolean(phoneNumber)");
     expect(review).toContain("Browser-ready; live line not connected");
     expect(review).toContain("Connect phone");
@@ -54,7 +56,7 @@ describe("demand-driven authenticated experience", () => {
   it("tracks only verifiable customer-readiness milestones", () => {
     expect(activation).toContain("Ready for customers");
     expect(activation).toContain("Job and greeting defined");
-    expect(activation).toContain("Business facts added");
+    expect(activation).toContain("Knowledge added");
     expect(activation).toContain("Phone number connected");
     expect(activation).toContain("First live customer handled");
     expect(activation).toContain("First follow-up reviewed");
@@ -72,7 +74,7 @@ describe("demand-driven authenticated experience", () => {
     expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery/);
     expect(setup).toContain("<details");
     expect(setup).toContain("AgentToolPermissions");
-    expect(workroom).toContain('/test/stream');
+    expect(workroom).toContain("/test/stream");
     expect(review).toContain('aria-label="Next actions"');
   });
 
@@ -90,7 +92,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {
-    expect(voice).toContain("Test response");
+    expect(voice).toMatch(/<MessageCircle[^>]*>[\s\S]*?Test\s*<\/button>/);
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");
     expect(voice).not.toContain("live PSTN");

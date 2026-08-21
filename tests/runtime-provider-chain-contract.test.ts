@@ -17,6 +17,7 @@ const read = (path: string) =>
 const client = read("src/lib/ai-client.ts");
 const models = read("src/lib/ai-models.ts");
 const realtime = read("src/lib/voice/openai-realtime-config.ts");
+const envExample = read(".env.example");
 
 const ALL: ReasoningProviderId[] = ["openai", "gemini", "gateway", "xai"];
 
@@ -25,6 +26,10 @@ describe("structured runtime provider chain policy", () => {
     expect(DEFAULT_REASONING_PROVIDER).toBe("openai");
     expect([...REASONING_PROVIDER_ORDER]).toEqual(["openai", "gateway", "xai", "gemini"]);
     expect(orderReasoningProviders(ALL)).toEqual(["openai", "gateway", "xai", "gemini"]);
+    expect(envExample).toContain("Managed structured primary is OpenAI GPT-5.6 Terra");
+    expect(envExample).toContain("openai (default) | gateway | xai | gemini");
+    expect(envExample).not.toContain("Managed structured primary is xAI");
+    expect(envExample).not.toContain("xai (default) | openai | gemini | gateway");
   });
 
   it("keeps the managed OpenAI default when no preference is configured", () => {

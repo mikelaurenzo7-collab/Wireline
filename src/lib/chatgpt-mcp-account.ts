@@ -9,8 +9,8 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  *
  * Private voice in this hosted widget uses OpenAI Realtime WebRTC because
  * ChatGPT iframes may only connect to `https://api.openai.com`. That is not
- * the Studio or PSTN brain. Tenant tests and phone calls use xAI
- * Speech-to-Speech (`grok-voice-think-fast-2.0`).
+ * the PSTN brain. Studio uses the same OpenAI Realtime WebRTC posture; phone
+ * calls remain on xAI Speech-to-Speech (`grok-voice-think-fast-2.0`).
  *
  * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
  * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling
@@ -26,7 +26,7 @@ export function buildAccountBoundWidgetHtml(): string {
 <style>${buildWirelineMcpWidgetCss()}</style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">BotBound Bot draft</div><h2 id="name">Your private phone Bot</h2><p id="summary">Create a BotBound account, then describe the first voice Bot you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">BotBound workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://botbound.me/studio" target="_blank" rel="noreferrer">Open in BotBound</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect BotBound to create your first voice-Bot draft.</div><p class="note">The first draft is saved to your BotBound account. Phone numbers, real calls, messaging, integrations, and launch stay in BotBound.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">BotBound Bot draft</div><h2 id="name">Your private phone Bot</h2><p id="summary">Create a BotBound account, then describe the first voice Bot you want in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Context</strong><span id="business">BotBound workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://botbound.me/studio" target="_blank" rel="noreferrer">Open in BotBound</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect BotBound to create your first voice-Bot draft.</div><p class="note">The first draft is saved to your BotBound account. Phone numbers, real calls, messaging, integrations, and launch stay in BotBound.</p></div></div>
 <script>
 (() => {
   const state = {

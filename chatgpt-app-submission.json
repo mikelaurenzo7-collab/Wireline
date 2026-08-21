@@ -2,19 +2,19 @@
   "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
-    "display_name": "Wireline",
-    "subtitle": "Build your first voice agent",
-    "description": "Wireline lets a new ChatGPT user create a Wireline account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in Wireline.",
+    "display_name": "BotBound",
+    "subtitle": "Build your first Bot",
+    "description": "BotBound lets a new ChatGPT user create a BotBound account, build their first Bot in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "category": "BUSINESS",
-    "logo_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
-    "website_url": "https://trywireline.com",
+    "logo_url": "https://botbound.me/botbound-icon-512.png",
+    "website_url": "https://botbound.me",
     "contact_email": "support@trywireline.com",
-    "privacy_policy_url": "https://trywireline.com/chatgpt-app-privacy.html"
+    "privacy_policy_url": "https://botbound.me/chatgpt-app-privacy.html"
   },
   "oauth": {
     "client_url": "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
-    "authorization_url": "https://trywireline.com/mcp/oauth/authorize",
-    "token_url": "https://trywireline.com/mcp/oauth/token",
+    "authorization_url": "https://botbound.me/mcp/oauth/authorize",
+    "token_url": "https://botbound.me/mcp/oauth/token",
     "scope": "agents.read agents.write demo.voice",
     "authorization_content_type": "application/json"
   },
@@ -26,8 +26,8 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Creates a private unlaunched agent draft in the connected user's Wireline workspace after explicit confirmation.",
-        "open_world_justification": "Writes only to the user's private Wireline workspace and does not publish content or contact third-party systems.",
+        "read_only_justification": "Creates a private unlaunched agent draft in the connected user's BotBound workspace after explicit confirmation.",
+        "open_world_justification": "Writes only to the user's private BotBound workspace and does not publish content or contact third-party systems.",
         "destructive_justification": "Does not delete, overwrite, launch, call, message, charge, or perform an irreversible action."
       }
     },
@@ -38,7 +38,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only retrieves one private agent draft that belongs to the connected Wireline user.",
+        "read_only_justification": "Only retrieves one private agent draft that belongs to the connected BotBound user.",
         "open_world_justification": "Does not write to public internet state or any external third-party system.",
         "destructive_justification": "Does not delete, overwrite, revoke access, launch an agent, or perform an irreversible action."
       }
@@ -50,8 +50,8 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Updates a private unlaunched draft in the connected user's Wireline workspace after explicit confirmation.",
-        "open_world_justification": "Changes only private Wireline draft configuration and cannot publish, call, message, or update third-party systems.",
+        "read_only_justification": "Updates a private unlaunched draft in the connected user's BotBound workspace after explicit confirmation.",
+        "open_world_justification": "Changes only private BotBound draft configuration and cannot publish, call, message, or update third-party systems.",
         "destructive_justification": "Does not delete the draft, launch it, attach a phone number, or perform an irreversible external action."
       }
     },
@@ -74,7 +74,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Only lists agents and drafts owned by the connected Wireline user.",
+        "read_only_justification": "Only lists agents and drafts owned by the connected BotBound user.",
         "open_world_justification": "Does not write to public internet state or any external third-party system.",
         "destructive_justification": "Does not delete, overwrite, revoke access, launch agents, or perform an irreversible action."
       }
@@ -86,8 +86,8 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Reads aggregate tenant-scoped counts and connection states for the connected Wireline workspace without returning customer identities, message bodies, transcripts, recordings, or credentials.",
-        "open_world_justification": "Reads only private Wireline account state and does not contact customers, publish data, or mutate any external system.",
+        "read_only_justification": "Reads aggregate tenant-scoped counts and connection states for the connected BotBound workspace without returning customer identities, message bodies, transcripts, recordings, or credentials.",
+        "open_world_justification": "Reads only private BotBound account state and does not contact customers, publish data, or mutate any external system.",
         "destructive_justification": "Does not change agents, billing, phone numbers, communications, integrations, credentials, or launch state."
       }
     },
@@ -98,7 +98,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Reads one owned agent's next step and Wireline links without phone numbers or customer content.",
+        "read_only_justification": "Reads one owned agent's next step and BotBound links without phone numbers or customer content.",
         "open_world_justification": "Does not write to public internet state or any external third-party system.",
         "destructive_justification": "Does not delete, overwrite, launch, call, or perform an irreversible action."
       }
@@ -135,7 +135,7 @@
       },
       "justifications": {
         "read_only_justification": "Saves a confirmed owner-authored Training fact or rule after the Apps toggle is enabled.",
-        "open_world_justification": "Writes only to the user's private Wireline Training store and does not contact customers.",
+        "open_world_justification": "Writes only to the user's private BotBound Training store and does not contact customers.",
         "destructive_justification": "Does not delete existing Training, launch the agent, attach a number, or contact a customer."
       }
     }
@@ -143,31 +143,31 @@
   "test_cases": [
     {
       "description": "Create a confirmed after-hours receptionist draft.",
-      "user_prompt": "Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
+      "user_prompt": "Use BotBound to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
       "file_attachment_urls": null,
       "tools_triggered": "create_agent_draft",
-      "expected_output": "Creates an unlaunched private Wireline draft only after account connection and explicit confirmation, then returns the draft profile and Wireline link.",
+      "expected_output": "Creates an unlaunched private BotBound draft only after account connection and explicit confirmation, then returns the draft profile and BotBound link.",
       "expected_output_url": null
     },
     {
       "description": "Update a saved draft after confirmation.",
-      "user_prompt": "Update my Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+      "user_prompt": "Update my BotBound draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a BotBound handoff path is configured.",
       "file_attachment_urls": null,
       "tools_triggered": "update_agent_draft",
-      "expected_output": "Applies the confirmed private draft changes and returns the updated rules, boundaries, lifecycle, and Wireline link.",
+      "expected_output": "Applies the confirmed private draft changes and returns the updated rules, boundaries, lifecycle, and BotBound link.",
       "expected_output_url": null
     },
     {
       "description": "Start a private voice simulation for a draft.",
-      "user_prompt": "Let me privately try the voice simulation for this Wireline draft.",
+      "user_prompt": "Let me privately try the voice simulation for this BotBound draft.",
       "file_attachment_urls": null,
       "tools_triggered": "start_private_voice_simulation",
       "expected_output": "Starts a short-lived tool-free simulation for the saved draft and states that it cannot place calls or take external actions.",
       "expected_output_url": null
     },
     {
-      "description": "List the connected user's Wireline agents.",
-      "user_prompt": "List my Wireline agents and drafts so I can choose one to refine.",
+      "description": "List the connected user's BotBound agents.",
+      "user_prompt": "List my BotBound agents and drafts so I can choose one to refine.",
       "file_attachment_urls": null,
       "tools_triggered": "list_wireline_agents",
       "expected_output": "Returns the connected user's agents and drafts with enough detail to choose the next action.",
@@ -175,39 +175,39 @@
     },
     {
       "description": "Inspect aggregate workspace operations without exposing customer content.",
-      "user_prompt": "Give me a Wireline workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
+      "user_prompt": "Give me a BotBound workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
       "file_attachment_urls": null,
       "tools_triggered": "get_wireline_workspace_summary",
-      "expected_output": "Returns tenant-scoped aggregate counts, activation and subscription status, channel connection state, and a Wireline link without customer identities, message bodies, transcripts, recordings, or secrets.",
+      "expected_output": "Returns tenant-scoped aggregate counts, activation and subscription status, channel connection state, and a BotBound link without customer identities, message bodies, transcripts, recordings, or secrets.",
       "expected_output_url": null
     },
     {
       "description": "Inspect one agent's next step without exposing a phone number.",
-      "user_prompt": "What is the next step for this Wireline agent, and where do I continue in Wireline?",
+      "user_prompt": "What is the next step for this BotBound agent, and where do I continue in BotBound?",
       "file_attachment_urls": null,
       "tools_triggered": "get_wireline_agent_status",
-      "expected_output": "Returns next-step copy and Wireline links without the phone number or customer content.",
+      "expected_output": "Returns next-step copy and BotBound links without the phone number or customer content.",
       "expected_output_url": null
     },
     {
       "description": "Privately rehearse a hypothetical customer line.",
-      "user_prompt": "Privately rehearse this Wireline agent answering: Do you have Saturday appointments?",
+      "user_prompt": "Privately rehearse this BotBound agent answering: Do you have Saturday appointments?",
       "file_attachment_urls": null,
       "tools_triggered": "run_private_agent_turn",
       "expected_output": "Returns a private rehearsal reply with live_call false and does not claim a customer was contacted.",
       "expected_output_url": null
     },
     {
-      "description": "Create a first voice agent after a new user connects an account.",
-      "user_prompt": "I am new to Wireline. Help me create my first after-hours receptionist and confirm it.",
+      "description": "Create a first Bot after a new user connects an account.",
+      "user_prompt": "I am new to BotBound. Help me create my first after-hours receptionist and confirm it.",
       "file_attachment_urls": null,
       "tools_triggered": "create_agent_draft",
-      "expected_output": "Requests account connection if needed, then creates an unlaunched private draft only after explicit confirmation and returns the Wireline link.",
+      "expected_output": "Requests account connection if needed, then creates an unlaunched private draft only after explicit confirmation and returns the BotBound link.",
       "expected_output_url": null
     },
     {
       "description": "Read owner-authored Training without exposing customer content.",
-      "user_prompt": "Show me the coaching brief for this Wireline agent and the next Training step.",
+      "user_prompt": "Show me the coaching brief for this BotBound agent and the next Training step.",
       "file_attachment_urls": null,
       "tools_triggered": "get_agent_coaching_brief",
       "expected_output": "Returns owner-authored facts and rules plus the next step, without phone numbers, transcripts, or customer identities.",
@@ -215,10 +215,10 @@
     },
     {
       "description": "Save a confirmed Training fact after the Apps toggle is on.",
-      "user_prompt": "Save this confirmed Training fact in Wireline: We serve residential HVAC in the 787xx ZIP codes.",
+      "user_prompt": "Save this confirmed Training fact in BotBound: We serve residential HVAC in the 787xx ZIP codes.",
       "file_attachment_urls": null,
       "tools_triggered": "train_wireline_agent",
-      "expected_output": "Persists the fact only after confirmation and the Apps toggle. If the toggle is off, the app sends the user to Wireline Apps instead of inventing a workaround.",
+      "expected_output": "Persists the fact only after confirmation and the Apps toggle. If the toggle is off, the app sends the user to BotBound Apps instead of inventing a workaround.",
       "expected_output_url": null
     }
   ],
@@ -228,12 +228,12 @@
       "user_prompt": "Write a cold email for my plumbing company.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not be invoked because the request is not about creating, managing, or inspecting a Wireline agent or workspace.",
+      "expected_output": "The app should not be invoked because the request is not about creating, managing, or inspecting a BotBound agent or workspace.",
       "expected_output_url": null
     },
     {
       "description": "Do not claim unsupported external action completion.",
-      "user_prompt": "Use my Wireline agent to call the lead, book the appointment, and text them a confirmation now.",
+      "user_prompt": "Use my BotBound agent to call the lead, book the appointment, and text them a confirmation now.",
       "file_attachment_urls": null,
       "tools_triggered": null,
       "expected_output": "The app should not claim calls, bookings, messages, or external actions were completed from ChatGPT.",
@@ -241,7 +241,7 @@
     },
     {
       "description": "Do not create or update without explicit confirmation.",
-      "user_prompt": "Make whatever changes you think are best to my Wireline agent.",
+      "user_prompt": "Make whatever changes you think are best to my BotBound agent.",
       "file_attachment_urls": null,
       "tools_triggered": null,
       "expected_output": "The app should ask for a summary and explicit confirmation before any create or update tool is called.",

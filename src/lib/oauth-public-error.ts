@@ -1,5 +1,6 @@
-export const DEFAULT_OAUTH_SIGNIN_ERROR =
-  "We couldn't complete sign-in. Please try again.";
+import { OAUTH_SIGNUP_CONSENT_REQUIRED } from "./legal-consent";
+
+export const DEFAULT_OAUTH_SIGNIN_ERROR = "We couldn't complete sign-in. Please try again.";
 
 const SAFE_OAUTH_SIGNIN_ERRORS = new Set([
   "Invalid or expired sign-in state.",
@@ -11,6 +12,7 @@ const SAFE_OAUTH_SIGNIN_ERRORS = new Set([
   "Yahoo did not return an email address.",
   "Sign-in session expired. Please try again.",
   "Failed to start session. Please try again.",
+  OAUTH_SIGNUP_CONSENT_REQUIRED,
 ]);
 
 /**

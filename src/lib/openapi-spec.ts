@@ -1,6 +1,6 @@
 // src/lib/openapi-spec.ts
 //
-// OpenAPI 3.1 description of Wireline's public API surface.
+// OpenAPI 3.1 description of BotBound's public API surface.
 //
 // Why this file exists
 // ────────────────────
@@ -179,7 +179,7 @@ const Agent: JsonSchema = {
 
 const CallLog: JsonSchema = {
   type: "object",
-  description: "A completed call with enrichment fields populated by Wireline.",
+  description: "A completed call with enrichment fields populated by BotBound.",
   required: ["id", "user_id"],
   properties: {
     id: { type: "string" },
@@ -335,7 +335,7 @@ const OutboundDialRequest: JsonSchema = {
     agentId: "agt_123",
     customerNumber: "+15551234567",
     customerName: "Jane Doe",
-    context: "Requested a callback about Business pricing.",
+    context: "Requested a callback about Pro pricing.",
     callPurpose: "callback",
     hasExpressWrittenConsent: false,
   },
@@ -617,7 +617,7 @@ const PATHS: Record<string, PathItem> = {
     get: {
       summary: "OpenAPI 3.1 spec for this API",
       description:
-        "Public. Returns this document. Use it to auto-generate client SDKs, drive contract tests, or expose Wireline as a tool to AI-agent frameworks.",
+        "Public. Returns this document. Use it to auto-generate client SDKs, drive contract tests, or expose BotBound as a tool to AI-agent frameworks.",
       operationId: "getOpenApiSpec",
       tags: ["Health"],
       security: auth.none,
@@ -1141,15 +1141,15 @@ function buildWebhookEntries(): Record<string, PathItem> {
  * Pass `process.env.APP_URL` (or the request's own origin) at call time.
  */
 export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
-  const url = serverUrl?.replace(/\/+$/, "") || "https://your-wireline-deployment.example.com";
+  const url = serverUrl?.replace(/\/+$/, "") || "https://your-botbound-deployment.example.com";
   return {
     openapi: "3.1.0",
     info: {
-      title: "Wireline API",
+      title: "BotBound API",
       version: "1.0.0",
       summary: "Carrier-grade omnichannel agents for voice, email, and follow-up.",
       description: [
-        "Wireline's public API. Designed for three audiences:",
+        "BotBound's public API. Designed for three audiences:",
         "",
         "1. **CRM / form / Zapier integrations**: push leads in via `POST /api/intake/lead`.",
         "2. **Account Holders & ops dashboards**: read agents, calls, settings, quotas, SLOs.",
@@ -1157,12 +1157,12 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         "",
         "Authentication:",
         "",
-        "- `bearerAuth`: Wireline session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
-        "- `intakeKeyAuth`: Wireline-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
+        "- `bearerAuth`: BotBound session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
+        "- `intakeKeyAuth`: BotBound-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
         "",
         "Outbound webhook deliveries are documented under `webhooks:`. Each entry shows the body shape your receiver will get.",
       ].join("\n"),
-      contact: { name: "Wireline" },
+      contact: { name: "BotBound" },
       license: { name: "Proprietary" },
     },
     servers: [{ url, description: "This deployment." }],
@@ -1201,13 +1201,13 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
-          description: "Wireline-issued JWT in `Authorization: Bearer <jwt>`.",
+          description: "BotBound-issued JWT in `Authorization: Bearer <jwt>`.",
         },
         intakeKeyAuth: {
           type: "apiKey",
           in: "header",
           name: "X-Wireline-Key",
-          description: "Wireline-issued intake API key. Manage in Admin → Intake Keys.",
+          description: "BotBound-issued intake API key. Manage in Admin → Intake Keys.",
         },
       },
       schemas: COMPONENT_SCHEMAS,

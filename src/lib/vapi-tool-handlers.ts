@@ -1,7 +1,6 @@
 /**
  * Pure, dependency-injected core logic for the revenue/security-path
- * Vapi tool handlers — `create_account`, `send_payment_link`, and
- * `send_signup_link`.
+ * Vapi tool handlers — `send_payment_link` and `send_signup_link`.
  *
  * These were originally inline inside the giant `tool-calls` block in
  * `src/routes/vapi/`, which made them untestable. Extracting
@@ -16,7 +15,7 @@
  * address.
  */
 
-const APP_URL_DEFAULT = "https://trywireline.com";
+const APP_URL_DEFAULT = "https://botbound.me";
 
 /** Vapi/LLMs may send boolean true as string "true". */
 function isEmailConfirmed(value: unknown): boolean {
@@ -48,111 +47,6 @@ export interface SendResultLike {
   ok: boolean;
   error?: string;
   id?: string;
-}
-
-// ---------------------------------------------------------------------------
-// create_account
-// ---------------------------------------------------------------------------
-
-export interface CreateAccountArgs {
-  to_email?: string;
-  caller_name?: string;
-  email_confirmed?: boolean;
-}
-
-export interface CreateAccountDeps {
-  /** authService.signUp — throws if the account already exists. */
-  signUp: (email: string, password: string, fullName?: string) => Promise<unknown>;
-  /** authService.createPasswordResetToken — returns null when email unknown. */
-  createPasswordResetToken: (email: string) => Promise<{ token: string; expiresAt: Date } | null>;
-  /** email-service.sendPasswordResetEmail. */
-  sendPasswordResetEmail: (opts: {
-    to: string;
-    resetUrl: string;
-    expiresAt: Date;
-  }) => Promise<SendResultLike>;
-  /** Random temp-password generator (injected for determinism in tests). */
-  randomPassword: () => string;
-  /** Base app URL; falls back to APP_URL env then trywireline.com. */
-  appUrl?: string;
-  log: ToolHandlerLogger;
-}
-
-/**
- * Core logic for the `create_account` Vapi tool. A Wireline phone agent
- * signs a caller up during the call: creates the account (random temp
- * password), starts the trial via signUp, then emails a set-password
- * link so the caller picks their own.
- *
- * Branch parity with the original inline handler:
- *  - bad email           → "spell it" reprompt, no signUp
- *  - email_confirmed!==true → read-back script, no signUp
- *  - account exists      → friendly "already has an account", no throw
- *  - signUp other error  → caught → snag fallback
- *  - reset email sent    → success message
- *  - reset email failed  → "account created, use Forgot password"
- */
-export async function handleCreateAccount(
-  args: CreateAccountArgs,
-  deps: CreateAccountDeps,
-): Promise<{ result: string }> {
-  try {
-    const { to_email, caller_name, email_confirmed } = args;
-
-    if (!looksLikeEmail(to_email)) {
-      return {
-        result:
-          "I couldn't parse that email. Ask the caller to spell it letter by letter, read it back, then try again.",
-      };
-    }
-
-    if (!isEmailConfirmed(email_confirmed)) {
-      return {
-        result: `Before I create the account, read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call create_account again with email_confirmed set to true.`,
-      };
-    }
-
-    const tempPassword = deps.randomPassword();
-    try {
-      await deps.signUp(to_email, tempPassword, caller_name);
-    } catch (e: unknown) {
-      // Most likely the email already has an account.
-      const msg = String((e as { message?: string })?.message || "").toLowerCase();
-      if (msg.includes("exist")) {
-        return {
-          result: `Good news, ${to_email} already has a Wireline account. Tell the caller to sign in at trywireline.com, or offer to send a password reset link.`,
-        };
-      }
-      throw e;
-    }
-
-    // Issue a reset token so the caller sets their own password.
-    const reset = await deps.createPasswordResetToken(to_email);
-    const appUrl = resolveAppUrl(deps.appUrl);
-    let emailed = false;
-    if (reset?.token) {
-      const r = await deps.sendPasswordResetEmail({
-        to: to_email,
-        resetUrl: `${appUrl}/reset-password?token=${encodeURIComponent(reset.token)}`,
-        expiresAt: reset.expiresAt,
-      });
-      emailed = r.ok;
-    }
-
-    return {
-      result: emailed
-        ? `Account created for ${to_email}. I've emailed them a link to set their password. Once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
-        : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
-    };
-  } catch (err: unknown) {
-    deps.log.error("create_account tool failed", {
-      error: (err as { message?: string })?.message ?? String(err),
-    });
-    return {
-      result:
-        "I hit a snag creating the account. Ask the caller to sign up themselves at trywireline.com/signup, it takes about a minute.",
-    };
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -242,7 +136,7 @@ export async function handleSendPaymentLink(
     });
     return {
       result:
-        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/pricing to get started.",
+        "I wasn't able to send that link right now. Let the caller know they can visit botbound.me/pricing to get started.",
     };
   }
 }
@@ -335,7 +229,7 @@ export async function handleSendSignupLink(
     });
     return {
       result:
-        "I wasn't able to send that right now. Let the caller know they can sign up at trywireline.com/signup, or call us back anytime.",
+        "I wasn't able to send that right now. Let the caller know they can sign up at botbound.me/signup, or call us back anytime.",
     };
   }
 }

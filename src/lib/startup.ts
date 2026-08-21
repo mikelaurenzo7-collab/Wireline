@@ -24,7 +24,9 @@ export function validateStartupEnv() {
   getInternalJwtSecret();
 
   const recommended: string[] = [];
-  if (!process.env.APP_URL) recommended.push("APP_URL");
+  // APP_URL is a production requirement. Keep the local-development hint
+  // without misclassifying the same production fault as merely recommended.
+  if (!IS_PROD && !process.env.APP_URL) recommended.push("APP_URL");
 
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
     recommended.push("CORS_ORIGINS");
@@ -72,7 +74,7 @@ export function validateStartupEnv() {
 
   if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
-      "Federal DNC screening is not configured. It remains a deferred operations checklist item; outbound continues only through the applicable call-purpose, consent, tenant DNC, calling-hours, approval, and audit controls.",
+      "Federal DNC screening is not configured. It remains a deferred operations checklist item; marketing and campaign outbound will fail closed until configuration is valid.",
     );
   }
 

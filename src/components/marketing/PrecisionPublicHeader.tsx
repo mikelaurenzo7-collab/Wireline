@@ -2,6 +2,7 @@ import { Link } from "react-router";
 
 import { BotBoundLockup } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
+import { signupHrefForPlan } from "../../lib/signup-intent";
 
 export default function PrecisionPublicHeader() {
   return (
@@ -13,7 +14,7 @@ export default function PrecisionPublicHeader() {
           className="min-w-0 shrink rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
           aria-label="BotBound home"
         >
-          <BotBoundLockup size="compact" />
+          <BotBoundLockup size="standard" />
         </Link>
 
         <nav
@@ -27,11 +28,13 @@ export default function PrecisionPublicHeader() {
             Sign In
           </Link>
           <Link
-            to="/signup?plan=personal"
+            to={signupHrefForPlan("personal")}
             aria-label="Start Free"
             className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
           >
-            <span>Start<span className="max-[430px]:hidden"> Free</span></span>
+            <span>
+              Start<span className="max-[430px]:hidden"> Free</span>
+            </span>
           </Link>
         </nav>
       </div>

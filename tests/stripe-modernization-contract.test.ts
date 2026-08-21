@@ -50,6 +50,7 @@ describe("Stripe Checkout modernization contract", () => {
     const redirect = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
     const billingPage = read("src/pages/BillingSettings.tsx");
+    const checkoutReturn = read("src/lib/billing-checkout-return.ts");
 
     expect(webhook).toContain("fulfillStripeCheckoutSession(session");
     expect(redirect).toContain("fulfillStripeCheckoutSession(session");
@@ -68,8 +69,8 @@ describe("Stripe Checkout modernization contract", () => {
     );
     expect(subscriptionBranch).toContain(".returning({ userId: schema.settings.userId })");
     expect(fulfillment).toContain("has no BotBound workspace");
-    expect(billingPage).toContain('params.get("balance") === "success"');
-    expect(billingPage).toContain('params.get("live_video") === "success"');
+    expect(checkoutReturn).toContain('params.get("balance") === "success"');
+    expect(checkoutReturn).toContain('params.get("live_video") === "success"');
     expect(billingPage).toContain("Payment processing");
     expect(billingPage).toContain("Runtime Balance added");
   });

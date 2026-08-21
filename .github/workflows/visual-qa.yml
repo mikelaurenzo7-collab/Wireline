@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - src/**
+      - public/**
+      - index.html
+      - package.json
+      - package-lock.json
+      - vite.config.ts
+      - vercel.json
       - scripts/capture-visual-qa.mjs
       - scripts/check-visual-qa-manifest.mjs
       - .github/workflows/visual-qa.yml
@@ -77,6 +83,6 @@ jobs:
         uses: actions/upload-artifact@v7
         continue-on-error: true
         with:
-          name: wireline-visual-qa-pr
+          name: botbound-visual-qa-pr
           path: artifacts/visual-qa-pr
           retention-days: 7

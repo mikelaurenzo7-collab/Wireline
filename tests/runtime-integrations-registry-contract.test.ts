@@ -9,19 +9,19 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents xAI as the required native voice/structured primary and OpenAI as required continuity", () => {
+  it("presents OpenAI as structured/browser primary and xAI as required native PSTN", () => {
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Continuity structured runtime and ChatGPT OpenAI Realtime widget. Native PSTN uses Twilio + xAI SIP.",
+      "Managed structured runtime plus Studio and ChatGPT OpenAI Realtime browser voice. Native PSTN uses Twilio + xAI SIP.",
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(
-      "Grok 4.6 structured primary, native Twilio SIP Speech-to-Speech, and browser realtime.",
+      "Native Twilio SIP Speech-to-Speech for PSTN plus an optional Grok 4.6 structured continuity lane.",
     );
     expect(source).toContain(
-      "One api.x.ai key covers chat, preview TTS, and native SIP.",
+      "One api.x.ai key covers optional structured continuity, preview TTS, and native SIP.",
     );
-    expect(source).toContain("OpenAI remains continuity and Realtime");
+    expect(source).toContain("OpenAI Realtime");
     expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);
     expect(compactSource).toMatch(/item\(\s*"xai".{0,500}?, true,/);

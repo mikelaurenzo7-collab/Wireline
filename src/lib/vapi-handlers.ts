@@ -729,7 +729,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           });
         }
         return claudeBrain.postCallAnalysis({
-          agentName: agentDetail?.name || "Wireline Agent",
+          agentName: agentDetail?.name || "BotBound Bot",
           archetype: agentDetail?.archetype || "Receptionist",
           role: agentDetail?.role || undefined,
           customerNumber: call?.customer?.number,

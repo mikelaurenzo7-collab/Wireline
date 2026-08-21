@@ -1,16 +1,17 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
-const STUDIO_HANDOFF_URL = "https://trywireline.com/studio/handoff";
+const BOTBOUND_ORIGIN = "https://botbound.me";
+const STUDIO_HANDOFF_URL = `${BOTBOUND_ORIGIN}/studio/handoff`;
 const ROUTES = new Map([
-  ["studio", "https://trywireline.com/studio"],
-  ["agents", "https://trywireline.com/overview"],
-  ["training", "https://trywireline.com/knowledge"],
-  ["wire", "https://trywireline.com/connections"],
-  ["phone", "https://trywireline.com/phone"],
-  ["inbox", "https://trywireline.com/inbox"],
-  ["approvals", "https://trywireline.com/approvals"],
-  ["insights", "https://trywireline.com/insights"],
-  ["billing", "https://trywireline.com/settings/billing"],
+  ["studio", `${BOTBOUND_ORIGIN}/studio`],
+  ["agents", `${BOTBOUND_ORIGIN}/overview`],
+  ["training", `${BOTBOUND_ORIGIN}/knowledge`],
+  ["wire", `${BOTBOUND_ORIGIN}/connections`],
+  ["phone", `${BOTBOUND_ORIGIN}/phone`],
+  ["inbox", `${BOTBOUND_ORIGIN}/inbox`],
+  ["approvals", `${BOTBOUND_ORIGIN}/approvals`],
+  ["insights", `${BOTBOUND_ORIGIN}/insights`],
+  ["billing", `${BOTBOUND_ORIGIN}/settings/billing`],
 ]);
 const MAX_SELECTION_LENGTH = 1600;
 const MAX_DESCRIPTION_LENGTH = 320;
@@ -102,7 +103,7 @@ async function openCompanion(tab) {
     await api.sidebarAction.open();
     return;
   }
-  await api.tabs.create({ url: "https://trywireline.com/studio" });
+  await api.tabs.create({ url: `${BOTBOUND_ORIGIN}/studio` });
 }
 
 async function registerMenus() {

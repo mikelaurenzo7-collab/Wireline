@@ -50,7 +50,6 @@ const SIDE_EFFECT_TOOL_NAMES = new Set([
   "route_to_business_unit",
   "trigger_enterprise_webhook",
   "send_signup_link",
-  "create_account",
   "send_payment_link",
 ]);
 

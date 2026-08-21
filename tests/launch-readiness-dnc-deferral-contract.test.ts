@@ -31,22 +31,23 @@ describe("launch readiness DNC deferral", () => {
     expect(status).toContain("Only hard launch_blockers fail GO");
   });
 
-  it("does not make missing Federal DNC credentials a global runtime kill switch", () => {
+  it("fails marketing outbound closed while leaving readiness registration deferred", () => {
     const federal = read("src/lib/federal-dnc-service.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
     const startup = read("src/lib/startup.ts");
 
     expect(federal).toContain("assertFederalDncForMarketing");
-    expect(federal).toContain("FEDERAL_DNC_DEFERRED");
-    expect(federal).toContain("allowed: true");
+    expect(federal).toContain("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(federal).toContain("allowed: false");
     expect(federal).toContain('source: "unconfigured"');
-    expect(federal).not.toContain('code?: "FEDERAL_DNC_NOT_CONFIGURED"');
+    expect(federal).toContain('code: "FEDERAL_DNC_NOT_CONFIGURED"');
 
-    expect(gate).not.toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
+    expect(gate).toContain('reason: "federal_dnc_unconfigured"');
     expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain("evaluateOutboundConsent");
-    expect(startup).toContain("deferred operations checklist item");
+    expect(startup).toContain("marketing and campaign outbound will fail closed");
   });
 });

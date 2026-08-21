@@ -51,10 +51,11 @@ describe("restored launch regression guards", () => {
     expect(composed).toContain("elite personal assistant");
     expect(composed).toContain("TEMPLATE SPECIALTY: Personal Concierge");
     expect(composed).toContain("## DELIVERY TONE");
-    expect(composed).toContain("personally discreet");
+    expect(composed).toContain("Concise, useful, and discreet");
 
     const voiceRuntime = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(voiceRuntime).toContain("a personal Wireline agent for your principal");
+    expect(voiceRuntime).toContain("a BotBound Bot for your principal");
+    expect(voiceRuntime).not.toContain("a personal BotBound Bot");
     expect(voiceRuntime).toContain("## QUIET-HOURS MODE");
     expect(voiceRuntime).toContain("Never invent personal facts");
   });
@@ -90,6 +91,9 @@ describe("restored launch regression guards", () => {
   });
 
   it("keeps legacy capability classification only as compatibility, not workspace navigation", () => {
+    expect(isBusinessTemplateCategory("Everyday")).toBe(false);
+    expect(isBusinessTemplateCategory("Operations")).toBe(true);
+    expect(isBusinessTemplateCategory("Custom")).toBe(true);
     expect(isBusinessTemplateCategory("Personal & Lifestyle")).toBe(false);
     expect(isBusinessTemplateCategory("Sales & Revenue")).toBe(true);
     expect(isBusinessTemplateCategory(null)).toBe(true);
@@ -103,6 +107,8 @@ describe("restored launch regression guards", () => {
     expect(mobile).toContain("resolveCreatePersonality");
     expect(agentRoutes).toContain("resolveCreatePersonality");
     expect(agentRoutes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
+    expect(dialog).toContain("isBusinessTemplateCategory(selectedTemplate.category)");
+    expect(dialog).not.toContain("accountType");
     expect(dialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(dialog).toContain("BOT_CHANNELS.map");
     expect(dialog).toContain('workspace_model: "one_workspace"');
@@ -111,7 +117,7 @@ describe("restored launch regression guards", () => {
 
   it("keeps one roster while preserving legacy seed flags for safe migrations", () => {
     const overview = read("src/pages/OverviewPage.tsx");
-    const shell = read("src/components/WorkspaceShell.tsx");
+    const roster = read("src/components/overview/OverviewRail.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const founderSeed = read("src/lib/founder-fleet-seed.ts");
 
@@ -119,10 +125,11 @@ describe("restored launch regression guards", () => {
     expect(overview).toContain("BotRoster");
     expect(overview).toContain("Create Your Own");
     expect(overview).not.toMatch(/personalAgents|businessAgents|founderPair|posture=/);
-    expect(shell).toContain("const orderedAgents = activeAgent");
-    expect(shell).toContain("{agents.length}");
-    expect(shell).not.toContain("const postureAgents =");
-    expect(shell).not.toContain("matchesPosture");
+    expect(overview).toContain("<BotRoster bots={agents}");
+    expect(roster).toContain("{bots.length}");
+    expect(roster).toContain("bots.slice(0, 4).map");
+    expect(roster).toContain('to="/studio"');
+    expect(roster).not.toMatch(/personalBots|businessBots|postureBots|matchesPosture/);
     expect(studio).not.toContain("useAccount");
     expect(studio).not.toContain("posture=");
     expect(founderSeed).toContain("isBusinessAgent: false");
@@ -194,10 +201,12 @@ describe("restored launch regression guards", () => {
       expect(source).toContain("responseStatus = response.status");
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
       expect(source).toContain("mailto:support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
       expect(source).toContain("setError(message)");
       expect(source).toContain("isTransport");
+      expect(source).toContain("if (isTransport)");
+      expect(source).toContain("} else {\n        setError(message);");
     }
-    expect(contact).toContain("Only fall back to mailto for transport/service failures");
     expect(read("src/components/AdminSettings.tsx")).toContain('toastError("Team unavailable"');
   });
 

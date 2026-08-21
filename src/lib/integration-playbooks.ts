@@ -288,7 +288,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   microsoft_excel: {
     integration: "microsoft_excel",
     label: "Excel",
-    headline: "Every call becomes a row in your Wireline log workbook, no manual export.",
+    headline: "Every call becomes a row in your BotBound log workbook, no manual export.",
     orbitHint: "Append call log row",
     connectPath: "/connections",
     tasks: [

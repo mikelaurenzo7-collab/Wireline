@@ -24,5 +24,10 @@ describe("outbound consent copy contract", () => {
     expect(web).toContain('from "../lib/outbound-consent-copy"');
     expect(web).toContain("OUTBOUND_CONSENT_LABEL");
     expect(web).toContain("OUTBOUND_CONSENT_LEGAL_PATH");
+    expect(android).toContain('const val LEGAL_URL = "https://botbound.me/trust/legal"');
+    expect(ios).toContain(
+      'static let legalURL = URL(string: "https://botbound.me/trust/legal")!',
+    );
+    expect(`${android}\n${ios}`).not.toContain("trywireline.com");
   });
 });

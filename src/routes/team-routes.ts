@@ -14,6 +14,7 @@ import { setSessionCookie } from "../lib/session-cookie";
 import { invalidateRoleCache } from "../middleware/require-role";
 import { canGrantRole, resolveStoredRole, type AccessRole } from "../lib/soc2-controls";
 import { getPostgresErrorCode } from "../lib/pg-errors";
+import { resolveCanonicalAppUrl } from "../lib/app-url";
 
 const router = Router();
 const INVITE_TTL_MS = 7 * 24 * 60 * 60_000;
@@ -97,6 +98,10 @@ router.post(
       throw AppError.fromHttpStatus(403, "Your role cannot grant an equal or higher role.");
     }
 
+    const canonical = resolveCanonicalAppUrl();
+    if ("error" in canonical) {
+      throw AppError.fromHttpStatus(503, "Team invitations are temporarily unavailable.");
+    }
     const plaintextToken = randomBytes(32).toString("base64url");
     const tokenHash = inviteHash(plaintextToken);
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
@@ -154,9 +159,8 @@ router.post(
         return created;
       });
 
-      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
       const acceptPath = `/accept-invite#token=${encodeURIComponent(plaintextToken)}`;
-      const inviteUrl = `${appUrl}${acceptPath}`;
+      const inviteUrl = `${canonical.url}${acceptPath}`;
       const invitedBy = req.user.email || "A colleague";
       const subject = `${invitedBy} invited you to BotBound`;
       const html = `

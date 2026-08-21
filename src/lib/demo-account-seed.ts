@@ -76,7 +76,7 @@ const SAMPLE_SUMMARIES = [
   "Tech support. Webhook signature error, walked them through rotating the secret.",
   "Tier comparison call. Customer downgrading from Pro to Starter, captured why (seasonal slowdown).",
   "Demo booked. Prospect switching from their current provider, wants to see the outbound playbook.",
-  "Renewal conversation. Customer happy, asked about Business tier supervisor cockpit.",
+  "Renewal conversation. Customer happy, asked about the Pro supervisor cockpit.",
   "Sales qual. 50-seat call-center prospect, routed to Liam for enterprise quote.",
   "Refund request. Charged twice during pause, refunded one and emailed receipt.",
   "Knowledge gap detected. Customer asked about Slack DLP, captured to docs queue.",
@@ -97,7 +97,7 @@ const SAMPLE_SENTIMENTS = ["positive", "positive", "neutral", "positive", "neutr
 
 const SAMPLE_KNOWLEDGE = [
   "Our standard demo runs 25 minutes: 5 min discovery, 15 min live agent demo on their actual phone, 5 min Q&A + next-step.",
-  "Business+ customers get a dedicated CSM. CSM hands off after first 90 days unless customer asks to keep them.",
+  "Scale customers get a dedicated CSM. CSM hands off after the first 90 days unless the customer asks to continue.",
   "Refund window: 14 days from invoice for any new charge. Beyond that we offer credits but not refunds.",
   "When troubleshooting webhook signature errors, rotate the signing secret from the integrations dashboard first, then re-verify delivery on the next event.",
   "Competitive wedge: we win on two-way SMS, email agents, and the supervisor cockpit. Lead with that triple when a prospect is comparing vendors.",
@@ -116,10 +116,10 @@ const SAMPLE_APPOINTMENT_TYPES = [
 const SAMPLE_EMAIL_SUBJECTS = [
   "Pricing for 5-seat plan?",
   "Re: invoice overage line item",
-  "HIPAA + Wireline for our practice",
+  "HIPAA + BotBound for our practice",
   "Follow-up from yesterday's call",
   "Demo request: outbound playbook",
-  "Business tier supervisor cockpit",
+  "Pro supervisor cockpit",
   "Refund for duplicate charge",
   "Integration question: Slack alerts",
   "Can Avery handle after-hours?",
@@ -129,7 +129,7 @@ const SAMPLE_EMAIL_SUBJECTS = [
 ];
 
 const SAMPLE_SMS_SNIPPETS = [
-  "Hi, can someone call me about the Business plan?",
+  "Hi, can someone call me about the Pro plan?",
   "Yes Thursday 2pm works for the demo.",
   "STOP",
   "What's your HIPAA stance? We're a 3-provider clinic.",
@@ -681,7 +681,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
               userId,
               threadId,
               direction: "out",
-              body: `Hi ${cust.name.split(" ")[0]}, Avery from Wireline. Happy to help with that. Reply anytime.`,
+              body: `Hi ${cust.name.split(" ")[0]}, Avery from BotBound. Happy to help with that. Reply anytime.`,
               twilioSid: `seed-sms-${userPrefix}-${i}-out`,
               agentId,
               createdAt: randomCreatedAt(4),

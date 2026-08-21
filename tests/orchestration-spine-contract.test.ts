@@ -54,6 +54,6 @@ describe("orchestration spine contract", () => {
   it("exposes mobile and extension handoff entrypoints", () => {
     expect(read("src/routes/mobile-routes.ts")).toContain("/api/mobile");
     expect(read("src/pages/BrowserHandoffBridge.tsx")).toContain("/studio/handoff");
-    expect(read("apps/browser-extension/README.md")).toMatch(/Wireline Command/i);
+    expect(read("apps/browser-extension/README.md")).toMatch(/BotBound Command/i);
   });
 });

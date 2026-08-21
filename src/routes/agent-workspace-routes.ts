@@ -318,7 +318,7 @@ router.post(
 
       const name = agent.name || "the agent";
       const role = agent.role || "AI receptionist";
-      const system = `You are ${name}, a Wireline AI ${role}. Reply in first person, warm and concise.`;
+      const system = `You are ${name}, a BotBound AI ${role}. Reply in first person, warm and concise.`;
       const transcript = history
         .slice(-12)
         .map((m) => `${m.role === "Account Holder" ? "Operator" : "You"}: ${m.content}`)

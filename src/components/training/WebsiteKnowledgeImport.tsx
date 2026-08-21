@@ -102,7 +102,7 @@ export default function WebsiteKnowledgeImport({
           </h2>
           <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
             Paste one public HTTPS page. BotBound reads page text only, blocks private networks and
-            unsafe redirects, and saves only explicit business facts and operating rules.
+            unsafe redirects, and saves only explicit facts and operating rules.
           </p>
         </div>
       </div>

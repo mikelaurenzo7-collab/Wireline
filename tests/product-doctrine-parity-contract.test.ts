@@ -40,7 +40,7 @@ describe("product doctrine parity", () => {
     expect(docsIndex).toContain("**Retired live talking-head.**");
     expect(docsIndex).not.toContain("GROK_BOT_COMPANION_RUNTIME.md");
     expect(showcase).toContain("| Live Video        | **Retired**");
-    expect(clientSurfaces).toContain("Launch status | **Retired**");
+    expect(clientSurfaces).toMatch(/Launch status\s+\|\s+\*\*Retired\*\*/);
     expect(entitlements).toContain("Live talking-head video is no longer offered");
     expect(entitlements).toContain("addonOffered: false");
     expect(grokLiveVoice).toContain("There is no work-companion API");
@@ -62,9 +62,14 @@ describe("product doctrine parity", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
-    expect(root).toContain("Every paid agent includes a **production-number slot**");
+    expect(root).toContain("Every paid Bot includes a **production-number slot**");
     expect(root).toContain("provisions the number only when the role needs one");
-    expect(pricing).toContain("Plans provide number slots");
-    expect(catalog).toContain("production-number slots, provisioned when needed");
+    expect(pricing).toContain("Every active paid Bot gets its own production number");
+    expect(pricing).toContain("Unused plan capacity does not allocate a carrier number");
+    expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
+    expect(catalog).toContain("Unused Bot capacity does not pre-provision orphan carrier numbers");
+    expect(catalog).toContain(
+      "1 dedicated production number, provisioned automatically for the active Bot",
+    );
   });
 });

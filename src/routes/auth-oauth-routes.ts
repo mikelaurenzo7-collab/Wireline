@@ -31,7 +31,7 @@ import { verifyYahooIdToken } from "../lib/yahoo-openid";
  * not a replacement.
  */
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { Router, Request, Response } from "express";
 import { googleApis } from "../lib/google-apis";
 import { drizzle, log } from "../lib/server-context";
@@ -53,8 +53,36 @@ import {
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 import { emailMaskForLog } from "../lib/twilio-webhook-privacy";
+import { createOAuthBridgeCode, isNewUserOAuthBridgeCode } from "../lib/oauth-bridge-code";
+import {
+  ACCOUNT_PRIVACY_VERSION,
+  ACCOUNT_TERMS_VERSION,
+  OAUTH_SIGNUP_CONSENT_REQUIRED,
+  hasCurrentAccountLegalConsentState,
+  type AccountLegalConsentEvidence,
+} from "../lib/legal-consent";
 
 const router = Router();
+
+type SignInOAuthProvider = "google" | "microsoft" | "yahoo";
+type OAuthProviderAvailability = Record<SignInOAuthProvider, boolean>;
+
+export function getOAuthProviderAvailability(): OAuthProviderAvailability {
+  return {
+    google: Boolean(
+      process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim(),
+    ),
+    microsoft: Boolean(
+      process.env.MICROSOFT_CLIENT_ID?.trim() && process.env.MICROSOFT_CLIENT_SECRET?.trim(),
+    ),
+    yahoo: Boolean(process.env.YAHOO_CLIENT_ID?.trim() && process.env.YAHOO_CLIENT_SECRET?.trim()),
+  };
+}
+
+router.get("/api/auth/providers", (_req: Request, res: Response) => {
+  res.set("Cache-Control", "no-store, max-age=0");
+  return res.json({ providers: getOAuthProviderAvailability() });
+});
 
 function oauthBridgeSecret(): string {
   const secret =
@@ -97,6 +125,22 @@ function beginOAuthSignIn(res: Response): void {
 }
 
 type OAuthUser = { id: string; email: string; fullName: string | null };
+type OAuthUserResolution = { user: OAuthUser; isNewUser: boolean };
+
+function legalConsentEvidenceFromState(
+  provider: SignInOAuthProvider,
+  stateUserId: unknown,
+  req: Request,
+): AccountLegalConsentEvidence | undefined {
+  if (!hasCurrentAccountLegalConsentState(stateUserId)) return undefined;
+  return {
+    termsVersion: ACCOUNT_TERMS_VERSION,
+    privacyVersion: ACCOUNT_PRIVACY_VERSION,
+    source: `oauth_${provider}`,
+    ipAddress: req.ip || undefined,
+    userAgent: req.get("user-agent") || undefined,
+  };
+}
 
 /**
  * Email is the cross-provider account-link key, so first-sign-in creation must
@@ -104,7 +148,11 @@ type OAuthUser = { id: string; email: string; fullName: string | null };
  * surfacing a unique-constraint error or leaving a new user without activation
  * settings and its default AI hard cap.
  */
-async function findOrCreateUserByEmail(email: string, fullName: string | null): Promise<OAuthUser> {
+async function findOrCreateUserByEmail(
+  email: string,
+  fullName: string | null,
+  legalConsentEvidence?: AccountLegalConsentEvidence,
+): Promise<OAuthUserResolution> {
   const normalized = email.trim().toLowerCase();
   return drizzle.transaction(async (tx) => {
     const inserted = (await tx
@@ -125,10 +173,30 @@ async function findOrCreateUserByEmail(email: string, fullName: string | null): 
 
     const created = inserted[0];
     if (created) {
+      if (!legalConsentEvidence) throw new Error(OAUTH_SIGNUP_CONSENT_REQUIRED);
+      const acceptedAt = new Date();
+      await tx.insert(schema.auditLog).values({
+        userId: created.id,
+        eventType: "auth.terms_accepted",
+        severity: "info",
+        action: "terms_accepted",
+        actorEmail: created.email,
+        resourceType: "account",
+        resourceId: created.id,
+        ipAddress: legalConsentEvidence.ipAddress || null,
+        userAgent: legalConsentEvidence.userAgent || null,
+        metadata: {
+          terms_version: legalConsentEvidence.termsVersion,
+          privacy_version: legalConsentEvidence.privacyVersion,
+          source: legalConsentEvidence.source,
+          accepted_at: acceptedAt.toISOString(),
+        },
+        createdAt: acceptedAt,
+      });
       const { startTrialForUser } = await import("../lib/trial-gate");
       await startTrialForUser(created.id, {}, tx);
       log.info("auth oauth: created new user", { email: emailMaskForLog(normalized) });
-      return created;
+      return { user: created, isNewUser: true };
     }
 
     const [existing] = await tx
@@ -159,7 +227,10 @@ async function findOrCreateUserByEmail(email: string, fullName: string | null): 
     const { startTrialForUser } = await import("../lib/trial-gate");
     await startTrialForUser(existing.id, {}, tx);
 
-    return { id: existing.id, email: existing.email, fullName: resolvedName };
+    return {
+      user: { id: existing.id, email: existing.email, fullName: resolvedName },
+      isNewUser: false,
+    };
   });
 }
 
@@ -369,6 +440,7 @@ async function bridgeRedirect(
   _token: string,
   errorMessage?: string,
   req?: Request,
+  isNewUser = false,
 ): Promise<string> {
   if (errorMessage) {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(sanitizeOAuthSignInError(errorMessage))}`;
@@ -377,7 +449,7 @@ async function bridgeRedirect(
   if (!bridgeState) {
     return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent("Sign-in session expired. Please try again.")}`;
   }
-  const code = randomBytes(32).toString("base64url");
+  const code = createOAuthBridgeCode(isNewUser);
   try {
     await storePendingCode(code, {
       user,
@@ -396,18 +468,16 @@ async function bridgeRedirect(
 
 router.get("/api/auth/google/url", oauthRateLimiter, async (req: Request, res: Response) => {
   try {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) {
       throw AppError.fromHttpStatus(503, "Google sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     const google = await googleApis();
-    const client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri,
-    );
+    const client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
     const authUrl = client.generateAuthUrl({
       scope: GOOGLE_SIGNIN_SCOPES,
       access_type: "online",
@@ -438,13 +508,12 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     );
   }
   try {
+    const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) throw new Error("Google sign-in is not configured.");
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     const google = await googleApis();
-    const client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri,
-    );
+    const client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
     const { tokens } = await client.getToken(code);
     client.setCredentials(tokens);
     const oauth2 = google.oauth2({ auth: client, version: "v2" });
@@ -465,13 +534,19 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
           baseUrl,
           {} as any,
           "",
-          "For your security, sign in with the method you used to create your Wireline account. Google couldn't verify current ownership of this email.",
+          "For your security, sign in with the method you used to create your BotBound account. Google couldn't verify current ownership of this email.",
         ),
       );
     }
-    const user = await findOrCreateUserByEmail(email, name);
-    scheduleFounderBootstrap(user.id, user.email);
-    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
+    const resolved = await findOrCreateUserByEmail(
+      email,
+      name,
+      legalConsentEvidenceFromState("google", vs.userId, req),
+    );
+    scheduleFounderBootstrap(resolved.user.id, resolved.user.email);
+    return res.redirect(
+      await bridgeRedirect(baseUrl, resolved.user, "", undefined, req, resolved.isNewUser),
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Google sign-in failed.";
     log.error("auth oauth google: callback failed", { error: message });
@@ -483,14 +558,16 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
 
 router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
-    if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
+    const clientId = process.env.MICROSOFT_CLIENT_ID?.trim();
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) {
       throw AppError.fromHttpStatus(503, "Microsoft sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
     const params = new URLSearchParams({
-      client_id: process.env.MICROSOFT_CLIENT_ID,
+      client_id: clientId,
       response_type: "code",
       redirect_uri: redirectUri,
       response_mode: "query",
@@ -524,13 +601,16 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
     return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", msg));
   }
   try {
+    const clientId = process.env.MICROSOFT_CLIENT_ID?.trim();
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) throw new Error("Microsoft sign-in is not configured.");
     const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
     const tokenRes = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: process.env.MICROSOFT_CLIENT_ID!,
-        client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
@@ -573,13 +653,19 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
           baseUrl,
           {} as any,
           "",
-          "For your security, sign in with the method you used to create your Wireline account. Microsoft couldn't verify ownership of this email.",
+          "For your security, sign in with the method you used to create your BotBound account. Microsoft couldn't verify ownership of this email.",
         ),
       );
     }
-    const user = await findOrCreateUserByEmail(email, name);
-    scheduleFounderBootstrap(user.id, user.email);
-    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
+    const resolved = await findOrCreateUserByEmail(
+      email,
+      name,
+      legalConsentEvidenceFromState("microsoft", vs.userId, req),
+    );
+    scheduleFounderBootstrap(resolved.user.id, resolved.user.email);
+    return res.redirect(
+      await bridgeRedirect(baseUrl, resolved.user, "", undefined, req, resolved.isNewUser),
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed.";
     log.error("auth oauth microsoft: callback failed", { error: message });
@@ -597,14 +683,16 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
 
 router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
-    if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
+    const clientId = process.env.YAHOO_CLIENT_ID?.trim();
+    const clientSecret = process.env.YAHOO_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) {
       throw AppError.fromHttpStatus(503, "Yahoo sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
     const params = new URLSearchParams({
-      client_id: process.env.YAHOO_CLIENT_ID,
+      client_id: clientId,
       response_type: "code",
       redirect_uri: redirectUri,
       scope: YAHOO_SIGNIN_SCOPES.join(" "),
@@ -638,10 +726,11 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     return res.redirect(await bridgeRedirect(baseUrl, {} as any, "", msg));
   }
   try {
+    const clientId = process.env.YAHOO_CLIENT_ID?.trim();
+    const clientSecret = process.env.YAHOO_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) throw new Error("Yahoo sign-in is not configured.");
     const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
-    const basic = Buffer.from(
-      `${process.env.YAHOO_CLIENT_ID}:${process.env.YAHOO_CLIENT_SECRET}`,
-    ).toString("base64");
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
     const tokenRes = await fetch("https://api.login.yahoo.com/oauth2/get_token", {
       method: "POST",
       headers: {
@@ -660,13 +749,19 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     }
     const tokenJson = (await tokenRes.json()) as { id_token?: string };
     const identity = await verifyYahooIdToken(tokenJson.id_token, {
-      clientId: process.env.YAHOO_CLIENT_ID!,
+      clientId,
       nonce: vs.pkceVerifier,
     });
 
-    const user = await findOrCreateUserByEmail(identity.email, identity.fullName);
-    scheduleFounderBootstrap(user.id, user.email);
-    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
+    const resolved = await findOrCreateUserByEmail(
+      identity.email,
+      identity.fullName,
+      legalConsentEvidenceFromState("yahoo", vs.userId, req),
+    );
+    scheduleFounderBootstrap(resolved.user.id, resolved.user.email);
+    return res.redirect(
+      await bridgeRedirect(baseUrl, resolved.user, "", undefined, req, resolved.isNewUser),
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed.";
     log.error("auth oauth yahoo: callback failed", { error: message });
@@ -735,6 +830,7 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
     email: entry.user.email,
     name: entry.user.fullName ?? "",
     is_owner: entry.isOwner ? "1" : "0",
+    is_new_user: isNewUserOAuthBridgeCode(code),
   });
 });
 

@@ -2,38 +2,38 @@
 
 Status: **Active** — call and weekly recap artifacts are live (this PR); proposals with a real download action follow in a separate PR.
 
-Every account holder on Starter Plus, Pro, or Business now receives a Letterpress-styled shareable URL alongside their post-call digest and weekly review. The URL renders on `trywireline.com`, cannot be indexed by search engines, honors the tenant's workspace brand within a Wireline-owned structural design, and expires under a per-artifact TTL. This document is the source of truth for the primitive; the code is at `src/lib/shareable-artifact/` and `src/routes/shareable-artifact-routes.ts`.
+Every entitled BotBound workspace receives a Letterpress-styled shareable URL alongside its post-call digest and weekly review. The URL renders on `botbound.me`, cannot be indexed by search engines, honors the workspace brand within a BotBound-owned structural design, and expires under a per-artifact TTL. This document is the source of truth for the primitive; the code is at `src/lib/shareable-artifact/` and `src/routes/shareable-artifact-routes.ts`.
 
 ## What ships in this pass
 
-- One shared primitive for shareable Wireline pages: table + service + public route + template kit.
+- One shared primitive for shareable BotBound pages: table + service + public route + template kit.
 - Two surfaces on top of the primitive:
   - **Call recap** — publishes on every post-call digest for entitled tenants (see `src/lib/post-call-digest.ts`). The digest email includes a "Open the recap →" CTA at the top and threads the signed URL through.
   - **Weekly review** — publishes on the weekly cadence of `generateScheduledOperatingReport` (`src/lib/scheduled-report-service.ts`). Daily cadence keeps its existing plain delivery; recap fatigue is real.
-- Workspace branding surface on `wireline_settings`: display name, accent hex (WCAG-validated against the chosen theme), theme (`obsidian` or `cool_light`), logo URL (trusted-host allowlist, reserved for proposals), contact line, and a "hide Wireline credit" toggle available to Pro and Business only.
+- Workspace branding surface on `wireline_settings`: display name, accent hex (WCAG-validated against the chosen theme), theme (`obsidian` or `cool_light`), logo URL (trusted-host allowlist, reserved for proposals), contact line, and a "hide BotBound credit" toggle available to Pro and compatible legacy enterprise entitlements.
 
 ## Entitlement
 
-- Free Builder (`personal`) and Starter (`starter`): the existing plain-email digest continues to send exactly as it does today; no artifact is published.
-- Starter Plus (`team`), Pro (`business`), Business (`enterprise`): artifacts are published on every entitled digest. Only Pro and Business can hide the "Powered by Wireline" credit on proposals.
+- Free Builder (legacy id `personal`) and Starter (`starter`): the existing plain-email digest continues to send exactly as it does today; no artifact is published.
+- Starter Plus (legacy id `team`) and Pro (legacy id `business`): artifacts are published on every entitled digest. Pro can hide the "Powered by BotBound" credit on proposals. The hidden `enterprise` id remains entitled only for compatibility with historical subscriptions.
 
 Entitlement is enforced server-side by `isBrandedArtifactEntitled` (`src/lib/shareable-artifact/entitlement.ts`) which reads the canonical plan catalog. There is no client-side gate.
 
 ## URL contract
 
-- Shape: `https://trywireline.com/recap/<slug>?t=<token>`
+- Shape: `https://botbound.me/recap/<slug>?t=<token>`
   - `slug` is 16 base62 characters (~95 bits) minted at publish time.
   - `token` is 24 random bytes rendered as URL-safe base64. It is returned to the caller once at publish time and is not persisted.
 - Storage: the server stores `sha256("v1|slug|token")`. Timing-safe comparison on resolve. A database dump cannot forge access to any artifact.
-- Failure modes — unknown slug, expired, revoked, and bad token — all return a Wireline-branded 404 page. The caller cannot distinguish which reason applies.
+- Failure modes — unknown slug, expired, revoked, and bad token — all return a BotBound-branded 404 page. The caller cannot distinguish which reason applies.
 - Rate limits: 60/minute per source IP, 20/minute per slug.
 - Response headers: `Cache-Control: private, no-store`, `X-Robots-Tag: noindex, nofollow, noarchive, nocache`, plus a same-origin CSP and `Referrer-Policy: no-referrer`.
 - Default TTL: 90 days; maximum 365. The owner can revoke early via `DELETE /api/recap-artifacts/:id`.
 
 ## Design contract
 
-- **Recaps stay Wireline-branded by default.** The account owner is the audience; the design system is the reason they chose Wireline. The workspace display name appears as an eyebrow ("Rita's Dental · Call Recap · Oct 12") but the Letterpress structure — hairline wire divider, obsidian ground, editorial hierarchy, print-perfect CSS, mono utility set — is not tenant-configurable.
-- **Proposals (future PR) are tenant-branded by default.** The tenant's own customer is the audience; the tenant's identity is what belongs on the wire. Wireline appears only as a footer credit that Pro and Business tiers can hide.
+- **Recaps stay BotBound-branded by default.** The account owner is the audience; the design system is part of the product. The workspace display name appears as an eyebrow ("Rita's Dental · Call Recap · Oct 12") but the Letterpress structure—hairline wire divider, obsidian ground, editorial hierarchy, print-perfect CSS, mono utility set—is not tenant-configurable.
+- **Proposals (future PR) are workspace-branded by default.** The workspace's customer is the audience; the workspace identity belongs on the artifact. BotBound appears as a footer credit that Pro and compatible legacy enterprise entitlements can hide.
 - **Personalization surface** — a workspace can inject: display name; a single accent hex validated for ≥3.0 WCAG contrast against the chosen theme's canvas (invalid values silently fall back to the theme default); a theme; a logo URL on trusted hosts (proposals only); a contact line; a credit-visibility toggle. Never a stylesheet, script, or arbitrary HTML.
 - **The craft is the moat; identity is the surface.** Tenants cannot pick a bad grid or a wrong type-scale; they choose how the page is signed.
 
@@ -74,7 +74,7 @@ Owner surfaces (both authenticated):
 
 ## Hook points
 
-- **Post-call digest**: `runPostCallDigest` (`src/lib/post-call-digest.ts`) invokes `maybePublishCallRecap` before the digest email composes. When the tenant is entitled, the returned URL is threaded into `renderDigestEmail` as an "Open the recap →" CTA and a small "Shareable Wireline recap · private link" eyebrow. When the tenant is not entitled, publish returns `null` and the digest email renders exactly as it did before.
+- **Post-call digest**: `runPostCallDigest` (`src/lib/post-call-digest.ts`) invokes `maybePublishCallRecap` before the digest email composes. When the workspace is entitled, the returned URL is threaded into `renderDigestEmail` as an "Open the recap →" CTA and a small "Shareable BotBound recap · private link" eyebrow. When the workspace is not entitled, publish returns `null` and the digest email renders exactly as it did before.
 - **Weekly report**: `generateScheduledOperatingReport` (`src/lib/scheduled-report-service.ts`) invokes `maybePublishWeeklyRecap` only when the frequency is `"weekly"`. The URL surfaces on the return payload as `shareableRecapUrl`; delivery jobs can attach it to the operating-report email.
 
 Both hooks are wrapped in try/catch that logs and swallows errors so the digest path is never blocked by an artifact-storage outage.
@@ -82,7 +82,7 @@ Both hooks are wrapped in try/catch that logs and swallows errors so the digest 
 ## Tests / contracts
 
 - `tests/shareable-artifact-token-contract.test.ts` — slug shape, entropy, timing-safe verify, versioned hash pinning.
-- `tests/shareable-artifact-entitlement-contract.test.ts` — Free/Starter blocked; Team/Business/Enterprise entitled; white-label toggle limited to Business/Enterprise.
+- `tests/shareable-artifact-entitlement-contract.test.ts` — Free Builder/Starter blocked; Starter Plus/Pro and legacy `enterprise` compatibility entitled; white-label toggle limited to Pro and legacy `enterprise` compatibility.
 - `tests/shareable-artifact-branding-contract.test.ts` — accent contrast floor pinned; default accents pass; broken hex rejected.
 - `tests/shareable-artifact-template-contract.test.ts` — shell contract (robots, theme variables, footer signature); recap + weekly + not-found render; no vendor names on the customer surface; tenant strings HTML-escaped.
 - `tests/shareable-artifact-authz-contract.test.ts` — router registered; public allowlist entry pinned; SPA fallback excludes `/recap/`; public route unauthenticated; owner surfaces authenticated.

@@ -24,7 +24,7 @@ export const BRAND_SYSTEM = {
     "State that the included BotBound number applies to paid plans so the free builder is never misrepresented.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after calls, texts, emails, handoffs, campaigns, and follow-up when proof helps the decision.",
-    "Never require customers to classify a Bot as personal or business before describing the work.",
+    "Never present Personal or Business as a customer-facing product, workspace, signup, or pricing classification.",
     "Public headlines must create desire, tension, leverage, or curiosity before they explain architecture.",
     "Leave room for curiosity; do not explain every capability before account entry.",
     "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase when the design system calls for cased controls.",
@@ -79,7 +79,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
   }
 >;
 
-export function customerAgentLanguage(_posture: CustomerAgentPosture) {
+export function customerAgentLanguage(_posture?: CustomerAgentPosture) {
   return BOT_LANGUAGE;
 }
 
@@ -141,7 +141,7 @@ export const MARKETING_VOICE = {
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Send the page you are viewing into Studio as reference context. Your Bot can prepare a call, draft a text, or follow up without making you leave the tab.",
+    "Send this page into Studio. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
   buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;
@@ -161,8 +161,7 @@ export const CLIENT_SURFACE_POSTURE = {
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "PHONE BOTS FOR CALLS, TEXT, AND EMAIL",
   proof: ["Answers calls", "Makes calls", "Sends texts", "Continues by email", "Logs outcomes"],
-  differentiator:
-    "BotBound keeps valuable conversations moving across calls, text, and email.",
+  differentiator: "BotBound keeps valuable conversations moving across calls, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
@@ -180,7 +179,7 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "ONE BOT. ANY USE CASE.",
+  eyebrow: "YOUR BOT. ANY USE CASE.",
   tagline:
     "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
@@ -195,14 +194,14 @@ export const PRODUCT_POSTURE = {
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, text, email, tools, and outcomes under one Bot.",
+    emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
   },
   business: {
     badge: "Bot",
     badgeShort: "Bot",
     createCta: "Build Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, text, email, tools, and outcomes under one Bot.",
+    emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
   },
 } as const;
 

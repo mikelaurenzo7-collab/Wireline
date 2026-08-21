@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  authService,
   hashPassword,
   verifyPassword,
   generateToken,
@@ -11,6 +12,25 @@ const versionedUser = (id: string, email: string, sessionVersion = 0) => ({
   id,
   email,
   sessionVersion,
+});
+
+describe("signUp legal consent boundary", () => {
+  beforeEach(() => {
+    process.env.INTERNAL_JWT_SECRET = "wireline-test-internal-jwt-secret-minimum-32-chars";
+    delete process.env.SUPABASE_JWT_SECRET;
+  });
+
+  it("rejects missing legal evidence before account creation", async () => {
+    const legacySignUp = authService.signUp as unknown as (
+      email: string,
+      password: string,
+      fullName?: string,
+    ) => Promise<unknown>;
+
+    await expect(
+      legacySignUp("voice-caller@example.com", "SafePassword1", "Voice Caller"),
+    ).rejects.toThrow("CURRENT_ACCOUNT_LEGAL_CONSENT_REQUIRED");
+  });
 });
 
 describe("hashPassword", () => {

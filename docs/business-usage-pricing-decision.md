@@ -1,4 +1,4 @@
-# Wireline Billing Catalog Direction
+# BotBound Billing Catalog Direction
 
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
@@ -6,30 +6,30 @@ Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 sections below are historical records of earlier 2026 catalog experiments. The live self-serve
 catalog is **Founder Early Access v6**: Free Builder plus three public paid tiers with guaranteed included
 voice minutes, a recurring monthly Runtime Allowance, flat $0.22/min Runtime Balance top-ups, and a
-licensed extra-agent add-on. **`src/lib/plan-catalog.ts` is the single source of truth** for plan
+licensed extra-Bot add-on. **`src/lib/plan-catalog.ts` is the single source of truth** for plan
 ids, prices, included voice minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key
 resolution. Treat any duplicated number in docs as stale unless it has just been verified against
 that file and the live Stripe catalog.
 
 ## Product model
 
-Wireline sells operating capacity, not template access.
+BotBound sells operating capacity, not audience modes or template access.
 
-- All templates are unlocked; Personal ("Free Builder") creates, trains, and privately simulates one draft agent at $0.
+- All role starters are unlocked; Free Builder (legacy internal id `personal`) creates, trains, and privately simulates one draft Bot at $0.
 - Every public paid tier (Starter, Starter Plus, Pro) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`. Larger Scale rollouts are sales-assisted.
-- Optional SMS and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment use a separate catalog allowance (`ai_spend_allowance_usd_monthly`), where every platform-funded provider call — model turns, Perplexity research, platform-key Apollo enrichment — is metered per account. The hard floor reserves voice, Runtime Allowance, and AI allowance simultaneously; `npm run economics:report` proves both billing intervals from source.
+- Optional SMS and shareable-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment use a separate catalog allowance (`ai_spend_allowance_usd_monthly`), where every platform-funded provider call—model turns, Perplexity research, platform-key Apollo enrichment—is metered per account. The hard floor reserves voice, Runtime Allowance, and AI allowance simultaneously; `npm run economics:report` proves both billing intervals from source.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
 
-| Plan id    | Product name          | Monthly / Annual | Voice min | Runtime |       Managed AI | Max agents | Number slots |
+| Plan id    | Product name           | Monthly / Annual | Voice min | Runtime |       Managed AI |   Max Bots | Number slots |
 | ---------- | --------------------- | ---------------: | --------: | ------: | ---------------: | ---------: | -----------: |
-| `personal` | Wireline Free Builder |               $0 |         0 |      $0 | $1.50 simulation |    1 draft |            0 |
-| `starter`  | Wireline Starter      |       $19 / $190 |        50 |   $1/mo |         $1.50/mo |          1 |            1 |
-| `team`     | Wireline Starter Plus |       $39 / $390 |       100 |   $3/mo |            $3/mo |          2 |            2 |
-| `business` | Wireline Pro          |       $79 / $790 |       190 |   $6/mo |            $6/mo |          5 |            5 |
+| `personal` | BotBound Free Builder  |               $0 |         0 |      $0 | $1.50 simulation |    1 draft |            0 |
+| `starter`  | BotBound Starter       |       $19 / $190 |        50 |   $1/mo |         $1.50/mo |          1 |            1 |
+| `team`     | BotBound Starter Plus  |       $39 / $390 |       100 |   $3/mo |            $3/mo |          2 |            2 |
+| `business` | BotBound Pro           |       $79 / $790 |       190 |   $6/mo |            $6/mo |          5 |            5 |
 
-The legacy `enterprise` / Wireline Business catalog row remains in code and Stripe for historical
+The legacy `enterprise` catalog row remains in code and Stripe for historical
 event and entitlement resolution. It is `public: false`: public discovery and self-serve checkout
 stop at Pro, then route larger deployments to a custom Scale agreement.
 
@@ -39,9 +39,11 @@ while the former margin gate reserved only the first two. The revised capacities
 prices and prepaid-only experience while every monthly and annual plan remains above the 30%
 contribution floor at simultaneous full utilization. There were no production customers to migrate.
 
-The former $19/month Live Video add-on is retired from public sale. Checkout and entitlement
-return closed (`addonOffered: false`). Leftover `STRIPE_LIVE_VIDEO_*` price IDs remain webhook-only
-so historical subscriptions can still sync; do not advertise or re-offer the talking-head SKU.
+The former $19/month Live Video add-on is fully retired. Checkout, entitlement,
+session minting, and creative publication remain closed (`addonOffered: false`).
+Leftover `STRIPE_LIVE_VIDEO_*` price IDs are webhook-only so historical
+subscriptions can still sync; do not advertise, regenerate, or re-offer the
+talking-head SKU.
 
 Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
 automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**
@@ -55,7 +57,7 @@ silence while a lookup runs. PSTN calls continue for as long as the conversation
 
 Commercial protection is minutes + prepaid wallet, not call hard-caps:
 
-1. **Included monthly voice minutes** per paid tier (and +50 min per extra-agent add-on).
+1. **Included monthly voice minutes** per paid tier (and +50 min per extra-Bot add-on).
 2. **Conversation Balance top-ups** fund overflow at the plan's `overage_per_min_usd` — no silent
    postpaid meter, no surprise invoice.
 3. **Active calls finish normally**; depleted coverage blocks only the _next_ new live action.
@@ -82,7 +84,7 @@ short call caps for profitability, and do not rebuild the Stripe catalog unless
 - Open checkout sessions: `0`
 - Active products now match the capacity catalog.
 
-Current active products after reconciliation:
+Products active in that historical snapshot:
 
 - `Conversation Balance`
 - `Wireline Scale & Enterprise` (sales-assisted; no self-serve price)
@@ -154,17 +156,17 @@ Founder Early Access v6 names. Do not infer the plan from the env-var label; res
 
 | Env var                              | Live product / interval         |
 | ------------------------------------ | ------------------------------- |
-| `STRIPE_STARTER_9_PRICE_ID`          | Wireline Starter monthly        |
-| `STRIPE_STARTER_9_ANNUAL_PRICE_ID`   | Wireline Starter annual         |
-| `STRIPE_STARTER_PRICE_ID`            | Wireline Starter Plus monthly   |
-| `STRIPE_STARTER_ANNUAL_PRICE_ID`     | Wireline Starter Plus annual    |
-| `STRIPE_TEAM_PRICE_ID`               | Wireline Pro monthly            |
-| `STRIPE_TEAM_ANNUAL_PRICE_ID`        | Wireline Pro annual             |
-| `STRIPE_BUSINESS_PRICE_ID`           | Wireline Business monthly       |
-| `STRIPE_BUSINESS_ANNUAL_PRICE_ID`    | Wireline Business annual        |
-| `STRIPE_EXTRA_AGENT_PRICE_ID`        | Extra Agent + 50 Minutes add-on |
-| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`   | Live Video add-on               |
-| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Live Video monthly alias        |
+| `STRIPE_STARTER_9_PRICE_ID`          | BotBound Starter monthly                |
+| `STRIPE_STARTER_9_ANNUAL_PRICE_ID`   | BotBound Starter annual                 |
+| `STRIPE_STARTER_PRICE_ID`            | BotBound Starter Plus monthly           |
+| `STRIPE_STARTER_ANNUAL_PRICE_ID`     | BotBound Starter Plus annual            |
+| `STRIPE_TEAM_PRICE_ID`               | BotBound Pro monthly                    |
+| `STRIPE_TEAM_ANNUAL_PRICE_ID`        | BotBound Pro annual                     |
+| `STRIPE_BUSINESS_PRICE_ID`           | Legacy hidden catalog compatibility     |
+| `STRIPE_BUSINESS_ANNUAL_PRICE_ID`    | Legacy hidden annual compatibility      |
+| `STRIPE_EXTRA_AGENT_PRICE_ID`        | Extra Bot + 50 Minutes add-on           |
+| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`   | Retired webhook-only compatibility      |
+| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Retired monthly webhook-only alias      |
 
 Retired zero-included-minutes price env vars and OpenRouter-era runtime assumptions must stay out of
 new deploy guidance. Stripe secrets and webhook secrets are separate credentials and must not be
@@ -200,27 +202,27 @@ Stripe blocks archival of a product's default price. The retired consumer produc
 
 ## Public positioning and cross-surface consistency
 
-Wireline's commercial story is intentionally narrow and repeatable:
+BotBound's commercial story is intentionally narrow and repeatable:
 
-- **Create free** — short intake, no subscription wall, all templates unlocked.
+- **Build free** — short intake, no subscription wall, all role starters unlocked.
 - **Train deeply** — facts, instructions, voice, memory, and sources live in Training, not checkout.
 - **Fund live work** — Runtime Balance is customer-controlled; Free Builder never requires a plan.
-- **Buy capacity when shared** — Starter, Starter Plus, Pro, and Business add live agents, number slots, governance, and included usage.
+- **Add capacity when useful** — Starter, Starter Plus, Pro, extra Bots, and Scale increase live-Bot, number, governance, and included-usage capacity without changing product or workspace type.
 
 These messages must stay aligned across:
 
 | Surface                   | Canonical copy anchor                                                               |
 | ------------------------- | ----------------------------------------------------------------------------------- |
 | `/pricing`                | Founder Early Access v6 from `src/lib/plan-catalog.ts`                              |
-| Billing settings          | "Start free. Fund live work."                                                       |
+| Billing settings          | "Build free. Go live from $19/mo."                                                  |
 | Runtime Balance API       | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts`                    |
 | Stripe catalog            | Product names and lookup keys generated by `scripts/lib/stripe-founder-catalog.mjs` |
-| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts`             |
+| ChatGPT MCP widgets       | BotBound Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts`             |
 | iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json`          |
 
 ## Still required before live rollout
 
 1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.
 2. Confirm prepaid Runtime Balance top-ups and included-minute burn remain the only overflow path (no Stripe metered postpaid overage).
-3. Keep Enterprise contact-sales until contract, committed-usage operations, and implementation controls are ready.
+3. Keep Scale sales-assisted until contract, committed-usage operations, and implementation controls are ready.
 4. Enforce custom-auth breached-password screening before public launch.

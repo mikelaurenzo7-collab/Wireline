@@ -67,6 +67,7 @@ export interface ClientPlan {
   configured: boolean;
   annual_configured: boolean;
   contact_sales: boolean;
+  is_free: boolean;
   public: boolean;
   pricing_model: "guaranteed_voice_plus_flexible_runtime";
 }

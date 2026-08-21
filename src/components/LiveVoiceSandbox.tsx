@@ -1,1 +1,1 @@
-export { default } from "./XAILiveVoiceSandbox";
+export { default } from "./OpenAILiveVoiceSandbox";

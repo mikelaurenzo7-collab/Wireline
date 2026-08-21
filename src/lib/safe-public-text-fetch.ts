@@ -2,6 +2,7 @@ import { isIP } from "node:net";
 import * as https from "node:https";
 
 import { extractVisibleHtmlText } from "./html-visible-text";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import {
   resolvePinnedWebhookDestination,
   type PinnedWebhookDestination,
@@ -11,7 +12,7 @@ import {
 const WEBSITE_FETCH_DEADLINE_MS = 10_000;
 const WEBSITE_FETCH_MAX_BYTES = 1_000_000;
 const WEBSITE_FETCH_MAX_REDIRECTS = 3;
-const WEBSITE_USER_AGENT = "BotBoundKnowledgeBot/1.0 (+https://trywireline.com)";
+const WEBSITE_USER_AGENT = `BotBoundKnowledgeBot/1.0 (+${BOTBOUND_PRODUCTION_ORIGIN})`;
 const ALLOWED_CONTENT_TYPES = new Set(["text/html", "text/plain", "application/xhtml+xml"]);
 
 type WebsiteFetchErrorCode =
@@ -64,7 +65,7 @@ function timeoutError(): WebsiteFetchError {
 function responseTooLargeError(): WebsiteFetchError {
   return new WebsiteFetchError(
     "response_too_large",
-    "That page is too large to import. Use a focused page with the essential business information.",
+    "That page is too large to import. Use a focused page with the essential information.",
     413,
   );
 }

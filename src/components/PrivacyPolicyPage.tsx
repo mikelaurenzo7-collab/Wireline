@@ -2,10 +2,11 @@ import { useState } from "react";
 import { ArrowLeft, Cookie, Shield } from "lucide-react";
 import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
+import { ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-const LAST_UPDATED = "August 17, 2026";
+const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED;
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
@@ -170,9 +171,9 @@ export default function PrivacyPolicyPage() {
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           <Section title="1. Who We Are">
             <p>
-              <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for
-              business conversations across voice, SMS, and email. Questions about this policy can
-              be sent to <strong>support@trywireline.com</strong>.
+              <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for calls,
+              texts, and email. Questions about this policy can be sent to{" "}
+              <strong>support@trywireline.com</strong>.
             </p>
           </Section>
 
@@ -219,13 +220,13 @@ export default function PrivacyPolicyPage() {
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure BotBound; process managed AI requests primarily
-              through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel
-              AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and
-              <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output
-              through ElevenLabs; route calls and messages; execute connected workflows; provide
-              support; prevent fraud and abuse; bill through Stripe; and understand aggregate
-              product performance.
+              We use data to provide and secure BotBound; process managed structured AI requests
+              primarily through <strong>OpenAI</strong>, with Vercel AI Gateway,{" "}
+              <strong>xAI</strong>, and <strong>Google Gemini</strong> as governed continuity
+              routes; run live phone conversations over Twilio PSTN and <strong>xAI</strong> Direct
+              SIP Speech-to-Speech; synthesize authorized voice output through ElevenLabs; route
+              calls and messages; execute connected workflows; provide support; prevent fraud and
+              abuse; bill through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -244,23 +245,65 @@ export default function PrivacyPolicyPage() {
           <Section title="4. Third-Party Sub-Processors and Measurement Providers">
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong>Supabase</strong>: Managed Postgres storage and backup</li>
-              <li><strong>Twilio</strong>: PSTN calls, phone numbers, and SMS</li>
-              <li><strong>xAI</strong>: Primary managed AI inference (Grok 4.6) and live phone conversation over Direct SIP Speech-to-Speech</li>
-              <li><strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the production phone runtime</li>
-              <li><strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model creation, quality proofs, and voice-model deletion</li>
-              <li><strong>OpenAI</strong>: Continuity inference and realtime voice sessions</li>
-              <li><strong>Google Gemini</strong>: Managed continuity inference and grounded search</li>
-              <li><strong>Perplexity</strong>: Optional live public research</li>
-              <li><strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and inference observability</li>
-              <li><strong>Stripe</strong>: Payment processing, billing, and tax calculation</li>
-              <li><strong>Resend</strong>: Transactional email delivery</li>
-              <li><strong>Vercel</strong>: Hosting, functions, and edge delivery</li>
-              <li><strong>Upstash</strong>: Distributed rate limits and spend controls</li>
-              <li><strong>Plausible</strong>: Privacy-oriented aggregate website analytics</li>
-              <li><strong>Meta</strong>: Optional advertising measurement and campaign attribution, only after explicit consent and subject to Global Privacy Control</li>
-              <li><strong>Have I Been Pwned Pwned Passwords</strong>: Compromised-password screening using a k-anonymous partial hash prefix</li>
-              <li><strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce, calendar, or team tools, only when you authorize them</li>
+              <li>
+                <strong>Supabase</strong>: Managed Postgres storage and backup
+              </li>
+              <li>
+                <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
+              </li>
+              <li>
+                <strong>OpenAI</strong>: Primary managed structured inference and Studio/ChatGPT
+                realtime browser voice
+              </li>
+              <li>
+                <strong>xAI</strong>: Optional structured continuity (Grok 4.6) and live phone
+                conversation over Direct SIP Speech-to-Speech
+              </li>
+              <li>
+                <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the
+                production phone runtime
+              </li>
+              <li>
+                <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model
+                creation, quality proofs, and voice-model deletion
+              </li>
+              <li>
+                <strong>Google Gemini</strong>: Managed continuity inference and grounded search
+              </li>
+              <li>
+                <strong>Perplexity</strong>: Optional live public research
+              </li>
+              <li>
+                <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
+                inference observability
+              </li>
+              <li>
+                <strong>Stripe</strong>: Payment processing, billing, and tax calculation
+              </li>
+              <li>
+                <strong>Resend</strong>: Transactional email delivery
+              </li>
+              <li>
+                <strong>Vercel</strong>: Hosting, functions, and edge delivery
+              </li>
+              <li>
+                <strong>Upstash</strong>: Distributed rate limits and spend controls
+              </li>
+              <li>
+                <strong>Plausible</strong>: Privacy-oriented aggregate website analytics
+              </li>
+              <li>
+                <strong>Meta</strong>: Optional advertising measurement and campaign attribution,
+                only after explicit consent and subject to Global Privacy Control
+              </li>
+              <li>
+                <strong>Have I Been Pwned Pwned Passwords</strong>: Compromised-password screening
+                using a k-anonymous partial hash prefix
+              </li>
+              <li>
+                <strong>Services you connect</strong>: Such as Google, Microsoft, CRM, commerce,
+                calendar, or team tools, only when you authorize them
+              </li>
             </ul>
             <p>
               Optional providers receive data only when you enable the related feature or direct a

@@ -17,7 +17,7 @@ describe("marketing metadata contract", () => {
     expect(staticHead).toContain("BotBound | Put Your Bot on the Line");
     expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("AI employees for calls, texts, and email.");
+      expect(source).toContain("Your Bot for calls, texts, and email.");
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");
@@ -49,6 +49,16 @@ describe("marketing metadata contract", () => {
     expect(trustPack).not.toContain("</main>");
   });
 
+  it("publishes BotBound's canonical vulnerability disclosure contact", () => {
+    const security = read("public/.well-known/security.txt");
+
+    expect(security).toContain("# BotBound security disclosure policy");
+    expect(security).toContain("Contact: https://botbound.me/contact");
+    expect(security).toContain("Canonical: https://botbound.me/.well-known/security.txt");
+    expect(security).toContain("Policy: https://botbound.me/security");
+    expect(security).not.toMatch(/Wireline|trywireline\.com|trywireline@yahoo\.com/);
+  });
+
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
     expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);
@@ -57,7 +67,8 @@ describe("marketing metadata contract", () => {
       "https://smith.ai/pricing/ai-receptionist",
       "https://www.bland.ai/pricing",
       "https://www.retellai.com/pricing",
-    ]) expect(compare).toContain(href);
+    ])
+      expect(compare).toContain(href);
   });
 
   it("never quotes a public price the catalog does not charge", () => {
@@ -76,8 +87,14 @@ describe("marketing metadata contract", () => {
       chargeable.add(plan.overage_per_min_usd);
     }
     for (const path of surfaces) {
-      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) => Number(match[1]));
-      for (const amount of quoted) expect(chargeable.has(amount), `${path} quotes $${amount}, which no plan, add-on, allowance, or overage rate charges`).toBe(true);
+      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) =>
+        Number(match[1]),
+      );
+      for (const amount of quoted)
+        expect(
+          chargeable.has(amount),
+          `${path} quotes $${amount}, which no plan, add-on, allowance, or overage rate charges`,
+        ).toBe(true);
     }
   });
 

@@ -1,5 +1,5 @@
-export const EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing";
-export const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE";
+export const EXPECTED_PRODUCT_URL = "https://botbound.me/pricing";
+export const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "BOTBOUND";
 
 function normalizeCopy(value) {
   return String(value || "")
@@ -13,7 +13,7 @@ function finding(level, message, metadata = {}) {
 
 /**
  * Compare active Stripe product copy, billing presentation, and managed
- * metadata against Wireline's canonical repository truth. The catalog audit
+ * metadata against BotBound's canonical repository truth. The catalog audit
  * owns price topology; this policy owns customer-visible product identity.
  */
 export function stripeProductCopyFindings(products, expectedProducts) {

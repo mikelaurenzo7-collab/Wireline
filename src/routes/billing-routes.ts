@@ -582,15 +582,18 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   typeof inv.amount_due === "number"
                     ? `$${(inv.amount_due / 100).toFixed(2)}`
                     : "your subscription payment";
-                const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
-                  /\/+$/,
-                  "",
-                );
+                const appUrl = resolveCanonicalAppUrl();
+                if ("error" in appUrl) {
+                  throw AppError.fromHttpStatus(
+                    503,
+                    "Payment-failure notice link is not configured",
+                  );
+                }
                 const delivery = await sendPaymentFailedEmail({
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
-                  updateCardUrl: `${appUrl}/settings/billing`,
+                  updateCardUrl: `${appUrl.url}/settings/billing`,
                   idempotencyKey: `stripe-payment-failed/${event.id}`,
                 });
                 if (!delivery.ok && delivery.disposition !== "suppressed") {
@@ -1156,7 +1159,7 @@ router.post(
       if (!plan || plan.id === "personal" || !stripeActive || !settingsActive) {
         return res.status(402).json({
           code: "LIVE_VIDEO_BASE_PLAN_REQUIRED",
-          error: "Activate a paid Wireline plan before adding live video.",
+          error: "Activate a paid BotBound plan before adding live video.",
         });
       }
 
@@ -1417,7 +1420,7 @@ router.post(
           return res.json({
             url: createdSession.url,
             operation_id: operationId,
-            warning: "Checkout is ready; Wireline is reconciling its local billing record.",
+            warning: "Checkout is ready; BotBound is reconciling its local billing record.",
           });
         }
 
@@ -1478,7 +1481,7 @@ router.get(
       const plan = planById(row?.plan_id || "personal");
       res.json({
         plan_id: plan?.id || "personal",
-        plan_name: plan?.name || "Personal",
+        plan_name: plan?.name || "Free Builder",
         included_agents: plan?.max_agents ?? 1,
         extra_agents: row?.extra_agents ?? 0,
         extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,

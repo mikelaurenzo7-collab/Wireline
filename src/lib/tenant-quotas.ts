@@ -40,8 +40,8 @@ export interface QuotaProfile {
   /** Lead-intake API requests per minute per tenant. */
   intake_rpm: number;
   /**
-   * Live-simulation minutes per UTC day (Studio xAI Speech-to-Speech tests
-   * and ChatGPT OpenAI Realtime previews). Each session mint charges its 5-minute secret TTL — the
+   * Live-simulation minutes per UTC day (Studio and ChatGPT OpenAI Realtime
+   * previews). Each session mint charges its 5-minute secret TTL — the
    * per-minute rate limiter stops bursts, this stops a tenant running
    * back-to-back realtime sessions all day on vendor-metered keys.
    */
@@ -432,11 +432,7 @@ export class QuotaTracker {
    * reservation so a recently lowered operator cap cannot remain stale in one
    * warm serverless invocation.
    */
-  async tryReserve(
-    userId: string,
-    dimension: QuotaDimension,
-    delta = 1,
-  ): Promise<QuotaDecision> {
+  async tryReserve(userId: string, dimension: QuotaDimension, delta = 1): Promise<QuotaDecision> {
     const units = quotaUnits(delta);
     const { profile } = await this.getProfile(userId, true);
     const limit = Math.max(0, Math.floor(profile[dimension]));

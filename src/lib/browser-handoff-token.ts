@@ -8,6 +8,7 @@
  */
 
 import { createHmac, randomBytes } from "node:crypto";
+import { getCanonicalAppUrl } from "./app-url";
 import { decryptSecret, encryptSecret, getDataKey, isVaultConfigured } from "./secret-vault";
 import type { BrowserCommandContext } from "./browser-command-context";
 import { BROWSER_COMMAND_CONTEXT_MAX_AGE_MS } from "./browser-command-context";
@@ -21,7 +22,7 @@ function handoffKey(): Buffer {
 }
 
 function appBase(): string {
-  return (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  return getCanonicalAppUrl();
 }
 
 export function isBrowserHandoffVaultConfigured(): boolean {

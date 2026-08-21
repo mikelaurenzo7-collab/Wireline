@@ -255,7 +255,9 @@ export default function AdminSettings() {
         });
       }
       setAgents(agentsJson?.agents || []);
-      setPhoneNumbers(Array.isArray(numbersJson?.numbers) ? numbersJson.numbers : []);
+      if (numbersRes.ok && !numbersJson?.degraded && Array.isArray(numbersJson?.numbers)) {
+        setPhoneNumbers(numbersJson.numbers);
+      }
 
       // Fetch team members
       const teamRes = await authFetch("/api/team");
@@ -266,8 +268,9 @@ export default function AdminSettings() {
     } catch (e) {
       clientLog.error("admin-settings:load", e);
       toastError("Settings unavailable", "Could not load settings. Please refresh.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const syncCarrierNumbers = async () => {

@@ -63,6 +63,7 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(handlers).toContain(
       "const isLiveCounterpart = Boolean(liveCallerNumber) && targetNumber === liveCallerNumber",
     );
+    expect(handlers).toContain("isMarketingCall: !isLiveCounterpart");
     expect(handlers).toContain("hasExpressWrittenConsent: isLiveCounterpart");
     expect(handlers).toContain("isLiveSessionFollowUp: isLiveCounterpart");
     expect(handlers).not.toContain("isLiveSessionFollowUp: true,");

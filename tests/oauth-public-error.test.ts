@@ -3,11 +3,15 @@ import {
   DEFAULT_OAUTH_SIGNIN_ERROR,
   sanitizeOAuthSignInError,
 } from "../src/lib/oauth-public-error";
+import { OAUTH_SIGNUP_CONSENT_REQUIRED } from "../src/lib/legal-consent";
 
 describe("OAuth public error sanitization", () => {
   it("preserves only authored public messages", () => {
     expect(sanitizeOAuthSignInError("Sign-in session expired. Please try again.")).toBe(
       "Sign-in session expired. Please try again.",
+    );
+    expect(sanitizeOAuthSignInError(OAUTH_SIGNUP_CONSENT_REQUIRED)).toBe(
+      OAUTH_SIGNUP_CONSENT_REQUIRED,
     );
   });
 

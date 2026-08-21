@@ -22,7 +22,7 @@ describe("MCP coaching and first-agent contract", () => {
 
   it("fails Training writes closed until the Apps toggle is true", () => {
     expect(account).toContain("readMcpCoachingWritesEnabled");
-    expect(account).toContain("Enable connected-app Training writes in Wireline Apps");
+    expect(account).toContain("Enable connected-app Training writes in BotBound Apps");
     expect(settings).toContain('router.post(\n  "/api/mcp/coaching-writes"');
     expect(settings).toContain("revokeAllMcpGrantsForUser");
     expect(settings).not.toContain("token_hash");

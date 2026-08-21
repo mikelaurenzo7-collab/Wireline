@@ -1,0 +1,37 @@
+[
+  {
+    "text": "[Phone ringing]",
+    "startMs": 0,
+    "endMs": 650,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Still busy?\n[Second phone ring; connection chime]",
+    "startMs": 650,
+    "endMs": 1900,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The second ring. Answered.",
+    "startMs": 1900,
+    "endMs": 3300,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound. Answers when you can’t.",
+    "startMs": 3600,
+    "endMs": 4700,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "botbound.me",
+    "startMs": 4700,
+    "endMs": 5950,
+    "timestampMs": null,
+    "confidence": null
+  }
+]

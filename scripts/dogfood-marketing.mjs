@@ -7,8 +7,9 @@ import { chromium } from "playwright";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
-const base = process.env.APP_URL || "https://trywireline.com";
+const base = process.env.APP_URL || CANONICAL_PRODUCTION_URL;
 const out =
   process.env.DOGFOOD_OUT || path.join(process.cwd(), ".tmp", "wireline-marketing-dogfood");
 const screenshots = path.join(out, "screenshots");

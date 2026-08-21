@@ -1,7 +1,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, ne } from "drizzle-orm";
-import { isFederalDncListed } from "./federal-dnc-service";
+import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
@@ -19,7 +19,7 @@ export function mergeLeadMetadata(
 }
 
 export type OutboundDialDenyReason =
-  /** Legacy response value retained while route clients age out; no new gate result emits it. */
+  /** Canonical fail-closed result when marketing screening cannot run. */
   | "federal_dnc_unconfigured"
   | "blocked_internal_dnc"
   | "blocked_tcpa"
@@ -43,9 +43,10 @@ export type OutboundDialGateResult =
 
 /**
  * Shared compliance gate for campaign dials, intake auto-dial, and manual
- * Studio/mobile outbound. Missing Federal DNC vendor credentials do not block
- * the entire product. When configured, the federal lookup remains authoritative;
- * every path still enforces tenant DNC, consent, calling hours, and duplicates.
+ * Studio/mobile outbound. Marketing fails closed when Federal DNC credentials
+ * are unavailable. Non-marketing service calls remain available and every path
+ * still enforces its applicable tenant DNC, consent, calling-hours, duplicate,
+ * and configured Federal DNC controls.
  */
 export async function evaluateOutboundDialGate(opts: {
   userId: string;
@@ -79,6 +80,20 @@ export async function evaluateOutboundDialGate(opts: {
     opts.hasExpressWrittenConsent === true ||
     metadata.has_express_written_consent === true ||
     isRequestedCallback;
+
+  if (isMarketingCall) {
+    const federalGate = assertFederalDncForMarketing();
+    if (!federalGate.allowed) {
+      return {
+        allowed: false,
+        status: "AutoDialFailed",
+        reason: "federal_dnc_unconfigured",
+        metadataPatch: { federal_dnc_configured: false },
+        federalDncCode: federalGate.code,
+        federalDncMessage: federalGate.message,
+      };
+    }
+  }
 
   // TCPA quiet hours first: local computation and the cheapest fail-closed check.
   // Live-session follow-up skips this because the consumer is already engaged.

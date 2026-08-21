@@ -1,0 +1,79 @@
+[
+  {
+    "text": "[Phone ringing]",
+    "startMs": 0,
+    "endMs": 700,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Your hands are full. The phone still rings.",
+    "startMs": 700,
+    "endMs": 1200,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "[Second phone ring; connection chime]",
+    "startMs": 1200,
+    "endMs": 2350,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The second ring. That’s where BotBound begins.",
+    "startMs": 2350,
+    "endMs": 4300,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound answers.",
+    "startMs": 4400,
+    "endMs": 5600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "On-brand. On the second ring. Ready to help.",
+    "startMs": 5600,
+    "endMs": 6900,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "“Thanks for calling Northstar Bakery. How can I help?”",
+    "startMs": 6900,
+    "endMs": 8100,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Booked. Confirmed. Logged.",
+    "startMs": 8200,
+    "endMs": 9500,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Appointment booked. Confirmation sent. Owner updated.",
+    "startMs": 9500,
+    "endMs": 11200,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound. Never miss the call that matters.",
+    "startMs": 12000,
+    "endMs": 13600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "botbound.me",
+    "startMs": 13600,
+    "endMs": 14900,
+    "timestampMs": null,
+    "confidence": null
+  }
+]

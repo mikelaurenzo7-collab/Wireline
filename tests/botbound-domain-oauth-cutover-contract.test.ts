@@ -43,8 +43,8 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(brand).toContain('canonicalProductionOrigin: "https://botbound.me"');
     expect(brand).toContain('legacyProductionOrigin: "https://trywireline.com"');
     expect(brand).toContain('customerFacing: "BotBound"');
-    expect(brand).toContain('canonicalOrigin: BOTBOUND_PRODUCTION_ORIGIN');
-    expect(brand).toContain('legacyOrigin: LEGACY_PRODUCTION_ORIGIN');
+    expect(brand).toContain("canonicalOrigin: BOTBOUND_PRODUCTION_ORIGIN");
+    expect(brand).toContain("legacyOrigin: LEGACY_PRODUCTION_ORIGIN");
   });
 
   it("keeps public BotBound metadata immutable and independent from the deferred callback origin", () => {
@@ -57,6 +57,8 @@ describe("BotBound domain and OAuth cutover boundary", () => {
 
     expect(appUrl).toContain("process.env.APP_URL");
     expect(appUrl).toContain('throw new Error("APP_URL is required in production")');
+    expect(appUrl).toContain("APP_URL must be exactly");
+    expect(appUrl).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     for (const source of [pageMeta, marketingMeta, landing]) {
       expect(source).toContain("BOTBOUND_PRODUCTION_ORIGIN");
       expect(source).not.toContain("LEGACY_PRODUCTION_ORIGIN");
@@ -87,14 +89,15 @@ describe("BotBound domain and OAuth cutover boundary", () => {
       expect(source, `${file} must not pin the retired hostname into its callback`).not.toContain(
         "https://trywireline.com/api/oauth/",
       );
-      expect(source, `${file} must not pin the canonical BotBound hostname into route source`).not.toMatch(
-        /https:\/\/[^\s"'`]*botbound\.me[^\s"'`]*/i,
-      );
+      expect(
+        source,
+        `${file} must not pin the canonical BotBound hostname into route source`,
+      ).not.toMatch(/https:\/\/[^\s"'`]*botbound\.me[^\s"'`]*/i);
       expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);
     }
 
     const graph = read("src/routes/oauth/microsoft-graph.ts");
-    expect(graph).toContain('return `${baseUrl}/api/oauth/${provider}/callback`');
+    expect(graph).toContain("return `${baseUrl}/api/oauth/${provider}/callback`");
     expect(graph).toContain('provider === "microsoft_teams"');
     for (const callback of MICROSOFT_GRAPH_CALLBACKS) {
       expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);

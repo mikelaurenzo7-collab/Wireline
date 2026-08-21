@@ -16,6 +16,8 @@ import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
 import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
+import type { AccountLegalConsentEvidence } from "./legal-consent";
+import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "./legal-consent";
 export {
   getOwnerEmails,
   resetOwnerEmailCacheForTests,
@@ -219,15 +221,18 @@ export const authService = {
   async signUp(
     email: string,
     password: string,
-    fullName?: string,
-    signupAttribution?: {
-      preferredPlanId?: string | null;
-      preferredBillingInterval?: "month" | "year" | null;
-      signupWedge?: string | null;
-      utmSource?: string | null;
-      utmMedium?: string | null;
-      utmCampaign?: string | null;
-    },
+    fullName: string | undefined,
+    signupAttribution:
+      | {
+          preferredPlanId?: string | null;
+          preferredBillingInterval?: "month" | "year" | null;
+          signupWedge?: string | null;
+          utmSource?: string | null;
+          utmMedium?: string | null;
+          utmCampaign?: string | null;
+        }
+      | undefined,
+    legalConsentEvidence: AccountLegalConsentEvidence,
   ) {
     try {
       getJwtSecret();
@@ -236,6 +241,14 @@ export const authService = {
       throw new AuthConfigurationError(
         err instanceof Error ? err.message : "JWT_SECRET_NOT_CONFIGURED",
       );
+    }
+
+    if (
+      !legalConsentEvidence ||
+      legalConsentEvidence.termsVersion !== ACCOUNT_TERMS_VERSION ||
+      legalConsentEvidence.privacyVersion !== ACCOUNT_PRIVACY_VERSION
+    ) {
+      throw new Error("CURRENT_ACCOUNT_LEGAL_CONSENT_REQUIRED");
     }
 
     await requirePasswordSafety(password, "signup");
@@ -250,6 +263,26 @@ export const authService = {
             .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
           const user = inserted[0];
 
+          const acceptedAt = new Date();
+          await tx.insert(schema.auditLog).values({
+            userId: user.id,
+            eventType: "auth.terms_accepted",
+            severity: "info",
+            action: "terms_accepted",
+            actorEmail: user.email,
+            resourceType: "account",
+            resourceId: user.id,
+            ipAddress: legalConsentEvidence.ipAddress || null,
+            userAgent: legalConsentEvidence.userAgent || null,
+            metadata: {
+              terms_version: legalConsentEvidence.termsVersion,
+              privacy_version: legalConsentEvidence.privacyVersion,
+              source: legalConsentEvidence.source,
+              accepted_at: acceptedAt.toISOString(),
+            },
+            createdAt: acceptedAt,
+          });
+
           const { startTrialForUser } = await import("./trial-gate");
           await startTrialForUser(user.id, signupAttribution, tx);
 
@@ -258,7 +291,7 @@ export const authService = {
           await tx.insert(schema.accounts).values({
             userId: user.id,
             type: account_type,
-            label: account_type === "personal" ? "Personal" : "My Business",
+            label: "Main workspace",
             isPrimary: true,
           });
 

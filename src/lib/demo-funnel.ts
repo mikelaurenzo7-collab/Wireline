@@ -6,6 +6,7 @@ import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import { BOTBOUND_PRODUCTION_ORIGIN, LEGACY_PRODUCTION_ORIGIN } from "./brand";
 export { DEMO_SOURCE_COOKIE, parseDemoSourceFromQuery } from "./demo-funnel-shared";
 
 export function escapeHtml(value: string): string {
@@ -23,7 +24,8 @@ export function validateDemoRecapUrl(rawUrl: string): string {
       process.env.APP_URL,
       process.env.PUBLIC_APP_URL,
       process.env.VITE_APP_URL,
-      "https://trywireline.com",
+      BOTBOUND_PRODUCTION_ORIGIN,
+      LEGACY_PRODUCTION_ORIGIN,
     ]
       .filter(Boolean)
       .map((url) => new URL(url as string).origin),

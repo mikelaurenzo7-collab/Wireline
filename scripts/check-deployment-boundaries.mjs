@@ -5,6 +5,7 @@ const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
+const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me";
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -12,7 +13,7 @@ const requireValue = (name, reason) => {
   if (!value(name)) failures.push(`${name}: ${reason}`);
 };
 
-function validHttpsUrl(name, required = false) {
+function canonicalProductionUrl(name, required = false) {
   const raw = value(name);
   if (!raw) {
     if (required) failures.push(`${name}: required for ${environment} deployments`);
@@ -20,7 +21,9 @@ function validHttpsUrl(name, required = false) {
   }
   try {
     const url = new URL(raw);
-    if (url.protocol !== "https:") failures.push(`${name}: must use https`);
+    if (url.origin !== CANONICAL_PRODUCTION_ORIGIN || raw !== CANONICAL_PRODUCTION_ORIGIN) {
+      failures.push(`${name}: must be exactly ${CANONICAL_PRODUCTION_ORIGIN}`);
+    }
   } catch {
     failures.push(`${name}: must be a valid absolute URL`);
   }
@@ -36,13 +39,10 @@ if (isProduction) {
   requireValue("MCP_OAUTH_TOKEN_PEPPER", "MCP OAuth tokens cannot be hashed safely");
   requireValue(
     "OPENAI_API_KEY",
-    "the continuity structured runtime and OpenAI Realtime sessions are missing",
+    "the managed primary structured runtime and OpenAI Realtime sessions are missing",
   );
   requireValue("XAI_API_KEY", "the native Twilio + xAI Speech-to-Speech runtime is missing");
-  requireValue(
-    "XAI_SIP_ALLOWED_ADDRESSES",
-    "native xAI SIP origination allowlist is missing",
-  );
+  requireValue("XAI_SIP_ALLOWED_ADDRESSES", "native xAI SIP origination allowlist is missing");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
@@ -55,8 +55,8 @@ if (isProduction) {
   requireValue("UPSTASH_REDIS_REST_URL", "distributed rate limiting is missing");
   requireValue("UPSTASH_REDIS_REST_TOKEN", "distributed rate limiting cannot authenticate");
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
-  validHttpsUrl("APP_URL", true);
-  validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
+  canonicalProductionUrl("APP_URL", true);
+  canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false);
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(

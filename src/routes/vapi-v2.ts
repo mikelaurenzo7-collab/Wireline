@@ -47,6 +47,7 @@ import { sseBroadcaster } from "../services/sse-broadcaster";
 import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./vapi/showcase-handlers";
 import type { ToolCallContext, ToolCallResult } from "./vapi/types";
 import { conversationShapeForLog } from "../lib/twilio-webhook-privacy";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 
 const router = express.Router();
 
@@ -232,8 +233,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         vapiCallId: callContext.callId,
       });
       if (eventId) {
-        const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-        const signupUrl = `${appUrl}/signup?demo=${encodeURIComponent(showcaseRoute.agent.name.toLowerCase())}`;
+        const signupUrl = `${BOTBOUND_PRODUCTION_ORIGIN}/signup?demo=${encodeURIComponent(showcaseRoute.agent.name.toLowerCase())}`;
         const prospectEmail = extractEmailFromText(String(summary));
         if (prospectEmail) {
           const sent = await sendDemoRecapEmail({

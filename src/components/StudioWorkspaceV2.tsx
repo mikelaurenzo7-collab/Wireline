@@ -27,7 +27,7 @@ import WorkspaceRecovery from "./WorkspaceRecovery";
 
 type WorkspaceSection = "setup" | "test" | "review";
 
-const BOT_LANGUAGE = customerAgentLanguage("personal");
+const BOT_LANGUAGE = customerAgentLanguage();
 const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-inspector:v1";
 
 const SECTIONS: Array<{

@@ -29,7 +29,7 @@ const isCanonicalProduction = environment === "production" && isCanonicalVercelP
 if (environment === "production" && !isCanonicalProduction) {
   console.error(
     "Refusing a production-target build on an unrecognized Vercel project. " +
-      "Production data and provider credentials are pinned to the canonical Wireline project ID; " +
+      "Production data and provider credentials are pinned to the canonical BotBound project ID; " +
       "project-name heuristics are not an isolation boundary.",
   );
   process.exit(1);
@@ -61,25 +61,26 @@ function runLiveVapiSchemaAuditIfRequested() {
   run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"]);
 }
 
-function runComprehensiveReleaseAudit() {
+function runCanonicalReleaseAudit() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
   const explicitlyRequested = commitMessage.includes("[launch-deep-audit]");
   if (!isCanonicalProduction && !explicitlyRequested) return;
 
   console.log(
-    `Running mandatory comprehensive TypeScript, ESLint, production-dependency security, and clean-room Vitest release audit for ${environment || "local"}.`,
+    `Running the canonical TypeScript, ESLint, runtime-policy, dependency-security, and clean-room BotBound launch-contract audit for ${environment || "local"}.`,
   );
   run("npm", ["run", "lint"]);
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
   run("npm", ["run", "lint:eslint"]);
-  // Exact-head previews can request the complete audit through the commit
-  // marker. Canonical production never relies on the smaller focused gate:
-  // every production artifact proves the full source tree before migrations or
-  // live provider assertions. The test wrapper strips all live credentials and
-  // forces a deterministic non-production runtime identity.
+  // Exact-head previews can request the canonical launch audit through the
+  // commit marker. The current launch-contract tranche is explicit below; the
+  // second pass is selected explicitly as well, rather than being substituted
+  // silently for a no-argument full-estate run. The wrapper strips live
+  // credentials and forces a deterministic non-production runtime identity.
+  run("npm", ["run", "runtime:policy:check"]);
   run("npm", ["run", "security:audit"]);
-  run("node", ["scripts/run-test-estate.mjs"]);
+  run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"]);
 }
 
 function syncShowcaseIfRequested() {
@@ -96,7 +97,7 @@ function syncShowcaseIfRequested() {
     process.exit(1);
   }
 
-  console.log("Synchronizing all public Wireline assistants after build certification.");
+  console.log("Synchronizing all public BotBound assistants after build certification.");
   run("npx", ["tsx", "scripts/sync-wireline-showcase.mts"]);
 }
 
@@ -131,18 +132,12 @@ function verifyStripePortalIfRequested() {
     process.exit(1);
   }
 
-  // This is an explicit production-only provider mutation. The reconciler is
-  // independently pinned to the canonical Vercel project, APP_URL, live Stripe
-  // key, exact founder catalog, managed metadata, and one active configuration.
-  // Running it with --apply makes the named reconciliation flag truthful and
-  // lets a brand/catalog release repair bounded portal drift before migrations.
-  console.log("Reconciling and verifying the canonical Stripe customer portal before live migration.");
-  run("node", [
-    "--import",
-    "tsx",
-    "scripts/reconcile-stripe-customer-portal.mts",
-    "--apply",
-  ]);
+  // Builds must never repair provider state. This production-only check is
+  // independently pinned to the canonical project, origin, live Stripe key,
+  // founder catalog, and managed metadata. Confirmed drift fails the artifact;
+  // an operator can then run the separately authorized reconcile command.
+  console.log("Verifying the canonical Stripe customer portal before live migration.");
+  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
@@ -171,6 +166,13 @@ run("node", [
   "scripts/run-test-estate.mjs",
   "tests/runtime-provider-chain-contract.test.ts",
   "tests/structured-runtime-policy-contract.test.ts",
+  "tests/openai-runtime-cohesion-contract.test.ts",
+  "tests/openai-live-demo-contract.test.ts",
+  "tests/studio-vapi-web-live-test-contract.test.ts",
+  "tests/federal-dnc-service.test.ts",
+  "tests/outbound-runtime-behavior.test.ts",
+  "tests/outbound-compliance-contract.test.ts",
+  "tests/launch-readiness-dnc-deferral-contract.test.ts",
   "tests/model-pricing-coverage-contract.test.ts",
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
@@ -179,6 +181,7 @@ run("node", [
   "tests/database-connection.test.ts",
   "tests/production-schema-database-selection.test.ts",
   "tests/migration-journal-integrity-contract.test.ts",
+  "tests/grok-46-persisted-defaults-contract.test.ts",
   "tests/production-schema-effects-contract.test.ts",
   "tests/production-promotion-safety-contract.test.ts",
   "tests/provider-spend-hard-gate-contract.test.ts",
@@ -190,6 +193,11 @@ run("node", [
   "tests/product-voice-contract.test.ts",
   "tests/botbound-visible-brand-sweep.test.ts",
   "tests/botbound-domain-oauth-cutover-contract.test.ts",
+  "tests/chatgpt-app-contract.test.ts",
+  "tests/claude-connector-contract.test.ts",
+  "tests/cursor-plugin-contract.test.ts",
+  "src/lib/mcp-app-metadata.test.ts",
+  "tests/public-navigation-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/launch-completeness-contract.test.ts",
@@ -274,9 +282,24 @@ run("node", [
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
 validateProductionEnvironment();
-runComprehensiveReleaseAudit();
+runCanonicalReleaseAudit();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
+
+// Certify every local artifact before touching provider or database state. A
+// compilation or bundle failure must not leave live infrastructure ahead of
+// the deployable code that required it.
+run("npm", ["run", "build"]);
+run("npm", ["run", "smoke:server"]);
+run("npx", [
+  "esbuild",
+  "src/entrypoints/chatgpt-mcp-api.ts",
+  "--platform=node",
+  "--bundle",
+  "--format=cjs",
+  "--outfile=dist/chatgpt-mcp-api.cjs",
+]);
+
 verifyStripePortalIfRequested();
 
 if (shouldMigrate) {
@@ -305,14 +328,4 @@ if (shouldVerifyProductionSchema) {
   run("node", ["scripts/run-production-schema-effects.mjs"]);
 }
 
-run("npm", ["run", "build"]);
-run("npm", ["run", "smoke:server"]);
-run("npx", [
-  "esbuild",
-  "src/entrypoints/chatgpt-mcp-api.ts",
-  "--platform=node",
-  "--bundle",
-  "--format=cjs",
-  "--outfile=dist/chatgpt-mcp-api.cjs",
-]);
 syncShowcaseIfRequested();

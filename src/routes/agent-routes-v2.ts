@@ -82,7 +82,7 @@ function extractionReply(parsed: ExtractedConfig) {
     );
   if (parsed.knowledge.length)
     parts.push(
-      `Saved ${parsed.knowledge.length} business fact${parsed.knowledge.length === 1 ? "" : "s"}.`,
+      `Saved ${parsed.knowledge.length} verified fact${parsed.knowledge.length === 1 ? "" : "s"}.`,
     );
   if (parsed.personality) parts.push("Updated the tone guidance.");
   return parts.length
@@ -151,7 +151,7 @@ async function extractTextAsset(fileName: string, text: string): Promise<Extract
   return normalizeExtraction(
     await runStructured<ExtractedConfig>({
       system:
-        "You are the Wireline Configuration Engine. Extract only explicit operational rules, concrete business facts, and requested tone guidance from a supplied asset. Be conservative. Never invent missing information.",
+        "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone guidance from a supplied asset. Be conservative. Never invent missing information.",
       user: `Asset name: ${fileName}\n\nAsset content:\n${text}`,
       tool: AI_TOOLS.trainingExtraction,
       complexity: "simple",
@@ -223,7 +223,7 @@ export async function extractImageAsset(fileName: string, dataUrl: string): Prom
     body: JSON.stringify({
       model: visionModel,
       instructions:
-        "Analyze the uploaded image only for explicit business facts, operating rules, service details, schedules, product details, or tone direction that can safely train a voice agent. Do not infer private information or create facts that are not visibly supported.",
+        "Analyze the uploaded image only for explicit facts, operating rules, service details, schedules, product details, or tone direction that can safely train a Bot. Do not infer private information or create facts that are not visibly supported.",
       input: [
         {
           role: "user",
@@ -310,7 +310,7 @@ router.post(
     const templateId = cleanText(req.body?.templateId, 80);
     // Always seed a real personality. Fast Start used to leave personal agents
     // with a one-line tone from the client; Studio Set up then overwrote it with
-    // business-ready copy. Templates still win when templateId is present.
+    // role-ready copy. Templates still win when templateId is present.
     const seededPersonality = resolveCreatePersonality({
       role,
       isBusinessAgent,
@@ -932,7 +932,7 @@ router.post(
     const parsed = normalizeExtraction(
       await runStructured<ExtractedConfig>({
         system:
-          "You are the Wireline Configuration Engine. Extract only explicit operational rules, concrete business facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
+          "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
         user: message,
         tool: AI_TOOLS.trainingExtraction,
         complexity: "simple",

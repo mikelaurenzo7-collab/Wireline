@@ -1,10 +1,10 @@
-# Wireline
+# BotBound
 
-Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+BotBound is the operating layer for **your Bot across calls, texts, and email**. Start with one trained Bot or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
 The public operating loop is **Build -> Train -> Launch -> Improve**. Product architecture expresses that loop through Create, Training, Wire, and Studio:
 
-1. **Create / Build** a focused voice agent quickly.
+1. **Create / Build** a focused Bot quickly.
 2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
 3. **Wire / Launch** it to an included number slot, integrations, routing, approvals, and billing controls.
 4. **Studio / Improve** operates calls, texts, follow-up, approvals, handoffs, review, and iteration from real outcomes.
@@ -12,20 +12,20 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 ## Product surface
 
 - **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
-- **Wireline Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks.
-- **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first voice agent, privately rehearse, then continue in Wireline.
+- **BotBound Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks. Technical package paths retain the `wireline` namespace for compatibility.
+- **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first Bot, privately rehearse, then continue in BotBound.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
-- **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
+- **Identity - retired live talking-head:** identity badges stay on every Bot. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Every paid agent includes a **production-number slot**. Wireline provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
+Every paid Bot includes a **production-number slot**. BotBound provisions the number only when the role needs one, so unused Bot capacity does not create unnecessary carrier spend.
 
 ## Technology and ownership
 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and a Vercel-capable server bundle.
-- **Design:** the **Wireline Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android.
-- **Managed reasoning:** xAI Grok 4.6 primary with OpenAI, Gemini, and Vercel AI Gateway continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
-- **Voice/PSTN:** Twilio plus xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) own production calling and Studio live tests. OpenAI Realtime is ChatGPT App private simulation only. Vapi is rollback-only. Realtime test surfaces never take over customer PSTN calls.
+- **Design:** the **BotBound Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android. Technical token filenames retain the `wireline` namespace.
+- **Managed reasoning:** OpenAI GPT-5.6 Terra primary with Vercel AI Gateway, xAI Grok 4.6, and Gemini continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
+- **Voice/PSTN:** OpenAI Realtime owns authenticated Studio and ChatGPT browser simulations. Twilio plus xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) independently own production calling; Vapi is rollback-only. Browser test surfaces never take over customer PSTN calls.
 - **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
 - **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
 - **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.
@@ -37,7 +37,7 @@ npm install
 npm run dev          # Vite + Express on http://localhost:3000
 ```
 
-### Wireline Command
+### BotBound Command
 
 ```bash
 node apps/browser-extension/scripts/build.mjs --check
@@ -56,30 +56,30 @@ npm run verify
 npm run verify:full
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
-node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
 Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.
 
 ## Repository map
 
-| Concern | Source of truth |
-| --- | --- |
-| Contribution workflow | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Repository health | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md) |
-| Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| Public positioning and creative proof | [docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md) |
-| Documentation map | [docs/README.md](./docs/README.md) |
-| Audit evidence | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md) |
-| Client/release boundaries | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md) |
-| Pricing and billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md) |
-| Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
-| Browser extension | `apps/browser-extension/` |
-| Native clients | `ios/`, `android/` |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
-| Cursor Directory | `.mcp.json`, `plugin.json`, `mcp.json`, [docs/CURSOR_PLUGIN.md](./docs/CURSOR_PLUGIN.md) |
-| Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
+| Concern                               | Source of truth                                                                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contribution workflow                 | [CONTRIBUTING.md](./CONTRIBUTING.md)                                                                                                                 |
+| Repository health                     | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md)                                                                                                           |
+| Architecture                          | [ARCHITECTURE.md](./ARCHITECTURE.md)                                                                                                                 |
+| Public positioning and creative proof | [docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md)                                                             |
+| Documentation map                     | [docs/README.md](./docs/README.md)                                                                                                                   |
+| Audit evidence                        | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md)                                                                                                         |
+| Client/release boundaries             | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md)                                                                                                 |
+| Pricing and billing                   | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md)   |
+| Design system                         | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`                                                |
+| Voice and model policy                | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
+| Browser extension                     | `apps/browser-extension/`                                                                                                                            |
+| Native clients                        | `ios/`, `android/`                                                                                                                                   |
+| ChatGPT App                           | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md)                                      |
+| Cursor Directory                      | `.mcp.json`, `plugin.json`, `mcp.json`, [docs/CURSOR_PLUGIN.md](./docs/CURSOR_PLUGIN.md)                                                             |
+| Tests and checks                      | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts`                                                                                  |
 
 ## Repository hygiene
 
@@ -90,4 +90,4 @@ Use `npm run verify` for focused implementation branches. Use `npm run verify:fu
 
 ## License
 
-Proprietary. Copyright Wireline.
+Proprietary. Copyright BotBound.

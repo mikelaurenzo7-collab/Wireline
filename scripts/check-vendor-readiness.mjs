@@ -10,6 +10,13 @@
  */
 
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import {
+  STRIPE_PUBLIC_BRAND,
+  STRIPE_PUBLIC_SUPPORT_EMAIL,
+  STRIPE_PUBLIC_SUPPORT_URL,
+  hasBotBoundDescriptor,
+} from "./lib/stripe-account-identity.mjs";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const checks = [];
 
@@ -263,15 +270,17 @@ const openaiModelIds = new Set(
 const openaiStructuredModelReady = openai?.ok && openaiModelIds.has("gpt-5.6-terra");
 const openaiRealtimeModelReady = openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
 const openaiTranscriberReady = openai?.ok && openaiModelIds.has("gpt-4o-mini-transcribe");
+const openaiRuntimeReady =
+  openaiStructuredModelReady && openaiRealtimeModelReady && openaiTranscriberReady;
 
 record(
   "openai",
   true,
-  openaiStructuredModelReady ? "ready" : "blocked",
-  openaiStructuredModelReady
-    ? "OpenAI key accepted and the required gpt-5.6-terra model is available."
+  openaiRuntimeReady ? "ready" : "blocked",
+  openaiRuntimeReady
+    ? "OpenAI key accepted and the required structured, realtime, and transcription models are available."
     : openai?.ok
-      ? "OpenAI key accepted, but the required gpt-5.6-terra model is unavailable."
+      ? "OpenAI key accepted, but one or more required structured, realtime, or transcription models are unavailable."
       : "OpenAI key missing or rejected.",
   "Keep a payment method, project budget, and usage alerts enabled.",
   {
@@ -307,13 +316,13 @@ record(
   true,
   xai?.ok ? "ready" : "blocked",
   xai?.ok
-    ? "xAI key accepted; Grok 4.6 structured and native grok-voice-think-fast-2.0 SIP are reachable."
-    : "xAI key missing or rejected; native PSTN and the structured primary cannot launch.",
-  "Fund Grok 4.6 as the structured default and grok-voice-think-fast-2.0 as native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the structured lane out.",
+    ? "xAI key accepted; native grok-voice-think-fast-2.0 SIP and optional Grok 4.6 continuity are reachable."
+    : "xAI key missing or rejected; native PSTN cannot launch.",
+  "Fund grok-voice-think-fast-2.0 for native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the Grok 4.6 structured continuity lane out.",
   {
-    structured_primary_model: "grok-4.6",
+    structured_continuity_model: "grok-4.6",
     native_sip_model: "grok-voice-think-fast-2.0",
-    xai_role: "managed_primary",
+    xai_role: "native_pstn_and_optional_structured_continuity",
   },
 );
 
@@ -507,11 +516,19 @@ const stripeStatementDescriptor = String(
   .toUpperCase();
 const stripeWebsiteOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.url);
 const stripeSupportOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.support_url);
+const stripeSupportUrl = String(stripeAccount?.body?.business_profile?.support_url || "")
+  .trim()
+  .replace(/\/+$/, "");
+const stripeSupportEmail = String(stripeAccount?.body?.business_profile?.support_email || "")
+  .trim()
+  .toLowerCase();
 const stripeBrandReady = Boolean(
-  /wireline/i.test(stripePublicName) &&
-  stripeStatementDescriptor.startsWith("WIRELINE") &&
-  stripeWebsiteOrigin === "https://trywireline.com" &&
-  stripeSupportOrigin === "https://trywireline.com",
+  stripePublicName === STRIPE_PUBLIC_BRAND &&
+  hasBotBoundDescriptor(stripeStatementDescriptor) &&
+  stripeWebsiteOrigin === CANONICAL_PRODUCTION_URL &&
+  stripeSupportOrigin === CANONICAL_PRODUCTION_URL &&
+  stripeSupportUrl === STRIPE_PUBLIC_SUPPORT_URL &&
+  stripeSupportEmail === STRIPE_PUBLIC_SUPPORT_EMAIL,
 );
 
 const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
@@ -548,7 +565,7 @@ const stripeWebhook = stripeWebhookInventory.find(
   (endpoint) =>
     endpoint?.status === "enabled" &&
     String(endpoint?.url || "").replace(/\/+$/, "") ===
-      "https://trywireline.com/api/stripe-webhook",
+      `${CANONICAL_PRODUCTION_URL}/api/stripe-webhook`,
 );
 const stripeEnabledWebhookEvents = Array.isArray(stripeWebhook?.enabled_events)
   ? [...stripeWebhook.enabled_events].sort()
@@ -586,11 +603,11 @@ const stripeFundingAction = !stripeBalanceRead
   : stripeAvailable < 0
     ? "Resolve the negative Stripe balance and failed bank debits before launch."
     : !stripeBrandReady
-      ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to Wireline in Stripe."
+      ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to BotBound in Stripe."
       : !stripePortalReady
-        ? "Exercise Wireline portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
+        ? "Exercise BotBound portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
         : !stripeWebhookReady
-          ? `Align the enabled trywireline.com webhook endpoint to the ${expectedStripeWebhookEvents.length} server-handled events (npm run stripe:webhook:align).`
+          ? `Align the enabled botbound.me webhook endpoint to the ${expectedStripeWebhookEvents.length} server-handled events (npm run stripe:webhook:align).`
           : !stripeTaxReady
             ? "Disable STRIPE_AUTOMATIC_TAX_ENABLED, or activate Stripe Tax settings and at least one applicable registration after qualified tax review."
             : "No prepaid funding required; keep payout bank, portal, webhook, and the deliberate tax posture healthy.";
@@ -618,7 +635,7 @@ record(
   {
     core_account_ready: stripeCoreReady,
     public_name: stripePublicName || null,
-    statement_descriptor_ready: stripeStatementDescriptor.startsWith("WIRELINE"),
+    statement_descriptor_ready: hasBotBoundDescriptor(stripeStatementDescriptor),
     website_origin: stripeWebsiteOrigin,
     support_origin: stripeSupportOrigin,
     brand_ready: stripeBrandReady,

@@ -1,0 +1,62 @@
+{
+  "capturedAt": "2026-08-20T23:57:23.772Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "results": [
+    {
+      "name": "botbound-home-desktop-1440x900",
+      "path": "/",
+      "width": 1440,
+      "height": 900,
+      "url": "http://127.0.0.1:3000/",
+      "output": "brand-work/exports/product-proof/botbound-home-desktop-1440x900.png",
+      "status": 200,
+      "bodyHorizontalOverflow": 0,
+      "rootHorizontalOverflow": 0,
+      "title": "BotBound | Put Your Bot on the Line",
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "name": "botbound-home-mobile-390x844",
+      "path": "/",
+      "width": 390,
+      "height": 844,
+      "url": "http://127.0.0.1:3000/",
+      "output": "brand-work/exports/product-proof/botbound-home-mobile-390x844.png",
+      "status": 200,
+      "bodyHorizontalOverflow": 0,
+      "rootHorizontalOverflow": 0,
+      "title": "BotBound | Put Your Bot on the Line",
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "name": "botbound-features-desktop-1440x900",
+      "path": "/features",
+      "width": 1440,
+      "height": 900,
+      "url": "http://127.0.0.1:3000/features",
+      "output": "brand-work/exports/product-proof/botbound-features-desktop-1440x900.png",
+      "status": 200,
+      "bodyHorizontalOverflow": 0,
+      "rootHorizontalOverflow": 0,
+      "title": "FEATURES | BotBound VOICE BOTS",
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "name": "botbound-pricing-desktop-1440x900",
+      "path": "/pricing",
+      "width": 1440,
+      "height": 900,
+      "url": "http://127.0.0.1:3000/pricing",
+      "output": "brand-work/exports/product-proof/botbound-pricing-desktop-1440x900.png",
+      "status": 200,
+      "bodyHorizontalOverflow": 0,
+      "rootHorizontalOverflow": 0,
+      "title": "PRICING | BotBound VOICE BOTS FROM $19/MONTH",
+      "pageErrors": [],
+      "consoleErrors": []
+    }
+  ]
+}

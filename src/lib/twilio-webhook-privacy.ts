@@ -43,16 +43,17 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function trustedWirelineRecordingUrl(value: string): string | null {
+function trustedBotBoundRecordingUrl(value: string): string | null {
   try {
     const url = new URL(value);
-    const isWirelineHost =
+    const isBotBoundHost =
+      url.hostname === "botbound.me" ||
+      url.hostname === "www.botbound.me" ||
       url.hostname === "trywireline.com" ||
-      url.hostname === "www.trywireline.com" ||
-      url.hostname.endsWith(".vercel.app");
+      url.hostname === "www.trywireline.com";
     if (
       url.protocol !== "https:" ||
-      !isWirelineHost ||
+      !isBotBoundHost ||
       url.username ||
       url.password ||
       !/^\/api\/calls\/\d+\/recording$/.test(url.pathname)
@@ -72,7 +73,7 @@ export function buildFailoverVoicemailEmail(input: FailoverVoicemailEmailInput):
   const escapedTo = escapeHtml(input.to);
   const escapedRecordingUrl = escapeHtml(input.recordingUrl);
   const escapedTranscription = escapeHtml(input.transcription);
-  const trustedRecordingUrl = trustedWirelineRecordingUrl(input.recordingUrl);
+  const trustedRecordingUrl = trustedBotBoundRecordingUrl(input.recordingUrl);
   const recordingHtml = trustedRecordingUrl
     ? `<a href="${escapeHtml(trustedRecordingUrl)}">${escapedRecordingUrl}</a>`
     : escapedRecordingUrl;

@@ -61,11 +61,8 @@ export default function StudioAgentWorkspacePanel({
   compact = false,
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
-    () =>
-      isBusinessAgent
-        ? `Hello, this is ${agentName || "your voice agent"}. How can I help?`
-        : `Hi, this is ${agentName || "your personal agent"}. How can I help?`,
-    [agentName, isBusinessAgent],
+    () => `Hi, this is ${agentName || "your Bot"}. How can I help?`,
+    [agentName],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
@@ -168,11 +165,7 @@ export default function StudioAgentWorkspacePanel({
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
         if (!knowledgeResponse.ok) {
-          throw new Error(
-            isBusinessAgent
-              ? "Business information could not be saved."
-              : "Personal preferences could not be saved.",
-          );
+          throw new Error("Knowledge and rules could not be saved.");
         }
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
         if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
@@ -182,9 +175,7 @@ export default function StudioAgentWorkspacePanel({
         if (!knowledgeCaptured) {
           setSetupNotice(null);
           setSetupError(
-            isBusinessAgent
-              ? "Tone and greeting were saved, but the business details need to be more specific. Add short facts such as hours, pricing, service area, or handoff rules."
-              : "Tone and greeting were saved, but the preferences need to be more specific. Add short, concrete rules and try again.",
+            "Tone and greeting were saved, but the knowledge needs to be more specific. Add short facts, preferences, or handoff rules and try again.",
           );
           return;
         }
@@ -299,8 +290,11 @@ export default function StudioAgentWorkspacePanel({
 
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-sm font-semibold text-foreground" htmlFor="setup-knowledge">
-                    {isBusinessAgent ? "Business facts" : "Personal facts"}{" "}
+                  <label
+                    className="text-sm font-semibold text-foreground"
+                    htmlFor="setup-knowledge"
+                  >
+                    Knowledge and rules{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
@@ -315,11 +309,7 @@ export default function StudioAgentWorkspacePanel({
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
                   className={`${compact ? "min-h-20" : "min-h-24"} w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50`}
-                  placeholder={
-                    isBusinessAgent
-                      ? "Hours, services, pricing, policies, and handoff rules…"
-                      : "Preferences, calendar rules, and when to interrupt you…"
-                  }
+                  placeholder="Facts, preferences, policies, calendar rules, and handoffs…"
                 />
               </div>
 
@@ -330,7 +320,12 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
 
-              <Button type="button" size={compact ? "sm" : undefined} onClick={() => void applySetup()} disabled={applyingSetup}>
+              <Button
+                type="button"
+                size={compact ? "sm" : undefined}
+                onClick={() => void applySetup()}
+                disabled={applyingSetup}
+              >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -352,7 +347,9 @@ export default function StudioAgentWorkspacePanel({
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <details className={`${compact ? "rounded-xl" : "rounded-2xl"} group border border-border bg-card`}>
+        <details
+          className={`${compact ? "rounded-xl" : "rounded-2xl"} group border border-border bg-card`}
+        >
           <summary
             className={`flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-foreground ${
               compact ? "min-h-12 px-4" : "min-h-14 px-5 sm:px-6"
@@ -369,7 +366,9 @@ export default function StudioAgentWorkspacePanel({
           </div>
         </details>
 
-        <div className={`flex gap-2 ${compact ? "flex-wrap" : "flex-col sm:flex-row sm:justify-end"}`}>
+        <div
+          className={`flex gap-2 ${compact ? "flex-wrap" : "flex-col sm:flex-row sm:justify-end"}`}
+        >
           <Button
             type="button"
             size={compact ? "sm" : undefined}

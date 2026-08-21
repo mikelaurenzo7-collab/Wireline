@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PRERENDERED_ROUTE_SHELLS, resolveRouteMeta } from "../src/lib/marketing-route-meta";
+import {
+  PRERENDERED_ROUTE_SHELLS,
+  SITE_URL,
+  resolveRouteMeta,
+} from "../src/lib/marketing-route-meta";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -12,13 +16,15 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 // trust packs — the pages regulated buyers are sent to — were in exactly that
 // state.
 describe("every submitted URL carries its own meta", () => {
-  const sitemapPaths = Array.from(
-    read("public/sitemap.xml").matchAll(/<loc>https:\/\/trywireline\.com([^<]*)<\/loc>/g),
-    (m) => m[1].replace(/\/+$/, "") || "/",
+  const sitemapUrls = Array.from(
+    read("public/sitemap.xml").matchAll(/<loc>(https:\/\/[^<]+)<\/loc>/g),
+    (match) => new URL(match[1]),
   );
+  const sitemapPaths = sitemapUrls.map((url) => url.pathname.replace(/\/+$/, "") || "/");
 
   it("submits a non-trivial set of URLs", () => {
     expect(sitemapPaths.length).toBeGreaterThanOrEqual(20);
+    expect(sitemapUrls.every((url) => url.origin === SITE_URL)).toBe(true);
   });
 
   it("resolves distinct per-route meta for every sitemap URL", () => {

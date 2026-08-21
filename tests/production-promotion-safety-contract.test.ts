@@ -58,6 +58,24 @@ describe("production promotion safety", () => {
     expect(buildSource).toContain('run("node", ["scripts/run-production-schema-effects.mjs"])');
   });
 
+  it("certifies every local artifact before any provider or database release step", () => {
+    const productBuild = buildSource.indexOf('run("npm", ["run", "build"]);');
+    const serverSmoke = buildSource.indexOf('run("npm", ["run", "smoke:server"]);');
+    const mcpBundle = buildSource.indexOf('"src/entrypoints/chatgpt-mcp-api.ts"');
+    const portalVerification = buildSource.indexOf("verifyStripePortalIfRequested();");
+    const migrations = buildSource.indexOf("if (shouldMigrate) {");
+
+    expect(productBuild).toBeGreaterThan(-1);
+    expect(serverSmoke).toBeGreaterThan(productBuild);
+    expect(mcpBundle).toBeGreaterThan(serverSmoke);
+    expect(portalVerification).toBeGreaterThan(mcpBundle);
+    expect(migrations).toBeGreaterThan(portalVerification);
+    expect(buildSource).toContain("Builds must never repair provider state");
+    expect(buildSource).not.toContain(
+      '"scripts/reconcile-stripe-customer-portal.mts",\n    "--apply",',
+    );
+  });
+
   it("rejects every noncanonical production project, including v0-named copies", () => {
     const result = spawnSync(process.execPath, ["scripts/vercel-build.mjs"], {
       cwd: process.cwd(),
@@ -77,13 +95,16 @@ describe("production promotion safety", () => {
 
   it("probes readiness only on the canonical customer-facing origin", () => {
     expect(resolveCanonicalProductionUrl("")).toBe(CANONICAL_PRODUCTION_URL);
-    expect(resolveCanonicalProductionUrl("https://trywireline.com/")).toBe(
+    expect(resolveCanonicalProductionUrl("https://botbound.me/")).toBe(
       CANONICAL_PRODUCTION_URL,
     );
     expect(() => resolveCanonicalProductionUrl("https://healthy-copy.example.com")).toThrow(
       /noncanonical production origin/,
     );
-    expect(() => resolveCanonicalProductionUrl("https://trywireline.com/alternate")).toThrow(
+    expect(() => resolveCanonicalProductionUrl("https://botbound.me/alternate")).toThrow(
+      /noncanonical production origin/,
+    );
+    expect(() => resolveCanonicalProductionUrl("https://trywireline.com/")).toThrow(
       /noncanonical production origin/,
     );
   });

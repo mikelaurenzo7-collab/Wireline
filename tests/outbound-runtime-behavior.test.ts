@@ -70,9 +70,79 @@ describe("outbound dial gate runtime", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED = "true";
     delete process.env.NODE_ENV;
     delete process.env.VERCEL;
+  });
+
+  it("fails marketing outbound closed before dialing when Federal DNC is unconfigured", async () => {
+    const assertFederalDncForMarketing = vi.fn(() => ({
+      allowed: false as const,
+      configured: false as const,
+      code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
+      message: "Federal DNC screening must be configured before marketing outbound can run.",
+    }));
+    const isFederalDncListed = vi.fn(async () => false);
+    const isDncBlocked = vi.fn(async () => false);
+
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: { select: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing,
+      isFederalDncListed,
+    }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
+
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-user",
+      phone: "+15551234567",
+      isMarketingCall: true,
+      metadata: { has_express_written_consent: true },
+    });
+
+    expect(result.allowed).toBe(false);
+    if (result.allowed) return;
+    expect(result.reason).toBe("federal_dnc_unconfigured");
+    expect(result.status).toBe("AutoDialFailed");
+    expect(result.federalDncCode).toBe("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(result.metadataPatch).toEqual({ federal_dnc_configured: false });
+    expect(assertFederalDncForMarketing).toHaveBeenCalledOnce();
+    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(isDncBlocked).not.toHaveBeenCalled();
+  });
+
+  it("keeps non-marketing live follow-ups available without a Federal DNC bypass", async () => {
+    const assertFederalDncForMarketing = vi.fn(() => ({
+      allowed: false as const,
+      configured: false as const,
+      code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
+      message: "Federal DNC screening must be configured before marketing outbound can run.",
+    }));
+
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: { select: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing,
+      isFederalDncListed: async () => false,
+    }));
+    vi.doMock("../src/lib/compliance", () => ({
+      isDncBlocked: async () => false,
+    }));
+
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-user",
+      phone: "+15551234567",
+      isMarketingCall: false,
+      isLiveSessionFollowUp: true,
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
   });
 
   it("writes JSON-safe duplicate_of_lead_id when another lead was called recently", async () => {

@@ -75,6 +75,11 @@ assert(
   "measurement loader must preserve post-consent campaign attribution.",
 );
 assert(
+  loader.includes('window.location.hostname === "botbound.me"') &&
+    loader.includes('window.location.hostname === "trywireline.com"'),
+  "measurement loader must recognize both the canonical BotBound host and the transition host.",
+);
+assert(
   loader.includes("window.__wirelineMarketingMeasurementEnabled = false"),
   "measurement revocation must update the runtime state.",
 );

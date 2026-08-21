@@ -3,28 +3,17 @@ import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
-import { useAccount } from "../../contexts/AccountContext";
-import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import AgentPresenceSlot from "../AgentPresenceSlot";
+import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
 
-function readiness(agent: WorkspaceAgentSummary | null) {
-  if (!agent) return null;
-  return agent.phone_number ? "Live" : "Needs setup";
-}
-
 export default function StudioContextChrome() {
-  const { agents, resolvedId } = useStudioActiveAgentId();
+  const { agents, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
   const [, setSearchParams] = useSearchParams();
-  const { accountType } = useAccount();
   const activeAgent = resolvedId ? (agents.find((agent) => agent.id === resolvedId) ?? null) : null;
-  const readyLabel = readiness(activeAgent);
-  const posture = activeAgent
-    ? activeAgent.is_business_agent
-      ? "business"
-      : "personal"
-    : accountType;
-  const language = customerAgentLanguage(posture);
+  const lineStatus = activeAgent ? agentLineStatus(activeAgent, phoneLookupDegraded) : null;
+  const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
+  const language = customerAgentLanguage();
 
   function selectAgent(agentId: string) {
     setSearchParams(
@@ -123,7 +112,7 @@ export default function StudioContextChrome() {
           {readyLabel ? (
             <span
               className={`hidden min-h-8 items-center rounded-md border px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] md:inline-flex ${
-                activeAgent?.phone_number
+                lineStatus === "live"
                   ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                   : "border-border bg-muted/50 text-muted-foreground"
               }`}
@@ -132,7 +121,12 @@ export default function StudioContextChrome() {
             </span>
           ) : null}
           {agents.length > 0 ? (
-            <Button asChild variant="secondary" size="sm" className="size-9 px-0 sm:size-auto sm:px-3">
+            <Button
+              asChild
+              variant="secondary"
+              size="sm"
+              className="size-9 px-0 sm:size-auto sm:px-3"
+            >
               <Link to="/studio?create=1" aria-label={language.createCta}>
                 <Plus className="size-4" aria-hidden="true" />
                 <span className="hidden sm:inline">New</span>

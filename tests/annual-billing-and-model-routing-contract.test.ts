@@ -4,8 +4,7 @@ import { describe, expect, it } from "vitest";
 import { selectModelForTask } from "../src/lib/ai-models";
 import { parseSignupIntent } from "../src/lib/signup-intent";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("annual billing purchase path", () => {
   it("wires annual billing through pricing, checkout, and signup", () => {
@@ -18,18 +17,13 @@ describe("annual billing purchase path", () => {
     expect(billingCard).toContain("interval },");
     expect(billingCard).toContain('billingInterval === "year"');
     expect(launchCheckout).toContain('req.body?.interval === "year"');
-    expect(
-      parseSignupIntent("?plan=starter&interval=year")
-        ?.preferredBillingInterval,
-    ).toBe("year");
+    expect(parseSignupIntent("?plan=starter&interval=year")?.preferredBillingInterval).toBe("year");
   });
 
   it("does not invent sales discounts", () => {
     const personas = read("src/lib/wireline-agent-personas.ts");
     expect(personas).toContain("Do not invent coupons or percent-off deals");
-    expect(personas).not.toMatch(
-      /Offer up to \$\{SALES_AUTO_DISCOUNT_MAX_PERCENT\}%/,
-    );
+    expect(personas).not.toMatch(/Offer up to \$\{SALES_AUTO_DISCOUNT_MAX_PERCENT\}%/);
   });
 
   it("keeps signup outside inherited tenant context", () => {
@@ -40,9 +34,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("keeps all workload complexity on the Gateway primary model", () => {
-    expect(selectModelForTask("simple")).toBe("grok-4.6");
-    expect(selectModelForTask("medium")).toBe("grok-4.6");
-    expect(selectModelForTask("complex")).toBe("grok-4.6");
+  it("keeps all workload complexity on the OpenAI managed primary model", () => {
+    expect(selectModelForTask("simple")).toBe("gpt-5.6-terra");
+    expect(selectModelForTask("medium")).toBe("gpt-5.6-terra");
+    expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
   });
 });

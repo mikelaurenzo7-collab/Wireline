@@ -7,7 +7,6 @@ import {
   PlugZap,
   ShieldCheck,
   Target,
-  Video,
 } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
@@ -15,8 +14,6 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceBrandingSettings from "../components/settings/WorkspaceBrandingSettings";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
-import { useAccount } from "../contexts/AccountContext";
-import { isRouteAvailableForAccount } from "../lib/account-type";
 
 const customizationLinks = [
   {
@@ -27,13 +24,13 @@ const customizationLinks = [
   },
   {
     label: "Voice & knowledge",
-    detail: "Facts, documents, and tone for the voice agent.",
+    detail: "Facts, documents, and tone for your Bot.",
     href: "/knowledge",
     icon: Mic2,
   },
   {
     label: "Phone line",
-    detail: "Provision a number and attach the voice agent.",
+    detail: "Provision a number and connect it to your Bot.",
     href: "/settings/phone",
     icon: Phone,
   },
@@ -55,26 +52,9 @@ const customizationLinks = [
     href: "/insights?tab=performance&view=goals",
     icon: Target,
   },
-  {
-    label: "Identity badge",
-    detail: "In-app face for business agents. Not a live video presenter.",
-    href: "/studio/live-video",
-    icon: Video,
-    businessOnly: true,
-  },
 ] as const;
 
 export default function CustomizationSettings() {
-  const { accountType } = useAccount();
-  // Success targets lives on /insights, a business surface — offering it to a
-  // personal account lands them on a page with no nav entry and no way back.
-  // businessOnly entries (the live video add-on serves business agents) are
-  // likewise offered only in business mode.
-  const visibleLinks = customizationLinks.filter(
-    (link) =>
-      isRouteAvailableForAccount(accountType, link.href.split(/[?#]/)[0]) &&
-      (!("businessOnly" in link && link.businessOnly) || accountType === "business"),
-  );
   return (
     <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="standard">
@@ -87,7 +67,7 @@ export default function CustomizationSettings() {
         <section className="mt-8" aria-label="Customization destinations">
           <p className="wl-eyebrow wl-eyebrow--muted">Customize next</p>
           <ul className="mt-3 divide-y divide-border border-y border-border">
-            {visibleLinks.map(({ label, detail, href, icon: Icon }) => (
+            {customizationLinks.map(({ label, detail, href, icon: Icon }) => (
               <li key={href}>
                 <Link
                   to={href}

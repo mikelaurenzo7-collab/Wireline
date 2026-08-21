@@ -10,12 +10,13 @@ describe("AgentMail inbox error honesty contract", () => {
   const syncRoute = read("src/routes/email-sync-routes.ts");
 
   it("propagates IMAP failures instead of presenting an unreachable mailbox as empty", () => {
-    expect(agentMail).toMatch(
-      /log\.warn\("AgentMail inbox fetch failed", \{ email, error: getErrorMessage\(err\) \}\);\s+throw err;/,
+    const failureBlock = agentMail.slice(
+      agentMail.indexOf('log.warn("AgentMail inbox fetch failed"'),
+      agentMail.indexOf("} finally {", agentMail.indexOf('log.warn("AgentMail inbox fetch failed"')),
     );
-    expect(agentMail).not.toMatch(
-      /log\.warn\("AgentMail inbox fetch failed", \{ email, error: getErrorMessage\(err\) \}\);\s+return \[\];/,
-    );
+    expect(failureBlock).toContain("getErrorMessage(error)");
+    expect(failureBlock).toContain("throw error;");
+    expect(failureBlock).not.toContain("return [];");
   });
 
   it("requires a canonical mailbox rather than accepting a calendar-only connection", () => {

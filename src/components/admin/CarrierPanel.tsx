@@ -185,7 +185,7 @@ export function CarrierPanel({
 
           <div className="space-y-1.5">
             <label htmlFor="vapi-inbound-agent-id" className="wl-label text-foreground/55">
-              Default voice agent for unassigned Vapi rollback inbound
+              Default Phone Bot for unassigned Vapi rollback inbound
             </label>
             <p className="text-xs text-muted-foreground">
               Native Twilio + xAI SIP lines route from Phone number routing. This default applies
@@ -204,10 +204,10 @@ export function CarrierPanel({
                 id="vapi-inbound-agent-id"
                 className="h-auto w-full rounded-md border border-input bg-black/5 py-2 pl-3 text-sm text-foreground"
               >
-                <SelectValue placeholder="Oldest voice agent" />
+                <SelectValue placeholder="Oldest Bot" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CARRIER_AGENT_UNSET}>Oldest voice agent</SelectItem>
+                <SelectItem value={CARRIER_AGENT_UNSET}>Oldest Bot</SelectItem>
                 {voiceAgents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id}>
                     {agent.name}
@@ -243,8 +243,8 @@ export function CarrierPanel({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-5 text-muted-foreground">
-              Assign each customer line to one voice agent. Add campaign labels only when
-              attribution is useful.
+              Assign each customer line to its Bot. Add campaign labels only when attribution is
+              useful.
             </p>
             <ShadButton
               type="button"
@@ -266,7 +266,7 @@ export function CarrierPanel({
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
               <p className="text-sm font-semibold text-foreground">No active customer lines</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Claim a number above when the voice agent is ready.
+                Claim a number above when the Bot is ready.
               </p>
             </div>
           ) : (
@@ -312,7 +312,7 @@ export function CarrierPanel({
                         }
                       >
                         <SelectTrigger
-                          aria-label={`Assign voice agent to ${number.phone_number}`}
+                          aria-label={`Assign Bot to ${number.phone_number}`}
                           className="h-auto min-w-[150px] rounded-md border border-input bg-black/5 py-1.5 pl-2.5 text-xs text-foreground"
                         >
                           <SelectValue placeholder="Unassigned" />

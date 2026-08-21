@@ -43,7 +43,7 @@ export type AgentRoleDefinition = {
 const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
   ceo: {
     label: "Lead Agent",
-    archetype: "All-Purpose Voice Agent",
+    archetype: "All-Purpose Bot",
     description:
       "Handles sales, marketing, front desk, support, scheduling, follow-up, recovery, and personal admin under owner-controlled rules",
   },
@@ -84,10 +84,10 @@ const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
   },
   personal_assistant: {
     // Stored role value is a stable technical contract; label/archetype are
-    // customer-visible through the web, API, and mobile role listings and
-    // follow the product-language rule: "personal agent", never "assistant".
-    label: "Personal Agent",
-    archetype: "Personal Agent",
+    // customer-visible through the web, API, and mobile role listings and use
+    // the familiar job title without creating a separate account mode.
+    label: "Personal Assistant",
+    archetype: "Personal Assistant",
     description: "Protects principal time and handles personal logistics",
   },
   marketing: {

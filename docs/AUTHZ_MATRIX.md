@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 404
-**Protected:** 329
-**Public (allowlisted):** 75
+**Routes scanned:** 396
+**Protected:** 320
+**Public (allowlisted):** 76
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -20,6 +20,7 @@
 | `GET /api/auth/microsoft/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/microsoft/url` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/oauth/exchange` | Signup/login/refresh (public by definition) |
+| `GET /api/auth/providers` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/yahoo/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/yahoo/url` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/forgot-password` | Signup/login/refresh (public by definition) |
@@ -127,6 +128,7 @@
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
+| agentmail-routes.ts | POST | `/api/agents/:agentId/managed-mailbox` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/connect` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/disconnect` | inline | — | — | Protected |
 | agentmail-webhook-routes.ts | POST | `/api/webhooks/agentmail/:accountId` | — | — | yes | Public (allowlisted) |
@@ -143,6 +145,7 @@
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | POST | `/api/auth/oauth/exchange` | — | — | yes | Public (allowlisted) |
+| auth-oauth-routes.ts | GET | `/api/auth/providers` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/yahoo/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/yahoo/url` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | GET | `/api/auth/bootstrap` | inline | — | yes | Protected |
@@ -306,6 +309,9 @@
 | marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-xai-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
+| mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
+| mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |
+| mcp-coaching-settings-routes.ts | DELETE | `/api/mcp/connections` | inline | — | — | Protected |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
@@ -459,19 +465,6 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
-| video-presenter-routes-base.ts | GET | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | PATCH | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/session/settle` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
-| video-presenter-routes-base.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
-| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/disable` | inline | — | — | Protected |
-| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
-| video-presenter-routes.ts | GET | `/api/video-presenter/usage` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |

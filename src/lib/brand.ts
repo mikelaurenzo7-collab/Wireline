@@ -3,7 +3,7 @@ export const BOTBOUND_BRAND = {
   technicalNamespace: "wireline",
   // Migration detector only. Never use this value as a customer-facing brand.
   legacyName: "Wireline",
-  descriptor: "AI employees for calls, texts, and email.",
+  descriptor: "Your Bot for calls, texts, and email.",
   canonicalProductionOrigin: "https://botbound.me",
   // Transition-only origin for external systems that have not completed the
   // domain cutover yet. Product links and new registrations use BotBound.

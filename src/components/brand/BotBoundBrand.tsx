@@ -6,7 +6,7 @@ import BotBoundMark from "./BotBoundMark";
 
 export { BOTBOUND_BRAND_NAME };
 
-export type BotBoundLockupSize = "compact" | "standard" | "large";
+export type BotBoundLockupSize = "compact" | "standard" | "large" | "display";
 export type BotBoundLockupSurface = "bare" | "tile";
 
 type BotBoundWordmarkProps = {
@@ -15,7 +15,7 @@ type BotBoundWordmarkProps = {
   inline?: boolean;
 };
 
-/** Canonical customer-facing BotBound wordmark. */
+/** Canonical customer-facing BotBound wordmark. Both B glyphs stay complete. */
 export function BotBoundWordmark({
   as: Tag = "span",
   className,

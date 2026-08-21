@@ -8,7 +8,7 @@
  * Tokens are stored encrypted via secret-vault.ts and auto-refreshed
  * when within 5 minutes of expiry (Google tokens last 1 hour).
  *
- * On first use, auto-creates a "Wireline Call Log" spreadsheet in the
+ * On first use, auto-creates a "BotBound Call Log" spreadsheet in the
  * user's Google Drive with a header row + auto-formatted columns. The
  * spreadsheet ID is cached in the connection metadata so subsequent
  * appends skip the discovery step.
@@ -23,6 +23,7 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { LEGACY_WIRELINE_NAME } from "./brand";
 
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
@@ -35,7 +36,8 @@ export const GOOGLE_SHEETS_SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
 ].join(" ");
 
-const SHEET_TITLE = "Wireline Call Log";
+const SHEET_TITLE = "BotBound Call Log";
+const LEGACY_SHEET_TITLE = `${LEGACY_WIRELINE_NAME} Call Log`;
 const HEADERS = ["Logged", "Caller", "Outcome", "Details", "Agent", "Duration"];
 
 export function googleSheetsConfigured(): boolean {
@@ -219,7 +221,7 @@ async function patchMetadata(connId: string, patch: Record<string, unknown>): Pr
 }
 
 /**
- * Ensure the managed "Wireline Call Log" spreadsheet exists.
+ * Ensure the managed "BotBound Call Log" spreadsheet exists.
  * On first use, creates the spreadsheet in Google Drive with
  * formatted headers. Returns the spreadsheetId or null.
  */
@@ -230,18 +232,20 @@ async function ensureSpreadsheet(token: string, conn: SheetConnection): Promise<
 
   const auth = { Authorization: `Bearer ${token}` };
 
-  // Search for existing spreadsheet by name in Drive
+  // Prefer the canonical title while reusing a legacy workbook when present.
   try {
-    const searchRes = await fetchWithTimeout(
-      `${DRIVE_API}?q=${encodeURIComponent(`name='${SHEET_TITLE}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`)}&fields=files(id,name)`,
-      { headers: auth },
-      10_000,
-    );
-    if (searchRes.ok) {
-      const data = (await searchRes.json()) as { files?: { id: string }[] };
-      if (data.files?.[0]?.id) {
-        await patchMetadata(conn.id, { spreadsheet_id: data.files[0].id });
-        return data.files[0].id;
+    for (const title of [SHEET_TITLE, LEGACY_SHEET_TITLE]) {
+      const searchRes = await fetchWithTimeout(
+        `${DRIVE_API}?q=${encodeURIComponent(`name='${title}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`)}&fields=files(id,name)`,
+        { headers: auth },
+        10_000,
+      );
+      if (searchRes.ok) {
+        const data = (await searchRes.json()) as { files?: { id: string }[] };
+        if (data.files?.[0]?.id) {
+          await patchMetadata(conn.id, { spreadsheet_id: data.files[0].id });
+          return data.files[0].id;
+        }
       }
     }
   } catch {
@@ -271,7 +275,7 @@ async function ensureSpreadsheet(token: string, conn: SheetConnection): Promise<
                         userEnteredFormat: {
                           textFormat: { bold: true },
                           backgroundColor: { red: 0.31, green: 0.12, blue: 0.48 },
-                          // White text on Wireline mono header
+                          // White text on the BotBound header
                           foregroundColorStyle: {
                             rgbColor: { red: 1, green: 1, blue: 1 },
                           },
@@ -295,7 +299,7 @@ async function ensureSpreadsheet(token: string, conn: SheetConnection): Promise<
     if (!sheet.spreadsheetId) return null;
 
     await patchMetadata(conn.id, { spreadsheet_id: sheet.spreadsheetId });
-    log.info("Created Wireline Call Log in Google Sheets", { spreadsheetId: sheet.spreadsheetId });
+    log.info("Created BotBound Call Log in Google Sheets", { spreadsheetId: sheet.spreadsheetId });
     return sheet.spreadsheetId;
   } catch (err) {
     log.error("Google Sheets create error", { error: getErrorMessage(err) });

@@ -223,7 +223,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   async function ingest(files: FileList | File[]) {
     if (!agentId) {
-      setIngestError("Choose a voice agent before adding knowledge.");
+      setIngestError("Choose a Bot before adding knowledge.");
       return;
     }
     const picked = Array.from(files);

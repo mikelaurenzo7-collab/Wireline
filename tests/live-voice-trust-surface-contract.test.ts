@@ -45,16 +45,15 @@ describe("live voice trust surface", () => {
     }
   });
 
-  it("uses native xAI as the Studio transport with approved tool contracts", () => {
+  it("uses OpenAI Realtime as the Studio transport with approved tool contracts", () => {
     const voice = source("src/components/XAILiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
-    expect(voice).toContain('authFetch("/api/voice/live/session"');
-    expect(voice).toContain('authFetch("/api/voice/live/tool"');
-    expect(voice).toContain("response.output_audio_transcript.delta");
-    expect(voice).toContain("conversation.item.input_audio_transcription.completed");
-    expect(voice).toContain("response.function_call_arguments.done");
     expect(openai).toContain('authFetch("/api/voice/live/session"');
     expect(openai).toContain('authFetch("/api/voice/live/tool"');
+    expect(openai).toContain("response.output_audio_transcript.delta");
+    expect(openai).toContain("conversation.item.input_audio_transcription.completed");
+    expect(openai).toContain("response.function_call_arguments.done");
+    expect(voice).toContain("xai-client-secret.");
   });
 });

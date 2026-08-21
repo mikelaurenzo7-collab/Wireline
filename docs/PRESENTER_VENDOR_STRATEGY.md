@@ -330,10 +330,10 @@ Synthesia, HeyGen classic video, HeyGen Video Agent, Runway — scripted or prom
 
 ## Launch posture
 
-Until the premium catalog exists, Wireline should say:
+The current BotBound launch posture is:
 
-> Voice agents are live today. App avatars help you recognize agents while you train, review, and operate them. Professional video presence is being curated for demos, recaps, explainers, content, and custom approved likenesses.
+> BotBound identity badges help you recognize Bots while you train, review, and operate them. Live talking-head video is retired and is not offered or being prepared for launch.
 
-This protects trust while preserving the strategic path to a high-quality Presence Catalog.
+This current posture protects trust. The vendor research above remains historical evidence only.
 
 *Refresh vendor pricing and catalog quality quarterly. Promote finalized supply-chain decisions into `ARCHITECTURE.md` when the catalog abstraction lands.*

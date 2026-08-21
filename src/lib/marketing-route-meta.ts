@@ -6,11 +6,21 @@ import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
-export const HOME_DESCRIPTION = "AI employees for calls, texts, and email.";
+export const HOME_DESCRIPTION = "Your Bot for calls, texts, and email.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
   '<meta name="googlebot" content="index, follow, max-image-preview:large" />';
+
+/** Customer-facing wedge slugs; stored wedge keys remain compatibility-safe. */
+export function publicWedgeSlug(key: VerticalKey): string {
+  return key === "personal" ? "everyday" : key;
+}
+
+function wedgeKeyForPublicSlug(slug: string): VerticalKey | null {
+  if (slug === "everyday" || slug === "personal") return "personal";
+  return slug in WEDGES ? (slug as VerticalKey) : null;
+}
 
 export interface RouteMeta {
   title: string;
@@ -55,39 +65,42 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
   },
   "/about": {
-    title: "ABOUT BotBound | AI EMPLOYEES FOR CONVERSATIONS AND FOLLOW-THROUGH",
+    title: "ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH",
     description:
-      "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots.",
+      "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
   },
   "/showcase": {
-    title: "TRY BotBound | HEAR A PHONE BOT",
+    title: "TRY BOTBOUND | HEAR A PHONE BOT",
     description:
-      "Hear the Phone Bot first. Then build one for calls, text, email, and the work that should happen next.",
+      "Hear the Phone Bot first. Then wire one for calls, email, text, and the work that should happen next.",
   },
   "/blog": {
-    title: "BotBound NOTES | AI EMPLOYEE GUIDES FOR SMALL BUSINESS",
+    title: "BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS",
     description:
-      "Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoffs, and routine communication work.",
+      "Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate.",
   },
-  "/support": { title: "Support | BotBound", description: "Get help with BotBound." },
+  "/support": {
+    title: "Support | BotBound",
+    description: "Get help building, training, launching, or running a BotBound Bot.",
+  },
   "/contact": {
     title: "Contact BotBound",
-    description: "Talk to BotBound about rollout, partnerships, or support.",
+    description: "Talk to BotBound about building a Bot, a team rollout, partnerships, or support.",
   },
   "/status": {
     title: "Provider Status | BotBound",
     description:
-      "Live access checks for BotBound's managed voice control plane and reasoning runtime.",
+      "Live access checks for BotBound's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
   },
   "/security": {
     title: "Security and Compliance | BotBound",
     description:
-      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof.",
+      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
   },
   "/trust": {
     title: "Trust Center | BotBound",
     description:
-      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and security proof.",
+      "How BotBound handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
   },
   "/trust/medical": {
     title: "Trust Pack: Healthcare sensitive workflows | BotBound",
@@ -112,21 +125,22 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "DEVELOPER PORTAL | BotBound",
     description:
-      "Connect BotBound to ChatGPT, Claude, and Cursor, then continue in the same Bot workspace.",
+      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | BotBound",
-    description: "Every shipped improvement to BotBound: features, infrastructure, polish, and security.",
+    description:
+      "Every shipped improvement to BotBound: features, infrastructure, polish, security. Updated when we ship.",
   },
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for BotBound: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
+      "Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
   },
   "/terms": {
     title: "Terms of Service",
     description:
-      "BotBound terms: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law.",
+      "BotBound's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
   },
   "/solutions/sales": {
     title: "EVERY GOOD LEAD GETS A NEXT STEP | BotBound",
@@ -214,7 +228,8 @@ const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
 };
 
 export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [
-  ...Object.keys(WEDGES).map((slug) => `/for/${slug}`),
+  ...Object.keys(WEDGES).map((slug) => `/for/${publicWedgeSlug(slug as VerticalKey)}`),
+  "/for/personal",
   ...Object.keys(STATIC_ROUTE_META),
   ...Object.keys(NON_INDEXED_ROUTE_META),
 ];
@@ -226,12 +241,15 @@ export function resolveRouteMeta(pathname: string): RouteMeta | null {
   if (clean === "/") return null;
   const forMatch = clean.match(/^\/for\/([a-z-]+)$/);
   if (forMatch) {
-    const wedge = WEDGES[forMatch[1] as VerticalKey];
-    if (!wedge) return null;
+    const wedgeKey = wedgeKeyForPublicSlug(forMatch[1]);
+    if (!wedgeKey) return null;
+    const wedge = WEDGES[wedgeKey];
+    const canonicalPath = `/for/${publicWedgeSlug(wedgeKey)}`;
     return {
       title: withBrand(wedge.metaTitle),
       description: withBotBoundBrand(wedge.metaDescription),
-      canonical: `${SITE_URL}${clean}`,
+      canonical: `${SITE_URL}${canonicalPath}`,
+      ...(clean === "/for/personal" ? { noIndex: true } : {}),
     };
   }
   const staticMeta = STATIC_ROUTE_META[clean] ?? NON_INDEXED_ROUTE_META[clean];
@@ -275,12 +293,18 @@ export function injectMarketingMeta(html: string, meta: RouteMeta): string {
       /<meta property="og:url" content="[^"]*" \/>/,
       `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`,
     )
-    .replace(/<meta property="og:title" content="[^"]*" \/>/, `<meta property="og:title" content="${title}" />`)
+    .replace(
+      /<meta property="og:title" content="[^"]*" \/>/,
+      `<meta property="og:title" content="${title}" />`,
+    )
     .replace(
       /<meta property="og:description" content="[^"]*" \/>/,
       `<meta property="og:description" content="${description}" />`,
     )
-    .replace(/<meta name="twitter:title" content="[^"]*" \/>/, `<meta name="twitter:title" content="${title}" />`)
+    .replace(
+      /<meta name="twitter:title" content="[^"]*" \/>/,
+      `<meta name="twitter:title" content="${title}" />`,
+    )
     .replace(
       /<meta name="twitter:description" content="[^"]*" \/>/,
       `<meta name="twitter:description" content="${description}" />`,

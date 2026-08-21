@@ -1,5 +1,5 @@
 /**
- * Render Wireline's canonical campaign voiceover tracks.
+ * Render BotBound's canonical campaign voiceover tracks.
  *
  * Scope: marketing and reference use only. Production phone-call speech uses
  * the managed voice runtime and never reads campaign assets. Generated audio
@@ -9,14 +9,25 @@
  *   ELEVENLABS_API_KEY=... node scripts/generate-campaign-vo.mjs [--force] [--voice <id>]
  *   XAI_API_KEY=... node scripts/generate-campaign-vo.mjs --engine xai [--force]
  */
+import { createHash } from "node:crypto";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { audioProvenanceMatches, writeAudioProvenance } from "./lib/audio-provenance.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const OUTPUT_DIR = resolve(REPO_ROOT, "official-assets/audio");
 const ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
+const ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_128";
+const ELEVENLABS_VOICE_SETTINGS = {
+  stability: 0.5,
+  similarity_boost: 0.75,
+  style: 0,
+  use_speaker_boost: true,
+};
+const XAI_OUTPUT_FORMAT = { codec: "mp3", sample_rate: 44_100, bit_rate: 128_000 };
+const DURATION_RETRY_POLICY = { maxAttempts: 4, speedStep: 0.03, maxSpeed: 1.2 };
 
 /** Curated Studio voice that customers can also use on the production runtime. */
 export const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
@@ -34,7 +45,7 @@ export const CAMPAIGN_VO = [
     targetSeconds: 15,
     speed: 1.07,
     maxSeconds: 15,
-    text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.",
+    text: "Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.",
   },
   {
     id: "ai-voice-agent-30s",
@@ -48,19 +59,62 @@ export const CAMPAIGN_VO = [
     file: "wireline-founder-60s.mp3",
     targetSeconds: 60,
     speed: 0.8,
-    text: "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan.",
-  },
-  {
-    id: "live-video-25s",
-    file: "wireline-live-video-25s.mp3",
-    targetSeconds: 25,
-    speed: 1,
-    text: "Some conversations deserve a face. Turn on Live Video and your voice agent joins on screen using the same Training, operating rules, and approved knowledge. Add it to a paid business agent for nineteen dollars a month.",
+    text: "I built BotBound because calls are still where real work happens, and they are still too easy to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a Bot of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Front desk, sales, support, or any role you define. One Bot, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a dedicated production number for every active paid Bot.",
   },
 ];
 
 export function speakable(text) {
-  return text.replace(/trywireline\.com/gi, "try wireline dot com");
+  return text.replace(/botbound\.me/gi, "bot bound dot me");
+}
+
+const RETIRED_PUBLIC_BRAND = /\bWireline\b|trywireline\.com/i;
+
+export function assertBotBoundCampaignText(text, id = "campaign track") {
+  if (RETIRED_PUBLIC_BRAND.test(text)) {
+    throw new Error(`${id} still contains retired public branding.`);
+  }
+}
+
+export function campaignTrackFingerprint({ track, engine, voiceId }) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        version: 2,
+        engine,
+        voiceId,
+        track: {
+          id: track.id,
+          text: speakable(track.text),
+          targetSeconds: track.targetSeconds,
+          maxSeconds: track.maxSeconds ?? null,
+          baseSpeed: track.speed ?? 1,
+        },
+        rendering:
+          engine === "xai"
+            ? {
+                endpoint: "https://api.x.ai/v1/tts",
+                language: "en",
+                outputFormat: XAI_OUTPUT_FORMAT,
+                textNormalization: true,
+              }
+            : {
+                model: ELEVENLABS_MODEL_ID,
+                outputFormat: ELEVENLABS_OUTPUT_FORMAT,
+                voiceSettings: ELEVENLABS_VOICE_SETTINGS,
+              },
+        durationParser: "mpeg1-layer3-cbr-v1",
+        retryPolicy: track.maxSeconds ? DURATION_RETRY_POLICY : { maxAttempts: 1 },
+      }),
+    )
+    .digest("hex");
+}
+
+export function campaignTrackFingerprintFromProvenance({ track, expectedEngine, provenance }) {
+  const voiceId = typeof provenance?.voice_id === "string" ? provenance.voice_id.trim() : "";
+  if (provenance?.track_id !== track.id || provenance?.engine !== expectedEngine || !voiceId) {
+    throw new Error(`${track.id} provenance does not match its campaign track and engine.`);
+  }
+  return campaignTrackFingerprint({ track, engine: expectedEngine, voiceId });
 }
 
 /**
@@ -106,6 +160,24 @@ export function mp3DurationSeconds(buffer) {
   return seconds;
 }
 
+export function assertGeneratedMp3(buffer, contentType, label = "Generated audio") {
+  const mimeType = String(contentType || "")
+    .split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (mimeType !== "audio/mpeg" && mimeType !== "audio/mp3") {
+    throw new Error(`${label} returned ${mimeType || "no content type"}, not MP3 audio.`);
+  }
+  if (!Buffer.isBuffer(buffer) || buffer.length < 1_024) {
+    throw new Error(`${label} returned an implausibly small MP3 payload.`);
+  }
+  const seconds = mp3DurationSeconds(buffer);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    throw new Error(`${label} returned no valid MP3 frames.`);
+  }
+  return seconds;
+}
+
 function parseArgs() {
   const argv = process.argv.slice(2);
   const engineIndex = argv.indexOf("--engine");
@@ -120,17 +192,13 @@ function parseArgs() {
     engine,
     force: argv.includes("--force"),
     voiceId:
-      voiceIndex >= 0
-        ? argv[voiceIndex + 1]
-        : engine === "xai"
-          ? XAI_VOICE_ID
-          : DEFAULT_VOICE_ID,
+      voiceIndex >= 0 ? argv[voiceIndex + 1] : engine === "xai" ? XAI_VOICE_ID : DEFAULT_VOICE_ID,
   };
 }
 
 async function renderElevenLabs({ apiKey, voiceId, text, speed }) {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${ELEVENLABS_OUTPUT_FORMAT}`,
     {
       method: "POST",
       headers: {
@@ -142,10 +210,7 @@ async function renderElevenLabs({ apiKey, voiceId, text, speed }) {
         text,
         model_id: ELEVENLABS_MODEL_ID,
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0,
-          use_speaker_boost: true,
+          ...ELEVENLABS_VOICE_SETTINGS,
           speed,
         },
       }),
@@ -157,7 +222,9 @@ async function renderElevenLabs({ apiKey, voiceId, text, speed }) {
     throw new Error(`ElevenLabs returned ${response.status}: ${detail}`);
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const audio = Buffer.from(await response.arrayBuffer());
+  assertGeneratedMp3(audio, response.headers.get("content-type"), "ElevenLabs TTS");
+  return audio;
 }
 
 async function renderXai({ apiKey, voiceId, text, speed }) {
@@ -172,7 +239,7 @@ async function renderXai({ apiKey, voiceId, text, speed }) {
       text,
       voice_id: voiceId,
       language: "en",
-      output_format: { codec: "mp3", sample_rate: 44_100, bit_rate: 128_000 },
+      output_format: XAI_OUTPUT_FORMAT,
       ...(speed !== 1 ? { speed: Math.min(1.5, Math.max(0.7, speed)) } : {}),
       text_normalization: true,
     }),
@@ -183,7 +250,9 @@ async function renderXai({ apiKey, voiceId, text, speed }) {
     throw new Error(`xAI TTS returned ${response.status}: ${detail}`);
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const audio = Buffer.from(await response.arrayBuffer());
+  assertGeneratedMp3(audio, response.headers.get("content-type"), "xAI TTS");
+  return audio;
 }
 
 async function outputExists(path) {
@@ -197,7 +266,7 @@ async function outputExists(path) {
 async function renderTrack({ track, render, apiKey, voiceId }) {
   const text = speakable(track.text);
   const words = text.split(/\s+/).filter(Boolean).length;
-  const maxAttempts = track.maxSeconds ? 4 : 1;
+  const maxAttempts = track.maxSeconds ? DURATION_RETRY_POLICY.maxAttempts : 1;
   let speed = track.speed ?? 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -218,7 +287,10 @@ async function renderTrack({ track, render, apiKey, voiceId }) {
       );
     }
 
-    speed = Math.min(1.2, Math.round((speed + 0.03) * 100) / 100);
+    speed = Math.min(
+      DURATION_RETRY_POLICY.maxSpeed,
+      Math.round((speed + DURATION_RETRY_POLICY.speedStep) * 100) / 100,
+    );
   }
 
   throw new Error(`${track.id} could not be rendered.`);
@@ -226,6 +298,7 @@ async function renderTrack({ track, render, apiKey, voiceId }) {
 
 async function main() {
   const { engine, force, voiceId } = parseArgs();
+  for (const track of CAMPAIGN_VO) assertBotBoundCampaignText(track.text, track.id);
   const apiKey = engine === "xai" ? process.env.XAI_API_KEY : process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     throw new Error(`${engine === "xai" ? "XAI_API_KEY" : "ELEVENLABS_API_KEY"} is not set.`);
@@ -237,14 +310,27 @@ async function main() {
 
   for (const track of CAMPAIGN_VO) {
     const outputPath = resolve(outputDir, track.file);
+    const fingerprint = campaignTrackFingerprint({ track, engine, voiceId });
     if (!force && (await outputExists(outputPath))) {
-      console.log(`[campaign-vo] ${track.file} exists. Use --force to regenerate.`);
-      continue;
+      if (await audioProvenanceMatches(outputPath, fingerprint)) {
+        console.log(`[campaign-vo] ${track.file} matches current copy; reusing it.`);
+        continue;
+      }
+      throw new Error(
+        `${track.file} exists without a matching copy fingerprint. Review the current BotBound script, then regenerate with --force.`,
+      );
     }
 
     const { audio, seconds } = await renderTrack({ track, render, apiKey, voiceId });
     await writeFile(outputPath, audio);
-    console.log(`[campaign-vo] wrote ${outputPath} (${audio.length} bytes, ${seconds.toFixed(2)}s)`);
+    await writeAudioProvenance(outputPath, fingerprint, audio, {
+      track_id: track.id,
+      engine,
+      voice_id: voiceId,
+    });
+    console.log(
+      `[campaign-vo] wrote ${outputPath} (${audio.length} bytes, ${seconds.toFixed(2)}s)`,
+    );
   }
 
   console.log("[campaign-vo] Done. official-assets/ is gitignored; do not commit generated audio.");

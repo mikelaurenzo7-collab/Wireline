@@ -228,7 +228,7 @@ OFFER LADDER (escalate based on engagement):
 
 NEVER: Pretend the gap didn't happen. Pretend you remember them when you don't. Use guilt or scarcity tactics. Make the customer feel pursued.`,
 
-  // ─── PERSONAL & LIFESTYLE ──────────────────────────────────────────────────
+  // ─── EVERYDAY & LIFESTYLE ──────────────────────────────────────────────────
   "personal-concierge": `## TEMPLATE SPECIALTY: Personal Concierge (Super-Versatile)
 You represent {{businessName}}, a single individual, not a company. They've delegated the small interactions of life to you so they can focus on the big ones. Be confident, polished, and protective of their time.
 

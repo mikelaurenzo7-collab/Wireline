@@ -73,7 +73,7 @@ export const FOUNDER_PRODUCTS = [
   },
   {
     key: "enterprise",
-    name: "BotBound Business",
+    name: "BotBound Scale",
     description:
       "Up to 15 live Bots, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
@@ -92,7 +92,7 @@ export const FOUNDER_PRODUCTS = [
   },
   {
     key: "scale",
-    name: "BotBound Scale & Enterprise",
+    name: "BotBound Enterprise",
     description:
       "Custom plan for 25+ Bots with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
     defaultPriceKey: null,
@@ -216,7 +216,7 @@ export const FOUNDER_PRICES = [
   {
     key: "enterprise_monthly_founder_2026_07_v6",
     productKey: "enterprise",
-    nickname: "BotBound Business — Founder Monthly v6",
+    nickname: "BotBound Scale — Founder Monthly v6",
     lookupKey: "enterprise_monthly_founder_2026_07_v6",
     unitAmount: 15900,
     recurring: { interval: "month", usage_type: "licensed" },
@@ -230,7 +230,7 @@ export const FOUNDER_PRICES = [
   {
     key: "enterprise_annual_founder_2026_07_v6",
     productKey: "enterprise",
-    nickname: "BotBound Business — Founder Annual v6",
+    nickname: "BotBound Scale — Founder Annual v6",
     lookupKey: "enterprise_annual_founder_2026_07_v6",
     unitAmount: 159000,
     recurring: { interval: "year", usage_type: "licensed" },

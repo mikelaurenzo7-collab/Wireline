@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/routes/call-ops-metrics-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
+const overview = readFileSync("src/components/CallOpsOverview.tsx", "utf8");
 const callOps = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
 
 describe("Call Ops operational truth", () => {
@@ -43,17 +44,19 @@ describe("Call Ops operational truth", () => {
   });
 
   it("uses exact KPI aggregates without coupling metric availability to the call feed", () => {
-    expect(callOps).toContain("type CallOpsMetrics = {");
-    expect(callOps).toContain("/api/call-ops/metrics?since=");
-    expect(callOps).toContain("setMetricsError(true)");
-    expect(callOps).toContain('label: "Today", value: metrics?.today ?? 0');
-    expect(callOps).toContain('label: "Pending", value: metrics?.pending ?? 0');
-    expect(callOps).toContain('label: "Agents", value: metrics?.agents ?? 0');
-    expect(callOps).toContain('label: "Escalations", value: metrics?.escalations ?? 0');
-    expect(callOps).toContain('metricsLoading || metricsError ? "N/A" : kpi.value');
-    expect(callOps).toContain('authFetch("/api/calls?limit=100&offset=0")');
-    expect(callOps).not.toContain("emitProductEventOnce");
-    expect(callOps).not.toContain('event: "outcome_reviewed"');
-    expect(callOps).not.toContain("const fleet = useMemo");
+    expect(overview).toContain("type CallOpsMetrics = {");
+    expect(overview).toContain("/api/call-ops/metrics?since=");
+    expect(overview).toContain("setMetricsError(true)");
+    expect(overview).toContain('label: "Today", value: metrics?.today ?? 0');
+    expect(overview).toContain('label: "Pending", value: metrics?.pending ?? 0');
+    expect(overview).toContain('label: "Bots", value: metrics?.agents ?? 0');
+    expect(overview).toContain('label: "Escalations", value: metrics?.escalations ?? 0');
+    expect(overview).toContain('metricsLoading || metricsError ? "N/A" : kpi.value');
+    expect(overview).toContain("No missing count is shown as zero.");
+    expect(overview).toContain("<CallOpsAnalytics />");
+    expect(callOps).not.toContain("/api/call-ops/metrics");
+    expect(overview).not.toContain("emitProductEventOnce");
+    expect(overview).not.toContain('event: "outcome_reviewed"');
+    expect(overview).not.toContain("const fleet = useMemo");
   });
 });

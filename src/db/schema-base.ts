@@ -21,7 +21,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0155_hot_path_knowledge_and_jobs_indexes.sql`.
+// `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -29,7 +29,7 @@ import { relations, sql } from "drizzle-orm";
 
 /**
  * A user can own one or two accounts — a personal account (single agent,
- * streamlined UI) and/or a business account (AI employees, Studio command
+ * streamlined UI) and/or a legacy business account (shared workspace defaults, Studio command
  * surfaces, outbound pipeline). The first account type created at signup becomes the
  * "primary" account. Agents, settings, and billing scope to an account,
  * not directly to a user.
@@ -145,8 +145,9 @@ export const settings = pgTable("wireline_settings", {
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  voiceLlmProvider: text("voice_llm_provider").default("xai"),
-  voiceLlmModel: text("voice_llm_model").default("grok-4.6"),
+  /** Rollback-only Vapi language-model pair; not the structured-runtime default. */
+  voiceLlmProvider: text("voice_llm_provider").default("openai"),
+  voiceLlmModel: text("voice_llm_model").default("gpt-4o"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),

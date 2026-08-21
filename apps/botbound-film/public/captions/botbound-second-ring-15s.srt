@@ -1,0 +1,43 @@
+1
+00:00:00,000 --> 00:00:00,700
+[Phone ringing]
+
+2
+00:00:00,700 --> 00:00:01,200
+Your hands are full. The phone still rings.
+
+3
+00:00:01,200 --> 00:00:02,350
+[Second phone ring; connection chime]
+
+4
+00:00:02,350 --> 00:00:04,300
+The second ring. That’s where BotBound begins.
+
+5
+00:00:04,400 --> 00:00:05,600
+BotBound answers.
+
+6
+00:00:05,600 --> 00:00:06,900
+On-brand. On the second ring. Ready to help.
+
+7
+00:00:06,900 --> 00:00:08,100
+“Thanks for calling Northstar Bakery. How can I help?”
+
+8
+00:00:08,200 --> 00:00:09,500
+Booked. Confirmed. Logged.
+
+9
+00:00:09,500 --> 00:00:11,200
+Appointment booked. Confirmation sent. Owner updated.
+
+10
+00:00:12,000 --> 00:00:13,600
+BotBound. Never miss the call that matters.
+
+11
+00:00:13,600 --> 00:00:14,900
+botbound.me

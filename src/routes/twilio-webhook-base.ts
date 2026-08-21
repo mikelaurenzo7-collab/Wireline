@@ -106,7 +106,7 @@ function failoverVoicemailTwiml(
   compliance: FailoverCompliance = { complianceMode: null, businessName: null },
 ): string {
   const context = includeOutageContext
-    ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
+    ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
     : "";
 
   const recordingEnabled =
@@ -172,7 +172,7 @@ async function resolveFailoverCompliance(to: string | null): Promise<FailoverCom
 
 function publicAssetUrl(pathname: string): string {
   const canonical = resolveCanonicalAppUrl();
-  const baseUrl = "error" in canonical ? "https://trywireline.com" : canonical.url;
+  const baseUrl = "error" in canonical ? "https://botbound.me" : canonical.url;
   return new URL(pathname, `${baseUrl.replace(/\/+$/, "")}/`).toString();
 }
 
@@ -346,7 +346,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         .status(200)
         .send(
           twimlReply(
-            "Wireline SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
+            "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
           ),
         );
     }
@@ -473,7 +473,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   if (fallbackNumber) {
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
+    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
     twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
     twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
@@ -595,7 +595,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         });
         const notification = await sendEmail({
           to: owner.email,
-          subject: "Wireline: voicemail left during call failover",
+          subject: "BotBound: voicemail left during call failover",
           ...voicemailEmail,
           idempotencyKey: `voicemail-failover/${recordingKey}`,
         });
@@ -728,18 +728,26 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     return res.status(200).send(twimlHangup());
   }
 
-  const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
   const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+  const approvedJingleUrl =
+    process.env.BOTBOUND_JINGLE_ASSET_APPROVED === "true"
+      ? publicAssetUrl("/sounds/botbound-jingle.mp3")
+      : null;
 
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
+  // The retired launch jingle names the previous product in its audio. Keep
+  // the public demo honest during the BotBound cutover: use provider speech
+  // until the BotBound recording has been generated, listened to, and approved.
+  twiml += approvedJingleUrl
+    ? `  <Play>${escapeTwimlValue(approvedJingleUrl)}</Play>\n`
+    : `  <Say voice="Polly.Joanna-Neural">Welcome to BotBound. Meet Mira, our playful front desk Bot.</Say>\n`;
   if (sipUri) {
     // Twilio <Dial> defaults to a four-hour maximum. A five-minute demo cap and
     // short ring timeout prevent a forgotten/abusive public call from turning
     // into an unbounded Twilio + Vapi session.
     twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
-    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
   }
   twiml += `</Response>`;

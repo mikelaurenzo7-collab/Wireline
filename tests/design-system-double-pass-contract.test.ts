@@ -53,7 +53,7 @@ describe("WIRELINE design-system double-pass contract", () => {
     const spendBoundary = read("tests/credential-and-spend-boundary-contract.test.ts");
 
     expect(retiredPage).toContain('<Navigate to="/studio" replace />');
-    expect(retiredPage).not.toContain('import AgentFace from');
+    expect(retiredPage).not.toContain("import AgentFace from");
     expect(retiredPage).not.toContain("<AgentFace");
     expect(presenter).toContain('import BotMark from "./BotMark"');
     expect(presenter).toContain("<BotMark");
@@ -63,8 +63,10 @@ describe("WIRELINE design-system double-pass contract", () => {
 
     // Security/spend auditing must prove the real retirement boundary rather
     // than requiring a retired face symbol to remain in source as a sentinel.
-    expect(spendBoundary).toContain("retired Live Video does not load a presenter SDK or session path");
-    expect(spendBoundary).toContain('page).toContain(\'<Navigate to="/studio" replace />\')');
+    expect(spendBoundary).toContain(
+      "retired Live Video does not load a presenter SDK or session path",
+    );
+    expect(spendBoundary).toContain("page).toContain('<Navigate to=\"/studio\" replace />')");
     expect(spendBoundary).toContain('page).not.toContain("@heygen/liveavatar-web-sdk")');
     expect(spendBoundary).not.toContain('expect(page).toContain("AgentFace")');
   });
@@ -86,7 +88,7 @@ describe("WIRELINE design-system double-pass contract", () => {
     const botMark = read("src/lib/bot-mark.ts");
 
     expect(vision).toContain(
-      "Bot identity is a role-agnostic WIRELINE signal signature; status colors communicate state only.",
+      "Bot identity is a role-agnostic BotBound signal signature; status colors communicate state only.",
     );
     expect(refinement).toContain('.wl-rail-agent-link[aria-current="page"]');
     expect(botMark).toContain("BOT_MARK_GRADIENT_CAPACITY = 1_048_576");
@@ -100,8 +102,9 @@ describe("WIRELINE design-system double-pass contract", () => {
     // up to 100 additional Bots, so 115 is the largest standard catalog roster.
     const standardCommercialCeiling = 115;
     const signatures = new Set(
-      Array.from({ length: standardCommercialCeiling }, (_, index) =>
-        botMarkFor({ seed: `commercial-slot:${index + 1}` }).gradientSignature,
+      Array.from(
+        { length: standardCommercialCeiling },
+        (_, index) => botMarkFor({ seed: `commercial-slot:${index + 1}` }).gradientSignature,
       ),
     );
 
@@ -120,7 +123,7 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(demo).toContain("Bot mark");
   });
 
-  it("keeps WIRELINE uppercase as one cross-platform visual brand while technical wireline stays data", () => {
+  it("keeps BotBound as one cross-platform visual brand while technical wireline stays data", () => {
     const brand = read("src/components/brand/WirelineBrand.tsx");
     const identity = read("src/styles/brand-identity.css");
     const webManifest = read("public/site.webmanifest");
@@ -129,21 +132,21 @@ describe("WIRELINE design-system double-pass contract", () => {
     const iosWidgetInfo = read("ios/WirelineWidgets/Info.plist");
     const androidStrings = read("android/app/src/main/res/values/strings.xml");
 
-    expect(brand).toContain('WIRELINE_BRAND_NAME = "WIRELINE"');
-    expect(brand).toContain("WirelineLockup");
-    expect(brand).toContain("WirelineWordmark");
-    expect(identity).toContain("the visible company name is always WIRELINE");
-    expect(identity).toContain("--wl-lockup-mark-width");
-    expect(identity).toContain("--wl-lockup-wordmark-size");
+    expect(brand).toContain("BOTBOUND_BRAND_NAME as WIRELINE_BRAND_NAME");
+    expect(brand).toContain("BotBoundLockup as WirelineLockup");
+    expect(brand).toContain("BotBoundWordmark as WirelineWordmark");
+    expect(identity).toContain("Customer-visible identity is BotBound");
+    expect(identity).toContain("--bb-lockup-mark");
+    expect(identity).toContain("--bb-lockup-wordmark-size");
 
-    expect(webManifest).toContain('"short_name": "WIRELINE"');
-    expect(extensionManifest).toContain('"name": "WIRELINE Command"');
-    expect(iosInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/);
-    expect(iosWidgetInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>WIRELINE<\/string>/);
-    expect(androidStrings).toContain('<string name="app_name">WIRELINE</string>');
+    expect(webManifest).toContain('"short_name": "BotBound"');
+    expect(extensionManifest).toContain('"name": "BotBound Command"');
+    expect(iosInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>BotBound<\/string>/);
+    expect(iosWidgetInfo).toMatch(/<key>CFBundleDisplayName<\/key>\s*<string>BotBound<\/string>/);
+    expect(androidStrings).toContain('<string name="app_name">BotBound</string>');
 
     // The brand law does not mutate technical identifiers into cosmetic casing.
-    expect(extensionManifest).toContain('"homepage_url": "https://trywireline.com"');
+    expect(extensionManifest).toContain('"homepage_url": "https://botbound.me"');
     expect(iosInfo).toContain("<string>wireline</string>");
   });
 });

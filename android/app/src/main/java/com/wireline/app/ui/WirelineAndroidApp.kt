@@ -383,15 +383,9 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
 private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, Boolean) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("scheduler") }
-    var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
     val choices = state.agentRoles.takeIf { it.isNotEmpty() }?.map { it.id to it.label }
         ?: listOf("scheduler" to "Appointment setter", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("ROLE CONTEXT", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            FilterChip(selected = !isBusinessAgent, onClick = { isBusinessAgent = false }, label = { Text("PERSONAL ROLE") }, modifier = Modifier.weight(1f))
-            FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("BUSINESS ROLE") }, modifier = Modifier.weight(1f))
-        }
         Text("NEW BOT", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
         Text("Choose a role starter and name your Bot. Voice, live conversation, text, email, knowledge, tools, and outcomes stay in the same workspace.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("BOT NAME") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
@@ -403,14 +397,15 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
             choices.chunked(2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     row.forEach { (value, label) ->
-                        FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label.uppercase(), maxLines = 1) }, modifier = Modifier.weight(1f))
+                        val customerLabel = if (value == "personal_assistant") "Assistant" else label
+                        FilterChip(selected = role == value, onClick = { role = value }, label = { Text(customerLabel.uppercase(), maxLines = 1) }, modifier = Modifier.weight(1f))
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
         ErrorText(state.error)
-        Button(onClick = { onCreate(name, role, isBusinessAgent) }, enabled = name.isNotBlank() && !state.isWorking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
+        Button(onClick = { onCreate(name, role, role != "personal_assistant") }, enabled = name.isNotBlank() && !state.isWorking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
             if (state.isWorking) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) else {
                 Icon(Icons.Default.Add, contentDescription = "CREATE BOT")
                 Spacer(Modifier.width(8.dp))

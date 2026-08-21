@@ -18,9 +18,13 @@ function withoutComments(source: string): string {
 }
 
 const customerSurfacePatterns = [
+  "src/*.tsx",
   "src/components/**/*.tsx",
+  "src/contexts/**/*.tsx",
   "src/pages/**/*.tsx",
   "src/data/**/*.ts",
+  "src/entrypoints/**/*.ts",
+  "src/hooks/**/*.ts",
   "src/lib/**/*.ts",
   "src/routes/**/*.ts",
   "api/**/*.ts",
@@ -32,20 +36,23 @@ const customerSurfacePatterns = [
   "ios/Wireline/Info.plist",
   "ios/WirelineWidgets/**/*.{swift,plist}",
   "public/**/*.{html,json,svg,xml,txt}",
+  "chatgpt-app-submission.json",
+  "claude-connector-submission.json",
   "index.html",
+  "plugin.json",
   "server.ts",
 ] as const;
 
 const compatibilityLinePatterns = [
   /legacyName:\s*"Wireline"/,
-  /X-Wireline-Key/,
-  /X-Wireline-Token/,
-  /X-Wireline-Signature/,
-  /X-Wireline-Demo-Max-Seconds/,
   /command@wireline\.com/,
   /https:\/\/github\.com\/mikelaurenzo7-collab\/Wireline/,
   /trywireline\.com/i,
 ] as const;
+
+function withoutStableHeaderTokens(line: string): string {
+  return line.replace(/X-Wireline-[A-Za-z-]+/g, "");
+}
 
 function isInternalLogLine(line: string): boolean {
   return /\b(?:log|logger|auditLogger)\.(?:debug|info|warn|error)\s*\(/.test(line);
@@ -54,13 +61,10 @@ function isInternalLogLine(line: string): boolean {
 function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/brand-text.ts") return true;
   if (path === "src/lib/google-sheets-service.ts") {
-    return /const SHEET_TITLE = "Wireline Call Log"/.test(line);
+    return /LEGACY_(?:SHEET_TITLE|WIRELINE_NAME)/.test(line);
   }
   if (path === "src/lib/microsoft-graph-service.ts") {
-    return /const EXCEL_FILE_NAME = "Wireline Call Log\.xlsx"/.test(line);
-  }
-  if (path === "src/lib/agent-capabilities.ts" || path === "src/lib/vapi-helpers.ts") {
-    return /Wireline Call Log/.test(line);
+    return /LEGACY_(?:EXCEL_FILE_NAME|WIRELINE_NAME)/.test(line);
   }
   if (path === "src/lib/voice/xai-sip-config.ts") {
     return /XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
@@ -101,14 +105,20 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /\/\/ Wireline policy: always disclose recording\./.test(line);
   }
   if (path === "src/lib/stripe-helpers.ts") {
-    return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
-      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
+    return (
+      /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
+      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line)
+    );
   }
   if (path === "src/lib/ai-brains.ts") {
-    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(line);
+    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(
+      line,
+    );
   }
   if (path === "src/lib/env-validator.ts") {
-    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(line);
+    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(
+      line,
+    );
   }
   if (path === "src/lib/launch-readiness.ts") {
     return /Launch hard gate is on and Wireline is not launch-ready/.test(line);
@@ -119,14 +129,7 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/routes/agent-routes-v2.ts") {
     return /You are the Wireline Configuration Engine/.test(line);
   }
-  if (path === "src/lib/openapi-spec.ts") return true;
   if (path === "src/lib/showcase-assistant.ts") return true;
-  if (
-    path === "src/routes/chatgpt-mcp-account-routes.ts" ||
-    path === "src/routes/chatgpt-mcp-routes.ts"
-  ) {
-    return true;
-  }
   return false;
 }
 
@@ -138,20 +141,37 @@ function isCompatibilityOnlyLine(path: string, line: string): boolean {
   );
 }
 
-function visibleWirelineLeaks(path: string): string[] {
-  const source = withoutComments(read(path));
+function visibleWirelineLeaksInSource(path: string, rawSource: string): string[] {
+  const source = withoutComments(rawSource);
   const lines = source.split("\n");
   const leaks: string[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (!/\bWireline\b/.test(line)) continue;
-    if (isCompatibilityOnlyLine(path, line)) continue;
+    const scannableLine = withoutStableHeaderTokens(line);
+    if (!/\bWireline\b/.test(scannableLine)) continue;
+    if (isCompatibilityOnlyLine(path, scannableLine)) continue;
     leaks.push(`${path}:${index + 1} ${line.trim().replace(/\s+/g, " ").slice(0, 210)}`);
   }
   return leaks;
 }
 
+function visibleWirelineLeaks(path: string): string[] {
+  return visibleWirelineLeaksInSource(path, read(path));
+}
+
 describe("BotBound visible-brand sweep", () => {
+  it("strips stable header tokens without hiding retired display copy on the same line", () => {
+    expect(
+      visibleWirelineLeaksInSource(
+        "synthetic.ts",
+        'const header = "X-Wireline-Key"; const title = "Wireline API";',
+      ),
+    ).toHaveLength(1);
+    expect(
+      visibleWirelineLeaksInSource("synthetic.ts", 'const header = "X-Wireline-Key";'),
+    ).toEqual([]);
+  });
+
   it("does not leak the retired standalone Wireline customer name through web, native, static, API, or delivered text", () => {
     const files = customerSurfacePatterns
       .flatMap((pattern) => globSync(pattern, { cwd: root }))
@@ -187,8 +207,12 @@ describe("BotBound visible-brand sweep", () => {
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "BotBound Starter"');
     expect(catalog).not.toContain('name: "Wireline Starter"');
-    expect(sheets).toContain('const SHEET_TITLE = "Wireline Call Log"');
-    expect(graph).toContain('const EXCEL_FILE_NAME = "Wireline Call Log.xlsx"');
+    expect(sheets).toContain('const SHEET_TITLE = "BotBound Call Log"');
+    expect(sheets).toContain("const LEGACY_SHEET_TITLE = `${LEGACY_WIRELINE_NAME} Call Log`");
+    expect(graph).toContain('const EXCEL_FILE_NAME = "BotBound Call Log.xlsx"');
+    expect(graph).toContain(
+      "const LEGACY_EXCEL_FILE_NAME = `${LEGACY_WIRELINE_NAME} Call Log.xlsx`",
+    );
     expect(androidTheme).toContain('name="Theme.Wireline"');
   });
 
@@ -249,12 +273,14 @@ describe("BotBound visible-brand sweep", () => {
     const identity = withoutComments(read("src/styles/brand-identity.css"));
 
     for (const weight of [500, 600, 700]) {
-      expect(fonts).toContain(`font-family: 'Inter Tight';\n  font-style: normal;\n  font-weight: ${weight};`);
+      expect(fonts).toContain(
+        `font-family: 'Inter Tight';\n  font-style: normal;\n  font-weight: ${weight};`,
+      );
     }
     expect(typography).not.toMatch(/\.wl-display-[1-4]\s*\{[^}]*font-weight:\s*400/s);
     expect(typography).toMatch(/\.wl-display-1\s*\{[^}]*font-weight:\s*500/s);
     expect(typography).toMatch(/\.wl-display-3\s*\{[^}]*font-weight:\s*600/s);
     expect(typography).toMatch(/\.wl-page-title\s*\{[^}]*font-weight:\s*700/s);
-    expect(identity).toMatch(/\.bb-wordmark\s*\{[^}]*font-weight:\s*700/s);
+    expect(identity).toMatch(/\.bb-wordmark\s*\{[^}]*font-weight:\s*800/s);
   });
 });

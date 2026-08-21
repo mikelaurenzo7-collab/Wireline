@@ -5,11 +5,7 @@ import * as schema from "../../db/schema";
 import { drizzle, log } from "../../lib/server-context";
 import { isOwnerRoutingShowcaseTool } from "../../lib/showcase-assistant";
 import { sanitizePhone } from "../../lib/vapi-helpers";
-import {
-  handleCreateAccount,
-  handleSendPaymentLink,
-  handleSendSignupLink,
-} from "../../lib/vapi-tool-handlers";
+import { handleSendPaymentLink, handleSendSignupLink } from "../../lib/vapi-tool-handlers";
 import { normalizeVapiToolCalls } from "../../lib/vapi-tool-call-utils";
 
 export type ShowcaseCallContext = {
@@ -148,21 +144,6 @@ export async function handleShowcaseToolCalls(args: {
           extraCustomerInfo: { to_email: toolArgs.to_email, tool_result: result.slice(0, 500) },
         }).catch(() => false);
       }
-      results.push({ toolCallId: toolCall.id, result });
-      continue;
-    }
-
-    if (toolName === "create_account") {
-      const { authService } = await import("../../lib/auth-service");
-      const { sendPasswordResetEmail } = await import("../../lib/email-service");
-      const crypto = await import("crypto");
-      const { result } = await handleCreateAccount(toolArgs, {
-        signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
-        createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
-        sendPasswordResetEmail,
-        randomPassword: () => crypto.randomBytes(24).toString("base64url"),
-        log,
-      });
       results.push({ toolCallId: toolCall.id, result });
       continue;
     }

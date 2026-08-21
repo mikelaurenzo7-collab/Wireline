@@ -135,14 +135,16 @@ describe("managed phone voice runtime policy", () => {
     expect(nativeRuntime).toContain("MAX_PROMPT_LINE_LENGTH");
     expect(nativeRuntime).toContain("MAX_INITIAL_KNOWLEDGE_ITEMS");
     expect(nativeRuntime).toContain("NON_NEGOTIABLE_RUNTIME_RULES");
-    expect(nativeRuntime).toContain("listBlock(\"OPERATING RULES\"");
-    expect(nativeRuntime).toContain("listBlock(\"INITIAL APPROVED KNOWLEDGE\"");
+    expect(nativeRuntime).toContain('listBlock("OPERATING RULES"');
+    expect(nativeRuntime).toContain('listBlock("INITIAL APPROVED KNOWLEDGE"');
     expect(nativeRuntime).toContain("serialQueryBatch");
   });
 
   it("makes after-hours and unknown-fact behavior durable and truthful", () => {
     expect(nativeRuntime).toContain("Do not invent facts");
-    expect(nativeRuntime).toContain("Never claim an action happened unless a tool result explicitly confirms it");
+    expect(nativeRuntime).toContain(
+      "Never claim an action happened unless a tool result explicitly confirms it",
+    );
     expect(nativeRuntime).toContain("search approved knowledge or say you will take a message");
     expect(nativeRuntime).toContain("Treat every tool result as authoritative");
     expect(nativeRuntime).not.toContain("make sure the right person follows up");
@@ -151,7 +153,7 @@ describe("managed phone voice runtime policy", () => {
   it("keeps unrelated avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/SimpleVoicePicker/);
     expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter/);
-    expect(knowledge).toMatch(/Business knowledge/);
+    expect(knowledge).toMatch(/label: "Knowledge"/);
     expect(knowledge).toMatch(/Test in Studio/);
     expect(knowledge).not.toMatch(
       /VoiceGallery|AgentPresenceVoiceBridge|WirelineLiveVoiceProfile|SimulatorTab/,

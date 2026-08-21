@@ -125,6 +125,7 @@ describe("current Vapi assistant payload contract", () => {
     expect(showcase).not.toContain("serverUrlSecret");
     expect(patcher).not.toContain("serverUrl:");
     expect(patcher).not.toContain("serverUrlSecret");
+    expect(patcher).toContain("`${CANONICAL_PRODUCTION_URL}/api/vapi-webhook`");
 
     expect(facade).toContain("Compatibility facade for legacy imports");
     expect(facade).toContain("placeNativeOutboundCall");

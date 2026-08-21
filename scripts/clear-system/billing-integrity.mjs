@@ -153,19 +153,19 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /WIRELINE Starter[\s\S]*WIRELINE Starter Plus[\s\S]*WIRELINE Pro[\s\S]*WIRELINE Scale & Enterprise/,
-    "shared product knowledge must match the launch catalog with canonical WIRELINE casing",
+    /BotBound Starter[\s\S]*BotBound Starter Plus[\s\S]*BotBound Pro[\s\S]*BotBound Enterprise/,
+    "shared product knowledge must match the launch catalog with canonical BotBound casing",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /\$159|WIRELINE Business/i,
+    /\$159|BotBound Business/i,
     "shared product knowledge must not quote the retired self-serve Business offer",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Legacy WIRELINE|WIRELINE Plus|one Assistants|Assistants analytics/i,
+    /Legacy BotBound|BotBound Plus|one Assistants|Assistants analytics/i,
     "shared product knowledge must purge legacy catalog and assistant copy",
   );
   mustExclude(

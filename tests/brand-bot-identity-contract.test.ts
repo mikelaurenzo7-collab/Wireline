@@ -10,7 +10,9 @@ describe("BotBound brand migration", () => {
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
     expect(component).toContain('data-botbound-mark="phone-bot"');
-    expect(component).toContain("Receiver held to the Bot's ear");
+    expect(component).toContain('src="/brand/botbound-app-icon.png"');
+    expect(component).toContain("visibly grips a violet telephone receiver");
+    expect(component).not.toContain("<svg");
     for (const source of [icon, favicon]) {
       expect(source).toContain("BotBound");
       expect(source).toMatch(/phone|Phone/);
@@ -32,15 +34,22 @@ describe("BotBound brand migration", () => {
 
   it("pins the new name, concise product promise, and Studio-first install path", () => {
     const product = read("src/lib/bot-product.ts");
-    const manifest = JSON.parse(read("public/site.webmanifest")) as { name: string; short_name: string; start_url: string; icons: Array<{ src: string }> };
+    const manifest = JSON.parse(read("public/site.webmanifest")) as {
+      name: string;
+      short_name: string;
+      start_url: string;
+      icons: Array<{ src: string }>;
+      shortcuts: Array<{ name: string; url: string }>;
+    };
     expect(product).toContain('name: "BotBound"');
     expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(product).toContain('promise: "AI employees for calls, texts, and email."');
+    expect(product).toContain('promise: "Your Bot for calls, texts, and email."');
     expect(manifest.name).toContain("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.start_url).toBe("/studio");
-    expect(manifest.icons[0]?.src).toBe("/botbound-icon.svg");
+    expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
+    expect(manifest.shortcuts.find((shortcut) => shortcut.name === "CALLS")?.url).toBe("/phone");
   });
 
   it("keeps the legacy technical namespace deliberately separate from customer identity", () => {

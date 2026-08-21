@@ -13,7 +13,7 @@ Scale / Enterprise customers may negotiate support, availability, security, data
 
 Wireline is engineered for continuous operation across calling, messaging, email, and the web application, with provider fallbacks and bounded failure modes where the product can safely provide them.
 
-- Public service posture: `https://trywireline.com/status`
+- Public service posture: `https://botbound.me/status`
 - Public application health: `GET /api/health`
 - Public voice reliability surface: `GET /api/health/voice-status`
 - Authenticated/operator diagnostics provide additional provider, queue, and SLO evidence.

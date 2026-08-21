@@ -4,7 +4,10 @@
 export const STRIPE_PUBLIC_BRAND = "BotBound";
 export const STRIPE_PUBLIC_HOSTS = new Set(["botbound.me", "www.botbound.me"]);
 export const STRIPE_PUBLIC_SUPPORT_URL = "https://botbound.me/support";
-export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@botbound.me";
+// Keep the verified compatibility inbox until a BotBound-domain alias has
+// passed send, receive, reply, and deliverability checks. The public product
+// identity is BotBound; this address is an intentionally staged dependency.
+export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@trywireline.com";
 export const STRIPE_STATEMENT_DESCRIPTOR_PREFIX = "BOTBOUND";
 export const STRIPE_BRAND_PRIMARY_COLOR = "#A78BFA";
 export const STRIPE_BRAND_SECONDARY_COLOR = "#141319";
@@ -124,7 +127,7 @@ export function stripeAccountIdentityFindings(account) {
   const supportEmail = normalizeText(account?.business_profile?.support_email).toLowerCase();
   if (supportEmail !== STRIPE_PUBLIC_SUPPORT_EMAIL) {
     findings.push(
-      finding("error", "Stripe support email does not match the public BotBound inbox.", {
+      finding("error", "Stripe support email does not match the verified public support inbox.", {
         expected: STRIPE_PUBLIC_SUPPORT_EMAIL,
         actual: supportEmail || null,
       }),

@@ -393,10 +393,10 @@ export default function EmailInbox({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <strong className="block truncate text-sm font-semibold text-foreground">
+                          <strong className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
                             {thread.sender}
                           </strong>
-                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                          <span className="wl-preserve-case mt-0.5 block truncate text-xs text-muted-foreground">
                             {thread.subject}
                           </span>
                         </div>
@@ -446,10 +446,10 @@ export default function EmailInbox({
                 </button>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-semibold text-foreground">
+                    <h2 className="wl-preserve-case truncate text-base font-semibold text-foreground">
                       {selected.subject}
                     </h2>
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                    <p className="wl-preserve-case mt-1 truncate text-xs text-muted-foreground">
                       {selected.sender}
                     </p>
                   </div>

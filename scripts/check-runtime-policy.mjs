@@ -23,8 +23,12 @@ const carrierPanelProse = carrierPanel.replace(/\s+/g, " ");
 const prodEnvCheck = read("scripts/check-prod-env.mjs");
 const legalPage = read("src/components/LegalPage.tsx");
 const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
+const privacyPageProse = privacyPage.replace(/\s+/g, " ");
 const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
 const migrationJournal = read("drizzle/migrations/meta/_journal.json");
+const runtimeCohesionMigration = read(
+  "drizzle/migrations/0156_openai_runtime_cohesion.sql",
+);
 const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
   .filter((name) => name.endsWith(".sql"))
   .sort()
@@ -38,22 +42,17 @@ if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com")
 
 if (!client.includes("https://api.openai.com/v1/responses"))
   fail("managed runtime is not using the direct OpenAI Responses endpoint");
-if (!client.includes("OpenAI request failed; trying Gemini fallback"))
-  fail("OpenAI-to-Gemini fallback order is missing");
-if (!client.includes("Gemini request failed; trying AI Gateway fallback"))
-  fail("Gemini-to-AI-Gateway fallback order is missing");
 // Eligibility and ordering live in the policy module; the client owns
-// transport only. The default chain is xAI -> OpenAI -> Gemini -> AI Gateway,
-// with Grok 4.6 as the managed default and OpenAI as first continuity.
+// transport only. The default chain is OpenAI -> AI Gateway -> xAI -> Gemini.
 const policy = read("src/lib/reasoning-provider-policy.ts");
 if (
-  !/REASONING_PROVIDER_ORDER[\s\S]{0,200}"xai",\s*\n\s*"openai",\s*\n\s*"gemini",\s*\n\s*"gateway",/.test(
+  !/REASONING_PROVIDER_ORDER[\s\S]{0,200}"openai",\s*\n\s*"gateway",\s*\n\s*"xai",\s*\n\s*"gemini",/.test(
     policy,
   )
 )
-  fail("managed runtime provider chain is not xAI -> OpenAI -> Gemini -> AI Gateway");
-if (!policy.includes('DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "xai"'))
-  fail("managed structured default provider is not xAI");
+  fail("managed runtime provider chain is not OpenAI -> AI Gateway -> xAI -> Gemini");
+if (!policy.includes('DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "openai"'))
+  fail("managed structured default provider is not OpenAI");
 if (!policy.includes("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK"))
   fail("xAI lane has lost its operator opt-out switch");
 if (!client.includes("orderReasoningProviders(available, resolveReasoningPreference())"))
@@ -64,10 +63,10 @@ if (!client.includes("if (isAbortError(error, options?.signal)) throw error"))
   fail("aborted AI requests can still cascade into fallback providers");
 if (!models.includes("export const OPENAI_STRUCTURED_PRIMARY_MODEL"))
   fail("ai-models does not export the OpenAI structured primary model");
-if (!models.includes("export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL"))
-  fail("managed structured default is not the xAI Grok 4.6 primary");
+if (!models.includes("export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL"))
+  fail("managed structured default is not OpenAI GPT-5.6 Terra");
 if (!models.includes('GROK_4_6: "grok-4.6"')) fail("Grok 4.6 model id is not registered");
-if (!models.includes("XAI_MODELS.GROK_4_6")) fail("managed xAI structured default is not Grok 4.6");
+if (!models.includes("XAI_MODELS.GROK_4_6")) fail("xAI structured continuity model is not Grok 4.6");
 if (!models.includes('GROK_4_3: "grok-4.3"')) fail("Grok 4.3 Vapi live-call model id is not registered");
 if (!models.includes('GPT_5_6_TERRA: "gpt-5.6-terra"'))
   fail("GPT-5.6 Terra model id is not registered");
@@ -76,16 +75,18 @@ if (!models.includes("OPENAI_MODELS.GPT_5_6_TERRA"))
 if (!structuredModels.includes("STRUCTURED_PRIMARY_MODEL"))
   fail("structured-runtime-models does not route through the managed structured primary");
 
-if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "xai"'))
-  fail("managed voice default is not xAI");
-if (!models.includes("VAPI_TENANT_DEFAULT_MODEL = XAI_MODELS.GROK_4_3"))
-  fail("managed Vapi live-call model is not Grok 4.3");
+if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"'))
+  fail("rollback Vapi workspace default provider is not OpenAI");
+if (!models.includes("VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O"))
+  fail("rollback Vapi workspace default model is not GPT-4o");
 if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS"))
   fail("managed voice does not carry fallback models");
-if (!schema.includes('voiceLlmProvider: text("voice_llm_provider").default("xai")'))
-  fail("Drizzle settings schema does not default managed voice to xAI");
-if (!schema.includes('voiceLlmModel: text("voice_llm_model").default("grok-4.6")'))
-  fail("Drizzle settings schema does not default managed voice model to Grok 4.6");
+if (!schema.includes('voiceLlmProvider: text("voice_llm_provider").default("openai")'))
+  fail("Drizzle settings schema does not default the Vapi rollback pair to OpenAI");
+if (!schema.includes('voiceLlmModel: text("voice_llm_model").default("gpt-4o")'))
+  fail("Drizzle settings schema does not default the Vapi rollback pair to GPT-4o");
+if (!schema.includes("Rollback-only Vapi language-model pair"))
+  fail("Drizzle settings schema does not document voice_llm field semantics");
 if (
   !adminSettings.includes("VAPI_TENANT_DEFAULT_PROVIDER") ||
   !adminSettings.includes("VAPI_TENANT_DEFAULT_MODEL")
@@ -95,9 +96,9 @@ if (adminSettings.includes('"anthropic"') || adminSettings.includes('"claude-son
   fail("Admin settings still contains legacy Claude voice defaults");
 if (
   !carrierPanelProse.includes(
-    "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
+    "BotBound manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
   ) ||
-  !carrierPanel.includes('["Phone runtime", "Wireline managed"]') ||
+  !carrierPanel.includes('["Phone runtime", "BotBound managed"]') ||
   !carrierPanel.includes('["Call intelligence", "Managed automatically"]') ||
   !carrierPanel.includes('["Continuity", "Automatic failover"]')
 )
@@ -113,13 +114,13 @@ if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes('v: "anthrop
 
 if (prodEnvCheck.includes("ANTHROPIC_API_KEY"))
   fail("production env check still asks for Anthropic");
-if (!prodEnvCheck.includes("Continuity structured runtime and OpenAI Realtime sessions"))
-  fail("production env check does not name the OpenAI continuity/Realtime dependency");
+if (!prodEnvCheck.includes("Managed GPT-5.6 Terra structured runtime and OpenAI Realtime browser sessions"))
+  fail("production env check does not name the OpenAI managed/Realtime dependency");
 if (
-  !prodEnvCheck.includes("Managed xAI credential") ||
-  !prodEnvCheck.includes("Grok 4.6")
+  !prodEnvCheck.includes("Native Twilio SIP Speech-to-Speech") ||
+  !prodEnvCheck.includes("optional Grok 4.6 structured continuity")
 )
-  fail("production env check does not classify xAI as the Grok 4.6 managed default");
+  fail("production env check does not classify xAI as PSTN plus optional continuity");
 if (!prodEnvCheck.includes('"ELEVENLABS_API_KEY"'))
   fail("production env check does not require managed studio speech");
 if (
@@ -127,12 +128,12 @@ if (
   legalPage.includes("<strong>Anthropic</strong>")
 )
   fail("public legal page still names Anthropic as active inference infrastructure");
-if (!privacyPage.includes("<strong>xAI</strong>: Primary managed AI inference"))
-  fail("public privacy page does not name xAI as the primary inference infrastructure");
+if (!privacyPage.includes("<strong>OpenAI</strong>: Primary managed structured inference"))
+  fail("public privacy page does not name OpenAI as the primary inference infrastructure");
 if (!privacyPage.includes("Grok 4.6"))
   fail("public privacy page does not name Grok 4.6");
-if (!privacyPage.includes("<strong>OpenAI</strong>: Continuity inference and realtime voice sessions"))
-  fail("public privacy page does not name OpenAI as continuity and realtime infrastructure");
+if (!privacyPageProse.includes("Studio/ChatGPT realtime browser voice"))
+  fail("public privacy page does not name OpenAI as Studio and ChatGPT realtime infrastructure");
 if (!privacyPage.includes("<strong>Google Gemini</strong>"))
   fail("public privacy page does not name Gemini fallback infrastructure");
 if (!privacyPage.includes("<strong>xAI</strong>"))
@@ -154,7 +155,7 @@ if (!/^\s*xai:\s*\{/m.test(integrationLogos)) fail("integration logo catalog doe
 if (!registerApiRoutes.includes("openaiRealtimeRouter"))
   fail("OpenAI Realtime router is not registered");
 if (!registerApiRoutes.includes("grokVoiceRouter"))
-  fail("optional Grok realtime voice router is not registered");
+  fail("native xAI PSTN router is not registered");
 
 if (/openrouter/i.test(models)) fail("ai-models still references the retired OpenRouter path");
 if (!/item\(\s*["']ai-gateway["']/.test(registry))
@@ -185,6 +186,14 @@ if (!migrationJournal.includes("0151_xai_grok_46_runtime_defaults"))
   fail("xAI runtime-default migration is not journaled for production deploys");
 if (!migrationJournal.includes("0154_xai_grok_46_persisted_defaults"))
   fail("Grok 4.6 persisted-default reconciliation is not journaled for production deploys");
+if (!migrationJournal.includes("0156_openai_runtime_cohesion"))
+  fail("OpenAI runtime-cohesion migration is not journaled for production deploys");
+if (!runtimeCohesionMigration.includes("voice_llm_provider SET DEFAULT 'openai'"))
+  fail("runtime-cohesion migration does not restore the Vapi OpenAI provider default");
+if (!runtimeCohesionMigration.includes("voice_llm_model SET DEFAULT 'gpt-4o'"))
+  fail("runtime-cohesion migration does not restore the Vapi GPT-4o model default");
+if (runtimeCohesionMigration.includes("ALTER COLUMN voice_provider"))
+  fail("runtime-cohesion migration changes the independent PSTN voice provider");
 
 if (existsSync(resolve(root, "src/routes/admin-migrate")))
   fail("unmounted admin migration route tree remains");
@@ -206,4 +215,4 @@ const legacyFiles = [
 const remaining = legacyFiles.filter((file) => existsSync(resolve(root, "src/lib", file)));
 if (remaining.length) fail(`legacy Claude modules remain: ${remaining.join(", ")}`);
 if (existsSync(resolve(root, "src/routes/claude-routes.ts"))) fail("legacy Claude routes remain");
-if (!process.exitCode) console.log("xAI-first runtime policy check passed");
+if (!process.exitCode) console.log("OpenAI-first runtime policy check passed");

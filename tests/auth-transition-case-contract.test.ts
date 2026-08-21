@@ -37,6 +37,8 @@ describe("auth transition and control case contract", () => {
   });
 
   it("uses the same canonical WIRELINE lockup on OAuth and invitation transitions", () => {
+    const chrome = source("src/components/marketing/MarketingChrome.tsx");
+    expect(chrome).toContain('id="main-content"');
     for (const file of ["src/pages/OAuthComplete.tsx", "src/pages/AcceptInvite.tsx"]) {
       const page = source(file);
       expect(page).toContain("authCanvas");
@@ -46,7 +48,8 @@ describe("auth transition and control case contract", () => {
       expect(page).toContain('surface="tile"');
       expect(page).not.toContain("wl-auth-brand-chip");
       expect(page).not.toContain("WirelineMark");
-      expect(page).toContain('id="main-content"');
+      expect(page).not.toContain('id="main-content"');
+      expect(page).not.toContain("<main");
       expect(page).toContain('aria-live="polite"');
     }
   });

@@ -47,6 +47,11 @@ function isPostgresConnectionString(value) {
 
 const required = [
   [
+    "APP_URL",
+    "Canonical BotBound origin for OAuth redirects, email links, billing returns, and provider callbacks",
+    process.env.APP_URL,
+  ],
+  [
     "POSTGRES_URL",
     "Postgres connection string for Drizzle-backed API routes",
     process.env.POSTGRES_URL,
@@ -65,12 +70,12 @@ const required = [
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   [
     "OPENAI_API_KEY",
-    "Continuity structured runtime and OpenAI Realtime sessions",
+    "Managed GPT-5.6 Terra structured runtime and OpenAI Realtime browser sessions",
     process.env.OPENAI_API_KEY,
   ],
   [
     "XAI_API_KEY",
-    "Managed xAI credential for Grok 4.6 structured primary and native Twilio SIP Speech-to-Speech",
+    "Native Twilio SIP Speech-to-Speech and optional Grok 4.6 structured continuity",
     process.env.XAI_API_KEY,
   ],
   [
@@ -128,7 +133,6 @@ const recommended = [
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
-  ["APP_URL", "Canonical URL for OAuth redirects and email links"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
   [
     "WIRELINE_POSTAL_ADDRESS",
@@ -196,6 +200,7 @@ const optional = [
 ];
 
 const formatHints = new Map([
+  ["APP_URL", "https://botbound.me (exactly; no path, port, credentials, or trailing slash)"],
   ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
@@ -209,6 +214,7 @@ function configuredValue([key, _description, value]) {
 
 function isValidEnvValue(key, value) {
   if (!value) return true;
+  if (key === "APP_URL") return String(value) === "https://botbound.me";
   if (key === "POSTGRES_URL" || key === "DATABASE_POOL_URL") {
     return isPostgresConnectionString(value);
   }
@@ -295,7 +301,9 @@ if (
 
 if (missingRequired.length) {
   console.log("MISSING REQUIRED env vars (deploy will fail):\n");
-  missingRequired.forEach(([key, description]) => console.log(`    - ${key}\n      ${description}`));
+  missingRequired.forEach(([key, description]) =>
+    console.log(`    - ${key}\n      ${description}`),
+  );
 }
 
 if (invalidRequired.length) {
@@ -308,7 +316,9 @@ if (invalidRequired.length) {
 
 if (missingRecommended.length) {
   console.log("\nMISSING RECOMMENDED env vars (features will be degraded):\n");
-  missingRecommended.forEach(([key, description]) => console.log(`    - ${key}\n      ${description}`));
+  missingRecommended.forEach(([key, description]) =>
+    console.log(`    - ${key}\n      ${description}`),
+  );
 }
 
 if (invalidRecommended.length) {

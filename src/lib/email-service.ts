@@ -24,6 +24,7 @@ import {
 } from "./email-compliance";
 import { isProviderDeliverySuppressed } from "./email-delivery-suppression";
 import { BRAND } from "../constants/brand-colors";
+import { resolveCanonicalAppUrl } from "./app-url";
 import {
   formatResendApiError,
   getResendTransportDiagnostics,
@@ -281,7 +282,17 @@ export async function sendSignupLinkEmail(opts: {
   callerName?: string;
   agentName?: string;
 }): Promise<SendResult> {
-  const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
+  const canonical = resolveCanonicalAppUrl();
+  if ("error" in canonical) {
+    log.error("send_signup_link called without a canonical APP_URL", emailLogContext(opts.to));
+    return {
+      ok: false,
+      provider: "no-transport",
+      disposition: "failed",
+      error: "Canonical app URL not configured (APP_URL missing)",
+    };
+  }
+  const signupUrl = `${canonical.url}/signup`;
   const greetingHtml = firstNameGreeting(opts.callerName);
   const greetingText = opts.callerName ? `Hi ${opts.callerName.trim().split(/\s+/)[0]},` : "Hi,";
   const fromAgentHtml = opts.agentName ? `, ${escapeHtml(opts.agentName)}` : "";

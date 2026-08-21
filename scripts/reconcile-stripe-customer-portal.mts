@@ -2,6 +2,7 @@
 
 import Stripe from "stripe";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 import {
   FOUNDER_CATALOG_VERSION,
@@ -34,8 +35,8 @@ if (environment !== "production") {
 if (process.env.VERCEL_PROJECT_ID !== CANONICAL_VERCEL_PROJECT_ID) {
   throw new Error("Stripe portal reconciliation is pinned to the canonical Wireline project.");
 }
-if (appUrl !== "https://trywireline.com") {
-  throw new Error("Stripe portal reconciliation requires APP_URL=https://trywireline.com.");
+if (appUrl !== CANONICAL_PRODUCTION_URL) {
+  throw new Error(`Stripe portal reconciliation requires APP_URL=${CANONICAL_PRODUCTION_URL}.`);
 }
 if (!/^(?:sk|rk)_live_/.test(secretKey)) {
   throw new Error("Stripe portal reconciliation requires the live Production Stripe key.");
@@ -175,7 +176,7 @@ const activeManaged = activeConfigurations.data.filter(
   (candidate) => candidate.metadata?.wireline_managed === "true",
 );
 if (activeManaged.length !== 1 || activeManaged[0]?.id !== verified.id) {
-  throw new Error("Stripe must have exactly one active Wireline-managed portal configuration.");
+  throw new Error("Stripe must have exactly one active BotBound-managed portal configuration.");
 }
 
 console.log(

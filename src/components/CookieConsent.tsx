@@ -8,7 +8,6 @@ import { WirelineWordmark } from "./brand/WirelineBrand";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
-import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
@@ -43,7 +42,7 @@ export default function CookieConsent() {
   const location = useLocation();
   const [hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const privacyPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
@@ -115,10 +114,11 @@ export default function CookieConsent() {
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
-  useModalFocusTrap(dialogRef, {
-    active: visible,
-    onEscape: dismiss,
-  });
+  useEffect(() => {
+    if (!visible || !explicitlyOpened) return;
+    const frame = window.requestAnimationFrame(() => privacyPanelRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [explicitlyOpened, visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -146,21 +146,21 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:right-4 sm:left-auto sm:max-w-[420px]",
+            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[420px] sm:max-w-[calc(100vw-2rem)]",
             clearMarketingSticky
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
               : hasSession
                 ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
                 : "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))]",
           )}
-          role="dialog"
-          aria-modal="true"
+          role="region"
           aria-label="Privacy choices"
-          ref={dialogRef}
+          tabIndex={-1}
+          ref={privacyPanelRef}
         >
           <div
             className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5",
+              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 lg:items-center lg:px-4 lg:py-2.5",
               hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
             )}
           >
@@ -168,10 +168,10 @@ export default function CookieConsent() {
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex-1 min-w-0 space-y-2 lg:flex lg:items-center lg:gap-4 lg:space-y-0">
               <p
                 className={cn(
-                  "leading-relaxed text-foreground/80",
+                  "leading-relaxed text-foreground/80 lg:flex-1",
                   hasSession
                     ? "text-[11px] sm:text-[length:var(--wireline-typography-caption-size)]"
                     : "text-[length:var(--wireline-typography-caption-size)]",
@@ -201,7 +201,7 @@ export default function CookieConsent() {
                   Your browser privacy signal is active, so advertising measurement remains off.
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 lg:flex-nowrap lg:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"

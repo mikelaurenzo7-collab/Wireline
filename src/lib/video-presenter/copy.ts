@@ -7,7 +7,7 @@ export function videoPresenterStatusMessage(
   isBusinessAgent: boolean,
 ): string {
   if (!isBusinessAgent) {
-    return "Personal agents use a private in-app identity badge.";
+    return "Everyday-use Bots use a private in-app identity badge.";
   }
   if (presenter.chosenAvatarId) {
     return "This agent keeps its identity badge. Live talking-head video is retired.";

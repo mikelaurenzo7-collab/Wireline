@@ -3,7 +3,11 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
-const retiredProductTerms = ["Ametrine Precision", "Browser Companion", "personal AI call assistant"];
+const retiredProductTerms = [
+  "Ametrine Precision",
+  "Browser Companion",
+  "personal AI call assistant",
+];
 
 function read(relativePath: string) {
   return readFileSync(resolve(root, relativePath), "utf8");
@@ -17,14 +21,13 @@ function expectNoTerms(source: string, terms: string[]) {
 describe("product documentation and compatibility contract", () => {
   it("keeps the root README aligned with the current product model", () => {
     const readme = read("README.md");
-    expect(readme).toContain("Wireline Command");
-    expect(readme).toContain("Wireline Letterpress design system");
+    expect(readme).toContain("BotBound Command");
+    expect(readme).toContain("BotBound Letterpress design system");
     expect(readme).toContain("Build -> Train -> Launch -> Improve");
     expect(readme).toContain("Create / Build");
     expect(readme).toContain("Wire / Launch");
     expect(readme).toContain("Studio / Improve");
-    expect(readme).toContain("voice agents");
-    expect(readme).toContain("personal and business conversations");
+    expect(readme).toContain("your Bot across calls, texts, and email");
     expect(readme).toContain("production-number slot");
     expect(readme).toContain("provisions the number only when the role needs one");
     expectNoTerms(readme, retiredProductTerms);
@@ -36,21 +39,23 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("Build -> Train -> Launch -> Improve");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
-    expect(launchTruth).toContain("Voice agents that get the work done.");
-    expect(readme).toContain("Broad public copy uses **voice agents**");
-    expect(readme).toContain("personal agents");
-    expect(readme).toContain("support agents");
-    expect(readme).toContain("sales agents");
+    expect(launchTruth).toContain("Put Your Bot on the Line.");
+    expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
+    expect(readme).toContain("same workspace model");
     expect(readme).toContain("included number");
     expect(readme).toContain("Training");
-    expect(readme).toContain("Wireline Command");
+    expect(readme).toContain("BotBound Command");
     expect(readme).toContain("WIRELINE_2026_ROADMAP.md");
     expectNoTerms(readme, retiredProductTerms);
   });
 
   it("pins the active launch creative manifest to the actual QA pack", () => {
     const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    for (const asset of ["Wireline_Launch_15s_Missed_Call_Clean.mp4", "Wireline_Product_Loop_22s_Music.mp4", "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4"]) {
+    for (const asset of [
+      "Wireline_Launch_15s_Missed_Call_Clean.mp4",
+      "Wireline_Product_Loop_22s_Music.mp4",
+      "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4",
+    ]) {
       expect(launchTruth).toContain(asset);
     }
     expect(launchTruth).not.toContain("Wireline_Launch_22s_Product_Reel_Clean.mp4");
@@ -104,7 +109,7 @@ describe("product documentation and compatibility contract", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(head).toContain("BotBound | Put Your Bot on the Line");
-    expect(head).toContain("AI employees for calls, texts, and email.");
+    expect(head).toContain("Your Bot for calls, texts, and email.");
     expect(head).toContain('"name":"BotBound"');
     expect(head).toContain('"slogan":"Put Your Bot on the Line"');
     expect(head).not.toContain("WIRE YOUR PHONE BOT");
@@ -113,7 +118,7 @@ describe("product documentation and compatibility contract", () => {
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("PUT YOUR BOT ON THE LINE");
-    expect(ogImage).toContain("AI employees for calls, texts, and email.");
+    expect(ogImage).toContain("Your Bot for calls, texts, and email.");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");
@@ -125,7 +130,22 @@ describe("product documentation and compatibility contract", () => {
   it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
-    const privateRoutes = ["/admin", "/agents", "/overview", "/studio", "/settings", "/inbox", "/knowledge", "/templates", "/connections", "/phone", "/insights", "/approvals", "/apps", "/call-logs"];
+    const privateRoutes = [
+      "/admin",
+      "/agents",
+      "/overview",
+      "/studio",
+      "/settings",
+      "/inbox",
+      "/knowledge",
+      "/templates",
+      "/connections",
+      "/phone",
+      "/insights",
+      "/approvals",
+      "/apps",
+      "/call-logs",
+    ];
     for (const route of privateRoutes) {
       expect(robots).toContain(`Disallow: ${route}`);
       expect(sitemap).not.toContain(`https://trywireline.com${route}`);

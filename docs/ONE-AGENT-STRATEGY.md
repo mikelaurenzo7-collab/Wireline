@@ -1,59 +1,57 @@
-# Wireline Agent-First Strategy
+# BotBound One-Product Strategy
 
-Date: 2026-07-26  
-Status: Active positioning note; supersedes broad "one AI employee" launch framing
+Date: 2026-08-21
+Status: Active positioning note; supersedes Personal-versus-Business framing
 
 ## Decision
 
-Wireline should lead broad public surfaces with **Voice agents for every conversation - personal or business**.
+BotBound leads with one clear promise:
 
-The product can still start from one capable default agent. The important nuance is that public copy must not imply Wireline only creates a single business employee or that personal plans are secondary. Customers can begin with one agent, then add specialized voice agents when volume, channels, or roles justify it.
+> Your Bot for calls, texts, and email.
 
-## Positioning Rules
+Customers start with the job, not an audience classification. One Bot can carry
+the conversation across channels under shared knowledge, rules, approvals, and
+memory. Additional Bots add concurrency or genuinely separate roles; they do
+not unlock a different product.
 
-| Context | Preferred Language |
+## Positioning rules
+
+| Context | Preferred language |
 | --- | --- |
-| Broad public marketing | Voice Agents |
-| Personal workspace | personal voice agent |
-| Business workspace | business voice agent when context is explicit |
-| Technical code/contracts | agent |
-| Multi-role growth | coordinated voice agents, roster, specialists |
-| CTA | Build your Voice Agent |
+| Broad public marketing | Bot or Phone Bot |
+| Workspace | Bot, Bots, workspace |
+| Role proof | Front Desk, Sales Rep, Support, Scheduler, Personal Assistant |
+| Multi-role growth | Additional Bots, specialized roles, coordinated Bots |
+| CTA | Build Your Bot |
+| Technical code and contracts | agent and stable legacy identifiers |
 
-## Why
-
-- Personal plans are first-class and should not feel like an awkward business employee metaphor.
-- "One agent" is a useful onboarding posture, but "only one agent" is not the product promise.
-- Business customers still get explicit role ownership through business voice-agent language once the workspace, plan, or role context is explicit.
-- Voice agents better matches the real runtime: voice-first, cross-channel follow-through, trained behavior, included paid-plan numbers, and outcome logging.
-
-## Launch Copy
+## Launch copy
 
 Use:
 
-> Voice agents for every conversation - personal or business.
+> Your Bot for calls, texts, and email.
 
-> Start with one agent. Build a team when you need one.
+> Build free. Go live from $19/month.
 
-> Build free. Go live from $19/mo.
+> Start with one job. Add another Bot when the work needs it.
 
-Avoid on broad surfaces:
+Avoid:
 
-> Broad AI-employee hero lines.
+> Personal or Business?
 
-> One-employee public promises.
+> AI employees for calls, texts, and email.
 
-> Old best-employee slogans.
+> Separate Personal and Business workspaces.
 
-## Product Doctrine
+## Product doctrine
 
-The public loop stays simple:
+1. Build a focused Bot from a role starter or blank canvas.
+2. Configure knowledge, tone, rules, channels, tools, approvals, and handoffs.
+3. Test privately, then launch on an eligible paid-plan number.
+4. Improve from logged conversations, outcomes, and follow-up.
 
-1. Create a focused voice agent.
-2. Train it on facts, sources, policies, voice, tone, and workflows.
-3. Wire it to a paid-plan number, integrations, routing, approvals, and billing controls.
-4. Run it in Studio across calls, texts, follow-up, handoffs, and review.
+## Success metric
 
-## Success Metric
-
-70% of new signups complete one successful private simulation or test call within 5 minutes and understand two things: they can start with one voice agent, and they can add specialized agents when their needs grow.
+Seventy percent of new signups complete one successful private simulation or
+test call within five minutes and understand that the same BotBound product can
+handle the job they describe, regardless of audience or organization type.

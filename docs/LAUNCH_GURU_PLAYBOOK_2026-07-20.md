@@ -1,4 +1,4 @@
-# Wireline Launch Guru Playbook
+# BotBound Launch Guru Playbook
 
 Updated: 2026-08-11  
 Status: **Active founder launch sequence**  
@@ -8,10 +8,10 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 | Area | Current Direction |
 | --- | --- |
-| Product | Voice agents for personal tasks and business conversations |
+| Product | Your Bot for calls, texts, and email |
 | Core loop | Build -> Train -> Launch -> Improve |
-| Public hero | Voice Agents |
-| CTA | Build your Voice Agent |
+| Public hero | Put Your Bot on the Line. |
+| CTA | Build Your Bot |
 | Price line | Build free. Go live from $19/mo. |
 | GTM posture | First 3–5 founder-led design partners before scaled acquisition |
 | Proof | Real product, exact-production capture, real workflow outcomes |
@@ -31,7 +31,7 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 Do not maintain a second hand-written plan catalog in launch documentation.
 
-`src/lib/plan-catalog.ts` owns current plan names, monthly/annual prices, included agents, number slots, voice minutes, Runtime Allowance, and add-on economics. Public launch copy may state the tested floor **Build free. Go live from $19/mo.** only while the catalog still supports it.
+`src/lib/plan-catalog.ts` owns current plan names, monthly/annual prices, included Bots, number slots, voice minutes, Runtime Allowance, and add-on economics. Public launch copy may state the tested floor **Build free. Go live from $19/mo.** only while the catalog still supports it.
 
 Before publishing pricing, sending an offer, or briefing paid creative, read the current catalog and run its Stripe/catalog checks. If the catalog changes, update launch copy deliberately rather than carrying an old table forward.
 
@@ -41,8 +41,8 @@ Before publishing pricing, sending an offer, or briefing paid creative, read the
 
 Before inviting a real customer:
 
-- create a clean disposable account and the intended workspace posture;
-- build one focused agent;
+- create a clean disposable account and enter the BotBound workspace;
+- build one focused Bot around a real job;
 - train it on real facts, rules, voice, and handoff behavior;
 - pass private simulation/test-call proof;
 - complete checkout -> webhook -> entitlement -> portal;
@@ -99,7 +99,7 @@ Prefer businesses where one conversation can clearly move work forward:
 - support-heavy small teams;
 - solo operators with visible inbound demand.
 
-Personal use remains part of the product, but first commercial evidence should favor workflows with measurable before/after handling.
+Everyday call delegation is a valid use case inside the same product. First commercial evidence should favor workflows with measurable before/after handling.
 
 ## First Offers To Prove
 
@@ -108,7 +108,7 @@ Personal use remains part of the product, but first commercial evidence should f
 3. Appointment scheduling and follow-up.
 4. Lead response and qualification.
 5. Support triage and handoff.
-6. Personal call delegation where the outcome is concrete.
+6. Everyday call delegation where the outcome is concrete.
 
 Do not widen the offer menu until the first repeatable workflow is clear.
 
@@ -118,7 +118,7 @@ Early targets are diagnostic, not public claims.
 
 Track:
 
-- time from signup to first built agent;
+- time from signup to first built Bot;
 - time to passing private test call;
 - checkout completion among users who intentionally choose live use;
 - time from paid activation to first useful live outcome;
@@ -132,16 +132,16 @@ Do not promote an internal target to a public performance promise.
 
 ## Funnel
 
-`Founder outreach / content -> trywireline.com -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow -> Review outcomes -> Improve -> expand only when useful`
+`Founder outreach / content -> botbound.me -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow -> Review outcomes -> Improve -> expand only when useful`
 
 ## Messaging Tests
 
 | Angle | Hook | CTA |
 | --- | --- | --- |
-| Missed call | Every missed call is someone trying the next name on the list. | Build your Voice Agent |
-| Personal | Delegate the call and keep control of the outcome. | Start free |
-| Business | Give the next important call a trained first response and visible follow-up. | Go live from $19/mo. |
-| Expansion | Start with one useful agent. Add more when real work proves the need. | Build your Voice Agent |
+| Missed call | Every missed call is someone trying the next name on the list. | Build Your Bot |
+| Everyday delegation | Delegate the call and keep control of the outcome. | Build Your Bot |
+| Front desk | Give the next important call a trained first response and visible follow-up. | Build Your Bot |
+| Expansion | Start with one useful Bot. Add more when real work proves the need. | Build Your Bot |
 
 All active creative must resolve to **Build -> Train -> Launch -> Improve** rather than introducing a separate workflow slogan.
 

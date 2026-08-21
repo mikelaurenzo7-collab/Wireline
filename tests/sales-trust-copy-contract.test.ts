@@ -61,14 +61,18 @@ describe("sales trust copy contract", () => {
   it("keeps the sales wedge governed, Bot-native, and tied to canonical disclosure guidance", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     const product = read("src/lib/bot-product.ts");
-    expect(wedges).toContain('metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"');
-    expect(wedges).toContain('headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"');
+    expect(wedges).toContain(
+      'metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"',
+    );
+    expect(wedges).toContain(
+      'headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"',
+    );
     expect(wedges).toContain("Fast, Governed Speed to Lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
     expect(product).toContain('name: "Sales Rep"');
-    expect(product).toContain('category: "Business" as const');
+    expect(product).toContain('category: "Operations" as const');
   });
 
   it("keeps the landing customer-facing without internal design meta", () => {
@@ -103,9 +107,9 @@ describe("sales trust copy contract", () => {
     ]) {
       expect(compare).toContain(url);
     }
-    expect(compare).toContain(
+    expect(compare.replace(/\s+/g, " ")).toContain(
       "not a claim that unlike products are feature-for-feature equivalents",
     );
-    expect(compare).toContain('to="/signup?plan=personal"');
+    expect(compare).toContain('signupHrefForPlan("personal")');
   });
 });

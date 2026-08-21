@@ -223,7 +223,7 @@ function buildOutboundInstructions(input: XAISipIncomingCall): string {
     ? [
         "## VOICEMAIL PROTOCOL",
         "If you reach voicemail or an answering machine, Do NOT speak a message. End the call immediately.",
-        "64.1200(b)(3) requires a toll-free automated opt-out line for telemarketing answering-machine messages; Wireline does not operate one, so there is no compliant marketing voicemail to leave.",
+        "64.1200(b)(3) requires a toll-free automated opt-out line for telemarketing answering-machine messages; BotBound does not operate one, so there is no compliant marketing voicemail to leave.",
       ].join("\n")
     : [
         "## VOICEMAIL PROTOCOL",
@@ -1146,7 +1146,7 @@ export async function runXAISipCallSession(input: XAISipIncomingCall): Promise<v
       return;
     }
 
-    let agentName = input.businessName?.trim() || "Wireline";
+    let agentName = input.businessName?.trim() || "BotBound";
     let outcome: RealtimeSessionOutcome = {
       transcript: "",
       endedReason: "runtime-startup-error",

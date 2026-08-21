@@ -159,6 +159,8 @@ router.post(
         utmMedium,
         utmCampaign,
         demoSource,
+        termsVersion,
+        privacyVersion,
       } = req.body;
       // Body is now validated by Zod middleware (email already lowercased + trimmed).
 
@@ -174,14 +176,26 @@ router.post(
             .where(eq(schema.users.email, email))
             .limit(1);
           if (existing) return { kind: "taken" as const };
-          const result = await authService.signUp(email, password, fullName, {
-            preferredPlanId,
-            preferredBillingInterval,
-            signupWedge,
-            utmSource,
-            utmMedium,
-            utmCampaign,
-          });
+          const result = await authService.signUp(
+            email,
+            password,
+            fullName,
+            {
+              preferredPlanId,
+              preferredBillingInterval,
+              signupWedge,
+              utmSource,
+              utmMedium,
+              utmCampaign,
+            },
+            {
+              termsVersion,
+              privacyVersion,
+              source: "email_password",
+              ipAddress: req.ip || undefined,
+              userAgent: req.get("user-agent") || undefined,
+            },
+          );
           return { kind: "created" as const, result };
         })(),
         SIGNUP_MIN_DURATION_MS,
@@ -221,9 +235,12 @@ router.post(
       // user can still poke around the product; the trial gate blocks
       // money-spending actions until verified.
       try {
+        const canonical = resolveCanonicalAppUrl();
+        if ("error" in canonical) {
+          throw new Error("APP_URL is required to deliver email verification links");
+        }
         const { token } = await authService.createEmailVerificationToken(result.user.id);
-        const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-        const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
+        const verifyUrl = `${canonical.url}/api/auth/verify-email/${encodeURIComponent(token)}`;
         const { sendEmailVerification } = await import("../lib/email-service");
         const emailRes = await sendEmailVerification({
           to: email,
@@ -316,9 +333,12 @@ const VERIFY_EMAIL_LANDING_PATH = "/overview";
 
 router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) => {
   const token = String(req.params.token || "");
-  const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  const canonical = resolveCanonicalAppUrl();
+  if ("error" in canonical) {
+    return res.status(503).send("Email verification is temporarily unavailable.");
+  }
   const landing = (state: string) =>
-    `${baseUrl}${VERIFY_EMAIL_LANDING_PATH}?verified=${encodeURIComponent(state)}`;
+    `${canonical.url}${VERIFY_EMAIL_LANDING_PATH}?verified=${encodeURIComponent(state)}`;
   try {
     const user = await authService.completeEmailVerification(token);
     if (!user) {
@@ -366,9 +386,12 @@ router.post(
         return res.json({ ok: true, sent: false, reason: "already_verified" });
       }
 
+      const canonical = resolveCanonicalAppUrl();
+      if ("error" in canonical) {
+        throw AppError.fromHttpStatus(503, "Email verification is temporarily unavailable.");
+      }
       const { token } = await authService.createEmailVerificationToken(user.id);
-      const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-      const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
+      const verifyUrl = `${canonical.url}/api/auth/verify-email/${encodeURIComponent(token)}`;
       const { sendEmailVerification } = await import("../lib/email-service");
       const result = await sendEmailVerification({
         to: user.email,
@@ -381,6 +404,7 @@ router.post(
         ...(result.ok ? {} : { reason: "transport_unavailable" }),
       });
     } catch (err: any) {
+      if (err instanceof AppError) throw err;
       log.error("resend-verification failed", { error: err?.message ?? String(err) });
       throw AppError.fromHttpStatus(500, "Resend failed");
     }

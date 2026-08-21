@@ -35,6 +35,7 @@ import {
   releaseVapiNumber,
   vapiAccountHeadroom,
 } from "./vapi-phone-numbers";
+import { getCanonicalAppUrl } from "./app-url";
 
 /**
  * What a tenant is told when number provisioning fails for a reason that is
@@ -52,10 +53,10 @@ import {
  * was not one the customer owns.
  */
 const NUMBER_PROVISIONING_UNAVAILABLE =
-  "Wireline could not activate a number right now. This is on our side and the team has been notified, your agent still works for texts, email, and follow-up in the meantime.";
+  "BotBound could not activate a number right now. This is on our side and the team has been notified, your agent still works for texts, email, and follow-up in the meantime.";
 
 const NUMBER_RELEASE_UNAVAILABLE =
-  "Wireline could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
+  "BotBound could not release that number right now. Nothing was charged for the attempt, and the team has been notified.";
 
 function isAutoProvisioningEnabled(): boolean {
   const flag = process.env.WIRELINE_AUTO_PROVISION_NUMBERS?.toLowerCase().trim();
@@ -65,9 +66,7 @@ function isAutoProvisioningEnabled(): boolean {
 }
 
 function appBaseUrl(): string {
-  return process.env.APP_URL && process.env.APP_URL.length > 0
-    ? process.env.APP_URL.replace(/\/+$/, "")
-    : "https://trywireline.com";
+  return getCanonicalAppUrl();
 }
 
 interface ProvisionOpts {

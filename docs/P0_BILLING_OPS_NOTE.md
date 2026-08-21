@@ -26,8 +26,11 @@ checkout. New customers needing more than Pro use the sales-assisted Scale path.
 Add-ons:
 
 - Extra Agent + 50 Minutes: $15/month
-- Live Video: $19/month
 - Runtime Balance (Conversation Balance API/module path retained): prepaid $10, $25, $50, or $100 ($10 minimum; dynamic Stripe checkout amounts from `src/lib/conversation-balance.ts`)
+
+Live Video is retired. Its historical Stripe price IDs remain reconciliation-only so old webhook
+events and subscriptions fail closed without breaking billing. No new checkout, entitlement, or
+presenter session is offered.
 
 Voice usage is not postpaid or metered in this launch catalog. Included Runtime Allowance and prepaid Runtime Balance are the supported model. Free Builder and pending-activation tenants cannot spend Runtime Balance on live SMS or voice.
 
@@ -62,7 +65,7 @@ Then verify in a non-production test workspace:
 4. Customer Portal cancellation appears in `GET /api/billing/status`.
 5. A $10 Runtime Balance checkout credits the ledger once when the event is replayed.
 6. Included Runtime Allowance is consumed before prepaid Runtime Balance.
-7. Extra Agent and Live Video use the canonical recurring prices.
+7. Extra Agent uses the canonical recurring price; retired Live Video price IDs remain absent from new checkout.
 8. Annual CTAs only appear when `/api/billing/plans` reports `annual_configured: true`.
 
 ## Environment hygiene

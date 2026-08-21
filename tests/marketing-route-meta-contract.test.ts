@@ -8,14 +8,12 @@ import {
   PRERENDERED_ROUTE_SHELLS,
   SITE_URL,
   injectMarketingMeta,
+  publicWedgeSlug,
   resolveRouteMeta,
   withBotBoundBrand,
 } from "../src/lib/marketing-route-meta";
 import { WEDGES } from "../src/data/vertical-wedges";
-import {
-  BOTBOUND_BRAND_NAME,
-  LEGACY_PRODUCTION_ORIGIN,
-} from "../src/lib/brand";
+import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../src/lib/brand";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const indexHtml = read("index.html");
@@ -25,14 +23,9 @@ describe("route meta prerendering", () => {
     expect(indexHtml).toContain(`<title>${HOME_TITLE}</title>`);
     expect(indexHtml.split(HOME_TITLE).length - 1).toBeGreaterThanOrEqual(3);
     expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBeGreaterThanOrEqual(3);
-    // Until the purchased BotBound domain is attached to the Vercel project,
-    // the source shell intentionally retains the proven legacy origin. The
-    // prerender registry itself is configuration-driven and uses SITE_URL.
+    expect(indexHtml).toContain(`<link rel="canonical" href="${BOTBOUND_PRODUCTION_ORIGIN}/" />`);
     expect(indexHtml).toContain(
-      `<link rel="canonical" href="${LEGACY_PRODUCTION_ORIGIN}/" />`,
-    );
-    expect(indexHtml).toContain(
-      `<meta property="og:url" content="${LEGACY_PRODUCTION_ORIGIN}/" />`,
+      `<meta property="og:url" content="${BOTBOUND_PRODUCTION_ORIGIN}/" />`,
     );
     expect(indexHtml).toContain(
       '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
@@ -45,7 +38,9 @@ describe("route meta prerendering", () => {
 
   it("prerenders every /for/* wedge, inline commercial page, and guarded account shell", () => {
     for (const slug of Object.keys(WEDGES)) {
-      expect(PRERENDERED_ROUTE_SHELLS).toContain(`/for/${slug}`);
+      expect(PRERENDERED_ROUTE_SHELLS).toContain(
+        `/for/${publicWedgeSlug(slug as keyof typeof WEDGES)}`,
+      );
     }
     for (const route of [
       "/pricing",
@@ -78,14 +73,24 @@ describe("route meta prerendering", () => {
 
   it("derives every /for/:slug page's meta from WEDGES (one source of truth)", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
-      const meta = resolveRouteMeta(`/for/${slug}`);
+      const publicSlug = publicWedgeSlug(slug as keyof typeof WEDGES);
+      const meta = resolveRouteMeta(`/for/${publicSlug}`);
       expect(meta, slug).not.toBeNull();
       expect(meta!.title).toMatch(/botbound/i);
       expect(meta!.title).not.toMatch(/\bWireline\b/i);
       expect(meta!.description).toBe(withBotBoundBrand(wedge.metaDescription));
-      expect(meta!.canonical).toBe(`${SITE_URL}/for/${slug}`);
+      expect(meta!.canonical).toBe(`${SITE_URL}/for/${publicSlug}`);
       expect(meta!.noIndex).not.toBe(true);
     }
+  });
+
+  it("keeps the retired audience slug as a noindex compatibility redirect shell", () => {
+    const legacy = resolveRouteMeta("/for/personal");
+    expect(PRERENDERED_ROUTE_SHELLS).toContain("/for/personal");
+    expect(legacy).toMatchObject({
+      canonical: `${SITE_URL}/for/everyday`,
+      noIndex: true,
+    });
   });
 
   it("keeps the inline-page values verbatim in sync with each page's PageMeta call", () => {
@@ -198,9 +203,7 @@ describe("route meta prerendering", () => {
 
     expect(resolveRouteMeta("/get-started")!.canonical).toBe(`${SITE_URL}/signup`);
     expect(resolveRouteMeta("/auth")!.canonical).toBe(`${SITE_URL}/signin`);
-    expect(resolveRouteMeta("/oauth-complete")!.canonical).toBe(
-      `${SITE_URL}/auth/oauth-complete`,
-    );
+    expect(resolveRouteMeta("/oauth-complete")!.canonical).toBe(`${SITE_URL}/auth/oauth-complete`);
     expect(resolveRouteMeta("/not-found")!.canonical).toBe(`${SITE_URL}/404`);
   });
 
@@ -219,14 +222,12 @@ describe("route meta prerendering", () => {
     );
 
     expect(out).not.toContain(`<title>${HOME_TITLE}</title>`);
-    expect(out).not.toContain(
-      `<link rel="canonical" href="${LEGACY_PRODUCTION_ORIGIN}/" />`,
-    );
+    expect(out).not.toContain(`<link rel="canonical" href="${BOTBOUND_PRODUCTION_ORIGIN}/" />`);
     expect(out).toContain('<meta name="twitter:card" content="summary_large_image" />');
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(out).toMatch(/"@type"\s*:\s*"WebSite"/);
     expect(out).toContain(
-      `<meta property="og:image" content="${LEGACY_PRODUCTION_ORIGIN}/og-image.png" />`,
+      `<meta property="og:image" content="${BOTBOUND_PRODUCTION_ORIGIN}/og-image.png" />`,
     );
   });
 
@@ -234,7 +235,7 @@ describe("route meta prerendering", () => {
     const pkg = read("package.json");
     const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
     expect(buildScript).toContain(
-      "vite build && node --import tsx scripts/prerender-marketing-meta.mts",
+      "vite build && node scripts/validate-botbound-jingle.mjs && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts",
     );
 
     const script = read("scripts/prerender-marketing-meta.mts");

@@ -211,8 +211,8 @@ export default function OverviewPage() {
             <h1 className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}>Overview</h1>
             {!isFirstRun ? (
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Build and operate Bots for business roles, personal work, or any custom workflow.
-                Voice, text, email, knowledge, tools, and outcomes stay together.
+                Build and operate Bots for any role or workflow. Voice, text, email, knowledge,
+                tools, and outcomes stay together.
               </p>
             ) : null}
           </div>

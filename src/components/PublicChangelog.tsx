@@ -105,7 +105,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Warm-transfer escalation",
-    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
+    body: "Every Bot can now warm-transfer a live caller to a human mid-call when it escalates. Turn it on in Training -> Identity -> Immediate-escalation triggers. The Bot speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
   },
   {
     date: "Jan 28, 2026",
@@ -117,7 +117,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Public system status page",
-    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at trywireline.com/status. Uses small, bounded health checks for each managed reasoning tier. External uptime monitors are welcome.",
+    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at botbound.me/status. Uses small, bounded health checks for each managed reasoning tier. External uptime monitors are welcome.",
   },
   {
     date: "Jan 27, 2026",
@@ -152,8 +152,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "May 19, 2026",
     tag: "feature",
-    title: "Per-agent Workspace: private DM with each voice agent",
-    body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply.',
+    title: "Per-Bot Workspace: a private DM with each Bot",
+    body: 'Every Bot now has its own persistent chat thread. Coach your Bot in plain English ("be warmer on price objections"), ask how this week\'s calls went, or add context. Memory includes the thread and the last five call summaries with every reply.',
   },
 ];
 

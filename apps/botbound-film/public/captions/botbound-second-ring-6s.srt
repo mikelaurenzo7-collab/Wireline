@@ -1,0 +1,20 @@
+1
+00:00:00,000 --> 00:00:00,650
+[Phone ringing]
+
+2
+00:00:00,650 --> 00:00:01,900
+Still busy?
+[Second phone ring; connection chime]
+
+3
+00:00:01,900 --> 00:00:03,300
+The second ring. Answered.
+
+4
+00:00:03,600 --> 00:00:04,700
+BotBound. Answers when you can’t.
+
+5
+00:00:04,700 --> 00:00:05,950
+botbound.me

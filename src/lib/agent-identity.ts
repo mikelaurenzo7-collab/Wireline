@@ -119,7 +119,7 @@ export const AGENT_IDENTITY_PERSONAS: Record<AgentIdentityPersonaId, AgentIdenti
   private_operator: {
     id: "private_operator",
     label: "Personal Concierge",
-    shortLabel: "Personal agent",
+    shortLabel: "Concierge Bot",
     defaultName: "Sarah",
     microcopy: "Screens callers, books for you, and briefs you privately.",
     promptDirective:

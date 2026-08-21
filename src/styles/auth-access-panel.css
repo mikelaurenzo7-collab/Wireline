@@ -36,7 +36,7 @@
   text-align: center;
 }
 
-.wl-access-panel__heading h1 {
+.wl-access-panel__heading :is(h1, h2) {
   margin: 0;
   font-family: var(--wireline-font-family-display);
   font-size: clamp(1.75rem, 3vw, 2.25rem);
@@ -46,10 +46,10 @@
 }
 
 /* Sign-in and sign-up already expose the active mode through the adjacent
- * tablist. Keep the h1 for document/accessibility structure without repeating
- * the same words visually above the tabs. Reset-password has no tabs, so its
- * heading remains visible. */
-.wl-access-panel__heading:has(+ .wl-access-panel__tabs) h1 {
+ * tablist. Keep the structural heading for document/accessibility structure
+ * without repeating the same words visually above the tabs. Reset-password
+ * has no tabs, so its heading remains visible. */
+.wl-access-panel__heading:has(+ .wl-access-panel__tabs) :is(h1, h2) {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -374,7 +374,7 @@
     box-shadow: none;
   }
 
-  .wl-access-panel__heading h1 {
+  .wl-access-panel__heading :is(h1, h2) {
     font-size: 1.65rem;
   }
 

@@ -13,11 +13,7 @@ import {
 import { IntegrationService } from "../../lib/integrations";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../../lib/twilio-service";
 import { PRESERVED_LEAD_STATUSES, sanitizePhone } from "../../lib/vapi-helpers";
-import {
-  handleCreateAccount,
-  handleSendPaymentLink,
-  handleSendSignupLink,
-} from "../../lib/vapi-tool-handlers";
+import { handleSendPaymentLink, handleSendSignupLink } from "../../lib/vapi-tool-handlers";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
 import { phoneSuffixForLog } from "../../lib/twilio-webhook-privacy";
@@ -445,24 +441,6 @@ export async function handleCoreToolCall(
     return { toolCallId, result };
   }
 
-  // create_account — a Wireline employee signs a caller up by phone.
-  // Creates the account with a random password + emails a
-  // set-password link so the caller picks their own. Same
-  // confirm-the-email guardrail as send_signup_link.
-  if (fn === "create_account") {
-    const { authService } = await import("../../lib/auth-service");
-    const { sendPasswordResetEmail } = await import("../../lib/email-service");
-    const crypto = await import("crypto");
-    const { result } = await handleCreateAccount(args || {}, {
-      signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
-      createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
-      sendPasswordResetEmail,
-      randomPassword: () => crypto.randomBytes(24).toString("base64url"),
-      log,
-    });
-    return { toolCallId, result };
-  }
-
   // send_payment_link — emails the caller a checkout link for a
   // specific plan so they can pay + activate without friction.
   if (fn === "send_payment_link") {
@@ -510,7 +488,7 @@ export async function handleCoreToolCall(
       const gate = await evaluateOutboundDialGate({
         userId: agent.user_id,
         phone: targetNumber,
-        isMarketingCall: false,
+        isMarketingCall: !isLiveCounterpart,
         hasExpressWrittenConsent: isLiveCounterpart,
         isLiveSessionFollowUp: isLiveCounterpart,
       });

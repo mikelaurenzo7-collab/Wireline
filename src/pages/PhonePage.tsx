@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
+import CallOpsOverview from "../components/CallOpsOverview";
 import OutboundHub from "../components/outbound/OutboundHub";
 import AppointmentsPanel from "../components/AppointmentsPanel";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
@@ -16,6 +17,7 @@ import {
 
 const PHONE_TABS = [
   { id: "logs", label: "History" },
+  { id: "analytics", label: "Analytics" },
   { id: "outbound", label: "Outbound" },
   {
     id: "appointments",
@@ -134,6 +136,7 @@ export default function PhonePage() {
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {primaryTab === "logs" && <PhoneCallHistoryPanel agentId={activeAgentId || null} />}
+          {primaryTab === "analytics" && <CallOpsOverview />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}

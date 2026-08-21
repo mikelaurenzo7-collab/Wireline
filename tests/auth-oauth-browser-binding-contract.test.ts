@@ -67,8 +67,10 @@ describe("auth OAuth browser binding contract", () => {
   it("accepts only the exact one-time bridge code shape", () => {
     const validCode = "A".repeat(43);
     expect(isOAuthBridgeCode(validCode)).toBe(true);
+    expect(isOAuthBridgeCode(`n${validCode}`)).toBe(true);
+    expect(isOAuthBridgeCode(`r${validCode}`)).toBe(true);
     expect(isOAuthBridgeCode("A".repeat(42))).toBe(false);
-    expect(isOAuthBridgeCode("A".repeat(44))).toBe(false);
+    expect(isOAuthBridgeCode(`x${validCode}`)).toBe(false);
     expect(isOAuthBridgeCode(`${"A".repeat(42)}!`)).toBe(false);
     expect(isOAuthBridgeCode(null)).toBe(false);
   });
@@ -132,12 +134,10 @@ describe("auth OAuth browser binding contract", () => {
     expect(rateLimiter).toContain('failClosedOnError: process.env.NODE_ENV === "production"');
 
     const callbacks = read("src/routes/auth-oauth-routes.ts");
-    expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
-      3,
-    );
-    expect(callbacks).toContain(
-      'router.post("/api/auth/oauth/exchange", oauthRateLimiter',
-    );
+    expect(
+      callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g),
+    ).toHaveLength(3);
+    expect(callbacks).toContain('router.post("/api/auth/oauth/exchange", oauthRateLimiter');
 
     const completion = read("src/pages/OAuthComplete.tsx");
     expect(completion).toContain("useLayoutEffect");
@@ -147,6 +147,19 @@ describe("auth OAuth browser binding contract", () => {
       completion.indexOf('fetch("/api/auth/oauth/exchange"'),
     );
     expect(completion).toContain('resolvePostAuthDestination(readStoredWorkspaceMode(), "")');
+
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    const legacyHandoffIndex = access.indexOf("canonicalLegacyBrowserHandoff(window.location)");
+    const providerStartIndex = access.indexOf("const startOAuth = async");
+    const allowedUrlIndex = access.indexOf("if (!isAllowedOAuthUrl(payload?.url))");
+    const persistReturnIndex = access.indexOf("persistOAuthReturnFromSearch(location.search)");
+    const providerNavigationIndex = access.indexOf("window.location.assign(payload.url)");
+    expect(legacyHandoffIndex).toBeGreaterThan(-1);
+    expect(providerStartIndex).toBeGreaterThan(legacyHandoffIndex);
+    expect(access).toContain("window.location.replace(legacyBrowserHandoffUrl)");
+    expect(access).toContain("if (legacyBrowserHandoffUrl) return");
+    expect(persistReturnIndex).toBeGreaterThan(allowedUrlIndex);
+    expect(providerNavigationIndex).toBeGreaterThan(persistReturnIndex);
   });
 
   it("requires integration-link callbacks to complete as the initiating account", () => {

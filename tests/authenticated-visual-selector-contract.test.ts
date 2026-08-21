@@ -8,9 +8,7 @@ const css = readFileSync(
 );
 
 describe("authenticated overview visual selectors", () => {
-  it("targets the current voice-agent section labels", () => {
-    expect(css).toContain('section[aria-label="Personal voice agents"]');
-    expect(css).toContain('section[aria-label="Business voice agents"]');
-    expect(css).not.toMatch(/section\[aria-label="(?:Personal|Business) AI employees"\]/);
+  it("does not revive retired audience-specific roster selectors", () => {
+    expect(css).not.toMatch(/section\[aria-label="(?:Personal|Business) (?:voice agents|AI employees)"\]/);
   });
 });

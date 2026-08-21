@@ -22,9 +22,7 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?<span>PUT YOUR BOT<\/span>[\s\S]*?<span>ON THE LINE<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain(
-      'const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;',
-    );
+    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
     expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
     expect(landing).toContain("{HERO_CHANNELS.map((label) =>");
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
@@ -50,6 +48,8 @@ describe("BotBound public iPhone prestige contract", () => {
   it("uses the real shared auth implementation and removes audience classification from account entry", () => {
     const portal = read("src/components/AuthPortal.tsx");
     const access = read("src/components/auth/AuthAccessPanel.tsx");
+    const accessStyles = read("src/styles/auth-access-panel.css");
+    const mobileStyles = read("src/styles/public-mobile-refinement.css");
 
     expect(portal).toContain("AuthAccessPanel");
     expect(access).toContain("/api/auth/signin");
@@ -57,11 +57,31 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(access).toContain('id: "google"');
     expect(access).toContain('id: "microsoft"');
     expect(access).toContain('id: "yahoo"');
-    expect(access).toContain('/api/auth/${provider}/url');
+    expect(access).toContain("/api/auth/${provider}/url");
     expect(access).not.toContain("WorkspaceSelector");
     expect(access).not.toMatch(/>Personal<|>Business</);
     expect(access).toContain("aria-labelledby={termsLabelId}");
-    expect(access).toContain("aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}");
+    expect(access).toContain(
+      "aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}",
+    );
+    expect(access).toContain("embedded ? <h2>{title}</h2> : <h1>{title}</h1>");
+    expect(access).toContain("autoFocus={!embedded}");
+    expect(accessStyles).toContain(
+      ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) :is(h1, h2)",
+    );
+    expect(mobileStyles).toContain(".landing-prestige__auth .wl-access-panel__heading :is(h1, h2)");
+    expect(accessStyles).not.toContain(
+      ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) h1",
+    );
+  });
+
+  it("keeps the desktop privacy choice clear of launch conversion controls", () => {
+    const consent = read("src/components/CookieConsent.tsx");
+
+    expect(consent).toContain("sm:w-[420px] sm:max-w-[calc(100vw-2rem)]");
+    expect(consent).not.toContain("lg:left-8 lg:right-8 lg:max-w-none");
+    expect(consent).toContain("lg:flex lg:items-center lg:gap-4 lg:space-y-0");
+    expect(consent).toContain("lg:flex-nowrap lg:shrink-0");
   });
 
   it("renders Jordan as a compact animated letterless signal, not a portrait or monogram", () => {
@@ -109,8 +129,8 @@ describe("BotBound public iPhone prestige contract", () => {
     );
     expect(mobile).toContain('[aria-label="Privacy Policy summary"]');
     expect(mobile).toContain("#privacy-choices");
-    expect(indexCss.indexOf('public-mobile-refinement.css')).toBeLessThan(
-      indexCss.indexOf('safe-area-ownership.css'),
+    expect(indexCss.indexOf("public-mobile-refinement.css")).toBeLessThan(
+      indexCss.indexOf("safe-area-ownership.css"),
     );
   });
 
@@ -123,7 +143,9 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(surfaceContract).toContain('system: "BotBound Design System"');
     expect(designCss).toContain("BotBound Design System");
     expect(vision).not.toMatch(/system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora)"/);
-    expect(surfaceContract).not.toMatch(/system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora)"/);
+    expect(surfaceContract).not.toMatch(
+      /system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora)"/,
+    );
     expect(designCss).not.toMatch(/Letterpress design system|Obsidian canvas|Aurora palette/i);
   });
 });

@@ -39,9 +39,9 @@ describe("coherent voice-model resolution (no cross-source downgrade)", () => {
       { llmProvider: "openai", llmModel: null },
       { voiceLlmProvider: null, voiceLlmModel: "gpt-4o" },
     );
-    // Default is xAI Grok 4.3 on Vapi; the key point is it never emits an incoherent pair.
-    expect(sel.provider).toBe("xai");
-    expect(sel.model).toBe("grok-4.3");
+    // Default is OpenAI GPT-4o on rollback Vapi; the key point is it never emits an incoherent pair.
+    expect(sel.provider).toBe("openai");
+    expect(sel.model).toBe("gpt-4o");
   });
 
   it("handles null agent/tenant without throwing", () => {

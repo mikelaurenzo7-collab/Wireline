@@ -122,9 +122,9 @@ describe("the demo-line recap is treated as the commercial email it is", () => {
 
   it("tells a demo caller the truth about why they were emailed", () => {
     const compliance = read("src/lib/email-compliance.ts");
-    expect(compliance).toContain("you asked for a recap on Wireline's demo line");
+    expect(compliance).toContain("you asked for a recap on BotBound's demo line");
     // The account-holder wording must survive for every existing caller.
-    expect(compliance).toContain("you have a Wireline account");
+    expect(compliance).toContain("you have a BotBound account");
   });
 });
 
@@ -354,8 +354,8 @@ describe("the retention purge deletes event data, never live configuration", () 
       }),
     );
     expect(journal.entries.at(-1)).toMatchObject({
-      idx: 53,
-      tag: "0155_hot_path_knowledge_and_jobs_indexes",
+      idx: 54,
+      tag: "0156_openai_runtime_cohesion",
     });
   });
 });

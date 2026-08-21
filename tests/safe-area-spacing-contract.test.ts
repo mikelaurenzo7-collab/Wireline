@@ -12,9 +12,7 @@ describe("safe-area spacing ownership", () => {
     const documentFlow = read("src/styles/marketing-document-flow.css");
     const index = read("src/index.css");
 
-    expect(app).toContain(
-      "wl-ui-caps wl-ui-caps--${mode} w-full max-w-[100vw] overflow-x-hidden",
-    );
+    expect(app).toContain("wl-ui-caps wl-ui-caps--${mode} w-full max-w-[100vw] overflow-x-hidden");
     expect(app).not.toContain("safe-area-insets");
     expect(ownership).toContain("The application root is exactly 100dvh and never pads itself");
     expect(documentFlow).toContain(".wl-ui-caps.wl-ui-caps--document");
@@ -59,7 +57,15 @@ describe("safe-area spacing ownership", () => {
       /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
-    expect(workspace).toContain("pb-5 sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6");
+    const workspaceSpacing = workspace.match(
+      /const mainSpacing = fullBleed \? "([^"]+)" : "([^"]+)"/,
+    );
+    expect(workspaceSpacing?.[1]).toContain("p-0");
+    expect(workspaceSpacing?.[2]).toMatch(/\bpx-3\b/);
+    expect(workspaceSpacing?.[2]).toMatch(/\bsm:px-6\b/);
+    expect(workspaceSpacing?.[2]).toMatch(/\blg:px-(?:7|8)\b/);
+    expect(workspaceSpacing?.[2]).toMatch(/\bxl:px-(?:9|10)\b/);
+    expect(workspaceSpacing?.[2]).toContain("lg:pb-6");
     expect(responsive).not.toContain(
       "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
     );

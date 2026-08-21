@@ -1,15 +1,14 @@
-# Wireline security disclosure policy
+# BotBound security disclosure policy
 # https://securitytxt.org/  (RFC 9116)
 #
-# If you believe you've found a security vulnerability in Wireline,
+# If you believe you've found a security vulnerability in BotBound,
 # please report it privately using the contact below. We respond
 # within one business day and credit reporters in our changelog
 # unless asked to stay anonymous.
 
-Contact: mailto:security@trywireline.com
-Contact: mailto:trywireline@yahoo.com
+Contact: https://botbound.me/contact
 Expires: 2027-01-01T00:00:00.000Z
 Preferred-Languages: en
-Canonical: https://trywireline.com/.well-known/security.txt
-Policy: https://trywireline.com/security
-Acknowledgments: https://trywireline.com/changelog
+Canonical: https://botbound.me/.well-known/security.txt
+Policy: https://botbound.me/security
+Acknowledgments: https://botbound.me/changelog

@@ -1,12 +1,12 @@
+import { CANONICAL_PRODUCTION_URL, LEGACY_COMPATIBILITY_URL } from "./lib/production-url.mjs";
+
 const argumentIndex = process.argv.findIndex((argument) => argument === "--url");
 const explicitUrl = argumentIndex >= 0 ? process.argv[argumentIndex + 1] : "";
-const baseUrl = (explicitUrl || process.env.APP_URL || "").trim().replace(/\/+$/, "");
-
-if (!baseUrl) {
-  throw new Error(
-    "Set APP_URL or pass --url https://trywireline.com to probe the ChatGPT App release surface.",
-  );
-}
+const baseUrl = (explicitUrl || process.env.APP_URL || CANONICAL_PRODUCTION_URL)
+  .trim()
+  .replace(/\/+$/, "");
+const canonicalMcpEndpoint = `${CANONICAL_PRODUCTION_URL}/mcp`;
+const legacyMcpEndpoint = `${LEGACY_COMPATIBILITY_URL}/mcp`;
 
 let origin;
 try {
@@ -33,18 +33,12 @@ const expectedAnnotations = new Map([
     "get_wireline_agent_status",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
-  [
-    "run_private_agent_turn",
-    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
-  ],
+  ["run_private_agent_turn", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
   [
     "get_agent_coaching_brief",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
-  [
-    "train_wireline_agent",
-    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
-  ],
+  ["train_wireline_agent", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
 ]);
 
 function assert(condition, message) {
@@ -80,7 +74,7 @@ async function jsonRpc(method, params = {}, id = method) {
   return { response, result: body.result };
 }
 
-const icon = await request("/wireline-chatgpt-app-icon.svg", {
+const icon = await request("/botbound-icon.svg", {
   headers: { Accept: "image/svg+xml" },
 });
 assert(icon.response.status === 200, "Dedicated ChatGPT app icon must return HTTP 200.");
@@ -89,8 +83,8 @@ assert(
   "Dedicated ChatGPT app icon must be served as SVG.",
 );
 assert(
-  typeof icon.body === "string" && icon.body.includes('<title id="title">Wireline</title>'),
-  "Dedicated ChatGPT app icon is malformed.",
+  typeof icon.body === "string" && icon.body.includes('<title id="title">BotBound</title>'),
+  "BotBound app icon is malformed.",
 );
 
 const privacy = await request("/chatgpt-app-privacy.html", { headers: { Accept: "text/html" } });
@@ -115,15 +109,23 @@ assert(
 const claudeDocs = await request("/claude-connector.html", { headers: { Accept: "text/html" } });
 assert(claudeDocs.response.status === 200, "Claude connector documentation must return HTTP 200.");
 assert(
-  typeof claudeDocs.body === "string" && claudeDocs.body.includes("https://trywireline.com/mcp"),
-  "Claude connector documentation must publish the MCP endpoint.",
+  typeof claudeDocs.body === "string" && claudeDocs.body.includes(canonicalMcpEndpoint),
+  "Claude connector documentation must publish the canonical MCP endpoint.",
+);
+assert(
+  typeof claudeDocs.body === "string" && !claudeDocs.body.includes(legacyMcpEndpoint),
+  "Claude connector documentation must not publish the compatibility origin as canonical.",
 );
 
 const cursorDocs = await request("/cursor-plugin.html", { headers: { Accept: "text/html" } });
 assert(cursorDocs.response.status === 200, "Cursor plugin documentation must return HTTP 200.");
 assert(
-  typeof cursorDocs.body === "string" && cursorDocs.body.includes("https://trywireline.com/mcp"),
-  "Cursor plugin documentation must publish the MCP endpoint.",
+  typeof cursorDocs.body === "string" && cursorDocs.body.includes(canonicalMcpEndpoint),
+  "Cursor plugin documentation must publish the canonical MCP endpoint.",
+);
+assert(
+  typeof cursorDocs.body === "string" && !cursorDocs.body.includes(legacyMcpEndpoint),
+  "Cursor plugin documentation must not publish the compatibility origin as canonical.",
 );
 assert(
   typeof cursorDocs.body === "string" && cursorDocs.body.includes("not a repo voice SDK"),
@@ -132,7 +134,7 @@ assert(
 assert(
   typeof cursorDocs.body === "string" &&
     cursorDocs.body.includes(
-      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&amp;config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==",
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&amp;config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
     ),
   "Cursor plugin documentation must publish the one-click install deeplink.",
 );
@@ -154,6 +156,16 @@ assert(
     !Array.isArray(protectedResource.body),
   "Protected-resource discovery must return JSON.",
 );
+assert(
+  protectedResource.body.resource === `${origin}/mcp`,
+  "Protected-resource discovery must bind to the probed MCP origin.",
+);
+assert(
+  Array.isArray(protectedResource.body.authorization_servers) &&
+    protectedResource.body.authorization_servers.length === 1 &&
+    protectedResource.body.authorization_servers[0] === origin,
+  "Protected-resource discovery must name the probed authorization server.",
+);
 
 const authorizationServer = await request("/.well-known/oauth-authorization-server");
 assert(
@@ -171,6 +183,18 @@ assert(
     typeof authorizationServer.body === "object" &&
     !Array.isArray(authorizationServer.body),
   "Authorization-server discovery must return JSON.",
+);
+assert(
+  authorizationServer.body.issuer === origin,
+  "Authorization-server discovery must bind its issuer to the probed origin.",
+);
+assert(
+  authorizationServer.body.authorization_endpoint === `${origin}/mcp/oauth/authorize`,
+  "Authorization-server discovery must publish the authorization endpoint on the probed origin.",
+);
+assert(
+  authorizationServer.body.token_endpoint === `${origin}/mcp/oauth/token`,
+  "Authorization-server discovery must publish the token endpoint on the probed origin.",
 );
 assert(
   authorizationServer.body.registration_endpoint === `${origin}/mcp/oauth/register`,
@@ -216,7 +240,7 @@ const initialized = await jsonRpc("initialize", {
 });
 assert(
   initialized.result.serverInfo?.name === "wireline",
-  "MCP server identity is not Wireline.",
+  "MCP server identity is not the stable wireline technical namespace.",
 );
 
 const tools = await jsonRpc("tools/list");
@@ -237,7 +261,10 @@ for (const tool of liveTools) {
     tool.outputSchema && typeof tool.outputSchema === "object",
     `${tool.name}: outputSchema is missing.`,
   );
-  assert(typeof tool.title === "string" && tool.title.trim().length > 0, `${tool.name}: title is missing.`);
+  assert(
+    typeof tool.title === "string" && tool.title.trim().length > 0,
+    `${tool.name}: title is missing.`,
+  );
   const expected = expectedAnnotations.get(tool.name);
   assert(expected, `Unexpected MCP tool exposed: ${tool.name}.`);
   for (const [key, value] of Object.entries(expected)) {
@@ -252,8 +279,14 @@ for (const tool of liveTools) {
 const lazyAuthCalls = [
   ["create_agent_draft", { business_name: "Acme", primary_goal: "Answer after hours" }],
   ["update_agent_draft", { agent_id: "draft" }],
-  ["run_private_agent_turn", { agent_id: "draft", customer_message: "Do you have Saturday appointments?" }],
-  ["train_wireline_agent", { agent_id: "draft", kind: "fact", content: "We serve residential HVAC." }],
+  [
+    "run_private_agent_turn",
+    { agent_id: "draft", customer_message: "Do you have Saturday appointments?" },
+  ],
+  [
+    "train_wireline_agent",
+    { agent_id: "draft", kind: "fact", content: "We serve residential HVAC." },
+  ],
   ["list_wireline_agents", {}],
 ];
 for (const [name, args] of lazyAuthCalls) {
@@ -298,7 +331,7 @@ assert(
   "Widget resource MIME type is incorrect.",
 );
 assert(
-  typeof content?.text === "string" && content.text.includes("Wireline agent draft"),
+  typeof content?.text === "string" && content.text.includes("BotBound Bot draft"),
   "Widget HTML is missing or malformed.",
 );
 assert(
@@ -338,8 +371,11 @@ assert(serverCard.response.status === 200, "MCP server card must return HTTP 200
 assert(
   serverCard.body &&
     typeof serverCard.body === "object" &&
-    serverCard.body.remotes?.[0]?.url?.endsWith("/mcp"),
-  "MCP server card must advertise the streamable HTTP remote.",
+    serverCard.body.websiteUrl === origin &&
+    serverCard.body.remotes?.[0]?.url === `${origin}/mcp` &&
+    serverCard.body.authentication?.oauth?.authorizationUrl === `${origin}/mcp/oauth/authorize` &&
+    serverCard.body.authentication?.oauth?.tokenUrl === `${origin}/mcp/oauth/token`,
+  "MCP server card must advertise one coherent issuer, remote, and OAuth origin.",
 );
 
 console.log(`ChatGPT App release probe passed for ${origin}.`);

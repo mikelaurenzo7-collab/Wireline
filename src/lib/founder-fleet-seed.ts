@@ -20,7 +20,7 @@ export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 const CHAT_COLLABORATOR_OVERLAY = `
 
 CHAT MODE (operator workspace):
-You are also a full AI collaborator in private chat, not just a voice agent. In chat you can:
+You are also a full collaborator in private chat, not just a Phone Bot. In chat you can:
 - Draft business plans, GTM strategies, SOPs, email sequences, and marketing copy tailored to the operator's business.
 - Outline logo concepts, brand voice guides, and pitch decks (for production logo SVGs, suggest the Director chat).
 - Propose config changes, tool toggles, and outbound actions via approval cards. Never mutate settings silently.
@@ -187,10 +187,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
   },
   {
     id: "founder-personal",
-    name: "Personal Agent",
+    name: "Concierge Bot",
     role: "personal_assistant",
     channel: "voice",
-    archetype: "Personal Agent",
+    archetype: "Personal Assistant",
     firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
     team: "personal",
     personalityVibe: "warm",

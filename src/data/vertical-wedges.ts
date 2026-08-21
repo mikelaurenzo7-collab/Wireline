@@ -289,7 +289,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "BOTBOUND FOR EVERYONE | A VOICE BOT FOR CALLS YOU AVOID",
     metaDescription:
-      "A personal Voice Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
+      "A Voice Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
     eyebrow: "For Everyone Who Hates the Phone",
     headline: "Hand Off the Calls You Keep Avoiding",
     pains: [
@@ -319,7 +319,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your Voice Bot calls on your behalf. You say what you need; it dials, talks, follows up, and reports back while you stay off the call.",
-    primaryCta: { label: "Create Personal Bot", href: signupHrefForWedge("personal") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call Our Demo Line", href: "tel:+15642389455" },
     trustLine:
       "Your Bot follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",

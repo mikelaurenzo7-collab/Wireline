@@ -2,7 +2,7 @@
 
 Status: **Canonical production runbook**
 
-The canonical deployment path is GitHub `main` -> Vercel project `revaluate/wireline` -> `trywireline.com`. Feature branches and pull requests create previews. Squash merges to `main` create production deployments.
+The canonical deployment path is GitHub `main` -> Vercel project `revaluate/wireline` -> `botbound.me`. The legacy `trywireline.com` origin remains only where registered callback compatibility requires it. Feature branches and pull requests create previews. Squash merges to `main` create production deployments.
 
 ## Release sequence
 
@@ -24,7 +24,7 @@ accepts only a READY, `main`, production-target deployment at the expected SHA.
 
 ## Vercel project boundary
 
-Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `trywireline.com` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.
+Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `botbound.me` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.
 
 The repository is pinned to Node 22 through `.nvmrc`, `package.json`, and Vercel configuration. Change the runtime family only through an intentional compatibility PR.
 
@@ -42,7 +42,7 @@ Preview builds must:
 - enforce the generated client bundle budgets and reject public source maps;
 - pass the no-database server import smoke.
 
-The `[launch-deep-audit]` commit marker runs all supported TypeScript configurations, zero-warning ESLint, the production-dependency security gate, and the complete non-E2E Vitest estate on that exact preview head. The test estate runs through `scripts/run-test-estate.mjs`, which removes database and provider credentials and forces a deterministic non-production test identity.
+The `[launch-deep-audit]` commit marker runs all supported TypeScript configurations, zero-warning ESLint, the production-dependency security gate, and the explicit current-launch Vitest estate on that exact preview head. The test estate runs through `scripts/run-test-estate.mjs`, which removes database and provider credentials and forces a deterministic non-production test identity. A local no-argument invocation remains the separate complete historical non-E2E archive and may expose obsolete contract drift; production never silently substitutes a smaller selection for that command.
 
 ## Production rules
 
@@ -50,20 +50,20 @@ The canonical production build must, in order:
 
 1. pass deployment-boundary, repository, documentation, focused contract, operational-core, and token-generation gates;
 2. validate the complete production environment against the canonical Vercel project;
-3. pass the comprehensive TypeScript, zero-warning ESLint, production-dependency security, and complete non-E2E Vitest audit on every production artifact, without relying on a commit marker and without exposing live credentials to tests;
-4. read and verify the catalog-fingerprinted Stripe Customer Portal when `WIRELINE_RECONCILE_STRIPE_PORTAL=true`;
-5. apply the exact committed Drizzle migration journal only after the code and live Stripe read-only gates pass;
-6. verify the resulting production schema effects;
-7. build the production client/server and ChatGPT MCP bundles, enforce client bundle budgets, reject public source maps, and pass server import smoke;
+3. pass the canonical TypeScript, zero-warning ESLint, runtime-policy, production-dependency security, and explicit current-launch Vitest audit on every production artifact, without relying on a commit marker and without exposing live credentials to tests;
+4. build the production client/server and ChatGPT MCP bundles, enforce client bundle budgets, reject public source maps, and pass server import smoke before any live release step;
+5. read and verify the catalog-fingerprinted Stripe Customer Portal when `WIRELINE_RECONCILE_STRIPE_PORTAL=true`;
+6. apply the exact committed Drizzle migration journal only after the code, local artifacts, and live Stripe read-only gates pass;
+7. verify the resulting production schema effects;
 8. report whether self-serve billing is authorized for the audited `main` production release channel or will remain runtime-closed;
-9. finish READY with no alias error and own `trywireline.com`.
+9. finish READY with no alias error and own `botbound.me`, with the legacy origin redirecting except for verified callback compatibility paths.
 
 Canonical production fails closed when the portal verification switch is absent or the live configuration cannot be verified. Artifact construction must never mutate Stripe Customer Portal state.
 
 After promotion, verify:
 
 ```text
-GET https://trywireline.com/api/health -> 200 { ok: true }
+GET https://botbound.me/api/health -> 200 { ok: true }
 ```
 
 Then inspect runtime errors for the new deployment and probe every route or provider flow changed by the release.
@@ -114,17 +114,17 @@ Self-serve billing is fail-closed and is authorized only on the audited canonica
 
 `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` is retired legacy configuration. It no longer authorizes checkout and no longer needs to be rotated for every safe production deploy. It may be removed from Production after the new channel-bound gate is live. Preview continues to reject that legacy variable if it is accidentally widened to Preview.
 
-This change is deliberately paired with the mandatory canonical-production pipeline: every production artifact from `main` must pass the complete clean-room TypeScript/ESLint/security/Vitest audit, environment validation, live Stripe read-only verification, migrations, schema-effect assertions, build, and server smoke before Vercel can make it READY. A surviving boolean alone cannot authorize Preview, a feature branch, or another Vercel environment.
+This change is deliberately paired with the mandatory canonical-production pipeline: every production artifact from `main` must pass the clean-room TypeScript/ESLint/runtime-policy/security/current-launch contract audit, environment validation, local artifact build and smoke, live Stripe read-only verification, migrations, and schema-effect assertions before Vercel can make it READY. A surviving boolean alone cannot authorize Preview, a feature branch, or another Vercel environment.
 
 `WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. The historical name is retained for environment compatibility, but canonical Production builds use it as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice history, and legal/return URLs before any production migration runs. Preview and Development must leave it false/unset.
 
 Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure, production-configured operator context. When drift is confirmed, run `npm run stripe:portal:reconcile` deliberately from that context, inspect the resulting managed configuration, then redeploy so the production artifact independently re-verifies the live state. The repair command is write-capable; it must not be embedded in a build, preview, or automatic retry loop.
 
-Before opening a controlled certification window, verify all of the following against the live Wireline Stripe account and the deployed artifact:
+Before opening a controlled certification window, verify all of the following against the live BotBound Stripe account and the deployed artifact:
 
-- Public business identity, support email/URL, statement descriptor, and tax posture display Wireline rather than a historical product identity.
+- Public business identity, support email/URL, statement descriptor, and tax posture display BotBound rather than the historical Wireline identity.
 - `STRIPE_AUTOMATIC_TAX_ENABLED` remains `false` unless Stripe Tax settings and at least one applicable live registration are active. Registration and nexus decisions require qualified tax advice; the application must never infer them.
-- The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `trywireline.com`.
+- The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `botbound.me`.
 - Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.
 - The exact production deployment SHA, migrations, aliases, health response, affected routes, and runtime-error stream are recorded and clean.
 - Broad invitations, paid media, cold outbound, and non-founder customer onboarding remain off during certification.

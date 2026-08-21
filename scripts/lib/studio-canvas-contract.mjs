@@ -70,6 +70,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "rail-default", pattern: /defaultSize=\{232\}/ },
     { id: "rail-range", pattern: /minSize=\{208\}[\s\S]*maxSize=\{320\}/ },
     { id: "rail-collapse", pattern: /collapsedSize=\{68\}/ },
+    { id: "wordmark", pattern: /BotBoundWordmark/ },
     { id: "manage-nav", pattern: /OPERATE_NAV/ },
     { id: "route-active-state", pattern: /useLocation/ },
     { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
@@ -85,13 +86,16 @@ export const STUDIO_CANVAS_REQUIRED = {
   navigation: [
     { id: "studio-label", pattern: /label: "Agent Studio"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
-    { id: "daily-work-order", pattern: /href: "\/studio"[\s\S]*href: "\/inbox"[\s\S]*href: "\/phone"/ },
+    {
+      id: "daily-work-order",
+      pattern: /href: "\/studio"[\s\S]*href: "\/inbox"[\s\S]*href: "\/phone"/,
+    },
     { id: "no-mobile-home", pattern: /MOBILE_PRIMARY_NAV[\s\S]*href:\s*"\/studio"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
     { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
-    { id: "readiness", pattern: /Live|Setup needed|Needs setup/ },
+    { id: "readiness", pattern: /agentReadinessLabel/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
     { id: "bot-switch-options", pattern: /agents\.map/ },

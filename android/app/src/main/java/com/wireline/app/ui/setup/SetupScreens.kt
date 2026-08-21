@@ -48,7 +48,7 @@ private val agentActions = listOf(
     AgentAction("check_calendar_availability", "Check calendars", "Looks for a time before proposing it."),
     AgentAction("book_appointment", "Book an appointment", "Creates an event once the slot is approved."),
     AgentAction("navigate_to", "Open directions", "Sends navigation to your phone when a call gives you an address."),
-    AgentAction("add_reminder", "Add a reminder", "Creates a reminder for personal or business follow-through."),
+    AgentAction("add_reminder", "Add a reminder", "Creates a reminder for follow-through."),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

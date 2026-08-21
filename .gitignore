@@ -1,5 +1,6 @@
 # Dependencies and package-manager state
 node_modules/
+/node_modules
 Pods/
 Carthage/
 vendor/bundle/
@@ -133,6 +134,20 @@ marketing-kit/
 official-assets/
 wireline-*-screenshots.zip
 wireline-*-assets*.zip
+
+# Full-resolution BotBound delivery media lives in the certified Drive tree.
+# The repository keeps reproducible source code, compact editorial inputs, and
+# proof captures; broadcast masters and editable presentation sources stay out
+# of Git history.
+/brand-work/gtm/*.pptx
+/brand-work/selected/botbound-app-icon.png
+/brand-work/commercial/*.png
+/brand-work/launch-stills/*.png
+/brand-work/exports/commercial/*.png
+/brand-work/exports/ooh/*.png
+/brand-work/exports/social/botbound-launch-instagram-1080-square.png
+/brand-work/exports/social/botbound-launch-story-1080x1920.png
+/brand-work/exports/product-proof/botbound-brand-ui-comparison.png
 
 # Local sandbox-only Vitest override; not part of CI
 vitest.sandbox.config.ts

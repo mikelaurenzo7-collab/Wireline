@@ -72,7 +72,9 @@ describe("OAuth provider identity integrity", () => {
 
     expect(binding).toContain('provider === "yahoo" ? createYahooOidcNonce() : undefined');
     expect(binding).toContain('authorizationUrl.searchParams.set("nonce", oidcNonce)');
-    expect(binding).toContain("createBoundOAuthSignInState(provider, bridgeState, oidcNonce)");
+    expect(binding).toMatch(
+      /createBoundOAuthSignInState\(\s*provider,\s*bridgeState,\s*oidcNonce,\s*legalConsentAccepted,?\s*\)/,
+    );
 
     expect(signIn).toContain("verifyYahooIdToken(tokenJson.id_token");
     expect(signIn).toContain("nonce: vs.pkceVerifier");

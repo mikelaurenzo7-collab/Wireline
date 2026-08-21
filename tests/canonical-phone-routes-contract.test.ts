@@ -25,8 +25,13 @@ describe("canonical Phone routes", () => {
       expect(source).not.toContain('to="/outbound"');
     }
 
-    expect(digest).toContain("https://trywireline.com/phone?tab=logs");
-    expect(escalation).toContain("trywireline.com/phone?tab=logs");
+    expect(digest).toContain(
+      "const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`",
+    );
+    expect(digest).toContain("in BotBound →");
+    expect(digest).not.toContain("trywireline.com/phone?tab=logs");
+    expect(digest).not.toContain("in Wireline →");
+    expect(escalation).toContain("botbound.me/phone?tab=logs");
     expect(marketingKit).toContain('route: "/phone?tab=logs"');
     expect(marketingKit).toContain('route: "/phone?tab=outbound"');
   });

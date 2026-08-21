@@ -63,7 +63,7 @@ class McpAuthorizationError extends Error {
     readonly requiredScope: McpScope,
     readonly oauthError: "invalid_token" | "insufficient_scope" = "invalid_token",
   ) {
-    super("Connect a Wireline account to continue.");
+    super("Connect a BotBound account to continue.");
   }
 }
 
@@ -139,7 +139,8 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
 
 function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {
   if (!principal) throw new McpAuthorizationError(scope, "invalid_token");
-  if (!principal.scopes.includes(scope)) throw new McpAuthorizationError(scope, "insufficient_scope");
+  if (!principal.scopes.includes(scope))
+    throw new McpAuthorizationError(scope, "insufficient_scope");
   return principal;
 }
 
@@ -147,7 +148,7 @@ function assertRehearsalConfirmation(value: unknown) {
   if (value !== true) {
     throw AppError.fromHttpStatus(
       400,
-      "Confirm that you want to trigger this private Wireline rehearsal before continuing.",
+      "Confirm that you want to trigger this private BotBound rehearsal before continuing.",
     );
   }
 }
@@ -156,7 +157,7 @@ function assertTrainingConfirmation(value: unknown) {
   if (value !== true) {
     throw AppError.fromHttpStatus(
       400,
-      "Confirm that you want this Training fact or rule to land in the Wireline workspace.",
+      "Confirm that you want this Training fact or rule to land in the BotBound workspace.",
     );
   }
 }
@@ -334,7 +335,14 @@ const trainingWriteOutputSchema = {
     landed_in_wireline: { const: true },
     open_in_wireline_url: { type: "string" },
   },
-  required: ["agent_id", "kind", "item_id", "content", "landed_in_wireline", "open_in_wireline_url"],
+  required: [
+    "agent_id",
+    "kind",
+    "item_id",
+    "content",
+    "landed_in_wireline",
+    "open_in_wireline_url",
+  ],
   additionalProperties: false,
 };
 
@@ -391,7 +399,8 @@ function toolDefinitions() {
     agent_name: { type: "string", description: "The name the agent uses with callers." },
     business_name: {
       type: "string",
-      description: "The business or personal brand the agent represents.",
+      title: "Represented name",
+      description: "The person, organization, or brand the Bot represents.",
     },
     role: { type: "string", enum: ["receptionist", "scheduler", "sales", "customer_service"] },
     primary_goal: { type: "string", description: "The main outcome the agent should drive." },
@@ -415,7 +424,7 @@ function toolDefinitions() {
       type: "array",
       items: { type: "string" },
       description:
-        "Actions the account holder wants the agent to support when configured in Wireline.",
+        "Actions the account holder wants the agent to support when configured in BotBound.",
     },
     escalation_policy: {
       type: "string",
@@ -424,16 +433,16 @@ function toolDefinitions() {
     knowledge_summary: {
       type: "string",
       description:
-        "Key business knowledge the agent should use until fuller knowledge sources are added in Wireline.",
+        "Key approved knowledge the Bot should use until fuller knowledge sources are added in BotBound.",
     },
   };
 
   return [
     {
       name: "create_agent_draft",
-      title: "Create a Wireline agent draft",
+      title: "Create a BotBound agent draft",
       description:
-        "Creates a persistent, private, unlaunched Wireline voice agent in the connected user’s workspace. Use this to help a new user build their first agent after they create a Wireline account. Before calling, summarize the proposed identity, goal, rules, and action boundaries, then obtain explicit confirmation. This does not attach a phone number, send a message, place a call, or launch the agent.",
+        "Creates a persistent, private, unlaunched Bot in the connected user’s BotBound workspace. Use this to help a new user build their first Bot after they create a BotBound account. Before calling, summarize the proposed identity, goal, rules, and action boundaries, then obtain explicit confirmation. This does not attach a phone number, send a message, place a call, or launch the Bot.",
       inputSchema: {
         type: "object",
         properties: {
@@ -453,7 +462,7 @@ function toolDefinitions() {
     },
     {
       name: "get_agent_draft",
-      title: "Get a Wireline agent draft",
+      title: "Get a BotBound agent draft",
       description:
         "Reads the connected user’s private agent draft, including its current customization profile and launch state.",
       inputSchema: {
@@ -469,9 +478,9 @@ function toolDefinitions() {
     },
     {
       name: "update_agent_draft",
-      title: "Update a Wireline agent draft",
+      title: "Update a BotBound agent draft",
       description:
-        "Updates the connected user’s private unlaunched Wireline draft. Before calling, summarize the configuration changes and obtain explicit confirmation. It does not launch the agent or activate an external action.",
+        "Updates the connected user’s private unlaunched BotBound draft. Before calling, summarize the configuration changes and obtain explicit confirmation. It does not launch the agent or activate an external action.",
       inputSchema: {
         type: "object",
         properties: {
@@ -494,7 +503,7 @@ function toolDefinitions() {
       name: "start_private_voice_simulation",
       title: "Start a private voice simulation",
       description:
-        "Creates a short-lived, tool-free voice simulation for one connected user’s Wireline draft. Before calling, obtain explicit confirmation. The simulation cannot make calls, send messages, access business systems, or complete an external action. Cursor and Claude receive a ready status only; the ChatGPT widget receives the short-lived session in client metadata.",
+        "Creates a short-lived, tool-free voice simulation for one connected user’s BotBound draft. Before calling, obtain explicit confirmation. The simulation cannot make calls, send messages, access connected systems, or complete an external action. Cursor and Claude receive a ready status only; the ChatGPT widget receives the short-lived session in client metadata.",
       inputSchema: {
         type: "object",
         properties: {
@@ -520,9 +529,9 @@ function toolDefinitions() {
     },
     {
       name: "list_wireline_agents",
-      title: "List Wireline agents",
+      title: "List BotBound agents",
       description:
-        "Lists the connected user’s Wireline agents and drafts. Use this for status or configuration questions about that user’s workspace.",
+        "Lists the connected user’s BotBound agents and drafts. Use this for status or configuration questions about that user’s workspace.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       outputSchema: {
         type: "object",
@@ -551,9 +560,9 @@ function toolDefinitions() {
     },
     {
       name: "get_wireline_workspace_summary",
-      title: "Get Wireline workspace summary",
+      title: "Get BotBound workspace summary",
       description:
-        "Returns aggregate operational status for the connected Wireline workspace: agents, assigned phone numbers, recent call/text/email activity, unread counts, channel connection state, activation, and subscription status. It never returns customer identities, message bodies, transcripts, recordings, credentials, or provider secrets.",
+        "Returns aggregate operational status for the connected BotBound workspace: agents, assigned phone numbers, recent call/text/email activity, unread counts, channel connection state, activation, and subscription status. It never returns customer identities, message bodies, transcripts, recordings, credentials, or provider secrets.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       outputSchema: workspaceSummaryOutputSchema,
       annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
@@ -562,9 +571,9 @@ function toolDefinitions() {
     },
     {
       name: "get_wireline_agent_status",
-      title: "Get Wireline agent status",
+      title: "Get BotBound agent status",
       description:
-        "Returns one connected user’s agent: whether it is on the phone network, the next Wireline step, and deep links into Studio, Training, and Wire. It never returns phone numbers, customer identities, transcripts, or message bodies.",
+        "Returns one connected user’s agent: whether it is on the phone network, the next BotBound step, and deep links into Studio, Training, and Wire. It never returns phone numbers, customer identities, transcripts, or message bodies.",
       inputSchema: {
         type: "object",
         properties: { agent_id: { type: "string" } },
@@ -580,7 +589,7 @@ function toolDefinitions() {
       name: "run_private_agent_turn",
       title: "Run a private agent rehearsal",
       description:
-        "Triggers one connected user’s Wireline agent in a private, tool-free text rehearsal. Use this to hear how the agent would answer a hypothetical customer line from Cursor, ChatGPT, or Claude. It does not place a live call, send a message, book anything, or launch the agent.",
+        "Triggers one connected user’s BotBound agent in a private, tool-free text rehearsal. Use this to hear how the agent would answer a hypothetical customer line from Cursor, ChatGPT, or Claude. It does not place a live call, send a message, book anything, or launch the agent.",
       inputSchema: {
         type: "object",
         properties: {
@@ -591,7 +600,8 @@ function toolDefinitions() {
           },
           confirmed: {
             type: "boolean",
-            description: "True only after the user explicitly asks to trigger this private rehearsal.",
+            description:
+              "True only after the user explicitly asks to trigger this private rehearsal.",
           },
         },
         required: ["agent_id", "customer_message", "confirmed"],
@@ -604,7 +614,7 @@ function toolDefinitions() {
     },
     {
       name: "get_agent_coaching_brief",
-      title: "Get a Wireline coaching brief",
+      title: "Get a BotBound coaching brief",
       description:
         "Returns owner-authored Training facts and operating rules for one connected user’s agent, plus the next coaching step. Use this to gameplan. It never returns customer identities, transcripts, recordings, or phone numbers.",
       inputSchema: {
@@ -620,9 +630,9 @@ function toolDefinitions() {
     },
     {
       name: "train_wireline_agent",
-      title: "Train a Wireline agent",
+      title: "Train a BotBound agent",
       description:
-        "Saves a confirmed Training fact or operating rule into the connected user’s Wireline workspace so it is live in Training. The account holder must enable connected-app Training writes in Wireline Apps first. This does not launch the agent, attach a number, or contact a customer.",
+        "Saves a confirmed Training fact or operating rule into the connected user’s BotBound workspace so it is live in Training. The account holder must enable connected-app Training writes in BotBound Apps first. This does not launch the agent, attach a number, or contact a customer.",
       inputSchema: {
         type: "object",
         properties: {
@@ -632,10 +642,11 @@ function toolDefinitions() {
             enum: ["fact", "rule"],
             description: "fact lands in Training knowledge. rule lands as an operating directive.",
           },
-          content: { type: "string", description: "The fact or rule to persist in Wireline." },
+          content: { type: "string", description: "The fact or rule to persist in BotBound." },
           confirmed: {
             type: "boolean",
-            description: "True only after the user explicitly confirms this should land in Wireline.",
+            description:
+              "True only after the user explicitly confirms this should land in BotBound.",
           },
         },
         required: ["agent_id", "kind", "content", "confirmed"],
@@ -656,44 +667,44 @@ function resourceMeta(req: Request) {
 const MCP_PROMPTS = [
   {
     name: "create_first_voice_agent",
-    title: "Create your first Wireline voice agent",
+    title: "Create your first Bot",
     description:
-      "Help a new Wireline user create their first confirmed private draft from a conversation, then privately rehearse it. Do not place a live call.",
+      "Help a new BotBound user create their first confirmed private draft from a conversation, then privately rehearse it. Do not place a live call.",
   },
   {
     name: "create_after_hours_receptionist",
     title: "Create an after-hours receptionist",
     description:
-      "Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.",
+      "Create a confirmed private BotBound draft that answers after hours, captures ZIP and urgency, and never quotes prices.",
   },
   {
     name: "refine_draft_boundaries",
     title: "Refine draft boundaries",
     description:
-      "Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+      "Update a saved BotBound draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a BotBound handoff path is configured.",
   },
   {
     name: "inspect_workspace_status",
     title: "Inspect workspace status",
     description:
-      "Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.",
+      "Ask for a privacy-minimized BotBound workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.",
   },
   {
     name: "rehearse_agent_reply",
     title: "Rehearse an agent reply",
     description:
-      "Trigger a private text rehearsal of a saved Wireline agent with a hypothetical customer line. Do not place a live call.",
+      "Trigger a private text rehearsal of a saved BotBound agent with a hypothetical customer line. Do not place a live call.",
   },
   {
     name: "coach_agent_training",
     title: "Coach agent training",
     description:
-      "Read the coaching brief for a Wireline agent, then add a confirmed Training fact or operating rule that lands in Wireline.",
+      "Read the coaching brief for a BotBound agent, then add a confirmed Training fact or operating rule that lands in BotBound.",
   },
 ] as const;
 
 const MCP_PROMPT_MESSAGES: Record<(typeof MCP_PROMPTS)[number]["name"], string> = {
-  create_first_voice_agent: `Help me create a Wireline account if I do not have one, then build my first voice agent in this chat.
+  create_first_voice_agent: `Help me create a BotBound account if I do not have one, then build my first Bot in this chat.
 
 Workflow:
 1. If tools require Connect, wait for me to finish OAuth. New users sign up and return to consent.
@@ -702,21 +713,21 @@ Workflow:
 4. Summarize identity, goal, rules, prohibited topics, and escalation. Call create_agent_draft only after I explicitly confirm.
 5. Privately rehearse with run_private_agent_turn or start_private_voice_simulation.
 6. Point me to open_in_wireline_url for a number and launch. Do not place a live call or claim a customer was contacted.`,
-  create_after_hours_receptionist: `Create a confirmed private Wireline draft that answers after hours, captures ZIP and urgency, and never quotes prices.
+  create_after_hours_receptionist: `Create a confirmed private BotBound draft that answers after hours, captures ZIP and urgency, and never quotes prices.
 
 Summarize the proposed identity, goal, rules, and boundaries first. Call create_agent_draft only after I confirm. Then offer a private rehearsal. Do not place a live call.`,
-  refine_draft_boundaries: `Update a saved Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.
+  refine_draft_boundaries: `Update a saved BotBound draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a BotBound handoff path is configured.
 
 Summarize the changes, then call update_agent_draft only after I confirm. Do not launch the agent.`,
-  inspect_workspace_status: `Ask for a privacy-minimized Wireline workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.
+  inspect_workspace_status: `Ask for a privacy-minimized BotBound workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.
 
 Use get_wireline_workspace_summary. Never ask for or repeat customer identities, transcripts, recordings, or phone numbers.`,
-  rehearse_agent_reply: `Trigger a private text rehearsal of a saved Wireline agent with a hypothetical customer line.
+  rehearse_agent_reply: `Trigger a private text rehearsal of a saved BotBound agent with a hypothetical customer line.
 
 Ask me for the line if I have not given one. Call run_private_agent_turn only after I confirm. State that this is not a live call.`,
-  coach_agent_training: `Read the coaching brief for a Wireline agent, then add a confirmed Training fact or operating rule that lands in Wireline.
+  coach_agent_training: `Read the coaching brief for a BotBound agent, then add a confirmed Training fact or operating rule that lands in BotBound.
 
-Use get_agent_coaching_brief first. If train_wireline_agent says the Apps toggle is off, send me to Wireline Apps. Do not invent a workaround or claim a live call happened.`,
+Use get_agent_coaching_brief first. If train_wireline_agent says the Apps toggle is off, send me to BotBound Apps. Do not invent a workaround or claim a live call happened.`,
 };
 
 function inputFromArgs(args: Record<string, unknown>): AgentCustomizationInput {
@@ -761,7 +772,7 @@ router.post("/mcp", async (req, res) => {
         },
         serverInfo: { name: MCP_SERVER_NAME, title: MCP_SERVER_TITLE, version: MCP_SERVER_VERSION },
         instructions:
-          "Wireline is the system of record. Cursor, ChatGPT, and Claude help a new user create a Wireline account and build their first voice agent here. They are not a voice SDK for a git repo. Confirm every create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Never claim a live call, SMS, email, number attachment, or launch happened here. After the first draft, point the user to open_in_wireline_url for numbers and launch.",
+          "BotBound is the system of record. Cursor, ChatGPT, and Claude help a new user create a BotBound account and build their first Bot here. They are not a voice SDK for a git repo. Confirm every create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Never claim a live call, SMS, email, number attachment, or launch happened here. After the first draft, point the user to open_in_wireline_url for numbers and launch.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
@@ -787,10 +798,10 @@ router.post("/mcp", async (req, res) => {
         resources: [
           {
             uri: CHATGPT_ACCOUNT_WIDGET_URI,
-            name: "Wireline agent draft",
+            name: "BotBound agent draft",
             mimeType: "text/html;profile=mcp-app",
             description:
-              "Connected Wireline agent draft with private voice simulation and a workspace handoff.",
+              "Connected BotBound agent draft with private voice simulation and a workspace handoff.",
           },
         ],
       });
@@ -828,7 +839,7 @@ router.post("/mcp", async (req, res) => {
       );
       return jsonRpc(res, id, {
         content: [
-          { type: "text", text: `${view.name} is saved as an unlaunched Wireline agent draft.` },
+          { type: "text", text: `${view.name} is saved as an unlaunched BotBound agent draft.` },
         ],
         structuredContent: structured,
         _meta: { agent_id: view.id },
@@ -841,7 +852,7 @@ router.post("/mcp", async (req, res) => {
       const structured = toStructuredDraft(draft.view, req);
       return jsonRpc(res, id, {
         content: [
-          { type: "text", text: `${draft.view.name} is an unlaunched Wireline agent draft.` },
+          { type: "text", text: `${draft.view.name} is an unlaunched BotBound agent draft.` },
         ],
         structuredContent: structured,
         _meta: { agent_id: draft.view.id },
@@ -859,7 +870,7 @@ router.post("/mcp", async (req, res) => {
       );
       return jsonRpc(res, id, {
         content: [
-          { type: "text", text: `${view.name} was updated in the connected Wireline workspace.` },
+          { type: "text", text: `${view.name} was updated in the connected BotBound workspace.` },
         ],
         structuredContent: structured,
         _meta: { agent_id: view.id },
@@ -874,7 +885,7 @@ router.post("/mcp", async (req, res) => {
         throw new AppError(
           503,
           "LAUNCH_NOT_READY",
-          "Private voice simulation is temporarily paused while Wireline restores launch readiness.",
+          "Private voice simulation is temporarily paused while BotBound restores launch readiness.",
         );
       }
       const limit = await rateLimit(`chatgpt-private-simulation:${authed.userId}`, {
@@ -885,7 +896,7 @@ router.post("/mcp", async (req, res) => {
       });
       if (!limit.allowed)
         throw AppError.tooManyRequests(
-          "The private voice simulation limit has been reached. Continue testing from Wireline.",
+          "The private voice simulation limit has been reached. Continue testing from BotBound.",
         );
       // Every mint charges a vendor-metered realtime secret on the platform
       // key, so this tool must draw from the same daily simulation-minute
@@ -911,7 +922,7 @@ router.post("/mcp", async (req, res) => {
         });
       if (!quota.allowed)
         throw AppError.tooManyRequests(
-          "Today's live-simulation minutes are used. They reset at midnight UTC, continue testing from Wireline.",
+          "Today's live-simulation minutes are used. They reset at midnight UTC, continue testing from BotBound.",
         );
       if (!quota.persisted) {
         // Read-only fallback decision: the increment was not durably
@@ -957,7 +968,7 @@ router.post("/mcp", async (req, res) => {
           throw new AppError(
             402,
             "SPEND_CAP_REACHED",
-            "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
+            "The plan-funded simulation allowance is used for this period. Continue from BotBound billing.",
             {
               period: spendDecision.period,
               month_to_date_usd: spendDecision.monthToDateUsd,
@@ -1045,8 +1056,8 @@ router.post("/mcp", async (req, res) => {
           {
             type: "text",
             text: agents.length
-              ? `Found ${agents.length} Wireline agent${agents.length === 1 ? "" : "s"}.`
-              : "No Wireline agents yet.",
+              ? `Found ${agents.length} BotBound agent${agents.length === 1 ? "" : "s"}.`
+              : "No BotBound agents yet.",
           },
         ],
         structuredContent: { agents },
@@ -1121,7 +1132,7 @@ router.post("/mcp", async (req, res) => {
         content: [
           {
             type: "text",
-            text: `Wireline workspace: ${summary.agent_count} agent${summary.agent_count === 1 ? "" : "s"}, ${summary.assigned_phone_number_count} assigned number${summary.assigned_phone_number_count === 1 ? "" : "s"}, and ${recentTotal} call, text, or email thread${recentTotal === 1 ? "" : "s"} in the last 30 days.`,
+            text: `BotBound workspace: ${summary.agent_count} agent${summary.agent_count === 1 ? "" : "s"}, ${summary.assigned_phone_number_count} assigned number${summary.assigned_phone_number_count === 1 ? "" : "s"}, and ${recentTotal} call, text, or email thread${recentTotal === 1 ? "" : "s"} in the last 30 days.`,
           },
         ],
         structuredContent: summary,
@@ -1143,7 +1154,7 @@ router.post("/mcp", async (req, res) => {
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, authed.userId)))
           .limit(1);
-        if (!agent) throw AppError.notFound("Wireline agent not found.");
+        if (!agent) throw AppError.notFound("BotBound agent not found.");
         const [line] = await drizzle
           .select({ id: schema.phoneNumbers.id })
           .from(schema.phoneNumbers)
@@ -1164,8 +1175,8 @@ router.post("/mcp", async (req, res) => {
           channel: agent.channel || "voice",
           on_phone_network: onPhoneNetwork,
           next_step: onPhoneNetwork
-            ? "This agent is on the phone network. Open Wireline Studio to operate live work. You can still run a private rehearsal from this client."
-            : "This agent is still a private draft. Open Wireline Wire to attach a number and launch. You can privately rehearse it from this client.",
+            ? "This agent is on the phone network. Open BotBound Studio to operate live work. You can still run a private rehearsal from this client."
+            : "This agent is still a private draft. Open BotBound Wire to attach a number and launch. You can privately rehearse it from this client.",
           open_in_wireline_url: `${origin}/studio?agent=${encoded}`,
           training_url: `${origin}/knowledge?agent=${encoded}`,
           wire_url: `${origin}/connections?agent=${encoded}`,
@@ -1197,7 +1208,7 @@ router.post("/mcp", async (req, res) => {
         throw new AppError(
           503,
           "LAUNCH_NOT_READY",
-          "Private rehearsal is temporarily paused while Wireline restores launch readiness.",
+          "Private rehearsal is temporarily paused while BotBound restores launch readiness.",
         );
       }
       if (!isRuntimeAvailable()) {
@@ -1214,7 +1225,7 @@ router.post("/mcp", async (req, res) => {
       });
       if (!limit.allowed) {
         throw AppError.tooManyRequests(
-          "The private rehearsal limit has been reached. Continue testing from Wireline.",
+          "The private rehearsal limit has been reached. Continue testing from BotBound.",
         );
       }
       let capExceeded = false;
@@ -1237,7 +1248,7 @@ router.post("/mcp", async (req, res) => {
         throw new AppError(
           402,
           "SPEND_CAP_REACHED",
-          "The plan-funded rehearsal allowance is used for this period. Continue from Wireline billing.",
+          "The plan-funded rehearsal allowance is used for this period. Continue from BotBound billing.",
         );
       }
       const turn = await tenantStore.run(authed.userId, () =>
@@ -1264,7 +1275,7 @@ router.post("/mcp", async (req, res) => {
       const brief = await tenantStore.run(authed.userId, () =>
         getAgentCoachingBrief(authed.userId, text(args.agent_id, 256)),
       );
-      const openInWirelineUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(brief.agent_id)}`;
+      const openInBotBoundUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(brief.agent_id)}`;
       return jsonRpc(res, id, {
         content: [
           {
@@ -1272,8 +1283,8 @@ router.post("/mcp", async (req, res) => {
             text: `${brief.agent_name}: ${brief.training_fact_count} Training fact${brief.training_fact_count === 1 ? "" : "s"}, ${brief.operating_rule_count} operating rule${brief.operating_rule_count === 1 ? "" : "s"}. ${brief.next_step}`,
           },
         ],
-        structuredContent: { ...brief, open_in_wireline_url: openInWirelineUrl },
-        _meta: { agent_id: brief.agent_id, open_in_wireline_url: openInWirelineUrl },
+        structuredContent: { ...brief, open_in_wireline_url: openInBotBoundUrl },
+        _meta: { agent_id: brief.agent_id, open_in_wireline_url: openInBotBoundUrl },
       });
     }
 
@@ -1291,7 +1302,7 @@ router.post("/mcp", async (req, res) => {
       if (!allowed) {
         throw AppError.fromHttpStatus(
           403,
-          "Enable connected-app Training writes in Wireline Apps before a fact or rule can land in Training.",
+          "Enable connected-app Training writes in BotBound Apps before a fact or rule can land in Training.",
         );
       }
       const saved = await tenantStore.run(authed.userId, () =>
@@ -1302,19 +1313,23 @@ router.post("/mcp", async (req, res) => {
           content: text(args.content, kind === "fact" ? 4000 : 2000),
         }),
       );
-      const openInWirelineUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(saved.agent_id)}`;
+      const openInBotBoundUrl = `${issuer(req)}/knowledge?agent=${encodeURIComponent(saved.agent_id)}`;
       return jsonRpc(res, id, {
         content: [
           {
             type: "text",
             text:
               kind === "fact"
-                ? `Saved a Training fact for this agent in Wireline.`
-                : `Saved an operating rule for this agent in Wireline.`,
+                ? `Saved a Training fact for this agent in BotBound.`
+                : `Saved an operating rule for this agent in BotBound.`,
           },
         ],
-        structuredContent: { ...saved, landed_in_wireline: true as const, open_in_wireline_url: openInWirelineUrl },
-        _meta: { agent_id: saved.agent_id, open_in_wireline_url: openInWirelineUrl },
+        structuredContent: {
+          ...saved,
+          landed_in_wireline: true as const,
+          open_in_wireline_url: openInBotBoundUrl,
+        },
+        _meta: { agent_id: saved.agent_id, open_in_wireline_url: openInBotBoundUrl },
       });
     }
 
@@ -1325,11 +1340,11 @@ router.post("/mcp", async (req, res) => {
       const challenge = mcpOAuthChallenge(
         `${issuer(req)}/.well-known/oauth-protected-resource`,
         error.requiredScope,
-        "Connect a Wireline account to continue.",
+        "Connect a BotBound account to continue.",
         error.oauthError,
       );
       res.setHeader("WWW-Authenticate", challenge);
-      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", status, {
+      return jsonRpcError(res, id, -32001, "Connect a BotBound account to continue.", status, {
         required_scope: error.requiredScope,
         oauth_error: error.oauthError,
         _meta: { "mcp/www_authenticate": [challenge] },
@@ -1345,7 +1360,7 @@ router.post("/mcp", async (req, res) => {
       method,
       error: error instanceof Error ? error.message : String(error),
     });
-    return jsonRpcError(res, id, -32603, "Wireline could not complete that request.", 500);
+    return jsonRpcError(res, id, -32603, "BotBound could not complete that request.", 500);
   }
 });
 

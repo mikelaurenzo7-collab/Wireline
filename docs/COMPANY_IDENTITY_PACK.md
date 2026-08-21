@@ -1,41 +1,41 @@
-# Wireline Company Identity Pack
+# BotBound Company Identity Pack
 
 **Status:** Active product contract  
 **Date:** 2026-07-11  
-**Owner:** Wireline
+**Owner:** BotBound
 
 ## Decision
 
-Wireline should give each live voice agent a dedicated company identity, not merely a phone number.
+BotBound gives each live Bot a dedicated company identity, not merely a phone number.
 
 The customer-facing package is:
 
-1. **Dedicated Wireline number** for inbound calls, outbound calls, callbacks, and SMS where supported.
+1. **Dedicated BotBound number** for inbound calls, outbound calls, callbacks, and SMS where supported.
 2. **Verified calling identity** using the customer's company display name, traditional CNAM fallback, and optional enhanced logo/call-reason assets where supported.
 3. **Registered SMS identity** for compliant application-to-person messaging.
 4. **Branded email identity** using the customer's sender name and authenticated sending domain.
 5. **One shared identity record** across the agent's voice, SMS, and email work.
 
-## What Wireline can promise
+## What BotBound can promise
 
-Wireline can:
+BotBound can:
 
 - provision or attach a dedicated business number on eligible paid plans;
 - collect and validate the company's identity profile;
 - separate profile readiness from external provider approval;
-- record an auditable request for Wireline review;
+- record an auditable request for BotBound review;
 - support founder-led provider submission during the founding-customer phase;
 - track review state per channel;
 - use one company identity across the agent's connected channels;
 - show exactly what is missing before a review request can be made.
 
-## What Wireline must not promise
+## What BotBound must not promise
 
-Wireline must not claim that:
+BotBound must not claim that:
 
 - a company name will appear on every recipient's phone;
 - a logo or call reason will appear on every mobile network or device;
-- completing the Wireline form means a carrier has approved the identity;
+- completing the BotBound form means a carrier has approved the identity;
 - clicking the review button automatically submits to every provider;
 - traditional CNAM and enhanced mobile branding are the same thing;
 - an SMS sender is production-ready before required business/campaign registration;
@@ -44,7 +44,7 @@ Wireline must not claim that:
 
 The customer-facing guarantee is intentionally narrow:
 
-> Wireline records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.
+> BotBound records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.
 
 ## Current implementation
 
@@ -62,7 +62,7 @@ The customer-facing guarantee is intentionally narrow:
 - voice, SMS, and email channel selection;
 - per-channel profile readiness;
 - per-channel provider status;
-- an explicit Wireline identity-review request;
+- an explicit BotBound identity-review request;
 - provider-state-aware review controls that prevent no-op resubmission;
 - explicit fail-closed feedback when no channel is selected;
 - 44-pixel minimum channel-selection targets.
@@ -95,17 +95,17 @@ Company Identity saves, review requests, stale-state reconciliation, and ordinar
 
 Provider review state is bound to a SHA-256 digest of the actual reviewed identity, including the dedicated number. The normalized business profile is not duplicated as a raw fingerprint in preferences or audit metadata. Changing the company identity or number invalidates stale review state. Merely adding another requested channel does not erase an already-approved identity for another channel.
 
-An explicitly empty or corrupt channel selection fails closed. Wireline never silently broadens it back to voice, SMS, and email.
+An explicitly empty or corrupt channel selection fails closed. BotBound never silently broadens it back to voice, SMS, and email.
 
 ### Founding-customer operating mode
 
 The current launch path is intentionally founder-led:
 
 1. The customer completes the identity profile.
-2. Wireline validates channel prerequisites.
-3. The customer requests Wireline review.
+2. BotBound validates channel prerequisites.
+3. The customer requests BotBound review.
 4. The request and exact identity digest are recorded durably.
-5. Wireline operations completes the applicable carrier, messaging, or email-provider workflow manually.
+5. BotBound operations completes the applicable carrier, messaging, or email-provider workflow manually.
 6. Provider status is reflected only after authoritative evidence exists.
 
 Automatic provider submission is not claimed until the relevant provider adapters, callbacks, and admin controls are implemented and proven.
@@ -115,7 +115,7 @@ Automatic provider submission is not claimed until the relevant provider adapter
 ### Profile status
 
 - `incomplete` — required business information is missing.
-- `ready` — Wireline has the minimum profile needed to request provider review.
+- `ready` — BotBound has the minimum profile needed to request provider review.
 
 ### Provider status
 
@@ -132,9 +132,9 @@ Automatic provider submission is not claimed until the relevant provider adapter
 
 ### Calling identity
 
-Minimum Wireline profile:
+Minimum BotBound profile:
 
-- dedicated Wireline number;
+- dedicated BotBound number;
 - company display name;
 - 15-character caller-ID fallback name;
 - company website.
@@ -143,9 +143,9 @@ Traditional CNAM is the fallback for landlines and other non-enhanced displays. 
 
 ### SMS identity
 
-Minimum Wireline profile:
+Minimum BotBound profile:
 
-- dedicated Wireline number;
+- dedicated BotBound number;
 - company display name;
 - company website;
 - support email.
@@ -154,7 +154,7 @@ This only establishes profile readiness. United States application-to-person lon
 
 ### Email identity
 
-Minimum Wireline profile:
+Minimum BotBound profile:
 
 - company display name;
 - company website;
@@ -185,9 +185,9 @@ Official references:
 
 ## Success criteria
 
-- Customers understand that the number belongs to their voice agent.
+- Customers understand that the number belongs to their Bot.
 - Customers can configure one recognizable company identity across channels.
-- Wireline never represents profile completion as provider approval.
+- BotBound never represents profile completion as provider approval.
 - Every review request and invalidation is auditable.
 - Provider limitations are visible before activation.
 - Identity or number changes invalidate stale review states durably.

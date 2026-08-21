@@ -1,3 +1,5 @@
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
+import { isProductionDeployment } from "./deployment-environment";
 import { isProductionRuntime } from "./session-cookie";
 
 const DEV_DEFAULT = "http://localhost:3000";
@@ -14,7 +16,9 @@ function previewDeploymentUrl(): string {
 function configuredAppUrl(): string {
   const previewUrl = previewDeploymentUrl();
   if (previewUrl) return previewUrl;
-  return String(process.env.APP_URL || "").trim().replace(/\/+$/, "");
+  return String(process.env.APP_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
 }
 
 /**
@@ -23,7 +27,12 @@ function configuredAppUrl(): string {
  */
 export function getCanonicalAppUrl(): string {
   const fromEnv = configuredAppUrl();
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    if (isProductionDeployment() && fromEnv !== BOTBOUND_PRODUCTION_ORIGIN) {
+      throw new Error(`APP_URL must be exactly ${BOTBOUND_PRODUCTION_ORIGIN} in production`);
+    }
+    return fromEnv;
+  }
   if (isProductionRuntime()) {
     throw new Error("APP_URL is required in production");
   }
@@ -31,9 +40,15 @@ export function getCanonicalAppUrl(): string {
 }
 
 /** Safe resolver for routes that must not throw when misconfigured. */
-export function resolveCanonicalAppUrl(): { url: string } | { error: "APP_URL_NOT_CONFIGURED" } {
+export function resolveCanonicalAppUrl():
+  { url: string } | { error: "APP_URL_NOT_CONFIGURED" | "APP_URL_NOT_CANONICAL" } {
   const fromEnv = configuredAppUrl();
-  if (fromEnv) return { url: fromEnv };
+  if (fromEnv) {
+    if (isProductionDeployment() && fromEnv !== BOTBOUND_PRODUCTION_ORIGIN) {
+      return { error: "APP_URL_NOT_CANONICAL" };
+    }
+    return { url: fromEnv };
+  }
   if (isProductionRuntime()) return { error: "APP_URL_NOT_CONFIGURED" };
   return { url: DEV_DEFAULT };
 }

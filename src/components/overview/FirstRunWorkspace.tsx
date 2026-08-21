@@ -26,9 +26,8 @@ export default function FirstRunWorkspace() {
               Build Your Bot
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-              Start with a proven role or create your own. Configure voice, text, email,
-              knowledge, tools, guardrails, approvals, and handoffs without choosing a
-              personal or business workspace.
+              Start with a proven role or create your own. Configure voice, text, email, knowledge,
+              tools, guardrails, approvals, and handoffs in one BotBound workspace.
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row">
               <Button asChild className="justify-center sm:min-w-[170px]">
@@ -63,11 +62,7 @@ export default function FirstRunWorkspace() {
           </p>
           <ol className="mt-4 grid gap-3">
             {[
-              [
-                "1",
-                "Choose the Job",
-                "Pick a business role, a personal starter, or a blank canvas.",
-              ],
+              ["1", "Choose the Job", "Pick a proven role starter or begin with a blank canvas."],
               [
                 "2",
                 "Connect the Channels",
@@ -85,7 +80,9 @@ export default function FirstRunWorkspace() {
                 </span>
                 <span className="min-w-0">
                   <strong className="block text-sm font-semibold text-foreground">{title}</strong>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {detail}
+                  </span>
                 </span>
               </li>
             ))}

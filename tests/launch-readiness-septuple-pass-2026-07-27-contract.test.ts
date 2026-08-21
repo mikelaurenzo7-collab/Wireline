@@ -8,12 +8,17 @@ const read = (path: string) =>
 describe("launch readiness septuple-pass 2026-07-27", () => {
   it("never treats Call Logs HTTP failures as an empty inventory", () => {
     const logs = read("src/components/CallLogsClaude.tsx");
-    expect(logs).toContain('throw new Error("Couldn\'t load calls. Try again in a moment.")');
+    const probe = read("src/components/PhoneCallHistoryPanel.tsx");
+    const overview = read("src/components/CallOpsOverview.tsx");
+    expect(logs).toContain('if (!response.ok) throw new Error("Could not load calls.")');
     expect(logs).not.toContain("response.ok ? response.json() : null");
-    expect(logs).toContain("loadFailed={Boolean(error)}");
-    expect(logs).toContain("if (loadFailed && !calls.length) return null");
-    expect(logs).toContain("if (loadFailed && !items.length) return null");
-    expect(logs).toContain('{metricsLoading || metricsError ? "N/A" : kpi.value}');
+    expect(logs).toContain('title="Call history unavailable"');
+    expect(logs).toContain("!calls.length && !error");
+    expect(logs).toContain("error && !calls.length ? null");
+    expect(probe).toContain("if (!response.ok) throw new Error");
+    expect(probe).toContain('title="Calls unavailable"');
+    expect(probe).toContain("Nothing has been erased.");
+    expect(overview).toContain('{metricsLoading || metricsError ? "N/A" : kpi.value}');
   });
 
   it("surfaces Webhooks and Intake Keys load failures instead of empty success", () => {
@@ -43,11 +48,13 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(billing).toContain("Billing unavailable");
   });
 
-  it("traps focus in CookieConsent and avoids fake no-line after phone refresh failure", () => {
+  it("keeps the compact CookieConsent non-modal and avoids fake no-line after phone refresh failure", () => {
     const cookie = read("src/components/CookieConsent.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
-    expect(cookie).toContain("useModalFocusTrap");
-    expect(cookie).toContain('aria-modal="true"');
+    expect(cookie).toContain('role="region"');
+    expect(cookie).toContain("privacyPanelRef.current?.focus()");
+    expect(cookie).not.toContain("useModalFocusTrap");
+    expect(cookie).not.toContain('aria-modal="true"');
     expect(wizard).toContain(
       "Couldn't refresh phone lines. Retry before provisioning another number.",
     );
@@ -57,9 +64,15 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
 
   it("keeps Call Logs and Cadences usable when secondary fetches fail", () => {
     const logs = read("src/components/CallLogsClaude.tsx");
+    const overview = read("src/components/CallOpsOverview.tsx");
     const cadences = read("src/components/Cadences.tsx");
-    expect(logs).toContain('{activeTab === "floor" ? (');
-    expect(logs).not.toContain('{!error && activeTab === "floor"');
+    expect(logs).toContain("setLoadMoreError(");
+    expect(logs).toContain("The calls already shown remain available.");
+    expect(logs).toContain("{desktop ? (");
+    expect(logs).not.toContain("{!error && desktop ? (");
+    expect(overview).toContain('title="Operational metrics unavailable"');
+    expect(overview).toContain("Call history and all-time analytics remain available.");
+    expect(overview).toContain("<CallOpsAnalytics />");
     expect(cadences).toContain("setRunsWarning(");
     expect(cadences).toContain("{runsWarning ? (");
   });

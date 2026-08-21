@@ -4,6 +4,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Download,
+  Loader2,
   Phone,
   RefreshCw,
 } from "lucide-react";
@@ -43,6 +44,7 @@ type CallsResponse = {
 };
 
 const CALL_LIST_PANEL_STORAGE_KEY = "wireline:calls-history-pane:v1";
+const CALL_PAGE_SIZE = 100;
 
 function formatDuration(seconds: number | null | undefined): string {
   if (!seconds || seconds < 0) return "";
@@ -87,6 +89,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [query, setQuery] = useState("");
@@ -96,7 +102,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     setLoading(true);
     setError(null);
     try {
-      const queryParams = new URLSearchParams({ limit: "100", offset: "0" });
+      const queryParams = new URLSearchParams({ limit: String(CALL_PAGE_SIZE), offset: "0" });
       const endpoint = agentId
         ? `/api/agents/${encodeURIComponent(agentId)}/calls?${queryParams.toString()}`
         : `/api/calls?${queryParams.toString()}`;
@@ -104,12 +110,18 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       if (!response.ok) throw new Error("Could not load calls.");
       const body = (await response.json()) as CallsResponse;
       const nextCalls = Array.isArray(body.calls) ? body.calls : [];
+      const nextTotal =
+        typeof body.total === "number" && Number.isFinite(body.total)
+          ? Math.max(nextCalls.length, body.total)
+          : nextCalls.length;
       setCalls(nextCalls);
+      setTotal(nextTotal);
+      setHasMore(body.hasMore === true || nextCalls.length < nextTotal);
+      setLoadMoreError(null);
       setSelectedId((current) =>
         current && nextCalls.some((call) => call.id === current) ? current : null,
       );
     } catch (reason) {
-      setCalls([]);
       setError(reason instanceof Error ? reason.message : "Could not load calls.");
     } finally {
       setLoading(false);
@@ -117,10 +129,47 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   }, [agentId]);
 
   useEffect(() => {
+    setCalls([]);
+    setTotal(0);
+    setHasMore(false);
+    setLoadMoreError(null);
     setSelectedId(null);
     setQuery("");
     void loadCalls();
   }, [loadCalls]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const queryParams = new URLSearchParams({
+        limit: String(CALL_PAGE_SIZE),
+        offset: String(calls.length),
+      });
+      const endpoint = agentId
+        ? `/api/agents/${encodeURIComponent(agentId)}/calls?${queryParams.toString()}`
+        : `/api/calls?${queryParams.toString()}`;
+      const response = await authFetch(endpoint);
+      if (!response.ok) throw new Error("Could not load more calls.");
+      const body = (await response.json()) as CallsResponse;
+      const page = Array.isArray(body.calls) ? body.calls : [];
+      const nextTotal =
+        typeof body.total === "number" && Number.isFinite(body.total)
+          ? Math.max(calls.length + page.length, body.total)
+          : Math.max(total, calls.length + page.length);
+      setCalls((current) => {
+        const knownIds = new Set(current.map((call) => call.id));
+        return [...current, ...page.filter((call) => !knownIds.has(call.id))];
+      });
+      setTotal(nextTotal);
+      setHasMore(body.hasMore === true || calls.length + page.length < nextTotal);
+    } catch (reason) {
+      setLoadMoreError(reason instanceof Error ? reason.message : "Could not load more calls.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [agentId, calls.length, hasMore, loading, loadingMore, total]);
 
   const selected = useMemo(
     () => calls.find((call) => call.id === selectedId) || null,
@@ -145,6 +194,37 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     );
   }, [calls, query]);
 
+  const paginationControl =
+    hasMore || loadMoreError ? (
+      <div className="border-t border-border p-3">
+        {loadMoreError ? (
+          <StatusNotice
+            tone="warning"
+            title="More calls unavailable"
+            action={
+              <Button type="button" variant="secondary" size="sm" onClick={loadMore}>
+                Try again
+              </Button>
+            }
+          >
+            {loadMoreError} The calls already shown remain available.
+          </StatusNotice>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full justify-center"
+            onClick={loadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+            {loadingMore ? "Loading more" : "Load more calls"}
+          </Button>
+        )}
+      </div>
+    ) : null;
+
   const listBody = (
     <>
       {loading && !calls.length ? (
@@ -167,50 +247,56 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             </Button>
           }
         />
-      ) : !visibleCalls.length ? (
-        <EmptyState title="No matching calls" density="compact" />
+      ) : error && !calls.length ? null : !visibleCalls.length ? (
+        <>
+          <EmptyState title={`No matches in ${calls.length} loaded calls`} density="compact" />
+          {paginationControl}
+        </>
       ) : (
-        <ul className="divide-y divide-border">
-          {visibleCalls.map((call) => {
-            const active = call.id === selectedId;
-            const meta = [call.agent_name, formatDuration(call.duration_seconds)]
-              .filter(Boolean)
-              .join(" · ");
-            return (
-              <li key={call.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(call.id)}
-                  aria-pressed={active}
-                  className={`w-full px-4 py-3.5 text-left transition-colors ${
-                    active ? "bg-primary/7" : "hover:bg-muted/45"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <strong className="block truncate font-mono text-sm font-semibold text-foreground">
-                        {formatPhone(call.customer_number, "Unknown caller")}
-                      </strong>
-                      <span className="wl-preserve-case mt-1 block truncate text-xs text-muted-foreground">
-                        {meta || humanize(call.direction, "Call")}
-                      </span>
+        <>
+          <ul className="divide-y divide-border">
+            {visibleCalls.map((call) => {
+              const active = call.id === selectedId;
+              const meta = [call.agent_name, formatDuration(call.duration_seconds)]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <li key={call.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(call.id)}
+                    aria-pressed={active}
+                    className={`w-full px-4 py-3.5 text-left transition-colors ${
+                      active ? "bg-primary/7" : "hover:bg-muted/45"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <strong className="block truncate font-mono text-sm font-semibold text-foreground">
+                          {formatPhone(call.customer_number, "Unknown caller")}
+                        </strong>
+                        <span className="wl-preserve-case mt-1 block truncate text-xs text-muted-foreground">
+                          {meta || humanize(call.direction, "Call")}
+                        </span>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className="block text-[10px] text-muted-foreground">
+                          {formatTime(call.created_at)}
+                        </span>
+                        <span
+                          className={`mt-1 block text-[10px] font-semibold ${statusTone(call.outcome_tag)}`}
+                        >
+                          {humanize(call.outcome_tag)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <span className="block text-[10px] text-muted-foreground">
-                        {formatTime(call.created_at)}
-                      </span>
-                      <span
-                        className={`mt-1 block text-[10px] font-semibold ${statusTone(call.outcome_tag)}`}
-                      >
-                        {humanize(call.outcome_tag)}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {paginationControl}
+        </>
       )}
     </>
   );
@@ -234,7 +320,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           {formatPhone(selected.customer_number, "Unknown caller")}
         </h3>
         <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
-          {[selected.agent_name, formatTime(selected.created_at), formatDuration(selected.duration_seconds)]
+          {[
+            selected.agent_name,
+            formatTime(selected.created_at),
+            formatDuration(selected.duration_seconds),
+          ]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -254,8 +344,14 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           {[
             ["Outcome", humanize(selected.outcome_tag)],
             ["Intent", humanize(selected.intent_label, "Unclassified")],
-            ["Lead", typeof selected.lead_score === "number" ? String(selected.lead_score) : "—"],
-            ["Quality", typeof selected.qa_score === "number" ? String(selected.qa_score) : "—"],
+            [
+              "Lead",
+              typeof selected.lead_score === "number" ? String(selected.lead_score) : "Not scored",
+            ],
+            [
+              "Quality",
+              typeof selected.qa_score === "number" ? String(selected.qa_score) : "Not scored",
+            ],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-card p-3">
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -305,7 +401,13 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-5">
         <span className="text-xs font-medium text-muted-foreground">
-          {agentId ? `${visibleCalls.length} for this Bot` : `${visibleCalls.length} calls`}
+          {query.trim()
+            ? `${visibleCalls.length} matches in ${calls.length} loaded`
+            : total > calls.length
+              ? `${calls.length} of ${total} calls`
+              : agentId
+                ? `${calls.length} for this Bot`
+                : `${calls.length} calls`}
         </span>
         <div className="flex items-center gap-1.5">
           <Button

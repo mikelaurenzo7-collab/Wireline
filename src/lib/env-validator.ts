@@ -2,6 +2,7 @@ import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
 import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 export type EnvGroup =
   | "core"
@@ -84,7 +85,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     requiredInProd: true,
-    description: "Continuity structured reasoning and OpenAI Realtime credential",
+    description: "Managed structured reasoning and OpenAI Realtime credential",
     validate: (value) => value.startsWith("sk-"),
     formatHint: "sk-...",
   },
@@ -108,7 +109,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "One xAI inference key for Grok 4.6 structured chat, browser realtime, and native Twilio SIP Speech-to-Speech. Chat and voice share this key; splitting keys does not reduce latency. OpenAI remains continuity and Realtime",
+      "One xAI key for native Twilio SIP Speech-to-Speech, preview TTS, and optional Grok 4.6 structured continuity. Studio browser voice and structured primary use OpenAI",
     validate: nonEmpty,
     requiredInProd: true,
   },
@@ -152,7 +153,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "Operator override for the first structured reasoning lane. Unset keeps the managed xAI Grok 4.6 default; the remaining lanes stay as continuity",
+      "Operator override for the first structured reasoning lane. Unset keeps the managed OpenAI GPT-5.6 Terra default; the remaining lanes stay as continuity",
     // Same acceptance as normalizeReasoningProvider, including the vendor
     // aliases operators actually type — a working config must not be flagged.
     validate: (value) =>
@@ -206,13 +207,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description:
       "Preferred Vapi Custom Credential ID for authenticated webhook delivery; falls back to the shared secret during migration",
-    validate: nonEmpty,
-  },
-  {
-    name: "VITE_VAPI_PUBLIC_KEY",
-    group: "voice",
-    required: false,
-    description: "Vapi browser test-call public key",
     validate: nonEmpty,
   },
   {
@@ -309,13 +303,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     group: "billing",
     required: false,
-    description: "Stripe price ID for photoreal live video add-on ($19/mo)",
+    description: "Retired Live Video price ID retained only for legacy Stripe reconciliation",
   },
   {
     name: "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
     group: "billing",
     required: false,
-    description: "SKU-shaped alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; either is honored",
+    description:
+      "Legacy alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; never enables checkout or sessions",
   },
   {
     name: "UPSTASH_REDIS_REST_URL",
@@ -369,8 +364,10 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "APP_URL",
     group: "operational",
     required: false,
+    requiredInProd: true,
     description: "Canonical public deployment URL",
-    validate: (value) => !value || isUrl(value),
+    validate: (value) => !value || value === BOTBOUND_PRODUCTION_ORIGIN,
+    formatHint: "https://botbound.me (exactly; no path, port, credentials, or trailing slash)",
   },
   {
     name: "CORS_ORIGINS",
@@ -502,18 +499,34 @@ export function validateEnv(): EnvValidationResult {
     }
   }
 
+  // This credential used to be intentionally browser-exposed. Public voice
+  // now uses server-minted one-use tickets and native ephemeral sessions, so
+  // accepting the retired key here would contradict the deployment boundary
+  // and could make a leaked configuration look healthy.
+  if (process.env.VITE_VAPI_PUBLIC_KEY?.trim()) {
+    result.valid = false;
+    byGroup.voice.total++;
+    byGroup.voice.invalid++;
+    result.errors.push({
+      var: "VITE_VAPI_PUBLIC_KEY",
+      group: "voice",
+      message:
+        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and native ephemeral sessions",
+    });
+  }
+
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
   const managedRuntime =
-    process.env.XAI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim() || gateway;
+    process.env.OPENAI_API_KEY?.trim() || gateway || process.env.XAI_API_KEY?.trim();
   if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
+      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN / XAI_API_KEY",
       group: "ai",
       message:
-        "Configure the xAI managed runtime, OpenAI continuity, or Vercel AI Gateway before serving AI requests",
+        "Configure the OpenAI managed runtime, Vercel AI Gateway, or an approved continuity provider before serving AI requests",
     });
   }
   return result;

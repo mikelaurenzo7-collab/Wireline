@@ -194,7 +194,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
-      "Voice, live conversations, text, and email under one Bot identity",
+      "Voice, live conversations, text, and email under your Bot's identity",
       "Lead Hunt access and optional connected-mailbox workflows",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -265,7 +265,7 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
   {
     id: "enterprise",
-    name: "BotBound Business",
+    name: "BotBound Scale",
     price_usd_monthly: 159,
     price_usd_annual: 1590,
     max_agents: 15,
@@ -479,8 +479,10 @@ export function plansForClient() {
       extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
       extra_agent_configured: !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
       features: plan.features,
-      configured: isFree || paidCheckoutAvailable,
-      annual_configured: isFree || (checkoutReleased && monthlyConfigured && annualConfigured),
+      // These flags describe Stripe Checkout availability. Free Builder is
+      // active without Stripe and must use the Studio path instead.
+      configured: !isFree && paidCheckoutAvailable,
+      annual_configured: !isFree && checkoutReleased && monthlyConfigured && annualConfigured,
       contact_sales: !isFree && !paidCheckoutAvailable,
       is_free: isFree,
       public: true,

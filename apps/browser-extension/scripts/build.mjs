@@ -73,7 +73,9 @@ function assertExtensionPolicy(manifest, target) {
 }
 
 async function renderIcons(outputDirectory) {
-  const svg = await readFile(resolve(extensionRoot, "assets/icon.svg"));
+  const canonicalIcon = await readFile(resolve(repoRoot, "public/brand/botbound-app-icon.png"));
+  const embeddedIcon = canonicalIcon.toString("base64");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><image href="data:image/png;base64,${embeddedIcon}" width="2048" height="2048"/></svg>`;
   const iconDirectory = resolve(outputDirectory, "icons");
   await mkdir(iconDirectory, { recursive: true });
   for (const size of [16, 32, 48, 128]) {

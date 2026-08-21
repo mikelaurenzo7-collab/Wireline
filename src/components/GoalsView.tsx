@@ -9,7 +9,7 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
 
-   Account Holders set monthly voice-agent targets (calls handled, appointments booked,
+   Account Holders set monthly Bot targets (calls handled, appointments booked,
    qualified leads, voice minutes) and watch live progress against an even
    daily run-rate. Reads /api/goals; the progress math lives in
    src/lib/goals.ts and is computed server-side on every fetch.
@@ -480,12 +480,12 @@ export default function GoalsView() {
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
           <h2 className="font-display text-2xl md:text-3xl text-foreground leading-tight">
             {activeGoals === 0
-              ? "Set your first agent goal"
+              ? "Set your first Bot goal"
               : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
           </h2>
           <p className="mt-1 text-caption max-w-md leading-relaxed">
-            Goals measure live voice-agent activity against an even daily run-rate for the current
-            calendar month.
+            Goals measure live Bot activity against an even daily run-rate for the current calendar
+            month.
           </p>
         </div>
         <div className="w-14 h-14 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">

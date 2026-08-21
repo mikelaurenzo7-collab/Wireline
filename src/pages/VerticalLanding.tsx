@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { BOTBOUND_BRAND_NAME } from "../lib/brand";
+import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
@@ -55,14 +55,14 @@ function CtaLink({
   );
 }
 
-const PERSONAL_PAIN_TITLES: Record<string, string> = {
+const EVERYDAY_PAIN_TITLES: Record<string, string> = {
   "Debt negotiation calls": "Debt negotiation",
   "Appointment booking you keep putting off": "Appointments",
   "Returns, billing disputes, customer service": "Billing disputes",
   "Phone anxiety, social avoidance, neurodivergence": "Phone anxiety",
 };
 
-const PERSONAL_FAQ_TITLES: Record<string, string> = {
+const EVERYDAY_FAQ_TITLES: Record<string, string> = {
   "Is it actually legal for an AI to make calls on my behalf?": "Can AI call for me?",
   "Can it really negotiate debt? Won't the collector just hang up on a robot?":
     "Can it negotiate debt?",
@@ -73,9 +73,15 @@ const PERSONAL_FAQ_TITLES: Record<string, string> = {
   "What can't it do?": "What can't it do?",
 };
 
-export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
+export default function VerticalLanding({
+  slug,
+  canonicalPath = `/for/${slug}`,
+}: {
+  slug: VerticalKey;
+  canonicalPath?: string;
+}) {
   const cfg = WEDGES[slug];
-  const isPersonal = slug === "personal";
+  const isEverydayCalls = slug === "personal";
   if (!cfg) return null;
 
   const structuredData = {
@@ -96,13 +102,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             "@type": "ListItem",
             position: 1,
             name: BOTBOUND_BRAND_NAME,
-            item: "https://trywireline.com/",
+            item: `${BOTBOUND_PRODUCTION_ORIGIN}/`,
           },
           {
             "@type": "ListItem",
             position: 2,
             name: cfg.metaTitle.split(/\s*[\u2014|]\s*/)[0].trim() || slug,
-            item: `https://trywireline.com/for/${slug}`,
+            item: `${BOTBOUND_PRODUCTION_ORIGIN}${canonicalPath}`,
           },
         ],
       },
@@ -114,7 +120,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
-        path={`/for/${slug}`}
+        path={canonicalPath}
         structuredData={structuredData}
       />
 
@@ -141,7 +147,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = PAIN_ICONS[pain.icon];
-            const title = isPersonal ? PERSONAL_PAIN_TITLES[pain.title] || pain.title : pain.title;
+            const title = isEverydayCalls
+              ? EVERYDAY_PAIN_TITLES[pain.title] || pain.title
+              : pain.title;
             return (
               <article
                 key={pain.title}
@@ -166,7 +174,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="wl-stitch-display text-balance">
-              {isPersonal
+              {isEverydayCalls
                 ? "You shape the voice and the handoff."
                 : "Your process, handled consistently."}
             </h2>
@@ -185,12 +193,16 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <section className="marketing-section mx-auto max-w-4xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
-            {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
+            {isEverydayCalls
+              ? "Questions before you hand off a call."
+              : "Questions before you go live."}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
           {cfg.faqs.map((faq) => {
-            const question = isPersonal ? PERSONAL_FAQ_TITLES[faq.q] || faq.q : faq.q;
+            const question = isEverydayCalls
+              ? EVERYDAY_FAQ_TITLES[faq.q] || faq.q
+              : faq.q;
             return (
               <details key={faq.q} className="group wl-stitch-card overflow-hidden">
                 <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
@@ -217,7 +229,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <div className="grid justify-items-center gap-7 text-center">
               <div className="max-w-2xl">
                 <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                  {isPersonal
+                  {isEverydayCalls
                     ? "Start with the call you keep putting off."
                     : "Start with the workflow your team needs covered."}
                 </h2>

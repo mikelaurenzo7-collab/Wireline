@@ -344,11 +344,11 @@ export function directorPromptHref(prompt: string): string {
 /** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
   title: "Help and demos",
-  subtitle: "Team lines, demos, and shortcuts back into Wireline.",
+  subtitle: "Team lines, demos, and shortcuts back into BotBound.",
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Studio", to: "/studio", hint: "Open the voice-agent roster" },
+    { label: "Studio", to: "/studio", hint: "Open your Bot workspace" },
     { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
     { label: "Training", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
@@ -600,9 +600,9 @@ export const OPS_INSIGHTS_EMPTY = {
     ],
   },
   leaderboard: {
-    title: "No ranked voice agents",
+    title: "No ranked Bots",
     actions: [
-      { label: "Create voice agent", to: "/studio", primary: true },
+      { label: "Create Bot", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },

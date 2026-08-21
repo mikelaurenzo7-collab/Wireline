@@ -5,7 +5,10 @@ import { PageMeta } from "../lib/page-meta";
 
 export default function AuthPortal() {
   const location = useLocation();
-  const isSignupRoute = location.pathname === "/signup" || location.pathname === "/get-started";
+  const isSignupRoute =
+    location.pathname === "/signup" ||
+    location.pathname.startsWith("/signup/") ||
+    location.pathname === "/get-started";
   const title = isSignupRoute ? "Create your account" : "Sign in";
   const description = isSignupRoute
     ? "Create your BotBound account and build your first Bot."

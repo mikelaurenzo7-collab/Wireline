@@ -18,7 +18,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        buildConfigField("String", "WIRELINE_BASE_URL", "\"https://trywireline.com\"")
+        buildConfigField("String", "WIRELINE_BASE_URL", "\"https://botbound.me\"")
     }
 
     buildFeatures {

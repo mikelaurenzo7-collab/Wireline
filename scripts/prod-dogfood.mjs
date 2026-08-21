@@ -15,13 +15,14 @@ import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
+  CANONICAL_DOGFOOD_ORIGIN,
   requireCanonicalCredentialTarget,
   requireDogfoodCredentials,
 } from "./dogfood-credentials.mjs";
 
 const requestedBase = (() => {
   const index = process.argv.indexOf("--base");
-  return index >= 0 ? process.argv[index + 1] : process.env.APP_URL || "https://trywireline.com";
+  return index >= 0 ? process.argv[index + 1] : process.env.APP_URL || CANONICAL_DOGFOOD_ORIGIN;
 })();
 const { email, password } = requireDogfoodCredentials();
 const base = requireCanonicalCredentialTarget(requestedBase);

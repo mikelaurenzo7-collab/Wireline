@@ -23,9 +23,12 @@ describe("a signed-in customer can reach Stripe", () => {
 
   it("keeps every public pricing CTA pointed at signup", () => {
     const pricing = read("src/pages/Pricing.tsx");
-    const ctaPaths = Array.from(pricing.matchAll(/ctaPath:\s*"([^"]+)"/g), (m) => m[1]);
-    expect(ctaPaths.length).toBeGreaterThanOrEqual(3);
-    for (const path of ctaPaths) expect(path).toMatch(/^\/signup\?plan=/);
+    const planIds = Array.from(
+      pricing.matchAll(/ctaPath:\s*signupHrefForPlan\("([^"]+)"\)/g),
+      (match) => match[1],
+    );
+    expect(planIds).toEqual(["starter", "team", "business"]);
+    expect(pricing).toContain('to={signupHrefForPlan("personal")}');
   });
 });
 
@@ -70,12 +73,20 @@ describe("OAuth signups get the same onboarding as email signups", () => {
     const oauthEnd = access.indexOf("const handleAuth = async", oauthStart);
     const oauthBlock = access.slice(oauthStart, oauthEnd);
 
-    expect(oauthBlock).toContain("markFreshSignupSession()");
-    expect(oauthBlock).toMatch(/if \(isSignUp\) markFreshSignupSession\(\)/);
-    const markIdx = oauthBlock.indexOf("markFreshSignupSession()");
+    expect(oauthBlock).toContain("clearFreshSignupSession()");
+    expect(oauthBlock).toContain("persistOAuthReturnFromSearch(location.search)");
+    expect(oauthBlock).not.toContain("markFreshSignupSession()");
+    const persistIdx = oauthBlock.indexOf("persistOAuthReturnFromSearch(location.search)");
+    const clearIdx = oauthBlock.indexOf("clearFreshSignupSession()");
     const assignIdx = oauthBlock.indexOf("window.location.assign(payload.url)");
-    expect(markIdx).toBeGreaterThan(-1);
-    expect(assignIdx).toBeGreaterThan(markIdx);
+    expect(persistIdx).toBeGreaterThan(-1);
+    expect(clearIdx).toBeGreaterThan(persistIdx);
+    expect(clearIdx).toBeGreaterThan(-1);
+    expect(assignIdx).toBeGreaterThan(clearIdx);
+
+    const completion = read("src/pages/OAuthComplete.tsx");
+    expect(completion).toContain("await syncSignupIntent(getStoredSignupIntent())");
+    expect(completion).toContain("if (data.is_new_user === true) markFreshSignupSession()");
   });
 });
 
@@ -127,8 +138,8 @@ describe("account entry recognizes an existing session without blocking first pa
 describe("password recovery keeps reset credentials out of request and browser history", () => {
   it("issues new reset links with a fragment and never logs token material", () => {
     const routes = read("src/routes/auth-routes.ts");
-    expect(routes).toContain('/reset-password#token=${encodeURIComponent(token.token)}');
-    expect(routes).not.toContain('/reset-password?token=${encodeURIComponent(token.token)}');
+    expect(routes).toContain("/reset-password#token=${encodeURIComponent(token.token)}");
+    expect(routes).not.toContain("/reset-password?token=${encodeURIComponent(token.token)}");
     expect(routes).not.toContain("tokenPrefix:");
     expect(routes).not.toContain("token.token.slice(");
   });
@@ -139,7 +150,9 @@ describe("password recovery keeps reset credentials out of request and browser h
     expect(reset).toContain('window.location.hash.replace(/^#/, "")');
     expect(reset).toContain('return hash.get("token") || query.get("token") || ""');
     expect(reset).toContain("const resetTokenRef = useRef(readResetTokenFromLocation())");
-    expect(reset).toContain('const [token] = useState<string | null>(() => resetTokenRef.current || null)');
+    expect(reset).toContain(
+      "const [token] = useState<string | null>(() => resetTokenRef.current || null)",
+    );
     expect(reset).toContain(
       'window.history.replaceState(window.history.state, "", window.location.pathname)',
     );

@@ -60,11 +60,13 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("Every PR now runs");
     expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
     expect(changelog).not.toContain("committed baselines");
+    expect(changelog).toContain("at botbound.me/status");
+    expect(changelog).not.toContain("trywireline.com/status");
 
     expect(security).toContain("Last updated · August 17, 2026");
     expect(security).toContain("Twilio for PSTN and xAI Direct SIP Speech-to-Speech");
     expect(security).toContain("Vapi is optional rollback and public-showcase PSTN only");
-    expect(security).toContain("OpenAI remains continuity inference");
+    expect(security).toContain("OpenAI provides managed structured inference");
     expect(security).toContain("ElevenLabs is managed text-to-speech");
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
@@ -94,7 +96,8 @@ describe("launch truth contract", () => {
       expect(source).not.toContain("Brief -> Train -> Launch -> Improve");
     }
 
-    expect(commandCenter).toContain("business voice agent");
+    expect(commandCenter).toContain("one product and one workspace model");
+    expect(commandCenter).not.toContain("business voice agent");
     expect(commandCenter).not.toContain("Business creates an **AI employee**");
     expect(commandCenter).not.toContain("Enable **leaked password protection** in Supabase Auth");
     expect(commandCenter).toContain("custom scrypt/HIBP-screened auth path");

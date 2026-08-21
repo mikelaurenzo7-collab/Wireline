@@ -1,4 +1,13 @@
-export const CANONICAL_PRODUCTION_URL = "https://trywireline.com";
+/** Public launch origin. Release certification must always probe this host. */
+export const CANONICAL_PRODUCTION_URL = "https://botbound.me";
+
+/**
+ * Transition-only compatibility origin for already-registered callbacks and
+ * shipped clients. It is deliberately not accepted by
+ * `resolveCanonicalProductionUrl`: a healthy compatibility alias must never
+ * let the canonical BotBound launch surface escape certification.
+ */
+export const LEGACY_COMPATIBILITY_URL = "https://trywireline.com";
 
 /** Launch certification must observe the canonical customer-facing origin. */
 export function resolveCanonicalProductionUrl(value = "") {
@@ -7,7 +16,7 @@ export function resolveCanonicalProductionUrl(value = "") {
   try {
     parsed = new URL(candidate);
   } catch {
-    throw new Error("WIRELINE_PRODUCTION_URL must be the canonical production URL.");
+    throw new Error("WIRELINE_PRODUCTION_URL must be the canonical BotBound production URL.");
   }
   if (
     parsed.origin !== CANONICAL_PRODUCTION_URL ||

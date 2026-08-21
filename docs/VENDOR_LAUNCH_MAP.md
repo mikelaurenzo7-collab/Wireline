@@ -9,11 +9,11 @@ This document records Wireline's intended production provider roles and the evid
 
 | Plane | Primary | Continuity / boundary |
 | --- | --- | --- |
-| Structured reasoning | xAI Grok 4.6 managed structured runtime | OpenAI, then Gemini, then Vercel AI Gateway |
+| Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime | Vercel AI Gateway, then xAI Grok 4.6, then Gemini |
 | PSTN orchestration | Native Twilio + xAI Direct SIP | `grok-voice-think-fast-2.0`; Vapi is rollback-only |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | Native xAI Eve/Ara/Rex/Sal/Leo | ElevenLabs remains Studio TTS / cloning, not the PSTN engine |
-| Live browser voice | Native xAI Speech-to-Speech, same model as PSTN | ChatGPT widget stays OpenAI Realtime (OpenAI-hosted iframe; not a Studio backup) |
+| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio and ChatGPT are private simulations; PSTN remains Twilio + xAI Direct SIP |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |
@@ -36,8 +36,8 @@ Leftover Stripe Live Video price IDs may still exist so webhooks do not brick bi
 
 - Public paid plans are the canonical Founder catalog in `src/lib/plan-catalog.ts` and `scripts/lib/stripe-founder-catalog.mjs`.
 - Voice overflow uses prepaid Runtime Balance; Wireline does not create surprise postpaid voice overage invoices.
-- Live Video is a separate fixed recurring add-on and does not use Stripe usage metering.
-- Stripe checkout, webhook, entitlement, portal, cancellation, refund/dispute, and add-on lifecycle must remain server-owned and idempotent.
+- Leftover Live Video price IDs are reconciliation-only legacy records. No checkout, entitlement, or session can be created.
+- Stripe checkout, webhook, entitlement, portal, cancellation, and refund/dispute handling must remain server-owned and idempotent.
 - Run `npm run stripe:catalog:check` before any catalog mutation and the read-only live Stripe audit before a billing release.
 
 ## Communications compliance

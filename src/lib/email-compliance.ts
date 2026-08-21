@@ -26,6 +26,7 @@ import { and, eq } from "drizzle-orm";
 import { readCompanyIdentityPreferences } from "./company-identity";
 import { isVaultConfigured, getDataKey } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { getCanonicalAppUrl } from "./app-url";
 
 const TOKEN_LABEL = "email-unsubscribe-v1";
 
@@ -75,7 +76,7 @@ export function verifyUnsubscribeToken(token: string | undefined | null): string
 }
 
 function appBase(): string {
-  return (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  return getCanonicalAppUrl();
 }
 
 export function unsubscribeUrl(email: string): string {

@@ -155,7 +155,7 @@ router.get(
         account: {
           mode: accountMode,
           plan_id: plan?.id || planId,
-          plan_name: plan?.name || "Personal",
+          plan_name: plan?.name || "Free Builder",
           business_name: row?.businessName || null,
           subscription_status: entitlement.subscriptionStatus,
         },

@@ -181,7 +181,7 @@ export default function Status() {
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
-        <main id="main-content" className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14" tabIndex={-1}>
+        <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
           <header className="border-b border-border pb-8 sm:pb-10" data-testid="status-overall">
             <div className="flex items-center gap-3">
               <span
@@ -294,7 +294,7 @@ export default function Status() {
               </div>
             </div>
           </details>
-        </main>
+        </div>
       </MarketingChrome>
     </>
   );

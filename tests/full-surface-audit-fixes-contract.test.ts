@@ -22,9 +22,6 @@ describe("live-voice knowledge retrieval", () => {
     // path already fixed in excerptAroundMatch.
     expect(live).toContain("function excerptAroundMatch(");
     expect(live).toContain("MAX_LIVE_KB_RESULT_CHARS");
-    expect(flat("src/lib/voice/openai-live-agent-service.ts")).toContain(
-      "// Full content — the excerpt window is applied on OUTPUT, never before // scoring.",
-    );
     // The snippet set that feeds scoring must not be pre-truncated.
     const snippetsIdx = live.indexOf("const snippets: Snippet[] = [");
     const matchesIdx = live.indexOf("const matches = snippets", snippetsIdx);
@@ -132,7 +129,9 @@ describe("SMS reply failure reasons", () => {
     // federal DNC unconfigured) throw an AppError and ride `error`. Reading
     // only `reason` turned every compliance block into a bare "Send failed".
     expect(threads).toContain("if (!response.ok || !result.ok) {");
-    expect(threads).toContain('throw new Error(result.reason || result.error || "Send failed");');
+    expect(threads).toContain(
+      'throw new Error(result.reason || result.error || "Text could not be sent.");',
+    );
   });
 });
 

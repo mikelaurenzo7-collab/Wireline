@@ -24,6 +24,39 @@ const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
     },
   });
 
+const runProductionBoundary = (appUrl: string) =>
+  spawnSync(process.execPath, [deploymentBoundaryPath], {
+    encoding: "utf8",
+    env: {
+      PATH: process.env.PATH || "",
+      NODE_ENV: "production",
+      VERCEL_ENV: "production",
+      POSTGRES_URL: "postgresql://launch.invalid/botbound",
+      DATABASE_POOL_URL: "postgresql://pool.launch.invalid/botbound",
+      INTERNAL_JWT_SECRET: "configured",
+      WIRELINE_DATA_KEY: "configured",
+      OAUTH_STATE_SECRET: "configured",
+      OAUTH_BRIDGE_SECRET: "configured",
+      MCP_OAUTH_TOKEN_PEPPER: "configured",
+      OPENAI_API_KEY: "configured",
+      XAI_API_KEY: "configured",
+      XAI_SIP_ALLOWED_ADDRESSES: "configured",
+      TWILIO_ACCOUNT_SID: "configured",
+      TWILIO_API_KEY: "configured",
+      TWILIO_API_SECRET: "configured",
+      TWILIO_AUTH_TOKEN: "configured",
+      PLATFORM_SMS_FROM: "+13125550100",
+      STRIPE_SECRET_KEY: "sk_live_configured",
+      STRIPE_WEBHOOK_SECRET: "configured",
+      VITE_STRIPE_PUBLIC_KEY: "pk_live_configured",
+      RESEND_API_KEY: "configured",
+      UPSTASH_REDIS_REST_URL: "https://launch.invalid",
+      UPSTASH_REDIS_REST_TOKEN: "configured",
+      CRON_SECRET: "configured",
+      APP_URL: appUrl,
+    },
+  });
+
 describe("production environment launch policy", () => {
   it("distinguishes production from Vercel preview even though NODE_ENV is production", () => {
     expect(isProductionDeployment({ VERCEL_ENV: "preview", NODE_ENV: "production" })).toBe(false);
@@ -55,6 +88,48 @@ describe("production environment launch policy", () => {
     expect(prodCheck).toContain("deferred checklist until business registration");
     expect(prodCheck).toContain("/^(?:sk|rk)_(?:test|live)_/");
     expect(envValidator).toContain("least-privilege rk_live_");
+  });
+
+  it("pins every production-generated URL to the exact BotBound origin", () => {
+    const appUrlStart = envValidator.indexOf('name: "APP_URL"');
+    expect(appUrlStart).toBeGreaterThanOrEqual(0);
+    expect(envValidator.slice(appUrlStart, appUrlStart + 500)).toContain("requiredInProd: true");
+    expect(envValidator.slice(appUrlStart, appUrlStart + 500)).toContain(
+      "value === BOTBOUND_PRODUCTION_ORIGIN",
+    );
+    expect(startup).toContain('if (!IS_PROD && !process.env.APP_URL) recommended.push("APP_URL")');
+
+    const requiredBlock = prodCheck.slice(
+      prodCheck.indexOf("const required = ["),
+      prodCheck.indexOf("const recommended = ["),
+    );
+    expect(requiredBlock).toContain('"APP_URL"');
+    expect(prodCheck).toContain('String(value) === "https://botbound.me"');
+    expect(deploymentBoundary).toContain(
+      'const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me"',
+    );
+    expect(deploymentBoundary).toContain(
+      'canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false)',
+    );
+
+    const canonical = runProductionBoundary("https://botbound.me");
+    expect(`${canonical.stdout}${canonical.stderr}`).toContain(
+      "Deployment-boundary check passed for production",
+    );
+    expect(canonical.status).toBe(0);
+
+    for (const wrongOrigin of [
+      "https://trywireline.com",
+      "https://botbound.me/",
+      "https://www.botbound.me",
+      "https://botbound.me.example.com",
+    ]) {
+      const result = runProductionBoundary(wrongOrigin);
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toContain(
+        "APP_URL: must be exactly https://botbound.me",
+      );
+    }
   });
 
   it("does not treat LiveAvatar as a production-readiness credential", () => {
@@ -149,9 +224,7 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).toContain(
       "self-serve billing may only ship from the audited main production release channel",
     );
-    expect(deploymentBoundary).toContain(
-      "per-commit release-SHA rotation is retired",
-    );
+    expect(deploymentBoundary).toContain("per-commit release-SHA rotation is retired");
     expect(deploymentBoundary).toContain(
       "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA is legacy configuration",
     );

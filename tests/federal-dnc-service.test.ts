@@ -12,7 +12,6 @@ describe("federal-dnc-service", () => {
     vi.stubEnv("FEDERAL_DNC_API_KEY", "");
     vi.stubEnv("FEDERAL_DNC_API_URL", "");
     vi.stubEnv("FEDERAL_DNC_PROVIDER", "");
-    vi.stubEnv("FEDERAL_DNC_ALLOW_UNCONFIGURED", "");
     vi.stubEnv("NODE_ENV", "test");
     vi.stubEnv("VERCEL", "");
   });
@@ -98,12 +97,14 @@ describe("federal-dnc-service", () => {
     expect(isFederalDncVendorConfigured()).toBe(false);
   });
 
-  it("defers missing vendor credentials instead of globally blocking production outbound", () => {
+  it("fails marketing outbound closed when vendor credentials are missing", () => {
     process.env.NODE_ENV = "production";
     const gate = assertFederalDncForMarketing();
-    expect(gate.allowed).toBe(true);
+    expect(gate.allowed).toBe(false);
     expect(gate.configured).toBe(false);
-    expect(gate.advisory).toBe("FEDERAL_DNC_DEFERRED");
+    if (gate.allowed) return;
+    expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
+    expect(gate.message).toContain("must be configured");
   });
 
   it("reports configured when federal screening credentials are valid", () => {
@@ -112,6 +113,5 @@ describe("federal-dnc-service", () => {
     const gate = assertFederalDncForMarketing();
     expect(gate.allowed).toBe(true);
     expect(gate.configured).toBe(true);
-    expect(gate.advisory).toBeUndefined();
   });
 });

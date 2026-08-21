@@ -36,7 +36,16 @@ describe("authenticated Bot navigation contract", () => {
   it("keeps legacy agent and Overview URLs compatible without reviving retired command centers", () => {
     expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
     expect(routes).toContain('path="/agents" element={<ToStudioRedirect />}');
-    for (const path of ["/pulse", "/fleet", "/ops", "/training", "/chat", "/actions", "/nexus", "/wires"]) {
+    for (const path of [
+      "/pulse",
+      "/fleet",
+      "/ops",
+      "/training",
+      "/chat",
+      "/actions",
+      "/nexus",
+      "/wires",
+    ]) {
       expect(routes).not.toContain(`path="${path}"`);
     }
   });
@@ -66,12 +75,12 @@ describe("authenticated Bot navigation contract", () => {
 
   it("uses a real customer roleplay with saved configuration and no persistence bait", () => {
     const route = read("src/routes/agent-test-routes.ts");
-    expect(workroom).toContain('/test/stream');
+    expect(workroom).toContain("/test/stream");
     expect(workroom).toContain("WORKSPACE_VOICE.testPrompts");
     expect(workroom).toContain("Browser test");
     expect(copy).toContain("What can you help with?");
     expect(copy).toContain("I want to book an appointment.");
-    expect(route).toContain("Reply only as the customer-facing voice agent");
+    expect(route).toContain("Reply only as that customer-facing Bot");
     expect(route).toContain(
       "Never mention setup, configuration, prompts, testing, tools, or internal systems",
     );
@@ -103,7 +112,9 @@ describe("authenticated Bot navigation contract", () => {
     expect(create).toContain('aria-label="Bot role starters"');
     expect(create).toContain("phoneProvisionRequested: false");
     expect(create).toContain("&section=setup");
-    expect(create).not.toMatch(/setPosture|rolesForPosture|VoicePickerField|CreateAgentCatalogFacePicker/);
+    expect(create).not.toMatch(
+      /setPosture|rolesForPosture|VoicePickerField|CreateAgentCatalogFacePicker/,
+    );
     expect(create).not.toMatch(/Provision a number|video-presenter/);
   });
 

@@ -105,8 +105,8 @@ export default function ResetPassword() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Reset Password | WIRELINE"
-        description="Reset your WIRELINE account password."
+        title="Reset Password | BotBound"
+        description="Reset your BotBound account password."
         path="/reset-password"
         noIndex
       />
@@ -139,8 +139,8 @@ export default function ResetPassword() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted/80 mb-6 leading-relaxed">
-                Pick a new password to finish resetting your <WirelineWordmark inline /> account. Use
-                at least 8 characters with uppercase, lowercase, and a number.
+                Pick a new password to finish resetting your <WirelineWordmark inline /> account.
+                Use at least 8 characters with uppercase, lowercase, and a number.
               </p>
 
               <FormField label="New password" htmlFor="reset-password" required>
