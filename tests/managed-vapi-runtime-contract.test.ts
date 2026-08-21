@@ -177,12 +177,12 @@ describe("managed phone voice runtime policy", () => {
     );
   });
 
-  it("keeps server-only voice vendors out of the browser boundary", () => {
+  it("allows the managed browser transport without exposing server-only voice vendors", () => {
     for (const source of [csp, vercel]) {
-      expect(source).toMatch(/api\.openai\.com/);
       expect(source).toMatch(/api\.vapi\.ai/);
-      expect(source).toMatch(/api\.x\.ai/);
-      expect(source).not.toMatch(/api\.elevenlabs\.io|cdn\.elevenlabs\.io/);
+      expect(source).not.toMatch(
+        /api\.openai\.com|api\.x\.ai|api\.elevenlabs\.io|cdn\.elevenlabs\.io/,
+      );
     }
   });
 });
