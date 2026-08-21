@@ -9,6 +9,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { decryptSecret } from "../lib/secret-vault";
 import { getErrorMessage } from "../lib/server-utils";
 import { runInBackground } from "../lib/background-work";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 
 // Targeted rate limit for Meta leadgen webhooks.
 // Meta retries failed deliveries with exponential backoff.
@@ -541,10 +542,8 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
     throw AppError.fromHttpStatus(503, "deletion request could not be recorded, retry");
   }
 
-  const baseUrl =
-    (process.env.APP_URL && new URL(process.env.APP_URL).origin) || "https://trywireline.com";
   return res.status(200).json({
-    url: `${baseUrl}/legal/data-deletion?fbid=${encodeURIComponent(facebookUserId)}&code=${confirmationCode}`,
+    url: `${BOTBOUND_PRODUCTION_ORIGIN}/legal/data-deletion?fbid=${encodeURIComponent(facebookUserId)}&code=${confirmationCode}`,
     confirmation_code: confirmationCode,
   });
 });

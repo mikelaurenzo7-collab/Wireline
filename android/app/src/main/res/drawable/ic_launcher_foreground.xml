@@ -1,87 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="1024"
-    android:viewportHeight="1024">
-    <!-- BotBound phone-Bot foreground. Technical Android package/resource names
-         remain stable; the customer-facing mark is the Bot holding a receiver
-         to its ear. Filled geometry keeps the silhouette legible at small size. -->
-
-    <!-- Torso -->
-    <path
-        android:fillColor="#EEE9FF"
-        android:pathData="M328,650C328,571 392,507 471,507H566C645,507 709,571 709,650V835H328Z" />
-    <path
-        android:fillColor="#CFC2FF"
-        android:pathData="M389,714C469,756 558,756 637,714V835H389Z" />
-
-    <!-- Head -->
-    <path
-        android:fillColor="#F7F5FF"
-        android:pathData="M453,224H591Q774,224 774,407V479Q774,662 591,662H453Q270,662 270,479V407Q270,224 453,224Z" />
-    <path
-        android:fillColor="#8B5CF6"
-        android:pathData="M239,396Q239,365 270,365Q301,365 301,396V519Q301,550 270,550Q239,550 239,519Z" />
-    <path
-        android:fillColor="#8B5CF6"
-        android:pathData="M744,396Q744,365 775,365Q806,365 806,396V519Q806,550 775,550Q744,550 744,519Z" />
-
-    <!-- Visor -->
-    <path
-        android:fillColor="#08080D"
-        android:pathData="M442,303H600Q712,303 712,415V426Q712,538 600,538H442Q330,538 330,426V415Q330,303 442,303Z" />
-
-    <!-- Friendly eyes -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#A78BFA"
-        android:strokeWidth="31"
-        android:strokeLineCap="round"
-        android:pathData="M402,414C425,375 464,375 486,414" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#A78BFA"
-        android:strokeWidth="31"
-        android:strokeLineCap="round"
-        android:pathData="M546,414C569,375 608,375 630,414" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#605A71"
-        android:strokeWidth="19"
-        android:strokeLineCap="round"
-        android:pathData="M470,574C501,601 546,601 576,574" />
-
-    <!-- Antenna -->
-    <path
-        android:fillColor="#8B5CF6"
-        android:pathData="M493,128H531V222H493Z" />
-    <path
-        android:fillColor="#A78BFA"
-        android:pathData="M512,76A40,40 0,1 1,511.9 76Z" />
-
-    <!-- Receiver held to ear -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8B5CF6"
-        android:strokeWidth="74"
-        android:strokeLineCap="round"
-        android:pathData="M213,301C170,354 148,425 148,508C148,598 172,674 218,729" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#A78BFA"
-        android:strokeWidth="68"
-        android:strokeLineCap="round"
-        android:pathData="M180,301L259,341M187,731L271,686" />
-
-    <!-- Hand gripping the receiver -->
-    <path
-        android:fillColor="#F7F5FF"
-        android:pathData="M280,594A59,59 0,1 1,279.9 594Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#8B5CF6"
-        android:strokeWidth="18"
-        android:strokeLineCap="round"
-        android:pathData="M250,639C281,608 319,608 349,631" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- BotBound phone-Bot foreground. One production master serves Android too:
+         approved robot, visible gripping hand, and violet phone receiver. -->
+    <item>
+        <bitmap
+            android:antialias="true"
+            android:filter="true"
+            android:gravity="fill"
+            android:src="@drawable/botbound_launcher_foreground" />
+    </item>
+</layer-list>

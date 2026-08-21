@@ -42,14 +42,16 @@ describe("authenticated responsive polish contract", () => {
     expect(css).not.toContain("black 20%");
   });
 
-  it("stacks authenticated titles and actions through narrow tablet widths", () => {
+  it("keeps authenticated actions responsive while Inbox consolidates its controls", () => {
     const frame = read("src/components/layout/WorkspacePageFrame.tsx");
     const inbox = read("src/pages/EmailPage.tsx");
 
     expect(frame).toContain("md:flex-row md:items-start md:justify-between");
     expect(frame).toContain("w-full [&>*]:w-full md:w-auto md:[&>*]:w-auto");
-    expect(inbox).toMatch(/<WorkspacePageIntro\s+title="Inbox"/);
-    expect(inbox).toContain("action={");
+    expect(inbox).toContain('<WorkspacePageIntro title="Inbox" titleHidden />');
+    expect(inbox).toContain("<WorkspaceControlBand");
+    expect(inbox).toContain("secondary={scopeControls}");
+    expect(inbox).not.toContain("action={");
     expect(inbox).not.toContain("sm:flex-row sm:items-end sm:justify-between");
   });
 
@@ -71,16 +73,16 @@ describe("authenticated responsive polish contract", () => {
     expect(dnc).not.toContain("sm:grid-cols-4");
   });
 
-  it("gives the Wireline number its own line on phones", () => {
+  it("lets a selected BotBound line wrap before its number gets squeezed", () => {
     const panel = read("src/components/PhoneSetupPanel.tsx");
 
     // The card is 210px of content at 360px. With the status chip beside it the
     // number heading got 113px and broke across three lines at 28px — and that
     // hit real numbers, not just the placeholder: "(312) 555-0142" needs 117px.
-    // Stacking under `sm` gives the heading the full 208px.
-    expect(panel).toContain(
-      "flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
-    );
+    // The selected-line header may share a row when space permits, but it must
+    // wrap the action instead of forcing the phone number into a narrow column.
+    expect(panel).toContain("flex flex-wrap items-start justify-between gap-3");
+    expect(panel).toMatch(/<h3[^>]*>\{formatPhone\(activeNumber\.phone_number\)\}<\/h3>/);
     expect(panel).not.toContain('<div className="flex items-start justify-between gap-4">');
   });
 

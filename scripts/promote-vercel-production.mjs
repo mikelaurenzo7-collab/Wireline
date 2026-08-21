@@ -1,5 +1,5 @@
 /**
- * Point trywireline.com (and other production domains) at a specific deployment.
+ * Point botbound.me (and any explicitly retained compatibility aliases) at a specific deployment.
  *
  * Usage (PowerShell):
  *   $env:VERCEL_TOKEN = "<token from Vercel dashboard → Tokens>"

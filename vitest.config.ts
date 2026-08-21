@@ -20,7 +20,16 @@ export default defineConfig({
     // DB/imap modules executing real queries), which is unacceptable for a
     // launch-ready gate.
     pool: "forks",
-    exclude: ["node_modules/**", "dist/**", "tests/e2e/**", ".worktrees/**"],
+    // The repository contains isolated applications (for example the Remotion
+    // film workspace) with their own dependency trees. Match these directories
+    // at any depth so a local app install cannot leak third-party test files
+    // into the root release gate.
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "tests/e2e/**",
+      "**/.worktrees/**",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],

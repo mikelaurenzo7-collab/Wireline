@@ -6,15 +6,15 @@
     "subtitle": "Build your first voice agent",
     "description": "BotBound lets a new ChatGPT user create a BotBound account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "category": "BUSINESS",
-    "logo_url": "https://botbound.me/botbound-icon.svg",
+    "logo_url": "https://botbound.me/botbound-icon-512.png",
     "website_url": "https://botbound.me",
     "contact_email": "support@trywireline.com",
     "privacy_policy_url": "https://botbound.me/chatgpt-app-privacy.html"
   },
   "oauth": {
     "client_url": "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
-    "authorization_url": "https://trywireline.com/mcp/oauth/authorize",
-    "token_url": "https://trywireline.com/mcp/oauth/token",
+    "authorization_url": "https://botbound.me/mcp/oauth/authorize",
+    "token_url": "https://botbound.me/mcp/oauth/token",
     "scope": "agents.read agents.write demo.voice",
     "authorization_content_type": "application/json"
   },

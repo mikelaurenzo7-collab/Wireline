@@ -31,7 +31,7 @@ function canonicalAccount(overrides: Record<string, unknown> = {}) {
       name: "BotBound",
       url: "https://botbound.me",
       support_url: "https://botbound.me/support",
-      support_email: "support@botbound.me",
+      support_email: "support@trywireline.com",
     },
     settings: {
       dashboard: { display_name: "BotBound" },
@@ -83,7 +83,7 @@ describe("Stripe account identity guard", () => {
         name: "Try Wireline",
         url: "https://trywireline.com",
         support_url: "https://trywireline.com/support",
-        support_email: "support@trywireline.com",
+        support_email: "support@botbound.me",
       },
       settings: {
         dashboard: { display_name: "Try Wireline" },
@@ -120,7 +120,7 @@ describe("Stripe account identity guard", () => {
     const account = canonicalAccount();
     account.business_profile.name = " botbound ";
     account.business_profile.url = "https://www.botbound.me/pricing";
-    account.business_profile.support_email = " SUPPORT@botbound.me ";
+    account.business_profile.support_email = " SUPPORT@trywireline.com ";
     account.settings.card_payments.statement_descriptor_prefix = "BOTBOUND";
     account.settings.payments.statement_descriptor = "BOTBOUND*RUNTIME";
     account.settings.branding.primary_color = "#a78bfa";

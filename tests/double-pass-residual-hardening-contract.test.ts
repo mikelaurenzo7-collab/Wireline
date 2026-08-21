@@ -11,6 +11,21 @@ describe("double-pass residual hardening", () => {
       expect(source).toContain("responseStatus = response.status");
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
       expect(source).toContain("mailto:support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
+    }
+  });
+
+  it("keeps every customer-facing support promise on the verified compatibility inbox", () => {
+    for (const path of [
+      "src/components/SupportPage.tsx",
+      "src/components/ContactPage.tsx",
+      "src/components/PrivacyPolicyPage.tsx",
+      "src/components/LegalPage.tsx",
+      "src/pages/Pricing.tsx",
+    ]) {
+      const source = read(path);
+      expect(source).toContain("support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
     }
   });
 
@@ -20,7 +35,7 @@ describe("double-pass residual hardening", () => {
     expect(source).toContain("narrowLegacyProductionEntries");
     expect(source).toContain('targets.some((target) => target !== "production")');
     expect(source).toContain("await patchEnv(entry.id, { target: PRODUCTION_TARGET })");
-    expect(source).toContain('`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`');
+    expect(source).toContain("`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`");
     expect(source).not.toContain("decrypt=true");
     expect(source).not.toContain('["production", "preview", "development"]');
   });

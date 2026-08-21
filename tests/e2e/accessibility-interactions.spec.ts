@@ -112,9 +112,9 @@ test.describe("keyboard accessibility interactions", () => {
     await page.getByRole("button", { name: "Continue with Google" }).click();
     await expect(consent).toBeFocused();
     await expect(consent).toHaveAttribute("aria-invalid", "true");
-    await expect(consent).toHaveAttribute("aria-describedby", "auth-consent-error");
+    await expect(consent).toHaveAttribute("aria-describedby", "auth-terms-error");
     const consentError = page.getByRole("alert");
-    await expect(consentError).toHaveAttribute("id", "auth-consent-error");
+    await expect(consentError).toHaveAttribute("id", "auth-terms-error");
     await expect(consentError).toContainText(
       "Accept the Terms and Privacy Policy above to continue.",
     );

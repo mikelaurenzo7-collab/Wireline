@@ -11,6 +11,7 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { getCanonicalAppUrl } from "../app-url";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { hashToken, isValidSlug, mintSlug, mintToken, verifyToken } from "./tokens";
@@ -54,7 +55,7 @@ function ttlDays(input: number | undefined): number {
 }
 
 function appBase(): string {
-  return (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  return getCanonicalAppUrl();
 }
 
 function shareableUrl(kind: RecapKind, slug: string, token: string): string {

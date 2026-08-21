@@ -68,7 +68,9 @@ describe("industry-leader audit hardening contracts", () => {
   it("keeps Yahoo out of mailbox connect UI until fetch/send ship", () => {
     const mailbox = read("src/components/MailboxConnectionCard.tsx");
     expect(mailbox).not.toMatch(/id:\s*"yahoo"/);
-    expect(mailbox).toContain("XOAUTH2 IMAP");
+    expect(mailbox).toContain('id: "google"');
+    expect(mailbox).toContain('id: "microsoft"');
+    expect(mailbox).toContain('id: "icloud"');
   });
 
   it("does not auto-enable unimplemented commerce stub tools on role defaults", () => {

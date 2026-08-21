@@ -46,19 +46,20 @@ describe("plan economics contract", () => {
       }
 
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
-      const liveBotFeature = plan.features.find((feature) => /\blive (?:Voice )?Bots?\b/i.test(feature));
+      const liveBotFeature = plan.features.find((feature) =>
+        /\blive (?:Voice )?Bots?\b/i.test(feature),
+      );
       expect(liveBotFeature, plan.id).toBeDefined();
       expect(liveBotFeature, plan.id).toMatch(new RegExp(`\\b${plan.max_agents}\\b`));
       expect(plan.extra_agent_price_usd).toBe(EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY);
-      expect(plan.extra_agent_voice_minutes_monthly).toBe(
-        EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY,
-      );
+      expect(plan.extra_agent_voice_minutes_monthly).toBe(EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY);
       expect(plan.extra_agent_included_phone_numbers).toBe(EXTRA_AGENT_ADDON_PHONE_NUMBERS);
       expect(plan.extraAgentPriceIdEnv).toBe(EXTRA_AGENT_ADDON_PRICE_ENV);
       expect(plan.extraAgentFallbackPriceId).toBe(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID);
-      expect(plan.features).toContain(
-        "+$15/mo per additional live Bot adds 50 guaranteed voice minutes and 1 number slot",
-      );
+      const extraBotFeature = plan.features.find((feature) => feature.startsWith("+$15/mo"));
+      expect(extraBotFeature, plan.id).toContain("50 guaranteed voice minutes");
+      expect(extraBotFeature, plan.id).toContain("1 production-number slot");
+      expect(extraBotFeature, plan.id).toContain("the active Bot gets its line automatically");
     }
   });
 
@@ -116,7 +117,9 @@ describe("plan economics contract", () => {
   it("does not reintroduce retired per-minute caps or postpaid-overage behavior", () => {
     const retired =
       /retired_max_call_seconds_per_usage_minute|MAX_CALL_SECONDS_PER_USAGE_MINUTE|postpaid voice-overage/i;
-    const violations = productionSources().filter((path) => retired.test(withoutComments(read(path))));
+    const violations = productionSources().filter((path) =>
+      retired.test(withoutComments(read(path))),
+    );
     expect(violations).toEqual([]);
   });
 

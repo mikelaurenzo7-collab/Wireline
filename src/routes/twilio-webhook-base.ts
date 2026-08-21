@@ -172,7 +172,7 @@ async function resolveFailoverCompliance(to: string | null): Promise<FailoverCom
 
 function publicAssetUrl(pathname: string): string {
   const canonical = resolveCanonicalAppUrl();
-  const baseUrl = "error" in canonical ? "https://trywireline.com" : canonical.url;
+  const baseUrl = "error" in canonical ? "https://botbound.me" : canonical.url;
   return new URL(pathname, `${baseUrl.replace(/\/+$/, "")}/`).toString();
 }
 
@@ -346,7 +346,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         .status(200)
         .send(
           twimlReply(
-            "Wireline SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
+            "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
           ),
         );
     }

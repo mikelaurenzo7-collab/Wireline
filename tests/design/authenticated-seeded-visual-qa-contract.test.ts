@@ -18,9 +18,13 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(connections).toContain(
       '<Accordion type="single" collapsible data-wireline-integration-map>',
     );
-    expect(connections).toMatch(
-      /<AccordionTrigger[^>]*>\s*Integration capabilities\s*<\/AccordionTrigger>/,
+    const advancedInventory = connections.slice(
+      connections.indexOf("data-wireline-integration-map"),
     );
+    expect(advancedInventory).toMatch(
+      /<AccordionTrigger[^>]*>[\s\S]*?Advanced[\s\S]*?<\/AccordionTrigger>/,
+    );
+    expect(advancedInventory).toContain("<AccordionContent");
     expect(connections).toContain("<IntegrationOperatingMap />");
   });
 

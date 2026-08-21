@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Non-billable live contract audit for Wireline's transient Vapi assistant.
+ * Non-billable live contract audit for BotBound's transient Vapi assistant.
  *
- * Creates one inert assistant using the exact managed xAI Grok 4.3 policy,
+ * Creates one inert assistant using the exact managed rollback model policy,
  * reads the saved configuration back, and always deletes it. It never
  * places a call, creates a chat, or generates model output.
  *
@@ -14,6 +14,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "../src/lib/ai-models";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const key = process.env.VAPI_PRIVATE_KEY?.trim();
 const secret = process.env.VAPI_WEBHOOK_SECRET?.trim();
@@ -41,7 +42,7 @@ try {
   const response = await request("/assistant", {
     method: "POST",
     body: JSON.stringify({
-      name: "Wireline Launch Schema Probe",
+      name: "BotBound Launch Schema Probe",
       firstMessage: "This assistant is an inert configuration probe.",
       model: {
         provider: VAPI_TENANT_DEFAULT_PROVIDER,
@@ -65,7 +66,7 @@ try {
         ],
       },
       server: {
-        url: "https://trywireline.com/api/vapi-webhook",
+        url: `${CANONICAL_PRODUCTION_URL}/api/vapi-webhook`,
         secret,
       },
       voice: {
@@ -108,11 +109,11 @@ try {
           (model?.fallbackModels == null ||
             (Array.isArray(model.fallbackModels) && model.fallbackModels.length === 0));
         if (!exact) {
-          console.error("Vapi changed or omitted the managed xAI Grok 4.3 model policy.");
+          console.error("Vapi changed or omitted the managed rollback model policy.");
           process.exitCode = 1;
         } else {
           console.log(
-            `Vapi certified ${VAPI_TENANT_DEFAULT_PROVIDER}/${VAPI_TENANT_DEFAULT_MODEL} without XaiModel fallbackModels.`,
+            `Vapi certified ${VAPI_TENANT_DEFAULT_PROVIDER}/${VAPI_TENANT_DEFAULT_MODEL} without an unexpected fallback model.`,
           );
         }
       }

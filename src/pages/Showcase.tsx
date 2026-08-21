@@ -19,7 +19,7 @@ export default function Showcase() {
   return (
     <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
-        title="TRY WIRELINE | HEAR A PHONE BOT"
+        title="TRY BOTBOUND | HEAR A PHONE BOT"
         description="Hear the Phone Bot first. Then wire one for calls, email, text, and the work that should happen next."
         path="/showcase"
       />

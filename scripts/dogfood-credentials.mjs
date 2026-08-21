@@ -2,7 +2,9 @@
  * Shared credential guard for local and production dogfood scripts.
  * Credentials are intentionally never committed as script defaults.
  */
-export const CANONICAL_DOGFOOD_ORIGIN = "https://trywireline.com";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
+
+export const CANONICAL_DOGFOOD_ORIGIN = CANONICAL_PRODUCTION_URL;
 
 /** Never POST production dogfood credentials to a configurable origin. */
 export function requireCanonicalCredentialTarget(value) {
@@ -10,7 +12,7 @@ export function requireCanonicalCredentialTarget(value) {
   try {
     parsed = new URL(String(value || CANONICAL_DOGFOOD_ORIGIN).trim());
   } catch {
-    throw new Error("Credentialed dogfood target must be https://trywireline.com.");
+    throw new Error(`Credentialed dogfood target must be ${CANONICAL_DOGFOOD_ORIGIN}.`);
   }
   if (
     parsed.origin !== CANONICAL_DOGFOOD_ORIGIN ||
@@ -22,7 +24,7 @@ export function requireCanonicalCredentialTarget(value) {
     parsed.port
   ) {
     throw new Error(
-      "Refusing to send production dogfood credentials anywhere except https://trywireline.com.",
+      `Refusing to send production dogfood credentials anywhere except ${CANONICAL_DOGFOOD_ORIGIN}.`,
     );
   }
   return CANONICAL_DOGFOOD_ORIGIN;

@@ -120,7 +120,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@botbound.me within 30 days of your first paid invoice if the plan was not the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
   ],
   [
     "What is the Scale plan?",

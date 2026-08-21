@@ -74,7 +74,7 @@ export default function MarketingFooter({
           <div className="marketing-footer-brand">
             <Link
               to="/"
-              aria-label="WIRELINE home"
+              aria-label="BotBound home"
               className="inline-flex rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
             >
               <WirelineLockup size="large" />

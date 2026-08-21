@@ -11,7 +11,7 @@ function reelBeatPaths(kit: string): string[] {
   if (start < 0 || end <= start) return [];
   const reels = kit.slice(start, end);
   return [...reels.matchAll(/route:\s*["'`]([^"'`]+)["'`]/g)]
-    .map((match) => new URL(match[1], "https://trywireline.com").pathname)
+    .map((match) => new URL(match[1], "https://botbound.me").pathname)
     .filter((path, index, all) => all.indexOf(path) === index)
     .sort();
 }

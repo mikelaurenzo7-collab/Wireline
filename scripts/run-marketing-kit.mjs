@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
@@ -76,18 +77,13 @@ function assertCleanCheckout(sourceCommit) {
   }
 }
 
-function isTrustedWirelineCaptureHost(hostname) {
+function isTrustedBotBoundCaptureHost(hostname) {
   const host = String(hostname || "").trim().toLowerCase();
-  return (
-    host === "trywireline.com" ||
-    host.endsWith(".trywireline.com") ||
-    host === "wireline-chi.vercel.app" ||
-    /^wireline-[a-z0-9-]+-revaluate\.vercel\.app$/.test(host)
-  );
+  return host === new URL(CANONICAL_PRODUCTION_URL).hostname;
 }
 
 function normalizeBaseURL(value) {
-  const url = new URL(value || "https://trywireline.com");
+  const url = new URL(value || CANONICAL_PRODUCTION_URL);
   if (url.protocol !== "https:") {
     throw new Error(
       `Launch-reel certification requires an HTTPS production URL; received ${url.toString()}. ` +
@@ -97,10 +93,10 @@ function normalizeBaseURL(value) {
   if (url.username || url.password) {
     throw new Error("Launch-reel certification does not allow credentials embedded in E2E_BASE_URL.");
   }
-  if (!isTrustedWirelineCaptureHost(url.hostname)) {
+  if (!isTrustedBotBoundCaptureHost(url.hostname)) {
     throw new Error(
       `Launch-reel certification refuses untrusted capture host ${url.hostname}. ` +
-        "Use trywireline.com or a Wireline deployment in the revaluate Vercel namespace. " +
+        `Use the canonical production origin ${CANONICAL_PRODUCTION_URL}. ` +
         "Use marketing:kit:raw without real credentials for local or third-party layout work.",
     );
   }
@@ -156,13 +152,12 @@ async function verifyRemoteSourceCommit(sourceCommit, requestedBaseURL) {
 
 async function verifyCaptureOrigins(sourceCommit) {
   const configuredBaseURL = normalizeBaseURL(
-    process.env.E2E_BASE_URL || "https://trywireline.com",
+    process.env.E2E_BASE_URL || CANONICAL_PRODUCTION_URL,
   );
-  // `marketing-kit.mjs` currently takes authenticated/video captures from
-  // E2E_BASE_URL but deliberately takes the public screenshot set from the
-  // canonical production alias. Both origins therefore belong to one
-  // publishable manifest and both must prove the same source commit.
-  const origins = [...new Set([configuredBaseURL, "https://trywireline.com"])];
+  // `marketing-kit.mjs` takes authenticated/video captures from E2E_BASE_URL
+  // and the public screenshot set from the canonical production origin. The
+  // set remains explicit so any future split must prove the same source commit.
+  const origins = [...new Set([configuredBaseURL, CANONICAL_PRODUCTION_URL])];
   const verified = [];
   for (const origin of origins) {
     verified.push(await verifyRemoteSourceCommit(sourceCommit, origin));

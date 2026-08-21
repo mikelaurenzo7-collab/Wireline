@@ -38,6 +38,14 @@ async function publicMetrics(page: Page) {
     const title = document.querySelector<HTMLElement>(".landing-stage__title");
     const call = document.querySelector<HTMLElement>(".landing-demo__button");
     const accountNav = document.querySelector<HTMLElement>('nav[aria-label="Account"]');
+    const prestigeMain = document.querySelector<HTMLElement>(".landing-prestige__main");
+    const prestigeEntrance = document.querySelector<HTMLElement>(".landing-prestige__entrance");
+    const prestigeHero = document.querySelector<HTMLElement>(".landing-prestige__hero");
+    const prestigeAuth = document.querySelector<HTMLElement>(".landing-prestige__auth");
+    const prestigeDemo = document.querySelector<HTMLElement>(".landing-prestige__demo-link");
+    const prestigeMobileLinks = document.querySelector<HTMLElement>(
+      ".landing-prestige__mobile-links",
+    );
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
       (link) => link.textContent?.trim() === "Start Free",
     );
@@ -51,6 +59,11 @@ async function publicMetrics(page: Page) {
     const callRect = rect(call);
     const accountRect = rect(accountNav);
     const startRect = rect(startFree);
+    const prestigeMainRect = rect(prestigeMain);
+    const prestigeEntranceRect = rect(prestigeEntrance);
+    const prestigeHeroRect = rect(prestigeHero);
+    const prestigeAuthRect = rect(prestigeAuth);
+    const prestigeDemoRect = rect(prestigeDemo);
 
     return {
       rootHorizontalOverflow: root.scrollWidth - root.clientWidth,
@@ -70,6 +83,23 @@ async function publicMetrics(page: Page) {
       accountRight: accountRect?.right ?? 0,
       startLeft: startRect?.left ?? 0,
       startRight: startRect?.right ?? 0,
+      prestigeMainLeft: prestigeMainRect?.left ?? 0,
+      prestigeMainRight: prestigeMainRect?.right ?? 0,
+      prestigeEntranceLeft: prestigeEntranceRect?.left ?? 0,
+      prestigeEntranceRight: prestigeEntranceRect?.right ?? 0,
+      prestigeHeroWidth: prestigeHeroRect?.width ?? 0,
+      prestigeHeroHeight: prestigeHeroRect?.height ?? 0,
+      prestigeAuthWidth: prestigeAuthRect?.width ?? 0,
+      prestigeAuthHeight: prestigeAuthRect?.height ?? 0,
+      prestigeDemoWidth: prestigeDemoRect?.width ?? 0,
+      prestigeDemoHeight: prestigeDemoRect?.height ?? 0,
+      prestigeEntranceDisplay: prestigeEntrance
+        ? getComputedStyle(prestigeEntrance).display
+        : "",
+      prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
+      prestigeMobileLinksDisplay: prestigeMobileLinks
+        ? getComputedStyle(prestigeMobileLinks).display
+        : "",
       consoleWidth: consoleRect?.width ?? 0,
       consoleHeight: consoleRect?.height ?? 0,
       consoleLeft: consoleRect?.left ?? 0,
@@ -84,12 +114,19 @@ async function publicMetrics(page: Page) {
   });
 }
 
-function expectNoHorizontalEscape(
+function expectDocumentInsideViewport(
   metrics: Awaited<ReturnType<typeof publicMetrics>>,
   name: string,
 ) {
   expect(metrics.rootHorizontalOverflow, `${name} root horizontal overflow`).toBeLessThanOrEqual(2);
   expect(metrics.bodyHorizontalOverflow, `${name} body horizontal overflow`).toBeLessThanOrEqual(2);
+}
+
+function expectNoHorizontalEscape(
+  metrics: Awaited<ReturnType<typeof publicMetrics>>,
+  name: string,
+) {
+  expectDocumentInsideViewport(metrics, name);
   expect(metrics.surfaceLeft, `${name} surface left edge`).toBeGreaterThanOrEqual(-2);
   expect(metrics.surfaceRight, `${name} surface right edge`).toBeLessThanOrEqual(
     metrics.viewportWidth + 2,
@@ -107,10 +144,21 @@ for (const { path, name } of PUBLIC_ROUTES) {
     const metrics = await publicMetrics(page);
 
     expect(metrics.viewportMode).toBe("document");
-    expect(metrics.flowOverflowY).toBe("visible");
-    expect(metrics.surfaceOverflow).toBe("visible");
-    expect(metrics.headerPosition).toBe("fixed");
-    expectNoHorizontalEscape(metrics, name);
+    if (path === "/") {
+      expectDocumentInsideViewport(metrics, name);
+      expect(metrics.prestigeEntranceDisplay).toBe("grid");
+      expect(metrics.prestigeMainLeft).toBeGreaterThanOrEqual(-2);
+      expect(metrics.prestigeMainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
+      expect(metrics.prestigeEntranceLeft).toBeGreaterThanOrEqual(-2);
+      expect(metrics.prestigeEntranceRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
+      expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
+      expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
+    } else {
+      expect(metrics.flowOverflowY).toBe("visible");
+      expect(metrics.surfaceOverflow).toBe("visible");
+      expect(metrics.headerPosition).toBe("fixed");
+      expectNoHorizontalEscape(metrics, name);
+    }
   });
 }
 
@@ -149,22 +197,20 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openPublicRoute(page, "/");
 
-  await expect(page.locator(".landing-console")).toBeVisible();
-  await expect(page.locator(".landing-stage__title")).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Agent work lane" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Account" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Build Your Voice Agent" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Hear It Live", exact: true })).toBeVisible();
-  await expect(
-    page.locator(".landing-demo").getByRole("button", { name: "Hear It Live", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." })).toBeAttached();
 
   const metrics = await publicMetrics(page);
-  expectNoHorizontalEscape(metrics, "desktop home");
-  expect(metrics.consoleWidth).toBeGreaterThan(520);
-  expect(metrics.consoleHeight).toBeGreaterThan(430);
-  expect(metrics.titleLeft).toBeGreaterThanOrEqual(0);
-  expect(metrics.titleRight).toBeLessThan(metrics.consoleRight);
+  expectDocumentInsideViewport(metrics, "desktop home");
+  expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
+  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(900);
+  expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
+  expect(metrics.prestigeAuthHeight).toBeGreaterThanOrEqual(900);
+  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
 });
 
 test("home remains usable on a short laptop", async ({ page }) => {
@@ -172,40 +218,33 @@ test("home remains usable on a short laptop", async ({ page }) => {
   await openPublicRoute(page, "/");
   const metrics = await publicMetrics(page);
 
-  expectNoHorizontalEscape(metrics, "short-laptop home");
-  expect(metrics.consoleHeight).toBeGreaterThan(400);
-  expect(metrics.callHeight, "live-demo control keeps a comfortable target").toBeGreaterThanOrEqual(
-    44,
-  );
-  expect(metrics.callWidth).toBeGreaterThan(120);
+  expectDocumentInsideViewport(metrics, "short-laptop home");
+  expect(metrics.prestigeHeroWidth).toBeGreaterThan(500);
+  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(800);
+  expect(metrics.prestigeAuthWidth).toBeGreaterThan(500);
+  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.prestigeDemoWidth).toBeGreaterThan(240);
 });
 
-test("home keeps account actions and normal document scrolling on phone", async ({ page }) => {
+test("home becomes an uncluttered access-first experience on phone", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await openPublicRoute(page, "/");
 
-  await expect(page.locator(".landing-console")).toBeVisible();
-  await expect(page.locator(".landing-phone")).toHaveCount(0);
-  await expect(page.locator(".landing-os__tray")).toHaveCount(0);
-  await expect(page.locator(".marketing-surface > header")).toBeVisible();
-  const account = page.getByRole("navigation", { name: "Account" });
-  await expect(account.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
-  await expect(account.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
+  await expect(page.locator(".landing-prestige__hero")).toBeHidden();
+  await expect(page.locator(".landing-prestige__desktop-only")).toBeHidden();
+  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Create Account" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const metrics = await publicMetrics(page);
-  expectNoHorizontalEscape(metrics, "phone home");
-  expect(metrics.documentVerticalOverflow).toBeGreaterThan(0);
-  expect(metrics.accountLeft).toBeGreaterThanOrEqual(0);
-  expect(metrics.accountRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
-  expect(metrics.startLeft).toBeGreaterThanOrEqual(0);
-  expect(metrics.startRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
-  expect(metrics.consoleWidth).toBeGreaterThan(320);
-
-  const scrollPosition = await page.evaluate(() => {
-    window.scrollTo(0, 180);
-    return window.scrollY;
-  });
-  expect(scrollPosition, "public document must be mechanically scrollable").toBeGreaterThan(0);
+  expectDocumentInsideViewport(metrics, "phone home");
+  expect(metrics.prestigeEntranceDisplay).toBe("block");
+  expect(metrics.prestigeHeroDisplay).toBe("none");
+  expect(metrics.prestigeHeroWidth).toBe(0);
+  expect(metrics.prestigeAuthWidth).toBeGreaterThan(320);
+  expect(metrics.prestigeAuthWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+  expect(metrics.prestigeMobileLinksDisplay).toBe("flex");
 });
 
 test("home remains composed on a short wide desktop", async ({ page }) => {
@@ -213,10 +252,11 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
   await openPublicRoute(page, "/");
   const metrics = await publicMetrics(page);
 
-  expectNoHorizontalEscape(metrics, "short-wide home");
-  expect(metrics.consoleWidth).toBeGreaterThan(540);
-  expect(metrics.consoleHeight).toBeGreaterThan(420);
-  expect(metrics.callHeight).toBeGreaterThanOrEqual(44);
+  expectDocumentInsideViewport(metrics, "short-wide home");
+  expect(metrics.prestigeHeroWidth).toBeGreaterThan(580);
+  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(720);
+  expect(metrics.prestigeAuthWidth).toBeGreaterThan(580);
+  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
 });
 
 test("features and pricing remain scrollable without horizontal clipping", async ({ page }) => {

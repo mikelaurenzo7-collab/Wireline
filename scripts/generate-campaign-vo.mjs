@@ -34,7 +34,7 @@ export const CAMPAIGN_VO = [
     targetSeconds: 15,
     speed: 1.07,
     maxSeconds: 15,
-    text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.",
+    text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.",
   },
   {
     id: "ai-voice-agent-30s",
@@ -60,7 +60,7 @@ export const CAMPAIGN_VO = [
 ];
 
 export function speakable(text) {
-  return text.replace(/trywireline\.com/gi, "try wireline dot com");
+  return text.replace(/botbound\.me/gi, "bot bound dot me");
 }
 
 /**

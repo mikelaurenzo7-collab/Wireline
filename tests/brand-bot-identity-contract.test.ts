@@ -10,7 +10,9 @@ describe("BotBound brand migration", () => {
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
     expect(component).toContain('data-botbound-mark="phone-bot"');
-    expect(component).toContain("Receiver held to the Bot's ear");
+    expect(component).toContain('src="/brand/botbound-app-icon.png"');
+    expect(component).toContain("visibly grips a violet telephone receiver");
+    expect(component).not.toContain("<svg");
     for (const source of [icon, favicon]) {
       expect(source).toContain("BotBound");
       expect(source).toMatch(/phone|Phone/);
@@ -40,7 +42,7 @@ describe("BotBound brand migration", () => {
     expect(manifest.name).toContain("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.start_url).toBe("/studio");
-    expect(manifest.icons[0]?.src).toBe("/botbound-icon.svg");
+    expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
   });
 
   it("keeps the legacy technical namespace deliberately separate from customer identity", () => {

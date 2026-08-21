@@ -130,22 +130,30 @@ describe("BotBound ChatGPT App production contract", () => {
   });
 
   it("keeps submission identity and OAuth metadata aligned with production", () => {
-    // Keep the established integration origin while callback registrations migrate.
     expect(submission.app_info.display_name).toBe("BotBound");
-    expect(submission.app_info.logo_url).toBe("https://botbound.me/botbound-icon.svg");
+    expect(submission.app_info.logo_url).toBe("https://botbound.me/botbound-icon-512.png");
     expect(submission.app_info.website_url).toBe("https://botbound.me");
     expect(submission.app_info.privacy_policy_url).toBe(
       "https://botbound.me/chatgpt-app-privacy.html",
     );
     expect(submission.app_info.contact_email).toBe("support@trywireline.com");
-    expect(submission.oauth.client_url).toBe(
-      "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
-    );
-    expect(submission.oauth.authorization_url).toBe(
-      "https://trywireline.com/mcp/oauth/authorize",
-    );
-    expect(submission.oauth.token_url).toBe("https://trywireline.com/mcp/oauth/token");
+    expect(submission.oauth.client_url).toBe("https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json");
+    expect(submission.oauth.authorization_url).toBe("https://botbound.me/mcp/oauth/authorize");
+    expect(submission.oauth.token_url).toBe("https://botbound.me/mcp/oauth/token");
+    expect(submissionPacket).toContain("https://botbound.me/mcp");
+    expect(submissionPacket).not.toContain("https://trywireline.com/mcp");
     expect(read("public/botbound-icon.svg")).toContain('<title id="title">BotBound</title>');
+  });
+
+  it("makes the release probe certify one coherent canonical MCP origin", () => {
+    const releaseProbe = read("scripts/check-chatgpt-app-release.mjs");
+    expect(releaseProbe).toContain("CANONICAL_PRODUCTION_URL");
+    expect(releaseProbe).toContain('request("/botbound-icon.svg"');
+    expect(releaseProbe).toContain("protectedResource.body.resource === `${origin}/mcp`");
+    expect(releaseProbe).toContain("authorizationServer.body.issuer === origin");
+    expect(releaseProbe).toContain("serverCard.body.websiteUrl === origin");
+    expect(releaseProbe).toContain("!claudeDocs.body.includes(legacyMcpEndpoint)");
+    expect(releaseProbe).toContain("!cursorDocs.body.includes(legacyMcpEndpoint)");
   });
 
   it("publishes explicit, complete tool annotations in the submission packet", () => {

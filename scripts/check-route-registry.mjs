@@ -25,10 +25,20 @@ const problems = [];
 // separate serverless entrypoint are enumerated below, and each claim is
 // verified against the mounting file rather than trusted as prose.
 const MOUNTED_ELSEWHERE = [
-  // Public MCP surface mounted by the standalone ChatGPT entrypoint.
-  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
-  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/entrypoints/chatgpt-mcp-api.ts" },
+  // Public MCP surface is mounted by the shared registrar used by both the
+  // standalone ChatGPT entrypoint and the canonical local server.
+  { file: "chatgpt-mcp-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
+  { file: "chatgpt-mcp-account-routes.ts", mountedBy: "src/server/register-mcp-routes.ts" },
 ];
+
+// These exact modules are retained only as fail-closed rollback inventory for
+// the retired Live Video product. Product contracts intentionally require that
+// they remain unmounted; adding any other archived router requires an explicit,
+// reviewable entry here rather than weakening orphan detection globally.
+const INTENTIONALLY_UNMOUNTED = new Set([
+  "video-presenter-routes.ts",
+  "video-presenter-routes-base.ts",
+]);
 
 function walkTsFiles(dir) {
   const files = [];
@@ -159,7 +169,11 @@ for (const file of walkTsFiles("src")) {
 }
 for (const [absolute, info] of moduleInfo) {
   if (info.constructsRouter) {
-    if (!mounted.has(absolute) && !mountedElsewhereFiles.has(absolute)) {
+    if (
+      !mounted.has(absolute) &&
+      !mountedElsewhereFiles.has(absolute) &&
+      !INTENTIONALLY_UNMOUNTED.has(info.relative)
+    ) {
       problems.push(
         `Route file src/routes/${info.relative} creates an Express router but is never mounted from src/server/register-api-routes.ts, directly or via a mounted router's router.use(...) (silent 404 in production; mount it or extend MOUNTED_ELSEWHERE in this script if intentional).`,
       );
@@ -167,6 +181,17 @@ for (const [absolute, info] of moduleInfo) {
   } else if (info.relative.includes(path.sep) && !importedAnywhere.has(absolute)) {
     problems.push(
       `src/routes/${info.relative} is not imported by any file under src/ (dead module in a routes subdirectory; wire it up or delete it).`,
+    );
+  }
+}
+
+for (const file of INTENTIONALLY_UNMOUNTED) {
+  const absolute = path.resolve(ROUTES_DIR, file);
+  if (!moduleInfo.has(absolute)) {
+    problems.push(`INTENTIONALLY_UNMOUNTED entry ${file} does not exist under src/routes/.`);
+  } else if (mounted.has(absolute) || mountedElsewhereFiles.has(absolute)) {
+    problems.push(
+      `Retired route file src/routes/${file} is mounted even though it is listed in INTENTIONALLY_UNMOUNTED.`,
     );
   }
 }

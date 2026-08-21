@@ -31,8 +31,13 @@ function rosterEmptyStateSurfaces(): string[] {
 describe("Bot roster: empty versus unreachable", () => {
   it("covers the surfaces that make a claim about the roster", () => {
     const surfaces = rosterEmptyStateSurfaces();
-    expect(surfaces.length).toBeGreaterThanOrEqual(5);
+    // Keep the discovery broad enough that this contract cannot pass vacuously,
+    // while allowing the 2026 workspace consolidation to remove duplicate
+    // roster surfaces without forcing a phantom replacement.
+    expect(surfaces.length).toBeGreaterThanOrEqual(4);
     expect(surfaces).toContain("src/components/StudioWorkspaceV2.tsx");
+    expect(surfaces).toContain("src/components/OutboundDialDialog.tsx");
+    expect(surfaces).toContain("src/components/insights/shared.tsx");
     expect(surfaces).toContain("src/pages/KnowledgePage.tsx");
   });
 
@@ -82,9 +87,12 @@ describe("Bot roster: empty versus unreachable", () => {
 
   it("still offers the unified create path when the roster is genuinely empty", () => {
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("return <StudioEmptyState />");
-    expect(read("src/components/PhoneSetupPanel.tsx")).toContain(
-      "agents.length === 0 && !agentsDegraded",
-    );
+    const phoneSetup = read("src/components/PhoneSetupPanel.tsx");
+    const degradedBranch = phoneSetup.indexOf(") : agentsDegraded ? (");
+    const createBranch = phoneSetup.indexOf('<Link to="/studio?create=1">Create Bot</Link>');
+    expect(degradedBranch).toBeGreaterThan(-1);
+    expect(createBranch).toBeGreaterThan(-1);
+    expect(degradedBranch).toBeLessThan(createBranch);
     expect(read("src/components/OutboundDialDialog.tsx")).toContain(
       "Create and activate one in Studio",
     );
@@ -113,15 +121,14 @@ describe("Bot line readiness: attached, absent, or unknown", () => {
     expect(agentReadinessLabel(withoutLine, true)).not.toBe("Needs setup");
   });
 
-  it("keeps both visible roster surfaces on the shared helper", () => {
-    for (const file of [
-      "src/components/overview/OverviewRail.tsx",
-      "src/components/WorkspaceShell.tsx",
-    ]) {
-      const source = read(file);
-      expect(source).toContain("agentReadinessLabel(");
-      expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
-    }
+  it("keeps the visible readiness surface on the shared helper", () => {
+    const source = read("src/components/overview/OverviewRail.tsx");
+    expect(source).toContain("agentReadinessLabel(");
+    expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
+
+    // The workspace shell now shows only the current Bot identity and makes no
+    // line-readiness claim, so it has no status label to normalize.
+    expect(read("src/components/WorkspaceShell.tsx")).not.toContain("Needs setup");
   });
 
   it("says on screen when the line lookup is what failed", () => {

@@ -290,7 +290,7 @@ describe("Resend delivery-feedback contract", () => {
     const envExample = read(".env.example");
 
     expect(readiness).toContain("RESEND_WEBHOOK_SECRET");
-    expect(readiness).toContain("https://trywireline.com/api/webhooks/resend");
+    expect(readiness).toContain("`${CANONICAL_PRODUCTION_URL}/api/webhooks/resend`");
     expect(readiness).toContain("https://api.resend.com/webhooks?limit=100");
     expect(readiness).toContain('detail?.status !== "enabled"');
     expect(readiness).toContain("!exactEvents(detail?.events)");

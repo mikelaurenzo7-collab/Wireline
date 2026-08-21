@@ -30,6 +30,7 @@ describe("BotBound Command extension contract", () => {
     expect(baseManifest.permissions).not.toEqual(expect.arrayContaining(["<all_urls>"]));
     expect(JSON.stringify(baseManifest)).not.toContain("<all_urls>");
     expect(JSON.stringify(baseManifest)).not.toContain("fonts.googleapis.com");
+    expect(baseManifest.homepage_url).toBe("https://botbound.me");
   });
 
   it("fails closed when browser capture timestamps are missing", () => {
@@ -70,7 +71,7 @@ describe("BotBound Command extension contract", () => {
     expect(studioSource).not.toContain("handoff=");
   });
 
-  it("presents modern BotBound Bot IA while retaining compatible route keys and transition origin", () => {
+  it("presents modern BotBound Bot IA on the canonical origin while retaining compatible route keys", () => {
     const panel = read("apps/browser-extension/panel/index.html");
     const panelJs = read("apps/browser-extension/panel/panel.js");
     const worker = read("apps/browser-extension/background/service-worker.js");
@@ -98,10 +99,17 @@ describe("BotBound Command extension contract", () => {
     expect(panelJs).toContain('route: "training"');
     expect(panelJs).toContain('route: "studio"');
     expect(panelJs).toContain("BotBound Bot");
-    // The stable extension route bridge stays on the proven transition origin
-    // until botbound.me is attached and verified on the Vercel project.
-    expect(worker).toContain('["phone", "https://trywireline.com/phone"]');
-    expect(worker).toContain('["inbox", "https://trywireline.com/inbox"]');
+    expect(panel).toContain('href="https://botbound.me/privacy"');
+    expect(worker).toContain('const BOTBOUND_ORIGIN = "https://botbound.me"');
+    expect(worker).toContain('["phone", `${BOTBOUND_ORIGIN}/phone`]');
+    expect(worker).toContain('["inbox", `${BOTBOUND_ORIGIN}/inbox`]');
+    expect(`${JSON.stringify(baseManifest)}\n${panel}\n${worker}`).not.toContain(
+      "trywireline.com",
+    );
+    // This is the published Firefox add-on identifier, not a customer-facing URL.
+    expect(firefoxManifest).toMatchObject({
+      browser_specific_settings: { gecko: { id: "command@wireline.com" } },
+    });
   });
 
   it("documents multi-surface QA ritual", () => {

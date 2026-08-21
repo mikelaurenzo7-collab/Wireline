@@ -40,7 +40,9 @@ export function SupportPage() {
       responseStatus = response.status;
       if (!response.ok) {
         const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(failBody?.error || `Support ticket could not be sent (${response.status}).`);
+        throw new Error(
+          failBody?.error || `Support ticket could not be sent (${response.status}).`,
+        );
       }
       const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
       if (!payload?.sent) throw new Error("Support ticket was not delivered.");
@@ -49,7 +51,8 @@ export function SupportPage() {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
       }
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : "The ticket service did not respond.";
+      const message =
+        reason instanceof Error ? reason.message : "The ticket service did not respond.";
       const isTransport =
         (responseStatus !== null && responseStatus >= 500) ||
         /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
@@ -57,7 +60,9 @@ export function SupportPage() {
       if (isTransport) {
         const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
         window.location.href = fallback;
-        setError("The ticket service did not respond, so your email client has opened with everything filled in.");
+        setError(
+          "The ticket service did not respond, so your email client has opened with everything filled in.",
+        );
       } else {
         setError(message);
       }
@@ -74,21 +79,32 @@ export function SupportPage() {
         path="/support"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <Link to="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
-          <h1 className="wl-stitch-marketing-hero text-balance">Help with your agent, without the runaround</h1>
+          <h1 className="wl-stitch-marketing-hero text-balance">
+            Help with your Bot, without the runaround
+          </h1>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <a
+            href={`tel:${supportAgent.tel}`}
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
             <Phone className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Call BotBound</h2>
             <p className="mt-2 text-sm text-muted-foreground">{supportAgent.display}</p>
           </a>
-          <a href="mailto:support@trywireline.com" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <a
+            href="mailto:support@trywireline.com"
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
             <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
@@ -100,13 +116,16 @@ export function SupportPage() {
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Open a ticket</h2>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+            Open a ticket
+          </h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Ticket received</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                You will hear from us within one business day at <strong className="text-foreground">{email}</strong>.
+                You will hear from us within one business day at{" "}
+                <strong className="text-foreground">{email}</strong>.
               </p>
             </div>
           ) : (
@@ -129,11 +148,26 @@ export function SupportPage() {
               </div>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Your email
-                <Input required type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
+                <Input
+                  required
+                  type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Subject
-                <Input required value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="A short summary of what you need" />
+                <Input
+                  required
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  placeholder="A short summary of what you need"
+                />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Details
@@ -142,13 +176,31 @@ export function SupportPage() {
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   rows={6}
-                  placeholder={issueType === "billing" ? "Invoice or charge in question, what you expected, and what happened." : issueType === "agent" ? "Agent name, approximate call time, what happened, and what should have happened." : "What you did, what happened, and what you expected."}
+                  placeholder={
+                    issueType === "billing"
+                      ? "Invoice or charge in question, what you expected, and what happened."
+                      : issueType === "agent"
+                        ? "Agent name, approximate call time, what happened, and what should have happened."
+                        : "What you did, what happened, and what you expected."
+                  }
                   className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
                 />
               </label>
-              {error && <p role="alert" className="text-sm leading-6 text-destructive">{error}</p>}
-              <button type="submit" disabled={submitting} className="marketing-btn-primary w-full min-h-12 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {error && (
+                <p role="alert" className="text-sm leading-6 text-destructive">
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="marketing-btn-primary w-full min-h-12 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
                 {submitting ? "Sending…" : "Send ticket"}
               </button>
             </form>
@@ -156,8 +208,10 @@ export function SupportPage() {
         </section>
         <p className="mt-7 text-center text-sm leading-6 text-muted-foreground">
           Tickets are handled according to the{" "}
-          <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">Privacy Policy</Link>.
-          You can request deletion at any time through account settings.
+          <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">
+            Privacy Policy
+          </Link>
+          . You can request deletion at any time through account settings.
         </p>
       </section>
     </MarketingPageFrame>

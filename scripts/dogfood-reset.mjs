@@ -10,14 +10,21 @@
  * DOGFOOD_EMAIL must be a platform admin. DEMO_EMAIL defaults to the
  * production showcase tenant.
  */
-import { requireDogfoodCredentials } from "./dogfood-credentials.mjs";
+import {
+  CANONICAL_DOGFOOD_ORIGIN,
+  requireCanonicalCredentialTarget,
+  requireDogfoodCredentials,
+} from "./dogfood-credentials.mjs";
 
-const base = (() => {
+const requestedBase = (() => {
   const i = process.argv.indexOf("--base");
-  return i >= 0 ? process.argv[i + 1] : process.env.APP_URL || "https://trywireline.com";
+  return i >= 0 ? process.argv[i + 1] : process.env.APP_URL || CANONICAL_DOGFOOD_ORIGIN;
 })();
+const base = requireCanonicalCredentialTarget(requestedBase);
 const dryRunOnly = process.argv.includes("--dry-run");
-const demoEmail = (process.env.DEMO_EMAIL || "wireline.demo@trywireline.com").trim().toLowerCase();
+// Stable seeded-account identity; this is not a production-origin decision.
+const LEGACY_SEEDED_DEMO_EMAIL = "wireline.demo@trywireline.com";
+const demoEmail = (process.env.DEMO_EMAIL || LEGACY_SEEDED_DEMO_EMAIL).trim().toLowerCase();
 
 const { email, password } = requireDogfoodCredentials();
 

@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { BOTBOUND_BRAND_NAME } from "../lib/brand";
+import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
@@ -96,13 +96,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             "@type": "ListItem",
             position: 1,
             name: BOTBOUND_BRAND_NAME,
-            item: "https://trywireline.com/",
+            item: `${BOTBOUND_PRODUCTION_ORIGIN}/`,
           },
           {
             "@type": "ListItem",
             position: 2,
             name: cfg.metaTitle.split(/\s*[\u2014|]\s*/)[0].trim() || slug,
-            item: `https://trywireline.com/for/${slug}`,
+            item: `${BOTBOUND_PRODUCTION_ORIGIN}/for/${slug}`,
           },
         ],
       },

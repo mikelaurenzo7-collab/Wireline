@@ -56,17 +56,24 @@ describe("Cursor Directory plugin contract", () => {
   it("points only at the remote Streamable HTTP server", () => {
     expect(openPlugins.mcpServers.wireline).toEqual({
       type: "streamable-http",
-      url: "https://trywireline.com/mcp",
+      url: "https://botbound.me/mcp",
     });
     expect(directoryMcp.mcpServers).toEqual({
-      wireline: { url: "https://trywireline.com/mcp" },
+      wireline: { url: "https://botbound.me/mcp" },
     });
-    expect(JSON.stringify(directoryMcp)).not.toMatch(/sk-|api[_-]?key|client_secret|Authorization/i);
+    expect(JSON.stringify(directoryMcp)).not.toMatch(
+      /sk-|api[_-]?key|client_secret|Authorization/i,
+    );
   });
 
   it("publishes a one-click Cursor install link without secrets", () => {
     const install =
-      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL3RyeXdpcmVsaW5lLmNvbS9tY3AifQ==";
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
+    const encodedConfig = new URL(install).searchParams.get("config");
+    expect(encodedConfig).not.toBeNull();
+    expect(JSON.parse(Buffer.from(encodedConfig!, "base64").toString("utf8"))).toEqual({
+      url: "https://botbound.me/mcp",
+    });
     expect(publicDocs).toContain(install.replace("&", "&amp;"));
     expect(apps).toContain(install);
     expect(docs).toContain(install);
@@ -77,23 +84,25 @@ describe("Cursor Directory plugin contract", () => {
   it("teaches first-agent acquisition, not a repo voice SDK", () => {
     expect(plugin.description).toMatch(/Create a BotBound account/i);
     for (const source of [skill, rule, agent, docs, packet, publicDocs]) {
-      expect(source).toMatch(/Wireline account|create an account|Create a Wireline account/i);
+      expect(source).toMatch(/BotBound account|create an account/i);
       expect(source).toMatch(/first voice agent|first agent|first-agent/i);
-      expect(source.toLowerCase()).not.toContain("embed wireline voice agents in another repo");
+      expect(source.toLowerCase()).not.toContain("embed botbound voice agents in another repo");
     }
     expect(skill).toContain("not a software development kit");
     expect(publicDocs).toContain("not a repo voice SDK");
     expect(apps).toContain("Not a repo voice SDK");
     expect(apps).toContain("/cursor-plugin.html");
+    expect(apps).toContain("BOTBOUND_PRODUCTION_ORIGIN");
+    expect(apps).not.toContain("https://trywireline.com/mcp");
   });
 
-  it("keeps Cursor OAuth callbacks on Cursor, not trywireline.com", () => {
+  it("keeps Cursor OAuth callbacks on Cursor, not the BotBound server origin", () => {
     const registry = read("src/lib/mcp-client-registry.ts");
     expect(registry).toContain("cursor://anysphere.cursor-mcp/oauth/callback");
     expect(registry).toContain("https://www.cursor.com/agents/mcp/oauth/callback");
     expect(registry).toContain("http://localhost:8787/callback");
     expect(packet).toContain("http://localhost:8787/callback");
-    expect(packet).toContain("Do not register `https://trywireline.com/...` as Cursor's redirect URI");
+    expect(packet).toContain("Do not register `https://botbound.me/...` as Cursor's redirect URI");
     expect(docs).toContain("Cursor-operated callbacks");
     expect(docs).toContain("http://localhost:8787/callback");
     expect(read("src/routes/chatgpt-mcp-routes.ts")).toContain(
@@ -107,6 +116,8 @@ describe("Cursor Directory plugin contract", () => {
     expect(panel).toContain("/api/mcp/connections");
     expect(panel).toContain("/api/mcp/coaching-writes");
     expect(panel).toContain("Allow connected apps to save Training");
-    expect(read("src/lib/mcp-coaching-preferences.ts")).toContain('MCP_COACHING_WRITES_KEY = "mcp_coaching_writes"');
+    expect(read("src/lib/mcp-coaching-preferences.ts")).toContain(
+      'MCP_COACHING_WRITES_KEY = "mcp_coaching_writes"',
+    );
   });
 });

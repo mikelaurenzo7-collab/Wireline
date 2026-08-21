@@ -59,7 +59,9 @@ describe("authenticated Bot flow", () => {
     expect(authAccess).not.toContain("const SIGNUP_PLAN_LABELS");
     expect(authAccess).toContain("WirelineLockup");
     expect(authAccess).not.toContain('<span className="wl-auth-brand-badge">W</span>');
-    expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(workspaceShell).toContain('import { BotBoundWordmark } from "./brand/BotBoundBrand"');
+    expect(workspaceShell).toContain('import BotBoundMark from "./brand/BotBoundMark"');
+    expect(workspaceShell).not.toContain("WirelineMark");
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain('return "/studio?create=1"');
     expect(authRedirect).not.toContain("create=1&posture=");
@@ -126,7 +128,11 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build Your Bot"');
-    expect(productCopy).toContain("Describe the job. Connect calls, email, text, knowledge, and tools.");
+    const emptyCue = productCopy.match(/emptyCue:\s*"([^"]+)"/)?.[1] ?? "";
+    expect(emptyCue).toMatch(/Describe the job/i);
+    for (const capability of ["calls", "text", "email", "knowledge", "tools"]) {
+      expect(emptyCue.toLowerCase()).toContain(capability);
+    }
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
@@ -196,7 +202,9 @@ describe("authenticated Bot flow", () => {
     expect(wizard).toContain('value === "train"');
     expect(wizard).toContain('value === "wire"');
     expect(wizard).toContain('value === "test"');
-    expect(wizard).toContain('const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]');
+    expect(wizard).toContain(
+      'const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]',
+    );
     expect(wizard).toContain("clearPostCreateWizard");
     expect(wizard).toContain("stashPostCreateWizardStep");
     expect(copy).toContain("POST_CREATE_WIZARD_COPY");

@@ -8,6 +8,8 @@
  * ambiguous and an automatic retry could send a duplicate message.
  */
 
+import { getCanonicalAppUrl } from "./app-url";
+
 export interface TwilioMessageRetryContext {
   retryNumber: number;
   delayMs: number;
@@ -60,7 +62,7 @@ export function twilioMessageStatusCallbackUrl(
   configuredAppUrl: string | undefined = process.env.APP_URL,
   scope?: TwilioMessageCallbackScope,
 ): string {
-  const baseUrl = (configuredAppUrl?.trim() || "https://trywireline.com").replace(/\/+$/, "");
+  const baseUrl = (configuredAppUrl?.trim() || getCanonicalAppUrl()).replace(/\/+$/, "");
   const callbackUrl = `${baseUrl}/api/twilio-webhook/message-status`;
   return scope ? `${callbackUrl}?scope=${scope}` : callbackUrl;
 }

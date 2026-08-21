@@ -9,8 +9,8 @@ const read = (path: string) =>
  * The authz matrix and route-registry gates were blind to ~21% of the mounted
  * route surface (factory/named handlers swallowed subsequent declarations,
  * comments before the path string skipped routes, and sub-routers composed via
- * router.use(subRouter) — oauth/ providers, twilio-webhook-base,
- * video-presenter-routes-base, grok-live-profile-routes — were never scanned).
+ * router.use(subRouter) — oauth/ providers, twilio-webhook-base, and
+ * grok-live-profile-routes — were never scanned).
  * These assertions pin the previously-invisible surface into the generated
  * matrix so the blindness cannot regress silently.
  */
@@ -57,10 +57,6 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     );
     expect(matrix).toMatch(
       /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback-complete` \|.*\| Public \(allowlisted\) \|/,
-    );
-    // video-presenter-routes.ts -> video-presenter-routes-base.ts.
-    expect(matrix).toMatch(
-      /\| video-presenter-routes-base\.ts \| PATCH \| `\/api\/agents\/:id\/video-presenter` \|.*\| Protected \|/,
     );
     // grok-voice-routes.ts -> grok-live-profile-routes.ts.
     expect(matrix).toMatch(

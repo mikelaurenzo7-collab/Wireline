@@ -102,10 +102,12 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("keeps the Phone Bot wedge explicit while preserving precise hyphenated compounds where useful", () => {
-    expect(HOME_TITLE).toContain("WIRE YOUR PHONE BOT");
-    expect(HOME_DESCRIPTION).toContain("Phone Bot");
+  it("keeps the R3 brand spine and Phone Bot wedge explicit while preserving precise compounds", () => {
+    expect(HOME_TITLE).toBe("BotBound | Put Your Bot on the Line");
+    expect(HOME_DESCRIPTION).toBe("AI employees for calls, texts, and email.");
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("PUT YOUR BOT");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("ON THE LINE");
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });

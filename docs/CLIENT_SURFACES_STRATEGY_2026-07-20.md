@@ -28,13 +28,13 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 1. **Page-native context** — title, URL, meta description, user selection, `tel:` links from the tab the founder is already looking at (CRM, inbox, Google result, lead page).
 2. **Zero copy/paste friction** — one gesture → Studio brief with “reference only” framing.
-3. **Always-available command palette** — side panel / context menu / `Ctrl+Shift+Y` without opening trywireline.com first.
+3. **Always-available command palette** — side panel / context menu / `Ctrl+Shift+Y` without opening botbound.me first.
 
 ### What it deliberately does *not* offer
 
 - No dialing, SMS, email send, number provision, billing, Training edits, or agent lifecycle.
 - No tokens, no API calls, no background scraping, no broad host permissions.
-- It opens Studio; Wireline's server does the work.
+- It opens Studio; BotBound's server does the work.
 
 ### Better way (already applied in this pass)
 
@@ -51,7 +51,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 ```text
                     ┌─────────────────────────────┐
-                    │  https://trywireline.com/mcp │
+                    │    https://botbound.me/mcp   │
                     │  OAuth PKCE + account tools  │
                     └──────────────┬──────────────┘
            ┌───────────────────────┼───────────────────────┐
@@ -73,7 +73,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 Guest demo tools (`CHATGPT_MCP_GUEST_DEMO`) are **removed** from the OAuth/MCP router — account-bound `POST /mcp` is the only tool transport. Do not reintroduce guest tools.
 
-There is **no** Claude Desktop extension, **no** Cursor `.cursor-plugin`, and **no** `plugins/` tree in this monorepo. Those would be separate products; the correct Wireline shape is one remote MCP server.
+There is **no** Claude Desktop extension, **no** Cursor `.cursor-plugin`, and **no** `plugins/` tree in this monorepo. Those would be separate products; the correct BotBound shape is one remote MCP server.
 
 ---
 
@@ -95,7 +95,7 @@ Do **not** sell iOS as live while `CLIENT_SURFACE_POSTURE.ios = Planned`. Align 
 
 **GO: promote and sell the web app without store-ready natives or extension.**
 
-Companions are optional early access. Create → Train → Wire → Run is complete on `trywireline.com`. Waiting on App Store / Play / Chrome Web Store is a perfectionist trap, not a product dependency.
+Companions are optional early access. Create → Train → Wire → Run is complete on `botbound.me`. Waiting on App Store / Play / Chrome Web Store is a perfectionist trap, not a product dependency.
 
 Real gates before inviting paid strangers (ops, not companions): Federal DNCScrub for marketing dials, live billing/voice/SMS/email E2E proof, Stripe buffer, Twilio top-up, rotate leaked tokens. See `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
 

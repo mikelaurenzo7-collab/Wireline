@@ -19,6 +19,7 @@ import {
 } from "./account-deletion";
 import { runTerminalDeletionSequence } from "./account-deletion-fence";
 import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
+import { getCanonicalAppUrl } from "./app-url";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -869,7 +870,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         .where(eq(schema.users.id, p.userId))
         .limit(1);
       if (!userRow?.email) return;
-      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+      const appUrl = getCanonicalAppUrl();
       const { sendTrialEndingSoonEmail } = await import("./email-service");
       const result = await sendTrialEndingSoonEmail({
         to: userRow.email,

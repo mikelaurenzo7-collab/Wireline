@@ -45,34 +45,34 @@ describe("dogfood credential aliases", () => {
   });
 
   it("accepts the documented Wireline E2E aliases", () => {
-    process.env.WIRELINE_E2E_EMAIL = "  Founder@TryWireline.com ";
+    process.env.WIRELINE_E2E_EMAIL = "  Founder@BotBound.me ";
     process.env.WIRELINE_E2E_PASSWORD = "wireline-test-password";
 
     expect(requireDogfoodCredentials()).toEqual({
-      email: "founder@trywireline.com",
+      email: "founder@botbound.me",
       password: "wireline-test-password",
     });
   });
 
   it("keeps explicit dogfood credentials highest precedence", () => {
-    process.env.DOGFOOD_EMAIL = "dogfood@trywireline.com";
+    process.env.DOGFOOD_EMAIL = "dogfood@botbound.me";
     process.env.DOGFOOD_PASSWORD = "dogfood-password";
-    process.env.WIRELINE_E2E_EMAIL = "e2e@trywireline.com";
+    process.env.WIRELINE_E2E_EMAIL = "e2e@botbound.me";
     process.env.WIRELINE_E2E_PASSWORD = "e2e-password";
 
     expect(requireDogfoodCredentials()).toEqual({
-      email: "dogfood@trywireline.com",
+      email: "dogfood@botbound.me",
       password: "dogfood-password",
     });
   });
 
   it("fails closed when no complete credential pair is configured", () => {
-    process.env.WIRELINE_E2E_EMAIL = "founder@trywireline.com";
+    process.env.WIRELINE_E2E_EMAIL = "founder@botbound.me";
     expect(() => requireDogfoodCredentials()).toThrow(/WIRELINE_E2E_EMAIL/);
   });
 
   it("never combines an email and password from different alias pairs", () => {
-    process.env.DOGFOOD_EMAIL = "dogfood@trywireline.com";
+    process.env.DOGFOOD_EMAIL = "dogfood@botbound.me";
     process.env.WIRELINE_E2E_PASSWORD = "unrelated-password";
 
     expect(() => requireDogfoodCredentials()).toThrow(/DOGFOOD_PASSWORD/);
@@ -100,22 +100,25 @@ describe("dogfood credential aliases", () => {
 
   it("never sends launch credentials to a configurable or malformed origin", () => {
     expect(requireCanonicalCredentialTarget("")).toBe(CANONICAL_DOGFOOD_ORIGIN);
-    expect(requireCanonicalCredentialTarget("https://trywireline.com/")).toBe(
+    expect(CANONICAL_DOGFOOD_ORIGIN).toBe("https://botbound.me");
+    expect(requireCanonicalCredentialTarget("https://botbound.me/")).toBe(
       CANONICAL_DOGFOOD_ORIGIN,
     );
     for (const target of [
-      "http://trywireline.com",
+      "http://botbound.me",
       "https://evil.example.com",
-      "https://trywireline.com.evil.example.com",
-      "https://user:pass@trywireline.com",
-      "https://trywireline.com:444",
-      "https://trywireline.com/redirect",
+      "https://botbound.me.evil.example.com",
+      "https://user:pass@botbound.me",
+      "https://botbound.me:444",
+      "https://botbound.me/redirect",
+      "https://trywireline.com",
     ]) {
       expect(() => requireCanonicalCredentialTarget(target)).toThrow(/Refusing|must be/);
     }
 
     for (const path of [
       "scripts/prod-dogfood.mjs",
+      "scripts/dogfood-reset.mjs",
       "scripts/build-official-assets.mjs",
       "scripts/marketing-kit.mjs",
     ]) {

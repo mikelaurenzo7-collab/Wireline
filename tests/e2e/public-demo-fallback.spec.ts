@@ -8,10 +8,10 @@ declare global {
   }
 }
 
-async function openHomepage(page: Page) {
+async function openShowcase(page: Page) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.goto("/", { waitUntil: "commit", timeout: 60_000 });
+    await page.goto("/showcase", { waitUntil: "commit", timeout: 60_000 });
     await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
     try {
       await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
@@ -53,20 +53,25 @@ test("a protected-demo outage fails before microphone permission and exposes the
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await openHomepage(page);
+  await openShowcase(page);
 
-  const console = page.locator(".landing-console");
-  await console.getByRole("button", { name: "Hear It Live", exact: true }).click();
+  const preview = page.getByText("LIVE PHONE PREVIEW", { exact: true }).locator("..");
+  await preview.getByRole("button", { name: "START LIVE DEMO", exact: true }).click();
 
-  await expect(console.getByRole("alert")).toContainText(
+  await expect(preview.getByRole("alert")).toContainText(
     "The protected live demo is temporarily unavailable",
   );
-  await expect(console.getByText("Public demo line available", { exact: true })).toBeVisible();
-  await expect(console.getByText("Standard carrier rates may apply.", { exact: true })).toBeVisible();
   await expect(
-    console.getByRole("link", { name: "Call the Public Demo Line", exact: true }),
-  ).toHaveAttribute("href", /^tel:/);
-  await expect(console.getByRole("button", { name: "Hear It Live", exact: true })).toBeEnabled();
+    preview.getByText("Standard carrier rates may apply.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole("link", { name: "CALL A DEMO LINE", exact: true }),
+  ).toHaveAttribute("href", "#demo-lines");
+  await expect(page.locator("#demo-lines").getByRole("link").first()).toHaveAttribute(
+    "href",
+    /^tel:/,
+  );
+  await expect(preview.getByRole("button", { name: "START LIVE DEMO", exact: true })).toBeEnabled();
 
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
 });

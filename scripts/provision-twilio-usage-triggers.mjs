@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import "dotenv/config";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const USAGE_ALERT_PATH = "/api/twilio-webhook/usage-alert";
 const TWILIO_API_BASE = "https://api.twilio.com/2010-04-01";
@@ -9,7 +10,7 @@ const args = new Set(process.argv.slice(2));
 const dryRun = !args.has("--apply") || args.has("--dry-run");
 const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim() || "";
 const authToken = process.env.TWILIO_AUTH_TOKEN?.trim() || "";
-const appUrl = (process.env.APP_URL?.trim() || "https://trywireline.com").replace(/\/+$/, "");
+const appUrl = (process.env.APP_URL?.trim() || CANONICAL_PRODUCTION_URL).replace(/\/+$/, "");
 const callbackUrl = `${appUrl}${USAGE_ALERT_PATH}`;
 
 function parseUsd(name, fallback) {

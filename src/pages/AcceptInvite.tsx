@@ -83,8 +83,8 @@ export default function AcceptInvite() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Accept workspace invitation | WIRELINE"
-        description="Join a shared WIRELINE workspace."
+        title="Accept workspace invitation | BotBound"
+        description="Join a shared BotBound workspace."
         path="/accept-invite"
         noIndex
       />

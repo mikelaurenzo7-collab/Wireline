@@ -7,12 +7,13 @@
  */
 
 import { timingSafeEqual } from "node:crypto";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "local";
 const apiKey = process.env.RESEND_API_KEY?.trim();
 const webhookSecret = process.env.RESEND_WEBHOOK_SECRET?.trim();
 
-const endpoint = "https://trywireline.com/api/webhooks/resend";
+const endpoint = `${CANONICAL_PRODUCTION_URL}/api/webhooks/resend`;
 const requiredEvents = [
   "email.bounced",
   "email.complained",

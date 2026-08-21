@@ -105,14 +105,20 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /\/\/ Wireline policy: always disclose recording\./.test(line);
   }
   if (path === "src/lib/stripe-helpers.ts") {
-    return /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
-      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line);
+    return (
+      /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
+      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line)
+    );
   }
   if (path === "src/lib/ai-brains.ts") {
-    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(line);
+    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(
+      line,
+    );
   }
   if (path === "src/lib/env-validator.ts") {
-    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(line);
+    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(
+      line,
+    );
   }
   if (path === "src/lib/launch-readiness.ts") {
     return /Launch hard gate is on and Wireline is not launch-ready/.test(line);
@@ -253,12 +259,14 @@ describe("BotBound visible-brand sweep", () => {
     const identity = withoutComments(read("src/styles/brand-identity.css"));
 
     for (const weight of [500, 600, 700]) {
-      expect(fonts).toContain(`font-family: 'Inter Tight';\n  font-style: normal;\n  font-weight: ${weight};`);
+      expect(fonts).toContain(
+        `font-family: 'Inter Tight';\n  font-style: normal;\n  font-weight: ${weight};`,
+      );
     }
     expect(typography).not.toMatch(/\.wl-display-[1-4]\s*\{[^}]*font-weight:\s*400/s);
     expect(typography).toMatch(/\.wl-display-1\s*\{[^}]*font-weight:\s*500/s);
     expect(typography).toMatch(/\.wl-display-3\s*\{[^}]*font-weight:\s*600/s);
     expect(typography).toMatch(/\.wl-page-title\s*\{[^}]*font-weight:\s*700/s);
-    expect(identity).toMatch(/\.bb-wordmark\s*\{[^}]*font-weight:\s*700/s);
+    expect(identity).toMatch(/\.bb-wordmark\s*\{[^}]*font-weight:\s*800/s);
   });
 });

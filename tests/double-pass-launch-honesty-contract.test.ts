@@ -137,9 +137,9 @@ describe("double-pass launch honesty", () => {
     const billing = read("src/routes/billing-routes.ts");
     const app = read("src/App.tsx");
     expect(tools).toContain("`${appUrl}/pricing${planParam}`");
-    expect(tools).toContain("trywireline.com/pricing");
+    expect(tools).toContain("botbound.me/pricing");
     expect(tools).not.toContain("`${appUrl}/billing${planParam}`");
-    expect(billing).toContain("updateCardUrl: `${appUrl}/settings/billing`");
+    expect(billing).toContain("updateCardUrl: `${appUrl.url}/settings/billing`");
     expect(app).toContain('path="/billing"');
     expect(app).toContain('to="/settings/billing"');
   });

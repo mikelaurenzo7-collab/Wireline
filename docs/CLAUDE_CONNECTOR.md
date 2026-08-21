@@ -1,34 +1,34 @@
-# Wireline Claude Connector
+# BotBound Claude Connector
 
 ## Product contract
 
-**Meet the user in Claude, create a real Wireline account if they are new, then help them build their first voice agent.**
+**Meet the user in Claude, create a real BotBound account if they are new, then help them build their first voice agent.**
 
-Claude, Claude Code, ChatGPT, and Cursor share one remote MCP server at `https://trywireline.com/mcp`. There is no separate Claude plugin package and no repo-embedded voice SDK. Cursor Directory packaging lives at the repository root (`.mcp.json`, `plugin.json`, `mcp.json`). Provider credentials, prompts, tenant enforcement, billing, and launch stay server-owned.
+Claude, Claude Code, ChatGPT, and Cursor share one remote MCP server at `https://botbound.me/mcp`. There is no separate Claude plugin package and no repo-embedded voice SDK. Cursor Directory packaging lives at the repository root (`.mcp.json`, `plugin.json`, `mcp.json`). Provider credentials, prompts, tenant enforcement, billing, and launch stay server-owned.
 
 ```text
 Claude conversation
--> Wireline OAuth (signup or sign in)
+-> BotBound OAuth (signup or sign in)
 -> confirmed first agent draft
 -> private voice or text rehearsal
--> optional Training that lands in Wireline
--> numbers, live calls, and launch in Wireline
+-> optional Training that lands in BotBound
+-> numbers, live calls, and launch in BotBound
 ```
 
 ## Public endpoints
 
 | Endpoint | Purpose |
 | --- | --- |
-| `https://trywireline.com/mcp` | Streamable HTTP MCP endpoint |
-| `https://trywireline.com/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
-| `https://trywireline.com/.well-known/oauth-authorization-server` | Wireline authorization-server metadata |
-| `https://trywireline.com/mcp/oauth/authorize` | OAuth authorization and consent screen |
-| `https://trywireline.com/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
-| `https://trywireline.com/mcp/oauth/register` | RFC 7591 dynamic client registration (Claude.ai, Cursor) |
-| `https://trywireline.com/mcp/server-card` | MCP server card |
-| `https://trywireline.com/.well-known/mcp/catalog.json` | MCP catalog |
-| `https://trywireline.com/claude-connector.html` | Public connector documentation |
-| `https://trywireline.com/mcp-privacy.html` | Connector-specific public privacy notice |
+| `https://botbound.me/mcp` | Streamable HTTP MCP endpoint |
+| `https://botbound.me/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
+| `https://botbound.me/.well-known/oauth-authorization-server` | BotBound authorization-server metadata |
+| `https://botbound.me/mcp/oauth/authorize` | OAuth authorization and consent screen |
+| `https://botbound.me/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
+| `https://botbound.me/mcp/oauth/register` | RFC 7591 dynamic client registration (Claude.ai, Cursor) |
+| `https://botbound.me/mcp/server-card` | MCP server card |
+| `https://botbound.me/.well-known/mcp/catalog.json` | MCP catalog |
+| `https://botbound.me/claude-connector.html` | Public connector documentation |
+| `https://botbound.me/mcp-privacy.html` | Connector-specific public privacy notice |
 
 ## Authentication
 
@@ -58,12 +58,12 @@ The agent-draft widget is dual-host:
 - MIME `text/html;profile=mcp-app`
 - `_meta.ui` for Claude (borderless, host CSS variables, `domain` = sha256(server URL).slice(0, 32) + `.claudemcpcontent.com`, CSP `resourceDomains: ["https://assets.claude.ai"]`, microphone permission)
 - `_meta["openai/..."]` for ChatGPT
-- `ui/open-link` / `window.openai.openExternal` for **Open in Wireline**, allowlisted origin `https://trywireline.com`
+- `ui/open-link` / `window.openai.openExternal` for **Open in BotBound**, allowlisted origin `https://botbound.me`
 
 ## Directory vs custom vs plugin
 
 - **Directory listing:** remote MCP server + MCP App, submitted at `https://claude.ai/admin-settings/directory/submissions/new`. Requires a Team or Enterprise org and Owner/Directory permission.
-- **Custom connector:** any Claude user can add `https://trywireline.com/mcp` from Settings → Connectors while the listing is in review.
+- **Custom connector:** any Claude user can add `https://botbound.me/mcp` from Settings → Connectors while the listing is in review.
 - **Plugin / MCPB:** not the submission type for this server. Skills are not a standalone directory type.
 
 ## Cursor Directory
@@ -73,7 +73,9 @@ Cursor installs the same `/mcp` server. The Cursor Directory package and submiss
 ## Verification
 
 ```bash
-node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
 The shared probe checks discovery, CIMD/PKCE, initialize identity `wireline`, the tool inventory, widget MIME/CSP, Claude host domain, prompts, privacy pages, Cursor plugin docs, and the server card. It does not substitute for a real OAuth reviewer flow in Claude.
+
+Existing clients registered against `https://trywireline.com/mcp` remain a compatibility concern during issuer migration. Do not publish that legacy origin for new connections, and do not remove it from runtime compatibility handling until registered-client traffic has been verified at zero.

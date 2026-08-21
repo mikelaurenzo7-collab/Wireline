@@ -6,7 +6,7 @@
     "tagline": "Build your first voice agent",
     "description": "BotBound lets a new Claude user create a BotBound account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "categories": ["business", "productivity"],
-    "icon_url": "https://botbound.me/botbound-icon.svg",
+    "icon_url": "https://botbound.me/botbound-icon-512.png",
     "website_url": "https://botbound.me",
     "documentation_url": "https://botbound.me/claude-connector.html",
     "privacy_policy_url": "https://botbound.me/mcp-privacy.html",
@@ -15,7 +15,7 @@
     "company_website": "https://botbound.me"
   },
   "server": {
-    "url": "https://trywireline.com/mcp",
+    "url": "https://botbound.me/mcp",
     "transport": "streamable-http",
     "url_mode": "same_url_for_all_users",
     "authentication": ["oauth_dcr", "oauth_cimd"],

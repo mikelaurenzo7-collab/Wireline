@@ -89,7 +89,7 @@ These generated tracks are for **marketing/reference use only**. They are not th
 
 File: `wireline-missed-call-15s.mp3`
 
-> Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.
+> Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.
 
 ### The Second Ring — 30s tail
 
@@ -123,7 +123,7 @@ I built Wireline because calls are still where real work shows up, and they are 
 
 Build a voice agent around one useful job. Train it on your facts and rules, test it privately, then launch it when you are ready. Review the call, follow-up, and outcome in one operating loop.
 
-Build free. Go live from $19/mo at trywireline.com.
+Build free. Go live from $19/mo at botbound.me.
 
 ### Short post
 

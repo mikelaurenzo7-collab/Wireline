@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../src/lib/product-copy";
+import { MARKETING_VOICE } from "../../src/lib/product-copy";
 
 test.setTimeout(150_000);
 
@@ -22,48 +22,18 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage live console has visible account navigation and no serious axe violations", async ({
+test("homepage mobile access path has clear branding and no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await gotoHomepageWithMain(page);
 
-  await expect(
-    page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "How Wireline works", exact: true }),
-  ).toBeAttached();
-  const accountNav = page.getByRole("navigation", { name: "Account" });
-  await expect(accountNav).toBeVisible();
-  await expect(accountNav.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
-  await expect(accountNav.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
-  await expect(page.locator(".landing-console")).toBeVisible();
-  await expect(page.getByText("Booked and logged", { exact: true })).toBeVisible();
-
-  const channelList = page.getByRole("list", { name: "Core agent channels" });
-  await expect(channelList).toBeVisible();
-  for (const label of ["Voice", "Text", "Email"]) {
-    await expect(channelList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
-  }
-  await expect(channelList.getByText("Live Video", { exact: false })).toHaveCount(0);
-
-  const workLane = page.getByRole("navigation", { name: "Agent work lane" });
-  await expect(workLane).toBeVisible();
-  await expect(
-    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.outbound.label}\\b`) }),
-  ).toBeVisible();
-  await expect(
-    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.inbound.label}\\b`) }),
-  ).toBeVisible();
-  await expect(
-    workLane.getByRole("link", { name: new RegExp(`^${AGENT_DIRECTION_MODES.hybrid.label}\\b`) }),
-  ).toBeVisible();
-
-  await expect(page.getByRole("link", { name: "Hear It Live", exact: true })).toBeVisible();
-  await expect(
-    page.locator(".landing-demo").getByRole("button", { name: "Hear It Live", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".landing-prestige__hero")).toBeHidden();
+  await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Create Account", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>
@@ -73,7 +43,7 @@ test("homepage live console has visible account navigation and no serious axe vi
   expect(blockingViolations).toEqual([]);
 });
 
-test("homepage narrative and proof stay inside the desktop viewport", async ({ page }) => {
+test("homepage promise and access path stay inside the desktop viewport", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
@@ -81,25 +51,60 @@ test("homepage narrative and proof stay inside the desktop viewport", async ({ p
     name: MARKETING_VOICE.headline,
     exact: true,
   });
-  const consoleElement = page.locator(".landing-console");
+  const hero = page.locator(".landing-prestige__hero");
+  const auth = page.locator(".landing-prestige__auth");
   await expect(headline).toBeVisible();
-  await expect(consoleElement).toBeVisible();
+  await expect(hero).toBeVisible();
+  await expect(auth).toBeVisible();
+  await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
-    const headline = document.querySelector(".landing-stage__title")?.getBoundingClientRect();
-    const consoleElement = document.querySelector(".landing-console")?.getBoundingClientRect();
+    const headline = document.querySelector(".landing-prestige__hero-copy h1")?.getBoundingClientRect();
+    const hero = document.querySelector(".landing-prestige__hero")?.getBoundingClientRect();
+    const auth = document.querySelector(".landing-prestige__auth")?.getBoundingClientRect();
     return {
       headlineLeft: headline?.left ?? -1,
       headlineRight: headline?.right ?? Number.POSITIVE_INFINITY,
-      consoleLeft: consoleElement?.left ?? -1,
-      consoleRight: consoleElement?.right ?? Number.POSITIVE_INFINITY,
+      heroLeft: hero?.left ?? -1,
+      heroRight: hero?.right ?? Number.POSITIVE_INFINITY,
+      authLeft: auth?.left ?? -1,
+      authRight: auth?.right ?? Number.POSITIVE_INFINITY,
       viewportWidth: document.documentElement.clientWidth,
     };
   });
 
   expect(bounds.headlineLeft).toBeGreaterThanOrEqual(0);
   expect(bounds.headlineRight).toBeLessThanOrEqual(bounds.viewportWidth);
-  expect(bounds.consoleLeft).toBeGreaterThanOrEqual(0);
-  expect(bounds.consoleRight).toBeLessThanOrEqual(bounds.viewportWidth);
-  expect(bounds.headlineRight).toBeLessThan(bounds.consoleRight);
+  expect(bounds.heroLeft).toBeGreaterThanOrEqual(0);
+  expect(bounds.heroRight).toBeLessThan(bounds.authRight);
+  expect(bounds.authLeft).toBeGreaterThanOrEqual(bounds.heroRight - 1);
+  expect(bounds.authRight).toBeLessThanOrEqual(bounds.viewportWidth);
+});
+
+test("homepage primary paths expose focus and change state cleanly", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await gotoHomepageWithMain(page);
+
+  const demo = page.getByRole("link", { name: /Hear Jordan live/i });
+  await demo.focus();
+  await expect(demo).toBeFocused();
+  const focusStyle = await demo.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focusStyle.outlineStyle).not.toBe("none");
+  expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
+
+  await demo.click();
+  await expect(page).toHaveURL(/\/showcase$/);
+  await expect(page.getByRole("heading").first()).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoHomepageWithMain(page);
+  await page.getByRole("tab", { name: "Create Account", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Create Account", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeAttached();
 });

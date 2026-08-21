@@ -51,14 +51,14 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("builds the exact launch-safe customer controls", () => {
-    const params = managedPortalConfigurationParams("https://trywireline.com", products);
+    const params = managedPortalConfigurationParams("https://botbound.me", products);
 
-    expect(params.default_return_url).toBe("https://trywireline.com/settings/billing");
+    expect(params.default_return_url).toBe("https://botbound.me/settings/billing");
     expect(params.business_profile?.headline).toBe(
       "Manage your BotBound billing, invoices, and subscription.",
     );
-    expect(params.business_profile?.privacy_policy_url).toBe("https://trywireline.com/privacy");
-    expect(params.business_profile?.terms_of_service_url).toBe("https://trywireline.com/terms");
+    expect(params.business_profile?.privacy_policy_url).toBe("https://botbound.me/privacy");
+    expect(params.business_profile?.terms_of_service_url).toBe("https://botbound.me/terms");
     expect(params.features.payment_method_update.enabled).toBe(true);
     expect(params.features.invoice_history.enabled).toBe(true);
     expect(params.features.subscription_cancel).toMatchObject({
@@ -75,7 +75,7 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("detects customer-control and plan-switch drift after write", () => {
-    const params = managedPortalConfigurationParams("https://trywireline.com", products);
+    const params = managedPortalConfigurationParams("https://botbound.me", products);
     const configuration = {
       id: "bpc_test",
       object: "billing_portal.configuration",
@@ -93,7 +93,7 @@ describe("Stripe customer portal reconciliation", () => {
     } as never;
 
     expect(
-      managedPortalConfigurationFindings(configuration, "https://trywireline.com", products),
+      managedPortalConfigurationFindings(configuration, "https://botbound.me", products),
     ).toEqual([]);
 
     const drifted = {
@@ -113,7 +113,7 @@ describe("Stripe customer portal reconciliation", () => {
       },
     } as never;
     expect(
-      managedPortalConfigurationFindings(drifted, "https://trywireline.com", products),
+      managedPortalConfigurationFindings(drifted, "https://botbound.me", products),
     ).toEqual(
       expect.arrayContaining([
         "legal_urls_mismatch",
@@ -127,7 +127,7 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("accepts Stripe's omitted product readback only when the exact write is freshly attested", () => {
-    const params = managedPortalConfigurationParams("https://trywireline.com", products);
+    const params = managedPortalConfigurationParams("https://botbound.me", products);
     const attestedAt = Number(params.metadata?.wireline_portal_catalog_attested_at);
     const configuration = {
       id: "bpc_live",
@@ -152,12 +152,12 @@ describe("Stripe customer portal reconciliation", () => {
     } as never;
 
     expect(
-      managedPortalConfigurationFindings(configuration, "https://trywireline.com", products),
+      managedPortalConfigurationFindings(configuration, "https://botbound.me", products),
     ).toEqual([]);
     expect(
       managedPortalConfigurationFindings(
         { ...configuration, updated: attestedAt + 30 } as never,
-        "https://trywireline.com",
+        "https://botbound.me",
         products,
       ),
     ).toContain("plan_switch_catalog_unverifiable");
@@ -175,7 +175,7 @@ describe("Stripe customer portal reconciliation", () => {
 
     expect(script).toContain('environment !== "production"');
     expect(script).toContain("process.env.VERCEL_PROJECT_ID !== CANONICAL_VERCEL_PROJECT_ID");
-    expect(script).toContain('appUrl !== "https://trywireline.com"');
+    expect(script).toContain("appUrl !== CANONICAL_PRODUCTION_URL");
     expect(script).toContain("/^(?:sk|rk)_live_/");
     expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");
     expect(script).toContain("FOUNDER_PRODUCTS");
@@ -185,7 +185,7 @@ describe("Stripe customer portal reconciliation", () => {
     expect(script).toContain("managedPortalConfigurationFindings");
     expect(script).toContain("staleManaged");
     expect(script).toContain("if (!apply)");
-    expect(script).toContain("exactly one active Wireline-managed portal configuration");
+    expect(script).toContain("exactly one active BotBound-managed portal configuration");
     expect(build).toContain('process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true"');
     expect(build).toContain("isCanonicalVercelProject");
     expect(build).toContain("function verifyStripePortalIfRequested()");

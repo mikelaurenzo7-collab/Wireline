@@ -342,7 +342,7 @@ Generated ${new Date().toISOString()} from ${baseUrl.origin} as ${email}.
 
 ### LinkedIn
 Wire your agent. Choose outbound, inbound, or hybrid. One trained agent. One visible outcome.
-Start free at trywireline.com.
+Start free at ${baseUrl.hostname}.
 
 ### Instagram and Reels hook
 "Your phone operation should not live in five tabs."

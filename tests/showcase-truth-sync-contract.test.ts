@@ -54,11 +54,15 @@ describe("public showcase truth guard", () => {
   it.each(publicAgents)(
     "sanitizes $agent.name without stale claims or cross-provider fallbacks",
     ({ agent, kind }) => {
-      const payload = sanitizeShowcaseAssistantPayload(
-        buildShowcaseAssistantPayload(agent, kind, {
-          webhookSecret: "test-webhook-secret",
-        }) as Record<string, unknown>,
-      );
+      const rawPayload = buildShowcaseAssistantPayload(agent, kind, {
+        webhookSecret: "test-webhook-secret",
+      }) as Record<string, unknown>;
+      const serializedRawPayload = JSON.stringify(rawPayload);
+
+      expect(serializedRawPayload).toContain("BotBound");
+      expect(serializedRawPayload).not.toMatch(/\bWireline\b/);
+
+      const payload = sanitizeShowcaseAssistantPayload(rawPayload);
       const prompt = promptFrom(payload);
       const model = modelFrom(payload);
 

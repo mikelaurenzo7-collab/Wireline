@@ -16,7 +16,7 @@
  * address.
  */
 
-const APP_URL_DEFAULT = "https://trywireline.com";
+const APP_URL_DEFAULT = "https://botbound.me";
 
 /** Vapi/LLMs may send boolean true as string "true". */
 function isEmailConfirmed(value: unknown): boolean {
@@ -73,13 +73,13 @@ export interface CreateAccountDeps {
   }) => Promise<SendResultLike>;
   /** Random temp-password generator (injected for determinism in tests). */
   randomPassword: () => string;
-  /** Base app URL; falls back to APP_URL env then trywireline.com. */
+  /** Base app URL; falls back to APP_URL env then the BotBound canonical origin. */
   appUrl?: string;
   log: ToolHandlerLogger;
 }
 
 /**
- * Core logic for the `create_account` Vapi tool. A Wireline phone agent
+ * Core logic for the `create_account` Vapi tool. A BotBound phone Bot
  * signs a caller up during the call: creates the account (random temp
  * password), starts the trial via signUp, then emails a set-password
  * link so the caller picks their own.
@@ -120,7 +120,7 @@ export async function handleCreateAccount(
       const msg = String((e as { message?: string })?.message || "").toLowerCase();
       if (msg.includes("exist")) {
         return {
-          result: `Good news, ${to_email} already has a Wireline account. Tell the caller to sign in at trywireline.com, or offer to send a password reset link.`,
+          result: `Good news, ${to_email} already has a BotBound account. Tell the caller to sign in at botbound.me, or offer to send a password reset link.`,
         };
       }
       throw e;
@@ -142,7 +142,7 @@ export async function handleCreateAccount(
     return {
       result: emailed
         ? `Account created for ${to_email}. I've emailed them a link to set their password. Once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
-        : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
+        : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to botbound.me, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
     };
   } catch (err: unknown) {
     deps.log.error("create_account tool failed", {
@@ -150,7 +150,7 @@ export async function handleCreateAccount(
     });
     return {
       result:
-        "I hit a snag creating the account. Ask the caller to sign up themselves at trywireline.com/signup, it takes about a minute.",
+        "I hit a snag creating the account. Ask the caller to sign up themselves at botbound.me/signup; it takes about a minute.",
     };
   }
 }
@@ -242,7 +242,7 @@ export async function handleSendPaymentLink(
     });
     return {
       result:
-        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/pricing to get started.",
+        "I wasn't able to send that link right now. Let the caller know they can visit botbound.me/pricing to get started.",
     };
   }
 }
@@ -335,7 +335,7 @@ export async function handleSendSignupLink(
     });
     return {
       result:
-        "I wasn't able to send that right now. Let the caller know they can sign up at trywireline.com/signup, or call us back anytime.",
+        "I wasn't able to send that right now. Let the caller know they can sign up at botbound.me/signup, or call us back anytime.",
     };
   }
 }

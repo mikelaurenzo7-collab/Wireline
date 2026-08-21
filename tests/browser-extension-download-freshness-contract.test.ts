@@ -119,5 +119,25 @@ describe("browser-extension download freshness contract", () => {
       expect(checked).toContain("panel/index.html");
       expect(checked).toContain("background/service-worker.js");
     });
+
+    it(`keeps the published ${target} download synchronized with the generated package`, () => {
+      const generated = new Map(
+        readZipCentralDirectory(resolve(outputRoot, `wireline-command-${target}.zip`)).map(
+          (entry) => [entry.name, entry.crc],
+        ),
+      );
+      const published = new Map(
+        readZipCentralDirectory(
+          resolve(root, `public/downloads/wireline-command-${target}.zip`),
+        ).map((entry) => [entry.name, entry.crc]),
+      );
+
+      expect([...published.keys()].sort()).toEqual([...generated.keys()].sort());
+      for (const [entryName, generatedCrc] of generated) {
+        expect(published.get(entryName), `${target}: published ${entryName} is stale`).toBe(
+          generatedCrc,
+        );
+      }
+    });
   }
 });

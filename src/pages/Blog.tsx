@@ -1,8 +1,9 @@
 import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 
-const SITE_URL = "https://trywireline.com";
+const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 
 const NOTES = [
   {

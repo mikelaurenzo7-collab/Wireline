@@ -1,10 +1,10 @@
-# WIRELINE Command
+# BotBound Command
 
-WIRELINE Command is a privacy-minimal browser command surface for WIRELINE Studio.
+BotBound Command is a privacy-minimal browser command surface for BotBound Studio.
 
-The website remains the full operating system for setup, billing, Knowledge, Connections, Phone, Inbox, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants WIRELINE to act with that page as context.
+The website remains the full operating system for setup, billing, Knowledge, Connections, Phone, Inbox, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants BotBound to act with that page as context.
 
-It lets a signed-in WIRELINE customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all Bot configuration, authorization, consent, billing, and launch controls remain server-owned.
+It lets a signed-in BotBound customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all Bot configuration, authorization, consent, billing, and launch controls remain server-owned.
 
 ## What it supports
 
@@ -27,14 +27,14 @@ The baseline package intentionally has:
 - no `host_permissions`
 - no `<all_urls>` access
 - no persistent content script
-- no WIRELINE session-token storage
+- no BotBound session-token storage
 - no background sync or page harvesting
 
 The extension reads the active page only after a user action. It captures a constrained title, URL, meta description, and explicit selection; it opens Studio with that context inside the URL fragment so the browser does not send it as part of the initial HTTP request. Studio immediately removes the fragment and presents the material as reference-only text for the user to review.
 
 ## Explicit context workflows
 
-WIRELINE Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
+BotBound Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
 
 1. **Prepare call from this page** — send the active page title/URL/selection only after the user clicks the command, then ask for call confirmation in Studio before any live call.
 2. **Extract facts into Knowledge** — turn selected page context into proposed knowledge or directives that the customer can review.
@@ -59,11 +59,11 @@ apps/browser-extension/dist/chromium/
 apps/browser-extension/dist/firefox/
 ```
 
-The build generates the browser-required PNG icon sizes from `assets/icon.svg` and merges the shared manifest with the target overlay.
+The build generates every browser-required PNG size from the canonical production artwork at `public/brand/botbound-app-icon.png` and merges the shared manifest with the target overlay. `assets/icon.svg` remains a browser-readable compatibility wrapper, not a second drawing of the mark.
 
 ## In-product install (preferred)
 
-Signed-in customers install from **Apps → WIRELINE Command** (`/settings/apps/command`).
+Signed-in customers install from **Apps → BotBound Command** (`/settings/apps/command`).
 That page serves the same zips the build copies into `public/downloads/`:
 
 ```text

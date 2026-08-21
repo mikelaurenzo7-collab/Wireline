@@ -6,13 +6,16 @@ import { expect, test } from "@playwright/test";
  */
 test.describe.configure({ timeout: 60_000 });
 
-test("signup advertises the studio create entry", async ({ page }) => {
+test("signup exposes the account creation entry", async ({ page }) => {
   const response = await page.goto("/signup", { waitUntil: "domcontentloaded", timeout: 45_000 });
   expect(response, "signup response").toBeTruthy();
   expect(response!.status()).toBeLessThan(500);
-  await expect(page.locator("h1, h2").first()).toBeVisible({ timeout: 15_000 });
-  const body = await page.locator("body").innerText();
-  expect(body.toLowerCase()).toMatch(/sign up|create|wireline/);
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByRole("button", { name: "Create Account", exact: true }).last(),
+  ).toBeVisible();
 });
 
 test("onboarding route resolves to studio create query", async ({ page }) => {

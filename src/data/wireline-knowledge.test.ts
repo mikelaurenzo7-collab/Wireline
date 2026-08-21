@@ -7,14 +7,14 @@ import {
   WIRELINE_PLANS,
 } from "./wireline-knowledge";
 
-describe("WIRELINE knowledge", () => {
+describe("BotBound knowledge", () => {
   it("keeps public offer naming aligned with the launch catalog and brand law", () => {
     expect(WIRELINE_PLANS.map((plan) => plan.name)).toEqual([
-      "WIRELINE Free Builder",
-      "WIRELINE Starter",
-      "WIRELINE Starter Plus",
-      "WIRELINE Pro",
-      "WIRELINE Scale & Enterprise",
+      "BotBound Free Builder",
+      "BotBound Starter",
+      "BotBound Starter Plus",
+      "BotBound Pro",
+      "BotBound Scale & Enterprise",
       "Runtime Balance",
     ]);
 
@@ -23,7 +23,7 @@ describe("WIRELINE knowledge", () => {
   });
 
   it("keeps Free Builder locked out of live work and never promises balance-funded calls", () => {
-    expect(WIRELINE_PLANS[0].name).toBe("WIRELINE Free Builder");
+    expect(WIRELINE_PLANS[0].name).toBe("BotBound Free Builder");
     expect(WIRELINE_PLANS[0].price).not.toContain("Runtime Balance");
     expect(WIRELINE_PLANS[0].includes.join(" ")).toMatch(/no live calls/);
     expect(WIRELINE_PLANS.at(-1)?.name).toBe("Runtime Balance");
@@ -39,6 +39,6 @@ describe("WIRELINE knowledge", () => {
     expect(combined).not.toMatch(/\bAssistants\b/);
     expect(combined).not.toMatch(/\bagents\b/i);
     expect(combined).toMatch(/\bBots?\b/);
-    expect(combined).toContain("WIRELINE");
+    expect(combined).toContain("BotBound");
   });
 });

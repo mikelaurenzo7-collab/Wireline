@@ -11,8 +11,11 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(admin).not.toContain(".catch(() => ({ numbers: [] }))");
     expect(admin).toContain("numbersJson?.degraded");
     expect(admin).toContain("Phone numbers unavailable");
+    expect(admin).toContain("if (!settingsRes.ok || !agentsRes.ok)");
+    expect(admin).toContain("finally {\n      setIsLoading(false);");
+    expect(admin).toContain("numbersRes.ok && !numbersJson?.degraded");
     expect(admin).toContain("if (!res.ok)");
-    expect(admin).toContain("Could not fetch available Wireline phone numbers.");
+    expect(admin).toContain("Could not fetch available BotBound phone numbers.");
   });
 
   it("fails closed when carrier sync lacks the platform Vapi key", () => {
@@ -140,7 +143,12 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(apps).toContain("simulate a Voice Bot");
     expect(apps).toContain("first Voice Bot");
     expect(apps).not.toContain("first voice agent");
-    expect(privacy).toContain("voice agent platform");
+    expect(privacy).toContain("operates a Bot platform for business");
+    expect(privacy).toContain("primarily through <strong>OpenAI</strong>");
+    expect(privacy).toContain("<strong>OpenAI</strong>: Primary managed structured inference");
+    expect(privacy).not.toContain(
+      "process managed AI requests primarily\n              through xAI",
+    );
     expect(productCopy).toContain(
       "Technical routes, schemas, events, and APIs retain `agent` for compatibility",
     );

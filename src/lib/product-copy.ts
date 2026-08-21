@@ -141,7 +141,7 @@ export const MARKETING_VOICE = {
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Send the page you are viewing into Studio as reference context. Your Bot can prepare a call, draft a text, or follow up without making you leave the tab.",
+    "Send this page into Studio. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
   buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;
@@ -161,8 +161,7 @@ export const CLIENT_SURFACE_POSTURE = {
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "PHONE BOTS FOR CALLS, TEXT, AND EMAIL",
   proof: ["Answers calls", "Makes calls", "Sends texts", "Continues by email", "Logs outcomes"],
-  differentiator:
-    "BotBound keeps valuable conversations moving across calls, text, and email.",
+  differentiator: "BotBound keeps valuable conversations moving across calls, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 

@@ -103,7 +103,7 @@ describe("distributed public health boundary", () => {
     expect(build).not.toContain("check-vapi-payload-contract-live.mjs");
     expect(audit).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
     expect(audit).toContain("VAPI_TENANT_DEFAULT_MODEL");
-    expect(audit).toContain("without XaiModel fallbackModels");
+    expect(audit).toContain("without an unexpected fallback model");
     expect(audit).toContain("model?.fallbackModels == null");
     expect(audit).not.toContain("fallbackModels: expectedFallbackModels");
     expect(audit).toContain('method: "DELETE"');

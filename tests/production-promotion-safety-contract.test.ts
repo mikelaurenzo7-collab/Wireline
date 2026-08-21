@@ -95,13 +95,16 @@ describe("production promotion safety", () => {
 
   it("probes readiness only on the canonical customer-facing origin", () => {
     expect(resolveCanonicalProductionUrl("")).toBe(CANONICAL_PRODUCTION_URL);
-    expect(resolveCanonicalProductionUrl("https://trywireline.com/")).toBe(
+    expect(resolveCanonicalProductionUrl("https://botbound.me/")).toBe(
       CANONICAL_PRODUCTION_URL,
     );
     expect(() => resolveCanonicalProductionUrl("https://healthy-copy.example.com")).toThrow(
       /noncanonical production origin/,
     );
-    expect(() => resolveCanonicalProductionUrl("https://trywireline.com/alternate")).toThrow(
+    expect(() => resolveCanonicalProductionUrl("https://botbound.me/alternate")).toThrow(
+      /noncanonical production origin/,
+    );
+    expect(() => resolveCanonicalProductionUrl("https://trywireline.com/")).toThrow(
       /noncanonical production origin/,
     );
   });

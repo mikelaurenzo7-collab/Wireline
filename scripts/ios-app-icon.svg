@@ -1,44 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">Wireline</title>
-  <desc id="desc">A folded violet and platinum W on a full-bleed obsidian field for iOS masking.</desc>
-  <defs>
-    <linearGradient id="frame" x1="120" y1="80" x2="904" y2="944" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#211F27"/>
-      <stop offset="0.45" stop-color="#101015"/>
-      <stop offset="1" stop-color="#060608"/>
-    </linearGradient>
-    <radialGradient id="surface" cx="46%" cy="30%" r="76%">
-      <stop offset="0" stop-color="#201B2B" stop-opacity="0.78"/>
-      <stop offset="0.56" stop-color="#0E0D13" stop-opacity="0.24"/>
-      <stop offset="1" stop-color="#07070A" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="purple-down" x1="14" y1="14" x2="68" y2="106" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#C8B5FF"/>
-      <stop offset="0.38" stop-color="#8B5CF6"/>
-      <stop offset="1" stop-color="#5221D6"/>
-    </linearGradient>
-    <linearGradient id="purple-up" x1="42" y1="106" x2="100" y2="14" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#5B24E8"/>
-      <stop offset="0.55" stop-color="#7040F2"/>
-      <stop offset="1" stop-color="#B69AFF"/>
-    </linearGradient>
-    <linearGradient id="fold" x1="76" y1="14" x2="132" y2="106" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2F2B3D"/>
-      <stop offset="0.46" stop-color="#625D72"/>
-      <stop offset="1" stop-color="#C8CAD4"/>
-    </linearGradient>
-    <linearGradient id="silver" x1="108" y1="106" x2="166" y2="14" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#BCC0CB"/>
-      <stop offset="0.48" stop-color="#E4E6ED"/>
-      <stop offset="1" stop-color="#FFFFFF"/>
-    </linearGradient>
-  </defs>
-  <rect width="1024" height="1024" fill="url(#frame)"/>
-  <rect width="1024" height="1024" fill="url(#surface)"/>
-  <g transform="translate(90 232) scale(4.7)">
-    <path d="M76 14H100L132 106H108Z" fill="url(#fold)"/>
-    <path d="M14 14H40L68 106H42Z" fill="url(#purple-down)"/>
-    <path d="M42 106H68L100 14H74Z" fill="url(#purple-up)"/>
-    <path d="M108 106H134L166 14H140Z" fill="url(#silver)"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" role="img" aria-labelledby="title description">
+  <title id="title">BotBound</title>
+  <desc id="description">Source wrapper for the BotBound phone Bot iOS app icon.</desc>
+  <metadata>Canonical production artwork: ../public/brand/botbound-app-icon.png; Aurora violet #A78BFA.</metadata>
+  <image href="../public/brand/botbound-app-icon.png" width="2048" height="2048"/>
 </svg>

@@ -78,8 +78,8 @@ describe("live-call communication supervision", () => {
   });
 
   it("keeps internal identifiers out of reviewer context and fallback subjects", async () => {
-    expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("Wireline");
-    expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("Wireline");
+    expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("BotBound");
+    expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("BotBound");
     expect(clientFacingAgentName("Avery")).toBe("Avery");
     expect(clientFacingAgentName("A".repeat(120))).toHaveLength(80);
 
@@ -99,10 +99,10 @@ describe("live-call communication supervision", () => {
         recipient: "caller@example.com",
         body: "Here is the link you requested.",
       }),
-    ).resolves.toMatchObject({ subject: "Follow-up from Wireline" });
+    ).resolves.toMatchObject({ subject: "Follow-up from BotBound" });
 
     expect(runStructuredMock).toHaveBeenCalledWith(
-      expect.objectContaining({ user: expect.stringContaining("Agent: Wireline") }),
+      expect.objectContaining({ user: expect.stringContaining("Agent: BotBound") }),
     );
   });
 });

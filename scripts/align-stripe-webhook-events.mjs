@@ -16,9 +16,10 @@
 import Stripe from "stripe";
 import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const API_VERSION = "2026-07-29.dahlia";
-const WEBHOOK_URL = "https://trywireline.com/api/stripe-webhook";
+const WEBHOOK_URL = `${CANONICAL_PRODUCTION_URL}/api/stripe-webhook`;
 
 const apply = process.argv.includes("--apply");
 

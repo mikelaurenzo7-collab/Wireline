@@ -198,7 +198,7 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
     prompt = replaceLiteral(
       prompt,
       "- If something goes wrong with a tool or action, never say 'error' or any technical term. Just say 'Let me note that and have someone follow up' and move on.",
-      "- If a tool or action does not confirm success, say it did not go through. Offer the direct self-service URL or trywireline.com; never promise human follow-up from a demo line.",
+      "- If a tool or action does not confirm success, say it did not go through. Offer the direct self-service URL or botbound.me; never promise human follow-up from a demo line.",
     );
   }
 

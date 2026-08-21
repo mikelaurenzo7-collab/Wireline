@@ -71,7 +71,7 @@ export default function WireAgentLanding() {
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
           <div className="landing-prestige__hero" aria-label="BotBound Phone Bot">
             <div className="landing-prestige__hero-brand">
-              <BotBoundLockup size="large" surface="tile" />
+              <BotBoundLockup size="display" surface="tile" />
             </div>
             <div className="landing-prestige__hero-copy">
               <h1 id="landing-prestige-title">
@@ -186,7 +186,11 @@ export default function WireAgentLanding() {
                             ? "1 private Bot"
                             : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
                         </li>
-                        <li>{free ? "Private simulation" : `${plan.voice_minutes_monthly} call minutes`}</li>
+                        <li>
+                          {free
+                            ? "Private simulation"
+                            : `${plan.voice_minutes_monthly} call minutes`}
+                        </li>
                         <li>
                           {free
                             ? "Activate when ready"

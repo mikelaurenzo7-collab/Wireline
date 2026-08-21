@@ -33,10 +33,13 @@ describe("launch readiness cross-surface contract", () => {
     const blog = read("src/pages/Blog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
-    expect(blog).toContain("Voice Bots");
+    expect(blog).toContain("Practical guides for Bots");
+    expect(blog).toContain("Tell your Bot");
+    expect(blog).not.toContain("Wireline");
     expect(pricing).toMatch(/Bot/i);
     expect(pricing).not.toContain("AI conversation workforce");
     expect(aiErrors).toContain("OpenAI, Gemini, or AI Gateway");
+    expect(aiErrors).not.toContain("xAI, OpenAI, Gemini, or AI Gateway");
   });
 
   it("keeps transport fallbacks and executable marketing surfaces free of retired hero mandates", () => {
@@ -47,6 +50,7 @@ describe("launch readiness cross-surface contract", () => {
     for (const source of [contact, support]) {
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
       expect(source).toContain("mailto:support@trywireline.com");
+      expect(source).not.toContain("support@botbound.me");
     }
     const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
     expect(cssWithoutComments).not.toMatch(/AI VOICE AGENTS/i);

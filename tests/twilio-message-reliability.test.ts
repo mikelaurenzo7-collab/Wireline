@@ -10,6 +10,14 @@ import {
 
 describe("Twilio message reliability", () => {
   it("attaches the canonical signed callback target and a bounded validity period", () => {
+    vi.stubEnv("APP_URL", "https://botbound.me/");
+    expect(twilioMessageStatusCallbackUrl()).toBe(
+      "https://botbound.me/api/twilio-webhook/message-status",
+    );
+    vi.unstubAllEnvs();
+
+    // Explicit legacy inputs remain valid while already-configured provider
+    // callbacks finish their compatibility window.
     expect(
       withTwilioMessageReliability(
         { to: "+15555550100", body: "Operational alert" },

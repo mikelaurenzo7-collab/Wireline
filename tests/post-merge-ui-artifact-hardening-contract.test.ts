@@ -54,6 +54,8 @@ describe("post-merge UI and artifact hardening", () => {
     expect(assets).toContain("try {\n    const context = await browser.newContext");
     expect(assets).toContain("finally {\n    await browser.close();");
     expect(assets).toContain("Free Builder, Starter, Starter Plus, and Pro. Scale is custom.");
+    expect(assets).toContain("Start free at ${baseUrl.hostname}.");
+    expect(assets).not.toContain("Start free at trywireline.com.");
     expect(assets).toContain("Voice agents for sales and support");
     expect(assets).not.toContain("Free Builder · Starter · Growth · Scale · Business");
     expect(assets).not.toContain("Your best salesperson, without the commission");

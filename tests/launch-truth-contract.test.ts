@@ -60,6 +60,8 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("Every PR now runs");
     expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
     expect(changelog).not.toContain("committed baselines");
+    expect(changelog).toContain("at botbound.me/status");
+    expect(changelog).not.toContain("trywireline.com/status");
 
     expect(security).toContain("Last updated · August 17, 2026");
     expect(security).toContain("Twilio for PSTN and xAI Direct SIP Speech-to-Speech");

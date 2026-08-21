@@ -70,9 +70,12 @@ for (const route of PUBLIC_ROUTES) {
  * Assert the served response directly: no redirect, and the route's own head.
  */
 const PRERENDERED_HEAD = [
-  { route: "/pricing", title: "Pricing | Wireline Voice Agents from $19/month" },
-  { route: "/features", title: "Features | Wireline Voice Agents" },
-  { route: "/for/legal", title: "Wireline for Law Firms | Voice Intake and Consult Routing" },
+  { route: "/pricing", title: "PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH" },
+  { route: "/features", title: "FEATURES | BOTBOUND VOICE BOTS" },
+  {
+    route: "/for/legal",
+    title: "BOTBOUND FOR LAW FIRMS | VOICE BOTS FOR INTAKE AND CONSULT ROUTING",
+  },
 ];
 
 for (const { route, title } of PRERENDERED_HEAD) {
@@ -82,7 +85,7 @@ for (const { route, title } of PRERENDERED_HEAD) {
 
     const html = await response.text();
     expect(html).toContain(`<title>${title}</title>`);
-    expect(html).toContain(`<link rel="canonical" href="https://trywireline.com${route}" />`);
+    expect(html).toContain(`<link rel="canonical" href="https://botbound.me${route}" />`);
   });
 }
 

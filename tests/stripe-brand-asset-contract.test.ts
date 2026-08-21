@@ -7,7 +7,8 @@ const root = process.cwd();
 describe("Stripe merchant-brand assets", () => {
   it("generates BotBound billing art from the same canonical phone-Bot icon", () => {
     const renderer = readFileSync(resolve(root, "scripts/render-image-assets.mjs"), "utf8");
-    expect(renderer).toContain('readFileSync(resolve(root, "public/botbound-icon.svg")');
+    expect(renderer).toContain('readFileSync(resolve(root, "public/brand/botbound-app-icon.png"))');
+    expect(renderer).toContain("const stripeLogoSource = writeStripeLogoSource(appIcon)");
     expect(renderer).toContain("BotBound");
     expect(renderer).toContain("AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL");
     expect(renderer).toContain('out: "public/botbound-stripe-logo.png"');

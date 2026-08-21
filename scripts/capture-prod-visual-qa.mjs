@@ -3,7 +3,7 @@ import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(
   /\/$/,
   "",
 );
@@ -735,7 +735,7 @@ try {
 
       const emailInput = signupPage.locator("input[placeholder*='colleague@']").first();
       if (await emailInput.isVisible().catch(() => false)) {
-        await emailInput.fill("engineering.test@trywireline.com");
+        await emailInput.fill("engineering.test@botbound.me");
         console.log("Populated the team roster invitation input successfully.");
       } else {
         issues.push({

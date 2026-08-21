@@ -46,9 +46,9 @@ describe("Claude Connector Directory contract", () => {
 
   it("challenges protected tool calls with HTTP 401, not a 200 isError result", () => {
     expect(account).toContain('oauthError: "invalid_token" | "insufficient_scope"');
-    expect(stack).toContain("res.status(oauthError === \"insufficient_scope\" ? 403 : 401)");
+    expect(stack).toContain('res.status(oauthError === "insufficient_scope" ? 403 : 401)');
     expect(stack).not.toContain("mcpToolErrorResult(message");
-    expect(stack).toContain('WWW-Authenticate');
+    expect(stack).toContain("WWW-Authenticate");
     const confirmationGated = [
       ["create_agent_draft", "get_agent_draft", "assertDraftConfirmation", "agents.write"],
       [
@@ -73,10 +73,15 @@ describe("Claude Connector Directory contract", () => {
     ] as const;
     for (const [name, next, confirm, scope] of confirmationGated) {
       const start = account.indexOf(`if (name === "${name}")`);
-      const end = account.indexOf(next === "return jsonRpcError" ? "return jsonRpcError" : `if (name === "${next}")`, start + 1);
+      const end = account.indexOf(
+        next === "return jsonRpcError" ? "return jsonRpcError" : `if (name === "${next}")`,
+        start + 1,
+      );
       const slice = account.slice(start, end);
       expect(slice.indexOf(`requireScope(principal, "${scope}")`)).toBeGreaterThan(-1);
-      expect(slice.indexOf(`requireScope(principal, "${scope}")`)).toBeLessThan(slice.indexOf(confirm));
+      expect(slice.indexOf(`requireScope(principal, "${scope}")`)).toBeLessThan(
+        slice.indexOf(confirm),
+      );
     }
   });
 
@@ -101,6 +106,10 @@ describe("Claude Connector Directory contract", () => {
       'redirect_domains: ["https://botbound.me", "https://trywireline.com"]',
     );
     expect(read("src/lib/mcp-app-metadata.ts")).not.toContain('"openai/widgetDomain": domain');
+    expect(claudeMcpAppDomain("https://botbound.me/mcp")).toBe(
+      "da53efc016f4d0335534b0ce0c3d3cc4.claudemcpcontent.com",
+    );
+    // Preserve deterministic metadata for already-registered legacy clients.
     expect(claudeMcpAppDomain("https://trywireline.com/mcp")).toBe(
       "9d4498d241a92d33aafe51697b0ba2b9.claudemcpcontent.com",
     );
@@ -113,16 +122,12 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.listing.tagline.length).toBeLessThanOrEqual(55);
     expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
     expect(listing.listing.slug).toBe("wireline");
-    expect(listing.listing.icon_url).toBe("https://botbound.me/botbound-icon.svg");
+    expect(listing.listing.icon_url).toBe("https://botbound.me/botbound-icon-512.png");
     expect(listing.listing.website_url).toBe("https://botbound.me");
-    expect(listing.listing.documentation_url).toBe(
-      "https://botbound.me/claude-connector.html",
-    );
+    expect(listing.listing.documentation_url).toBe("https://botbound.me/claude-connector.html");
     expect(listing.listing.privacy_policy_url).toBe("https://botbound.me/mcp-privacy.html");
     expect(listing.listing.company_website).toBe("https://botbound.me");
-    // The connected MCP issuer remains on the registered legacy origin during
-    // callback migration; directory links themselves are already canonical.
-    expect(listing.server.url).toBe("https://trywireline.com/mcp");
+    expect(listing.server.url).toBe("https://botbound.me/mcp");
     expect(listing.server.allowed_link_uris).toEqual(["https://botbound.me"]);
     expect(listing.listing.support_email).toBe("support@trywireline.com");
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
@@ -135,7 +140,8 @@ describe("Claude Connector Directory contract", () => {
   });
 
   it("publishes public docs and privacy pages required by the portal", () => {
-    expect(publicDocs).toContain("https://trywireline.com/mcp");
+    expect(publicDocs).toContain("https://botbound.me/mcp");
+    expect(publicDocs).not.toContain("https://trywireline.com/mcp");
     expect(publicDocs).toContain('href="/contact">contact BotBound</a>');
     expect(publicDocs).not.toContain("mailto:support@trywireline.com");
     expect(privacy).toContain("Information returned to the connecting client");
@@ -143,5 +149,7 @@ describe("Claude Connector Directory contract", () => {
     expect(docs).toContain("401");
     expect(packet).toContain("https://claude.ai/admin-settings/directory/submissions/new");
     expect(packet).toContain("Team or Enterprise");
+    expect(packet).toContain("https://botbound.me/mcp");
+    expect(packet).not.toContain("https://trywireline.com/mcp");
   });
 });

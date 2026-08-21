@@ -44,7 +44,9 @@ describe("authenticated mobile cleanup", () => {
     expect(knowledge).toContain("sm:[&>button]:w-auto");
     expect(knowledge).toContain('"Choose files"');
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
+    expect(studio).toContain(
+      'layout={splitWorkspace && section === "test" ? "split" : "standalone"}',
+    );
     expect(read("src/components/AgentTemplates.tsx")).toContain(
       "sm:grid-cols-2 sm:gap-3 xl:grid-cols-3",
     );

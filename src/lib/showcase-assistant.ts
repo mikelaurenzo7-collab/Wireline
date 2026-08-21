@@ -21,15 +21,16 @@ import {
 import { sanitizePhone } from "./vapi-helpers";
 import { buildVapiServerConfig } from "./vapi-server-config";
 import { resolveVapiSpeechPipeline, type VapiTranscriberMode } from "./voice-agent-profile";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 export type ShowcaseKind = "cs" | "demo";
 
-export const SHOWCASE_WEBHOOK_URL = "https://trywireline.com/api/vapi-webhook";
+export const SHOWCASE_WEBHOOK_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/api/vapi-webhook`;
 
 /** Vapi dashboard label — keeps number → assistant names aligned with the catalog. */
 const SHOWCASE_VAPI_LABELS: Record<string, string> = {
-  Sarah: "Wireline Customer Support",
-  Liam: "Wireline Sales",
+  Sarah: "BotBound Customer Support",
+  Liam: "BotBound Sales",
   Jordan: "Inbound CS Demo",
   Ria: "Demo Concierge",
   Marcus: "Medical Office Intake",
@@ -63,15 +64,15 @@ type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
 /**
  * Tool exposure differs by agent kind:
  *
- * - "cs" (the real Wireline employee lines — Sarah, Liam): these ARE
- *   Wireline's front-line team, so they get the full toolset, including
+ * - "cs" (the real BotBound employee lines — Sarah, Liam): these ARE
+ *   BotBound's front-line team, so they get the full toolset, including
  *   the owner-routing tools (schedule_callback, escalate_to_human) that
  *   land a task in the founder's (Mike's) triage inbox.
  *
  * - "demo" (the vertical role-play lines on the landing page): these are
  *   pure showcase demos. They must NEVER route a human follow-up to the
  *   founder — a curious prospect calling the "restaurant demo" is not a
- *   real Wireline support case. They keep only the self-service
+ *   real BotBound support case. They keep only the self-service
  *   conversion tools (signup / account / payment link), which help a
  *   prospect act on their own without ever paging Mike.
  *
@@ -135,8 +136,8 @@ const SHOWCASE_VIBE_GUIDE: Record<ContactAgent["defaultVibe"], string> = {
 function buildAgentEnergyHint(agent: ContactAgent): string {
   const byName: Record<string, string> = {
     Sarah:
-      "You are Wireline's flagship support voice, refined, patient, unhurried. Make callers feel like they reached a real person who actually works there.",
-    Liam: "You are Wireline's sharpest generalist, upbeat, ROI-minded, curious. Ask one sharp question, then move toward Free Builder signup, a live plan, or the right answer fast.",
+      "You are BotBound's flagship support voice, refined, patient, unhurried. Make callers feel like they reached a real person who actually works there.",
+    Liam: "You are BotBound's sharpest generalist, upbeat, ROI-minded, curious. Ask one sharp question, then move toward Free Builder signup, a live plan, or the right answer fast.",
     Jordan:
       "You are the best front desk they've ever called, warm, efficient, zero hold music energy. Capture the reason for the call in one turn.",
     Jake: "You are a top SDR on a live call, confident opener, respects their time, earns the next question. Never sound like a robodialer.",
@@ -177,7 +178,7 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   send_signup_link: {
     name: "send_signup_link",
     description:
-      "Email the caller a Wireline Free Builder signup or info link after you capture and confirm their full email address.",
+      "Email the caller a BotBound Free Builder signup or info link after you capture and confirm their full email address.",
     parameters: {
       type: "object",
       properties: {
@@ -200,7 +201,7 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   create_account: {
     name: "create_account",
     description:
-      "Create the caller's Wireline account when they are ready to start now and have confirmed their email address.",
+      "Create the caller's BotBound account when they are ready to start now and have confirmed their email address.",
     parameters: {
       type: "object",
       properties: {
@@ -384,7 +385,7 @@ function buildSharedOpeningRules(): string[] {
     "- The caller already heard your greeting and your ask for their name.",
     "- When they answer with ONLY a name, respond as the same person in one short sentence.",
     "- Use this pattern only when they give a name and nothing else: Great to meet you, [name]. What can I help you with today?",
-    "- If they give their name AND a question or request in the same breath (e.g. 'this is Michael and can you tell me about Wireline'), handle BOTH: greet them by name in a few words, then go straight to answering or acting on what they asked. Never drop the second half of what they said.",
+    "- If they give their name AND a question or request in the same breath (e.g. 'this is Michael and can you tell me about BotBound'), handle BOTH: greet them by name in a few words, then go straight to answering or acting on what they asked. Never drop the second half of what they said.",
     "- Never ask 'what can I help you with' when the caller has already told you what they need. Just help with it.",
     "- Do not change persona, energy, accent, or sentence style after the opener.",
     "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently.",
@@ -473,13 +474,13 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
 
   return [
     "DEMO OPENING FLOW:",
-    "- Turn 1 is your scripted firstMessage: Wireline demo frame + ask for their name.",
+    "- Turn 1 is your scripted firstMessage: BotBound demo frame + ask for their name.",
     `- When they answer with ONLY a name: greet them briefly, then ask what ${businessAsk}.`,
     `- Next, ask ONE open question tailored to your role: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.`,
     "- If they give name + company + details in one reply, skip redundant questions and start the role-play immediately.",
     "- If they only want a generic demo, use the business name 'your business' and your role's default scenario (see ROLE-PLAY STANDARD below).",
     "- After demo context is set, begin role-play. Do not keep interviewing.",
-    "- If they ask about Wireline mid-intake, answer briefly in your voice, then resume collecting demo context.",
+    "- If they ask about BotBound mid-intake, answer briefly in your voice, then resume collecting demo context.",
     "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Keep intake turns under 25 words when possible.",
     "- Do not change persona, energy, or sentence style once role-play starts.",
   ];
@@ -511,7 +512,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
       "ROLE-PLAY STANDARD for Outbound sales / SDR (Jake):",
       "- You are the caller's sales rep, sharp, respectful, never pushy or spammy.",
       "- Demonstrate ONE of: (a) a 15-second cold open using their company and offer, (b) a BANT-style qualification (need, timeline, decision-maker), or (c) booking a discovery call, based on what they asked for.",
-      "- Default scenario if they give no details: outbound call to a small-business owner about Wireline-style voice agents for missed calls.",
+      "- Default scenario if they give no details: outbound call to a small-business owner about BotBound-style voice agents for missed calls.",
       "- Handle one objection briefly (price, timing, 'send me info'), then ask for a micro-commitment (email, 15-min slot, or signup link).",
       "- Never claim you already sent email unless a tool returns DELIVERY_OK.",
     ],
@@ -528,7 +529,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
       "- Demonstrate: verify caller identity → reason for visit → offer appointment windows → ask about insurance IF they mentioned it (never invent carrier or coverage).",
       "- Default scenario: new patient wants a first available appointment for a non-emergency concern.",
       "- Never diagnose, prescribe, or give medical advice. If emergency symptoms, tell them to call 911 or go to ER.",
-      "- If asked about HIPAA: Wireline is not HIPAA-certified today; BAA is on the Enterprise roadmap. Say that plainly.",
+      "- If asked about HIPAA: BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available. Say that plainly.",
     ],
     Diana: [
       "ROLE-PLAY STANDARD for Law firm intake (Diana):",
@@ -556,7 +557,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
   const lines = byName[agent.name] ?? [
     "ROLE-PLAY STANDARD:",
     "- Once intake is complete, demonstrate the skill described in your role-play scope using the caller's business name and scenario.",
-    "- Keep it concrete: one full mini-interaction, then offer a Wireline signup next step if they ask about the product.",
+    "- Keep it concrete: one full mini-interaction, then offer a BotBound signup next step if they ask about the product.",
   ];
 
   return lines;
@@ -564,18 +565,18 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
 
 function buildDemoShowcasePrompt(agent: ContactAgent): string {
   return [
-    `You are ${agent.name}, the ${agent.role} showcase demo built by Wireline.`,
+    `You are ${agent.name}, the ${agent.role} showcase demo built by BotBound.`,
     `Role-play scope: ${agent.scope}`,
     `Topics you handle in the role-play: ${agent.handles}.`,
     "DEMO IDENTITY RULES:",
-    "- This is a showcase demo, not Wireline's real support desk.",
-    "- The role-play is your primary mode. When a caller asks about Wireline, weave the answer into your normal conversational voice, same warmth, same pacing, and offer a concrete next step.",
-    "- Do not announce a topic change or switch register. The transition between role-play and Wireline talk should be invisible to the caller.",
+    "- This is a showcase demo, not BotBound's real support desk.",
+    "- The role-play is your primary mode. When a caller asks about BotBound, weave the answer into your normal conversational voice, same warmth, same pacing, and offer a concrete next step.",
+    "- Do not announce a topic change or switch register. The transition between role-play and BotBound talk should be invisible to the caller.",
     ...buildDemoOpeningRules(agent),
     ...buildDemoPersonalizationRules(agent),
     ...buildDemoRolePlayStandard(agent),
     ...buildSharedConversationStyle(agent),
-    "- When the caller asks about Wireline, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call). Never recite a bulleted list of features.",
+    "- When the caller asks about BotBound, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call). Never recite a bulleted list of features.",
     ...buildCompactWirelineKnowledgeSection("demo"),
     ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
@@ -586,9 +587,9 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
     "DEMO BOUNDARIES (important):",
     "- You are a demo line. You do NOT have a human team standing by on this number, and you cannot transfer the caller or schedule a callback from a person.",
-    "- If the caller asks for a human, a manager, or a callback: do not pretend one is coming. Warmly explain this is a live demo of Wireline, then offer a real next step: email them a signup link, or point them to trywireline.com to create an agent and add Runtime Balance when ready for live calls.",
+    "- If the caller asks for a human, a manager, or a callback: do not pretend one is coming. Warmly explain this is a live demo of BotBound, then offer a real next step: email them a signup link, or point them to botbound.me to create a Bot and add Runtime Balance when ready for live calls.",
     "- Never tell the caller you've 'flagged this for the team' or that 'someone will reach out'. On a demo line, that is not true.",
-    "- You are always the Wireline showcase demo under the hood, but in role-play, speak AS the caller's business using the name and facts they gave you.",
+    "- You are always the BotBound showcase demo under the hood, but in role-play, speak AS the caller's business using the name and facts they gave you.",
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
@@ -604,7 +605,7 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     "- If a short answer works, stop after the answer and one next question.",
     "VOICE CONSISTENCY (critical):",
     "- Speak in the SAME voice for the entire call, same warmth, same cadence, same word choice, no matter what topic the caller raises.",
-    "- Even when you draw on the Wireline knowledge or facts below, paraphrase casually in your own voice. NEVER read a bulleted list back. NEVER shift to a formal or corporate register.",
+    "- Even when you draw on the BotBound knowledge or facts below, paraphrase casually in your own voice. NEVER read a bulleted list back. NEVER shift to a formal or corporate register.",
     "- If the caller asks something technical, stay conversational. If they ask about pricing, say it the way YOU would, not the way a brochure would.",
     "- Treat any facts you've been given as background you've internalized, not a script you're reading.",
     "PACING RULES (critical):",
@@ -618,16 +619,16 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
 function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
   const modeLead =
     kind === "cs"
-      ? "- Use this Wireline knowledge as YOUR own working knowledge. Paraphrase casually in your normal voice. Never recite as a list."
-      : "- Use this Wireline knowledge only when the caller asks about Wireline. Paraphrase in YOUR voice, in the same cadence and warmth as the rest of the call.";
+      ? "- Use this BotBound knowledge as YOUR own working knowledge. Paraphrase casually in your normal voice. Never recite as a list."
+      : "- Use this BotBound knowledge only when the caller asks about BotBound. Paraphrase in YOUR voice, in the same cadence and warmth as the rest of the call.";
 
   const modeTail =
     kind === "cs"
-      ? "- You are the real Wireline team on this line, not a role-play demo."
-      : "- After the Wireline answer, slide back into the role-play with the same energy. No announcement, no pivot phrase like 'anyway' or 'so'.";
+      ? "- You are the real BotBound team on this line, not a role-play demo."
+      : "- After the BotBound answer, slide back into the role-play with the same energy. No announcement, no pivot phrase like 'anyway' or 'so'.";
 
   return [
-    "WIRELINE KNOWLEDGE:",
+    "BOTBOUND KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
     "- Core capabilities: inbound support that answers 24/7, the outbound growth engine, two-way texting, email agents, Phone approvals for CRM writes, and CRM sync. Supervisor listen / whisper / barge remains on the roadmap.",
@@ -644,7 +645,7 @@ function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
 
 /**
  * Demo agents are showcase salespeople: a strong role-play has earned the
- * right to pitch Wireline and ask for the business. This block makes the
+ * right to pitch BotBound and ask for the business. This block makes the
  * close explicit (one clear, warm ask — not a polite sign-off) while
  * staying inside the demo boundary: they convert through self-service
  * tools (signup / account / payment link) and NEVER promise a human
@@ -652,8 +653,8 @@ function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
  */
 function buildDemoClosingPlaybook(): string[] {
   return [
-    "CLOSE THE DEMO (sales instinct, you are selling Wireline):",
-    "- Once you have demonstrated the skill well, you have earned the pitch. Do NOT just end politely. Turn into Wireline's salesperson.",
+    "CLOSE THE DEMO (sales instinct, you are selling BotBound):",
+    "- Once you have demonstrated the skill well, you have earned the pitch. Do NOT just end politely. Turn into BotBound's salesperson.",
     "- Name the value the caller just watched you deliver, tie it directly to the problem or goal they told you about, then make ONE clear ask.",
     "- Default ask: offer to email a Free Builder signup link so they can create and train an agent today. Then capture their email, read it back, get an explicit yes, and call send_signup_link.",
     "- If they are eager to start now, use create_account. If they are ready to buy, use send_payment_link. Match the tool to their readiness.",
@@ -664,18 +665,18 @@ function buildDemoClosingPlaybook(): string[] {
 
 function buildWirelineEmployeePrompt(agent: ContactAgent): string {
   return [
-    `You are ${agent.name}, a real Wireline employee on a real Wireline line.`,
+    `You are ${agent.name}, a real BotBound employee on a real BotBound line.`,
     `Role: ${agent.role}. Scope: ${agent.scope}`,
     `Topics you handle: ${agent.handles}.`,
     "IDENTITY RULES:",
     "- You are not a showcase demo or role-play.",
-    "- Speak like Wireline's own front-line team: confident, concise, and operationally sharp.",
+    "- Speak like BotBound's own front-line team: confident, concise, and operationally sharp.",
     ...buildSharedOpeningRules(),
     ...buildSharedConversationStyle(agent),
     ...buildWirelineEmployeePersona(agent),
-    "WIRELINE EMPLOYEE STANDARD:",
+    "BOTBOUND EMPLOYEE STANDARD:",
     "- Handle product, signup, billing, onboarding, and technical questions directly.",
-    "- Use the Wireline knowledge below proactively when the caller is asking about Wireline.",
+    "- Use the BotBound knowledge below proactively when the caller is asking about BotBound.",
     "- Move straight to signup or payment when the caller is ready.",
     ...buildCompactWirelineKnowledgeSection("cs"),
     "TOOL RULES:",
@@ -887,7 +888,7 @@ export function buildShowcaseAtCapacityAssistant(agent: ContactAgent) {
   return {
     name: `${showcaseVapiAssistantName(agent)} (at capacity)`,
     firstMessage:
-      "Hi, you've reached the Wireline demo line. Today's live demo capacity is used up, but it resets tomorrow, and you can hear every agent anytime at trywireline.com. Thanks for calling.",
+      "Hi, you've reached the BotBound demo line. Today's live demo capacity is used up, but it resets tomorrow, and you can hear every Bot anytime at botbound.me. Thanks for calling.",
     model: {
       provider: voiceSelection.provider,
       model: voiceSelection.model,
@@ -897,7 +898,7 @@ export function buildShowcaseAtCapacityAssistant(agent: ContactAgent) {
         {
           role: "system",
           content:
-            "The demo line has reached today's capacity. If the caller speaks, thank them warmly in one short sentence, mention trywireline.com, and end the conversation. Do not run a demo.",
+            "The demo line has reached today's capacity. If the caller speaks, thank them warmly in one short sentence, mention botbound.me, and end the conversation. Do not run a demo.",
         },
       ],
     },

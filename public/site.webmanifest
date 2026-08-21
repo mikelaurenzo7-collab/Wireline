@@ -13,9 +13,9 @@
   "lang": "en-US",
   "categories": ["productivity", "utilities", "communications"],
   "icons": [
-    { "src": "/botbound-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
-    { "src": "/botbound-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/botbound-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/botbound-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/botbound-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/botbound-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
     { "name": "BOT STUDIO", "short_name": "STUDIO", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },

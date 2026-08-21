@@ -35,12 +35,21 @@ describe("BotBound managed AgentMail contract", () => {
   });
 
   it("fails closed when a configured custom domain is not ready", () => {
+    const resolver = agentmailRoutes.slice(
+      agentmailRoutes.indexOf("async function resolveManagedBotInbox"),
+      agentmailRoutes.indexOf("/**\n * POST /api/agents/:agentId/managed-mailbox"),
+    );
     expect(agentmailRoutes).toContain("Managed AgentMail custom-domain provisioning failed closed");
-    expect(agentmailRoutes).toMatch(
+    expect(resolver).toMatch(
       /if \(preferredDomain && preferredDomain !== AGENTMAIL_FREE_DOMAIN\)[\s\S]*throw error;/,
     );
-    expect(agentmailRoutes).not.toMatch(
-      /Managed AgentMail custom-domain provisioning failed[\s\S]*createManagedInboxAttempt\(\{ \.\.\.input, username \}\)/,
+    const failureBranch = resolver.slice(
+      resolver.indexOf("Managed AgentMail custom-domain provisioning failed closed"),
+      resolver.indexOf("throw error;") + "throw error;".length,
+    );
+    expect(failureBranch).not.toContain("createManagedInboxAttempt");
+    expect(resolver.indexOf("throw error;")).toBeLessThan(
+      resolver.indexOf("createManagedInboxAttempt({ ...input, username })"),
     );
     expect(agentmailLib).toContain("Confirm the domain is verified in the AgentMail organization");
   });
@@ -59,7 +68,7 @@ describe("BotBound managed AgentMail contract", () => {
 
   it("retains the tenant-owned AgentMail connect path only as legacy compatibility", () => {
     const legacySection = agentmailRoutes.slice(
-      agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"'),
+      agentmailRoutes.lastIndexOf("/**", agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"')),
     );
     expect(legacySection).toContain("Legacy/advanced compatibility path");
     expect(legacySection).toContain("encryptSecret(apiKey)");
@@ -68,8 +77,8 @@ describe("BotBound managed AgentMail contract", () => {
   });
 
   it("uses the managed sentinel transparently for IMAP, SMTP, and provider API execution", () => {
-    expect(agentmailLib).toContain("pass: resolveAgentMailCredential(apiKey)");
-    expect(agentmailLib).toContain("const credential = resolveAgentMailCredential(apiKey)");
+    expect(agentmailLib).toContain("pass: resolveAgentMailCredential(credential)");
+    expect(agentmailLib).toContain("const apiKey = resolveAgentMailCredential(credential)");
     expect(integrations).toContain("fetchAgentMailInbox(email, apiKey, opts)");
     expect(integrations).toContain("sendAgentMail(email, apiKey, sendParams)");
   });

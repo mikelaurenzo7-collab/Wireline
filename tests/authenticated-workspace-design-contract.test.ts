@@ -72,17 +72,21 @@ describe("authenticated workspace design architecture", () => {
     expect(studio).toContain("minSize={312}");
     expect(studio).toContain("maxSize={520}");
     expect(studio).toContain("collapsedSize={44}");
-    expect(studio).toContain("compact={splitWorkspace}");
-    expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
+    expect(studio.match(/compact=\{splitWorkspace && section === "test"\}/g)).toHaveLength(2);
+    expect(studio).toContain(
+      'layout={splitWorkspace && section === "test" ? "split" : "standalone"}',
+    );
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
-    expect(review).toContain('data-wireline-studio-review-density={compact ? "inspector" : "page"}');
+    expect(review).toContain(
+      'data-wireline-studio-review-density={compact ? "inspector" : "page"}',
+    );
   });
 
   it("keeps the Studio composer compact, adaptive, and keyboard-native", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     expect(workroom).toContain("showStarterPrompts");
     expect(workroom).toContain("quickPrompts.slice(0, 3)");
-    expect(workroom).toContain('rows={1}');
+    expect(workroom).toContain("rows={1}");
     expect(workroom).toContain('textarea.style.minHeight = "52px"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");
     expect(workroom).toContain('window.matchMedia("(pointer: fine)").matches');
@@ -111,8 +115,10 @@ describe("authenticated workspace design architecture", () => {
   it("keeps phone line management canonical in Calls rather than duplicated in Settings", () => {
     const routes = read("src/routes/AppRoutes.tsx");
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
-    expect(routes).toContain('path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />}');
-    expect(routes).not.toContain('const PhoneSettings = lazy');
+    expect(routes).toContain(
+      'path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />}',
+    );
+    expect(routes).not.toContain("const PhoneSettings = lazy");
     expect(settingsTabs).not.toContain('href: "/settings/phone"');
     expect(settingsTabs).toContain("WorkspaceControlBand");
   });

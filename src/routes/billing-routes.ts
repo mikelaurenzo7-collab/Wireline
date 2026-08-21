@@ -582,15 +582,18 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   typeof inv.amount_due === "number"
                     ? `$${(inv.amount_due / 100).toFixed(2)}`
                     : "your subscription payment";
-                const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
-                  /\/+$/,
-                  "",
-                );
+                const appUrl = resolveCanonicalAppUrl();
+                if ("error" in appUrl) {
+                  throw AppError.fromHttpStatus(
+                    503,
+                    "Payment-failure notice link is not configured",
+                  );
+                }
                 const delivery = await sendPaymentFailedEmail({
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
-                  updateCardUrl: `${appUrl}/settings/billing`,
+                  updateCardUrl: `${appUrl.url}/settings/billing`,
                   idempotencyKey: `stripe-payment-failed/${event.id}`,
                 });
                 if (!delivery.ok && delivery.disposition !== "suppressed") {

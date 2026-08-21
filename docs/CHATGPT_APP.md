@@ -1,18 +1,18 @@
-# Wireline ChatGPT App
+# BotBound ChatGPT App
 
 ## Product contract
 
-**Meet the user in ChatGPT, create a real Wireline account if they are new, then help them build their first voice agent.**
+**Meet the user in ChatGPT, create a real BotBound account if they are new, then help them build their first voice agent.**
 
-Wireline is not an anonymous demo surface and not a repo-embedded voice SDK. A connected user can create, read, refine, list, privately rehearse, and inspect agents that belong to their Wireline workspace. Confirmed Training writes land in Wireline after the Apps toggle. The app can also return aggregate operational status across agents, assigned phone numbers, calling, texting, and email without returning customer identities or communication content.
+BotBound is not an anonymous demo surface and not a repo-embedded voice SDK. A connected user can create, read, refine, list, privately rehearse, and inspect agents that belong to their BotBound workspace. Confirmed Training writes land in BotBound after the Apps toggle. The app can also return aggregate operational status across agents, assigned phone numbers, calling, texting, and email without returning customer identities or communication content.
 
 ```text
 ChatGPT conversation
--> Wireline OAuth (signup or sign in)
+-> BotBound OAuth (signup or sign in)
 -> confirmed first agent draft
 -> private voice or text rehearsal
--> optional Training that lands in Wireline
--> numbers, live calls, and launch in Wireline
+-> optional Training that lands in BotBound
+-> numbers, live calls, and launch in BotBound
 ```
 
 ## What ChatGPT owns
@@ -23,7 +23,7 @@ ChatGPT conversation
 - Private voice simulation of a saved draft.
 - Privacy-minimized, read-only workspace summaries for status questions.
 
-## What Wireline owns
+## What BotBound owns
 
 - Tenant isolation and account ownership.
 - Entitlement and capacity checks.
@@ -36,15 +36,15 @@ ChatGPT conversation
 
 | Endpoint | Purpose |
 | --- | --- |
-| `https://trywireline.com/mcp` | Streamable HTTP MCP endpoint |
-| `https://trywireline.com/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
-| `https://trywireline.com/.well-known/oauth-authorization-server` | Wireline authorization-server metadata |
-| `https://trywireline.com/mcp/oauth/authorize` | OAuth authorization and consent screen |
-| `https://trywireline.com/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
-| `https://trywireline.com/chatgpt-app-privacy.html` | App-specific public privacy notice |
-| `https://trywireline.com/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
-| `https://trywireline.com/claude-connector.html` | Claude Connector public documentation |
-| `https://trywireline.com/cursor-plugin.html` | Cursor plugin public documentation |
+| `https://botbound.me/mcp` | Streamable HTTP MCP endpoint |
+| `https://botbound.me/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
+| `https://botbound.me/.well-known/oauth-authorization-server` | BotBound authorization-server metadata |
+| `https://botbound.me/mcp/oauth/authorize` | OAuth authorization and consent screen |
+| `https://botbound.me/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
+| `https://botbound.me/chatgpt-app-privacy.html` | App-specific public privacy notice |
+| `https://botbound.me/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
+| `https://botbound.me/claude-connector.html` | Claude Connector public documentation |
+| `https://botbound.me/cursor-plugin.html` | Cursor plugin public documentation |
 
 ## Customization profile
 
@@ -70,7 +70,7 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 | `start_private_voice_simulation` | `demo.voice` | Starts a short, tool-free private simulation. |
 | `list_wireline_agents` | `agents.read` | Lists the connected user's agents. |
 | `get_wireline_workspace_summary` | `agents.read` | Returns tenant-scoped aggregate agent, phone-number, recent activity, unread, connection, activation, and subscription status without raw customer content. |
-| `get_wireline_agent_status` | `agents.read` | Returns one agent's next step and Wireline links without phone numbers or customer content. |
+| `get_wireline_agent_status` | `agents.read` | Returns one agent's next step and BotBound links without phone numbers or customer content. |
 | `run_private_agent_turn` | `demo.voice` | Confirmed private text rehearsal of an owned agent. Not a live call. |
 | `get_agent_coaching_brief` | `agents.read` | Owner-authored Training facts and rules. Never customer communications. |
 | `train_wireline_agent` | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
@@ -88,7 +88,7 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 ## Required Vercel environment variables
 
 ```bash
-APP_URL=https://trywireline.com
+APP_URL=https://botbound.me
 MCP_OAUTH_TOKEN_PEPPER=
 OPENAI_API_KEY_CHATKIT=
 OPENAI_API_KEY=
@@ -105,7 +105,7 @@ Use Client Identifier Metadata Document registration for ChatGPT. The shared `/m
 Run the public, unauthenticated protocol probe against the deployed environment:
 
 ```bash
-node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
 The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization identity `wireline`, the tool inventory, prompts, the account-bound widget resource, Claude host domain metadata, privacy pages, Cursor plugin docs, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
@@ -113,9 +113,11 @@ The probe verifies protected-resource discovery, authorization-server discovery,
 ## Private rollout and App Directory readiness
 
 1. Run the release probe against production.
-2. Test OAuth with a real Wireline account.
+2. Test OAuth with a real BotBound account.
 3. Create a reviewer account with sample agents, a stable password, and no MFA.
 4. Exercise first-agent create, update, private simulation, list, aggregate workspace summary, coaching brief, and negative safety prompts from `docs/CHATGPT_APP_SUBMISSION.md`.
 5. Verify that the workspace summary returns only aggregates and connection state—never customer identifiers, communication bodies, transcripts, recordings, or credentials.
 6. Capture evidence of OAuth, draft creation, customization, simulation, workspace visibility, and the unlaunched state.
 7. Submit the account-bound version for review only after production checks pass.
+
+The `wireline` server and tool identifiers remain stable technical namespaces. `https://trywireline.com/mcp` remains compatibility-only for existing registrations during issuer migration and is not published for new connections.

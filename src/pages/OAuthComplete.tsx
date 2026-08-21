@@ -93,8 +93,8 @@ export default function OAuthComplete() {
   return (
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
-        title="Completing sign-in | WIRELINE"
-        description="Finishing your WIRELINE sign-in."
+        title="Completing sign-in | BotBound"
+        description="Finishing your BotBound sign-in."
         path="/auth/oauth-complete"
         noIndex
       />

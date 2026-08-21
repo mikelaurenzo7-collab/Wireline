@@ -6,7 +6,7 @@ Wireline sends platform email through Resend. Delivery feedback closes the loop 
 
 ## Production endpoint
 
-`POST https://trywireline.com/api/webhooks/resend`
+`POST https://botbound.me/api/webhooks/resend`
 
 The endpoint accepts `application/json` only and uses the raw request bytes. It verifies Resend / Standard Webhooks headers before parsing JSON or touching the database:
 
@@ -46,7 +46,7 @@ Commercial lifecycle mail still performs the additional CAN-SPAM / one-click-uns
 
 ## Activation procedure
 
-1. In Resend, create a production webhook targeting `https://trywireline.com/api/webhooks/resend`.
+1. In Resend, create a production webhook targeting `https://botbound.me/api/webhooks/resend`. Keep the legacy endpoint registered during the origin transition until its required traffic is zero.
 2. Subscribe to the five events listed above.
 3. Copy the generated `whsec_...` signing secret into a secure local environment as `RESEND_WEBHOOK_SECRET`.
 4. Run `node scripts/sync-resend-env-to-vercel.mjs` with an authorized Vercel token. The script syncs the webhook secret to **production only**.

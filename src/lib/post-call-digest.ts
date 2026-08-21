@@ -22,6 +22,7 @@ import { BRAND } from "../constants/brand-colors";
 import * as schema from "../db/schema";
 import { withAccountDeletionFence } from "./account-deletion-fence";
 import { executeAction } from "./action-engine";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import { CRMService } from "./crm-service";
 import { sendEmail } from "./email-service";
 import { type JobRow, writeTransactionConfig } from "./job-queue";
@@ -41,6 +42,8 @@ import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
+
+const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`;
 
 export function classifyCallOutcome(input: {
   summary?: string | null;
@@ -1372,7 +1375,7 @@ export function renderDigestEmail(d: {
     recapBlock,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
-    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
+    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="${CALL_LOGS_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">in BotBound →</a></p>`,
     `</div>`,
   ].join("");
 }
@@ -1403,7 +1406,7 @@ export function renderDigestEmailText(d: {
     `Next action: ${nextActionFromOutcome(d.outcomeTag)}`,
     crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false),
     d.recapUrl ? `Recap: ${d.recapUrl}` : null,
-    "Open the call: https://trywireline.com/phone?tab=logs",
+    `Open the call: ${CALL_LOGS_URL}`,
   ]
     .filter((line): line is string => line !== null)
     .join("\n");

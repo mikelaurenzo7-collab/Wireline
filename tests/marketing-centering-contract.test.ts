@@ -81,12 +81,11 @@ describe("marketing centering contract", () => {
     const mark = read("src/components/brand/BotBoundMark.tsx");
     const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
-    expect(mark).toContain('viewBox="0 0 128 128"');
+    expect(mark).toContain("<img");
+    expect(mark).toContain('src="/brand/botbound-app-icon.png"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
-    expect(mark).toContain('<stop offset="0" stopColor="#FFFFFF" />');
-    expect(mark).toContain('<stop offset="0.42" stopColor="#8B5CF6" />');
-    expect(mark).toContain('d="M24 34c-5 7-8 16-8 27 0 12 3 22 9 29"');
-    expect(mark).not.toContain('viewBox="0 0 180 120"');
+    expect(mark).not.toContain("<svg");
+    expect(mark).not.toContain("viewBox=");
     expect(legacyMark).toContain('export { default } from "./BotBoundMark"');
   });
 

@@ -24,7 +24,9 @@ export function validateStartupEnv() {
   getInternalJwtSecret();
 
   const recommended: string[] = [];
-  if (!process.env.APP_URL) recommended.push("APP_URL");
+  // APP_URL is a production requirement. Keep the local-development hint
+  // without misclassifying the same production fault as merely recommended.
+  if (!IS_PROD && !process.env.APP_URL) recommended.push("APP_URL");
 
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
     recommended.push("CORS_ORIGINS");

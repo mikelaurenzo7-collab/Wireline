@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
     paths:
+      - src/**
+      - public/**
+      - index.html
+      - package.json
+      - package-lock.json
+      - vite.config.ts
+      - vercel.json
       - scripts/capture-prod-visual-qa.mjs
       - .github/workflows/production-visual-qa.yml
   workflow_dispatch:
@@ -18,7 +25,7 @@ jobs:
     timeout-minutes: 20
     env:
       CI: "true"
-      WIRELINE_VISUAL_BASE_URL: https://trywireline.com
+      WIRELINE_VISUAL_BASE_URL: https://botbound.me
       WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-prod
     steps:
       - name: Checkout
@@ -44,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v7
         continue-on-error: true
         with:
-          name: wireline-production-visual-qa
+          name: botbound-production-visual-qa
           path: artifacts/visual-qa-prod
           if-no-files-found: warn
           retention-days: 14

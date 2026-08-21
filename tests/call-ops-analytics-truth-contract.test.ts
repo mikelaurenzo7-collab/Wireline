@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 const route = readFileSync("src/routes/call-ops-analytics-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
 const analytics = readFileSync("src/components/CallOpsAnalytics.tsx", "utf8");
+const overview = readFileSync("src/components/CallOpsOverview.tsx", "utf8");
 const callOps = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
+const phonePage = readFileSync("src/pages/PhonePage.tsx", "utf8");
 
 describe("Call Ops analytics truth", () => {
   it("computes exact tenant aggregates without selecting transcript-bearing rows", () => {
@@ -16,7 +18,9 @@ describe("Call Ops analytics truth", () => {
     expect(route).toContain("totalCalls: sql`count(*)`");
     expect(route).toContain("sum(${schema.callLogs.durationSeconds})");
     expect(route).toContain("avg(${schema.callLogs.qaScore})");
-    expect(route).toContain("extract(dow from timezone(${timeZone}, ${schema.callLogs.createdAt}))::int");
+    expect(route).toContain(
+      "extract(dow from timezone(${timeZone}, ${schema.callLogs.createdAt}))::int",
+    );
     expect(route).toContain(".groupBy(weekdayExpression)");
     expect(route).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
     expect(route).not.toContain("schema.callLogs.transcript");
@@ -42,9 +46,15 @@ describe("Call Ops analytics truth", () => {
     expect(analytics).toContain("analytics.avgDurationSeconds");
     expect(analytics).toContain("analytics.avgQaScore");
     expect(analytics).toContain("analytics.weekdayCounts");
-    expect(callOps).toContain('import CallOpsAnalytics from "./CallOpsAnalytics";');
-    expect(callOps).toContain("return <CallOpsAnalytics />;");
-    expect(callOps).not.toContain('/api/calls?limit=500');
+    expect(overview).toContain('import CallOpsAnalytics from "./CallOpsAnalytics";');
+    expect(overview).toContain("<CallOpsAnalytics />");
+    expect(phonePage).toContain('import CallOpsOverview from "../components/CallOpsOverview";');
+    expect(phonePage).toContain('{ id: "analytics", label: "Analytics" }');
+    expect(phonePage).toContain('primaryTab === "analytics" && <CallOpsOverview />');
+    expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");
+    expect(callOps).toContain("offset: String(calls.length)");
+    expect(callOps).toContain("Load more calls");
+    expect(callOps).not.toContain("/api/calls?limit=500");
     expect(callOps).not.toContain("function AnalyticsContent()");
   });
 });

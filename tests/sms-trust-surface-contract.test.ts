@@ -35,6 +35,8 @@ describe("SMS trust surface", () => {
     expect(sms).toContain("/api/sms/threads/${threadId}/messages");
     expect(sms).toContain("/api/sms/threads/${threadId}/reply");
     expect(outcome).toContain("/api/sms/threads/${threadId}/outcome");
-    expect(outcome).toContain("Approvals owns the durable human handoff lifecycle");
+    expect(outcome).toContain('onClick={() => void setOutcome("escalated", true)}');
+    expect(outcome).toContain("A human follow-up is now in Approvals.");
+    expect(outcome).toContain("body.handoff_task_id");
   });
 });

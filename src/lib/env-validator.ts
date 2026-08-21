@@ -2,6 +2,7 @@ import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
 import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
+import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 
 export type EnvGroup =
   | "core"
@@ -209,13 +210,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
-    name: "VITE_VAPI_PUBLIC_KEY",
-    group: "voice",
-    required: false,
-    description: "Vapi browser test-call public key",
-    validate: nonEmpty,
-  },
-  {
     name: "ELEVENLABS_API_KEY",
     group: "voice",
     required: false,
@@ -369,8 +363,10 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "APP_URL",
     group: "operational",
     required: false,
+    requiredInProd: true,
     description: "Canonical public deployment URL",
-    validate: (value) => !value || isUrl(value),
+    validate: (value) => !value || value === BOTBOUND_PRODUCTION_ORIGIN,
+    formatHint: "https://botbound.me (exactly; no path, port, credentials, or trailing slash)",
   },
   {
     name: "CORS_ORIGINS",
@@ -502,6 +498,22 @@ export function validateEnv(): EnvValidationResult {
     }
   }
 
+  // This credential used to be intentionally browser-exposed. Public voice
+  // now uses server-minted one-use tickets and native ephemeral sessions, so
+  // accepting the retired key here would contradict the deployment boundary
+  // and could make a leaked configuration look healthy.
+  if (process.env.VITE_VAPI_PUBLIC_KEY?.trim()) {
+    result.valid = false;
+    byGroup.voice.total++;
+    byGroup.voice.invalid++;
+    result.errors.push({
+      var: "VITE_VAPI_PUBLIC_KEY",
+      group: "voice",
+      message:
+        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and native ephemeral sessions",
+    });
+  }
+
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
   const managedRuntime =
@@ -510,7 +522,7 @@ export function validateEnv(): EnvValidationResult {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
+      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN / XAI_API_KEY",
       group: "ai",
       message:
         "Configure the OpenAI managed runtime, Vercel AI Gateway, or an approved continuity provider before serving AI requests",

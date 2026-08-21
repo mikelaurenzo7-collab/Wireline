@@ -1,27 +1,27 @@
-# Wireline Claude Connector - Submission Packet
+# BotBound Claude Connector - Submission Packet
 
 ## Listing identity
 
-- **Name:** Wireline (max 100)
+- **Name:** BotBound (max 100)
 - **Tagline:** Build your first voice agent (27 / 55)
 - **Slug:** `wireline` (permanent once published)
 - **Categories:** business, productivity
-- **Icon:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
-- **Docs:** `https://trywireline.com/claude-connector.html`
-- **Privacy:** `https://trywireline.com/mcp-privacy.html`
+- **Icon:** `https://botbound.me/botbound-icon-512.png`
+- **Docs:** `https://botbound.me/claude-connector.html`
+- **Privacy:** `https://botbound.me/mcp-privacy.html`
 - **Support:** `support@trywireline.com`
-- **Company:** Wireline / `https://trywireline.com`
+- **Company:** BotBound / `https://botbound.me`
 
 Machine-readable copy lives in `claude-connector-submission.json`.
 
 ## Server
 
-- **URL:** `https://trywireline.com/mcp`
+- **URL:** `https://botbound.me/mcp`
 - **Transport:** streamable HTTP
 - **URL mode:** same URL for every user
 - **Auth:** OAuth DCR and CIMD (`oauth_dcr` and `oauth_cimd`)
 - **Lazy auth:** yes. List and initialize are public; tool calls challenge with HTTP 401
-- **Allowed link URIs:** `https://trywireline.com` only (owned origin)
+- **Allowed link URIs:** `https://botbound.me` only (owned origin)
 
 ## Portal access
 
@@ -40,14 +40,14 @@ Desktop-extension (MCPB) and plugin forms are the wrong path for this server.
 
 Anthropic requires a fully populated account. Do not invent credentials in git. The founder supplies:
 
-- Sign-in URL `https://trywireline.com/signin`
+- Sign-in URL `https://botbound.me/signin`
 - Email and password for a workspace that already has at least one agent draft, an assigned number if available, and connected or disconnected text/email state that makes the workspace summary meaningful
 - No MFA on the reviewer account
 - Confirmation that the account may be used only for directory review
 
 ## MCP App screenshots
 
-Required for MCP Apps: **3-5 PNG images, width at least 1000px**, cropped to the **app response only** (no prompt). Pair each image with the prompt text. Video/GIF is rejected. Do not commit screenshots to the repository; capture them from a Claude conversation after connecting `https://trywireline.com/mcp` as a custom connector.
+Required for MCP Apps: **3-5 PNG images, width at least 1000px**, cropped to the **app response only** (no prompt). Pair each image with the prompt text. Video/GIF is rejected. Do not commit screenshots to the repository; capture them from a Claude conversation after connecting `https://botbound.me/mcp` as a custom connector.
 
 Suggested captures, matching `claude-connector-submission.json`:
 
@@ -61,7 +61,7 @@ Use the [MCP Apps Figma community file](https://www.figma.com/community/file/159
 
 ## Policy acknowledgments
 
-The portal requires seven acknowledgments: directory guidelines, first-party API usage, no financial-asset transfer, no AI image/video/audio generation as the product, no prompt injection, no extra conversation-data collection, and public documentation. Wireline’s tools call first-party Wireline APIs. Private voice simulation uses OpenAI Realtime as an implementation detail of a tool-free draft rehearsal, not an image/video generator.
+The portal requires seven acknowledgments: directory guidelines, first-party API usage, no financial-asset transfer, no AI image/video/audio generation as the product, no prompt injection, no extra conversation-data collection, and public documentation. BotBound tools call first-party BotBound APIs. Private voice simulation uses OpenAI Realtime as an implementation detail of a tool-free draft rehearsal, not an image/video generator.
 
 ## Escalation
 

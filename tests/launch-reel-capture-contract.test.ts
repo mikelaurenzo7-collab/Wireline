@@ -77,12 +77,11 @@ describe("launch reel capture contract", () => {
     expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
   });
 
-  it("restricts publishable capture to Wireline-owned production hosts", () => {
-    expect(certifier).toContain("function isTrustedWirelineCaptureHost(hostname)");
-    expect(certifier).toContain('host === "trywireline.com"');
-    expect(certifier).toContain('host.endsWith(".trywireline.com")');
-    expect(certifier).toContain('host === "wireline-chi.vercel.app"');
-    expect(certifier).toContain("-revaluate\\.vercel\\.app");
+  it("restricts publishable capture to the canonical BotBound production host", () => {
+    expect(certifier).toContain("function isTrustedBotBoundCaptureHost(hostname)");
+    expect(certifier).toContain("host === new URL(CANONICAL_PRODUCTION_URL).hostname");
+    expect(certifier).not.toContain('host === "trywireline.com"');
+    expect(certifier).not.toContain('host === "wireline-chi.vercel.app"');
     expect(certifier).toContain("Launch-reel certification refuses untrusted capture host");
     expect(certifier).toContain("does not allow credentials embedded in E2E_BASE_URL");
   });
@@ -90,7 +89,7 @@ describe("launch reel capture contract", () => {
   it("source-verifies every origin represented by a publishable manifest", () => {
     expect(certifier).toContain("async function verifyCaptureOrigins(sourceCommit)");
     expect(certifier).toContain(
-      'const origins = [...new Set([configuredBaseURL, "https://trywireline.com"])]',
+      "const origins = [...new Set([configuredBaseURL, CANONICAL_PRODUCTION_URL])]",
     );
     expect(certifier).toContain("verified.push(await verifyRemoteSourceCommit(sourceCommit, origin))");
     expect(certifier).toContain("function combineSourceVerification");

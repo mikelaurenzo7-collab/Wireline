@@ -22,7 +22,7 @@ export const ACTIVATION_PENDING_COPY = {
 
 export const ACTIVATION_NUDGE_COPY = {
   eyebrow: "Activation",
-  body: "Dial your line for a real conversation. That's when WIRELINE counts you as live.",
+  body: "Dial your line for a real conversation. That's when BotBound counts you as live.",
   cta: "Call to activate",
 } as const;
 

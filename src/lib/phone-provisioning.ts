@@ -35,6 +35,7 @@ import {
   releaseVapiNumber,
   vapiAccountHeadroom,
 } from "./vapi-phone-numbers";
+import { getCanonicalAppUrl } from "./app-url";
 
 /**
  * What a tenant is told when number provisioning fails for a reason that is
@@ -65,9 +66,7 @@ function isAutoProvisioningEnabled(): boolean {
 }
 
 function appBaseUrl(): string {
-  return process.env.APP_URL && process.env.APP_URL.length > 0
-    ? process.env.APP_URL.replace(/\/+$/, "")
-    : "https://trywireline.com";
+  return getCanonicalAppUrl();
 }
 
 interface ProvisionOpts {

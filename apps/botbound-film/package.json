@@ -1,0 +1,39 @@
+{
+  "name": "@botbound/second-ring-film",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BotBound launch film package — The Second Ring / Hands Full",
+  "scripts": {
+    "audio:generate": "node scripts/generate-audio.mjs && ffmpeg -hide_banner -loglevel error -y -i public/audio/botbound-score.wav -codec:a libmp3lame -b:a 160k public/audio/botbound-score.mp3",
+    "captions:export": "node scripts/export-captions.mjs",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "build": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion bundle src/index.ts --out-dir dist",
+    "compositions": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion compositions src/index.ts",
+    "studio": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion studio src/index.ts --no-open",
+    "render:30": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-30s-4K out/botbound-second-ring-30s-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:15": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-15s-4K out/botbound-second-ring-15s-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:6": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-6s-4K out/botbound-second-ring-6s-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:vertical": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-15s-Vertical-4K out/botbound-second-ring-15s-vertical-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:6-vertical": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-6s-Vertical-4K out/botbound-second-ring-6s-vertical-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:square": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-10s-Square-4K out/botbound-second-ring-10s-square-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
+    "render:all": "npm run render:30 && npm run render:15 && npm run render:6 && npm run render:vertical && npm run render:6-vertical && npm run render:square",
+    "still:opening": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-opening.jpg --frame=28 --scale=0.5",
+    "still:product": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-product.jpg --frame=342 --scale=0.5",
+    "still:endcard": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-endcard.jpg --frame=850 --scale=0.5"
+  },
+  "dependencies": {
+    "@remotion/captions": "4.0.506",
+    "@remotion/cli": "4.0.506",
+    "@remotion/fonts": "4.0.506",
+    "@remotion/media": "4.0.506",
+    "@remotion/transitions": "4.0.506",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "remotion": "4.0.506"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "typescript": "^5.9.0"
+  }
+}

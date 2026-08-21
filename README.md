@@ -1,6 +1,6 @@
-# Wireline
+# BotBound
 
-Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+BotBound is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
 The public operating loop is **Build -> Train -> Launch -> Improve**. Product architecture expresses that loop through Create, Training, Wire, and Studio:
 
@@ -13,12 +13,12 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. Product ar
 
 - **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
 - **Wireline Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks.
-- **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first voice agent, privately rehearse, then continue in Wireline.
+- **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first voice agent, privately rehearse, then continue in BotBound.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every agent. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Every paid agent includes a **production-number slot**. Wireline provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
+Every paid agent includes a **production-number slot**. BotBound provisions the number only when the role needs one, so unused agent capacity does not create unnecessary carrier spend.
 
 ## Technology and ownership
 
@@ -56,30 +56,30 @@ npm run verify
 npm run verify:full
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
-node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
 Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.
 
 ## Repository map
 
-| Concern | Source of truth |
-| --- | --- |
-| Contribution workflow | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Repository health | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md) |
-| Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| Public positioning and creative proof | [docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md) |
-| Documentation map | [docs/README.md](./docs/README.md) |
-| Audit evidence | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md) |
-| Client/release boundaries | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md) |
-| Pricing and billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md) |
-| Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
-| Browser extension | `apps/browser-extension/` |
-| Native clients | `ios/`, `android/` |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
-| Cursor Directory | `.mcp.json`, `plugin.json`, `mcp.json`, [docs/CURSOR_PLUGIN.md](./docs/CURSOR_PLUGIN.md) |
-| Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
+| Concern                               | Source of truth                                                                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contribution workflow                 | [CONTRIBUTING.md](./CONTRIBUTING.md)                                                                                                                 |
+| Repository health                     | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md)                                                                                                           |
+| Architecture                          | [ARCHITECTURE.md](./ARCHITECTURE.md)                                                                                                                 |
+| Public positioning and creative proof | [docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md)                                                             |
+| Documentation map                     | [docs/README.md](./docs/README.md)                                                                                                                   |
+| Audit evidence                        | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md)                                                                                                         |
+| Client/release boundaries             | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md)                                                                                                 |
+| Pricing and billing                   | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md)   |
+| Design system                         | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`                                                |
+| Voice and model policy                | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
+| Browser extension                     | `apps/browser-extension/`                                                                                                                            |
+| Native clients                        | `ios/`, `android/`                                                                                                                                   |
+| ChatGPT App                           | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md)                                      |
+| Cursor Directory                      | `.mcp.json`, `plugin.json`, `mcp.json`, [docs/CURSOR_PLUGIN.md](./docs/CURSOR_PLUGIN.md)                                                             |
+| Tests and checks                      | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts`                                                                                  |
 
 ## Repository hygiene
 

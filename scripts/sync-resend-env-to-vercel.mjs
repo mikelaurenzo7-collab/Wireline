@@ -20,7 +20,7 @@
  *   $env:RESEND_WEBHOOK_SECRET = "whsec_..."   # from the Resend webhook page
  *   # Optional when rotating/configuring the production sender:
  *   $env:RESEND_API_KEY = "re_..."
- *   $env:RESEND_FROM_EMAIL = "Wireline <noreply@trywireline.com>"
+ *   $env:RESEND_FROM_EMAIL = "BotBound <noreply@trywireline.com>"
  *   # or: $env:RESEND_FROM_DOMAIN = "trywireline.com"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */

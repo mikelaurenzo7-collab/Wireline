@@ -1,0 +1,75 @@
+1
+00:00:00,000 --> 00:00:00,850
+[Phone ringing]
+
+2
+00:00:00,850 --> 00:00:01,400
+Your hands are full. The phone still rings.
+
+3
+00:00:01,400 --> 00:00:02,600
+[Second phone ring; connection chime]
+
+4
+00:00:02,600 --> 00:00:05,000
+The second ring. That’s where BotBound begins.
+
+5
+00:00:05,200 --> 00:00:06,500
+BotBound answers.
+
+6
+00:00:06,500 --> 00:00:08,250
+On-brand. On the second ring. Ready to help.
+
+7
+00:00:08,250 --> 00:00:09,400
+“Thanks for calling Northstar Bakery. How can I help?”
+
+8
+00:00:09,400 --> 00:00:10,400
+A real conversation. Not a voicemail maze.
+
+9
+00:00:10,400 --> 00:00:11,600
+Caller: “Can you fit in a cake pickup Friday?”
+
+10
+00:00:11,600 --> 00:00:12,800
+BotBound: “Absolutely. I can hold 4:30. Does that work?”
+
+11
+00:00:12,800 --> 00:00:13,500
+Caller: “Perfect.”
+
+12
+00:00:13,500 --> 00:00:14,900
+BotBound: “You’re booked. I just texted the details.”
+
+13
+00:00:15,200 --> 00:00:16,800
+Booked. Confirmed. Logged.
+
+14
+00:00:16,800 --> 00:00:19,000
+Appointment booked. Confirmation sent. Owner updated.
+
+15
+00:00:19,000 --> 00:00:20,800
+The customer moves forward. You never leave the work.
+
+16
+00:00:22,200 --> 00:00:23,600
+Better every call.
+
+17
+00:00:23,600 --> 00:00:25,600
+Build. Train. Launch. Improve.
+
+18
+00:00:26,400 --> 00:00:28,200
+BotBound. Never miss the call that matters.
+
+19
+00:00:28,200 --> 00:00:29,800
+botbound.me

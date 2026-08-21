@@ -219,13 +219,13 @@ export default function PrivacyPolicyPage() {
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure BotBound; process managed AI requests primarily
-              through xAI, with <strong>OpenAI</strong>, <strong>Google Gemini</strong>, and Vercel
-              AI Gateway as continuity routes; run live phone conversations over Twilio PSTN and
-              <strong>xAI</strong> Direct SIP Speech-to-Speech; synthesize authorized voice output
-              through ElevenLabs; route calls and messages; execute connected workflows; provide
-              support; prevent fraud and abuse; bill through Stripe; and understand aggregate
-              product performance.
+              We use data to provide and secure BotBound; process managed structured AI requests
+              primarily through <strong>OpenAI</strong>, with Vercel AI Gateway,{" "}
+              <strong>xAI</strong>, and <strong>Google Gemini</strong> as governed continuity
+              routes; run live phone conversations over Twilio PSTN and <strong>xAI</strong> Direct
+              SIP Speech-to-Speech; synthesize authorized voice output through ElevenLabs; route
+              calls and messages; execute connected workflows; provide support; prevent fraud and
+              abuse; bill through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -344,7 +344,8 @@ export default function PrivacyPolicyPage() {
               or object to processing, withdraw consent, and receive a portable copy of personal
               data. To exercise a right, use Delete Account in Settings or contact
               <strong> support@trywireline.com</strong>. Where processing relies on consent,
-              withdrawing consent does not affect processing completed before withdrawal.
+              withdrawing
+              consent does not affect processing completed before withdrawal.
             </p>
           </Section>
 

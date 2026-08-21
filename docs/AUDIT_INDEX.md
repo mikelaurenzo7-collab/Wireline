@@ -8,6 +8,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md](./BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md) | August 20 adversarial, evidence-backed launch-gap audit across public conversion, auth, workspace, billing, security, data, communications, companion clients, analytics, SEO, campaign delivery, and release operations. |
+| [BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md](./BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md) | August 20 surface-by-surface execution matrix for package gates, live public probes, CI, extension, native, media, accessibility, recovery, and unresolved release evidence. |
 | [reviews/2026-08-16-final-design-and-launch-readiness.md](./reviews/2026-08-16-final-design-and-launch-readiness.md) | August 16 final landing/design disposition, protected public-demo runtime, exact release-candidate evidence, live Vercel/Stripe/Supabase posture, production rollback/main mismatch, business operations, launch matrix, and ordered founder certification checklist. |
 | [reviews/2026-08-15-wireline-production-ops-review.md](./reviews/2026-08-15-wireline-production-ops-review.md) | August 15 review of Claude's anchored marketing work, exact merged-SHA production verification, live Stripe/Vercel/Supabase posture, exact-head billing control, product truth, pricing, launch strategy, and remaining carrier/real-customer proof. |
 | [reviews/2026-08-13-wireline-launch-decision.md](./reviews/2026-08-13-wireline-launch-decision.md) | August 13 code, architecture, billing, data, unit-economics, product, design, market, compliance, vendor, and production launch decision. |

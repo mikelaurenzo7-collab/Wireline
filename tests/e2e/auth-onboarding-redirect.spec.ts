@@ -76,11 +76,10 @@ test("settings sign-out followed by direct personal signup always enters Fast St
 
   await page.goto("/signup");
   await expect(page).toHaveURL(/\/signup$/);
-  await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   expect(await page.evaluate((key) => localStorage.getItem(key), AUTH_REDIRECT_KEY)).toBeNull();
 
-  await page.getByRole("button", { name: /Personal/ }).click();
-  await page.getByLabel("Email address").fill("fresh@example.test");
+  await page.getByLabel("Email", { exact: true }).fill("fresh@example.test");
   await page.getByLabel("Password", { exact: true }).fill("ValidPassword123!");
   await page.locator("#auth-terms").check();
 

@@ -11,8 +11,8 @@
   --wireline-brand-platinum: var(--wireline-color-action-secondary-default);
   --wireline-brand-obsidian: #0a0a0e;
   --wireline-brand-obsidian-deeper: #050508;
-  --bb-wordmark-tracking: -0.035em;
-  --bb-wordmark-inline-tracking: -0.025em;
+  --bb-wordmark-tracking: -0.047em;
+  --bb-wordmark-inline-tracking: -0.038em;
   --bb-brand-glow: color-mix(in srgb, var(--wireline-brand-violet) 22%, transparent);
   --bb-brand-platinum-soft: color-mix(in srgb, var(--wireline-brand-platinum) 76%, white 24%);
 }
@@ -24,12 +24,16 @@
   color: currentColor;
   font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 1em;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: var(--bb-wordmark-tracking);
   line-height: 0.94;
   text-transform: none;
   white-space: nowrap;
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1,
+    "ss01" 1;
   text-rendering: geometricPrecision;
 }
 
@@ -39,16 +43,6 @@
 
 .bb-wordmark__bound {
   color: var(--wireline-brand-violet-light);
-  background: linear-gradient(
-    112deg,
-    var(--wireline-brand-violet-light) 0%,
-    color-mix(in srgb, var(--wireline-brand-violet-light) 58%, var(--bb-brand-platinum-soft)) 52%,
-    var(--bb-brand-platinum-soft) 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 1.15rem color-mix(in srgb, var(--wireline-brand-violet) 13%, transparent);
 }
 
 .bb-wordmark[data-inline="true"] {
@@ -60,9 +54,9 @@
 }
 
 .bb-lockup {
-  --bb-lockup-mark: 2rem;
-  --bb-lockup-wordmark-size: 1rem;
-  --bb-lockup-gap: 0.58rem;
+  --bb-lockup-mark: 2.625rem;
+  --bb-lockup-wordmark-size: 1.18rem;
+  --bb-lockup-gap: 0.62rem;
   display: inline-flex;
   min-width: 0;
   align-items: center;
@@ -72,15 +66,21 @@
 }
 
 .bb-lockup[data-size="compact"] {
-  --bb-lockup-mark: 1.58rem;
-  --bb-lockup-wordmark-size: 0.84rem;
+  --bb-lockup-mark: 2rem;
+  --bb-lockup-wordmark-size: 0.98rem;
   --bb-lockup-gap: 0.48rem;
 }
 
 .bb-lockup[data-size="large"] {
-  --bb-lockup-mark: 2.55rem;
-  --bb-lockup-wordmark-size: 1.22rem;
-  --bb-lockup-gap: 0.7rem;
+  --bb-lockup-mark: 3.75rem;
+  --bb-lockup-wordmark-size: 1.68rem;
+  --bb-lockup-gap: 0.78rem;
+}
+
+.bb-lockup[data-size="display"] {
+  --bb-lockup-mark: 5.25rem;
+  --bb-lockup-wordmark-size: 2.42rem;
+  --bb-lockup-gap: 1rem;
 }
 
 .bb-lockup__mark {
@@ -91,15 +91,24 @@
   flex: 0 0 var(--bb-lockup-mark);
   place-items: center;
   color: var(--wireline-brand-violet);
-  filter: drop-shadow(0 0.3rem 0.72rem color-mix(in srgb, var(--wireline-brand-violet) 14%, transparent));
+  filter: drop-shadow(
+    0 0.35rem 0.9rem color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent)
+  );
 }
 
-.bb-lockup__mark > svg {
+.bb-mark-image,
+.bb-lockup__mark > img {
   position: relative;
   z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.bb-mark-image[data-signal="false"] {
+  filter: grayscale(1) contrast(1.08);
 }
 
 .bb-lockup__wordmark {
@@ -108,45 +117,8 @@
 }
 
 .bb-lockup[data-surface="tile"] .bb-lockup__mark {
-  isolation: isolate;
-  width: calc(var(--bb-lockup-mark) + 0.48rem);
-  height: calc(var(--bb-lockup-mark) + 0.48rem);
-  flex-basis: calc(var(--bb-lockup-mark) + 0.48rem);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--wireline-brand-platinum) 22%, transparent);
-  border-radius: calc(var(--wireline-radius-sm) + 0.12rem);
-  background:
-    radial-gradient(circle at 32% 18%, color-mix(in srgb, white 8%, transparent), transparent 32%),
-    radial-gradient(circle at 40% 28%, color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent), transparent 55%),
-    linear-gradient(
-      148deg,
-      color-mix(in srgb, var(--wireline-brand-obsidian) 82%, var(--wireline-brand-platinum) 18%) 0%,
-      var(--wireline-brand-obsidian) 54%,
-      var(--wireline-brand-obsidian-deeper) 100%
-    );
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--wireline-brand-violet) 5%, transparent),
-    0 0.55rem 1.45rem rgba(0, 0, 0, 0.24),
-    0 0 1.8rem var(--bb-brand-glow);
-}
-
-.bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 12%;
-  border: 1px solid color-mix(in srgb, var(--wireline-brand-violet-light) 12%, transparent);
-  border-radius: 50%;
-  opacity: 0.82;
-  box-shadow: 0 0 1rem color-mix(in srgb, var(--wireline-brand-violet) 12%, transparent);
-  pointer-events: none;
-}
-
-.bb-lockup[data-surface="tile"] .bb-lockup__mark > svg {
-  width: 84%;
-  height: 84%;
+  filter: drop-shadow(0 0.55rem 1.35rem rgba(0, 0, 0, 0.28))
+    drop-shadow(0 0 1.7rem var(--bb-brand-glow));
 }
 
 /* Compatibility selectors keep older component imports visually identical to
@@ -157,13 +129,13 @@
 }
 
 :is(
-    .wl-auth-entry-mark > span:last-child,
-    .landing-console__brand > span:last-child,
-    .wl-workspace-shell a[aria-label="BotBound"] > span:last-child,
-    .wl-transition-brand > .wl-overline
-  ) {
+  .wl-auth-entry-mark > span:last-child,
+  .landing-console__brand > span:last-child,
+  .wl-workspace-shell a[aria-label="BotBound"] > span:last-child,
+  .wl-transition-brand > .wl-overline
+) {
   font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: var(--bb-wordmark-tracking) !important;
   line-height: 0.94;
   text-transform: none !important;
@@ -199,8 +171,12 @@ button:has(> .wl-wireline-lockup):focus-visible {
     background: Canvas;
     box-shadow: none;
   }
+}
 
-  .bb-lockup[data-surface="tile"] .bb-lockup__mark::after {
-    display: none;
+@media (max-width: 430px) {
+  .bb-lockup[data-size="standard"] {
+    --bb-lockup-mark: 2.2rem;
+    --bb-lockup-wordmark-size: 1rem;
+    --bb-lockup-gap: 0.5rem;
   }
 }

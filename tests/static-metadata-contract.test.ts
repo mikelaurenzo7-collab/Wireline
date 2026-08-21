@@ -13,7 +13,7 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain("AI employees for calls, texts, and email.");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Put Your Bot on the Line"');
-    expect(index).toContain('"logo":"https://botbound.me/botbound-icon.svg"');
+    expect(index).toContain('"logo":"https://botbound.me/botbound-icon-512.png"');
     expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
     expect(index).toContain('<meta property="og:image" content="https://botbound.me/og-image.png" />');
@@ -41,9 +41,9 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain('<link rel="preconnect" href="https://plausible.io" crossorigin />');
+    expect(index).toContain('<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />');
     expect(index).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg" />');
-    expect(index).toContain('<link rel="icon" type="image/png" href="/favicon.png" />');
-    expect(index).toContain('<link rel="mask-icon" href="/favicon.svg" color="#8B5CF6" />');
+    expect(index).not.toContain('rel="mask-icon"');
     expect(index).toContain('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />');
     expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(index).toContain('"@type":"WebSite"');
@@ -103,7 +103,7 @@ describe("BotBound static marketing metadata", () => {
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe("AI employees for calls, texts, and email.");
     expect(manifest.start_url).toBe("/studio");
-    expect(manifest.icons[0]?.src).toBe("/botbound-icon.svg");
+    expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual(["BOT STUDIO", "INBOX", "CALLS"]);
     expect(manifest.shortcuts.find((shortcut) => shortcut.name === "INBOX")?.description).toContain("texts and email");
     expect(manifest.shortcuts.some((shortcut) => shortcut.url === "/agents")).toBe(false);

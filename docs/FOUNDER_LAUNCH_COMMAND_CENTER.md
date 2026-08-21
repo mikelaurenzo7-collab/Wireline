@@ -71,7 +71,7 @@ These are real external readiness items, not reasons to rewrite working product 
 
 Production sending is configured, but signed delivery feedback is not active until both are true:
 
-1. Resend has a production webhook pointing at `https://trywireline.com/api/webhooks/resend`;
+1. Resend has a production webhook pointing at `https://botbound.me/api/webhooks/resend`;
 2. `RESEND_WEBHOOK_SECRET` is set in production Vercel.
 
 The receiver, schema, suppression semantics, and rollback path are already implemented. See `docs/RESEND_DELIVERY_FEEDBACK.md`.
