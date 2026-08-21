@@ -10,7 +10,7 @@ const CREATE_DESTINATION = "/studio?create=1";
 
 export default function OnboardingFlow() {
   const navigate = useNavigate();
-  const language = customerAgentLanguage("personal");
+  const language = customerAgentLanguage();
   const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {

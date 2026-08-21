@@ -53,7 +53,7 @@ const replacements = {
   ],
   "src/lib/vapi-assistant-factory-v2.ts": [
     ["a Wireline ${configured.role || \"agent\"}", "a BotBound ${configured.role || \"agent\"}"],
-    ["a personal Wireline agent", "a personal BotBound Bot"],
+    ["a personal Wireline agent", "a BotBound Bot for your principal"],
   ],
   "src/lib/vapi-handlers.ts": [
     ["agentDetail?.name || \"Wireline Agent\"", "agentDetail?.name || \"BotBound Bot\""],

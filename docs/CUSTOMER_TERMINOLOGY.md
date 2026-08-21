@@ -4,59 +4,48 @@ Status: **Active canonical language policy**.
 
 ## Decision
 
-Wireline keeps both account types because they change defaults, collaboration,
-and customer intent:
+BotBound is one product and one workspace model. Customers describe the work,
+choose a role starter, and configure a **Bot**. They do not classify the product,
+workspace, or Bot as Personal or Business.
 
-- **Personal workspace** — the customer creates a **personal agent** for their
-  own calls, appointments, follow-up, and personal tasks.
-- **Business workspace** — the customer creates a **business voice agent** for a
-  customer-facing job shared with a team.
-
-The signup question is “How will you use Wireline?”, not a claim that every
-user is employing someone. Personal and Business are useful defaults, not
-permanent silos; the creation flow can still switch posture deliberately.
+Legacy `personal` and `business` values remain in billing, account, agent, and
+provider contracts until they can be migrated safely. They are compatibility
+identifiers, not customer language and not separate product lanes.
 
 ## Surface rules
 
-| Surface                                       | Canonical language                                       |
-| --------------------------------------------- | -------------------------------------------------------- |
-| Personal signup/setup                         | `personal agent`, `agent`                                |
-| Business signup/setup                         | `business voice agent`, `voice agent`                    |
-| Broad business marketing                      | `Voice agent`, `business voice agent`                 |
-| Personal marketing                            | `personal agent` or plain-language task copy             |
-| Navigation                                    | `Agent` in Personal; `Voice Agent` in Business           |
-| Technical APIs, routes, DB, events, MCP tools | `agent`                                                  |
-| Internal identifiers                          | Keep `agentId`, `agents`, `/api/agents`, `agent_created` |
+| Surface | Canonical language |
+| --- | --- |
+| Broad marketing | `Bot`, `Phone Bot`, or a concrete role such as `Front Desk` |
+| Signup and setup | `Build your Bot`, `Choose the job`, `Knowledge and rules` |
+| Workspace and navigation | `Bot`, `Bots`, `workspace`, `Knowledge` |
+| Role starters | Job names such as `Sales Rep`, `Support`, or `Personal Assistant` |
+| Pricing | `Free Builder`, `Starter`, `Starter Plus`, `Pro`, `Scale` |
+| Technical APIs, routes, DB, events, MCP tools | Keep stable `agent`, plan, and account identifiers |
 
-Do not rename structural API or database contracts for marketing consistency.
-The customer-facing noun is resolved by `CUSTOMER_AGENT_LANGUAGE` in
-`src/lib/product-copy.ts`.
+The shared customer-facing noun resolves through `CUSTOMER_AGENT_LANGUAGE` in
+`src/lib/product-copy.ts`. Both legacy postures deliberately return the same Bot
+language.
 
 ## Required prompts
 
-### Personal
-
-- “Build your first personal agent.”
-- “What should your personal agent handle?”
-- “Start with one call, appointment, or personal task.”
-- CTA: “Create personal agent”
-
-### Business
-
-- “Build your first business voice agent.”
-- “What job should this voice agent own?”
-- “Start with one customer-facing job.”
-- CTA: “Create business voice agent”
+- “Build your Bot.”
+- “What job should your Bot own?”
+- “Start with a proven role or create your own.”
+- “Add knowledge and rules.”
+- CTA: “Create Bot” or “Build Your Bot”
 
 ## Avoid
 
-- **“AI” next to “agent.”** They name the same thing, so “AI voice agent” says
-  it twice and “AI” is the word doing the least work. The noun is `voice agent`.
-  This is a copy rule, not a code rule: keyword metadata still carries the terms
-  people type into a search box, and technical identifiers are untouched.
-- Bare “employee” before the customer chooses Personal or Business.
-- Bare “business agent” without the voice-agent context in customer-facing creation copy.
-- “AI Voice Employee” as a separate product category; voice is one channel.
-- Renaming technical `agent` fields or tool names.
-- Treating Personal and Business as pricing tiers; they are workspace/use-case
-  postures while plan IDs remain the billing source of truth.
+- Personal or Business as a workspace, signup choice, pricing lane, or product noun.
+- Audience-shaped public plan URLs. Emit `free`, `starter`, `starter-plus`, and
+  `pro`; continue accepting historical aliases.
+- `AI employee` as the product description.
+- `AI` next to `agent` in customer copy.
+- Bare `business agent` or `personal agent` when the intended meaning is simply Bot.
+- Renaming structural API, database, event, provider, or billing contracts only
+  for copy consistency.
+
+`Business name`, `business hours`, and `Personal Assistant` remain valid when
+they name real customer data or a real job. The rule removes product taxonomy,
+not ordinary language.

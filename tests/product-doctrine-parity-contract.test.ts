@@ -62,7 +62,7 @@ describe("product doctrine parity", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
-    expect(root).toContain("Every paid agent includes a **production-number slot**");
+    expect(root).toContain("Every paid Bot includes a **production-number slot**");
     expect(root).toContain("provisions the number only when the role needs one");
     expect(pricing).toContain("Every active paid Bot gets its own production number");
     expect(pricing).toContain("Unused plan capacity does not allocate a carrier number");

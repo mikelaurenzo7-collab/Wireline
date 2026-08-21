@@ -3,8 +3,8 @@
   "listing": {
     "name": "BotBound",
     "slug": "wireline",
-    "tagline": "Build your first voice agent",
-    "description": "BotBound lets a new Claude user create a BotBound account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
+    "tagline": "Build your first Bot",
+    "description": "BotBound lets a new Claude user create a BotBound account, build their first Bot in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "categories": ["business", "productivity"],
     "icon_url": "https://botbound.me/botbound-icon-512.png",
     "website_url": "https://botbound.me",
@@ -30,7 +30,7 @@
     "sponsored_content": false
   },
   "use_cases": [
-    "Create a BotBound account and a confirmed first voice-agent draft from a conversation.",
+    "Create a BotBound account and a confirmed first Bot draft from a conversation.",
     "Refine a saved draft's tone, prohibited topics, and handoff policy.",
     "Inspect aggregate workspace status without exposing customer content.",
     "Run a short private, tool-free voice simulation of a saved draft.",

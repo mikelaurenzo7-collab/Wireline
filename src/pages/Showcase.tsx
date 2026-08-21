@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { ArrowRight, Phone } from "lucide-react";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { PageMeta } from "../lib/page-meta";
+import { signupHrefForPlan } from "../lib/signup-intent";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
-const PERSONAL_SIGNUP = "/signup?plan=personal";
+const FREE_SIGNUP = signupHrefForPlan("personal");
 
 export default function Showcase() {
   const primaryDemo = LANDING_PUBLIC_DEMO_AGENTS[0];
@@ -27,7 +28,7 @@ export default function Showcase() {
       <section className="marketing-section marketing-section--screen">
         <MarketingHero
           title="HEAR WHAT YOUR CUSTOMER HEARS"
-          primaryAction={{ label: "BUILD YOUR BOT", to: PERSONAL_SIGNUP }}
+          primaryAction={{ label: "BUILD YOUR BOT", to: FREE_SIGNUP }}
           visual={
             <div className="flex flex-col gap-3 text-center">
               <div className="text-sm font-semibold text-foreground">LIVE PHONE PREVIEW</div>

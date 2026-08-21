@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- video presenter entitlement and checkout errors remain loosely typed. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- billing and analytics provider errors remain loosely typed. */
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
@@ -25,9 +25,6 @@ import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
 } from "../lib/conversation-balance";
-import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
-import type { LiveVideoAddonState } from "../lib/video-presenter/types";
-import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { Chip } from "./atoms";
 
 import type {
@@ -87,8 +84,6 @@ export default function StripeBillingCard({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState<number | null>(null);
-  const [liveVideoBusy, setLiveVideoBusy] = useState(false);
-  const [liveVideoAddon, setLiveVideoAddon] = useState<LiveVideoAddonState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<"month" | "year">(() => {
     try {
@@ -107,12 +102,9 @@ export default function StripeBillingCard({
     setError(null);
     setSelfServeBillingReleased(false);
     try {
-      const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
+      const [statusRaw, plansRaw] = await Promise.all([
         authFetch("/api/billing/status"),
         authFetch("/api/billing/plans"),
-        authFetch("/api/video-presenter/entitlement")
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null),
       ]);
       if (!statusRaw.ok || !plansRaw.ok) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
@@ -139,7 +131,6 @@ export default function StripeBillingCard({
           (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
       );
       setPlans(livePlans);
-      setLiveVideoAddon(entitlementRes);
     } catch (e: any) {
       setError(e?.message || "Load failed");
     } finally {
@@ -262,24 +253,6 @@ export default function StripeBillingCard({
     }
   };
 
-  const startLiveVideoCheckout = async () => {
-    if (!selfServeBillingReleased) {
-      setError(CHECKOUT_RELEASE_MESSAGE);
-      return;
-    }
-    setLiveVideoBusy(true);
-    setError(null);
-    try {
-      const r = await authFetch("/api/billing/live-video-checkout", { method: "POST" });
-      const d = await r.json();
-      if (!r.ok || !d.url) throw new Error(d.error || "Live video checkout failed");
-      window.location.href = d.url;
-    } catch (e: any) {
-      setError(e?.message || "Live video checkout failed");
-      setLiveVideoBusy(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
@@ -373,65 +346,6 @@ export default function StripeBillingCard({
       ) : null}
       {hasActiveSubscription ? <UsageMeter onUpgrade={openPortal} /> : null}
       {hasGrantedPlanAccess ? <UsageMeter /> : null}
-      {liveVideoAddon?.addonOffered ? (
-        <div className="rounded-md wl-panel border border-dashed border-border p-6 md:p-8 space-y-3">
-          <WiredEyebrow>Add-on</WiredEyebrow>
-          <h3 className="font-semibold tracking-[-.02em] text-xl text-foreground">
-            Live video presence
-          </h3>
-          <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
-            {liveVideoAddonPitch()} {liveVideoMeteringNote()}
-          </p>
-          {liveVideoAddon.billingEntitled ? (
-            <div className="space-y-2">
-              <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
-                Active on this workspace
-              </p>
-              <Link
-                to="/studio/live-video"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
-              >
-                Set up your presenter
-                <ArrowRight className="size-3.5" aria-hidden="true" />
-              </Link>
-            </div>
-          ) : liveVideoAddon.liveVideoCheckoutAvailable && selfServeBillingReleased ? (
-            <ShadButton
-              type="button"
-              disableAnimations
-              variant="outline"
-              onClick={() => void startLiveVideoCheckout()}
-              disabled={liveVideoBusy}
-              className="inline-flex gap-2 px-5 py-2.5 rounded-md border-[color:var(--wireline-color-action-secondary-default)] text-[var(--wireline-color-text-onAction)] bg-[var(--wireline-color-action-secondary-default)] hover:opacity-95"
-            >
-              {liveVideoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Subscribe · $19/mo
-            </ShadButton>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
-                {!selfServeBillingReleased
-                  ? CHECKOUT_RELEASE_MESSAGE
-                  : liveVideoAddon.reason || "Restore an active paid plan before using live video."}
-              </p>
-              {sub?.has_subscription ? (
-                <button
-                  type="button"
-                  onClick={() => void openPortal()}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
-                >
-                  Manage billing
-                  <ExternalLink className="size-3.5" aria-hidden="true" />
-                </button>
-              ) : !hasGrantedPlanAccess ? (
-                <p className="text-xs text-muted-foreground">
-                  Choose a live plan below to continue.
-                </p>
-              ) : null}
-            </div>
-          )}
-        </div>
-      ) : null}
       {showBalanceTopUp ? (
         <>{canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}</>
       ) : null}
@@ -620,7 +534,7 @@ function PlanPicker({
                     <Icon className="w-6 h-6 wl-accent-text" />
                   </div>
                   <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                    {plan.max_agents} {plan.max_agents === 1 ? "voice agent" : "voice agents"}
+                    {plan.max_agents} {plan.max_agents === 1 ? "Bot" : "Bots"}
                   </span>
                 </div>
                 <div>
@@ -750,8 +664,7 @@ function GrantedPlanAccessCard({
             </p>
             {sub.max_agents ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
-                {agentCount} / {sub.max_agents}{" "}
-                {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
+                {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "Bot" : "Bots"} in use
               </p>
             ) : null}
           </div>
@@ -821,15 +734,14 @@ function ActiveSubCard({
                         : ""
                   }
                 >
-                  {agentCount} / {sub.max_agents}{" "}
-                  {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
+                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "Bot" : "Bots"} in use
                 </span>
               ) : (
                 ""
               )}
               {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
                 <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
-                  Near capacity. Add a voice agent from Manage subscription or upgrade your plan.
+                  Near capacity. Add a Bot from Manage subscription or upgrade your plan.
                 </span>
               ) : null}
               {renews && (

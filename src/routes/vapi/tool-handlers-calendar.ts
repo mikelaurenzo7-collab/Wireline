@@ -117,7 +117,7 @@ export async function handleCalendarToolCall(
             customerName: customer_name.trim(),
             serviceType: service_type.trim(),
             status: "Scheduled",
-            notes: `Booked by voice agent. Confirmed timezone: ${timeZone}. ${displayTime}`,
+            notes: `Booked by your Bot. Confirmed timezone: ${timeZone}. ${displayTime}`,
             phoneNumber:
               (message.call as { customer?: { number?: string } } | undefined)?.customer?.number ??
               null,

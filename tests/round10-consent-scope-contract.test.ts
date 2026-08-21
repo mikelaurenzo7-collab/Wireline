@@ -63,5 +63,8 @@ describe("round-10 consent placement cannot depend on probe timing", () => {
       consent.indexOf("window.addEventListener(OPEN_PRIVACY_CHOICES_EVENT"),
     );
     expect(listener).not.toContain("onPublicSurface");
+    expect(consent).toContain("privacyPanelRef.current?.focus()");
+    expect(consent).toContain('role="region"');
+    expect(consent).not.toContain('aria-modal="true"');
   });
 });

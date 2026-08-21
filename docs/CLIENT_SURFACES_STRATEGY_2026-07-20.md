@@ -1,6 +1,10 @@
 # Client Surfaces Strategy — 2026-07-20
 
-Status: **Active** — product decision note after a deep monorepo / companion-surface audit.
+Status: **Historical strategy evidence** — current release posture is owned by `docs/CLIENT_SURFACES.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, and `CLIENT_SURFACE_POSTURE` in `src/lib/product-copy.ts`.
+
+> Current decision: every companion serves the same BotBound product and
+> workspace. Live talking-head video, paid presenter add-ons, and session minting
+> are retired; identity badges remain.
 Canonical posture object: `CLIENT_SURFACE_POSTURE` in `src/lib/product-copy.ts`.
 Ownership contract: `docs/CLIENT_SURFACES.md`.
 
@@ -14,7 +18,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 | **Claude via MCP** | **Yes — same server** | Same connector, Claude OAuth DCR | No separate Claude plugin package |
 | **Cursor via MCP** | **Yes — server only** | Same `/mcp` + Cursor redirect allowlist | **No Cursor plugin in this repo** |
 | **iOS / Android** | **Keep building, don't market as live** | OS call UI, push, widgets, Siri | CallKit/Telecom/FCM/widgets — not a Studio clone |
-| **Video presenter** | **Gated add-on** | Optional face for business agents | Not a separate app |
+| **Video presenter** | **Retired** | Identity badge and legacy fail-closed compatibility only | No checkout or session minting |
 
 **North star:** companions capture context or urgent control; the web app owns agency, money, and launch.
 
@@ -32,7 +36,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 ### What it deliberately does *not* offer
 
-- No dialing, SMS, email send, number provision, billing, Training edits, or agent lifecycle.
+- No dialing, SMS, email send, number provision, billing, Training edits, or Bot lifecycle.
 - No tokens, no API calls, no background scraping, no broad host permissions.
 - It opens Studio; BotBound's server does the work.
 
@@ -67,7 +71,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 | Claude | No | Yes — Anthropic redirect DCR | Yes — connectors link |
 | Cursor | **No** | Yes — Cursor redirect allowlist in `mcp-client-registry.ts` | Yes — `/settings/apps` + `/developers`; `draftSource: cursor_mcp` |
 
-**Live MCP tools (account-bound):** draft create/get/update, list agents, workspace summary, private voice simulation.
+**Live MCP tools (account-bound):** draft create/get/update, list Bots, workspace summary, private voice simulation.
 
 **Hard non-goals (enforced):** no number provision, dial, SMS, launch, billing mutations.
 
@@ -95,7 +99,7 @@ Do **not** sell iOS as live while `CLIENT_SURFACE_POSTURE.ios = Planned`. Align 
 
 **GO: promote and sell the web app without store-ready natives or extension.**
 
-Companions are optional early access. Create → Train → Wire → Run is complete on `botbound.me`. Waiting on App Store / Play / Chrome Web Store is a perfectionist trap, not a product dependency.
+Companions are optional early access. The same BotBound product and workspace are complete on `botbound.me`; technical surfaces retain Create -> Train -> Wire -> Run. Waiting on App Store / Play / Chrome Web Store is not a product dependency.
 
 Real gates before inviting paid strangers (ops, not companions): Federal DNCScrub for marketing dials, live billing/voice/SMS/email E2E proof, Stripe buffer, Twilio top-up, rotate leaked tokens. See `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
 

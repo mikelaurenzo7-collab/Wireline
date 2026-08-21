@@ -75,7 +75,7 @@ export function SupportPage() {
     <MarketingPageFrame longform>
       <PageMeta
         title="Support | BotBound"
-        description="Get help with BotBound for personal call support or business call coverage."
+        description="Get help building, training, launching, or running a BotBound Bot."
         path="/support"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">

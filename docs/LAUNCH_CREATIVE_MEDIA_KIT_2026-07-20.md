@@ -1,4 +1,4 @@
-# Wireline Launch Creative Media Kit
+# BotBound Launch Creative Media Kit
 
 Updated: 2026-08-14  
 Status: **Active delivery and capture kit**  
@@ -15,13 +15,12 @@ One story across public creative:
 
 Use:
 
-- **Voice Agents**
-- **Build your Voice Agent**
+- **Bot** or **Phone Bot**
+- **Build Your Bot**
 - **Build free. Go live from $19/mo.**
-- **Personal + Business**
+- **One BotBound product across every role**
 - calls, texts, email, follow-up, handoff, and logged outcomes
 - real product proof from the production commit being promoted
-- Live Video as a paid business proof layer only when the picture comes from an exact-production authenticated session
 
 Avoid:
 
@@ -30,55 +29,64 @@ Avoid:
 - competing workflow spines;
 - fake dashboards, customer logos, testimonials, adoption counts, or ROI;
 - stale screenshots or footage simply because they are already edited;
-- presenting a static identity badge, generated avatar concept, or provider mock as a real Live Video session.
+- presenting a static identity badge, generated avatar concept, or provider mock as a real Live Video session;
+- publishing retired Live Video narration, presenter sessions, session-mint footage, or paid-add-on claims.
 
 Legacy filenames containing older provider or positioning language may remain for file compatibility. Filenames are not current launch copy and must not override this doctrine.
 
 ## Brand System
 
-| Element | Direction |
-| --- | --- |
-| Canvas | Cool near-white or cool obsidian |
-| Accent | Electric violet with restrained platinum wire detail |
-| Mood | Premium, operational, clear, outcome-driven |
-| Product imagery | Call, agent, follow-up, booking/handoff, transcript, outcome, Live Video presenter state when exact-source and truthful |
-| Avoid | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks, unlabeled synthetic avatar proof |
+| Element         | Direction                                                                                                               |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Canvas          | Cool near-white or cool obsidian                                                                                        |
+| Accent          | Electric violet with restrained platinum wire detail                                                                    |
+| Mood            | Premium, operational, clear, outcome-driven                                                                             |
+| Product imagery | Phone Bot, call, follow-up, booking/handoff, transcript, and outcome                                                    |
+| Avoid           | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks, unlabeled synthetic avatar proof           |
 
 ## Required Audio Deliverables
 
-| Asset | Purpose |
-| --- | --- |
-| `wireline-missed-call-15s.mp3` | 15-second missed-call narration from the campaign pack |
+| Asset                             | Purpose                                                            |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `wireline-missed-call-15s.mp3`    | 15-second missed-call narration from the campaign pack             |
 | `wireline-ai-voice-agent-30s.mp3` | **Second Ring** late-entry narration; not a generic walkthrough VO |
-| `wireline-founder-60s.mp3` | Founder/product-proof narration |
-| `wireline-live-video-25s.mp3` | **Live Video Proof** narration for the paid business add-on cut |
+| `wireline-founder-60s.mp3`        | Founder/product-proof narration                                    |
 
-Generate with `npm run campaign:vo`. Campaign audio is marketing/reference material only and never the production phone-call speech path.
+Generate the three listed outputs with `npm run campaign:vo`. If a compatibility
+path also emits `wireline-live-video-25s.mp3`, quarantine it under Rejected
+Historical and exclude it from every package. Campaign audio is
+marketing/reference material only and never the production phone-call speech
+path.
 
-The default narration voice is deliberately a **curated runtime Studio voice** (Jessica) — the same catalog customers put on a live phone line — so the voice quality the reels sell is the voice quality the product ships. A contract pins the generator's default to the runtime catalog; do not point it at a marketing-only voice.
+The default ElevenLabs narration voice (Jessica) is approved campaign/reference
+audio, not a claim about the production PSTN engine. A contract pins the
+generator configuration; every cut must still use real captured Bot audio when
+selling live-call quality.
 
 ## Required Launch Cuts
 
-| Cut | Format | Purpose | Current posture |
-| --- | --- | --- | --- |
-| Missed Call | 9:16, 15s | Fast problem -> agent -> outcome -> CTA | Recapture against exact production before publishing |
-| Second Ring | 9:16 / 1:1 / 16:9, ~30s | Primary paid-social voice-quality proof | Needs certified captured call/product picture |
-| Founder / Product Proof | 16:9, 45-60s | Founder-led explanation and product proof | Recapture against exact production before publishing |
-| Live Video Proof | 16:9 / 9:16 / 1:1, 20-30s | Paid business add-on proof: voice agent extends to an on-screen presenter | Needs certified authenticated session proof: session mint, voice sync, explicit stop, and truthful allowance state |
-| Two Rings | 6s bumper | Minimal missed-call scroll-stop | Derive from certified captured-call proof |
-| sound-off variants | matching paid formats | Muted-viewer accessibility without UI clutter | Produce from each certified paid cut |
+| Cut                     | Format                    | Purpose                                                                   | Current posture                                                                                                    |
+| ----------------------- | ------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Missed Call             | 9:16, 15s                 | Fast problem -> Bot -> outcome -> CTA                                     | Recapture against exact production before publishing                                                               |
+| Second Ring             | 9:16 / 1:1 / 16:9, ~30s   | Primary paid-social voice-quality proof                                   | Needs certified captured call/product picture                                                                      |
+| Founder / Product Proof | 16:9, 45-60s              | Founder-led explanation and product proof                                 | Recapture against exact production before publishing                                                               |
+| Two Rings               | 6s bumper                 | Minimal missed-call scroll-stop                                           | Derive from certified captured-call proof                                                                          |
+| sound-off variants      | matching paid formats     | Muted-viewer accessibility without UI clutter                             | Produce from each certified paid cut                                                                               |
 
 ## Creative Status — 2026-08-14
 
 ### Certified rich-state captures exist
 
-A full `npm run marketing:kit` capture was certified against production commit `40c4d02` on 2026-08-14 with a **seeded, working workspace** (live overview KPIs, populated call history, six-thread inbox, clean knowledge facts) instead of the earlier empty-state picture. Masters, canonical VO, and the release record are mirrored in the `launch-assets` storage bucket under `certified-2026-08-14-40c4d02/` and indexed from the Drive folder "Wireline Launch Assets — Certified 2026-08-14 (40c4d02)".
+A full `npm run marketing:kit` capture was certified against production commit `40c4d02` on 2026-08-14 with a **seeded, working workspace** (live overview KPIs, populated call history, six-thread inbox, clean knowledge facts) instead of the earlier empty-state picture. The historical masters and release record are mirrored in the `launch-assets` storage bucket under `certified-2026-08-14-40c4d02/` and indexed from the legacy-named Drive folder "Wireline Launch Assets — Certified 2026-08-14 (40c4d02)". Certification against that old commit does not make a file release-current; recapture against the production commit being promoted.
 
 Two beats still show setup states in that capture and must be recaptured after the next deploy: the outbound dial dialog and phone setup (number activation was blocked by a carrier purchase bug — Twilio rejects a purchase that sets `voiceFallbackUrl` with an empty `VoiceUrl` — fixed in the same release).
 
-### Live Video provider — verified live
+### Historical Live Video provider evidence — retired
 
-A real authenticated production session was driven end to end on 2026-08-14: consent → enable → live stage → session mint → explicit stop, with the full 50-presenter provider catalog loading and the allowance metering truthfully (one 5-minute reservation per stage, 60 → 55 → 50). The provider-activation gate is cleared; the remaining step for the Live Video Proof cut is capturing presenter pixels from a browser environment with WebRTC egress.
+A real authenticated production session was exercised on 2026-08-14. That
+evidence is retained only to explain the retired implementation. It does not
+authorize a product claim, checkout path, session mint, audio deliverable, or
+creative cut. Live talking-head video is now fully retired and non-publishable.
 
 ### Campaign audio — dual-engine, duration-verified
 
@@ -90,41 +98,13 @@ The old 46-second walkthrough and old 15-second missed-call source contain a vis
 
 A clean edit of stale product footage is still stale product footage. Raw output is not release-certified.
 
-### Live Video extension
+### Historical Live Video extension and 25-second brief — non-publishable
 
-Live Video creative may be prepared as a launch-adjacent business proof asset, but it must not outrank the main voice-agent wedge or make unsupported real-time presenter claims.
-
-A publishable Live Video cut requires exact-production authenticated capture that proves:
-
-- a business agent enters the Live Video product surface;
-- the presenter session is real, not an identity badge, placeholder, mock, or generated concept frame;
-- voice synchronization is visible or audibly contextualized by real product state;
-- the session is explicitly stopped or exits cleanly;
-- usage, allowance, or entitlement copy remains truthful for the plan being represented;
-- no provider mark, vendor console, secret, token, or unsupported availability claim appears.
-
-Static avatar badges are allowed as product identity UI. They are **not** Live Video proof frames unless the surrounding copy clearly labels them as fallback or setup state.
-
-### Live Video Proof — 25s cut brief
-
-Narration: `wireline-live-video-25s.mp3` (16.9s rendered). Copy lives in the campaign document.
-
-The cut has one job the voice reels cannot do: prove the presenter is a **session**, not a picture. Every beat below exists to make that undeniable, and the eight seconds of narration silence are where the proof actually happens.
-
-| Time | Shot | Overlay | Sound |
-| --- | --- | --- | --- |
-| 0.0–3.0 | A call already in progress on the phone surface — the product the viewer knows | — | Room tone. Real captured agent audio, low. |
-| 3.0–5.5 | Operator turns Live Video on for that same business agent. Allowance state visible and truthful. | Some conversations deserve a face. | UI tick |
-| 5.5–9.0 | Session mints. Presenter connects and **answers** — mouth in sync with the words being spoken. | — | **Presenter at full level. No VO. No music.** |
-| 9.0–15.0 | Caller interrupts mid-sentence; the presenter stops and responds. | — | **Still full level.** VO enters only at 15.0. |
-| 15.0–22.0 | Studio: transcript and logged outcome for the session just watched. | Same agent. Same rules. Same record. | VO — first and only entry |
-| 22.0–25.0 | Explicit stop. Allowance decrements truthfully. End card. | Build your Voice Agent / trywireline.com | Music resolves |
-
-**The interruption at 0:09 is the whole cut.** A rendered talking head can lip-sync a script; it cannot be cut off. Showing the presenter stop mid-word is the single frame that separates a real session from a generated concept video, and it is the reason this brief refuses a pre-rendered stand-in no matter how good the render looks.
-
-**Do not claim voice identity — unless the picture proves it.** In the default session the presenter speaks through Wireline's own realtime voice, not the phone voice. The overlay therefore claims *rules and record*, which is true, and never *same voice* — with one now-real exception: Studio exposes a **Presenter voice engine** choice, and on the Studio-voice engine an agent whose phone voice is a PSTN-approved ElevenLabs voice speaks with **that same voice** on screen. A cut may claim *same voice* only when the captured session visibly runs that engine for that agent, and the claim must not generalize to the default engine.
-
-**Sound-off variant:** extend the Studio transcript beat so the muted viewer reads the presenter's words being written live. Do not add a caption bar over the presenter.
+The former Live Video extension, `wireline-live-video-25s.mp3` narration, session
+proof requirements, shot list, and paid-add-on positioning are superseded. Keep
+old files only as provenance under **Rejected Historical**. Do not regenerate,
+capture, edit, place, or publish them. Static identity badges remain ordinary
+Bot identity UI; they are never Live Video proof.
 
 ## Publish Gate
 
@@ -136,11 +116,11 @@ A finished reel is publishable only when all of the following are true:
 - the verified remote commit is the deployed production SHA being represented in the release record;
 - no auth wall, 404, loading hold, dead route, error surface, or stale UI appears;
 - active UI remains legible after 9:16 or 1:1 reframing;
-- product-proof frames are authentic Wireline UI, not generated or fabricated dashboards;
+- product-proof frames are authentic BotBound UI, not generated or fabricated dashboards;
 - no unsupported customer, ROI, revenue, adoption, or compliance claim appears;
 - pricing and channel claims match the current plan catalog and launch posture;
-- the real agent voice is heard at **full level** for a meaningful stretch when voice quality is the selling point;
-- Live Video proof uses either a real provider session or a clearly labeled setup/fallback state, never a static badge presented as a live presenter;
+- the real Bot voice is heard at **full level** for a meaningful stretch when voice quality is the selling point;
+- no retired Live Video, presenter-session, session-mint, or paid-add-on claim appears;
 - the end frame is deliberate, readable, and current;
 - platform captions are provided for accessibility without persistent subtitle clutter over legible UI.
 
@@ -152,15 +132,15 @@ Publishable capture requires a clean checkout of the exact deployed source commi
 git checkout <exact-production-sha>
 DEMO_EMAIL=<demo-account-email> \
 DEMO_PASSWORD=<demo-account-password> \
-E2E_BASE_URL=https://trywireline.com \
+E2E_BASE_URL=https://botbound.me \
 npm run marketing:kit
 ```
 
-Publishable capture is restricted to Wireline-owned hosts: `trywireline.com` / its subdomains, the `wireline-chi.vercel.app` project alias, or Wireline deployments in the `revaluate` Vercel namespace. Embedded URL credentials and arbitrary third-party HTTPS hosts are rejected before capture.
+Publishable capture is restricted to the canonical BotBound production host, `botbound.me`. Embedded URL credentials, preview aliases, the legacy domain, and arbitrary third-party HTTPS hosts are rejected before capture.
 
-An exact Wireline deployment URL may be used as `E2E_BASE_URL`, but the current generator also includes a canonical `trywireline.com` public-screenshot set in the same manifest. Therefore **both origins must already serve the exact source commit** or certification fails closed. Do not use an immutable deployment URL to claim pre-alias certification while the canonical public screenshots still point at an older release.
+`E2E_BASE_URL` must be the canonical BotBound production URL. The generator includes canonical public screenshots in the same manifest, and certification fails closed unless every represented origin serves the exact checkout commit.
 
-Before opening a browser, the wrapper requests `HEAD /api/health/public` from every represented origin and requires each `X-Wireline-Source-Commit` header to equal the clean checkout SHA. It repeats the same verification after capture so an alias promotion during recording cannot produce mixed-source media.
+Before opening a browser, the wrapper requests `HEAD /api/health/public` from every represented origin and requires each `X-Wireline-Source-Commit` header to equal the clean checkout SHA. It repeats the same verification after capture so a deployment promotion during recording cannot produce mixed-source media.
 
 The wrapper also invalidates the entire prior `marketing-kit/` output before preflight and removes partial output on any failure. A failed recertification therefore cannot leave an older release record or stale video set available for accidental packaging.
 
@@ -181,13 +161,12 @@ The wrapper proves:
 
 The technical scene map can use current product surfaces while still expressing the public loop:
 
-| Public beat | Product evidence |
-| --- | --- |
-| Build | Create/Studio intake and focused agent setup |
-| Train | Knowledge/training facts, rules, voice, and behavior |
-| Launch | Phone/Connections setup and enabled channels |
-| Improve | Call history, transcript, outcome, analytics, or follow-up review |
-| Live Video | Paid business Live Video settings, presenter/session status, real presenter frame or explicitly labeled fallback, and usage evidence after clean stop |
+| Public beat | Product evidence                                                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build       | Create/Studio intake and focused Bot setup                                                                                                            |
+| Train       | Knowledge/training facts, rules, voice, and behavior                                                                                                  |
+| Launch      | Phone/Connections setup and enabled channels                                                                                                          |
+| Improve     | Call history, transcript, outcome, analytics, or follow-up review                                                                                     |
 
 Implementation surface names do not create a second brand narrative.
 
@@ -202,37 +181,27 @@ Before editing:
 - verify dropdowns, dialogs, sheets, and portalled controls remain centered and visible;
 - reject sign-in redirects, 404s, empty states that imply a defect, or transient error notices;
 - reframe vertical video around the active UI rather than shrinking the entire desktop shell;
-- verify Live Video frames do not show setup placeholders as if they were active provider sessions;
+- reject any retired Live Video or presenter-session frame from publishable cuts;
 - verify the final edit meets its named duration and end-card contract.
 
 ## Cut Delivery Rules
 
 ### Missed Call — 15s
 
-Follow the campaign pack's exact timing. The contrast may use **You cannot pick up.** then **Your agent can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `trywireline.com`.
+Follow the campaign pack's exact timing. The contrast may use **You cannot pick up.** then **Your Bot can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `botbound.me`.
 
 ### Second Ring — ~30s
 
-The captured call and agent response are the proof center. Do not fill the whole cut with narration. Preserve silence where the missed-call problem needs it, then let the real agent voice play at full level.
+The captured call and Bot response are the proof center. Do not fill the whole cut with narration. Preserve silence where the missed-call problem needs it, then let the real Bot voice play at full level.
 
 ### Founder / Product Proof — 45-60s
 
 Show **Build -> Train -> Launch -> Improve** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
 
-### Live Video Proof — 20-30s
+### Historical Live Video Proof — do not deliver
 
-Use Live Video as an extension of the voice-agent story, not a separate product narrative. Start from a useful business context, show the agent's on-screen presenter only after the real product state is established, and keep the session lifecycle visible enough to prove control.
-
-Required beats:
-
-- business agent is already built and trained;
-- Live Video is enabled or opened from the authenticated product surface;
-- a real presenter session is shown or the frame is explicitly labeled setup/fallback;
-- the agent's voice and presenter state are synchronized enough to be understandable;
-- session stop, entitlement, or usage state is clean and truthful;
-- end card returns to **Build your Voice Agent** and **Build free. Go live from $19/mo.**
-
-Do not use a generated avatar, static badge, or external vendor preview as the proof frame.
+The former 20–30 second presenter cut is retired and non-publishable. It has no
+required beats, placement, CTA, or deliverable status in the BotBound launch.
 
 ### Two Rings — 6s
 
@@ -246,23 +215,23 @@ For muted placements, extend readable product moments and use sparse on-screen c
 
 ### Static ad
 
-Create a premium Wireline launch ad using authentic product imagery or approved product screenshots. Headline: **Voice Agents**. Support: **Personal + Business. Calls + follow-up + outcomes.** CTA: **Build free. Go live from $19/mo.** Keep the composition clean and operational; no fake customer proof or generic robot imagery.
+Create a premium BotBound launch ad using authentic product imagery or approved product screenshots. Headline: **Put Your Bot on the Line.** Support: **Your Bot for calls, texts, and email.** CTA: **Build free. Go live from $19/mo.** Keep the composition clean and operational; no fake customer proof or generic robot imagery.
 
 ### Founder video
 
-Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch, Improve in that order. Keep the product readable and let captured agent audio take over where voice quality is being proved.
+Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch, Improve in that order. Keep the product readable and let captured Bot audio take over where voice quality is being proved.
 
 ### Short-form edit
 
-Cut the certified 15-second source to the campaign pack. Real product proof only after any cinematic problem hook. Preserve the agent at full level during its proof beat. End with the current price line and domain.
+Cut the certified 15-second source to the campaign pack. Real product proof only after any cinematic problem hook. Preserve the Bot at full level during its proof beat. End with the current price line and domain.
 
-### Live Video proof edit
+### Historical Live Video proof edit — do not execute
 
-Create a restrained business add-on proof cut from exact-production authenticated footage. Show the trained voice agent moving into an on-screen presenter session, the presenter responding in context, and the clean stopped/usage state. Keep vendor UI and generated avatar concepts out of the publishable frame.
+The former presenter edit brief is retained as rejected historical provenance. Do not create, regenerate, place, or publish this cut.
 
 ### Launch deck
 
-Six slides maximum: Voice Agents; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; personal + business workflows; product proof; Build free / Go live from $19/mo. Live Video may appear as a one-frame business add-on proof point only after exact-production capture is certified.
+Six slides maximum: BotBound; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; role and use-case proof; exact product proof; Build free / Go live from $19/mo. Do not include Live Video.
 
 ## Asset Organization
 
@@ -273,19 +242,18 @@ Use clear status folders or metadata:
 - `Rejected Historical` — known broken/stale masters retained only for provenance;
 - `Audio` — current canonical VO renders;
 - `Copy` — current launch copy pack;
-- `Live Video` — exact-source session proof, setup/fallback frames, and rejected provider/mock references kept visibly separated.
+- `Rejected Historical/Live Video` — retired session proof, narration, and provider references; never a source for current launch output.
 
 Never label a historical edit `final` without also recording whether it is release-current.
 
 ## Placement Plan
 
-| Channel | Preferred asset | Gate |
-| --- | --- | --- |
-| Homepage / sales support | 16:9 product-proof cut | Exact-production capture certified |
-| LinkedIn organic | Founder post + founder/product proof | Current claims and UI |
-| X / short social | Missed-call still or short cut | Current price/domain |
-| Meta / LinkedIn paid | Missed Call / Second Ring | Phone + checkout dogfood complete |
-| Reels / TikTok | 9:16 Missed Call / Second Ring | Legible vertical reframe + captions |
-| Sales follow-up / business add-on | Live Video Proof | Authenticated provider session, clean stop, and entitlement truth certified |
+| Channel                           | Preferred asset                      | Gate                                                                        |
+| --------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| Homepage / sales support          | 16:9 product-proof cut               | Exact-production capture certified                                          |
+| LinkedIn organic                  | Founder post + founder/product proof | Current claims and UI                                                       |
+| X / short social                  | Missed-call still or short cut       | Current price/domain                                                        |
+| Meta / LinkedIn paid              | Missed Call / Second Ring            | Phone + checkout dogfood complete                                           |
+| Reels / TikTok                    | 9:16 Missed Call / Second Ring       | Legible vertical reframe + captions                                         |
 
 Paid acquisition starts only after the workflow being advertised has passed founder dogfood. Creative polish is not a substitute for product evidence.

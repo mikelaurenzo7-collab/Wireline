@@ -1,13 +1,10 @@
 import express, { type Response } from "express";
 import { and, eq } from "drizzle-orm";
-import { z } from "zod";
 
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
-import { validateBody } from "../lib/api-validation";
 import { drizzle } from "../lib/server-context";
 import { getLiveAvatarStatus } from "../lib/video-presenter/liveavatar-service";
-import { isLiveVideoProvider } from "../lib/video-presenter/live-video-addon";
 import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { authenticateUser } from "../middleware/auth";
@@ -32,11 +29,6 @@ const sessionLimiter = createRateLimiter({
   windowMs: 60_000,
   max: 12,
   failClosedOnError: true,
-});
-
-const patchPresenterSchema = z.object({
-  avatarId: z.string().uuid().optional(),
-  provider: z.enum(["liveavatar", "heygen", "synthetic", "tavus", "d-id", "simli"]).optional(),
 });
 
 async function ownedAgent(agentId: string, userId: string) {
@@ -128,30 +120,10 @@ router.patch(
   "/api/agents/:id/video-presenter",
   authenticateUser,
   presenterLimiter,
-  validateBody(patchPresenterSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest) => {
     const agent = await ownedAgent(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    if (!agent.isBusinessAgent) {
-      throw AppError.fromHttpStatus(
-        400,
-        "Presenter customization is available for business agents only.",
-      );
-    }
-
-    if (req.body.provider !== undefined) {
-      if (isLiveVideoProvider(req.body.provider) || req.body.provider !== "synthetic") {
-        throwLiveVideoRetired();
-      }
-    }
-
-    if (req.body.avatarId !== undefined) {
-      throwLiveVideoRetired();
-    }
-
-    const updated = await ownedAgent(agent.id, req.user.id);
-    if (!updated) throw AppError.fromHttpStatus(404, "Agent not found");
-    res.json({ presenter: resolveAgentVideoPresenter(updated) });
+    throwLiveVideoRetired();
   },
 );
 

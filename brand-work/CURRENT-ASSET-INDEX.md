@@ -9,7 +9,7 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 - Launch library: https://drive.google.com/drive/folders/1IuBVwWQIFQZbBCeSW5DKLxeBOmSygTuF
 - Native Google Slides launch deck: https://docs.google.com/presentation/d/1VDwq4RTI86V1DKfKRkcEG7ojve52-JVqMeTYFhy7GIQ/edit?usp=drivesdk
 - Decks and GTM folder: https://drive.google.com/drive/folders/12ynmOVkcvJJKHc-PNhv9gSLKh3jHRyIu
-- Certified product proof: https://drive.google.com/drive/folders/1FVW4a87GFOELb3ivNt6UAbR349fB7FZy
+- Archived revision 3 product proof (2026-08-20; not current release evidence): https://drive.google.com/drive/folders/1FVW4a87GFOELb3ivNt6UAbR349fB7FZy
 - Commercial package: https://drive.google.com/drive/folders/1DzD3AwRJx1EDM61vcvbJPPbdXaQN66M4
 - Accessibility captions: https://drive.google.com/drive/folders/1nBwFmpmTN2GUb7ABIOlm83IynMh9chqo
 - Revision 3 checksum manifest: https://drive.google.com/file/d/1UWLgskUaEbH1NxXrhzX4kPgej8Cqye0Y/view
@@ -37,7 +37,9 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 - `exports/email/botbound-launch-email-header-1200x400.png`
 - `exports/commercial/botbound-commercial-endframe-4k.png`
 
-## Product proof
+## Archived revision 3 product proof — not current release evidence
+
+These captures preserve the 2026-08-20 revision 3 snapshot. They predate the current launch copy, identity, and UI changes. Do not publish or cite them as evidence for the current release; current browser proof remains pending a fresh production-build capture, visual review, and checksum.
 
 - `exports/product-proof/botbound-brand-ui-comparison.jpg`
 - `exports/product-proof/botbound-home-desktop-1440x900.png`
@@ -67,8 +69,8 @@ Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-deliver
 ## Integrity and regeneration
 
 - `DELIVERY-SHA256SUMS-R3.txt` covers the 62-file certified Drive delivery snapshot.
-- `SOURCE-SHA256SUMS.txt` covers the compact repository source package and browser proof.
+- `SOURCE-SHA256SUMS.txt` covers the compact repository source package and preserves the archived revision 3 browser proof.
 - Product, native, billing, OG, and browser icons: `npm run assets`
 - Launch placements: `npm run brand:launch`
-- Browser proof: `npm run brand:proof`
+- Fresh current-release browser proof: `npm run brand:proof`, followed by visual review and checksum refresh
 - Film compositions and render commands: `apps/botbound-film`

@@ -13,12 +13,12 @@ struct SignInView: View {
                 Text("BotBound").font(.largeTitle.weight(.bold))
                 Text("PUT YOUR BOT ON THE LINE")
                     .font(.headline.weight(.semibold))
-                Text("AI employees for calls, texts, and email.")
+                Text("Your Bot for calls, texts, and email.")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("BotBound. Put your Bot on the line. AI employees for calls, texts, and email.")
+            .accessibilityLabel("BotBound. Put your Bot on the line. Your Bot for calls, texts, and email.")
 
             VStack(spacing: 12) {
                 TextField("EMAIL", text: $email)

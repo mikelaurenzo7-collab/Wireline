@@ -52,13 +52,13 @@ export const AGENT_TOOL_NAME_VALUES = [
   "crm_update_deal_stage",
   "shopify_apply_discount",
   "square_send_invoice",
-  // Device actions (Wireline personal-assistant tools — dispatched to the
+  // Device actions (BotBound assistant tools — dispatched to the
   // Account Holder's phone via push; opt-in per agent, never in a customer-facing
   // default role set).
   "navigate_to",
   "add_reminder",
   "play_music",
-  // Enterprise/Business Agent exclusive actions
+  // Advanced routing actions
   "route_to_business_unit",
   "trigger_enterprise_webhook",
 ] as const;
@@ -111,9 +111,9 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "route_to_business_unit",
-    label: "Route to business unit",
+    label: "Route to a team",
     description:
-      "Enterprise routing: Transfers caller to a specific internal department or SLA queue.",
+      "Transfers a caller to a specific internal team, department, or SLA queue.",
     group: "core",
   },
   {
@@ -125,7 +125,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "create_followup_task",
-    label: "Create Assistants task",
+    label: "Create follow-up task",
     description: "Queue follow-up.",
     group: "core",
   },
@@ -436,7 +436,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_excel",
     label: "Log call to Excel",
     description:
-      "Appends a row (caller, outcome, and details) to the Account Holder's Wireline Call Log spreadsheet in OneDrive.",
+      "Appends a row (caller, outcome, and details) to the Account Holder's BotBound Call Log spreadsheet in OneDrive.",
     group: "core",
     integration: "microsoft_excel",
   },
@@ -444,7 +444,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_google_sheets",
     label: "Log call to Google Sheets",
     description:
-      "Appends a row (caller, outcome, and details) to the Account Holder's Wireline Call Log spreadsheet in Google Drive.",
+      "Appends a row (caller, outcome, and details) to the Account Holder's BotBound Call Log spreadsheet in Google Drive.",
     group: "core",
     integration: "google_sheets",
   },
@@ -492,7 +492,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "ecommerce",
     integration: "square",
   },
-  // Device actions — Wireline personal-assistant tools. No integration; they
+  // Device actions — BotBound assistant tools. No integration; they
   // dispatch a push to the Account Holder's phone, which deep-links Maps / writes a
   // calendar event / opens music. Opt-in per agent via enabledTools.
   {
@@ -780,8 +780,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_excel",
     "log_to_google_sheets",
   ],
-  // Personal assistants — represent an individual person, not a business.
-  // Focused on scheduling, message-taking, callbacks, and general communication.
+  // Assistant roles focus on scheduling, message-taking, callbacks, and
+  // general communication.
   // Workplace alerts, commerce, CRM pipeline, and lead scoring stay opt-in and
   // do not enter the live model context merely because the tenant connected them.
   personal_assistant: [
@@ -859,8 +859,8 @@ export function resolveAgentTools(_role?: string, enabledTools?: unknown): Agent
   return normalized !== null ? normalized : getDefaultAgentTools();
 }
 
-/** Tool names that are business/enterprise only (used for splitting everyday vs business in UIs).
- *  Canonical source - imported by per-agent workspace and ActionsWorkspace.
+/** Stable compatibility set for capabilities excluded from lightweight roles.
+ * Canonical source imported by create defaults and legacy agent records.
  */
 export const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
   "search_leads",
@@ -872,9 +872,8 @@ export const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
   "crm_log_call",
   "crm_create_opportunity",
   "send_slack_notification",
-  // Teams is the same class of workplace-chat tool as Slack. Leaving it out
-  // let personal creates keep a business-workspace integration and split it
-  // to the wrong side of the everyday/business UI grouping.
+  // Teams is the same class of workplace-chat tool as Slack. Keeping both in
+  // this set preserves the same capability defaults for existing records.
   "send_teams_message",
   "list_x_ad_campaigns",
   "get_x_ad_campaign_stats",

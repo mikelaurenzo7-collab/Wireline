@@ -6,11 +6,21 @@ import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
-export const HOME_DESCRIPTION = "AI employees for calls, texts, and email.";
+export const HOME_DESCRIPTION = "Your Bot for calls, texts, and email.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
   '<meta name="googlebot" content="index, follow, max-image-preview:large" />';
+
+/** Customer-facing wedge slugs; stored wedge keys remain compatibility-safe. */
+export function publicWedgeSlug(key: VerticalKey): string {
+  return key === "personal" ? "everyday" : key;
+}
+
+function wedgeKeyForPublicSlug(slug: string): VerticalKey | null {
+  if (slug === "everyday" || slug === "personal") return "personal";
+  return slug in WEDGES ? (slug as VerticalKey) : null;
+}
 
 export interface RouteMeta {
   title: string;
@@ -71,12 +81,11 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/support": {
     title: "Support | BotBound",
-    description: "Get help with BotBound for personal call support or business call coverage.",
+    description: "Get help building, training, launching, or running a BotBound Bot.",
   },
   "/contact": {
     title: "Contact BotBound",
-    description:
-      "Talk to BotBound about personal call coverage, team rollout, partnerships, or support.",
+    description: "Talk to BotBound about building a Bot, a team rollout, partnerships, or support.",
   },
   "/status": {
     title: "Provider Status | BotBound",
@@ -219,7 +228,8 @@ const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
 };
 
 export const PRERENDERED_ROUTE_SHELLS: readonly string[] = [
-  ...Object.keys(WEDGES).map((slug) => `/for/${slug}`),
+  ...Object.keys(WEDGES).map((slug) => `/for/${publicWedgeSlug(slug as VerticalKey)}`),
+  "/for/personal",
   ...Object.keys(STATIC_ROUTE_META),
   ...Object.keys(NON_INDEXED_ROUTE_META),
 ];
@@ -231,12 +241,15 @@ export function resolveRouteMeta(pathname: string): RouteMeta | null {
   if (clean === "/") return null;
   const forMatch = clean.match(/^\/for\/([a-z-]+)$/);
   if (forMatch) {
-    const wedge = WEDGES[forMatch[1] as VerticalKey];
-    if (!wedge) return null;
+    const wedgeKey = wedgeKeyForPublicSlug(forMatch[1]);
+    if (!wedgeKey) return null;
+    const wedge = WEDGES[wedgeKey];
+    const canonicalPath = `/for/${publicWedgeSlug(wedgeKey)}`;
     return {
       title: withBrand(wedge.metaTitle),
       description: withBotBoundBrand(wedge.metaDescription),
-      canonical: `${SITE_URL}${clean}`,
+      canonical: `${SITE_URL}${canonicalPath}`,
+      ...(clean === "/for/personal" ? { noIndex: true } : {}),
     };
   }
   const staticMeta = STATIC_ROUTE_META[clean] ?? NON_INDEXED_ROUTE_META[clean];

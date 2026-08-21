@@ -1,10 +1,30 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-// Public signup intent mirrors plansForClient(). The legacy `enterprise` plan
-// remains resolver-compatible in plan-catalog for existing Stripe events, but
-// it is not a public acquisition or self-serve checkout target.
+// Signup attribution stores stable billing ids. Customer-facing URLs use the
+// clean launch names below, while old links remain resolver-compatible.
 export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
+
+export const PUBLIC_SIGNUP_PLAN_SLUGS = {
+  personal: "free",
+  starter: "starter",
+  team: "starter-plus",
+  business: "pro",
+} as const satisfies Record<SignupPlanId, string>;
+
+export function publicSignupPlanSlug(planId: SignupPlanId): string {
+  return PUBLIC_SIGNUP_PLAN_SLUGS[planId];
+}
+
+export function signupHrefForPlan(
+  planId: SignupPlanId,
+  options: { interval?: "month" | "year"; template?: string } = {},
+): string {
+  const params = new URLSearchParams({ plan: publicSignupPlanSlug(planId) });
+  if (options.interval) params.set("interval", options.interval);
+  if (options.template) params.set("template", options.template);
+  return `/signup?${params.toString()}`;
+}
 
 export const SIGNUP_WEDGE_KEYS = [
   "home-services",
@@ -87,7 +107,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   support: {
     label: "customer coverage",
-    // One-employee front desk — Starter ($19), not Pro. Wedge-only CTAs
+    // One-Bot front desk — Starter ($19), not Pro. Wedge-only CTAs
     // omit ?plan= so billing does not pretune a mismatched badge.
     defaultPlanId: "starter",
     templateId: "support-tier1",
@@ -281,7 +301,7 @@ export function getSignupWedgeRecommendation(
 
 export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId): string {
   const plan = planId || SIGNUP_WEDGE_RECOMMENDATIONS[wedge].defaultPlanId;
-  return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(plan)}`;
+  return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(publicSignupPlanSlug(plan))}`;
 }
 
 export async function syncSignupIntent(intent: SignupIntent | null): Promise<void> {

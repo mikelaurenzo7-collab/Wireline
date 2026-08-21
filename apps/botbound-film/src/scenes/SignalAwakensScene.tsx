@@ -99,7 +99,7 @@ export const SignalAwakensScene: React.FC<{bumper?: boolean}> = ({bumper = false
                 }),
               }}
             >
-              Your AI phone agent answers in your voice, while you stay in the work.
+              Your Bot answers in your voice, while you stay in the work.
             </Interactive.Div>
           ) : null}
         </div>

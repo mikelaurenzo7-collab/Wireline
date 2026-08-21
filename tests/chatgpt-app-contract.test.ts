@@ -12,6 +12,7 @@ const draftServiceSource = read("src/lib/agent-draft-service.ts");
 const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
 const privacyNotice = read("public/chatgpt-app-privacy.html");
+const mcpMetadataSource = read("src/lib/mcp-app-metadata.ts");
 const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
   app_info: {
     display_name: string;
@@ -52,6 +53,16 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(oauthRouteSource).toContain("backfillMcpOAuthResourceBindings");
   });
 
+  it("keeps connected-client identifiers stable beneath the BotBound presentation", () => {
+    expect(mcpMetadataSource).toContain('MCP_SERVER_NAME = "wireline"');
+    expect(mcpMetadataSource).toContain('name: "com.trywireline/mcp"');
+    expect(mcpMetadataSource).toContain('"com.trywireline/docs"');
+    expect(accountRouteSource).toContain('name: "list_wireline_agents"');
+    expect(accountRouteSource).toContain('name: "train_wireline_agent"');
+    expect(accountRouteSource).toContain("open_in_wireline_url");
+    expect(accountRouteSource).toContain("landed_in_wireline");
+  });
+
   it("allows Cursor and Claude dynamic OAuth registration callbacks", () => {
     const registry = read("src/lib/mcp-client-registry.ts");
     expect(registry).toContain("isCursorRedirectUri");
@@ -64,7 +75,7 @@ describe("BotBound ChatGPT App production contract", () => {
 
   it("requires OAuth for every production agent operation", () => {
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
-    expect(accountRouteSource).toContain('title: "Create a Wireline agent draft"');
+    expect(accountRouteSource).toContain('title: "Create a BotBound agent draft"');
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
@@ -116,7 +127,7 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain("assertDraftConfirmation(args.confirmed)");
     expect(accountRouteSource).toContain('requireScope(principal, "agents.write")');
     expect(draftServiceSource).toContain('lifecycle: "draft"');
-    expect(accountRouteSource).toContain("unlaunched Wireline agent draft");
+    expect(accountRouteSource).toContain("unlaunched BotBound agent draft");
   });
 
   it("keeps agent customization canonical across client surfaces", () => {
@@ -181,6 +192,8 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(privacyNotice).toContain("aggregate workspace summary");
     expect(privacyNotice).toContain("protected metadata");
     expect(privacyNotice).toContain("not included in the model-visible conversation");
+    expect(privacyNotice).toContain("build their first Bot in ChatGPT");
+    expect(privacyNotice).not.toMatch(/\bvoice agents?\b/i);
   });
 
   it("states the account-first no-launch boundary consistently", () => {
@@ -188,8 +201,8 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(submissionPacket).toContain("No agent launch.");
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
     expect(submissionPacket).toContain("OAuth authorization code flow with PKCE `S256`.");
-    expect(submissionPacket).toContain("Build your first voice agent");
-    expect(submission.app_info.subtitle).toBe("Build your first voice agent");
+    expect(submissionPacket).toContain("Build your first Bot");
+    expect(submission.app_info.subtitle).toBe("Build your first Bot");
     expect(JSON.stringify(submission.test_cases)).toContain("create_agent_draft");
     expect(JSON.stringify(submission.test_cases)).toContain("get_agent_coaching_brief");
     expect(JSON.stringify(submission.test_cases)).toContain("train_wireline_agent");
@@ -207,7 +220,9 @@ describe("BotBound ChatGPT App production contract", () => {
       expect(accountRouteSource).not.toContain(`name: "${name}"`);
     }
     expect(accountRouteSource).toContain('name: "create_agent_draft"');
-    expect(accountRouteSource).toContain("unlaunched Wireline voice agent");
+    expect(accountRouteSource).toContain(
+      "unlaunched Bot in the connected user’s BotBound workspace",
+    );
     expect(accountRouteSource).toContain('name: "train_wireline_agent"');
     expect(accountRouteSource).toContain("readMcpCoachingWritesEnabled");
   });

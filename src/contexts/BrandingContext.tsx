@@ -13,7 +13,7 @@ type BrandingSettings = {
 };
 
 const DEFAULT_BRANDING: BrandingSettings = {
-  brand_name: "Wireline",
+  brand_name: "BotBound",
   brand_logo_url: "",
   primary_color: "#A78BFA",
   business_name: "",

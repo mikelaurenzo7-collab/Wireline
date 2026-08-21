@@ -1,10 +1,10 @@
-# BotBound Launch Identity Design QA
+# BotBound Launch Identity Design QA — Archived 2026-08-20 Snapshot
 
 ## Result summary
 
-The BotBound launch identity and coded public experience pass the final design QA gate. The complete BotBound wordmark, white phone Bot, gripping hand, violet receiver, and obsidian/platinum/violet palette remain coherent from the approved lockup through responsive product surfaces, icons, campaign stills, the founder deck, and the Remotion film system.
+At capture time, the revision 3 BotBound launch identity and coded public experience passed the recorded design QA gate. The complete BotBound wordmark, white phone Bot, gripping hand, violet receiver, and obsidian/platinum/violet palette were coherent from the approved lockup through responsive product surfaces, icons, campaign stills, the founder deck, and the Remotion film system.
 
-Browser-rendered evidence now covers the production build at desktop and phone widths. The pass includes responsive layout, focus and state changes, serious accessibility violations, console and page errors, CSP execution, and horizontal overflow.
+This record and its linked captures are an archived 2026-08-20 snapshot. They predate the current launch copy, identity, and UI changes and are not approved evidence for the current release. Current browser proof remains pending until a production build is recaptured, visually reviewed, and checksummed.
 
 ## Browser evidence
 
@@ -19,7 +19,7 @@ Browser-rendered evidence now covers the production build at desktop and phone w
 - Approved-identity and implementation comparison: `brand-work/exports/product-proof/botbound-brand-ui-comparison.jpg`
 - Machine-readable runtime proof: `brand-work/exports/product-proof/botbound-launch-proof.json`
 
-Every captured route returned HTTP 200 with zero root or body horizontal overflow, zero page errors, and zero console errors.
+At capture time, every captured route returned HTTP 200 with zero root or body horizontal overflow, zero page errors, and zero console errors.
 
 ## Automated verification
 
@@ -43,7 +43,7 @@ Every captured route returned HTTP 200 with zero root or body horizontal overflo
 3. The first phone proof showed a nested native input outline splitting the field focus ring through the leading icon. Focus ownership moved to the complete field shell, preserving a high-contrast halo while removing the visual fracture.
 4. The mobile access lockup was enlarged so the phone Bot and complete wordmark read clearly at the conversion point.
 
-No actionable P0, P1, or P2 visual differences remain in the inspected launch identity, responsive public surfaces, campaign exports, film frames, or founder deck.
+No actionable P0, P1, or P2 visual differences remained in the revision 3 surfaces inspected at capture time. This historical result does not certify the current release.
 
 ## Product Design rubric
 
@@ -54,4 +54,6 @@ No actionable P0, P1, or P2 visual differences remain in the inspected launch id
 - Accessibility and interaction: focus, tab state, CTA navigation, reduced motion, serious Axe checks, and responsive overflow all pass.
 - Runtime health: captured routes are clean of CSP, console, page, and horizontal-overflow errors.
 
-final result: pass
+historical revision 3 snapshot: pass
+
+current release: not certified pending fresh browser capture, visual review, and checksum

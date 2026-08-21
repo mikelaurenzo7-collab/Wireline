@@ -9,6 +9,19 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("OpenAI managed public contracts", () => {
+  it("keeps the raw OpenAPI identity on BotBound while preserving stable header names", () => {
+    const spec = getOpenApiSpec() as any;
+    const customerVisibleText = JSON.stringify(spec)
+      .replaceAll("X-Wireline-Key", "")
+      .replaceAll("X-Wireline-Signature", "");
+
+    expect(spec.info.title).toBe("BotBound API");
+    expect(spec.info.contact.name).toBe("BotBound");
+    expect(spec.servers[0].url).toBe("https://your-botbound-deployment.example.com");
+    expect(spec.components.securitySchemes.intakeKeyAuth.name).toBe("X-Wireline-Key");
+    expect(customerVisibleText).not.toMatch(/\bWireline\b/);
+  });
+
   it("publishes the real health response and OpenAI-backed insight contract", () => {
     const spec = normalizeOpenApiForManagedRuntime(
       getOpenApiSpec("https://trywireline.com"),

@@ -16,7 +16,7 @@ const problems = [];
 // Orphan detection: an Express router file under src/routes/ (top level OR a
 // subdirectory such as oauth/) that isn't transitively mounted from
 // register-api-routes.ts is a silent 404 in production. Historical example:
-// escalation-routes.ts was the target of the four flagship voice agents'
+// escalation-routes.ts was the target of the four flagship Bots'
 // escalate_to_human tool and was never mounted, so every escalation 404'd.
 // Reachability follows default imports passed to app.use()/router.use(), so
 // sub-router composition (oauth/index.ts providers, twilio-webhook-base,

@@ -14,7 +14,7 @@ The Android app is the everyday control surface for Wireline agents:
 
 > Wire your agent.
 
-The native product is a daily control surface for agents, calls, recaps, and follow-up. Business and personal workflows share the same backend agent configuration, while the interface remains practical and agent-forward. Billing, provider policy, prompts, compliance gates, and tenant enforcement remain server-owned.
+The native product is a daily control surface for Bots, calls, recaps, and follow-up. Every workflow uses the same backend Bot configuration and the same practical, Bot-forward interface. Billing, provider policy, prompts, compliance gates, and tenant enforcement remain server-owned.
 
 ## Design contract
 

@@ -65,7 +65,7 @@ function timeoutError(): WebsiteFetchError {
 function responseTooLargeError(): WebsiteFetchError {
   return new WebsiteFetchError(
     "response_too_large",
-    "That page is too large to import. Use a focused page with the essential business information.",
+    "That page is too large to import. Use a focused page with the essential information.",
     413,
   );
 }

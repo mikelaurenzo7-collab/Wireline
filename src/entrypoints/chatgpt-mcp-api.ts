@@ -12,7 +12,7 @@ registerMcpRoutes(app);
 
 app.use((req, res) => {
   const { status, body } = formatErrorResponse(
-    AppError.notFound(`No Wireline MCP route matches ${req.method} ${req.path}`),
+    AppError.notFound(`No BotBound MCP route matches ${req.method} ${req.path}`),
   );
   res.status(status).json(body);
 });

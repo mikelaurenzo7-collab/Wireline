@@ -28,8 +28,8 @@ Choose a partner because the problem is measurable, not because the logo looks i
 
 | Step | Evidence |
 | --- | --- |
-| 1 | Partner creates a real account and one focused voice agent |
-| 2 | Agent is trained on the partner's real facts, rules, voice, and handoff posture |
+| 1 | Partner creates a real account and one focused Bot |
+| 2 | The Bot is trained on the partner's real facts, rules, voice, and handoff posture |
 | 3 | A private test call passes before live traffic |
 | 4 | Partner activates a paid plan and claims or connects the live number |
 | 5 | One real inbound call is handled, or a consented non-marketing outbound call is completed where permitted |
@@ -44,13 +44,13 @@ A booked appointment is useful proof when the workflow calls for one. It is not 
 - Demo/test activity remains labeled as demo/test and never becomes implied customer proof.
 - Do not invent testimonials, ROI, adoption counts, or guaranteed outcomes.
 - Use normal published plan economics unless a separate founder decision explicitly authorizes a temporary offer.
-- Start with one job per partner. Add agents or workflow breadth only after the first loop works.
+- Start with one job per partner. Add Bots or workflow breadth only after the first loop works.
 
 ## Founder offer
 
 Keep the offer simple:
 
-> I built Wireline for calls and follow-up that fall through the cracks. I am onboarding a few design partners before a broad launch. I will personally help set up one voice agent around a real workflow, test it with you, and improve it from the outcomes. If you have one missed-call or follow-up problem worth fixing, I would like to run that workflow with you.
+> I built BotBound for calls and follow-up that fall through the cracks. I am onboarding a few design partners before a broad launch. I will personally help set up your Bot around one real workflow, test it with you, and improve it from the outcomes. If you have one missed-call or follow-up problem worth fixing, I would like to run that workflow with you.
 
 No fake urgency. No claim that other customers already use it.
 

@@ -73,6 +73,10 @@ describe("account legal-consent evidence contract", () => {
     expect(signUpStart).toBeGreaterThan(-1);
     expect(signUpEnd).toBeGreaterThan(signUpStart);
     expect(signUp).toContain("drizzle.transaction(async (tx) =>");
+    expect(signUp).toContain("legalConsentEvidence: AccountLegalConsentEvidence");
+    expect(signUp).toContain("!legalConsentEvidence ||");
+    expect(signUp).toContain('throw new Error("CURRENT_ACCOUNT_LEGAL_CONSENT_REQUIRED")');
+    expect(signUp).not.toContain("if (legalConsentEvidence)");
     expect(signUp).toMatch(/tx\s*\.insert\(schema\.users\)/);
     expect(signUp).toContain("tx.insert(schema.auditLog)");
     expect(signUp).toContain('eventType: "auth.terms_accepted"');
@@ -90,6 +94,24 @@ describe("account legal-consent evidence contract", () => {
     expect(authRoutes).toContain("termsVersion,");
     expect(authRoutes).toContain("privacyVersion,");
     expect(authRoutes).toContain('userAgent: req.get("user-agent") || undefined');
+  });
+
+  it("keeps voice conversion on the consent-bearing signup page", () => {
+    const showcaseAssistant = read("src/lib/showcase-assistant.ts");
+    const toolHandlers = read("src/lib/vapi-tool-handlers.ts");
+    const coreRoute = read("src/routes/vapi/tool-handlers-core.ts");
+    const showcaseRoute = read("src/routes/vapi/showcase-handlers.ts");
+    const voiceAccountCreationSurface = [
+      showcaseAssistant,
+      toolHandlers,
+      coreRoute,
+      showcaseRoute,
+    ].join("\n");
+
+    expect(showcaseAssistant).toContain('"send_signup_link"');
+    expect(showcaseAssistant).toContain("send the signup link");
+    expect(voiceAccountCreationSurface).not.toContain("create_account");
+    expect(voiceAccountCreationSurface).not.toContain("authService.signUp");
   });
 
   it("carries current signup consent inside signed, browser-bound OAuth state", () => {

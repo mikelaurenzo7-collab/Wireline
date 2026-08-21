@@ -2,7 +2,7 @@
 
 ## Product contract
 
-**Meet the user in Claude, create a real BotBound account if they are new, then help them build their first voice agent.**
+**Meet the user in Claude, create a real BotBound account if they are new, then help them build their first Bot.**
 
 Claude, Claude Code, ChatGPT, and Cursor share one remote MCP server at `https://botbound.me/mcp`. There is no separate Claude plugin package and no repo-embedded voice SDK. Cursor Directory packaging lives at the repository root (`.mcp.json`, `plugin.json`, `mcp.json`). Provider credentials, prompts, tenant enforcement, billing, and launch stay server-owned.
 

@@ -303,13 +303,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     group: "billing",
     required: false,
-    description: "Stripe price ID for photoreal live video add-on ($19/mo)",
+    description: "Retired Live Video price ID retained only for legacy Stripe reconciliation",
   },
   {
     name: "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
     group: "billing",
     required: false,
-    description: "SKU-shaped alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; either is honored",
+    description:
+      "Legacy alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; never enables checkout or sessions",
   },
   {
     name: "UPSTASH_REDIS_REST_URL",

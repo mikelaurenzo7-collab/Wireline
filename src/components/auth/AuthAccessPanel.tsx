@@ -4,8 +4,10 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { canonicalLegacyBrowserHandoff } from "../../lib/canonical-browser-origin";
 import {
   persistAuthRedirect,
+  persistOAuthReturnFromSearch,
   persistWorkspaceMode,
   readRedirectFromSearch,
   readStoredWorkspaceMode,
@@ -229,6 +231,12 @@ export default function AuthAccessPanel({
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
+  const legacyBrowserHandoffUrl =
+    typeof window === "undefined" ? null : canonicalLegacyBrowserHandoff(window.location);
+
+  useEffect(() => {
+    if (legacyBrowserHandoffUrl) window.location.replace(legacyBrowserHandoffUrl);
+  }, [legacyBrowserHandoffUrl]);
 
   useEffect(() => {
     captureDemoSourceFromLocation();
@@ -245,6 +253,7 @@ export default function AuthAccessPanel({
   }, [workspaceMode]);
 
   useEffect(() => {
+    if (legacyBrowserHandoffUrl) return;
     const controller = new AbortController();
     void fetch("/api/auth/providers", {
       headers: { Accept: "application/json" },
@@ -272,12 +281,13 @@ export default function AuthAccessPanel({
         // Fail closed: email remains available without rendering dead provider actions.
       });
     return () => controller.abort();
-  }, []);
+  }, [legacyBrowserHandoffUrl]);
 
   useEffect(() => {
+    if (legacyBrowserHandoffUrl) return;
     if (authLoading || !user) return;
     navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
-  }, [authLoading, user, navigate, workspaceMode, location.search]);
+  }, [authLoading, user, navigate, workspaceMode, location.search, legacyBrowserHandoffUrl]);
 
   const changeMode = (next: Exclude<AuthMode, "reset">) => {
     setMode(next);
@@ -328,6 +338,7 @@ export default function AuthAccessPanel({
       if (!isAllowedOAuthUrl(payload?.url)) {
         throw new Error("Received an invalid sign-in URL.");
       }
+      persistOAuthReturnFromSearch(location.search);
       // OAuth completion receives the database-authoritative new-user result.
       // Clear any abandoned/stale marker before leaving this browser context.
       clearFreshSignupSession();
@@ -458,6 +469,22 @@ export default function AuthAccessPanel({
   const termsId = embedded ? "landing-auth-terms" : "auth-terms";
   const termsLabelId = `${termsId}-label`;
   const termsErrorId = `${termsId}-error`;
+
+  if (legacyBrowserHandoffUrl) {
+    return (
+      <section
+        className={cn("wl-access-panel", embedded && "is-embedded", className)}
+        aria-label="Opening BotBound"
+      >
+        <div className="wl-access-panel__card" role="status" aria-live="polite">
+          <div className="flex min-h-24 items-center justify-center gap-3 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            <span>Opening BotBound…</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

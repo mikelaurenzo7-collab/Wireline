@@ -31,7 +31,7 @@ const PUBLIC_ROUTES = [
   "/trust/legal",
   "/trust/insurance",
   "/trust/enterprise",
-  "/for/personal",
+  "/for/everyday",
   "/for/home-services",
   "/for/medical",
   "/for/legal",

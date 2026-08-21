@@ -153,7 +153,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /BotBound Starter[\s\S]*BotBound Starter Plus[\s\S]*BotBound Pro[\s\S]*BotBound Scale & Enterprise/,
+    /BotBound Starter[\s\S]*BotBound Starter Plus[\s\S]*BotBound Pro[\s\S]*BotBound Enterprise/,
     "shared product knowledge must match the launch catalog with canonical BotBound casing",
   );
   mustExclude(

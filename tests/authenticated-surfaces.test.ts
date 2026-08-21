@@ -6,7 +6,9 @@ describe("authenticated surfaces", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toBe("BotBound Design System");
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/near-black canvas/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/violet/i);
-    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(/only customer-facing product name/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(
+      /only customer-facing product name/i,
+    );
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.retired).toContain(
       "Letterpress as a design-system name",
     );
@@ -28,10 +30,7 @@ describe("authenticated surfaces", () => {
       "Apps",
       "Compliance",
     ]);
-    expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual([
-      "Business knowledge",
-      "Reports",
-    ]);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual(["Knowledge", "Reports"]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.settings.phoneOwnership).toContain("Calls → Lines");
   });
 

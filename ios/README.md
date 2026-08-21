@@ -10,7 +10,7 @@ Wireline is agent-first: it screens inbound calls, places explicit user-initiate
 
 > Wire your agent.
 
-The native app is the everyday control surface: ask Wireline, check live calls, review recaps, manage callback handoff, and re-enter work through Siri, widgets, and CallKit. Personal and business agents share the same backend contract without forcing one audience into the other's language.
+The native app is the everyday control surface: ask BotBound, check live calls, review recaps, manage callback handoff, and re-enter work through Siri, widgets, and CallKit. Every Bot uses the same backend contract and one audience-neutral product language.
 
 ## Architecture
 

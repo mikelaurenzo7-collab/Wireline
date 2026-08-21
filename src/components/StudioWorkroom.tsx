@@ -63,7 +63,7 @@ function AgentAvatar({ agentName, speaking = false }: { agentName: string; speak
       seed={agentName || "agent"}
       size={24}
       speaking={speaking}
-      title={`${agentName || "Voice agent"} face`}
+      title={`${agentName || "Bot"} face`}
       className="mt-1 shrink-0"
     />
   );

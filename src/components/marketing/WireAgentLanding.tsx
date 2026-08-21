@@ -10,6 +10,7 @@ import { BOT_CHANNELS, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
+import { signupHrefForPlan } from "../../lib/signup-intent";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
 const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;
@@ -146,7 +147,7 @@ export default function WireAgentLanding() {
                       ))}
                     </ul>
                     <Link
-                      to={`/signup?plan=personal&template=${template.key}`}
+                      to={signupHrefForPlan("personal", { template: template.key })}
                       onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
                       Build this role
@@ -198,7 +199,7 @@ export default function WireAgentLanding() {
                         </li>
                       </ul>
                       <Link
-                        to={`/signup?plan=${id}`}
+                        to={signupHrefForPlan(id)}
                         className={featured ? "is-primary" : undefined}
                         onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
                       >

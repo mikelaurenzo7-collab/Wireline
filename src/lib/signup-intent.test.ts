@@ -42,7 +42,7 @@ describe("signup-intent", () => {
     });
   });
 
-  it("defaults unqualified signup traffic to Personal Conversation Balance", () => {
+  it("defaults unqualified signup traffic to Free Builder", () => {
     expect(recommendedPlanFromIntent(null)).toBe("personal");
   });
 

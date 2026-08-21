@@ -12,7 +12,6 @@ import BotMark from "./BotMark";
 import { BotBoundWordmark } from "./brand/BotBoundBrand";
 import BotBoundMark from "./brand/BotBoundMark";
 import { useAuth } from "../contexts/AuthContext";
-import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
@@ -27,7 +26,6 @@ import {
   type ShellNavItem,
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
-import { isRouteAvailableForAccount } from "../lib/account-type";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 
 const BOT_LANGUAGE = {
@@ -112,7 +110,6 @@ function MobileDockLink({ item, pathname, moreOpen, onMore }: { item: ShellNavIt
 
 function DesktopRail({ pathname, collapsed, onToggleCollapsed }: { pathname: string; collapsed: boolean; onToggleCollapsed: () => void }) {
   const { user } = useAuth();
-  const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const secondaryRouteParent = desktopNavParentHref(pathname);
@@ -154,7 +151,7 @@ function DesktopRail({ pathname, collapsed, onToggleCollapsed }: { pathname: str
 
       <nav className="mt-3 flex shrink-0 flex-col gap-0.5 border-t border-border/60 pt-3" aria-label="Manage">
         {!collapsed ? <div className="px-2.5 pb-1.5"><WiredEyebrow>Manage</WiredEyebrow></div> : null}
-        {OPERATE_NAV.filter((item) => item.href !== "/settings" && isRouteAvailableForAccount(accountType, item.href)).map((item) => <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} activeOverride={secondaryRouteParent === item.href ? true : undefined} />)}
+        {OPERATE_NAV.filter((item) => item.href !== "/settings").map((item) => <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} activeOverride={secondaryRouteParent === item.href ? true : undefined} />)}
       </nav>
 
       <div className="min-h-4 flex-1" />

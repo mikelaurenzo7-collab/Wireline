@@ -10,13 +10,15 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain("BotBound | Put Your Bot on the Line");
-    expect(index).toContain("AI employees for calls, texts, and email.");
+    expect(index).toContain("Your Bot for calls, texts, and email.");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Put Your Bot on the Line"');
     expect(index).toContain('"logo":"https://botbound.me/botbound-icon-512.png"');
     expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
-    expect(index).toContain('<meta property="og:image" content="https://botbound.me/og-image.png" />');
+    expect(index).toContain(
+      '<meta property="og:image" content="https://botbound.me/og-image.png" />',
+    );
     expect(index).not.toContain("https://trywireline.com");
     expect(index).not.toContain("support@trywireline.com");
     expect(index).not.toContain("WIRE YOUR PHONE BOT");
@@ -41,10 +43,14 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain('<link rel="preconnect" href="https://plausible.io" crossorigin />');
-    expect(index).toContain('<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />');
+    expect(index).toContain(
+      '<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />',
+    );
     expect(index).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg" />');
     expect(index).not.toContain('rel="mask-icon"');
-    expect(index).toContain('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />');
+    expect(index).toContain(
+      '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />',
+    );
     expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(index).toContain('"@type":"WebSite"');
     expect(index).toContain('"@id":"https://botbound.me/#website"');
@@ -61,7 +67,7 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
-    expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "AI employees for calls, texts, and email."');
+    expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email."');
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
@@ -72,7 +78,7 @@ describe("BotBound static marketing metadata", () => {
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("PUT YOUR BOT ON THE LINE");
-    expect(ogImage).toContain("AI employees for calls, texts, and email.");
+    expect(ogImage).toContain("Your Bot for calls, texts, and email.");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain("#8B5CF6");
     expect(ogImage).not.toContain("WIRE YOUR");
@@ -101,11 +107,17 @@ describe("BotBound static marketing metadata", () => {
 
     expect(manifest.name).toBe("BotBound | Put Your Bot on the Line");
     expect(manifest.short_name).toBe("BotBound");
-    expect(manifest.description).toBe("AI employees for calls, texts, and email.");
+    expect(manifest.description).toBe("Your Bot for calls, texts, and email.");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
-    expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual(["BOT STUDIO", "INBOX", "CALLS"]);
-    expect(manifest.shortcuts.find((shortcut) => shortcut.name === "INBOX")?.description).toContain("texts and email");
+    expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([
+      "BOT STUDIO",
+      "INBOX",
+      "CALLS",
+    ]);
+    expect(manifest.shortcuts.find((shortcut) => shortcut.name === "INBOX")?.description).toContain(
+      "texts and email",
+    );
     expect(manifest.shortcuts.some((shortcut) => shortcut.url === "/agents")).toBe(false);
   });
 });

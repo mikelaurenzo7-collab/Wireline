@@ -1,15 +1,15 @@
 # Launch Readiness and Margin Plan
 
-Status: **Active canonical operating plan**. Ops scorecard Wireline needs before scaling paid
-traffic and live usage.
+Status: **Active canonical operating plan**. BotBound's ops scorecard for scaling paid traffic and
+live usage.
 
 ## Goal
 
-Answer one question quickly: **Is Wireline safe, reliable, and profitable to sell today?**
+Answer one question quickly: **Is BotBound safe, reliable, and profitable to sell today?**
 
 Launch is not a vibe check. Treat it as four proofs that must stay current:
 
-1. A real user can create, train, wire, and run an AI employee.
+1. A real user can build, configure, launch, and run a Bot.
 2. One inbound call, one outbound call, Stripe test checkout, and Stripe webhook sync are verified
    after the active production deployment reaches READY.
 3. Public claims only describe surfaces that are live or clearly marked beta/gated.
@@ -27,16 +27,16 @@ Launch is not a vibe check. Treat it as four proofs that must stay current:
 | Rate limiting | Upstash Redis is configured in production. | Per-invocation fallback in serverless. |
 | Email/support | Resend and support paths are configured. | Ticket delivery failures or unverified sending domain. |
 | Error reporting | Production errors reach the owner dashboard or external reporter. | Silent 5xx, missing alert sink. |
-| Creative/GTM | Ads use the current v6 price sheet, truthful launch status, and the AI-employee wedge. | Old $9 copy, invented metrics, or claims that beta/native/ChatGPT surfaces are generally live. |
+| Creative/GTM | Ads use the current v6 price sheet, truthful launch status, and canonical Your Bot language. | Old $9 copy, retired category framing, invented metrics, or claims that beta/native/ChatGPT surfaces are generally live. |
 | Trust/legal | Public proof is truthful and current. | Placeholder logos, implied certification, stale privacy copy. |
 
 ## Margin tracking
 
-Wireline should track contribution margin at the account level.
+BotBound should track contribution margin at the account level.
 
 | Cost/revenue lane | Inputs | Required output |
 | --- | --- | --- |
-| Plan revenue | Stripe subscription, add-ons, extra agents. | Monthly recurring revenue by account. |
+| Plan revenue | Stripe subscription, add-ons, extra Bots. | Monthly recurring revenue by account. |
 | Runtime Balance | Credit wallet and ledger deltas. | Prepaid balance, burn rate, and top-up events. |
 | Voice | Twilio numbers/SMS/calls, xAI Direct SIP Speech-to-Speech minutes, optional Vapi rollback. | Cost per call, cost per account, unused-number inventory. |
 | AI | OpenAI/Gemini/Vercel AI Gateway/optional xAI usage. | Token/audio cost by account and feature. |

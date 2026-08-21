@@ -1,4 +1,4 @@
-# Wireline Agent-First Launch Checklist
+# BotBound Launch Checklist
 
 Date: 2026-07-26  
 Status: Active founder launch checklist; supersedes the broad "best employee" framing from 2026-07-10
@@ -7,15 +7,15 @@ Status: Active founder launch checklist; supersedes the broad "best employee" fr
 
 Lead with:
 
-> Voice agents for every conversation - personal or business.
+> Your Bot for calls, texts, and email.
 
 Support with:
 
-> Start with one agent. Build a team when you need one.
+> Start with one Bot. Add another when the work needs it.
 
 > Build free. Go live from $19/mo.
 
-Business workspace copy should use "business voice agent" when the audience is explicitly business. Broad public surfaces should use "Voice Agent" so personal plans and multi-agent growth stay clear.
+All public and workspace copy uses one audience-neutral Bot language. Specific roles describe jobs, not customer categories.
 
 ## Go / No-Go
 
@@ -23,7 +23,7 @@ Business workspace copy should use "business voice agent" when the audience is e
 | --- | --- |
 | Phone loop | Inbound call, outbound call, SMS follow-up, outcome log, and handoff state verified |
 | Payment loop | Starter checkout, entitlement, Customer Portal, cancellation, and Conversation Balance behavior verified |
-| Positioning | Public copy says Voice Agents; no broad "one AI employee"; no sub-$19 launch copy |
+| Positioning | Public copy says Bot; no AI-employee framing, audience split, or sub-$19 launch copy |
 | Capacity | Pricing and included minutes match `src/lib/plan-catalog.ts` |
 | Compliance | DNC/SMS consent/STOP posture reviewed before outbound spend |
 | Runtime | Vercel production deploy READY and runtime errors clean |
@@ -31,31 +31,29 @@ Business workspace copy should use "business voice agent" when the audience is e
 
 ## Pricing Snapshot
 
-| Plan | Monthly | Included Live Voice Minutes | Included Agents / Numbers |
+| Plan | Monthly | Included Live Voice Minutes | Included Bots / Numbers |
 | --- | ---: | ---: | ---: |
 | Free Builder | $0 | 0 live minutes | Private builder / simulation only |
-| Starter | $19 | 60 | 1 |
-| Starter Plus | $39 | 120 | 2 |
-| Pro | $79 | 245 | 5 |
-| Business | $159 | 450 | 15 |
+| Starter | $19 | 50 | 1 |
+| Starter Plus | $39 | 100 | 2 |
+| Pro | $79 | 190 | 5 |
 
-Extra agent add-on: $15/mo, +50 live voice minutes, +1 included number. Enterprise remains custom.
+Extra Bot add-on: $15/mo, +50 live voice minutes, +1 included number. Scale remains a custom sales path.
 
 ## Public Copy Checklist
 
-- Homepage hero: Voice Agents.
-- Primary CTA: Build your Voice Agent.
+- Homepage hero: Put Your Bot on the Line.
+- Primary CTA: Build Your Bot.
 - Pricing line: Build free. Go live from $19/mo.
-- Number promise: Every paid voice agent includes a Wireline number.
+- Number promise: Every active paid Bot gets its own BotBound production number.
 - Free Builder: create, train, and simulate before paid live launch.
-- Personal examples: call delegation, scheduling, vendors, reminders, follow-up.
-- Business examples: lead response, front desk, support triage, appointment setting, collections.
+- Role examples: call delegation, scheduling, lead response, front desk, support triage, appointment setting, and collections.
 - WhatsApp: private beta only; do not advertise as public launch channel.
 
 ## Launch QA Walkthrough
 
 1. Sign up as a new user.
-2. Create one voice agent using either Personal or Business context.
+2. Create one Bot from a role starter or blank canvas.
 3. Train with facts, tone, escalation rules, and prohibited topics.
 4. Run a private simulation.
 5. Upgrade to Starter.

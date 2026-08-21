@@ -33,7 +33,7 @@ describe("home landing launch clarity", () => {
 
   it("keeps conversion explicit and owner control visible", () => {
     expect(landing).toContain('id="pricing"');
-    expect(landing).toContain('to={`/signup?plan=${id}`}');
+    expect(landing).toContain("to={signupHrefForPlan(id)}");
     expect(landing).toContain("YOUR LINE. YOUR RULES.");
     expect(landing).toContain('to="/security"');
     expect(landing).not.toContain("Put your first voice agent to work");

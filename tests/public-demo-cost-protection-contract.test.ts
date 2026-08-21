@@ -64,7 +64,7 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("if (attempt !== attemptRef.current) return");
     expect(hook).toContain("attemptRef.current += 1");
     expect(hook).toContain("The live connection took too long");
-    expect(hook).toContain("socket.current?.close(1000, \"Wireline protected demo ended\")");
+    expect(hook).toContain("socket.current?.close(1000, \"BotBound protected demo ended\")");
     expect(hook, "provider exceptions must not be dumped raw").not.toContain(
       "voice bridge error:",
     );

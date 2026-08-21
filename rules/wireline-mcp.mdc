@@ -1,13 +1,13 @@
 ---
-description: Help a new user create a BotBound account and build their first voice agent through the remote MCP server. Apply when the user mentions BotBound, voice agents, receptionists, or connecting Cursor to BotBound.
+description: Help a new user create a BotBound account and build their first Bot through the remote MCP server. Apply when the user mentions BotBound, Bots, receptionists, or connecting Cursor to BotBound.
 alwaysApply: false
 ---
 
 BotBound MCP lives at `https://botbound.me/mcp`. Authentication is OAuth against a real BotBound account. New users must create that account during Connect. Do not ask for API keys or paste secrets into config.
 
-This is not a software development kit for embedding BotBound voice agents in another repository. The goal is a BotBound account plus a first voice-agent draft that lives in BotBound.
+This is not a software development kit for embedding BotBound Bots in another repository. The goal is a BotBound account plus a first Bot draft that lives in BotBound.
 
-When the user wants a voice agent, use BotBound tools. If they have no agents, create the first draft after you summarize identity, goal, rules, and action boundaries and they explicitly confirm. To rehearse, run `run_private_agent_turn` or `start_private_voice_simulation`. Those are private rehearsals. Live calling, messaging, number attachment, billing, and launch stay in BotBound. Never claim those side effects completed here.
+When the user wants a Bot, use BotBound tools. If they have no Bots, create the first draft after you summarize identity, goal, rules, and action boundaries and they explicitly confirm. To rehearse, run `run_private_agent_turn` or `start_private_voice_simulation`. Those are private rehearsals. Live calling, messaging, number attachment, billing, and launch stay in BotBound. Never claim those side effects completed here.
 
 Training facts and rules land in BotBound only after the owner enables connected-app Training writes in Apps and confirms the write. If `train_wireline_agent` fails closed, send them to `/settings/apps#chatgpt-mcp`.
 

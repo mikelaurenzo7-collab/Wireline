@@ -1072,7 +1072,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_excel: {
     name: "log_to_excel",
     description:
-      "Append a row to the Account Holder's Wireline Call Log spreadsheet in OneDrive, records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Excel.",
+      "Append a row to the Account Holder's BotBound Call Log spreadsheet in OneDrive, recording the caller, outcome, and a short detail. Use it at the end of a call to keep a running log the Account Holder can review in Excel.",
     parameters: {
       type: "object",
       properties: {
@@ -1096,7 +1096,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_google_sheets: {
     name: "log_to_google_sheets",
     description:
-      "Append a row to the Account Holder's Wireline Call Log spreadsheet in Google Drive, records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Google Sheets.",
+      "Append a row to the Account Holder's BotBound Call Log spreadsheet in Google Drive, recording the caller, outcome, and a short detail. Use it at the end of a call to keep a running log the Account Holder can review in Google Sheets.",
     parameters: {
       type: "object",
       properties: {

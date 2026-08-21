@@ -35,7 +35,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     "openai/widgetCSP": {
       connect_domains: ["https://api.openai.com"],
       resource_domains: [],
-      redirect_domains: ["https://botbound.me", "https://trywireline.com"],
+      redirect_domains: ["https://botbound.me"],
     },
   };
 }
@@ -53,7 +53,7 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
       "Create a BotBound account, build your first Bot from Cursor, ChatGPT, or Claude, privately rehearse it, and continue in BotBound. Live calls, numbers, and launch stay in BotBound.",
     websiteUrl: issuer,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
-    icons: [{ src: MCP_ICON_URL, mimeType: "image/svg+xml" }],
+    icons: [{ src: MCP_ICON_URL, mimeType: "image/png" }],
     remotes: [
       {
         type: "streamable-http",

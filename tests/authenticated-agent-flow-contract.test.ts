@@ -148,7 +148,7 @@ describe("authenticated Bot flow", () => {
     expect(studioWorkspace).not.toContain("posture=");
   });
 
-  it("keeps Fast Start broad across business roles, personal starters, and custom workflows", () => {
+  it("keeps Fast Start broad across proven roles and custom workflows", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
@@ -169,7 +169,9 @@ describe("authenticated Bot flow", () => {
     }
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain("BOT_CHANNELS.map");
-    expect(createDialog).toContain("Employee roles, personal starters, and Create Your Own");
+    expect(createDialog).toContain(
+      "Proven roles and Create Your Own all lead to the same configurable Bot",
+    );
     expect(createDialog).not.toContain("Choose one personal job");
   });
 

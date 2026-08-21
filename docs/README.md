@@ -2,7 +2,7 @@
 
 BotBound's public operating loop is **Build -> Train -> Launch -> Improve**. The repository still uses technical surface names such as Create, Training, Connections / Wire, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
-Broad public copy uses **voice agents** for personal and business conversations. Personal workspaces create **personal agents**. Business workspaces may describe role-specific **sales agents** or **support agents** when the context is explicit. Never pair "AI" with "agent" in copy: see `CUSTOMER_TERMINOLOGY.md`. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
+Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job rather than choosing Personal or Business, and every role starter enters the same workspace model. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Every active paid Bot has an included number. Outbound, inbound, and hybrid modes are first-class.
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 
@@ -15,12 +15,12 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Training         | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Deep configuration, sources, behavior, policy, evaluation, and memory.                                 |
 | Wire             | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                               |
 | Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                               |
-| Wireline Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff.                                                      |
+| BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.               |
 | iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.                 |
 | Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                  |
 | ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                        |
 | Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.me/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                   |
-| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first agent. |
+| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot.   |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                   |
 
 ## Product interface rules
@@ -32,7 +32,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 - Use labels, tabs, icons, state, and clear next actions instead of explanatory paragraphs on active work surfaces.
 - Phone / Call History and Analytics may explain history, coaching, exports, and insights.
 - Inbound and hybrid are first-class selectable modes, not fallback copy.
-- Wireline Command remains explicit-user-action only.
+- BotBound Command remains explicit-user-action only.
 
 ## Canonical repository and system documents
 
@@ -42,8 +42,8 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                                                    |
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                                      |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                                       |
-| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | Customer-language contract for personal, business, and technical contexts.                                      |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Agent-first positioning and roster-compatible launch framing.                                                   |
+| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                              |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                                                   |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                                  |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                                         |
 | [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                                   |
@@ -113,16 +113,19 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 | Document                                                                                     | Role                                                                     |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md)                                       | Current product, UX, KPI, and implementation roadmap.                    |
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md)                       | Phased product, trust, cost, and multi-surface execution plan.           |
-| [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md)                                               | Brand, marketing, onboarding, product, and operations plan.              |
 | [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md)                               | Research lanes, prioritization, metrics, and execution horizon.          |
 | [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md)                       | Guided call-plan setup doctrine (retired 2026-08-13; historical record). |
 | [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | Provider-neutral voice moat and partner sequence.                        |
-| [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md)                               | Presenter vendor matrix and business-presence roadmap.                   |
 | [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)                                                 | Operational success and support motion.                                  |
 | [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md)                       | Planned Runtime Balance referral loop.                                   |
 | [DESIGN_PARTNER_SPRINT_2026-07-08.md](./DESIGN_PARTNER_SPRINT_2026-07-08.md)                 | Planned design-partner sprint and entry gates.                           |
+
+## Historical planning reference
+
+| Document                                               | Classification                                                                                                                         |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md) | Historical July 2026 planning snapshot. Current product language, packaging, launch posture, and roadmap live in the authorities above. |
 
 ## Documentation rules
 

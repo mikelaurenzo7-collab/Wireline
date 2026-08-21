@@ -52,7 +52,7 @@ const SOLUTIONS = {
         "A Conversation Bot answers by call, text, or email with the same identity and context.",
       ],
       [
-        "It Uses Your Business Truth",
+        "It Uses Your Approved Truth",
         "Policies, services, availability, and escalation rules stay consistent.",
       ],
       [

@@ -138,7 +138,7 @@ export function normalizeAgentCustomization(
   source: AgentCustomizationProfile["source"] = "chatgpt_mcp",
 ): AgentCustomizationProfile {
   const selectedRole = role(input.role);
-  const businessName = text(input.business_name, 120) || "Your business";
+  const businessName = text(input.business_name, 120) || "Your work";
   const name = text(input.agent_name, 120) || defaultName(selectedRole, businessName);
   const primaryGoal = text(input.primary_goal, 700) || defaultGoal(selectedRole);
   const tone = text(input.tone, 120) || "warm, concise, and capable";

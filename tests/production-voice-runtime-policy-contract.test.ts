@@ -36,7 +36,7 @@ describe("production voice runtime policy", () => {
     expect(routes).toContain("generated marketing voiceovers are not live call voices");
     expect(routes).toContain("Vapi-supported streaming voice-library workflow");
     expect(routes).toContain("LIVE_CUSTOM_VOICE_UNSUPPORTED");
-    expect(docs).toContain("AI Voice Generator, presenter TTS, and other audio-file tools");
+    expect(docs).toContain("Audio-file tools are marketing/demo asset generators");
     expect(docs).toContain("not live PSTN runtime engines");
   });
 });

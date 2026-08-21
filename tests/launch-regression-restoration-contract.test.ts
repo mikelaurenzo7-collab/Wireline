@@ -51,10 +51,11 @@ describe("restored launch regression guards", () => {
     expect(composed).toContain("elite personal assistant");
     expect(composed).toContain("TEMPLATE SPECIALTY: Personal Concierge");
     expect(composed).toContain("## DELIVERY TONE");
-    expect(composed).toContain("personally discreet");
+    expect(composed).toContain("Concise, useful, and discreet");
 
     const voiceRuntime = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(voiceRuntime).toContain("a personal BotBound Bot for your principal");
+    expect(voiceRuntime).toContain("a BotBound Bot for your principal");
+    expect(voiceRuntime).not.toContain("a personal BotBound Bot");
     expect(voiceRuntime).toContain("## QUIET-HOURS MODE");
     expect(voiceRuntime).toContain("Never invent personal facts");
   });
@@ -90,6 +91,9 @@ describe("restored launch regression guards", () => {
   });
 
   it("keeps legacy capability classification only as compatibility, not workspace navigation", () => {
+    expect(isBusinessTemplateCategory("Everyday")).toBe(false);
+    expect(isBusinessTemplateCategory("Operations")).toBe(true);
+    expect(isBusinessTemplateCategory("Custom")).toBe(true);
     expect(isBusinessTemplateCategory("Personal & Lifestyle")).toBe(false);
     expect(isBusinessTemplateCategory("Sales & Revenue")).toBe(true);
     expect(isBusinessTemplateCategory(null)).toBe(true);
@@ -103,6 +107,8 @@ describe("restored launch regression guards", () => {
     expect(mobile).toContain("resolveCreatePersonality");
     expect(agentRoutes).toContain("resolveCreatePersonality");
     expect(agentRoutes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
+    expect(dialog).toContain("isBusinessTemplateCategory(selectedTemplate.category)");
+    expect(dialog).not.toContain("accountType");
     expect(dialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(dialog).toContain("BOT_CHANNELS.map");
     expect(dialog).toContain('workspace_model: "one_workspace"');

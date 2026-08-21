@@ -21,12 +21,13 @@ Never keep an old audit finding alive simply because it once appeared here.
 
 ## Product decision
 
-Wireline keeps Personal and Business workspaces because they change defaults and customer intent.
+BotBound uses one product and one workspace model. Customers start with a job or
+role; a use case never creates a separate account mode, package, or onboarding
+branch.
 
-- Personal creates a **personal agent**.
-- Business creates a **business voice agent**.
-- Broad public copy uses **voice agent**.
-- Technical APIs, routes, events, and database fields keep `agent`.
+- Customer-facing copy uses **Bot**, **Phone Bot**, or a concrete role.
+- Additional Bots add capacity or genuinely separate roles inside the same product.
+- Technical APIs, routes, events, database fields, and legacy compatibility IDs may keep `agent`, `personal`, or `business` internally.
 
 Do not use `AI employee` as the launch noun. Do not pair `AI` with `agent` in customer-facing copy.
 
@@ -94,7 +95,7 @@ Record current evidence after verification; do not copy old dollar balances or c
 
 ## Not launch blockers by themselves
 
-- **Supabase Auth leaked-password advisory:** Wireline customer passwords use the custom scrypt/HIBP-screened auth path, not Supabase Auth. Do not present the Supabase Auth toggle as a customer-auth control unless that architecture changes.
+- **Supabase Auth leaked-password advisory:** BotBound customer passwords use the custom scrypt/HIBP-screened auth path, not Supabase Auth. Do not present the Supabase Auth toggle as a customer-auth control unless that architecture changes.
 - **GitHub hosted-runner billing failure:** restore CI when the account permits it, but do not call a runner-startup/billing failure a code regression. Exact-head Vercel deep certification remains the release gate while that external condition persists.
 - **Unused-index advisor notices on demo/test data:** do not delete indexes based on pre-customer statistics alone.
 
@@ -102,8 +103,8 @@ Record current evidence after verification; do not copy old dollar balances or c
 
 Before admitting a real customer, complete one controlled founder dogfood from a clean account:
 
-1. sign up and create the intended Personal or Business workspace;
-2. build one focused agent;
+1. sign up and enter the BotBound workspace;
+2. build one focused Bot around a real job;
 3. train it on real facts, rules, voice, and handoff posture;
 4. pass a private test call;
 5. complete the paid checkout path and verify entitlement state;
@@ -133,7 +134,7 @@ Publish only when the finished cut:
 - contains no 404, auth wall, loading hold, dead route, or stale UI;
 - keeps the real product legible after reframing;
 - uses no fabricated product UI or fake customer proof;
-- lets the real agent voice play at full level for a meaningful stretch when selling voice quality;
+- lets the real Bot voice play at full level for a meaningful stretch when selling voice quality;
 - matches current pricing, channel availability, and compliance posture;
 - records the exact source commit in the release evidence.
 

@@ -10,7 +10,7 @@ import {BotMark, Eyebrow} from '../components/Brand';
 import {FilmBackground} from '../components/FilmBackground';
 
 const steps = [
-  {label: 'Build', detail: 'Your business'},
+  {label: 'Build', detail: 'Your Bot'},
   {label: 'Train', detail: 'Your voice'},
   {label: 'Launch', detail: 'Your number'},
   {label: 'Improve', detail: 'Every call'},

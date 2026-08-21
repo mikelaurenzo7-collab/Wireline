@@ -1,13 +1,20 @@
 export type CheckoutReturnFlow = "plan" | "runtime_balance" | "live_video";
 
 export type CheckoutReturnVerification = {
+  status?: string;
   payment_status?: string;
   synced?: boolean;
   credit_granted?: boolean;
   live_video_enabled?: boolean;
 };
 
-export type CheckoutReturnOutcome = "fulfilled" | "pending" | "invalid" | "retryable";
+export type CheckoutReturnOutcome =
+  | "fulfilled"
+  | "retired"
+  | "pending"
+  | "expired"
+  | "invalid"
+  | "retryable";
 
 const CHECKOUT_RETURN_QUERY_KEYS = [
   "billing",
@@ -35,9 +42,10 @@ export function hasCheckoutReturnToVerify(search: string): boolean {
 
 /**
  * A Checkout return is final only when fulfillment reached the product state
- * promised by that Checkout, or the server proved that the reference itself
- * is invalid. Network/auth/server failures and delayed payment methods retain
- * the session proof so a refresh can safely retry the idempotent verifier.
+ * promised by that Checkout, a paid legacy SKU was safely reconciled into its
+ * retired state, or the server proved the reference itself is invalid.
+ * Network/auth/server failures and delayed payment methods retain the session
+ * proof so a refresh can safely retry the idempotent verifier.
  */
 export function classifyCheckoutReturn(
   flow: CheckoutReturnFlow,
@@ -48,19 +56,32 @@ export function classifyCheckoutReturn(
   if (responseStatus === null || responseStatus < 200 || responseStatus >= 300 || !verification) {
     return "retryable";
   }
+  if (verification.status === "expired") return "expired";
   if (verification.payment_status === "unpaid") return "pending";
+  if (
+    flow === "live_video" &&
+    (verification.payment_status === "paid" ||
+      verification.payment_status === "no_payment_required")
+  ) {
+    return "retired";
+  }
 
   const fulfilled =
     flow === "plan"
       ? verification.synced === true
       : flow === "runtime_balance"
         ? verification.credit_granted === true
-        : verification.live_video_enabled === true;
+        : false;
   return fulfilled ? "fulfilled" : "retryable";
 }
 
 export function shouldFinalizeCheckoutReturn(outcome: CheckoutReturnOutcome): boolean {
-  return outcome === "fulfilled" || outcome === "invalid";
+  return (
+    outcome === "fulfilled" ||
+    outcome === "retired" ||
+    outcome === "expired" ||
+    outcome === "invalid"
+  );
 }
 
 export function checkoutReturnUrlWithoutProof(

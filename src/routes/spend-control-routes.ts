@@ -70,7 +70,7 @@ async function ensurePersistedSpendBudget(
   const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(tier);
   const planName =
     customerPlanName(resolvedPlan?.name) ||
-    `${BOTBOUND_BRAND_NAME} ${liveProviderWorkEnabled ? "Business" : "Free Builder"}`;
+    `${BOTBOUND_BRAND_NAME} ${liveProviderWorkEnabled ? "Live" : "Free Builder"}`;
   const guardScope: SpendGuardScope = liveProviderWorkEnabled
     ? "plan_funded"
     : "free_simulation_allowance";

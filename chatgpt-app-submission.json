@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "BotBound",
-    "subtitle": "Build your first voice agent",
-    "description": "BotBound lets a new ChatGPT user create a BotBound account, build their first voice agent in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
+    "subtitle": "Build your first Bot",
+    "description": "BotBound lets a new ChatGPT user create a BotBound account, build their first Bot in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "category": "BUSINESS",
     "logo_url": "https://botbound.me/botbound-icon-512.png",
     "website_url": "https://botbound.me",
@@ -198,7 +198,7 @@
       "expected_output_url": null
     },
     {
-      "description": "Create a first voice agent after a new user connects an account.",
+      "description": "Create a first Bot after a new user connects an account.",
       "user_prompt": "I am new to BotBound. Help me create my first after-hours receptionist and confirm it.",
       "file_attachment_urls": null,
       "tools_triggered": "create_agent_draft",

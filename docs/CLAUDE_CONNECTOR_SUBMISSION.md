@@ -3,7 +3,7 @@
 ## Listing identity
 
 - **Name:** BotBound (max 100)
-- **Tagline:** Build your first voice agent (27 / 55)
+- **Tagline:** Build your first Bot (20 / 55)
 - **Slug:** `wireline` (permanent once published)
 - **Categories:** business, productivity
 - **Icon:** `https://botbound.me/botbound-icon-512.png`

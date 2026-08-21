@@ -12,9 +12,8 @@ const fonts = [
 ];
 
 function imageData(relativePath) {
-  const mime = relativePath.endsWith(".jpg") || relativePath.endsWith(".jpeg")
-    ? "image/jpeg"
-    : "image/png";
+  const mime =
+    relativePath.endsWith(".jpg") || relativePath.endsWith(".jpeg") ? "image/jpeg" : "image/png";
   return `data:${mime};base64,${readFileSync(resolve(root, relativePath)).toString("base64")}`;
 }
 
@@ -49,7 +48,9 @@ const appIcon = imageData("public/brand/botbound-app-icon.png");
 const operator = imageData("public/brand/botbound-operator-primary.png");
 const bakery = imageData("brand-work/launch-stills/botbound-second-ring-bakery-hero-2560x1440.jpg");
 const auto = imageData("brand-work/launch-stills/botbound-hands-full-auto-social-1600-square.jpg");
-const florist = imageData("brand-work/launch-stills/botbound-second-ring-florist-story-1440x2560.jpg");
+const florist = imageData(
+  "brand-work/launch-stills/botbound-second-ring-florist-story-1440x2560.jpg",
+);
 
 const obsidianLockup = frame({
   width: 1600,
@@ -57,7 +58,7 @@ const obsidianLockup = frame({
   title: "BotBound primary horizontal lockup on obsidian",
   description: "The approved BotBound robot and unbroken wordmark.",
   background: `<defs><radialGradient id="g" cx="18%" cy="24%" r="90%"><stop stop-color="#24183C"/><stop offset=".5" stop-color="#0A0A0E"/><stop offset="1" stop-color="#050508"/></radialGradient></defs><rect width="1600" height="480" fill="url(#g)"/>`,
-  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164)}<text x="500" y="348" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL</text>`,
+  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164)}<text x="500" y="348" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">YOUR BOT FOR CALLS, TEXTS, AND EMAIL.</text>`,
 });
 writePng("identity/botbound-lockup-obsidian-1600x480.png", obsidianLockup, 1600);
 
@@ -67,7 +68,7 @@ const platinumLockup = frame({
   title: "BotBound primary horizontal lockup on platinum",
   description: "The approved BotBound robot and unbroken wordmark for light surfaces.",
   background: `<rect width="1600" height="480" fill="#F5F4F8"/>`,
-  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164, "#0A0A0E", "#6D3DEB")}<text x="500" y="348" fill="#5B556B" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL</text>`,
+  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164, "#0A0A0E", "#6D3DEB")}<text x="500" y="348" fill="#5B556B" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">YOUR BOT FOR CALLS, TEXTS, AND EMAIL.</text>`,
 });
 writePng("identity/botbound-lockup-platinum-1600x480.png", platinumLockup, 1600);
 
@@ -77,7 +78,7 @@ const transparentLockup = frame({
   title: "BotBound transparent horizontal lockup",
   description: "The approved BotBound robot and unbroken wordmark on transparency.",
   background: "",
-  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164)}<text x="500" y="348" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL</text>`,
+  content: `<image href="${appIcon}" x="88" y="64" width="352" height="352"/>${wordmark(492, 286, 164)}<text x="500" y="348" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="28" font-weight="600" letter-spacing="1.4">YOUR BOT FOR CALLS, TEXTS, AND EMAIL.</text>`,
 });
 writePng("identity/botbound-lockup-transparent-1600x480.png", transparentLockup, 1600);
 
@@ -127,7 +128,7 @@ const email = frame({
   title: "BotBound launch email header",
   description: "A concise BotBound campaign email header.",
   background: `<defs><radialGradient id="signal" cx="82%" cy="44%" r="62%"><stop stop-color="#8B5CF6" stop-opacity=".28"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient><linearGradient id="canvas" x1="0" x2="1"><stop stop-color="#050508"/><stop offset="1" stop-color="#14111F"/></linearGradient></defs><rect width="1200" height="400" fill="url(#canvas)"/><rect width="1200" height="400" fill="url(#signal)"/>`,
-  content: `${wordmark(52, 70, 44)}<text x="50" y="186" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="70" font-weight="800" letter-spacing="-3"><tspan x="50">PUT YOUR BOT</tspan><tspan x="50" dy="72">ON THE <tspan fill="#A78BFA">LINE.</tspan></tspan></text><text x="54" y="344" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="24" font-weight="600">The AI employee that answers.</text><image href="${operator}" x="790" y="-52" width="490" height="490"/>`,
+  content: `${wordmark(52, 70, 44)}<text x="50" y="186" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="70" font-weight="800" letter-spacing="-3"><tspan x="50">PUT YOUR BOT</tspan><tspan x="50" dy="72">ON THE <tspan fill="#A78BFA">LINE.</tspan></tspan></text><text x="54" y="344" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="24" font-weight="600">Your Bot. Every channel.</text><image href="${operator}" x="790" y="-52" width="490" height="490"/>`,
 });
 writePng("email/botbound-launch-email-header-1200x400.png", email, 1200);
 
@@ -137,6 +138,6 @@ const endFrame = frame({
   title: "BotBound commercial end frame",
   description: "The approved robot and BotBound launch promise on obsidian.",
   background: `<defs><radialGradient id="signal" cx="50%" cy="50%" r="58%"><stop stop-color="#8B5CF6" stop-opacity=".25"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient><linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#181126"/><stop offset=".5" stop-color="#0A0A0E"/><stop offset="1" stop-color="#050508"/></linearGradient></defs><rect width="3840" height="2160" fill="url(#canvas)"/><rect width="3840" height="2160" fill="url(#signal)"/>`,
-  content: `<image href="${operator}" x="1360" y="68" width="1120" height="1120"/>${wordmark(1020, 1450, 348)}<text x="1920" y="1648" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="116" font-weight="800" text-anchor="middle" letter-spacing="2">PUT YOUR BOT ON THE LINE.</text><text x="1920" y="1790" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="62" font-weight="600" text-anchor="middle">AI employees for calls, texts, and email.</text><rect x="1584" y="1882" width="672" height="154" rx="77" fill="#A78BFA"/><text x="1920" y="1983" fill="#0E0B16" font-family="Inter Tight, sans-serif" font-size="58" font-weight="800" text-anchor="middle" letter-spacing="5">BOTBOUND.ME</text>`,
+  content: `<image href="${operator}" x="1360" y="68" width="1120" height="1120"/>${wordmark(1020, 1450, 348)}<text x="1920" y="1648" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="116" font-weight="800" text-anchor="middle" letter-spacing="2">PUT YOUR BOT ON THE LINE.</text><text x="1920" y="1790" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="62" font-weight="600" text-anchor="middle">Your Bot for calls, texts, and email.</text><rect x="1584" y="1882" width="672" height="154" rx="77" fill="#A78BFA"/><text x="1920" y="1983" fill="#0E0B16" font-family="Inter Tight, sans-serif" font-size="58" font-weight="800" text-anchor="middle" letter-spacing="5">BOTBOUND.ME</text>`,
 });
 writePng("commercial/botbound-commercial-endframe-4k.png", endFrame, 3840);

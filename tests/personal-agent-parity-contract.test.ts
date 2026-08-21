@@ -34,9 +34,9 @@ describe("unified Bot workspace compatibility", () => {
     expect(BOT_WORKSPACE_PROMISE.description).toContain("Context carries forward");
   });
 
-  it("keeps business, personal, and custom starters in one role catalog", () => {
+  it("keeps operations, everyday, and custom starters in one role catalog", () => {
     const categories = new Set(BOT_ROLE_TEMPLATES.map((template) => template.category));
-    expect(categories).toEqual(new Set(["Business", "Personal", "Custom"]));
+    expect(categories).toEqual(new Set(["Operations", "Everyday", "Custom"]));
     expect(BOT_ROLE_TEMPLATES.map((template) => template.name)).toEqual(expect.arrayContaining(["Front Desk", "Sales Rep", "Personal Assistant", "Family Concierge", "Create Your Own"]));
   });
 

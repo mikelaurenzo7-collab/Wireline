@@ -40,7 +40,7 @@ export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
 }> = [
   { id: "bright", label: "Bright", description: "Upbeat, energetic, and personable." },
   { id: "warm", label: "Warm", description: "Friendly, patient, and conversational." },
-  { id: "clear", label: "Clear", description: "Confident, crisp, and business-ready." },
+  { id: "clear", label: "Clear", description: "Confident, crisp, and composed." },
   { id: "balanced", label: "Balanced", description: "Neutral, composed, and versatile." },
   { id: "direct", label: "Direct", description: "Decisive, focused, and authoritative." },
 ] as const;

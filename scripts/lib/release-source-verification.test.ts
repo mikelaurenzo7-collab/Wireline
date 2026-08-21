@@ -1,0 +1,84 @@
+import { execFileSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// @ts-expect-error -- plain .mjs helper shared by release scripts.
+import {
+  assertCleanCheckout,
+  normalizeBaseURL,
+  resolveSourceCommit,
+  verifyRemoteSourceCommit,
+} from "./release-source-verification.mjs";
+
+describe("launch media source verification", () => {
+  let repoRoot = "";
+
+  beforeEach(async () => {
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "");
+    vi.stubEnv("GITHUB_SHA", "");
+    repoRoot = await mkdtemp(join(tmpdir(), "botbound-release-source-"));
+    execFileSync("git", ["init", "--quiet"], { cwd: repoRoot });
+    execFileSync("git", ["config", "user.email", "launch-test@botbound.test"], {
+      cwd: repoRoot,
+    });
+    execFileSync("git", ["config", "user.name", "BotBound Launch Test"], { cwd: repoRoot });
+    await writeFile(join(repoRoot, "source.txt"), "certified source\n");
+    execFileSync("git", ["add", "source.txt"], { cwd: repoRoot });
+    execFileSync("git", ["commit", "--quiet", "-m", "certified source"], { cwd: repoRoot });
+  });
+
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    await rm(repoRoot, { recursive: true, force: true });
+  });
+
+  it("binds certification to one clean local commit", async () => {
+    const sourceCommit = resolveSourceCommit(repoRoot);
+    expect(sourceCommit).toMatch(/^[0-9a-f]{40}$/);
+    expect(() => assertCleanCheckout(repoRoot, sourceCommit)).not.toThrow();
+
+    await writeFile(join(repoRoot, "source.txt"), "dirty source\n");
+    expect(() => assertCleanCheckout(repoRoot, sourceCommit)).toThrow("clean Git checkout");
+  });
+
+  it("rejects a malformed CI source commit instead of silently using HEAD", () => {
+    vi.stubEnv("GITHUB_SHA", "not-a-commit");
+    expect(() => resolveSourceCommit(repoRoot)).toThrow("exact 40-character SHA");
+  });
+
+  it("accepts only the exact canonical production origin", () => {
+    expect(normalizeBaseURL("https://botbound.me/")).toBe("https://botbound.me");
+    for (const target of [
+      "http://botbound.me",
+      "https://trywireline.com",
+      "https://preview.botbound.me",
+      "https://user:pass@botbound.me",
+    ]) {
+      expect(() => normalizeBaseURL(target), target).toThrow();
+    }
+  });
+
+  it("checks a cache-busted health response for the exact deployed commit", async () => {
+    const sourceCommit = resolveSourceCommit(repoRoot);
+    const fetchMock = vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(String(input));
+      expect(url.pathname).toBe("/api/health/public");
+      expect(url.searchParams.get("source_commit_check")).toBe(sourceCommit);
+      expect(init?.method).toBe("HEAD");
+      expect(init?.redirect).toBe("error");
+      return new Response(null, {
+        status: 200,
+        headers: { "X-Wireline-Source-Commit": sourceCommit },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyRemoteSourceCommit(sourceCommit, "https://botbound.me"),
+    ).resolves.toMatchObject({ baseURL: "https://botbound.me", deployedCommit: sourceCommit });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+});

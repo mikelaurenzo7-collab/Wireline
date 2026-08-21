@@ -62,9 +62,10 @@ function callStartErrorMessage(reason: unknown): string {
 }
 
 async function responseMessage(response: Response): Promise<string> {
-  const body = (await response.json().catch(() => null)) as
-    | { error?: string | { message?: string }; message?: string }
-    | null;
+  const body = (await response.json().catch(() => null)) as {
+    error?: string | { message?: string };
+    message?: string;
+  } | null;
   if (typeof body?.error === "string" && body.error) return body.error;
   if (body?.error && typeof body.error === "object" && body.error.message) {
     return body.error.message;
@@ -189,7 +190,7 @@ export function useProtectedPublicDemo(
     sessionAbortRef.current = null;
     captureEncoder.current?.reset();
     captureEncoder.current = null;
-    socket.current?.close(1000, "Wireline protected demo ended");
+    socket.current?.close(1000, "BotBound protected demo ended");
     socket.current = null;
     microphone.current?.getTracks().forEach((track) => track.stop());
     microphone.current = null;
@@ -234,40 +235,37 @@ export function useProtectedPublicDemo(
     [releaseTransport, resetCallState],
   );
 
-  const startCapture = useCallback(
-    async (stream: MediaStream, ws: WebSocket, attempt: number) => {
-      const context = new AudioContext();
-      if (context.state === "suspended") await context.resume();
-      if (attempt !== attemptRef.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        await context.close();
-        return;
+  const startCapture = useCallback(async (stream: MediaStream, ws: WebSocket, attempt: number) => {
+    const context = new AudioContext();
+    if (context.state === "suspended") await context.resume();
+    if (attempt !== attemptRef.current) {
+      stream.getTracks().forEach((track) => track.stop());
+      await context.close();
+      return;
+    }
+
+    const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
+    const sourceNode = context.createMediaStreamSource(stream);
+    const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
+    const sink = context.createGain();
+    sink.gain.value = 0;
+    processor.onaudioprocess = (event) => {
+      if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
+      for (const audio of encoder.push(event.inputBuffer.getChannelData(0))) {
+        ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
       }
+    };
+    sourceNode.connect(processor);
+    processor.connect(sink);
+    sink.connect(context.destination);
 
-      const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
-      const sourceNode = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
-      const sink = context.createGain();
-      sink.gain.value = 0;
-      processor.onaudioprocess = (event) => {
-        if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
-        for (const audio of encoder.push(event.inputBuffer.getChannelData(0))) {
-          ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
-        }
-      };
-      sourceNode.connect(processor);
-      processor.connect(sink);
-      sink.connect(context.destination);
-
-      microphone.current = stream;
-      audioContext.current = context;
-      captureSource.current = sourceNode;
-      captureProcessor.current = processor;
-      captureSink.current = sink;
-      captureEncoder.current = encoder;
-    },
-    [],
-  );
+    microphone.current = stream;
+    audioContext.current = context;
+    captureSource.current = sourceNode;
+    captureProcessor.current = processor;
+    captureSink.current = sink;
+    captureEncoder.current = encoder;
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -381,9 +379,7 @@ export function useProtectedPublicDemo(
       );
       setMaxDurationSeconds(duration);
 
-      const ws = new WebSocket(session.websocketUrl, [
-        `xai-client-secret.${session.clientSecret}`,
-      ]);
+      const ws = new WebSocket(session.websocketUrl, [`xai-client-secret.${session.clientSecret}`]);
       socket.current = ws;
       await startCapture(stream, ws, attempt);
       if (attempt !== attemptRef.current) return;
@@ -464,7 +460,7 @@ export function useProtectedPublicDemo(
                     content: [
                       {
                         type: "output_text",
-                        text: "That’s the demo. Build your own Wireline voice agent free when you’re ready.",
+                        text: "That’s the demo. Build your Bot free when you’re ready.",
                       },
                     ],
                   },

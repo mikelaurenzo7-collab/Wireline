@@ -36,8 +36,8 @@ Leftover Stripe Live Video price IDs may still exist so webhooks do not brick bi
 
 - Public paid plans are the canonical Founder catalog in `src/lib/plan-catalog.ts` and `scripts/lib/stripe-founder-catalog.mjs`.
 - Voice overflow uses prepaid Runtime Balance; Wireline does not create surprise postpaid voice overage invoices.
-- Live Video is a separate fixed recurring add-on and does not use Stripe usage metering.
-- Stripe checkout, webhook, entitlement, portal, cancellation, refund/dispute, and add-on lifecycle must remain server-owned and idempotent.
+- Leftover Live Video price IDs are reconciliation-only legacy records. No checkout, entitlement, or session can be created.
+- Stripe checkout, webhook, entitlement, portal, cancellation, and refund/dispute handling must remain server-owned and idempotent.
 - Run `npm run stripe:catalog:check` before any catalog mutation and the read-only live Stripe audit before a billing release.
 
 ## Communications compliance

@@ -38,10 +38,39 @@ const CORE_BUYING_SURFACES = [
 
 const CUSTOMER_BOT_SURFACES = [
   "src/components/ActivationChecklist.tsx",
+  "src/components/AgentTemplates.tsx",
+  "src/components/CrmConnectionCard.tsx",
   "src/components/OutboundDialDialog.tsx",
+  "src/components/PublicChangelog.tsx",
+  "src/components/StripeBillingCard.tsx",
+  "src/components/StudioWorkroom.tsx",
+  "src/components/admin/CarrierPanel.tsx",
+  "src/components/insights/shared.tsx",
+  "src/components/onboarding/PostCreateActivationWizard.tsx",
   "src/components/outbound/CampaignsPanel.tsx",
   "src/components/marketing/BrowserCallWidget.tsx",
+  "src/hooks/useProtectedPublicDemo.ts",
+  "src/lib/private-agent-test.ts",
   "src/lib/voice/xai-public-demo-session.ts",
+  "src/pages/CustomizationSettings.tsx",
+  "src/routes/agent-test-routes.ts",
+  "src/routes/chatgpt-mcp-account-routes.ts",
+] as const;
+
+const UNIFIED_AUDIENCE_SURFACES = [
+  "src/components/admin/AccountsPanel.tsx",
+  "src/components/CommandBar.tsx",
+  "src/components/CreateAgentDialog.tsx",
+  "src/components/StudioAgentWorkspacePanel.tsx",
+  "src/components/bots/BotConfigurator.tsx",
+  "src/components/overview/FirstRunWorkspace.tsx",
+  "src/pages/OverviewPage.tsx",
+  "src/pages/KnowledgePage.tsx",
+  "src/components/ContactPage.tsx",
+  "src/routes/chatgpt-mcp-account-routes.ts",
+  "ios/Wireline/Views/AssistantLibraryView.swift",
+  "ios/Wireline/Views/WorkspaceView.swift",
+  "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
 ] as const;
 
 describe("BotBound product voice", () => {
@@ -50,7 +79,7 @@ describe("BotBound product voice", () => {
       name: "BotBound",
       slogan: "PUT YOUR BOT ON THE LINE",
       supportingLine: "CALL · TEXT · EMAIL",
-      promise: "AI employees for calls, texts, and email.",
+      promise: "Your Bot for calls, texts, and email.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -92,6 +121,15 @@ describe("BotBound product voice", () => {
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
   });
 
+  it("does not reintroduce personal-versus-business language on customer surfaces", () => {
+    for (const path of UNIFIED_AUDIENCE_SURFACES) {
+      const source = withoutComments(read(path));
+      expect(source, path).not.toMatch(
+        /add (?:a )?(?:personal|business) (?:account|workspace)|personal and business|business and personal|business-ready|personally discreet|business knowledge|personal & lifestyle/i,
+      );
+    }
+  });
+
   it("makes all three communication channels explicit in one consistent order", () => {
     expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Text", "Email"]);
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email"]);
@@ -121,7 +159,9 @@ describe("BotBound product voice", () => {
 
   it("keeps role starters materially differentiated without forcing marketing categories", () => {
     const names = BOT_ROLE_TEMPLATES.map((template) => template.name);
-    const directions = [...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction))].sort();
+    const directions = [
+      ...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction)),
+    ].sort();
     expect(directions).toEqual(["hybrid", "inbound", "outbound"]);
     for (const role of [
       "Front Desk",
@@ -244,7 +284,7 @@ describe("BotBound product voice", () => {
       "/trust",
       "/privacy",
       "/terms",
-      "/for/personal",
+      "/for/everyday",
       "/signin",
       "/signup",
       "/get-started",

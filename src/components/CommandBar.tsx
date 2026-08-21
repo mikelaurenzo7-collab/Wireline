@@ -9,7 +9,6 @@ import {
 import {
   BarChart3,
   Bot,
-  BriefcaseBusiness,
   Cable,
   CheckSquare,
   ChevronRight,
@@ -24,7 +23,6 @@ import {
   Sparkles,
   Terminal,
   UsersRound,
-  WandSparkles,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -36,8 +34,6 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
-import { useAccount } from "../contexts/AccountContext";
-import { isRouteAvailableForAccount } from "../lib/account-type";
 import { customerAgentLanguage } from "../lib/product-copy";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
@@ -129,26 +125,10 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     category: "Workspace",
   },
   {
-    id: "create-personal",
-    label: "Create a personal agent",
-    keywords: "create personal focused job train",
+    id: "create-bot",
+    label: "Create a Bot",
+    keywords: "create bot role workflow train setup studio",
     icon: Sparkles,
-    href: "/studio?create=1&posture=personal",
-    category: "Create",
-  },
-  {
-    id: "create-business",
-    label: "Create a business voice agent",
-    keywords: "create business customer job",
-    icon: BriefcaseBusiness,
-    href: "/studio?create=1&posture=business",
-    category: "Create",
-  },
-  {
-    id: "create-brief",
-    label: "Open a new Studio brief",
-    keywords: "create new agent setup studio",
-    icon: WandSparkles,
     href: "/studio?create=1",
     category: "Create",
   },
@@ -212,7 +192,6 @@ export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { accountType } = useAccount();
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -224,13 +203,8 @@ export default function CommandBar() {
   useBodyScrollLock(isOpen);
 
   const filteredCommands = useMemo(() => {
-    // The palette must offer the same surface set as the rail: an unfiltered
-    // list pushed personal accounts to business-only pages (Activity) where no
-    // nav entry exists and there is no way back.
-    const language = customerAgentLanguage(accountType);
-    const available = WORKSPACE_COMMANDS.filter((command) =>
-      isRouteAvailableForAccount(accountType, command.href),
-    ).map((command) =>
+    const language = customerAgentLanguage();
+    const available = WORKSPACE_COMMANDS.map((command) =>
       command.id === "agents" ? { ...command, label: language.navLabel } : command,
     );
     const term = query.trim().toLocaleLowerCase();
@@ -241,7 +215,7 @@ export default function CommandBar() {
         .toLocaleLowerCase()
         .includes(term),
     );
-  }, [accountType, query]);
+  }, [query]);
 
   const close = useCallback(() => {
     setIsOpen(false);

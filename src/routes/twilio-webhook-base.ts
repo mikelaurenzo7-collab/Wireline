@@ -728,11 +728,19 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     return res.status(200).send(twimlHangup());
   }
 
-  const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
   const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+  const approvedJingleUrl =
+    process.env.BOTBOUND_JINGLE_ASSET_APPROVED === "true"
+      ? publicAssetUrl("/sounds/botbound-jingle.mp3")
+      : null;
 
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
+  // The retired launch jingle names the previous product in its audio. Keep
+  // the public demo honest during the BotBound cutover: use provider speech
+  // until the BotBound recording has been generated, listened to, and approved.
+  twiml += approvedJingleUrl
+    ? `  <Play>${escapeTwimlValue(approvedJingleUrl)}</Play>\n`
+    : `  <Say voice="Polly.Joanna-Neural">Welcome to BotBound. Meet Mira, our playful front desk Bot.</Say>\n`;
   if (sipUri) {
     // Twilio <Dial> defaults to a four-hour maximum. A five-minute demo cap and
     // short ring timeout prevent a forgotten/abusive public call from turning

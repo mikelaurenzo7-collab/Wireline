@@ -59,7 +59,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "BotBound Scale & Enterprise",
+    name: "BotBound Enterprise",
     price: "Custom committed usage",
     bestFor: "Governed rollout for organizations that need 25 or more Bots.",
     includes: [

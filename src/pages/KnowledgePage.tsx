@@ -24,9 +24,9 @@ const knowledgeTabs: Array<{
 }> = [
   {
     id: "knowledge",
-    label: "Business knowledge",
+    label: "Knowledge",
     shortLabel: "Knowledge",
-    ariaLabel: "Business knowledge",
+    ariaLabel: "Bot knowledge",
   },
   { id: "reports", label: "Reports" },
 ];

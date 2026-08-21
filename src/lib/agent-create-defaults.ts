@@ -86,5 +86,5 @@ export function resolveCreatePersonality(opts: {
 export function isBusinessTemplateCategory(category: string | null | undefined): boolean {
   const normalized = (category || "").trim().toLowerCase();
   if (!normalized) return true;
-  return !normalized.includes("personal");
+  return !normalized.includes("personal") && !normalized.includes("everyday");
 }

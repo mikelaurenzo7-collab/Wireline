@@ -32,7 +32,7 @@ Wireline's commercial posture is broad phone-agent coverage: people, teams, and 
 | iOS / Android     | Urgent control surface.                             | Calls, handoff, notifications, approvals, recent summaries, wallet.                                       | Become a full admin clone before core urgent loops are flawless.                                                                    |
 | Browser extension | Explicit context capture.                           | Prepare call, extract facts, draft follow-up, send context to Studio.                                     | Harvest pages silently or store auth tokens.                                                                                        |
 | ChatGPT App       | Private assistant for configuration and simulation. | Drafts, improvements, simulations, account-bound tools.                                                   | Provision numbers, dial, launch agents, change billing, or claim external actions happened unless Wireline actually performed them. |
-| Marketing site    | Explain and convert.                                | Broad personal and business entry points, trust proof, use-case proof, and the canonical operating loop. | Fabricate proof, imply inactive features are generally available, or make one industry look like the only buyer.                    |
+| Marketing site    | Explain and convert.                                | One BotBound product, trust proof, role and use-case proof, and the canonical operating loop.             | Fabricate proof, imply inactive features are generally available, or make one industry look like the only buyer.                    |
 
 ## Release boundary matrix
 

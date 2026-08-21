@@ -24,6 +24,8 @@ export interface WorkspaceBrand {
 }
 
 const TRUSTED_LOGO_HOSTS: readonly string[] = [
+  "botbound.me",
+  "www.botbound.me",
   "trywireline.com",
   "cdn.trywireline.com",
   "assets.trywireline.com",

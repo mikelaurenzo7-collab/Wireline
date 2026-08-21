@@ -1,24 +1,29 @@
-# Wireline Research Operating System
+# BotBound Research Operating System
 
-This document turns Wireline research into an execution system. It is not a backlog dump. Every item below must improve one of four outcomes:
+This document turns BotBound research into an execution system. It is not a backlog dump. Every item below must improve one of four outcomes:
 
-1. **Trust** — the agent is safe, reliable, permissioned, auditable, and understandable.
-2. **Activation** — a user reaches a trained, testable, useful agent quickly.
-3. **Retention** — the agent keeps producing measurable value after the first call, text, handoff, or follow-up.
-4. **Expansion** — one useful agent becomes more agents, more surfaces, more numbers, more teammates, and more governed workflows.
+1. **Trust** — the Bot is safe, reliable, permissioned, auditable, and understandable.
+2. **Activation** — a user reaches a trained, testable, useful Bot quickly.
+3. **Retention** — the Bot keeps producing measurable value after the first call, text, handoff, or follow-up.
+4. **Expansion** — one useful Bot becomes more Bots, surfaces, numbers, teammates, and governed workflows.
 
-The canonical public promise is **Wire your agent**. The canonical product model is **Create -> Train -> Run**, with **Wire** as the launch and integration layer. Wireline is one protected agent platform across web, browser, native mobile, and ChatGPT—not a set of disconnected client apps.
+The canonical public promise is **Your Bot for calls, texts, and email.** The
+public loop is **Build -> Train -> Launch -> Improve**. Technical surfaces may
+retain **Create -> Train -> Wire -> Run** and `agent` identifiers where contracts
+require them. BotBound is one protected product and workspace across web,
+browser, native mobile, and ChatGPT—not a set of audience modes or disconnected
+client apps.
 
 ---
 
 ## Research stance
 
-Wireline should be studied like a regulated communications product, a conversion product, and an AI operations product at the same time.
+BotBound should be studied like a regulated communications product, a conversion product, and an AI operations product at the same time.
 
 - Treat voice quality, latency, interruption handling, routing accuracy, call outcomes, and fallback behavior as product quality, not implementation details.
 - Treat onboarding, empty states, templates, training, checkout, and phone provisioning as one activation system.
 - Treat every public page, metadata surface, app manifest, browser extension screen, mobile shell, and ChatGPT App surface as one brand system.
-- Treat every agent action as permissioned infrastructure: identity, consent, tenant scope, plan scope, audit trail, and reversible failure modes.
+- Treat every Bot action as permissioned infrastructure: identity, consent, tenant scope, plan scope, audit trail, and reversible failure modes.
 - Treat every roadmap bet as a measurable hypothesis with an owner, metric, decision date, and kill criteria.
 
 ---
@@ -29,8 +34,8 @@ Wireline should be studied like a regulated communications product, a conversion
 
 | Question                                                                                            | Why it matters                                       | Required evidence                                                                                               | Decision unlocked                                       |
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Can a new user create, train, test, and wire one useful agent without founder intervention?         | Activation is the product.                           | 10 observed onboarding sessions; time-to-trained-agent; drop-off points; rage clicks; failed validation events. | Simplify onboarding, templates, and first-run training. |
-| Does the agent behave correctly in real calls under messy caller behavior?                          | Voice trust determines retention.                    | 100-call dogfood set across personal, solo business, front desk, sales, and support scenarios.                  | Launch readiness for public traffic.                    |
+| Can a new user create, train, test, and wire one useful Bot without founder intervention?           | Activation is the product.                           | 10 observed onboarding sessions; time-to-trained-Bot; drop-off points; rage clicks; failed validation events.   | Simplify onboarding, templates, and first-run training. |
+| Does the Bot behave correctly in real calls under messy caller behavior?                            | Voice trust determines retention.                    | 100-call dogfood set across everyday delegation, owner-operated, front desk, sales, and support use cases.       | Launch readiness for public traffic.                    |
 | Are phone provisioning, call routing, SMS, transcripts, and follow-up reliable enough for paid use? | The line cannot feel experimental once live.         | Synthetic probes, provider error taxonomy, end-to-end traces, retry/fallback results.                           | Production launch and SLA posture.                      |
 | Is the public story understood in under five seconds on mobile?                                     | Mobile browser is the first impression.              | Five-second tests, first-click tests, mobile scroll maps, CTA comprehension.                                    | Hero/landing iteration and ad readiness.                |
 | Are static metadata, runtime metadata, social previews, and installable-app metadata aligned?       | Crawlers and share surfaces see static output first. | Static metadata contracts and Vercel HTML fetch after deploy.                                                   | SEO/social confidence.                                  |
@@ -40,9 +45,9 @@ Wireline should be studied like a regulated communications product, a conversion
 
 | Question                                                      | Why it matters                                      | Required evidence                                                                                    | Decision unlocked                                      |
 | ------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Which first agent is most likely to activate each segment?    | One generic template weakens conversion.            | Template selection, completion, test-call success, live wiring rate by segment.                      | Segment-specific onboarding and templates.             |
-| What is the right paid packaging for solo operators vs teams? | Solo business agents sit between Personal and Team. | Willingness-to-pay interviews; checkout experiments; usage-margin analysis.                          | Pricing and plan page changes.                         |
-| What is the minimum viable analytics loop for the customer?   | Customers need proof the agent works.               | Interviews; dashboard usage; desired weekly report formats.                                          | Agent ROI summary, weekly recap, and expansion nudges. |
+| Which first Bot is most likely to activate each role cohort?  | One generic template weakens conversion.            | Role-starter selection, completion, test-call success, and live wiring rate by cohort.                | Better starters inside the shared onboarding path.     |
+| What capacity and price fit owner-operators versus teams?     | Usage and role count vary without requiring modes.  | Willingness-to-pay interviews; checkout experiments; usage-margin analysis.                          | Pricing and plan page changes.                          |
+| What is the minimum viable analytics loop for the customer?   | Customers need proof the Bot works.                 | Interviews; dashboard usage; desired weekly report formats.                                          | Bot outcome summary, weekly recap, and expansion nudges. |
 | Which integrations create durable retention?                  | Integrations become switching costs.                | CRM/calendar/email usage, failure rates, support load, retention lift.                               | Integration roadmap.                                   |
 | What usage events predict conversion and churn?               | Growth needs leading indicators.                    | Cohort analysis on setup events, call tests, phone wiring, first successful handoff, balance top-up. | Lifecycle email, in-app prompts, and sales handoff.    |
 
@@ -50,7 +55,7 @@ Wireline should be studied like a regulated communications product, a conversion
 
 | Question                                                                                       | Why it matters                                           | Required evidence                                                                            | Decision unlocked                                   |
 | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| What can Wireline learn from every call that competitors cannot easily copy?                   | Moat comes from operational data and workflow memory.    | Agent memory model, safe feedback loops, evaluation rubrics, replayable call datasets.       | Quality flywheel design.                            |
+| What can BotBound learn from every call that competitors cannot easily copy?                   | Moat comes from operational data and workflow memory.    | Bot memory model, safe feedback loops, evaluation rubrics, replayable call datasets.         | Quality flywheel design.                            |
 | Which verticals deserve first-class trust packs?                                               | Regulated and high-value buyers need proof.              | Buyer interviews, compliance requirements, objection logs.                                   | Legal, medical, insurance, real-estate trust packs. |
 | Should voice synthesis, voice marketplace, or client-specific voices become a product surface? | Differentiation may be voice identity, but risk is high. | Consent/legal review, customer demand, provider quality benchmarks, fraud prevention design. | Voice roadmap.                                      |
 | Where should browser, mobile, and ChatGPT surfaces diverge?                                    | Each surface must earn its existence.                    | Usage by surface; task-fit research; support tickets; OS/store constraints.                  | Surface-specific roadmap.                           |
@@ -61,12 +66,12 @@ Wireline should be studied like a regulated communications product, a conversion
 
 ### 1. Positioning and ICP
 
-**Current canonical audience:** personal assistants, solo business agents, teams, sales teams, and call centers.
+**Current research cohorts:** roles and use cases inside the same BotBound product and workspace.
 
-Study these ICPs separately:
+Study these use-case cohorts separately without creating product or onboarding branches:
 
-1. Personal: unknown callers, appointments, errands, waiting on hold, reminders, family logistics.
-2. Solo business: real estate agents, brokers, contractors, consultants, recruiters, attorneys, med-spa owners, insurance agents.
+1. Everyday delegation: unknown callers, appointments, errands, waiting on hold, reminders, family logistics.
+2. Owner-operator: real estate, contracting, consulting, recruiting, legal intake, med-spa, and insurance work.
 3. Team SMB: front desk, shared inbox, service booking, support queue, after-hours line.
 4. Sales: inbound qualification, outbound follow-up, speed-to-lead, CRM handoff.
 5. Call center: triage, overflow, summaries, routing, compliance, QA assist.
@@ -74,15 +79,15 @@ Study these ICPs separately:
 Deliverables:
 
 - Segment one-pagers with pains, jobs-to-be-done, triggers, objections, killer demo, proof, plan fit, and integration needs.
-- One hero and one onboarding path per segment.
+- Role proof and starter templates per cohort inside one shared onboarding path.
 - Segment-specific call scripts and evaluation rubrics.
 - Segment-specific pricing objections and willingness-to-pay notes.
 
 Metrics:
 
 - Visit -> signup by segment.
-- Signup -> first agent created.
-- Agent created -> first training asset added.
+- Signup -> first Bot created.
+- Bot created -> first knowledge source added.
 - Training asset -> test call completed.
 - Test call -> phone wired.
 - Phone wired -> first successful external outcome.
@@ -93,14 +98,13 @@ Activation must be measured as a sequence, not a single signup.
 
 Target activation path:
 
-1. Pick audience.
-2. Pick first job.
-3. Create draft agent.
-4. Add one knowledge source or rule.
-5. Run one simulated/test call.
-6. Review transcript and correction.
-7. Wire number or channel.
-8. Complete first real outcome.
+1. Pick the first job or role.
+2. Create a draft Bot.
+3. Add one knowledge source or rule.
+4. Run one simulated/test call.
+5. Review transcript and correction.
+6. Wire a number or channel.
+7. Complete the first real outcome.
 
 Deliverables:
 
@@ -113,7 +117,7 @@ Deliverables:
 
 Activation metrics:
 
-- Median time to draft agent.
+- Median time to draft Bot.
 - Median time to test call.
 - Median time to first live call.
 - Percent completing each step.
@@ -154,13 +158,13 @@ Quality metrics:
 
 ### 4. Telephony, SMS, and reliability
 
-Wireline's reliability standard should be closer to communications infrastructure than a normal SaaS dashboard.
+BotBound's reliability standard should be closer to communications infrastructure than a normal SaaS dashboard.
 
 Deliverables:
 
 - End-to-end trace ID from inbound call to transcript to follow-up to billing ledger.
 - Provider error taxonomy for telephony, voice model, SMS, calendar, CRM, and billing.
-- Synthetic call probes every 15 minutes for showcase agents and at least hourly for key vertical templates.
+- Synthetic call probes every 15 minutes for showcase Bots and at least hourly for key role templates.
 - Status page mapping from internal health to customer-facing status language.
 - Runbook for P0/P1 voice degradation.
 
@@ -176,19 +180,19 @@ Metrics:
 
 ### 5. Conversion, pricing, and monetization
 
-Commercial system:
+Commercial system—one catalog for every use case:
 
-- Personal: create and train free, live work funded through Conversation Balance.
-- Team: recurring shared capacity plus Conversation Balance.
-- Business: higher operating capacity, CRM, governance, analytics, and role-aware controls.
-- Enterprise: contact sales, SSO, audit, BYO telephony, implementation, committed usage.
+- Free Builder: create, train, and privately simulate one draft Bot.
+- Starter, Starter Plus, and Pro: progressively higher live Bot, number, and usage capacity.
+- Bot add-ons: increase capacity without changing product or workspace type.
+- Scale: custom volume, SSO, audit, telephony, implementation, and support terms.
 
 Deliverables:
 
 - Plan entitlement matrix.
 - Checkout QA runbook.
 - Margin model by minute, provider, plan, and use case.
-- Price sensitivity interviews for solo business vs team buyers.
+- Price sensitivity interviews by live capacity, role count, and support need.
 - Checkout experiment backlog.
 
 Metrics:
@@ -198,20 +202,20 @@ Metrics:
 - Checkout start -> completed subscription/top-up.
 - Balance top-up repeat rate.
 - Gross margin per voice minute and per account.
-- Expansion from Personal/Solo to Team/Business.
+- Expansion from Free Builder to live use, higher capacity, and additional Bots.
 
 ### 6. Growth, SEO, and content
 
-Wireline should own practical intent, not generic AI hype.
+BotBound should own practical intent, not generic AI hype.
 
 Content pillars:
 
-1. AI phone agent for solo operators.
-2. AI front desk for appointment businesses.
-3. Speed-to-lead voice agent for sales teams.
+1. Phone Bot for owner-operators.
+2. Front Desk Bot for appointment businesses.
+3. Speed-to-lead Phone Bot for sales teams.
 4. AI call overflow and after-hours coverage.
 5. Agent training guides and call scripts.
-6. Trust/security/compliance for voice agents.
+6. Trust, security, and compliance for Phone Bots.
 7. Browser/mobile/ChatGPT command surfaces.
 
 Deliverables:
@@ -265,7 +269,7 @@ Deliverables:
 - Surface-by-surface task map.
 - Store/reviewer acceptance checklist.
 - Permission and privacy policy matrix.
-- Shared contract for agent creation, training, launch, and actions.
+- Shared contract for Bot creation, training, launch, and actions.
 - Surface-specific dogfood scripts.
 
 Metrics:
@@ -329,8 +333,8 @@ P0:
 
 1. Ensure CI runs product voice, metadata, static metadata, authz, CSP, build, and server smoke.
 2. Add a separate Playwright workflow for homepage e2e and accessibility smoke.
-3. Add activation event taxonomy and instrument the first funnel: landing view, audience select, CTA click, signup intent capture, agent draft created, training asset added, test call started/completed, wire started/completed.
-4. Patch remaining landing audience copy so solo business is first-class across preview cards and notes.
+3. Add activation event taxonomy and instrument the first funnel: landing view, role selected, CTA click, signup intent captured, Bot draft created, knowledge added, test call started/completed, and live wiring started/completed.
+4. Patch any remaining audience-mode copy so every role enters the same product and workspace.
 5. Create synthetic call probe runbook and map the expected trace from call -> transcript -> summary -> follow-up -> billing ledger.
 6. Enforce custom-auth breached-password screening before public launch.
 
@@ -348,12 +352,12 @@ P0:
 1. Build first-run checklist inside product.
 2. Add segment-specific onboarding templates.
 3. Add post-call coaching loop: transcript -> issue -> suggested correction -> retest.
-4. Launch weekly agent performance recap.
+4. Launch a weekly Bot outcome recap.
 5. Build margin dashboard for provider cost, minutes, and plan revenue.
 
 P1:
 
-1. Run pricing interviews for solo business vs team.
+1. Run pricing interviews by required live capacity, role count, and support need.
 2. Add demo call library by segment.
 3. Publish high-intent SEO pages only where template and proof exist.
 4. Add integration research for Google Calendar, Gmail, CRM, Slack, and vertical systems.
@@ -403,7 +407,7 @@ Any item with Severity 5 can override the formula.
 2. Public positioning is now centralized in shared product voice constants and protected by product voice/static metadata tests.
 3. Static HTML, runtime metadata, web manifest, and OG image have guardrails against old promise drift.
 4. Primary CI still needs stronger coverage for the new product contracts and e2e accessibility smoke.
-5. The public landing component still has a few business-mode strings that over-index on call centers and under-index on solo business.
+5. Audience-mode strings must not return; role and use-case proof belongs inside the shared BotBound journey.
 6. Pricing direction is coherent but still requires post-deploy checkout, webhook, portal, and billing-status verification before live rollout.
 7. Custom-auth breached-password screening is enforced (see `docs/security/auth-password-controls.md`); the Supabase Auth leaked-password advisor WARN is an accepted, non-active-control posture, not an open launch blocker (see `docs/SUPABASE_ADVISOR_POSTURE_2026-07-07.md`).
 8. SLA language promises synthetic call probes; the implementation and reporting loop must be verified before using that as a public trust claim.
@@ -417,5 +421,5 @@ Any item with Severity 5 can override the formula.
 - Do not sell unlimited voice without a cost ledger and abuse controls.
 - Do not ship public launch while core security posture has known dashboard-level gaps.
 - Do not let the product revert to generic assistant/dashboard/operator language.
-- Do not add new visual systems outside Wireline Letterpress.
+- Do not add new visual systems outside BotBound Letterpress.
 - Do not add roadmap items without a metric and a kill criterion.

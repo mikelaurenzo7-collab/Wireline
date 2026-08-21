@@ -26,7 +26,7 @@ describe("marketing centering contract", () => {
     );
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
-    expect(header).toContain('to="/signup?plan=personal"');
+    expect(header).toContain('to={signupHrefForPlan("personal")}');
     expect(header).toContain('<BotBoundLockup size="standard" />');
     expect(header).toContain('aria-label="Start Free"');
     expect(header).not.toContain("DialogTrigger");

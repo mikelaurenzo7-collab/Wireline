@@ -54,7 +54,7 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "enrich-lead": {
     title: "Enrich Lead",
-    tagline: "Wireline AI searches the web: identity, employer, hooks.",
+    tagline: "BotBound searches the web for identity, employer, and useful hooks.",
     icon: Search,
     accent: BRAND.colors.primary,
     thinking: false,
@@ -103,14 +103,14 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "knowledge-from-url": {
     title: "Ingest from URL",
-    tagline: "Wireline AI reads your site and extracts agent facts.",
+    tagline: "BotBound reads your site and extracts approved Bot knowledge.",
     icon: Globe,
     accent: BRAND.colors.primary,
     thinking: false,
   },
   "knowledge-from-document": {
     title: "Ingest from PDF",
-    tagline: "Upload a brochure, menu, or policy doc. Wireline AI reads it.",
+    tagline: "Upload a brochure, menu, or policy document. BotBound reads it.",
     icon: FileUp,
     accent: BRAND.colors.outlineVariant,
     thinking: false,

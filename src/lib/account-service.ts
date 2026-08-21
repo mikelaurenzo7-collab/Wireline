@@ -1,7 +1,8 @@
 /**
  * account-service.ts — CRUD + resolution for Wireline accounts.
  *
- * Each user can own at most two accounts: one personal and one business.
+ * Each user can own at most two workspaces. Legacy account types remain the
+ * storage constraint, but they do not create separate customer-facing products.
  * The first account created at signup is the "primary" (is_primary=true).
  * Account type currently drives product lens and agent archetype defaults;
  * agents, settings, and billing remain user-scoped until workspace isolation
@@ -88,7 +89,7 @@ export async function createAccount(
   const allAccounts = await getAccountsForUser(userId);
   const isPrimary = allAccounts.length === 0;
 
-  const defaultLabel = type === "personal" ? "Personal" : "My Business";
+  const defaultLabel = isPrimary ? "Main workspace" : "Additional workspace";
 
   const [inserted] = await drizzle
     .insert(schema.accounts)
@@ -114,9 +115,5 @@ export async function ensureDefaultAccount(
 ): Promise<WirelineAccount> {
   const existing = await getAccountsForUser(userId);
   if (existing.length > 0) return existing.find((a) => a.isPrimary) ?? existing[0];
-  return createAccount(
-    userId,
-    preferredType,
-    preferredType === "personal" ? "Personal" : "My Business",
-  );
+  return createAccount(userId, preferredType, "Main workspace");
 }

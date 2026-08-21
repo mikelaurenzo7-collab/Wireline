@@ -37,7 +37,6 @@ const TOOL_START_MESSAGES: Readonly<Record<string, string>> = {
   search_leads: "Let me pull up the record.",
   escalate_to_human: "Let me connect you now.",
   send_signup_link: "Let me prepare that signup link.",
-  create_account: "Let me set that up.",
   send_payment_link: "Let me prepare the secure payment link.",
   gemini_ground: "Let me verify that with current information.",
   enrich_lead: "Let me look that up.",
@@ -75,7 +74,6 @@ const DESTINATION_CONFIRMATION_TOOLS = new Set([
 const MATERIAL_WRITE_TOOLS = new Set([
   "book_appointment",
   "schedule_callback",
-  "create_account",
   "crm_create_opportunity",
   "crm_create_contact",
   "crm_update_deal_stage",
@@ -110,8 +108,6 @@ const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
     "Confirm the exact callback date, time, timezone, and purpose immediately before scheduling.",
   add_to_dnc:
     "Execute immediately when the caller opts out. Do not make them repeat the request or attempt to persuade them to stay subscribed.",
-  create_account:
-    "Confirm the caller's full name and email address, and explain that a secure password-setup email will follow.",
   send_signup_link: "Confirm the caller's email address before sending the signup link.",
   send_payment_link:
     "Confirm the recipient and selected plan or payment purpose before sending the secure link.",

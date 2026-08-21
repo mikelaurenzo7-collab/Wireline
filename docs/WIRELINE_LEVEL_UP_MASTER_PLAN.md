@@ -1,12 +1,12 @@
-# Wireline Level-Up Master Plan
+# BotBound Level-Up Master Plan
 
-Status: **Active canonical execution plan**. This plan sequences the approved audit recommendations into a flawless product, monorepo, and business operating system.
+Status: **Active execution plan**. Current product language and commercial posture defer to `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`, `docs/CUSTOMER_TERMINOLOGY.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, and `src/lib/plan-catalog.ts`.
 
 **Jul 2026 master plan:** Pricing lock + 90-day GTM (P0–P4) is captured in the Cursor master plan and operationalized here. Canonical commercial rates live in `docs/business-usage-pricing-decision.md` and `src/lib/plan-catalog.ts`. Operator proof: `docs/P0_BILLING_OPS_NOTE.md`.
 
 ## Principle
 
-Wireline should feel broad in capability but narrow in first value: an owner creates an agent, trains it, wires it to real work, and runs calls/texts/follow-up safely. Every repo improvement should either strengthen that loop, protect trust, protect margin, or make the whole multi-surface product easier to operate.
+BotBound should feel broad in capability but narrow in first value: a customer builds a Bot around a real job, trains it, launches it on the needed channels, and improves it from outcomes. Every repo improvement should strengthen that loop, protect trust or margin, or make the one multi-surface product easier to operate.
 
 ## Phase 0 — Truth, deletion, and guardrails
 
@@ -23,10 +23,10 @@ Exit criteria:
 
 ## Phase 1 — Broad launch
 
-Launch around the broad phone-agent promise: personal agents, sales agents, support agents, scheduling agents, call-center coverage, and vertical templates all feed the same Create -> Train -> Wire -> Run loop.
+Launch around **Your Bot for calls, texts, and email.** Sales, support, scheduling, front-desk, everyday-delegation, and vertical role starters all enter the same BotBound product and workspace.
 
 Must be excellent:
-- First agent creation.
+- First Bot creation.
 - Training facts and policies.
 - Phone/voice wiring.
 - Studio run loop.
@@ -35,7 +35,7 @@ Must be excellent:
 - Trust pack and truthful product proof.
 
 Exit criteria:
-- A new qualified buyer can understand the product in one page, create one useful agent, wire it deliberately, and run/review real work.
+- A new qualified buyer can understand the product in one page, build one useful Bot, launch it deliberately, and run/review real work.
 
 ## Phase 2 — Reliability and margin engine
 
@@ -50,7 +50,7 @@ Build:
 - Twilio number inventory review.
 
 Exit criteria:
-- Wireline can answer “Is it safe and profitable to sell today?” from one internal cockpit.
+- BotBound can answer “Is it safe and profitable to sell today?” from one internal cockpit.
 
 ## Phase 3 — Multi-surface excellence
 
@@ -58,29 +58,28 @@ Make every app surface serve a distinct job and release from an explicit tier bo
 
 | Tier | Launch status | Product job | Release gate |
 | --- | --- | --- | --- |
-| Web/API | **Live** | Complete command center, setup workbench, billing, voice/integration runtime, mobile adapters, MCP, and presenter APIs. | `npm run verify`, `npm run verify:full` for release/sensitive changes, `npm run verify:contracts`, targeted provider smoke, and read-only DB health when schema assumptions change. |
-| Browser extension | **Beta** | Explicit page-context handoff to Studio through Wireline Command. | Extension build `--check`, Chromium/Firefox packaging, manual browser smoke, permissions review, and explicit-action context handoff verification. |
+| Web/API | **Live** | Complete command center, setup workbench, billing, voice/integration runtime, mobile adapters, and MCP. | `npm run verify`, `npm run verify:full` for release/sensitive changes, `npm run verify:contracts`, targeted provider smoke, and read-only DB health when schema assumptions change. |
+| Browser extension | **Beta** | Explicit page-context handoff to Studio through BotBound Command. | Extension build `--check`, Chromium/Firefox packaging, manual browser smoke, permissions review, and explicit-action context handoff verification. |
 | iOS | **Planned** | Urgent owner control for calls, approvals, notifications, handoff, wallet, widgets, and review. | XcodeGen, simulator build, physical-device PushKit/CallKit, App Privacy/account deletion, and mobile API smoke. |
 | Android | **Beta** | Urgent owner control for calls, approvals, notifications, handoff, wallet, widgets, and review. | Gradle compile, emulator smoke, physical-device Telecom/FCM, Play Data safety/account deletion, and release signing verification. |
 | ChatGPT App | **Beta** | Private account-bound drafting, refinement, simulation, and account-aware workflow assistance. | MCP discovery/tool/resource probe, OAuth PKCE reviewer flow, private simulation boundary test, and no-side-effect tool review. |
-| Video presenter | **Planned/Beta add-on** | Optional consent-gated visual presenter layer for business agents. | Consent/fallback smoke, provider readiness, cost/metering review, customer-copy review, and support/pricing gate. |
+| Video presenter | **Retired** | Identity badges and fail-closed legacy webhook compatibility only. | No checkout, session minting, talking-head generation, or publishable Live Video claim. |
 
 Exit criteria:
 - Native clients use a complete `/api/mobile/*` adapter surface except auth.
 - Browser extension remains explicit-user-action only: no silent browsing, broad host permissions, background page harvesting, token storage, or independent outbound execution.
-- ChatGPT tools cannot bypass Wireline authorization, provision numbers, dial, launch agents, change billing, or claim external actions happened unless Wireline performed them through approved server workflows.
-- Video presenters ship only as consent-gated add-ons with server-owned credentials, fallback behavior, truthful customer copy, pricing, and rollback criteria.
+- ChatGPT tools cannot bypass BotBound authorization, provision numbers, dial, launch Bots, change billing, or claim external actions happened unless BotBound performed them through approved server workflows.
+- Retired video-presenter paths remain fail-closed and cannot mint sessions, enter checkout, or produce launch creative.
 - Each tier has documented owning files/directories, required checks, non-goals, security/privacy constraints, and rollback criteria in `docs/CLIENT_SURFACES.md`.
 
 ## Phase 4 — Expansion
 
-Expand only after **20+ paying Team/Business accounts or $2k MRR** and 14 days of clean webhook/ledger reconciliation (see `docs/P0_BILLING_OPS_NOTE.md`).
+Expand only after a meaningful cohort of paying accounts or $2k MRR and 14 days of clean webhook/ledger reconciliation (see `docs/P0_BILLING_OPS_NOTE.md`).
 
 Expansion lanes:
 - CRM/email/calendar automations.
 - Vertical templates and certified setup playbooks.
-- Live video presenter add-on after consent, fallback, pricing, provider-readiness, privacy, and rollback gates are satisfied.
-- Enterprise package: SSO, security review, custom telephony, dedicated support, and negotiated volume economics.
+- Scale path: SSO, security review, custom telephony, dedicated support, and negotiated volume economics without creating a second product.
 - Richer analytics, QA, leaderboard, and insight surfaces once rebuilt on the current runtime.
 
 Exit criteria:
@@ -92,7 +91,7 @@ Exit criteria:
 - No browser-stored JWTs.
 - No silent browser harvesting; browser context must remain explicit-user-action only.
 - No inactive endpoint claims in public contracts.
-- No vendor-name leakage in customer-facing presenter copy.
+- No retired presenter checkout, session minting, talking-head generation, or publishable Live Video copy.
 - No expensive usage without metering, gating, and account-level visibility.
-- No ChatGPT App ability to provision numbers, dial, launch agents, change billing, or perform outbound actions.
+- No ChatGPT App ability to provision numbers, dial, launch Bots, change billing, or perform outbound actions.
 - No new canonical doc without `docs/README.md` linkage.

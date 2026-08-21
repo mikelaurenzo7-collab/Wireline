@@ -145,7 +145,7 @@ struct WorkspaceView: View {
                 if agents.isEmpty {
                     BrandEmptyState(
                         title: "NO BOTS YET",
-                        message: "Build a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom Bot in the same workspace.",
+                        message: "Start with a role or create your own. Every Bot lives in the same workspace.",
                         systemImage: "waveform.and.person.filled"
                     )
                 } else {

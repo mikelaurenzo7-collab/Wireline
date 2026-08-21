@@ -1,6 +1,6 @@
-# Wireline Accessibility Statement
+# BotBound Accessibility Statement
 
-**Commitment:** Wireline is committed to ensuring our web application is
+**Commitment:** BotBound is committed to ensuring our web application is
 accessible to all users, including those with disabilities. We target
 **WCAG 2.1 Level AA** conformance across all public-facing and
 operator-facing surfaces.
@@ -15,7 +15,7 @@ operator-facing surfaces.
 |----------|---------------|----------|
 | **Keyboard navigation** | All interactive elements reachable via Tab/Enter/Escape | CommandBar, modal dismissal, form navigation |
 | **Touch targets** | Minimum 44×44px interactive target on CTAs, inputs, and buttons | `min-height: 44px` enforced in `design-system.css` / `cta-readability.css`; comfortable-target token `--wireline-interaction-target-comfortable` |
-| **Color contrast** | Wireline Letterpress (Aurora) palette — near-white text on obsidian canvas in dark mode, obsidian text on near-white in light mode | `design-tokens/wireline.tokens.json` + `src/styles/design-system.css` |
+| **Color contrast** | BotBound Letterpress palette — near-white text on obsidian canvas in dark mode, obsidian text on near-white in light mode | `design-tokens/wireline.tokens.json` + `src/styles/design-system.css` |
 | **Reduced motion** | `motion/react` respects `prefers-reduced-motion` | Framer Motion default behavior |
 | **Focus indicators** | Visible focus rings on all interactive elements | Tailwind's `focus:ring-2` pattern |
 | **Semantic HTML** | Proper heading hierarchy, landmark regions | Layout components use `<nav>`, `<main>`, `<header>` |
@@ -35,7 +35,7 @@ operator-facing surfaces.
 
 ### Known Limitations
 
-- **Voice call interface**: The core product (voice agents on phone calls)
+- **Voice call interface**: The core product (Bots on phone calls)
   is inherently accessible to visually impaired users — it's a phone call.
   The web dashboard for managing agents requires visual interaction.
 - **Real-time live monitor**: The supervisor cockpit updates in real-time.
@@ -70,4 +70,4 @@ and providing a fix or workaround within 14 days.
 
 ---
 
-*Last reviewed: May 2026. This document is updated quarterly.*
+*Last reviewed: August 2026. This document is updated quarterly.*

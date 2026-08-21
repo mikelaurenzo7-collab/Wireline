@@ -53,10 +53,45 @@ describe("post-merge UI and artifact hardening", () => {
     expect(assets).toContain('secure: baseUrl.protocol === "https:"');
     expect(assets).toContain("try {\n    const context = await browser.newContext");
     expect(assets).toContain("finally {\n    await browser.close();");
-    expect(assets).toContain("Free Builder, Starter, Starter Plus, and Pro. Scale is custom.");
+    expect(assets).toContain(
+      "Free Builder, Starter, Starter Plus, and Pro. See live pricing for current capacity and rates.",
+    );
     expect(assets).toContain("Start free at ${baseUrl.hostname}.");
     expect(assets).not.toContain("Start free at trywireline.com.");
-    expect(assets).toContain("Voice agents for sales and support");
+    expect(assets).toContain("# BotBound official asset pack");
+    expect(assets).toContain('path.join(marketingKit, "release-record.json")');
+    expect(assets).toContain("releaseRecord.publishable !== true");
+    expect(assets).toContain("const sourceCommit = resolveSourceCommit(repoRoot)");
+    expect(assets.match(/assertCleanCheckout\(repoRoot, sourceCommit\)/g)).toHaveLength(2);
+    expect(assets.match(/verifyRemoteSourceCommit\(sourceCommit, baseUrl\.origin\)/g)).toHaveLength(
+      2,
+    );
+    expect(assets).toContain("copyExistingProductMedia(sourceCommit)");
+    expect(assets).toContain("verifyCertifiedMediaRecord(frames[0]");
+    expect(assets).toContain("verifyCertifiedMediaRecord(records[0]");
+    expect(assets).toContain("Expected exactly 3 certified launch videos");
+    expect(assets).toContain("verifiedBytes");
+    expect(assets).not.toContain("copyFile(");
+    for (const id of [
+      "reel-46s-master-walkthrough",
+      "reel-30s-product-loop",
+      "reel-15s-missed-call",
+    ]) {
+      expect(assets).toContain(id);
+    }
+    expect(assets).not.toContain("copyIfExists");
+    expect(assets).toContain("validatePreservedCampaignAudio");
+    expect(assets).toContain("audioProvenanceMatches(audioPath, fingerprint)");
+    expect(assets).toContain("campaignTrackFingerprintFromProvenance");
+    expect(assets).toContain("readAudioProvenance(audioPath)");
+    expect(assets).not.toContain("voiceId: DEFAULT_VOICE_ID");
+    expect(assets).toContain("assertGeneratedMp3(");
+    expect(assets).toContain("assertKnownOfficialAssetTopLevel");
+    expect(assets).not.toContain('"visual-qa/');
+    expect(assets).not.toContain("await rm(outRoot, { recursive: true, force: true })");
+    expect(assets).not.toContain("as ${email}");
+    expect(assets).not.toContain("# Wireline official asset pack");
+    expect(assets).toContain("Your Bot for sales and support");
     expect(assets).not.toContain("Free Builder · Starter · Growth · Scale · Business");
     expect(assets).not.toContain("Your best salesperson, without the commission");
   });

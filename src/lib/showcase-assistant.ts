@@ -47,7 +47,6 @@ export function showcaseVapiAssistantName(agent: ContactAgent): string {
 
 export const SHOWCASE_TOOL_NAMES = [
   "send_signup_link",
-  "create_account",
   "send_payment_link",
   "schedule_callback",
   "escalate_to_human",
@@ -73,7 +72,7 @@ type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
  *   pure showcase demos. They must NEVER route a human follow-up to the
  *   founder — a curious prospect calling the "restaurant demo" is not a
  *   real BotBound support case. They keep only the self-service
- *   conversion tools (signup / account / payment link), which help a
+ *   conversion tools (signup / payment link), which help a
  *   prospect act on their own without ever paging Mike.
  *
  * The handler in routes/vapi/showcase-handlers.ts enforces the same
@@ -193,29 +192,6 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
         caller_name: {
           type: "string",
           description: "The caller's first name if you have it.",
-        },
-      },
-      required: ["to_email"],
-    },
-  },
-  create_account: {
-    name: "create_account",
-    description:
-      "Create the caller's BotBound account when they are ready to start now and have confirmed their email address.",
-    parameters: {
-      type: "object",
-      properties: {
-        to_email: {
-          type: "string",
-          description: "The caller's confirmed email address.",
-        },
-        caller_name: {
-          type: "string",
-          description: "The caller's name if you have it.",
-        },
-        email_confirmed: {
-          type: "boolean",
-          description: "Set true only after the caller explicitly confirmed the email address.",
         },
       },
       required: ["to_email"],
@@ -512,7 +488,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
       "ROLE-PLAY STANDARD for Outbound sales / SDR (Jake):",
       "- You are the caller's sales rep, sharp, respectful, never pushy or spammy.",
       "- Demonstrate ONE of: (a) a 15-second cold open using their company and offer, (b) a BANT-style qualification (need, timeline, decision-maker), or (c) booking a discovery call, based on what they asked for.",
-      "- Default scenario if they give no details: outbound call to a small-business owner about BotBound-style voice agents for missed calls.",
+      "- Default scenario if they give no details: outbound call to a small-business owner about a BotBound Bot for missed calls.",
       "- Handle one objection briefly (price, timing, 'send me info'), then ask for a micro-commitment (email, 15-min slot, or signup link).",
       "- Never claim you already sent email unless a tool returns DELIVERY_OK.",
     ],
@@ -581,7 +557,6 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
-    "- Use create_account when they want to start now.",
     "- Use send_payment_link when they are ready to buy.",
     "- Use the demo-specific tool (book_appointment, file_claim, book_showing, etc.) relevant to your scenario after gathering the required information.",
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
@@ -648,7 +623,7 @@ function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
  * right to pitch BotBound and ask for the business. This block makes the
  * close explicit (one clear, warm ask — not a polite sign-off) while
  * staying inside the demo boundary: they convert through self-service
- * tools (signup / account / payment link) and NEVER promise a human
+ * tools (signup / payment link) and NEVER promise a human
  * callback, which a demo line cannot honor.
  */
 function buildDemoClosingPlaybook(): string[] {
@@ -657,7 +632,7 @@ function buildDemoClosingPlaybook(): string[] {
     "- Once you have demonstrated the skill well, you have earned the pitch. Do NOT just end politely. Turn into BotBound's salesperson.",
     "- Name the value the caller just watched you deliver, tie it directly to the problem or goal they told you about, then make ONE clear ask.",
     "- Default ask: offer to email a Free Builder signup link so they can create and train an agent today. Then capture their email, read it back, get an explicit yes, and call send_signup_link.",
-    "- If they are eager to start now, use create_account. If they are ready to buy, use send_payment_link. Match the tool to their readiness.",
+    "- If they are eager to start now, send the signup link. If they are ready to buy, use send_payment_link. Match the tool to their readiness.",
     "- Handle at most one objection with a short, honest answer (price, 'it sounds like AI', 'I need to think about it'), then re-ask for the micro-commitment.",
     "- Stay warm and confident, never pushy: one clear ask, not three. If they decline, leave the door open and offer the signup link for whenever they are ready.",
   ];
@@ -681,7 +656,6 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     ...buildCompactWirelineKnowledgeSection("cs"),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
-    "- Use create_account when they want to start now.",
     "- Use send_payment_link when they are ready to buy.",
     "- Use schedule_callback only after the caller gives a specific callback time.",
     "- Use escalate_to_human when they ask for a person, emotions are high, or the issue is risky.",

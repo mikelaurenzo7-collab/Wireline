@@ -194,7 +194,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
-      "Voice, live conversations, text, and email under one Bot identity",
+      "Voice, live conversations, text, and email under your Bot's identity",
       "Lead Hunt access and optional connected-mailbox workflows",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
@@ -265,7 +265,7 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
   {
     id: "enterprise",
-    name: "BotBound Business",
+    name: "BotBound Scale",
     price_usd_monthly: 159,
     price_usd_annual: 1590,
     max_agents: 15,

@@ -46,7 +46,7 @@ export const POST_CREATE_WIZARD_COPY = {
       title: "Connect where customers reach you",
       detail:
         "Phone is the default lane. Open Connections when you need CRM, SMS, email, or other tools linked.",
-      phoneTitle: "Business phone line",
+      phoneTitle: "Bot phone line",
       phoneDetail: "Provision a US number on the next step. Callers reach this agent directly.",
       connectionsTitle: "Connections",
       connectionsDetail: "Mailbox, Salesforce, SMS threads, and routing live under Connections.",

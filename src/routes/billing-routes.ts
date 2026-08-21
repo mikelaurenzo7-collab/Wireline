@@ -1481,7 +1481,7 @@ router.get(
       const plan = planById(row?.plan_id || "personal");
       res.json({
         plan_id: plan?.id || "personal",
-        plan_name: plan?.name || "Personal",
+        plan_name: plan?.name || "Free Builder",
         included_agents: plan?.max_agents ?? 1,
         extra_agents: row?.extra_agents ?? 0,
         extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,

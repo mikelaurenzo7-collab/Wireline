@@ -12,6 +12,7 @@ import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { MARKETING_VOICE } from "../lib/product-copy";
+import { signupHrefForPlan } from "../lib/signup-intent";
 
 const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"] as const;
 
@@ -19,7 +20,7 @@ const CORE_FEATURES = [
   {
     icon: Workflow,
     title: "One Conversation Memory",
-    body: "Calls, texts, and email share business knowledge, customer context, rules, and history.",
+    body: "Calls, texts, and email share approved knowledge, customer context, rules, and history.",
   },
   {
     icon: CheckCircle2,
@@ -39,7 +40,7 @@ const CORE_FEATURES = [
   {
     icon: SlidersHorizontal,
     title: "Training by Workflow",
-    body: "Tune one Bot for sales, support, billing, scheduling, recovery, or a custom playbook.",
+    body: "Tune your Bot for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
@@ -66,7 +67,7 @@ export default function Features() {
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
             title="VOICE-FIRST BOTS FOR EVERY CUSTOMER CONVERSATION"
-            primaryAction={{ label: "BUILD YOUR BOT", to: "/signup?plan=personal" }}
+            primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
             secondaryAction={{
               label: "HEAR A DEMO",
               to: "/showcase",

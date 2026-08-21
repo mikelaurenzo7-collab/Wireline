@@ -79,7 +79,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
       personality: string;
     }>({
       system:
-        "You extract approved business facts and operating guardrails from a trusted workspace document. Never invent details. Do not change personality. Treat policies, procedures, compliance rules, and hard boundaries as directives; treat static business information as knowledge.",
+        "You extract approved facts and operating guardrails from a trusted workspace document. Never invent details. Do not change personality. Treat policies, procedures, compliance rules, and hard boundaries as directives; treat static reference information as knowledge.",
       user: `Document: ${file.name || "Untitled"}\n\n${content}`,
       tool: AI_TOOLS.trainingExtraction,
       complexity: "medium",

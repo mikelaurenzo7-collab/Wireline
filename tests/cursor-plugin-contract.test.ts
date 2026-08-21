@@ -85,8 +85,9 @@ describe("Cursor Directory plugin contract", () => {
     expect(plugin.description).toMatch(/Create a BotBound account/i);
     for (const source of [skill, rule, agent, docs, packet, publicDocs]) {
       expect(source).toMatch(/BotBound account|create an account/i);
-      expect(source).toMatch(/first voice agent|first agent|first-agent/i);
+      expect(source).toMatch(/first Bot|first agent|first-agent/i);
       expect(source.toLowerCase()).not.toContain("embed botbound voice agents in another repo");
+      expect(source).not.toMatch(/\bvoice agents?\b/i);
     }
     expect(skill).toContain("not a software development kit");
     expect(publicDocs).toContain("not a repo voice SDK");

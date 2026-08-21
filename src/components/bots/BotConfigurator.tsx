@@ -109,7 +109,7 @@ export default function BotConfigurator({
           >
             {BOT_ROLE_TEMPLATES.map((template) => (
               <option key={template.key} value={template.key}>
-                {template.name} · {template.category}
+                {template.name} · {template.direction}
               </option>
             ))}
           </select>

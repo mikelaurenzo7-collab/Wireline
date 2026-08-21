@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { emitProductEvent } from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";
+import { signupHrefForPlan } from "../../lib/signup-intent";
 import { cn } from "../../lib/utils";
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
 };
 
 export default function MarketingStickyCta({
-  href = "/signup?plan=personal",
+  href = signupHrefForPlan("personal"),
   label = MARKETING_VOICE.primaryCta,
   secondaryHref = "/showcase",
   secondaryLabel = "Hear It Live",

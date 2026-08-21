@@ -1,6 +1,7 @@
 import type { Request } from "express";
 import Twilio from "twilio";
 import { resolveCanonicalAppUrl } from "./app-url";
+import { LEGACY_PRODUCTION_ORIGIN } from "./brand";
 import { isProductionRuntime } from "./session-cookie";
 
 export type TwilioWebhookReject = { ok: false };
@@ -13,33 +14,71 @@ function firstHeaderValue(value: string | string[] | undefined): string {
     .trim();
 }
 
-function resolveTwilioRequestUrl(req: Request): string | null {
-  const explicitBase = String(process.env.TWILIO_WEBHOOK_BASE_URL || "")
-    .trim()
-    .replace(/\/+$/, "");
-
-  if (explicitBase) {
-    try {
-      return new URL(req.originalUrl, `${explicitBase}/`).toString();
-    } catch {
+function normalizedOrigin(value: string | undefined): string | null {
+  const candidate = String(value || "").trim();
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    if (
+      (url.protocol !== "https:" && url.protocol !== "http:") ||
+      url.username ||
+      url.password ||
+      (url.pathname !== "/" && url.pathname !== "") ||
+      url.search ||
+      url.hash
+    ) {
       return null;
     }
+    return url.origin;
+  } catch {
+    return null;
   }
+}
+
+function requestTarget(req: Request): string | null {
+  const target = String(req.originalUrl || "");
+  return target.startsWith("/") && !target.startsWith("//") ? target : null;
+}
+
+function requestUrlAtOrigin(origin: string | null, target: string): string | null {
+  return origin ? `${origin}${target}` : null;
+}
+
+function resolveTwilioRequestUrl(req: Request): string | null {
+  const target = requestTarget(req);
+  if (!target) return null;
+
+  const explicitBase = normalizedOrigin(process.env.TWILIO_WEBHOOK_BASE_URL);
 
   if (isProductionRuntime()) {
     const canonical = resolveCanonicalAppUrl();
-    if ("error" in canonical) return null;
-    try {
-      return new URL(req.originalUrl, `${canonical.url}/`).toString();
-    } catch {
-      return null;
+    const allowedOrigins = [
+      ...("error" in canonical ? [] : [canonical.url]),
+      LEGACY_PRODUCTION_ORIGIN,
+    ]
+      .map((origin) => normalizedOrigin(origin))
+      .filter((origin): origin is string => Boolean(origin));
+    const forwardedHost =
+      firstHeaderValue(req.headers["x-forwarded-host"]) || firstHeaderValue(req.headers.host);
+    const matchedOrigin = allowedOrigins.find(
+      (origin) => new URL(origin).host.toLowerCase() === forwardedHost.toLowerCase(),
+    );
+    if (matchedOrigin) return requestUrlAtOrigin(matchedOrigin, target);
+
+    // Some trusted proxies replace the public Host. An explicit external base
+    // remains a deliberate fallback; deployment policy pins it to BotBound.
+    if (explicitBase) {
+      return requestUrlAtOrigin(explicitBase, target);
     }
+    return null;
   }
+
+  if (explicitBase) return requestUrlAtOrigin(explicitBase, target);
 
   const protocol = firstHeaderValue(req.headers["x-forwarded-proto"]) || req.protocol || "http";
   const host =
     firstHeaderValue(req.headers["x-forwarded-host"]) || firstHeaderValue(req.headers.host);
-  return host ? `${protocol}://${host}${req.originalUrl}` : null;
+  return host ? `${protocol}://${host}${target}` : null;
 }
 
 /**

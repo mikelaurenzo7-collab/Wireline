@@ -3,7 +3,7 @@
 ## App identity
 
 - **Name:** BotBound
-- **Subtitle:** Build your first voice agent
+- **Subtitle:** Build your first Bot
 - **Category:** Business productivity / customer communications
 - **Hosted logo:** `https://botbound.me/botbound-icon-512.png`
 - **Public MCP endpoint:** `https://botbound.me/mcp`
@@ -27,11 +27,11 @@ Use the identifiers from the already-approved Developer Mode app when creating t
 
 ## One-sentence value proposition
 
-**Create a BotBound account from ChatGPT if you are new, build your first voice agent in that conversation, privately rehearse it, then continue in BotBound for numbers and launch.**
+**Create a BotBound account from ChatGPT if you are new, build your first Bot in that conversation, privately rehearse it, then continue in BotBound for numbers and launch.**
 
 ## What the app does inside ChatGPT
 
-BotBound requires a connected account. A new user creates that account during OAuth, then uses normal language to build their first voice agent - for example a sales and support phone agent - for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in BotBound.
+BotBound requires a connected account. A new user creates that account during OAuth, then uses normal language to build their first Bot - for example a sales and support Phone Bot - for call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The Bot profile can include its represented identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing Bots, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in BotBound.
 
 ## Why ChatGPT is essential
 
@@ -81,7 +81,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 ### Account-bound creation path
 
 1. Use the approved BotBound app in the ChatGPT review environment with MCP endpoint `https://botbound.me/mcp`.
-2. Run: **"Use BotBound to create a sales and support voice agent for my business. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
+2. Run: **"Use BotBound to create a sales and support Bot. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
 3. Confirm ChatGPT requests a BotBound account connection.
 4. New users create a BotBound account on the signup screen and return to consent. Reviewers may sign in to the supplied reviewer account instead, then approve the requested permissions.
 5. Repeat the request and review the proposed profile summary.
@@ -118,7 +118,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 
 ### Direct
 
-1. "Use BotBound to create a sales and support voice agent for my business."
+1. "Use BotBound to create a sales and support Bot."
 2. "Create a BotBound agent that qualifies new dental patients and captures a preferred appointment time."
 3. "Make me a BotBound sales agent for a property-management company. It should qualify fit but never promise pricing."
 4. "Create a law-firm intake agent that takes a message and never gives legal advice."

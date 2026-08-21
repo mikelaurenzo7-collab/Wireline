@@ -2,8 +2,6 @@ import { Link } from "react-router";
 
 import { MOBILE_MORE_NAV, isNavActive, type ShellNavItem } from "../../constants/navigation";
 import { navIcon } from "../nav-icons";
-import { useAccount } from "../../contexts/AccountContext";
-import { isRouteAvailableForAccount } from "../../lib/account-type";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/shadcn/Sheet";
 
 type MobileNavMoreSheetProps = {
@@ -44,11 +42,8 @@ export default function MobileNavMoreSheet({
   onOpenChange,
   pathname,
 }: MobileNavMoreSheetProps) {
-  const { accountType } = useAccount();
   const close = () => onOpenChange(false);
-  const items = MOBILE_MORE_NAV.filter((item) =>
-    isRouteAvailableForAccount(accountType, item.href),
-  );
+  const items = MOBILE_MORE_NAV;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

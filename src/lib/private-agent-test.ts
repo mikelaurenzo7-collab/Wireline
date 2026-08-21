@@ -20,7 +20,7 @@ export type PrivateAgentTestContext = {
 
 export const PRIVATE_AGENT_TEST_TOOL: StructuredToolSchema = {
   name: "customer_test_reply",
-  description: "Reply directly to the customer using the saved voice agent configuration.",
+  description: "Reply directly to the customer using the saved Bot configuration.",
   input_schema: {
     type: "object",
     additionalProperties: false,
@@ -99,7 +99,7 @@ export async function loadPrivateAgentTestContext(
   );
 
   const agent = agentRows[0];
-  if (!agent) throw AppError.fromHttpStatus(404, "Voice agent not found");
+  if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
 
   const directiveLines = compactLines(
     directives.map((directive) => directive.content),
@@ -114,17 +114,19 @@ export async function loadPrivateAgentTestContext(
     : "";
 
   const system = [
-    `You are ${agent.name || "the voice agent"}, acting as the business's ${agent.role || "customer-facing voice agent"}.`,
+    `You are ${agent.name || "the Bot"}, a customer-facing Bot configured for this role: ${agent.role || "general support"}.`,
     "This is a private rehearsal with a prospective customer. It is not a live call, message, or booking.",
-    "Reply only as the customer-facing voice agent. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
+    "Reply only as that customer-facing Bot. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
     "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
-    "Do not invent prices, policies, availability, or business facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
-    personalities[0]?.content ? `Tone: ${personalities[0].content}` : "Tone: clear and professional.",
+    "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
+    personalities[0]?.content
+      ? `Tone: ${personalities[0].content}`
+      : "Tone: clear and professional.",
     agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
-    knowledgeLines.length ? `Business facts:\n- ${knowledgeLines.join("\n- ")}` : "",
-    businessProfile ? `Business profile: ${businessProfile}` : "",
-    agent.businessHours ? `Business hours: ${JSON.stringify(agent.businessHours)}` : "",
+    knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
+    businessProfile ? `Workspace profile: ${businessProfile}` : "",
+    agent.businessHours ? `Operating hours: ${JSON.stringify(agent.businessHours)}` : "",
     agent.timezone ? `Timezone: ${agent.timezone}` : "",
     agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
     agent.escalationPhone || agent.escalationEmail
@@ -134,7 +136,7 @@ export async function loadPrivateAgentTestContext(
     .filter(Boolean)
     .join("\n\n");
 
-  return { agentId: agent.id, agentName: agent.name || "the voice agent", system };
+  return { agentId: agent.id, agentName: agent.name || "the Bot", system };
 }
 
 export async function runPrivateAgentTestTurn(input: {

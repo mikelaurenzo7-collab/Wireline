@@ -15,7 +15,8 @@ if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 function designToken(tokens, ...segments) {
   let current = tokens;
   for (const segment of segments) current = current?.[segment];
-  if (!current || typeof current.$value !== "string") throw new Error(`Missing design token: ${segments.join(".")}`);
+  if (!current || typeof current.$value !== "string")
+    throw new Error(`Missing design token: ${segments.join(".")}`);
   return current.$value;
 }
 
@@ -54,7 +55,9 @@ function writeCompatibilitySvgSources() {
 }
 
 function writeStripeLogoSource(appIcon) {
-  const tokens = JSON.parse(readFileSync(resolve(root, "design-tokens/wireline.tokens.json"), "utf8"));
+  const tokens = JSON.parse(
+    readFileSync(resolve(root, "design-tokens/wireline.tokens.json"), "utf8"),
+  );
   const embeddedMark = appIcon.toString("base64");
   const brand = designToken(tokens, "color", "action", "primary", "default");
   const checkoutInk = designToken(tokens, "color", "canvas", "default");
@@ -62,11 +65,11 @@ function writeStripeLogoSource(appIcon) {
   const displayFont = designToken(tokens, "font", "family", "display");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">BotBound phone Bot with the AI employees for calls, texts, and email brand line.</desc>
+  <desc id="description">BotBound phone Bot beside the brand promise: Your Bot for calls, texts, and email.</desc>
   <image href="data:image/png;base64,${embeddedMark}" x="28" y="28" width="304" height="304"/>
   <text x="390" y="176" fill="${checkoutInk}" font-family="${displayFont}, sans-serif" font-size="104" font-weight="800" letter-spacing="-4.5">Bot<tspan fill="${brand}">Bound</tspan></text>
   <rect x="394" y="204" width="620" height="3" rx="1.5" fill="${brand}"/>
-  <text x="394" y="258" fill="${checkoutMuted}" font-family="${displayFont}, sans-serif" font-size="28" font-weight="700" letter-spacing="3">AI EMPLOYEES FOR CALLS, TEXTS, AND EMAIL</text>
+  <text x="394" y="258" fill="${checkoutMuted}" font-family="${displayFont}, sans-serif" font-size="28" font-weight="700" letter-spacing="3">YOUR BOT FOR CALLS, TEXTS, AND EMAIL.</text>
 </svg>\n`;
   for (const out of ["public/botbound-stripe-logo.svg", "public/wireline-stripe-logo.svg"]) {
     writeFileSync(resolve(root, out), source, "utf8");
@@ -79,7 +82,7 @@ function writeOgSource(operator) {
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">BotBound | Put Your Bot on the Line</title>
   <desc id="description">A friendly Bot grips a violet phone receiver beside the BotBound promise.</desc>
-  <metadata>BotBound | PUT YOUR BOT ON THE LINE | AI employees for calls, texts, and email.</metadata>
+  <metadata>BotBound | PUT YOUR BOT ON THE LINE | Your Bot for calls, texts, and email.</metadata>
   <defs>
     <radialGradient id="signal" cx="76%" cy="47%" r="54%"><stop stop-color="#8B5CF6" stop-opacity=".25"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
     <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#14111F"/><stop offset=".52" stop-color="#0A0A0E"/><stop offset="1" stop-color="#050508"/></linearGradient>
@@ -88,7 +91,7 @@ function writeOgSource(operator) {
   <rect width="1200" height="630" fill="url(#signal)"/>
   <path d="M0 570H1200" stroke="#A78BFA" stroke-opacity=".35"/>
   <text x="72" y="92" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="46" font-weight="800" letter-spacing="-2">Bot<tspan fill="#A78BFA">Bound</tspan></text>
-  <text x="72" y="178" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" letter-spacing="4">THE AI EMPLOYEE THAT ANSWERS</text>
+  <text x="72" y="178" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" letter-spacing="4">YOUR BOT. EVERY CHANNEL.</text>
   <text x="68" y="286" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="80" font-weight="800" letter-spacing="-4">PUT YOUR BOT</text>
   <text x="68" y="364" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="80" font-weight="800" letter-spacing="-4">ON THE <tspan fill="#A78BFA">LINE.</tspan></text>
   <text x="72" y="428" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="27" font-weight="500">Calls, texts, and email. Answered.</text>
@@ -152,6 +155,11 @@ for (const target of targets) {
   console.log(`✔ rendered ${target.out} (${png.length} bytes)`);
 }
 
-const extensionBuild = spawnSync(process.execPath, [resolve(root, "apps/browser-extension/scripts/build.mjs")], { cwd: root, encoding: "utf8", stdio: "inherit" });
+const extensionBuild = spawnSync(
+  process.execPath,
+  [resolve(root, "apps/browser-extension/scripts/build.mjs")],
+  { cwd: root, encoding: "utf8", stdio: "inherit" },
+);
 if (extensionBuild.error) throw extensionBuild.error;
-if (extensionBuild.status !== 0) throw new Error(`Browser-extension packaging failed with status ${extensionBuild.status}.`);
+if (extensionBuild.status !== 0)
+  throw new Error(`Browser-extension packaging failed with status ${extensionBuild.status}.`);

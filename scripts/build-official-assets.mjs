@@ -1,5 +1,5 @@
 /**
- * Build official Wireline marketing, app-store, social, and ad assets from
+ * Build official BotBound marketing, app-store, social, and ad assets from
  * production or an explicitly supplied E2E_BASE_URL.
  *
  *   node scripts/build-official-assets.mjs
@@ -10,9 +10,21 @@
 import { chromium } from "@playwright/test";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { readFileSync, existsSync } from "node:fs";
-import { mkdir, rm, writeFile, copyFile, readdir } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  CAMPAIGN_VO,
+  assertGeneratedMp3,
+  campaignTrackFingerprintFromProvenance,
+} from "./generate-campaign-vo.mjs";
+import { audioProvenanceMatches, readAudioProvenance } from "./lib/audio-provenance.mjs";
+import { verifyCertifiedMediaRecord } from "./lib/certified-media.mjs";
+import {
+  assertCleanCheckout,
+  resolveSourceCommit,
+  verifyRemoteSourceCommit,
+} from "./lib/release-source-verification.mjs";
 import {
   requireCanonicalCredentialTarget,
   requireCompleteCredentialPair,
@@ -21,6 +33,17 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "official-assets");
 const marketingKit = path.join(repoRoot, "marketing-kit");
+const generatedOutputNames = [
+  "web",
+  "app-store",
+  "social",
+  "ads",
+  "reels",
+  "copy",
+  "videos",
+  "product-gallery",
+  "README.md",
+];
 
 function loadEnv(filePath) {
   try {
@@ -118,13 +141,6 @@ async function signIn() {
 
 async function ensureDir(dirPath) {
   await mkdir(dirPath, { recursive: true });
-}
-
-async function copyIfExists(src, dest) {
-  if (!existsSync(src)) return false;
-  await ensureDir(path.dirname(dest));
-  await copyFile(src, dest);
-  return true;
 }
 
 async function captureSized(page, route, file, size, fullPage = false) {
@@ -283,48 +299,168 @@ async function captureProductAssets(page) {
   console.log("✓ reels stills");
 }
 
-async function copyExistingProductMedia() {
+async function copyExistingProductMedia(sourceCommit) {
+  const releaseRecordPath = path.join(marketingKit, "release-record.json");
+  if (!existsSync(releaseRecordPath)) {
+    console.log("Skipping optional marketing-kit media: no certified release record.");
+    return;
+  }
+  const releaseRecord = JSON.parse(readFileSync(releaseRecordPath, "utf8"));
+  if (releaseRecord.publishable !== true || !/^[0-9a-f]{40}$/i.test(releaseRecord.sourceCommit)) {
+    throw new Error(
+      "Marketing-kit media is not release-certified and cannot enter official assets.",
+    );
+  }
+  if (sourceCommit !== releaseRecord.sourceCommit.toLowerCase()) {
+    throw new Error(
+      `Certified marketing-kit media is from ${releaseRecord.sourceCommit}, not the current checkout ${sourceCommit}.`,
+    );
+  }
+
   const gallery = path.join(outRoot, "product-gallery");
   await ensureDir(gallery);
   const galleryMap = [
-    ["visual-qa/settled/desktop/overview.png", "desktop-overview.png"],
-    ["visual-qa/settled/desktop/studio.png", "desktop-studio.png"],
-    ["visual-qa/settled/desktop/phone.png", "desktop-phone.png"],
-    ["visual-qa/settled/desktop/approvals.png", "desktop-approvals.png"],
-    ["visual-qa/settled/desktop/connections.png", "desktop-connections.png"],
-    ["visual-qa/settled/desktop/insights.png", "desktop-insights.png"],
-    ["visual-qa/settled/desktop/inbox.png", "desktop-inbox.png"],
-    ["visual-qa/settled/mobile/overview.png", "mobile-overview.png"],
-    ["visual-qa/settled/mobile/studio.png", "mobile-studio.png"],
-    ["visual-qa/settled/mobile/phone.png", "mobile-phone.png"],
-    ["visual-qa/settled/mobile/approvals.png", "mobile-approvals.png"],
-    ["visual-qa/marketing/desktop/home.png", "marketing-home.png"],
-    ["visual-qa/marketing/desktop/pricing.png", "marketing-pricing.png"],
-    ["visual-qa/marketing/desktop/showcase.png", "marketing-showcase.png"],
-    ["visual-qa/marketing/mobile/home.png", "marketing-home-mobile.png"],
-    ["marketing-kit/screenshots/desktop/overview.png", "kit-overview.png"],
-    ["marketing-kit/screenshots/reel/overview.png", "kit-reel-overview.png"],
+    {
+      layout: "desktop",
+      path: "marketing-kit/screenshots/desktop/overview.png",
+      name: "kit-overview.png",
+    },
+    {
+      layout: "reel",
+      path: "marketing-kit/screenshots/reel/overview.png",
+      name: "kit-reel-overview.png",
+    },
   ];
-  for (const [relativePath, name] of galleryMap) {
-    await copyIfExists(path.join(repoRoot, relativePath), path.join(gallery, name));
+  const screenshotLayouts = Array.isArray(releaseRecord.authenticatedScreenshots)
+    ? releaseRecord.authenticatedScreenshots
+    : [];
+  for (const selected of galleryMap) {
+    const layouts = screenshotLayouts.filter((record) => record?.layout === selected.layout);
+    if (layouts.length !== 1 || !Array.isArray(layouts[0].frames)) {
+      throw new Error(`Certified ${selected.layout} screenshot records are missing or ambiguous.`);
+    }
+    const frames = layouts[0].frames.filter((record) => record?.id === "overview");
+    if (frames.length !== 1) {
+      throw new Error(`Certified ${selected.layout} overview screenshot is missing or ambiguous.`);
+    }
+    const verifiedBytes = await verifyCertifiedMediaRecord(frames[0], {
+      repoRoot,
+      marketingRoot: marketingKit,
+      expectedPath: selected.path,
+      allowedExtensions: [".png"],
+      minSizeBytes: 1_024,
+    });
+    await writeFile(path.join(gallery, selected.name), verifiedBytes);
   }
 
   const videoOut = path.join(outRoot, "videos");
   await ensureDir(videoOut);
-  const kitVideos = path.join(marketingKit, "videos");
-  if (!existsSync(kitVideos)) return;
+  const videoRecords = Array.isArray(releaseRecord.videos) ? releaseRecord.videos : [];
+  if (videoRecords.length !== 3) {
+    throw new Error(`Expected exactly 3 certified launch videos; found ${videoRecords.length}.`);
+  }
+  const expectedVideos = [
+    "reel-46s-master-walkthrough",
+    "reel-30s-product-loop",
+    "reel-15s-missed-call",
+  ].map((id) => ({ id, path: `marketing-kit/videos/${id}.webm` }));
+  for (const expected of expectedVideos) {
+    const records = videoRecords.filter((record) => record?.id === expected.id);
+    if (records.length !== 1) {
+      throw new Error(`Certified launch video ${expected.id} is missing or ambiguous.`);
+    }
+    const verifiedBytes = await verifyCertifiedMediaRecord(records[0], {
+      repoRoot,
+      marketingRoot: marketingKit,
+      expectedPath: expected.path,
+      allowedExtensions: [".webm"],
+      minSizeBytes: 100_000,
+    });
+    await writeFile(path.join(videoOut, path.posix.basename(expected.path)), verifiedBytes);
+  }
+}
 
-  for (const file of await readdir(kitVideos)) {
-    if (file.endsWith(".webm") || file.endsWith(".mp4")) {
-      await copyFile(path.join(kitVideos, file), path.join(videoOut, file));
+async function relativeFiles(root, prefix = "") {
+  const files = [];
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    const relativePath = path.posix.join(prefix, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await relativeFiles(path.join(root, entry.name), relativePath)));
+    } else {
+      files.push(relativePath);
+    }
+  }
+  return files;
+}
+
+async function validatePreservedCampaignAudio() {
+  const audioRoot = path.join(outRoot, "audio");
+  if (!existsSync(audioRoot)) return;
+
+  const expected = new Map();
+  for (const { engine, prefix } of [
+    { engine: "elevenlabs", prefix: "" },
+    { engine: "xai", prefix: "xai" },
+  ]) {
+    for (const track of CAMPAIGN_VO) {
+      const relativePath = path.posix.join(prefix, track.file);
+      expected.set(relativePath, { track, engine });
+    }
+  }
+
+  const actualFiles = await relativeFiles(audioRoot);
+  const allowedFiles = new Set([...expected.keys()].flatMap((audio) => [audio, `${audio}.sha256`]));
+  const unexpected = actualFiles.filter((file) => !allowedFiles.has(file));
+  if (unexpected.length) {
+    throw new Error(`Unexpected campaign audio cannot survive rebuild: ${unexpected.join(", ")}`);
+  }
+
+  for (const [relativePath, recipe] of expected) {
+    const audioPath = path.join(audioRoot, ...relativePath.split("/"));
+    const hasAudio = existsSync(audioPath);
+    const hasProvenance = existsSync(`${audioPath}.sha256`);
+    if (hasAudio !== hasProvenance) {
+      throw new Error(`Campaign audio is missing its matching provenance pair: ${relativePath}`);
+    }
+    if (hasAudio) {
+      const provenance = await readAudioProvenance(audioPath);
+      let fingerprint;
+      try {
+        fingerprint = campaignTrackFingerprintFromProvenance({
+          track: recipe.track,
+          expectedEngine: recipe.engine,
+          provenance,
+        });
+      } catch {
+        throw new Error(`Campaign audio provenance is stale or corrupt: ${relativePath}`);
+      }
+      if (!(await audioProvenanceMatches(audioPath, fingerprint))) {
+        throw new Error(`Campaign audio provenance is stale or corrupt: ${relativePath}`);
+      }
+      assertGeneratedMp3(
+        await readFile(audioPath),
+        "audio/mpeg",
+        `Certified campaign audio ${relativePath}`,
+      );
     }
   }
 }
 
-async function writeCopyPack() {
-  const copyMd = `# Wireline official asset pack
+async function assertKnownOfficialAssetTopLevel() {
+  if (!existsSync(outRoot)) return;
+  const allowed = new Set([...generatedOutputNames, "audio"]);
+  const unexpected = (await readdir(outRoot)).filter((name) => !allowed.has(name));
+  if (unexpected.length) {
+    throw new Error(
+      `Unknown official asset output cannot survive rebuild: ${unexpected.join(", ")}`,
+    );
+  }
+}
 
-Generated ${new Date().toISOString()} from ${baseUrl.origin} as ${email}.
+async function writeCopyPack() {
+  const copyMd = `# BotBound official asset pack
+
+Generated ${new Date().toISOString()} from ${baseUrl.origin}.
 
 ## Folders
 
@@ -336,12 +472,12 @@ Generated ${new Date().toISOString()} from ${baseUrl.origin} as ${email}.
 | \`ads/\` | Meta feed and story, Google Display, and LinkedIn ads |
 | \`reels/\` | 9:16 stills for Reels, TikTok, and Stories |
 | \`videos/\` | Screen recordings ready for editing |
-| \`product-gallery/\` | Selected product UI stills from visual QA |
+| \`product-gallery/\` | Selected UI stills from a certified launch capture |
 
 ## Suggested captions
 
 ### LinkedIn
-Wire your agent. Choose outbound, inbound, or hybrid. One trained agent. One visible outcome.
+Build one Bot around a real job. Give it your knowledge, rules, tools, approvals, and handoffs.
 Start free at ${baseUrl.hostname}.
 
 ### Instagram and Reels hook
@@ -350,20 +486,24 @@ Cut: Home, Overview, Studio, Phone, Pricing
 CTA: Link in bio
 
 ### Meta ad primary text
-Create and train a voice agent for free. Live work draws from prepaid Runtime Balance.
-Free Builder, Starter, Starter Plus, and Pro. Scale is custom. Clear rates. No surprise math.
+Create and train your Bot for free. Live work draws from prepaid Runtime Balance.
+Free Builder, Starter, Starter Plus, and Pro. See live pricing for current capacity and rates.
 
 ### App Store subtitle
-Voice agents for sales and support
+Your Bot for sales and support
 
 ### App Store promo text
-Wireline trains outbound and inbound agents that book meetings, update your systems, and keep a clean outcome record.
+BotBound trains inbound and outbound Bots that book meetings, update your systems, and keep a clean outcome record.
 
 ## Notes
 - Prefer \`product-gallery/desktop-*\` for SaaS website screenshots.
 - Prefer \`app-store/iphone-*\` for mobile store listings.
 - Convert \`videos/*.webm\` to H.264 MP4 before social upload.
 `;
+
+  if (/\bWireline\b|trywireline\.com/i.test(copyMd) || copyMd.includes(String(email))) {
+    throw new Error("Official asset copy contains retired branding or a capture-account identity.");
+  }
 
   await writeFile(path.join(outRoot, "README.md"), copyMd, "utf8");
   await ensureDir(path.join(outRoot, "copy"));
@@ -372,7 +512,14 @@ Wireline trains outbound and inbound agents that book meetings, update your syst
 
 async function main() {
   console.log(`Building official assets from ${baseUrl.origin}`);
-  await rm(outRoot, { recursive: true, force: true });
+  const sourceCommit = resolveSourceCommit(repoRoot);
+  assertCleanCheckout(repoRoot, sourceCommit);
+  await verifyRemoteSourceCommit(sourceCommit, baseUrl.origin);
+  await assertKnownOfficialAssetTopLevel();
+  await validatePreservedCampaignAudio();
+  for (const name of generatedOutputNames) {
+    await rm(path.join(outRoot, name), { recursive: true, force: true });
+  }
   await ensureDir(outRoot);
 
   const cookie = await signIn();
@@ -405,12 +552,17 @@ async function main() {
     await browser.close();
   }
 
-  await copyExistingProductMedia();
+  assertCleanCheckout(repoRoot, sourceCommit);
+  await verifyRemoteSourceCommit(sourceCommit, baseUrl.origin);
+  await copyExistingProductMedia(sourceCommit);
   await writeCopyPack();
   console.log(`Done: ${outRoot}`);
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  for (const name of generatedOutputNames) {
+    await rm(path.join(outRoot, name), { recursive: true, force: true });
+  }
   console.error(error);
   process.exit(1);
 });

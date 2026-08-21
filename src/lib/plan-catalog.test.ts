@@ -48,7 +48,7 @@ describe("plan-catalog", () => {
     expect(planById("starter")?.name).toBe("BotBound Starter");
     expect(planById("team")?.name).toBe("BotBound Starter Plus");
     expect(planById("business")?.name).toBe("BotBound Pro");
-    expect(planById("enterprise")?.name).toBe("BotBound Business");
+    expect(planById("enterprise")?.name).toBe("BotBound Scale");
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
@@ -62,9 +62,9 @@ describe("plan-catalog", () => {
     ]);
   });
 
-  it("keeps the legacy Business tier resolvable but out of self-serve launch", () => {
+  it("keeps the legacy Scale tier resolvable but out of self-serve launch", () => {
     const enterprise = planById("enterprise");
-    expect(enterprise?.name).toBe("BotBound Business");
+    expect(enterprise?.name).toBe("BotBound Scale");
     expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
     expect(enterprise?.public).toBe(false);

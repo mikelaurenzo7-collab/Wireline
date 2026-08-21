@@ -5,6 +5,7 @@ import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
+import { signupHrefForPlan } from "../lib/signup-intent";
 import { cn } from "../lib/utils";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
@@ -32,7 +33,14 @@ const PAID_TIERS = [
       "One focused Voice Bot for inbound calls, outbound calls, or scheduling, with an included BotBound number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
-    ctaPath: "/signup?plan=starter",
+    ctaPath: signupHrefForPlan("starter"),
+    highlights: [
+      "1 live Bot with its own production number",
+      "50 included live-voice minutes",
+      "Call, text, email, and automatic outcomes",
+      `$${planById.starter.runtime_allowance_usd_monthly} Runtime + $${planById.starter.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance`,
+      "No automatic overages",
+    ],
     featured: false,
     badge: "Lowest Cost Live Plan",
   },
@@ -44,7 +52,14 @@ const PAID_TIERS = [
     detail: `Two live Bots, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, text, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose Annual Starter Plus",
-    ctaPath: "/signup?plan=team",
+    ctaPath: signupHrefForPlan("team"),
+    highlights: [
+      "2 live Bots with 2 production numbers",
+      "100 included live-voice minutes",
+      "Call, text, email, and full Lead Hunt",
+      `$${planById.team.runtime_allowance_usd_monthly} Runtime + $${planById.team.ai_spend_allowance_usd_monthly} managed AI allowance`,
+      "No automatic overages",
+    ],
     featured: true,
     badge: "Best Founder Value",
   },
@@ -56,7 +71,14 @@ const PAID_TIERS = [
     detail: "Up to five specialized Bots with shared context, routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
     ctaAnnual: "Go Pro Annually",
-    ctaPath: "/signup?plan=business",
+    ctaPath: signupHrefForPlan("business"),
+    highlights: [
+      "Up to 5 live Bots with 5 production numbers",
+      "190 included live-voice minutes",
+      "Lead Hunt, routing, and approvals",
+      "Connected calendar, CRM, mailbox, and actions",
+      `$${planById.business.runtime_allowance_usd_monthly} Runtime + $${planById.business.ai_spend_allowance_usd_monthly} managed AI allowance; no automatic overages`,
+    ],
     featured: false,
     badge: "Multi-Bot",
   },
@@ -68,7 +90,12 @@ const PAID_PLAN_FEATURES: readonly (readonly string[])[] = PAID_TIERS.map(
 const SHARED_PAID_FEATURES = PAID_PLAN_FEATURES[0].filter((feature) =>
   PAID_PLAN_FEATURES.every((features) => features.includes(feature)),
 );
-const isSharedPaidFeature = (feature: string) => SHARED_PAID_FEATURES.includes(feature);
+const FREE_BUILDER_HIGHLIGHTS = [
+  "1 private draft Bot",
+  "Setup, knowledge, and private simulation",
+  `$${planById.personal.ai_spend_allowance_usd_monthly.toFixed(2)} of private AI simulation each month`,
+  "Upgrade to a paid plan when you need a live number",
+] as const;
 
 const CHANNEL_RULES = [
   {
@@ -91,7 +118,7 @@ const CHANNEL_RULES = [
 
 const FAQ = [
   [
-    "Does one Bot handle voice, text, and email?",
+    "Can your Bot handle voice, text, and email?",
     "Yes. A single BotBound Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
@@ -183,8 +210,13 @@ export default function Pricing() {
       <main id="main-content" className="marketing-flow" tabIndex={-1}>
         <section id="plans" className="marketing-section marketing-section--screen">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-border pb-3 lg:justify-between">
-              <p className="wl-eyebrow text-muted-foreground">Pricing</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-3 lg:justify-between">
+              <div className="text-center lg:text-left">
+                <p className="wl-eyebrow m-0 text-muted-foreground">Pricing</p>
+                <h1 className="mt-1 text-lg font-semibold tracking-[-0.025em] text-foreground">
+                  Start free. Go live from $19.
+                </h1>
+              </div>
 
               <div
                 className="inline-flex rounded-full border border-border bg-muted/40 p-1"
@@ -226,7 +258,7 @@ export default function Pricing() {
 
             <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
-                <h3 className="wl-card-title">Free Builder</h3>
+                <h2 className="wl-card-title">Free Builder</h2>
                 <div className="mt-3 flex items-end justify-center gap-1.5">
                   <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                     $0
@@ -234,7 +266,7 @@ export default function Pricing() {
                   <span className="text-xs text-muted-foreground">forever</span>
                 </div>
                 <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
-                  {planById.personal.features.map((feature) => (
+                  {FREE_BUILDER_HIGHLIGHTS.map((feature) => (
                     <li key={feature} className="flex gap-2">
                       <Check
                         className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
@@ -245,7 +277,7 @@ export default function Pricing() {
                   ))}
                 </ul>
                 <Link
-                  to="/signup?plan=personal"
+                  to={signupHrefForPlan("personal")}
                   className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
                 >
                   Build Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -253,7 +285,7 @@ export default function Pricing() {
               </article>
 
               {PAID_TIERS.map(
-                ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, featured }) => {
+                ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, highlights, featured }) => {
                   const showAnnual = annual && plan.price_usd_annual > 0;
                   const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
                   const priceSuffix = showAnnual ? "/year" : "/month";
@@ -276,7 +308,7 @@ export default function Pricing() {
                           Most Popular
                         </span>
                       ) : null}
-                      <h3 className="wl-card-title">{publicName}</h3>
+                      <h2 className="wl-card-title">{publicName}</h2>
                       <div className="mt-3 flex items-end justify-center gap-1.5">
                         <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                           ${price}
@@ -293,17 +325,15 @@ export default function Pricing() {
                         </p>
                       ) : null}
                       <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
-                        {plan.features
-                          .filter((f) => !isSharedPaidFeature(f))
-                          .map((feature) => (
-                            <li key={feature} className="flex gap-2">
-                              <Check
-                                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
+                        {highlights.map((feature) => (
+                          <li key={feature} className="flex gap-2">
+                            <Check
+                              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                              aria-hidden="true"
+                            />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
                       </ul>
                       <Link
                         to={path}
@@ -325,7 +355,7 @@ export default function Pricing() {
               className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
             >
               <div className="flex items-center gap-2.5">
-                <h3 className="wl-card-title">Scale &amp; Enterprise</h3>
+                <h2 className="wl-card-title">Scale &amp; Enterprise</h2>
                 <span className="text-sm text-muted-foreground">Custom</span>
               </div>
               <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
@@ -350,7 +380,7 @@ export default function Pricing() {
                   {SHARED_PAID_FEATURES.join(". ")}
                 </p>
                 <h2 className="wl-public-section-heading mx-auto text-center">
-                  One Bot. No seat tax. Clear costs.
+                  Your Bot. No seat tax. Clear costs.
                 </h2>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                   {CHANNEL_RULES.map(({ title, body }) => (
@@ -374,7 +404,9 @@ export default function Pricing() {
                   </Link>
                   .
                 </p>
-                <h2 className="wl-public-section-heading mx-auto mt-6 text-center">Before launch</h2>
+                <h2 className="wl-public-section-heading mx-auto mt-6 text-center">
+                  Before launch
+                </h2>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {FAQ.map(([question, answer]) => (
                     <details

@@ -68,16 +68,16 @@ Primary:
 Proof:
 
 - Answers the call. Books the work. Sends the follow-up.
-- Calls, texts, and email. Handled like your best employee.
+- Calls, texts, and email. Handled under your rules.
 - Build it. Train it. Put it on a number.
 
 Social launch caption:
 
-> Your best work should not stop every time the phone rings. BotBound gives your business an AI employee for calls, texts, and email, so the customer gets an answer while you stay in the work. Put your Bot on the line at BotBound.me.
+> Your best work should not stop every time the phone rings. BotBound gives you a Bot for calls, texts, and email, so the customer gets an answer while you stay in the work. Put your Bot on the line at BotBound.me.
 
 PR descriptor:
 
-> BotBound is the platform for building AI employees that handle calls, texts, and email, with the knowledge, tools, approvals, and follow-through required to do real work.
+> BotBound is the platform for building Bots that handle calls, texts, and email, with the knowledge, tools, approvals, and follow-through required to do real work.
 
 ## Launch sequencing
 

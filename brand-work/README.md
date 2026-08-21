@@ -37,9 +37,11 @@ Full-resolution PNG originals and finished delivery plates live in the certified
 
 ## Product proof and GTM
 
-- Certified browser captures and comparison: `exports/product-proof/`
+- Archived 2026-08-20 browser captures and comparison; not current release evidence: `exports/product-proof/`
 - Founder launch deck, contact sheet, and copy system: `gtm/`
-- Final browser and accessibility gate: `../design-qa.md`
+- Historical revision 3 browser and accessibility record: `../design-qa.md`
+
+Current browser proof remains pending until the production build is recaptured, visually reviewed, and checksummed. Do not publish or cite the archived captures as proof of the current release.
 
 ## Motion package and review outputs
 
@@ -63,7 +65,7 @@ The files in `apps/botbound-film/out/` are intentionally ignored by Git and deli
 ## Integrity
 
 - `DELIVERY-SHA256SUMS-R3.txt` is the immutable 62-file manifest for the certified Drive delivery snapshot. Video and full-resolution entries verify after that package is restored from Drive.
-- `SOURCE-SHA256SUMS.txt` covers the compact, reproducible repository inputs and browser proof included with this branch.
+- `SOURCE-SHA256SUMS.txt` covers the compact, reproducible repository inputs and preserves the archived revision 3 browser proof included with this branch.
 - Paths in both manifests are repository-relative.
 
 ## Regeneration

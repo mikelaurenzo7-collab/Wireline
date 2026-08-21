@@ -96,7 +96,8 @@ describe("launch truth contract", () => {
       expect(source).not.toContain("Brief -> Train -> Launch -> Improve");
     }
 
-    expect(commandCenter).toContain("business voice agent");
+    expect(commandCenter).toContain("one product and one workspace model");
+    expect(commandCenter).not.toContain("business voice agent");
     expect(commandCenter).not.toContain("Business creates an **AI employee**");
     expect(commandCenter).not.toContain("Enable **leaked password protection** in Supabase Auth");
     expect(commandCenter).toContain("custom scrypt/HIBP-screened auth path");

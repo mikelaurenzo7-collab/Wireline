@@ -29,7 +29,7 @@ import { relations, sql } from "drizzle-orm";
 
 /**
  * A user can own one or two accounts — a personal account (single agent,
- * streamlined UI) and/or a business account (AI employees, Studio command
+ * streamlined UI) and/or a legacy business account (shared workspace defaults, Studio command
  * surfaces, outbound pipeline). The first account type created at signup becomes the
  * "primary" account. Agents, settings, and billing scope to an account,
  * not directly to a user.

@@ -4,9 +4,9 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, Textarea } from "./atoms";
 import { StatusNotice } from "./molecules";
-import { useAccount } from "../contexts/AccountContext";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
+import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import {
   stashCreateWarning,
   stashPostCreateWizard,
@@ -46,7 +46,8 @@ const TECHNICAL_ROLE_BY_TEMPLATE: Record<TemplateKey, TechnicalRole> = {
 
 const SELECTED =
   "border-primary bg-[var(--wireline-color-action-primary-containerStrong)] text-[var(--wireline-color-text-primary)]";
-const IDLE = "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
+const IDLE =
+  "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
 
 function templateForKey(value: string | null | undefined) {
   return (
@@ -105,12 +106,8 @@ export default function CreateAgentDialog({
 }) {
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
-  const { accountType } = useAccount();
   const { refresh } = useAgents();
-  const initialTemplate = useMemo(
-    () => templateForKey(initialTemplateKey),
-    [initialTemplateKey],
-  );
+  const initialTemplate = useMemo(() => templateForKey(initialTemplateKey), [initialTemplateKey]);
   const [name, setName] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>(initialTemplate.key);
   const [brief, setBrief] = useState(initialBrief);
@@ -119,7 +116,7 @@ export default function CreateAgentDialog({
   const [error, setError] = useState("");
   const briefRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLFormElement>(null);
-  const language = customerAgentLanguage("personal");
+  const language = customerAgentLanguage();
 
   useModalFocusTrap(dialogRef, { active: open, onEscape: close });
   useBodyScrollLock(open);
@@ -168,9 +165,7 @@ export default function CreateAgentDialog({
     const role = TECHNICAL_ROLE_BY_TEMPLATE[templateKey];
     // Compatibility only: legacy records and provider defaults still store a
     // capability profile. It never creates a second customer-facing workspace.
-    const legacyCapabilityProfile =
-      selectedTemplate.category === "Business" ||
-      (selectedTemplate.category === "Custom" && accountType === "business");
+    const legacyCapabilityProfile = isBusinessTemplateCategory(selectedTemplate.category);
 
     setCreating(true);
     setError("");
@@ -206,7 +201,6 @@ export default function CreateAgentDialog({
               agentId: body.id,
               message: [
                 `Role starter: ${selectedTemplate.name}.`,
-                `Role category: ${selectedTemplate.category}.`,
                 `Conversation direction: ${selectedTemplate.direction}.`,
                 `Available channels: ${BOT_CHANNELS.map((channel) => channel.label).join(", ")}.`,
                 `First brief: ${finalBrief}`,
@@ -270,7 +264,12 @@ export default function CreateAgentDialog({
           event: "sales_agent_created",
           audience: "sales",
           agentId: body.id,
-          metadata: { role, template: templateKey, workspace_model: "one_workspace", object: "bot" },
+          metadata: {
+            role,
+            template: templateKey,
+            workspace_model: "one_workspace",
+            object: "bot",
+          },
         });
       }
       const wizardPayload: PostCreateWizardPayload = {
@@ -323,7 +322,10 @@ export default function CreateAgentDialog({
                 >
                   {language.setupPrompt}
                 </h2>
-                <p id="create-agent-description" className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                <p
+                  id="create-agent-description"
+                  className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground"
+                >
                   {language.setupDescription}
                 </p>
               </div>
@@ -350,7 +352,7 @@ export default function CreateAgentDialog({
                   Start With a Role
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Employee roles, personal starters, and Create Your Own all lead to the same configurable Bot.
+                  Proven roles and Create Your Own all lead to the same configurable Bot.
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5" aria-label="Available Bot channels">
@@ -365,7 +367,11 @@ export default function CreateAgentDialog({
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Bot role starters">
+            <div
+              className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+              role="group"
+              aria-label="Bot role starters"
+            >
               {BOT_ROLE_TEMPLATES.map((template) => {
                 const selected = templateKey === template.key;
                 return (
@@ -395,7 +401,7 @@ export default function CreateAgentDialog({
                       </span>
                     </span>
                     <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
-                      {template.category} · {template.direction}
+                      {template.direction}
                     </span>
                     <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
                       {template.summary}
@@ -407,7 +413,9 @@ export default function CreateAgentDialog({
           </section>
 
           <label className="mt-6 block">
-            <span className="mb-2 block text-xs font-semibold text-foreground">Describe the Job</span>
+            <span className="mb-2 block text-xs font-semibold text-foreground">
+              Describe the Job
+            </span>
             <Textarea
               ref={briefRef}
               value={brief}
@@ -423,7 +431,8 @@ export default function CreateAgentDialog({
 
           <label className="mt-5 grid gap-1.5">
             <span className="text-xs font-semibold text-foreground">
-              {language.nameLabel} <span className="font-normal text-muted-foreground">(optional)</span>
+              {language.nameLabel}{" "}
+              <span className="font-normal text-muted-foreground">(optional)</span>
             </span>
             <Input
               value={name}
@@ -434,8 +443,8 @@ export default function CreateAgentDialog({
           </label>
 
           <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            After creation, configure the playbook, phone voice, channels, knowledge, tools, guardrails,
-            approvals, and handoffs in Studio.
+            After creation, configure the playbook, phone voice, channels, knowledge, tools,
+            guardrails, approvals, and handoffs in Studio.
           </p>
 
           {error ? (

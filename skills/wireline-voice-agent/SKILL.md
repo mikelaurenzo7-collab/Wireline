@@ -1,13 +1,13 @@
 ---
 name: wireline-voice-agent
-description: Help a new user create a BotBound account and build their first voice agent through the remote MCP server at https://botbound.me/mcp. Use when the user wants a receptionist, scheduler, sales, or support voice agent from Cursor, ChatGPT, or Claude.
+description: Help a new user create a BotBound account and build their first Bot through the remote MCP server at https://botbound.me/mcp. Use when the user wants a receptionist, scheduler, sales, or support Bot from Cursor, ChatGPT, or Claude.
 ---
 
-# BotBound first voice agent
+# BotBound first Bot
 
 BotBound is an account-bound remote MCP server. There is no anonymous demo and no API key in this plugin. The host client performs OAuth. New users create a BotBound account during that consent flow, then return to authorize the client.
 
-This plugin is not a software development kit for embedding BotBound voice agents in another repository. People who want that can write their own integration against public docs. The job here is to obtain a real BotBound account and help the user build their first agent in the chat they already have open.
+This plugin is not a software development kit for embedding BotBound Bots in another repository. People who want that can write their own integration against public docs. The job here is to obtain a real BotBound account and help the user build their first Bot in the chat they already have open.
 
 ## Connect
 

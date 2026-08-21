@@ -1,18 +1,17 @@
-const KNOWLEDGE_TABS = ["Business knowledge", "Reports"] as const;
+const KNOWLEDGE_TABS = ["Knowledge", "Reports"] as const;
 
-const SETTINGS_TABS = [
-  "Account",
-  "Billing",
-  "Team",
-  "Appearance",
-  "Apps",
-  "Compliance",
-] as const;
+const SETTINGS_TABS = ["Account", "Billing", "Team", "Appearance", "Apps", "Compliance"] as const;
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 const NAV_GROUPS = ["Work", "Manage"] as const;
 const MOBILE_PRIMARY_LABELS = ["Studio", "Inbox", "Calls", "More"] as const;
-const MOBILE_MORE_LABELS = ["Connections", "Knowledge", "Approvals", "Activity", "Settings"] as const;
+const MOBILE_MORE_LABELS = [
+  "Connections",
+  "Knowledge",
+  "Approvals",
+  "Activity",
+  "Settings",
+] as const;
 
 export const AUTHENTICATED_SURFACE_CONTRACT = {
   brand: {
@@ -96,7 +95,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
   knowledge: {
     route: "/knowledge",
     tabs: KNOWLEDGE_TABS,
-    requiredSections: ["Business knowledge", "Reports"],
+    requiredSections: ["Knowledge", "Reports"],
     retiredPatterns: ["trainingNav", "six item section map", "Voice/Flows/Simulator tabs"],
   },
   training: {
@@ -105,8 +104,10 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
   },
   hierarchy: {
     studio: "canonical home and Bot workspace: create, select, configure, test, and improve",
-    inbox: "email and text conversations, globally or scoped to one Bot; providers are filters, not navigation",
-    calls: "voice operations, lines, history, outbound work, and reports, globally or scoped to one Bot",
+    inbox:
+      "email and text conversations, globally or scoped to one Bot; providers are filters, not navigation",
+    calls:
+      "voice operations, lines, history, outbound work, and reports, globally or scoped to one Bot",
     overviewRoute: "compatibility redirect to Studio; never a competing dashboard",
     agentsRoute: "compatibility redirect to Studio for old roster bookmarks",
   },

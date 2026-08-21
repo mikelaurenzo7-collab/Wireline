@@ -2,7 +2,7 @@
 
 ## Product contract
 
-**Meet the user in ChatGPT, create a real BotBound account if they are new, then help them build their first voice agent.**
+**Meet the user in ChatGPT, create a real BotBound account if they are new, then help them build their first Bot.**
 
 BotBound is not an anonymous demo surface and not a repo-embedded voice SDK. A connected user can create, read, refine, list, privately rehearse, and inspect agents that belong to their BotBound workspace. Confirmed Training writes land in BotBound after the Apps toggle. The app can also return aggregate operational status across agents, assigned phone numbers, calling, texting, and email without returning customer identities or communication content.
 

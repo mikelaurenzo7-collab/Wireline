@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 395
+**Routes scanned:** 396
 **Protected:** 320
-**Public (allowlisted):** 75
+**Public (allowlisted):** 76
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -20,6 +20,7 @@
 | `GET /api/auth/microsoft/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/microsoft/url` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/oauth/exchange` | Signup/login/refresh (public by definition) |
+| `GET /api/auth/providers` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/yahoo/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/yahoo/url` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/forgot-password` | Signup/login/refresh (public by definition) |
@@ -144,6 +145,7 @@
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | POST | `/api/auth/oauth/exchange` | — | — | yes | Public (allowlisted) |
+| auth-oauth-routes.ts | GET | `/api/auth/providers` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/yahoo/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/yahoo/url` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | GET | `/api/auth/bootstrap` | inline | — | yes | Protected |

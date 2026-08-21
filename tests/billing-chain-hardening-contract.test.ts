@@ -72,6 +72,7 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(checkout).toMatch(/sessionUserId !== req\.user\.id[\s\S]{0,300}404/);
     // The reconcile shares the webhook's writers so the two stay idempotent.
     expect(checkout).toMatch(/\/api\/billing\/checkout\/verify[\s\S]*fulfillStripeCheckoutSession/);
+    expect(checkout).toContain("status: session.status");
     expect(fulfillment).toContain("await syncSubscriptionFromStripe(subscription)");
   });
 
@@ -97,6 +98,16 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(billingCard).toContain("billingReady?: boolean");
     expect(billingCard).toContain("if (billingReady) refresh()");
     expect(billingCard).not.toContain("window.history.replaceState");
+  });
+
+  it("ends an expired Checkout return with an honest retry path", () => {
+    const expiredIdx = billingPage.indexOf('checkoutOutcome === "expired"');
+    const pendingIdx = billingPage.indexOf('checkoutOutcome === "pending"');
+
+    expect(expiredIdx).toBeGreaterThan(-1);
+    expect(pendingIdx).toBeGreaterThan(expiredIdx);
+    expect(billingPage).toContain('title: "Checkout expired"');
+    expect(billingPage).toContain("Your current billing options are shown below.");
   });
 
   it("routes Free Builder to Studio without attempting Stripe Checkout", () => {

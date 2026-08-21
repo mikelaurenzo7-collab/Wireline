@@ -14,7 +14,7 @@ describe("BotBound knowledge", () => {
       "BotBound Starter",
       "BotBound Starter Plus",
       "BotBound Pro",
-      "BotBound Scale & Enterprise",
+      "BotBound Enterprise",
       "Runtime Balance",
     ]);
 

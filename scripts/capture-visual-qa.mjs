@@ -37,7 +37,7 @@ const marketingRoutes = [
   "/privacy",
   "/terms",
   "/developers",
-  "/for/personal",
+  "/for/everyday",
   "/for/home-services",
   "/for/medical",
   "/for/legal",

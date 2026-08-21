@@ -3,6 +3,7 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { LEGACY_WIRELINE_NAME } from "./brand";
 
 /**
  * Microsoft Graph Integration Service — Teams + Excel.
@@ -421,7 +422,8 @@ export async function sendTeamsMessage(params: {
 //  Excel — managed call-log workbook
 // ────────────────────────────────────────────────────────────────────
 
-const EXCEL_FILE_NAME = "Wireline Call Log.xlsx";
+const EXCEL_FILE_NAME = "BotBound Call Log.xlsx";
+const LEGACY_EXCEL_FILE_NAME = `${LEGACY_WIRELINE_NAME} Call Log.xlsx`;
 const EXCEL_HEADERS = ["Logged", "Caller", "Outcome", "Details"];
 
 /** Ensure the managed workbook + table exist; ids are cached in metadata. */
@@ -435,16 +437,20 @@ async function ensureWorkbook(
 
   const auth = { Authorization: `Bearer ${token}` };
 
-  // Find the workbook in the OneDrive root, or create it.
+  // Prefer the canonical title while reusing a legacy workbook when present.
   let itemId: string | undefined;
-  const findRes = await fetchWithTimeout(
-    `${GRAPH}/me/drive/root:/${encodeURIComponent(EXCEL_FILE_NAME)}`,
-    { headers: auth },
-    10_000,
-  );
-  if (findRes.ok) {
-    itemId = ((await findRes.json()) as { id?: string }).id;
-  } else {
+  for (const fileName of [EXCEL_FILE_NAME, LEGACY_EXCEL_FILE_NAME]) {
+    const findRes = await fetchWithTimeout(
+      `${GRAPH}/me/drive/root:/${encodeURIComponent(fileName)}`,
+      { headers: auth },
+      10_000,
+    );
+    if (findRes.ok) {
+      itemId = ((await findRes.json()) as { id?: string }).id;
+      if (itemId) break;
+    }
+  }
+  if (!itemId) {
     const createRes = await fetchWithTimeout(
       `${GRAPH}/me/drive/root/children`,
       {

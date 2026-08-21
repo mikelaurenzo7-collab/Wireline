@@ -17,7 +17,11 @@ function reelBeatPaths(kit: string): string[] {
 }
 
 function declaredRoutePaths(appRoutes: string): Set<string> {
-  return new Set([...appRoutes.matchAll(/<Route\s+path="([^"]+)"/g)].map((match) => match[1]).filter((path) => !path.includes("*")));
+  return new Set(
+    [...appRoutes.matchAll(/<Route\s+path="([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((path) => !path.includes("*")),
+  );
 }
 
 describe("launch completeness contracts", () => {
@@ -31,12 +35,17 @@ describe("launch completeness contracts", () => {
 
   it("freezes the exact source before capture and rejects unsafe output", () => {
     const wrapper = source("scripts/run-marketing-kit.mjs");
-    const provenanceIndex = wrapper.indexOf("const sourceCommit = resolveSourceCommit();");
+    const sourceVerifier = source("scripts/lib/release-source-verification.mjs");
+    const provenanceIndex = wrapper.indexOf("const sourceCommit = resolveSourceCommit(repoRoot);");
     const captureIndex = wrapper.indexOf("const capture = spawnSync");
     expect(provenanceIndex).toBeGreaterThan(-1);
     expect(captureIndex).toBeGreaterThan(provenanceIndex);
-    expect(wrapper).toContain("assertCleanCheckout(sourceCommit);");
-    expect(wrapper.match(/assertCleanCheckout\(sourceCommit\);/g)).toHaveLength(2);
+    expect(wrapper).toContain('./lib/release-source-verification.mjs"');
+    expect(wrapper.match(/assertCleanCheckout\(repoRoot, sourceCommit\);/g)).toHaveLength(2);
+    expect(wrapper).toContain("const beforeCapture = await verifyCaptureOrigins(sourceCommit)");
+    expect(wrapper).toContain("const afterCapture = await verifyCaptureOrigins(sourceCommit)");
+    expect(sourceVerifier).toContain("source_commit_check");
+    expect(sourceVerifier).toContain('response.headers.get("x-wireline-source-commit")');
     expect(wrapper).toContain("path.relative(outputRoot, resolved)");
     expect(wrapper).toMatch(/escapes marketing-kit\//);
     expect(wrapper).toContain("release-record.json");
@@ -52,8 +61,19 @@ describe("launch completeness contracts", () => {
     const beats = reelBeatPaths(kit);
     const declared = declaredRoutePaths(appRoutes);
     const missing = beats.filter((path) => !declared.has(path));
-    expect(beats).toEqual(["/", "/email", "/knowledge", "/overview", "/phone", "/settings/phone", "/studio"]);
-    expect(missing, `Launch reel beats reference routes absent from AppRoutes: ${missing.join(", ")}. A stale scene route records the authenticated 404 and can still look like a unique certified frame.`).toEqual([]);
+    expect(beats).toEqual([
+      "/",
+      "/email",
+      "/knowledge",
+      "/overview",
+      "/phone",
+      "/settings/phone",
+      "/studio",
+    ]);
+    expect(
+      missing,
+      `Launch reel beats reference routes absent from AppRoutes: ${missing.join(", ")}. A stale scene route records the authenticated 404 and can still look like a unique certified frame.`,
+    ).toEqual([]);
   });
 
   it("preserves the retired email deep link and its state while Inbox remains canonical", () => {
@@ -88,7 +108,9 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("edge stale-while-revalidate");
     expect(status).toContain("timestamp above is the authoritative age");
     expect(status).toContain("non-persistent inference against the managed reasoning provider");
-    expect(marketingMeta).toContain("Live access checks for BotBound's managed voice control plane and reasoning runtime.");
+    expect(marketingMeta).toContain(
+      "Live access checks for BotBound's managed voice control plane and reasoning runtime.",
+    );
     expect(probe).toContain('fetch("https://api.openai.com/v1/responses"');
     expect(probe).toContain("store: false");
     expect(status).toContain("Provider checks operational");
@@ -105,7 +127,9 @@ describe("launch completeness contracts", () => {
     const status = source("src/components/Status.tsx");
     expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
     expect(status).toContain("const controller = new AbortController();");
-    expect(status).toContain("window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)");
+    expect(status).toContain(
+      "window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)",
+    );
     expect(status).toContain("signal: controller.signal,");
     expect(status).toContain("window.clearTimeout(timeout);");
     expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
@@ -113,7 +137,9 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
     expect(status).toContain("JSON.parse(rawText)");
     expect(status).toContain("normalizeHealth(parsed)");
-    expect(status).toContain("Showing the last reported snapshot while the live probe cache is unavailable.");
+    expect(status).toContain(
+      "Showing the last reported snapshot while the live probe cache is unavailable.",
+    );
     expect(status).toContain("{error && data ? (");
   });
 
@@ -137,23 +163,55 @@ describe("launch completeness contracts", () => {
     const oauthSecurity = source("src/lib/mcp-oauth-security.ts");
     const journal = source("drizzle/migrations/meta/_journal.json");
     expect(journal).toContain('"tag": "0144_auth_token_user_cascades"');
-    for (const table of ["wireline_password_reset_tokens", "wireline_email_verification_tokens", "wireline_mcp_oauth_codes", "wireline_mcp_access_tokens", "wireline_mcp_refresh_tokens", "wireline_oauth_pending_codes"]) expect(migration).toContain(`public.${table}`);
-    expect(migration.match(/REFERENCES public\.wireline_users\(id\) ON DELETE CASCADE/g)).toHaveLength(6);
+    for (const table of [
+      "wireline_password_reset_tokens",
+      "wireline_email_verification_tokens",
+      "wireline_mcp_oauth_codes",
+      "wireline_mcp_access_tokens",
+      "wireline_mcp_refresh_tokens",
+      "wireline_oauth_pending_codes",
+    ])
+      expect(migration).toContain(`public.${table}`);
+    expect(
+      migration.match(/REFERENCES public\.wireline_users\(id\) ON DELETE CASCADE/g),
+    ).toHaveLength(6);
     expect(migration).toContain("DELETE FROM public.wireline_password_reset_tokens");
     expect(migration).toContain("DELETE FROM public.wireline_email_verification_tokens");
-    expect(migration).toContain("DELETE FROM public.wireline_mcp_oauth_codes WHERE expires_at < now()");
-    expect(migration).toContain("DELETE FROM public.wireline_mcp_access_tokens WHERE expires_at < now()");
-    expect(migration).toContain("DELETE FROM public.wireline_mcp_refresh_tokens WHERE expires_at < now()");
-    for (const index of ["idx_mcp_oauth_codes_user_id", "idx_mcp_access_tokens_user_id", "idx_mcp_refresh_tokens_user_id", "idx_oauth_pending_codes_user_id", "idx_mcp_oauth_codes_expires_at"]) expect(migration).toContain(`CREATE INDEX IF NOT EXISTS ${index}`);
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_oauth_codes WHERE expires_at < now()",
+    );
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_access_tokens WHERE expires_at < now()",
+    );
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_refresh_tokens WHERE expires_at < now()",
+    );
+    for (const index of [
+      "idx_mcp_oauth_codes_user_id",
+      "idx_mcp_access_tokens_user_id",
+      "idx_mcp_refresh_tokens_user_id",
+      "idx_oauth_pending_codes_user_id",
+      "idx_mcp_oauth_codes_expires_at",
+    ])
+      expect(migration).toContain(`CREATE INDEX IF NOT EXISTS ${index}`);
     expect(oauthSecurity).toContain("pruneExpiredMcpOAuthRows");
-    expect(oauthSecurity).toContain("DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()");
+    expect(oauthSecurity).toContain(
+      "DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()",
+    );
   });
 
   it("reconciles only historical rows already covered by the current deletion contract", () => {
-    const migration = source("drizzle/migrations/0145_reconcile_historical_deleted_user_artifacts.sql");
+    const migration = source(
+      "drizzle/migrations/0145_reconcile_historical_deleted_user_artifacts.sql",
+    );
     const deletion = source("src/lib/account-deletion.ts");
     const journal = source("drizzle/migrations/meta/_journal.json");
-    const reconciled = ["wireline_director_conversation_messages", "wireline_dnc_list", "wireline_audit_log", "wireline_training_backup_20260609"];
+    const reconciled = [
+      "wireline_director_conversation_messages",
+      "wireline_dnc_list",
+      "wireline_audit_log",
+      "wireline_training_backup_20260609",
+    ];
     expect(journal).toContain('"tag": "0145_reconcile_historical_deleted_user_artifacts"');
     for (const table of reconciled) {
       expect(migration).toContain(`DELETE FROM public.${table}`);

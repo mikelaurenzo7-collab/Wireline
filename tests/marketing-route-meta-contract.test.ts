@@ -8,6 +8,7 @@ import {
   PRERENDERED_ROUTE_SHELLS,
   SITE_URL,
   injectMarketingMeta,
+  publicWedgeSlug,
   resolveRouteMeta,
   withBotBoundBrand,
 } from "../src/lib/marketing-route-meta";
@@ -37,7 +38,9 @@ describe("route meta prerendering", () => {
 
   it("prerenders every /for/* wedge, inline commercial page, and guarded account shell", () => {
     for (const slug of Object.keys(WEDGES)) {
-      expect(PRERENDERED_ROUTE_SHELLS).toContain(`/for/${slug}`);
+      expect(PRERENDERED_ROUTE_SHELLS).toContain(
+        `/for/${publicWedgeSlug(slug as keyof typeof WEDGES)}`,
+      );
     }
     for (const route of [
       "/pricing",
@@ -70,14 +73,24 @@ describe("route meta prerendering", () => {
 
   it("derives every /for/:slug page's meta from WEDGES (one source of truth)", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
-      const meta = resolveRouteMeta(`/for/${slug}`);
+      const publicSlug = publicWedgeSlug(slug as keyof typeof WEDGES);
+      const meta = resolveRouteMeta(`/for/${publicSlug}`);
       expect(meta, slug).not.toBeNull();
       expect(meta!.title).toMatch(/botbound/i);
       expect(meta!.title).not.toMatch(/\bWireline\b/i);
       expect(meta!.description).toBe(withBotBoundBrand(wedge.metaDescription));
-      expect(meta!.canonical).toBe(`${SITE_URL}/for/${slug}`);
+      expect(meta!.canonical).toBe(`${SITE_URL}/for/${publicSlug}`);
       expect(meta!.noIndex).not.toBe(true);
     }
+  });
+
+  it("keeps the retired audience slug as a noindex compatibility redirect shell", () => {
+    const legacy = resolveRouteMeta("/for/personal");
+    expect(PRERENDERED_ROUTE_SHELLS).toContain("/for/personal");
+    expect(legacy).toMatchObject({
+      canonical: `${SITE_URL}/for/everyday`,
+      noIndex: true,
+    });
   });
 
   it("keeps the inline-page values verbatim in sync with each page's PageMeta call", () => {
@@ -222,7 +235,7 @@ describe("route meta prerendering", () => {
     const pkg = read("package.json");
     const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
     expect(buildScript).toContain(
-      "vite build && node --import tsx scripts/prerender-marketing-meta.mts",
+      "vite build && node scripts/validate-botbound-jingle.mjs && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts",
     );
 
     const script = read("scripts/prerender-marketing-meta.mts");

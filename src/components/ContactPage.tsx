@@ -17,8 +17,8 @@ import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
 const INQUIRY_TYPES = [
-  { value: "personal", label: "Personal" },
-  { value: "sales", label: "Business" },
+  { value: "personal", label: "Build a Bot" },
+  { value: "sales", label: "Team rollout" },
   { value: "partnership", label: "Partnership" },
   { value: "general", label: "General" },
 ] as const;
@@ -136,7 +136,7 @@ export function ContactPage() {
     <MarketingPageFrame longform>
       <PageMeta
         title="Contact BotBound"
-        description="Talk to BotBound about personal call coverage, team rollout, partnerships, or support."
+        description="Talk to BotBound about building a Bot, a team rollout, partnerships, or support."
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
@@ -148,9 +148,7 @@ export function ContactPage() {
           Back home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
-          <h1 className="wl-stitch-marketing-hero text-balance">
-            Get the right kind of call coverage
-          </h1>
+          <h1 className="wl-stitch-marketing-hero text-balance">Talk through the Bot you need</h1>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -221,11 +219,12 @@ export function ContactPage() {
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  Company <span className="font-normal text-muted-foreground">(optional)</span>
+                  Company or organization{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
                   <Input
                     value={company}
                     onChange={(event) => setCompany(event.target.value)}
-                    placeholder="Optional for personal use"
+                    placeholder="Optional"
                   />
                 </label>
               </div>

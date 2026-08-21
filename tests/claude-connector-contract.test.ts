@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { claudeMcpAppDomain, MCP_SERVER_NAME } from "../src/lib/mcp-app-metadata";
+import { claudeMcpAppDomain, mcpServerCard, MCP_SERVER_NAME } from "../src/lib/mcp-app-metadata";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -38,7 +38,7 @@ describe("Claude Connector Directory contract", () => {
   it("keeps a shared remote MCP server named wireline", () => {
     expect(MCP_SERVER_NAME).toBe("wireline");
     expect(account).toContain("serverInfo: { name: MCP_SERVER_NAME");
-    expect(account).toContain('title: "Create a Wireline agent draft"');
+    expect(account).toContain('title: "Create a BotBound agent draft"');
     expect(account).toContain("prompts/list");
     expect(account).toContain("create_after_hours_receptionist");
     expect(account).toContain("create_first_voice_agent");
@@ -103,7 +103,7 @@ describe("Claude Connector Directory contract", () => {
     expect(widget).not.toContain("xai-client-secret.");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain("claudemcpcontent.com");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain(
-      'redirect_domains: ["https://botbound.me", "https://trywireline.com"]',
+      'redirect_domains: ["https://botbound.me"]',
     );
     expect(read("src/lib/mcp-app-metadata.ts")).not.toContain('"openai/widgetDomain": domain');
     expect(claudeMcpAppDomain("https://botbound.me/mcp")).toBe(
@@ -123,6 +123,7 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
     expect(listing.listing.slug).toBe("wireline");
     expect(listing.listing.icon_url).toBe("https://botbound.me/botbound-icon-512.png");
+    expect(mcpServerCard().icons[0]?.mimeType).toBe("image/png");
     expect(listing.listing.website_url).toBe("https://botbound.me");
     expect(listing.listing.documentation_url).toBe("https://botbound.me/claude-connector.html");
     expect(listing.listing.privacy_policy_url).toBe("https://botbound.me/mcp-privacy.html");
@@ -131,8 +132,8 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.server.allowed_link_uris).toEqual(["https://botbound.me"]);
     expect(listing.listing.support_email).toBe("support@trywireline.com");
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
-    expect(listing.listing.tagline).toBe("Build your first voice agent");
-    expect(packet).toContain("Build your first voice agent");
+    expect(listing.listing.tagline).toBe("Build your first Bot");
+    expect(packet).toContain("Build your first Bot");
     expect(listing.prerequisites?.some((item) => /create a BotBound account/i.test(item))).toBe(
       true,
     );
@@ -141,11 +142,15 @@ describe("Claude Connector Directory contract", () => {
 
   it("publishes public docs and privacy pages required by the portal", () => {
     expect(publicDocs).toContain("https://botbound.me/mcp");
+    expect(publicDocs).toContain("build their first Bot in Claude");
+    expect(publicDocs).not.toMatch(/\bvoice agents?\b/i);
     expect(publicDocs).not.toContain("https://trywireline.com/mcp");
     expect(publicDocs).toContain('href="/contact">contact BotBound</a>');
     expect(publicDocs).not.toContain("mailto:support@trywireline.com");
     expect(privacy).toContain("Information returned to the connecting client");
     expect(privacy).toContain("not included in the model-visible conversation");
+    expect(privacy).toContain("build their first Bot");
+    expect(privacy).not.toMatch(/\bvoice agents?\b/i);
     expect(docs).toContain("401");
     expect(packet).toContain("https://claude.ai/admin-settings/directory/submissions/new");
     expect(packet).toContain("Team or Enterprise");

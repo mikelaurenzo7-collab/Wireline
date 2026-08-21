@@ -1,18 +1,37 @@
 import { Link } from "react-router";
 import { ArrowRight, Check, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { signupHrefForPlan } from "../lib/signup-intent";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
   { title: "Makes the Call", copy: "Handles natural conversations by voice, email, or text." },
-  { title: "Plain Instructions", copy: "Your voice, playbook, knowledge, and rules. No flowchart required." },
+  {
+    title: "Plain Instructions",
+    copy: "Your voice, playbook, knowledge, and rules. No flowchart required.",
+  },
   { title: "A Clear Next Step", copy: "Booked, handed off, followed up, or logged." },
-  { title: "Persistent Memory", copy: "Every lesson, objection, and preference stays in the Bot's shared memory." },
-  { title: "Real Calendar Booking", copy: "Availability checks, timezone aware, and no double booking." },
-  { title: "Across Channels", copy: "Starts on voice and continues by email or text with the same context." },
+  {
+    title: "Persistent Memory",
+    copy: "Every lesson, objection, and preference stays in the Bot's shared memory.",
+  },
+  {
+    title: "Real Calendar Booking",
+    copy: "Availability checks, timezone aware, and no double booking.",
+  },
+  {
+    title: "Across Channels",
+    copy: "Starts on voice and continues by email or text with the same context.",
+  },
   { title: "After-Hours Coverage", copy: "24/7 without overtime, burnout, or missed calls." },
-  { title: "Every Outcome Visible", copy: "Transcripts, summaries, actions, and analytics for every conversation." },
-  { title: "Improves with Use", copy: "Post-call review in Studio captures lessons. Automated retraining from every call remains on the roadmap." },
+  {
+    title: "Every Outcome Visible",
+    copy: "Transcripts, summaries, actions, and analytics for every conversation.",
+  },
+  {
+    title: "Improves with Use",
+    copy: "Post-call review in Studio captures lessons. Automated retraining from every call remains on the roadmap.",
+  },
 ] as const;
 
 const MARKET_OPTIONS = [
@@ -20,7 +39,7 @@ const MARKET_OPTIONS = [
     name: "BotBound",
     price: "$0 to build · live from $19/mo",
     usage: "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
-    fit: "Owners who want one Bot across calls, live conversations, text, email, follow-up, and outcomes",
+    fit: "Owners who want their Bot across calls, live conversations, text, email, follow-up, and outcomes",
     href: "/pricing",
     source: "BotBound pricing",
     internal: true,
@@ -71,7 +90,10 @@ const TABLE_ROWS = [
   ["Miss after-hours calls", "Your Bot picks up 24/7, without voicemail tag"],
   ["Train a new receptionist", "Your Bot starts with your playbook on day one"],
   ["Log calls manually in a CRM", "Your Bot writes the summary and syncs the record"],
-  ["Follow up on every inbound lead", "Your Bot qualifies, books, or hands off. Nothing falls through"],
+  [
+    "Follow up on every inbound lead",
+    "Your Bot qualifies, books, or hands off. Nothing falls through",
+  ],
 ] as const;
 
 export default function Compare() {
@@ -94,7 +116,9 @@ export default function Compare() {
           {DIFFERENCES.map(({ title, copy }) => (
             <article className="bg-card px-5 py-6 text-center sm:px-6" key={title}>
               <h2 className="wl-card-title">{title}</h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{copy}</p>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                {copy}
+              </p>
             </article>
           ))}
         </div>
@@ -109,37 +133,64 @@ export default function Compare() {
           <div className="mt-8 overflow-x-auto border border-border bg-card">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
-                Public launch pricing and buying-model comparison for BotBound and selected alternatives
+                Public launch pricing and buying-model comparison for BotBound and selected
+                alternatives
               </caption>
               <thead className="border-b border-border bg-muted/40">
                 <tr>
-                  {['Option', 'Public Entry Price', 'Usage Boundary', 'Best Fit', 'Source'].map((heading) => (
-                    <th key={heading} className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{heading}</th>
-                  ))}
+                  {["Option", "Public Entry Price", "Usage Boundary", "Best Fit", "Source"].map(
+                    (heading) => (
+                      <th
+                        key={heading}
+                        className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                      >
+                        {heading}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {MARKET_OPTIONS.map((option, index) => (
                   <tr
-                    className={(index ? "border-t border-border " : "") + (option.internal ? "bg-primary/[0.06]" : "bg-card")}
+                    className={
+                      (index ? "border-t border-border " : "") +
+                      (option.internal ? "bg-primary/[0.06]" : "bg-card")
+                    }
                     key={option.name}
                   >
                     <th className="px-5 py-5 align-top text-sm font-semibold text-foreground">
                       {option.name}
                       {option.internal ? (
-                        <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">This Product</span>
+                        <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                          This Product
+                        </span>
                       ) : null}
                     </th>
-                    <td className="px-5 py-5 align-top text-sm font-semibold text-foreground">{option.price}</td>
-                    <td className="max-w-xs px-5 py-5 align-top text-sm leading-6 text-muted-foreground">{option.usage}</td>
-                    <td className="max-w-sm px-5 py-5 align-top text-sm leading-6 text-muted-foreground">{option.fit}</td>
+                    <td className="px-5 py-5 align-top text-sm font-semibold text-foreground">
+                      {option.price}
+                    </td>
+                    <td className="max-w-xs px-5 py-5 align-top text-sm leading-6 text-muted-foreground">
+                      {option.usage}
+                    </td>
+                    <td className="max-w-sm px-5 py-5 align-top text-sm leading-6 text-muted-foreground">
+                      {option.fit}
+                    </td>
                     <td className="px-5 py-5 align-top text-sm">
                       {option.internal ? (
-                        <Link className="inline-flex items-center gap-1.5 font-medium text-primary" to={option.href}>
+                        <Link
+                          className="inline-flex items-center gap-1.5 font-medium text-primary"
+                          to={option.href}
+                        >
                           {option.source} <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       ) : (
-                        <a className="inline-flex items-center gap-1.5 font-medium text-primary" href={option.href} rel="noreferrer" target="_blank">
+                        <a
+                          className="inline-flex items-center gap-1.5 font-medium text-primary"
+                          href={option.href}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
                           {option.source} <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       )}
@@ -151,7 +202,10 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1, 2026 and may change. Taxes, carrier fees, optional extras, annual discounts, implementation services, and usage patterns can change the effective total. This is a buying-model reference, not a claim that unlike products are feature-for-feature equivalents.
+            Public prices were checked on the linked official pages on August 1, 2026 and may
+            change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
+            and usage patterns can change the effective total. This is a buying-model reference, not
+            a claim that unlike products are feature-for-feature equivalents.
           </p>
         </div>
       </section>
@@ -159,11 +213,18 @@ export default function Compare() {
       <section className="marketing-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="text-center">
-            <h2 className="wl-stitch-display text-balance">The Routine Call Should Not Become a Project</h2>
+            <h2 className="wl-stitch-display text-balance">
+              The Routine Call Should Not Become a Project
+            </h2>
           </div>
           <div className="overflow-hidden border border-border bg-card">
             {TABLE_ROWS.map(([before, after], index) => (
-              <div className={(index ? "border-t border-border " : "") + "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"} key={before}>
+              <div
+                className={
+                  (index ? "border-t border-border " : "") + "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
+                }
+                key={before}
+              >
                 <p className="text-sm leading-6 text-muted-foreground">{before}</p>
                 <p className="flex gap-2 text-sm font-medium leading-6 text-foreground">
                   <Check className="mt-1 h-4 w-4 flex-none text-primary" />
@@ -174,7 +235,12 @@ export default function Compare() {
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link to="/signup?plan=personal" className="font-semibold text-primary hover:underline">Start Free</Link>{" "}
+            <Link
+              to={signupHrefForPlan("personal")}
+              className="font-semibold text-primary hover:underline"
+            >
+              Start Free
+            </Link>{" "}
             and build one before you compare another.
           </p>
         </div>

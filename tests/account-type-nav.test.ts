@@ -7,19 +7,23 @@ import {
 } from "../src/lib/account-type";
 import { MOBILE_MORE_NAV } from "../src/constants/navigation";
 
-describe("account-type navigation lens", () => {
-  it("keeps the core Bot workspace and setup destinations for personal accounts", () => {
-    const paths = accountSidebarItems("personal").map((item) => item.path);
+describe("legacy account-type navigation compatibility", () => {
+  it("keeps the complete Bot workspace for both stored account values", () => {
+    const legacyPersonalPaths = accountSidebarItems("personal").map((item) => item.path);
+    const legacyBusinessPaths = accountSidebarItems("business").map((item) => item.path);
+    expect(legacyPersonalPaths).toEqual(legacyBusinessPaths);
+    const paths = legacyPersonalPaths;
     expect(paths).toContain("/studio");
     expect(paths).toContain("/inbox");
     expect(paths).toContain("/phone");
     expect(paths).toContain("/connections");
     expect(paths).toContain("/settings");
-    expect(paths).not.toContain("/insights");
+    expect(paths).toContain("/insights");
   });
 
-  it("preserves the shared Work / Manage IA while trimming personal-only visibility", () => {
+  it("preserves the same Work / Manage IA for both compatibility values", () => {
     const groups = accountNavGroups("personal");
+    expect(groups).toEqual(accountNavGroups("business"));
     expect(groups.map((group) => group.label)).toEqual(["Work", "Manage"]);
     expect(groups.find((group) => group.label === "Work")?.items.map((item) => item.path)).toEqual([
       "/studio",
@@ -27,21 +31,21 @@ describe("account-type navigation lens", () => {
       "/phone",
     ]);
     expect(groups.find((group) => group.label === "Manage")?.items.map((item) => item.path)).toEqual([
+      "/insights",
       "/connections",
       "/settings",
     ]);
   });
 
-  it("exposes Activity for business without promoting approvals into the primary rail", () => {
-    const paths = accountSidebarItems("business").map((item) => item.path);
-    expect(paths).toContain("/insights");
+  it("keeps secondary tools out of the primary rail", () => {
+    const paths = accountSidebarItems("personal").map((item) => item.path);
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
     expect(MOBILE_MORE_NAV.map((item) => item.href)).toContain("/approvals");
   });
 
-  it("gates Activity for personal while retaining core workspace routes", () => {
-    expect(isRouteAvailableForAccount("personal", "/insights")).toBe(false);
+  it("does not branch route availability by a legacy account value", () => {
+    expect(isRouteAvailableForAccount("personal", "/insights")).toBe(true);
     expect(isRouteAvailableForAccount("personal", "/studio")).toBe(true);
     expect(isRouteAvailableForAccount("personal", "/phone")).toBe(true);
     expect(isRouteAvailableForAccount("personal", "/connections")).toBe(true);

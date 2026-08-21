@@ -25,7 +25,7 @@ The first ring asks a person to stop the work. The second ring is where BotBound
 
 ### The product truth
 
-BotBound gives a business an AI employee for calls, texts, and email. One Bot can answer or make calls, continue the conversation by text or email, work from the business's knowledge and rules, take approved actions, hand off exceptions, and preserve the outcome.
+BotBound gives a business a Bot for calls, texts, and email. One Bot can answer or make calls, continue the conversation by text or email, work from the business's knowledge and rules, take approved actions, hand off exceptions, and preserve the outcome.
 
 ### The launch argument
 
@@ -52,7 +52,7 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 | Layer | Job | Approved message | Where it belongs |
 | --- | --- | --- | --- |
 | Brand | Create memory | **Put Your Bot on the Line.** | End frames, homepage hero, lockups, OOH |
-| Category | Explain the product | **AI employees for calls, texts, and email.** | Homepage, press, deck, profiles |
+| Category | Explain the product | **Your Bot for calls, texts, and email.** | Homepage, press, deck, profiles |
 | Campaign | Create tension | **You can't answer every call. Your Bot can.** | Hero film, paid social, OOH |
 | Situation | Make it personal | **Busy doing the work? Your Bot can answer.** | Vertical creative, role ads, email |
 | Proof | Show the finished job | **Answers the call. Books the work. Sends the follow-up.** | Product cutdowns, retargeting, demo |
@@ -63,7 +63,7 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 
 - Customer-facing noun: **Bot**
 - Acquisition wedge: **Phone Bot**
-- Broader promise: **AI employees for calls, texts, and email.**
+- Broader promise: **Your Bot for calls, texts, and email.**
 - Product lifecycle: **Build. Configure. Launch. Improve.**
 - Approved film loop already in The Second Ring treatment: **Build. Train. Launch. Improve.**
 - Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
@@ -76,7 +76,7 @@ Use **Configure** for the formal product lifecycle. Use **train** as a natural v
 ### Tier 1: always safe
 
 - Put Your Bot on the Line.
-- AI employees for calls, texts, and email.
+- Your Bot for calls, texts, and email.
 - You can't answer every call. Your Bot can.
 - The call still gets answered.
 - Your line. Your rules.
@@ -84,7 +84,7 @@ Use **Configure** for the formal product lifecycle. Use **train** as a natural v
 ### Tier 2: proof-led
 
 - Answers the call. Books the work. Sends the follow-up.
-- One Bot. One conversation across calls, texts, and email.
+- Your Bot. One conversation across calls, texts, and email.
 - The customer gets an answer. You stay in the work.
 - Give the work a Bot. Step in when you want to.
 - Built around the job. Guided by your rules.
@@ -108,14 +108,14 @@ Use **Configure** for the formal product lifecycle. Use **train** as a natural v
 - Human replacement.
 - Fully autonomous.
 - Set it and forget it.
-- The world's best AI employee.
+- The world's best Bot.
 - Any savings, revenue, conversion, answer-rate, or response-time claim without current evidence.
 
 ## 4. Core launch copy
 
 ### One-line pitch
 
-BotBound gives your business an AI employee for calls, texts, and email, built around your knowledge, rules, tools, and handoffs.
+BotBound gives your business a Bot for calls, texts, and email, built around your knowledge, rules, tools, and handoffs.
 
 ### Two-line pitch
 
@@ -138,7 +138,7 @@ Headline:
 
 Support:
 
-> AI employees for calls, texts, and email.
+> Your Bot for calls, texts, and email.
 
 Footnote:
 
@@ -170,7 +170,7 @@ Publish only after the launch gate is signed off. Replace all bracketed fields a
 
 ### Headline
 
-**BotBound Puts an AI Employee on the Line for Calls, Texts, and Email**
+**BotBound Puts Your Bot on the Line for Calls, Texts, and Email**
 
 ### Subheadline
 
@@ -178,7 +178,7 @@ Publish only after the launch gate is signed off. Replace all bracketed fields a
 
 ### Release
 
-**[CITY, STATE], [MONTH DAY, YEAR]**: BotBound today introduced a web platform for building AI employees that handle calls, texts, and email under one identity, shared context, and clear business rules.
+**[CITY, STATE], [MONTH DAY, YEAR]**: BotBound today introduced a web platform for building Bots that handle calls, texts, and email under one identity, shared context, and clear business rules.
 
 BotBound starts with a familiar problem. A customer calls while the person who can help is already doing the work. Instead of forcing the owner to stop or sending the caller into a dead end, a BotBound Phone Bot can answer, understand the request, book or route the next step, continue by text or email when useful, and preserve the outcome for review.
 
@@ -194,7 +194,7 @@ The launch campaign, **The Second Ring**, follows people whose hands are occupie
 
 ### About BotBound
 
-BotBound is the platform for building AI employees that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Start with one Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
+BotBound is the platform for building Bots that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Start with one Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
 
 ### Media contact
 
@@ -213,7 +213,7 @@ But the person calling does not know that. They just need an answer.
 
 That is the moment we built BotBound for.
 
-BotBound gives your business an AI employee for calls, texts, and email. You build one Bot around a real job, give it the right knowledge and rules, and decide where it can act or should hand off.
+BotBound gives your business a Bot for calls, texts, and email. You build one Bot around a real job, give it the right knowledge and rules, and decide where it can act or should hand off.
 
 It can answer the call, understand what the customer needs, book or route the next step, continue by text or email, and log what happened.
 
@@ -237,7 +237,7 @@ The phone always rings when your hands are full. The customer still needs an ans
 
 **2/8**
 
-BotBound gives your business an AI employee for calls, texts, and email. Start with one Bot. Build it around a real job. Give it your knowledge, rules, tools, approvals, and handoffs.
+BotBound gives your business a Bot for calls, texts, and email. Start with one Bot. Build it around a real job. Give it your knowledge, rules, tools, approvals, and handoffs.
 
 **3/8**
 
@@ -271,13 +271,13 @@ Put Your Bot on the Line.<br>
 
 1. Put Your Bot on the Line.
 2. The phone rang. Your Bot answered.
-3. Meet BotBound, your AI employee for the line
+3. Meet BotBound, your Bot for the line
 4. Your hands are full. The call still gets answered.
 5. The Second Ring is here.
 
 ### Preheader options
 
-- AI employees for calls, texts, and email.
+- Your Bot for calls, texts, and email.
 - Build one Bot around a real job. Put it on a number when it is ready.
 - Answer the call, handle the next step, and keep the outcome.
 
@@ -287,7 +287,7 @@ Put Your Bot on the Line.<br>
 
 The phone does not wait until the work is convenient.
 
-BotBound gives your business an AI employee for calls, texts, and email, so the customer can get an answer while you stay in the work.
+BotBound gives your business a Bot for calls, texts, and email, so the customer can get an answer while you stay in the work.
 
 Build one Bot around a real job. Give it your knowledge, rules, tools, approvals, and handoff path. It can answer, qualify, book, confirm, follow up, and log what happened.
 
@@ -303,7 +303,7 @@ P.S. Watch **The Second Ring**, our launch film about the moment a customer stil
 
 The phone does not wait until the work is convenient.
 
-BotBound gives your business an AI employee for calls, texts, and email. Build one Bot around a real job, give it your knowledge and rules, and decide where it can act or should hand off.
+BotBound gives your business a Bot for calls, texts, and email. Build one Bot around a real job, give it your knowledge and rules, and decide where it can act or should hand off.
 
 Build free at https://botbound.me
 
@@ -313,11 +313,11 @@ Put Your Bot on the Line.
 
 ### Micro, up to 55 characters
 
-AI employees for calls, texts, and email.
+Your Bot for calls, texts, and email.
 
 ### Short, up to 90 characters
 
-Build an AI employee for calls, texts, email, and the work that follows.
+Build a Bot for calls, texts, email, and the work that follows.
 
 ### Medium, up to 180 characters
 
@@ -325,7 +325,7 @@ BotBound lets you build one Bot around a real job, configure its knowledge and r
 
 ### Long
 
-BotBound is the platform for building AI employees that handle calls, texts, and email under one identity and set of business rules. Start with a Phone Bot or role template, add the knowledge and playbook it needs, connect approved tools and handoffs, and privately simulate the experience. When it is ready, a paid plan can put the Bot on a dedicated production number. The Bot can answer or make calls, qualify needs, book or route the next step, continue by text or email, and preserve the outcome for review.
+BotBound is the platform for building Bots that handle calls, texts, and email under one identity and set of business rules. Start with a Phone Bot or role template, add the knowledge and playbook it needs, connect approved tools and handoffs, and privately simulate the experience. When it is ready, a paid plan can put the Bot on a dedicated production number. The Bot can answer or make calls, qualify needs, book or route the next step, continue by text or email, and preserve the outcome for review.
 
 ### App or directory listing
 
@@ -333,7 +333,7 @@ BotBound helps a business build one Bot around a real customer-facing job. Confi
 
 ### Boilerplate, 32 words
 
-BotBound is the platform for building AI employees that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Put Your Bot on the Line at BotBound.me.
+BotBound is the platform for building Bots that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Put Your Bot on the Line at BotBound.me.
 
 ## 10. Media captions by cut
 
@@ -345,7 +345,7 @@ These are publishing captions, not subtitle files. Accessibility subtitle delive
 
 Your best work should not stop every time the phone rings.
 
-BotBound gives your business an AI employee for calls, texts, and email, so the customer gets an answer while you stay in the work.
+BotBound gives your business a Bot for calls, texts, and email, so the customer gets an answer while you stay in the work.
 
 You can't answer every call. Your Bot can.
 
@@ -403,7 +403,7 @@ Ring. Answer. Next step. Put Your Bot on the Line.
 
 Every missed call is someone deciding whether to try the next name on the list.
 
-BotBound gives your business an AI employee for calls, texts, and email. Build one Bot around the job, configure the rules, and put it on a number when it is ready.
+BotBound gives your business a Bot for calls, texts, and email. Build one Bot around the job, configure the rules, and put it on a number when it is ready.
 
 Watch **The Second Ring**.
 
@@ -415,7 +415,7 @@ Watch **The Second Ring**.
 
 Hands in the work. Customer on the line. Your Bot takes the second ring.
 
-AI employees for calls, texts, and email.
+Your Bot for calls, texts, and email.
 
 Put Your Bot on the Line.<br>
 `BotBound.me`
@@ -446,7 +446,7 @@ Put Your Bot on the Line. `BotBound.me`
 
 ### YouTube description
 
-The phone always rings when your hands are full. BotBound gives your business an AI employee for calls, texts, and email, so the customer can get an answer while you stay in the work.
+The phone always rings when your hands are full. BotBound gives your business a Bot for calls, texts, and email, so the customer can get an answer while you stay in the work.
 
 Build one Bot around a real job. Configure its knowledge and rules. Put it on a number when it is ready.
 
@@ -454,7 +454,7 @@ Build free: `https://botbound.me`
 
 ### Partner or community post
 
-Meet BotBound, a platform for building AI employees that handle calls, texts, and email under one shared set of knowledge and rules. Start with one private Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
+Meet BotBound, a platform for building Bots that handle calls, texts, and email under one shared set of knowledge and rules. Start with one private Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
 
 ### Product screenshot post
 
@@ -487,8 +487,8 @@ Footer: PUT YOUR BOT ON THE LINE.
 
 ### Product-forward
 
-> AI EMPLOYEES<br>
-> FOR THE PHONE.
+> YOUR BOT.<br>
+> EVERY CHANNEL.
 
 Support: CALL · TEXT · EMAIL<br>
 Footer: BOTBOUND.ME
@@ -524,11 +524,13 @@ Footer: BOTBOUND.ME
 | Awareness | **WATCH THE SECOND RING** | Approved film page or hosted video | Launch day hero, press, YouTube | See what happens on the second ring. |
 | Curiosity | **HEAR IT LIVE** | `/showcase` | Homepage, product proof, retargeting | Hear what your customer hears. |
 | Exploration | **SEE WHAT A BOT CAN DO** | `/features` | Press, deck, organic social | Calls, texts, email, tools, and outcomes. |
-| High intent | **BUILD YOUR BOT** | `/signup?plan=personal` | Homepage, film end card, email | Build free. Put it on a number when it is ready. |
-| Low-friction start | **START FREE** | `/signup?plan=personal` | Paid social, mobile, pricing | One private draft Bot and simulation. |
-| Role-led | **BUILD THIS ROLE** | `/signup?plan=personal&template=[template-key]` | Role cards, vertical campaigns | Start with the job. Rewrite every rule. |
+| High intent | **BUILD YOUR BOT** | `/signup?plan=free` | Homepage, film end card, email | Build free. Put it on a number when it is ready. |
+| Low-friction start | **START FREE** | `/signup?plan=free` | Paid social, mobile, pricing | One private draft Bot and simulation. |
+| Role-led | **BUILD THIS ROLE** | `/signup?plan=free&template=[template-key]` | Role cards, vertical campaigns | Start with the job. Rewrite every rule. |
 | Pricing | **SEE PRICING** | `/pricing` | Email footer, comparison, FAQ | Free Builder, then live paid plans. |
 | Starter purchase | **START FOR $19** | `/signup?plan=starter` | Pricing only, after live price check | One live Voice Bot and one included number. |
+| Starter Plus purchase | **START FOR $39** | `/signup?plan=starter-plus` | Pricing only, after live price check | Two live Bots and two included numbers. |
+| Pro purchase | **START FOR $79** | `/signup?plan=pro` | Pricing only, after live price check | Up to five live Bots and five included numbers. |
 | Trust | **SEE HOW CONTROL WORKS** | `/security` | Pricing, sales follow-up | Your line. Your rules. |
 | Founder contact | **TALK THROUGH THE JOB** | `/contact` | High-consideration or complex use case | Bring one workflow worth fixing. |
 
@@ -575,11 +577,11 @@ Footer: BOTBOUND.ME
 
 15-second florist Reel:
 
-`https://botbound.me/signup?plan=personal&utm_source=instagram&utm_medium=paid_social&utm_campaign=bb_launch_second_ring_202608&utm_content=video_15s_vertical_florist_v1`
+`https://botbound.me/signup?plan=free&utm_source=instagram&utm_medium=paid_social&utm_campaign=bb_launch_second_ring_202608&utm_content=video_15s_vertical_florist_v1`
 
 Founder launch email:
 
-`https://botbound.me/signup?plan=personal&utm_source=email&utm_medium=email&utm_campaign=bb_launch_second_ring_202608&utm_content=email_founder_v1`
+`https://botbound.me/signup?plan=free&utm_source=email&utm_medium=email&utm_campaign=bb_launch_second_ring_202608&utm_content=email_founder_v1`
 
 Product-proof retargeting:
 
@@ -603,7 +605,7 @@ The sequence moves from tension to character, then from character to product pro
 - **Goal:** introduce the ownable robot and phone silhouette.
 - **Hero asset:** approved operator on Obsidian, visible hand on violet receiver.
 - **Copy:** `THE SECOND RING BELONGS TO YOUR BOT.`
-- **Support:** `AI employees for calls, texts, and email.`
+- **Support:** `Your Bot for calls, texts, and email.`
 - **CTA:** `MEET BOTBOUND.`
 - **Channels:** social reveal, homepage takeover, founder profile assets.
 
@@ -651,7 +653,7 @@ The sequence moves from tension to character, then from character to product pro
 - **Support:** `Build free. Put it on a number when it is ready.`
 - **CTA:** `START FREE.`
 - **Channels:** all social, email follow-up to engaged recipients, video retargeting.
-- **Destination:** `/signup?plan=personal`.
+- **Destination:** `/signup?plan=free`.
 
 ## 16. Channel and creative guardrails
 

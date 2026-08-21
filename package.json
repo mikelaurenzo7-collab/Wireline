@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "node --import tsx server.ts",
-    "build": "npm run assets && vite build && node --import tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
+    "build": "npm run assets && vite build && node scripts/validate-botbound-jingle.mjs && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:server": "esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:vercel": "node scripts/vercel-build.mjs",
     "start": "node dist/server.cjs",

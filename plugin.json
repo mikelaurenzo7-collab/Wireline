@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "wireline",
   "version": "1.0.0",
-  "description": "Create a BotBound account from Cursor and build your first voice agent. Privately rehearse it, then continue in BotBound. Not a repo voice SDK. Live calls, numbers, and launch stay in BotBound.",
+  "description": "Create a BotBound account from Cursor and build your first Bot. Privately rehearse it, then continue in BotBound. Not a repo voice SDK. Live calls, numbers, and launch stay in BotBound.",
   "author": {
     "name": "BotBound",
     "email": "support@trywireline.com",

@@ -17,7 +17,7 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 
 Paste these values if the auto-detect form asks for them. Do not invent a second MCP URL or a static OAuth client id.
 
-- **Description:** Connect a BotBound account in Cursor, describe a voice agent, create a private unlaunched draft, run a short tool-free simulation, and inspect aggregate workspace status without customer content.
+- **Description:** Connect a BotBound account in Cursor, describe a Bot, create a private unlaunched draft, run a short tool-free simulation, and inspect aggregate workspace status without customer content.
 - **Install docs:** `https://botbound.me/cursor-plugin.html`
 - **Config:** `{ "url": "https://botbound.me/mcp" }` with no `headers` and no `auth` secrets.
 

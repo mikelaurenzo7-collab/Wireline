@@ -32,15 +32,25 @@ describe("billing Checkout return recovery", () => {
         credit_granted: true,
       }),
     ).toBe("fulfilled");
-    expect(
-      classifyCheckoutReturn("live_video", 200, {
-        payment_status: "paid",
-        live_video_enabled: true,
-      }),
-    ).toBe("fulfilled");
     expect(classifyCheckoutReturn("plan", 200, { payment_status: "paid", synced: false })).toBe(
       "retryable",
     );
+  });
+
+  it("finalizes retired Live Video returns after payment reconciliation", () => {
+    expect(
+      classifyCheckoutReturn("live_video", 200, {
+        payment_status: "paid",
+        live_video_enabled: false,
+      }),
+    ).toBe("retired");
+    expect(
+      classifyCheckoutReturn("live_video", 200, {
+        payment_status: "no_payment_required",
+        live_video_enabled: false,
+      }),
+    ).toBe("retired");
+    expect(shouldFinalizeCheckoutReturn("retired")).toBe(true);
   });
 
   it("keeps delayed and transient outcomes retryable", () => {
@@ -50,6 +60,16 @@ describe("billing Checkout return recovery", () => {
     expect(classifyCheckoutReturn("plan", 401, null)).toBe("retryable");
     expect(shouldFinalizeCheckoutReturn("pending")).toBe(false);
     expect(shouldFinalizeCheckoutReturn("retryable")).toBe(false);
+  });
+
+  it("finalizes an expired unpaid session so refreshes do not retry forever", () => {
+    expect(
+      classifyCheckoutReturn("plan", 200, {
+        status: "expired",
+        payment_status: "unpaid",
+      }),
+    ).toBe("expired");
+    expect(shouldFinalizeCheckoutReturn("expired")).toBe(true);
   });
 
   it("scrubs only definitively invalid references", () => {

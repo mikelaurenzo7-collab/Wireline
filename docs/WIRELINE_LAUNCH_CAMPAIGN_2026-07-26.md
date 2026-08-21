@@ -1,4 +1,4 @@
-# Wireline Launch Campaign — Voice Agents
+# BotBound Launch Campaign
 
 Updated: 2026-08-15  
 Status: **Active founder-launch pack**  
@@ -8,18 +8,18 @@ This document owns launch copy, voiceover masters, campaign language, and cut br
 
 ## Campaign Truth
 
-**Voice agents for personal tasks and business conversations.**
+**Your Bot for calls, texts, and email.**
 
-Wireline helps people and teams build voice agents around useful work.
+BotBound helps people and teams build Bots around useful work.
 
 The public operating loop is **Build -> Train -> Launch -> Improve**:
 
-1. **Build** one agent around a clear job.
+1. **Build** one Bot around a clear job.
 2. **Train** it on facts, rules, voice, and behavior.
 3. **Launch** it on the calls and follow-up channels the user enables.
 4. **Improve** it from transcripts, outcomes, and review.
 
-Start with one useful workflow. Add agents or workflow breadth only when real use proves the need.
+Start with one useful workflow. Add Bots or workflow breadth only when real use proves the need.
 
 ## Founder Launch Execution Priority
 
@@ -35,32 +35,32 @@ Founder time and cash go to onboarding, call quality, support, and direct custom
 
 ## Launch Offer
 
-- Primary CTA: **Build your Voice Agent**
+- Primary CTA: **Build Your Bot**
 - Price line: **Build free. Go live from $19/mo.**
 - Live plan floor: **Starter — $19/mo**
 - Builder posture: Free Builder is for building, training, and private simulation before paid live use.
-- Number promise: Every paid voice agent includes a Wireline number.
-- Audience: Personal and Business without making either secondary.
+- Number promise: Every active paid Bot gets a dedicated production number.
+- Product model: One BotBound product and workspace for every job or role.
 
 ## Brand Spine
 
-| Element | Current Copy |
-| --- | --- |
-| North star | Voice agents for every conversation — personal or business. |
-| Compact line | Start with one useful agent. Add more when real work proves the need. |
-| Outcome line | Capture the call, send the follow-up, log the outcome. |
-| Product loop | Build -> Train -> Launch -> Improve |
-| CTA | Build your Voice Agent |
-| Price | Build free. Go live from $19/mo. |
+| Element      | Current Copy                                                          |
+| ------------ | --------------------------------------------------------------------- |
+| North star   | Your Bot for calls, texts, and email.                                 |
+| Compact line | Start with one useful Bot. Add more when real work proves the need.   |
+| Outcome line | Capture the call, send the follow-up, log the outcome.                |
+| Product loop | Build -> Train -> Launch -> Improve                                   |
+| CTA          | Build Your Bot                                                        |
+| Price        | Build free. Go live from $19/mo.                                      |
 
 ## Claim Guardrails
 
 Use:
 
-- `voice agent`, `business voice agent`, and `personal agent` where context requires it;
+- `Bot`, `Phone Bot`, or a concrete role or use case; never an audience-based product mode;
 - calls, texts, email, follow-up, handoff, and logged outcomes when the depicted runtime actually persists them;
 - private simulation before live launch;
-- paid plans include a Wireline number;
+- every active paid Bot gets a dedicated production number;
 - precise demo/test labeling before real customer evidence exists.
 
 Avoid:
@@ -70,26 +70,29 @@ Avoid:
 - fully autonomous, guaranteed booking, guaranteed revenue, or compliance-safe promises;
 - customer counts, testimonials, ROI claims, or implied adoption before real customer evidence supports them;
 - public WhatsApp claims while it remains outside the launch posture;
-- claiming Live Video history or persisted outcomes until that browser-session path writes them;
+- presenting retired Live Video as an active feature, add-on, or proof surface;
 - any workflow spine other than **Build -> Train -> Launch -> Improve**.
 
 ## Primary Hook
 
 “Every missed call is someone trying the next name on the list.”
 
-The picture must be real Wireline product proof from the exact production commit being promoted. Show the unanswered-call problem, the trained agent handling the conversation, and then the finished follow-up or logged outcome from that same production workflow.
+The picture must be real BotBound product proof from the exact production commit being promoted. Show the unanswered-call problem, the trained Bot handling the conversation, and then the finished follow-up or logged outcome from that same production workflow.
 
 ## AI Voice Generator Audio
 
 These generated tracks are for **marketing/reference use only**. They are not the production phone-call speech path.
 
-`npm run campaign:vo` renders exactly four canonical tracks into the gitignored `official-assets/audio/` directory.
+`npm run campaign:vo` currently renders four named tracks into the gitignored
+`official-assets/audio/` directory. The first three are active campaign
+references; the legacy Live Video output is compatibility-only and must not be
+published.
 
 ### Missed call — 15s
 
 File: `wireline-missed-call-15s.mp3`
 
-> Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.
+> Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.
 
 ### The Second Ring — 30s tail
 
@@ -97,37 +100,36 @@ File: `wireline-ai-voice-agent-30s.mp3`
 
 > Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month.
 
-This narration enters late. The missed-call moment, real captured agent audio, finished work, and end card carry the cut.
+This narration enters late. The missed-call moment, real captured Bot audio, finished work, and end card carry the cut.
 
 ### Founder explainer — 60s slot
 
 File: `wireline-founder-60s.mp3`
 
-> I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan.
+> I built BotBound because calls are still where real work happens, and they are still too easy to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a Bot of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Front desk, sales, support, or any role you define. One Bot, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a dedicated production number for every active paid Bot.
 
-### Live Video proof — 25s slot
+### Retired Live Video proof — do not publish
 
 File: `wireline-live-video-25s.mp3`
 
-> Some conversations deserve a face. Turn on Live Video and your voice agent joins on screen using the same Training, operating rules, and approved knowledge. Add it to a paid business agent for nineteen dollars a month.
-
-This script claims only what the current browser runtime proves. Live Video uses the selected agent's identity, Training directives, operating rules, and approved knowledge. It is metered through a reserved allowance and pauses at the session or monthly limit. It does not yet claim cross-channel history or a persisted call-style outcome.
-
-Picture requirements are strict: show an authenticated exact-production session, token mint, presenter speaking in sync, explicit stop, terminal five-minute pause, and truthful allowance state. A static identity badge, generated concept, or provider demo is not product proof.
+This filename is retained only to identify a historical audio artifact. Its paid
+add-on script is superseded and must not be generated, published, or used as
+product proof. Live talking-head video, checkout, and session minting are
+retired; identity badges remain. See `docs/PRODUCT_SHOWCASE_MATRIX.md`.
 
 ## Organic and Direct Launch Copy
 
 ### Founder post
 
-I built Wireline because calls are still where real work shows up, and they are still too easy to miss.
+I built BotBound because calls are still where real work shows up, and they are still too easy to miss.
 
-Build a voice agent around one useful job. Train it on your facts and rules, test it privately, then launch it when you are ready. Review the call, follow-up, and outcome in one operating loop.
+Build a Bot around one useful job. Train it on your facts and rules, test it privately, then launch it when you are ready. Review the call, follow-up, and outcome in one operating loop.
 
 Build free. Go live from $19/mo at botbound.me.
 
 ### Short post
 
-You cannot answer every call. Your agent can.
+You cannot answer every call. Your Bot can.
 
 Build it. Train it. Launch it. Improve it from the work.
 
@@ -143,15 +145,15 @@ Do not spend against these concepts until the advertised workflow has passed fou
 
 ### Missed Call Recovery
 
-- Primary text: “Every missed call is someone trying the next name on the list. Build a Wireline voice agent to handle the call, continue the follow-up, and log the outcome while you stay on the job.”
-- Headline: **Voice Agents**
+- Primary text: “Every missed call is someone trying the next name on the list. Build a BotBound Bot to handle the call, continue the follow-up, and log the outcome while you stay on the job.”
+- Headline: **Your Bot Can Answer**
 - Description: **Build free. Go live from $19/mo.**
-- CTA: **Build your Voice Agent**
+- CTA: **Build Your Bot**
 
-### Personal + Business
+### One Product, Every Role
 
-- Primary text: “Personal call delegation, front-desk coverage, support triage, lead response, and appointment follow-up, trained privately before live use.”
-- Headline: **Personal or Business**
+- Primary text: “Call delegation, front-desk coverage, support triage, lead response, and appointment follow-up, trained privately before live use.”
+- Headline: **One BotBound Product**
 - Description: **Build -> Train -> Launch -> Improve**
 - CTA: **Start free**
 
@@ -162,7 +164,7 @@ Every publishable cut must follow `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md` an
 - Use real product for product proof.
 - Capture from the exact production source commit being promoted.
 - Reject auth walls, 404s, dead routes, loading holds, stale UI, and mock product frames.
-- Let real agent voice play at **full level** with no narration or music underneath it when the cut sells voice quality.
+- Let real Bot voice play at **full level** with no narration or music underneath it when the cut sells voice quality.
 - Show finished work from the same runtime: follow-up, booking, handoff, transcript, or logged outcome.
 - Keep burned-in copy sparse and provide a sound-off treatment with accessible captions.
 - Never manufacture logos, testimonials, customer counts, ROI, or customer adoption.
@@ -173,13 +175,13 @@ Every publishable cut must follow `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md` an
 ### 1. Missed Call — 15s
 
 0–2s: missed-call moment.  
-2–6s: real Wireline call proof.  
+2–6s: real BotBound call proof.
 6–11s: finished follow-up or logged outcome.  
 11–15s: clean end card.
 
 ### 2. The Second Ring — 30s
 
-Primary proof cut. Use real captured agent audio as the center. Silence may carry the problem; narration enters late.
+Primary proof cut. Use real captured Bot audio as the center. Silence may carry the problem; narration enters late.
 
 ### 3. Founder / Product Proof — 45–60s
 
@@ -191,7 +193,7 @@ Use the same certified production proof. Do not invent a second product story.
 
 ## Post-proof Brand Concepts
 
-OOH and a larger “Second Ring” hero film can be reconsidered only after Wireline has a repeatable paid activation and retention signal. Any later brief must use real production audio and exact-production product capture, with no customer evidence fabricated. This section is a parking lot, not an execution plan.
+OOH and a larger “Second Ring” hero film can be reconsidered only after BotBound has a repeatable paid activation and retention signal. Any later brief must use real production audio and exact-production product capture, with no customer evidence fabricated. This section is a parking lot, not an execution plan.
 
 ## Creative Status
 
@@ -200,9 +202,9 @@ Historical masters containing authenticated 404s, mock product, stale pricing, o
 ## Delivery Guide
 
 - Voice: direct, founder-like, unhurried; not announcer-style.
-- Speak `trywireline.com` as “try wireline dot com.”
+- Speak `botbound.me` as “bot bound dot me.”
 - Speak prices as words in narration.
-- Preserve room for real agent audio and silence.
+- Preserve room for real Bot audio and silence.
 - Regenerate audio whenever canonical copy changes, then re-measure duration.
 
 ## Measurement

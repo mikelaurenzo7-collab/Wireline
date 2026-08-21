@@ -27,7 +27,7 @@ function importSummary(result: {
 }): string {
   const parts: string[] = [];
   if (result.factsAdded) {
-    parts.push(`Saved ${result.factsAdded} business fact${result.factsAdded === 1 ? "" : "s"}.`);
+    parts.push(`Saved ${result.factsAdded} verified fact${result.factsAdded === 1 ? "" : "s"}.`);
   }
   if (result.rulesAdded) {
     parts.push(`Saved ${result.rulesAdded} operating rule${result.rulesAdded === 1 ? "" : "s"}.`);

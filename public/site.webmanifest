@@ -1,7 +1,7 @@
 {
   "name": "BotBound | Put Your Bot on the Line",
   "short_name": "BotBound",
-  "description": "AI employees for calls, texts, and email.",
+  "description": "Your Bot for calls, texts, and email.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
@@ -20,7 +20,7 @@
   "shortcuts": [
     { "name": "BOT STUDIO", "short_name": "STUDIO", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },
     { "name": "INBOX", "short_name": "INBOX", "description": "Review texts and email by Bot.", "url": "/inbox" },
-    { "name": "CALLS", "short_name": "CALLS", "description": "Manage lines and review call history.", "url": "/calls" }
+    { "name": "CALLS", "short_name": "CALLS", "description": "Manage lines and review call history.", "url": "/phone" }
   ],
   "prefer_related_applications": false
 }

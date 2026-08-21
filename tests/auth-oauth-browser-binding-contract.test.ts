@@ -147,6 +147,19 @@ describe("auth OAuth browser binding contract", () => {
       completion.indexOf('fetch("/api/auth/oauth/exchange"'),
     );
     expect(completion).toContain('resolvePostAuthDestination(readStoredWorkspaceMode(), "")');
+
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    const legacyHandoffIndex = access.indexOf("canonicalLegacyBrowserHandoff(window.location)");
+    const providerStartIndex = access.indexOf("const startOAuth = async");
+    const allowedUrlIndex = access.indexOf("if (!isAllowedOAuthUrl(payload?.url))");
+    const persistReturnIndex = access.indexOf("persistOAuthReturnFromSearch(location.search)");
+    const providerNavigationIndex = access.indexOf("window.location.assign(payload.url)");
+    expect(legacyHandoffIndex).toBeGreaterThan(-1);
+    expect(providerStartIndex).toBeGreaterThan(legacyHandoffIndex);
+    expect(access).toContain("window.location.replace(legacyBrowserHandoffUrl)");
+    expect(access).toContain("if (legacyBrowserHandoffUrl) return");
+    expect(persistReturnIndex).toBeGreaterThan(allowedUrlIndex);
+    expect(providerNavigationIndex).toBeGreaterThan(persistReturnIndex);
   });
 
   it("requires integration-link callbacks to complete as the initiating account", () => {

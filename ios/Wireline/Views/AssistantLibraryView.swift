@@ -8,7 +8,6 @@ struct AssistantLibraryView: View {
     @State private var showCreate = false
     @State private var name = ""
     @State private var role = "scheduler"
-    @State private var isBusinessAgent = false
     @State private var isCreating = false
     @State private var creationError: String?
 
@@ -24,7 +23,7 @@ struct AssistantLibraryView: View {
                 } else if agents.isEmpty {
                     BrandEmptyState(
                         title: "NO BOTS YET",
-                        message: "Build a Voice Bot, Conversation Bot, Human Bot, business role, personal role, or custom Bot in one workspace.",
+                        message: "Start with a role or create your own. Every Bot lives in the same workspace.",
                         systemImage: "waveform.and.person.filled"
                     )
                 } else {
@@ -62,19 +61,6 @@ struct AssistantLibraryView: View {
     private var createSheet: some View {
         NavigationStack {
             Form {
-                Section("ROLE CONTEXT") {
-                    Picker("ROLE CONTEXT", selection: $isBusinessAgent) {
-                        Text("PERSONAL ROLE").tag(false)
-                        Text("BUSINESS ROLE").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: isBusinessAgent) { _, business in
-                        if business, role == "scheduler" { role = "receptionist" }
-                    }
-                    Text("Voice, live conversation, text, email, knowledge, tools, and outcomes stay in the same workspace.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
                 Section("START WITH ONE CLEAR JOB") {
                     TextField("BOT NAME", text: $name)
                     if rolesLoading && agentRoles.isEmpty {
@@ -82,10 +68,13 @@ struct AssistantLibraryView: View {
                     } else {
                         Picker("ROLE", selection: $role) {
                             ForEach(roleChoices, id: \.id) { choice in
-                                Text(choice.label.uppercased()).tag(choice.id)
+                                Text(customerRoleLabel(choice).uppercased()).tag(choice.id)
                             }
                         }
                     }
+                    Text("Voice, live conversation, text, email, knowledge, tools, and outcomes stay in the same workspace.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 Section {
                     Button {
@@ -147,7 +136,10 @@ struct AssistantLibraryView: View {
             let agent = try await MobileAssistantCreation.create(
                 name: cleanName,
                 role: role,
-                isBusinessAgent: isBusinessAgent
+                // The server still stores this compatibility profile. Derive it
+                // from the selected job instead of asking customers to choose an
+                // audience lane.
+                isBusinessAgent: role != "personal_assistant"
             )
             agents.insert(agent, at: 0)
             name = ""
@@ -156,5 +148,9 @@ struct AssistantLibraryView: View {
         } catch {
             creationError = error.localizedDescription
         }
+    }
+
+    private func customerRoleLabel(_ choice: AgentRole) -> String {
+        choice.id == "personal_assistant" ? "Assistant" : choice.label
     }
 }

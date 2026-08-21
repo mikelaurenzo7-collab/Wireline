@@ -511,7 +511,7 @@ Recommended fix:
 
 Evidence:
 
-- brand-work/BOTBOUND-BRAND-GUIDE.md approves BotBound, Put Your Bot on the Line., and AI employees for calls, texts, and email.
+- brand-work/BOTBOUND-BRAND-GUIDE.md approves BotBound, Put Your Bot on the Line., and Your Bot for calls, texts, and email.
 - docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md is still marked Active launch authority, names Wireline, says Voice agents that get the work done., and says to avoid AI employee as the primary noun.
 - docs/FOUNDER_LAUNCH_COMMAND_CENTER.md repeats the no-AI-employee rule.
 - src/lib/product-copy.ts uses Build -> Configure -> Launch -> Improve.

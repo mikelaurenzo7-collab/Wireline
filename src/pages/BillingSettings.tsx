@@ -113,12 +113,6 @@ export default function BillingSettings() {
                   title: "Runtime Balance added",
                   message: "Your prepaid balance is ready for calls, texts, and live work.",
                 });
-              } else if (returnFlow === "live_video" && verification.live_video_enabled) {
-                setCheckoutReturnNotice({
-                  tone: "success",
-                  title: "Live video activated",
-                  message: "Your workspace can now use the live video add-on.",
-                });
               } else if (returnFlow === "plan" && verification.synced) {
                 setCheckoutReturnNotice({
                   tone: "success",
@@ -126,7 +120,20 @@ export default function BillingSettings() {
                   message: "Your BotBound plan and workspace access are up to date.",
                 });
               }
-            } else if (checkoutOutcome === "pending" || verification?.payment_status === "unpaid") {
+            } else if (checkoutOutcome === "retired") {
+              setCheckoutReturnNotice({
+                tone: "info",
+                title: "Legacy checkout reconciled",
+                message:
+                  "Live video is retired and was not activated. Any legacy billing record was preserved for support review.",
+              });
+            } else if (checkoutOutcome === "expired") {
+              setCheckoutReturnNotice({
+                tone: "info",
+                title: "Checkout expired",
+                message: "No payment was completed. Your current billing options are shown below.",
+              });
+            } else if (checkoutOutcome === "pending") {
               setCheckoutReturnNotice({
                 tone: "info",
                 title: "Payment processing",
@@ -134,7 +141,7 @@ export default function BillingSettings() {
                   returnFlow === "runtime_balance"
                     ? "Your Runtime Balance will update automatically after Stripe confirms the funds."
                     : returnFlow === "live_video"
-                      ? "Live video will activate automatically after Stripe confirms the funds."
+                      ? "This legacy checkout is still processing. Live video remains retired and no new activation will be granted."
                       : "Your plan will activate automatically after Stripe confirms the funds.",
               });
             } else if (checkoutOutcome === "invalid") {
@@ -161,7 +168,7 @@ export default function BillingSettings() {
         if (finalizeCheckoutReturn && !cancelled) {
           // This page is the sole owner of Stripe return reconciliation and
           // query cleanup. Keep session_id across transient/delayed outcomes;
-          // remove it only after fulfillment or a definitive invalid response.
+          // remove it only after fulfillment, expiry, or a definitive invalid response.
           window.history.replaceState(
             window.history.state,
             "",

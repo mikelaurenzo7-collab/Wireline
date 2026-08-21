@@ -38,7 +38,7 @@ export const LiveAnswerScene: React.FC = () => {
             }),
           }}
         >
-          <Eyebrow fontSize={isVertical ? 48 : 28 * scaleFactor}>Live · BotBound agent</Eyebrow>
+          <Eyebrow fontSize={isVertical ? 48 : 28 * scaleFactor}>Live · Your Bot</Eyebrow>
         </div>
         <Interactive.Div
           name="Live answer headline"
@@ -142,7 +142,7 @@ export const LiveAnswerScene: React.FC = () => {
                 letterSpacing: '-0.03em',
               }}
             >
-              Front Desk Agent
+              Front Desk Bot
             </div>
             <div
               style={{

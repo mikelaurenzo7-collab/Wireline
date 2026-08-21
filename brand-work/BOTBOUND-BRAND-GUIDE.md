@@ -4,7 +4,7 @@ Production identity approved 2026-08-20.
 
 ## The idea
 
-BotBound is the AI employee that answers while the customer is doing the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
+BotBound is the Bot that answers while the customer is doing the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
 
 The brand line is:
 
@@ -12,7 +12,7 @@ The brand line is:
 
 The product promise is:
 
-> AI employees for calls, texts, and email.
+> Your Bot for calls, texts, and email.
 
 ## Primary identity
 

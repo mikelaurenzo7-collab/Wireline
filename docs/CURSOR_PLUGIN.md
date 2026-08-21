@@ -2,9 +2,9 @@
 
 ## Product contract
 
-**Meet the user in Cursor, create a real BotBound account if they are new, then help them build their first voice agent.**
+**Meet the user in Cursor, create a real BotBound account if they are new, then help them build their first Bot.**
 
-Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://botbound.me/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding BotBound voice agents in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
+Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://botbound.me/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding BotBound Bots in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
 
 ```text
 Cursor Agent

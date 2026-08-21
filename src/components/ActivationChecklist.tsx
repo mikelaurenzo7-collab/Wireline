@@ -18,10 +18,7 @@ import {
   fetchAssistantSetupProgress,
   type AssistantSetupProgress,
 } from "../lib/fleet-setup-progress";
-import {
-  isActivationCelebrated,
-  markActivationCelebrated,
-} from "../lib/post-signup-onboarding";
+import { isActivationCelebrated, markActivationCelebrated } from "../lib/post-signup-onboarding";
 import { cn } from "../lib/utils";
 
 const DISMISS_KEY = "wireline_activation_checklist_dismissed";
@@ -58,9 +55,9 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     },
     {
       id: "facts",
-      label: "Business facts added",
-      actionLabel: "Add business facts",
-      detail: "Add pricing, hours, policies, FAQs, or other answers customers need.",
+      label: "Knowledge added",
+      actionLabel: "Add knowledge",
+      detail: "Add facts, preferences, policies, FAQs, or other answers the Bot needs.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
       icon: GraduationCap,
@@ -139,10 +136,7 @@ export default function ActivationChecklist({ className }: { className?: string 
     if (celebrationDismissed) return null;
     return (
       <section
-        className={cn(
-          "wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6",
-          className,
-        )}
+        className={cn("wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6", className)}
         aria-label="Your Voice Bot is live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -236,9 +230,7 @@ export default function ActivationChecklist({ className }: { className?: string 
                   <Icon className="size-3.5 opacity-70" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold text-foreground">
-                    {step.label}
-                  </span>
+                  <span className="block text-xs font-semibold text-foreground">{step.label}</span>
                 </span>
               </Link>
             </li>

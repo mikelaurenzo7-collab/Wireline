@@ -25,7 +25,7 @@ const marketingRoutes = [
   "/compare",
   "/solutions/support",
   "/solutions/sales",
-  "/for/personal",
+  "/for/everyday",
   "/for/home-services",
   "/for/medical",
   "/for/legal",
@@ -147,7 +147,7 @@ async function settle(page) {
 async function assertStudioComposer(page, viewportName, issues) {
   const studioBrief = page.locator("textarea#studio-brief").first();
   const workroomComposer = page.locator("textarea#studio-workroom-message").first();
-  const emptyCreate = page.getByRole("link", { name: /Create personal agent/i }).first();
+  const emptyCreate = page.getByRole("link", { name: /Create Bot/i }).first();
   const composer = (await studioBrief.isVisible().catch(() => false))
     ? studioBrief
     : (await workroomComposer.isVisible().catch(() => false))

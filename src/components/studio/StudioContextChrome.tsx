@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
-import { useAccount } from "../../contexts/AccountContext";
 import AgentPresenceSlot from "../AgentPresenceSlot";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
@@ -11,16 +10,10 @@ import { customerAgentLanguage } from "../../lib/product-copy";
 export default function StudioContextChrome() {
   const { agents, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
   const [, setSearchParams] = useSearchParams();
-  const { accountType } = useAccount();
   const activeAgent = resolvedId ? (agents.find((agent) => agent.id === resolvedId) ?? null) : null;
   const lineStatus = activeAgent ? agentLineStatus(activeAgent, phoneLookupDegraded) : null;
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
-  const posture = activeAgent
-    ? activeAgent.is_business_agent
-      ? "business"
-      : "personal"
-    : accountType;
-  const language = customerAgentLanguage(posture);
+  const language = customerAgentLanguage();
 
   function selectAgent(agentId: string) {
     setSearchParams(

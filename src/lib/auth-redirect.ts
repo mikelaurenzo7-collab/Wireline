@@ -77,6 +77,15 @@ function returningPaidIntentDestination(search: string): string | null {
   return `/settings/billing?${params.toString()}`;
 }
 
+/**
+ * Preserve only the redirect requested by the OAuth flow that is starting now.
+ * Paid-plan intent becomes a one-shot internal redirect; long-lived signup
+ * attribution in localStorage never redirects an unrelated later sign-in.
+ */
+export function persistOAuthReturnFromSearch(search: string): void {
+  persistAuthRedirect(readRedirectFromSearch(search) || returningPaidIntentDestination(search));
+}
+
 export function resolvePostAuthDestination(
   _workspaceMode: WorkspaceMode,
   search = typeof window !== "undefined" ? window.location.search : "",

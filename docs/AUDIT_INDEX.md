@@ -1,4 +1,4 @@
-# Wireline Audit Evidence Index
+# BotBound Audit Evidence Index
 
 Status: **Historical evidence index**
 
@@ -43,6 +43,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 | [RUNNING_COSTS_AUDIT_2026-07-06.md](./RUNNING_COSTS_AUDIT_2026-07-06.md) | Historical cost evidence referenced by launch margin planning. |
 | [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | Supabase advisor evidence and custom-auth interpretation. Recheck live advisors before acting. |
 | [CLIENT_SURFACES_STRATEGY_2026-07-20.md](./CLIENT_SURFACES_STRATEGY_2026-07-20.md) | Strategy evidence behind current release tiers in `CLIENT_SURFACES.md`. |
+| [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | Historical Aurora implementation program; current BotBound language, one-workspace model, pricing, and retired-presenter posture supersede its earlier branches. |
+| [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md) | Retired presenter-vendor and paid-add-on planning evidence. Live talking-head video, checkout, and session minting are not current product work. |
 | [mobile-web-native-strategy-audit.md](./mobile-web-native-strategy-audit.md) | Earlier surface-split analysis. Verify every conclusion against `CLIENT_SURFACES.md`. |
 
 ## Surface, design, and launch-triage evidence

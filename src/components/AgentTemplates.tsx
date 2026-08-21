@@ -241,25 +241,24 @@ const AGENT_TEMPLATES = [
     firstMessage:
       "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
   },
-  // === PERSONAL & LIFESTYLE ===
-  // Personal templates are unlocked starting points. They represent a single
-  // person rather than a business, and they can be upgraded through Training.
+  // === EVERYDAY & LIFESTYLE ===
+  // These are role starters in the same Bot workspace, not a separate product.
   {
     id: "personal-concierge",
-    category: "Personal & Lifestyle",
+    category: "Everyday & Lifestyle",
     name: "Personal Concierge",
     description:
-      "Versatile personal agent. Books appointments, handles follow-ups, screens calls, and takes messages on your behalf.",
+      "Books appointments, handles follow-ups, screens calls, and takes messages on your behalf.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
     accent: BRAND.colors.primary,
-    badge: "Personal · most versatile",
+    badge: "Everyday · most versatile",
     firstMessage: "Hi, this is [Your Name]'s agent. How can I help you today?",
   },
   {
     id: "personal-screener",
-    category: "Personal & Lifestyle",
+    category: "Everyday & Lifestyle",
     name: "Call Screener",
     description:
       "Picks up unknown numbers, screens spam and sales calls, takes messages from legitimate callers, and never bothers you for nothing.",
@@ -267,13 +266,13 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: PhoneIncoming,
     accent: BRAND.colors.primary,
-    badge: "Personal · inbound",
+    badge: "Everyday · inbound",
     firstMessage:
       "Hi, you've reached [Your Name]'s line. I'm their agent. Can I take a quick message or let them know what this is about?",
   },
   {
     id: "personal-errand",
-    category: "Personal & Lifestyle",
+    category: "Everyday & Lifestyle",
     name: "Errand Caller",
     description:
       "Calls dentists, plumbers, hairdressers, restaurants, and offices to book, confirm, or reschedule on your behalf.",
@@ -281,13 +280,13 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: ClipboardList,
     accent: BRAND.colors.primary,
-    badge: "Personal · outbound",
+    badge: "Everyday · outbound",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name]. They asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
   },
   {
     id: "personal-negotiator",
-    category: "Personal & Lifestyle",
+    category: "Everyday & Lifestyle",
     name: "Bill Negotiator",
     description:
       "Calls your cable, internet, insurance, or wireless carrier to renegotiate rates, dispute charges, or cancel cleanly. Polite but firm.",
@@ -295,7 +294,7 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Receipt,
     accent: BRAND.colors.primary,
-    badge: "Personal · saves money",
+    badge: "Everyday · saves money",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name], account [Account #]. They've asked me to discuss their current plan and pricing.",
   },
@@ -311,7 +310,7 @@ const CATEGORIES = [
   "Collections & Finance",
   "Marketing",
   "E-commerce",
-  "Personal & Lifestyle",
+  "Everyday & Lifestyle",
 ] as const;
 
 const TEMPLATE_TOTAL = AGENT_TEMPLATES.length;
@@ -425,7 +424,7 @@ function TemplateCard({
               {template.channel}
             </span>
             {template.badge && (
-              // whitespace-nowrap: a pill that wraps mid-phrase ("PERSONAL ·
+              // whitespace-nowrap: a pill that wraps mid-phrase ("EVERYDAY ·
               // MOST / VERSATILE") reads as a broken chip, not a badge.
               <span className="hidden sm:inline-flex whitespace-nowrap px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-foreground/70">
                 {template.badge}
@@ -491,7 +490,7 @@ function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
         <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
-          Start from a blank voice agent in Studio and set the job, greeting, and voice yourself.
+          Start from a blank Bot in Studio and set the job, greeting, and voice yourself.
         </p>
       </div>
       <ShadButton

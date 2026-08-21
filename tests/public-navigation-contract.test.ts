@@ -15,7 +15,7 @@ describe("public navigation contract", () => {
     expect(header).not.toContain("WirelineLockup");
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
-    expect(header).toContain('to="/signup?plan=personal"');
+    expect(header).toContain('to={signupHrefForPlan("personal")}');
     expect(header).toContain("Sign In");
     expect(header).toContain("Start Free");
     expect(header).toContain("marketing-btn-primary");

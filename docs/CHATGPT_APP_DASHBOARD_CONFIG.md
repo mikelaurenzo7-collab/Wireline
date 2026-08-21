@@ -3,7 +3,7 @@
 ## App identity
 
 - **Display name:** `BotBound`
-- **Subtitle:** `Build your first voice agent`
+- **Subtitle:** `Build your first Bot`
 - **Category:** `BUSINESS`
 - **Website:** `https://botbound.me`
 - **Support:** `support@trywireline.com`

@@ -36,7 +36,7 @@ struct AssistantRow: View {
             Medallion(systemImage: icon(for: agent.archetype), size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(agent.name).font(.headline.weight(.semibold)).foregroundStyle(Brand.text)
-                Text(postureLabel(for: agent))
+                Text(roleLabel(for: agent))
                     .font(Brand.caption)
                     .foregroundStyle(Brand.text2)
             }
@@ -53,15 +53,15 @@ struct AssistantRow: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(agent.name), \(postureLabel(for: agent))")
+        .accessibilityLabel("\(agent.name), \(roleLabel(for: agent))")
     }
 
-    private func postureLabel(for agent: Agent) -> String {
-        if agent.isBusinessAgent == true { return "Business agent" }
+    private func roleLabel(for agent: Agent) -> String {
         if let role = agent.role {
-            return role.replacingOccurrences(of: "_", with: " ").capitalized.replacingOccurrences(of: "Assistant", with: "Agent")
+            if role == "personal_assistant" { return "Assistant" }
+            return role.replacingOccurrences(of: "_", with: " ").capitalized
         }
-        return "Personal agent"
+        return "Bot"
     }
 
     private func icon(for archetype: String?) -> String {
@@ -128,7 +128,7 @@ struct BrandEmptyState: View {
 
 #Preview("Components") {
     List {
-        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_agent", archetype: "Personal Agent", channels: ["voice", "email"], voiceId: nil, isBusinessAgent: false))
+        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "scheduler", archetype: "Scheduler", channels: ["voice", "email"], voiceId: nil, isBusinessAgent: false))
         CallCard(call: ActiveCall(callId: "c1", agentId: "1", customerNumber: "+1 555 123 4567", status: "in-progress", label: nil, type: "inbound"))
         Button("Place a call") {}.buttonStyle(PrimaryButtonStyle())
         BrandEmptyState(title: "No agents yet", message: "Set up your first call agent on the web to get started.")
