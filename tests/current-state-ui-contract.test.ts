@@ -89,11 +89,11 @@ describe("current-state UI contract", () => {
 
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("price_usd_monthly");
-    expect(landing).toContain('to={`/signup?plan=${id}`}');
-    expect(landing).toContain('/signup?plan=personal&template=${template.key}');
+    expect(landing).toContain("to={`/signup?plan=${id}`}");
+    expect(landing).toContain("/signup?plan=personal&template=${template.key}");
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
-    expect(authPortal).toContain('location.pathname === "/signup" || location.pathname === "/get-started"');
+    expect(authPortal).toContain('location.pathname.startsWith("/signup/")');
     expect(authPortal).toContain("AuthAccessPanel");
     expect(authAccess).toContain("STRIPE_PLANS.find");
     expect(authAccess).toContain("plan.price_usd_annual");

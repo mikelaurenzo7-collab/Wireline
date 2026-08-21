@@ -67,8 +67,10 @@ describe("auth OAuth browser binding contract", () => {
   it("accepts only the exact one-time bridge code shape", () => {
     const validCode = "A".repeat(43);
     expect(isOAuthBridgeCode(validCode)).toBe(true);
+    expect(isOAuthBridgeCode(`n${validCode}`)).toBe(true);
+    expect(isOAuthBridgeCode(`r${validCode}`)).toBe(true);
     expect(isOAuthBridgeCode("A".repeat(42))).toBe(false);
-    expect(isOAuthBridgeCode("A".repeat(44))).toBe(false);
+    expect(isOAuthBridgeCode(`x${validCode}`)).toBe(false);
     expect(isOAuthBridgeCode(`${"A".repeat(42)}!`)).toBe(false);
     expect(isOAuthBridgeCode(null)).toBe(false);
   });
@@ -132,12 +134,10 @@ describe("auth OAuth browser binding contract", () => {
     expect(rateLimiter).toContain('failClosedOnError: process.env.NODE_ENV === "production"');
 
     const callbacks = read("src/routes/auth-oauth-routes.ts");
-    expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
-      3,
-    );
-    expect(callbacks).toContain(
-      'router.post("/api/auth/oauth/exchange", oauthRateLimiter',
-    );
+    expect(
+      callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g),
+    ).toHaveLength(3);
+    expect(callbacks).toContain('router.post("/api/auth/oauth/exchange", oauthRateLimiter');
 
     const completion = read("src/pages/OAuthComplete.tsx");
     expect(completion).toContain("useLayoutEffect");

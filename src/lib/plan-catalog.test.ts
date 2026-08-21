@@ -34,6 +34,14 @@ describe("plan-catalog", () => {
     expect(personal?.name).toBe("BotBound Free Builder");
     expect(personal?.public).toBe(true);
     expect(personal?.price_usd_monthly).toBe(0);
+
+    const clientPersonal = plansForClient().find((plan) => plan.id === "personal");
+    expect(clientPersonal).toMatchObject({
+      is_free: true,
+      configured: false,
+      annual_configured: false,
+      contact_sales: false,
+    });
   });
 
   it("maps the Founder Early Access tiers to their BotBound public names", () => {

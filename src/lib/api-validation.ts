@@ -6,6 +6,7 @@ import {
   signupSchema as baseSignupSchema,
 } from "./api-validation-base";
 import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
+import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "./legal-consent";
 
 export * from "./api-validation-base";
 
@@ -46,6 +47,9 @@ export const signupSchema = baseSignupSchema.extend({
   password: boundedPasswordSchema,
   preferredPlanId: publicSignupPlanIdSchema.optional(),
   preferredBillingInterval: z.enum(["month", "year"]).optional(),
+  termsAccepted: z.literal(true),
+  termsVersion: z.literal(ACCOUNT_TERMS_VERSION),
+  privacyVersion: z.literal(ACCOUNT_PRIVACY_VERSION),
 });
 
 export const signupIntentSchema = signupSchema

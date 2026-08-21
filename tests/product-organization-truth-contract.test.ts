@@ -26,7 +26,7 @@ describe("product organization truth contracts", () => {
     expect(inbox).toContain("error && !threads.length");
     expect(inbox).toContain('title="Inbox unavailable"');
     expect(inbox).toContain('title={agentId ? "No email for this Bot" : "No email yet"}');
-    expect(inbox).toContain('onClick={() => void loadThreads()}');
+    expect(inbox).toContain("onClick={() => void loadThreads()}");
     expect(inbox).not.toContain('title="Connect your inbox"');
   });
 
@@ -34,9 +34,9 @@ describe("product organization truth contracts", () => {
     const billing = source("src/pages/BillingSettings.tsx");
     const stripeCard = source("src/components/StripeBillingCard.tsx");
 
-    expect(billing).toContain(
-      "<StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />",
-    );
+    expect(billing).toContain("showBalanceTopUp={false}");
+    expect(billing).toContain("showTrustFooter={false}");
+    expect(billing).toContain("billingReady={billingReady}");
     expect(billing).toContain("<BillingTrustFooter />");
     expect(billing.match(/CONVERSATION_BALANCE_PRESETS_USD\.map/g)).toHaveLength(1);
     expect(billing).toContain("plan.included_phone_numbers");

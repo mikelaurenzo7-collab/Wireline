@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 import { FileText, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { ACCOUNT_TERMS_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const LAST_UPDATED = "August 1, 2026";
+const LAST_UPDATED = ACCOUNT_TERMS_LAST_UPDATED;
 
 function LegalLayout({
   title,

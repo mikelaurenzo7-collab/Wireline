@@ -65,11 +65,18 @@ type StripeBillingCardProps = {
    * the true end of the page, so the legal row never lands mid-scroll.
    */
   showTrustFooter?: boolean;
+  /**
+   * BillingSettings holds this false while it reconciles a Stripe Checkout
+   * return. That prevents an older status request from racing the entitlement
+   * sync and overwriting the reconciled state in this card.
+   */
+  billingReady?: boolean;
 };
 
 export default function StripeBillingCard({
   showBalanceTopUp = true,
   showTrustFooter = true,
+  billingReady = true,
 }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
@@ -141,22 +148,8 @@ export default function StripeBillingCard({
   };
 
   useEffect(() => {
-    refresh();
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (
-      params.get("billing") === "success" ||
-      params.get("credits") === "success" ||
-      params.get("balance") === "success" ||
-      params.get("live_video") === "success"
-    ) {
-      const t = setTimeout(refresh, 1500);
-      window.history.replaceState({}, "", window.location.pathname);
-      return () => clearTimeout(t);
-    }
-  }, []);
+    if (billingReady) refresh();
+  }, [billingReady]);
 
   const startCheckout = async (planId: string, interval: "month" | "year" = billingInterval) => {
     const hasActive =
@@ -166,7 +159,9 @@ export default function StripeBillingCard({
 
     const selectedPlan = plans.find((plan) => plan.id === planId);
     const selectedIntervalReady =
-      interval === "year" ? selectedPlan?.annual_configured === true : selectedPlan?.configured === true;
+      interval === "year"
+        ? selectedPlan?.annual_configured === true
+        : selectedPlan?.configured === true;
     if (!selfServeBillingReleased || !selectedIntervalReady) {
       setError(CHECKOUT_RELEASE_MESSAGE);
       return;
@@ -417,8 +412,7 @@ export default function StripeBillingCard({
               <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
                 {!selfServeBillingReleased
                   ? CHECKOUT_RELEASE_MESSAGE
-                  : liveVideoAddon.reason ||
-                    "Restore an active paid plan before using live video."}
+                  : liveVideoAddon.reason || "Restore an active paid plan before using live video."}
               </p>
               {sub?.has_subscription ? (
                 <button
@@ -598,9 +592,10 @@ function PlanPicker({
             const accent = PLAN_ACCENTS[plan.id] || BRAND.colors.primary;
             const isBusy = busy === plan.id;
             const isSignupMatch = signupPlanInterest === plan.id;
+            const isFree = plan.is_free === true;
             const annual = plan.price_usd_annual > 0;
             const showAnnual = billingInterval === "year" && annual;
-            const canSubscribe = showAnnual ? plan.annual_configured : plan.configured;
+            const canSubscribe = !isFree && (showAnnual ? plan.annual_configured : plan.configured);
             const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
             const priceSuffix = showAnnual ? "/yr" : "/mo";
             const monthsSaved =
@@ -666,30 +661,43 @@ function PlanPicker({
                     </li>
                   ))}
                 </ul>
-                <ShadButton
-                  type="button"
-                  disableAnimations
-                  variant="outline"
-                  onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
-                  disabled={isBusy || !canSubscribe}
-                  className={cn(
-                    "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
-                    !isBusy && canSubscribe && "wl-accent-subscribe",
-                  )}
-                >
-                  {isBusy ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : canSubscribe ? (
-                    <>
-                      Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
-                    </>
-                  ) : checkoutReleased ? (
-                    "Contact sales"
-                  ) : (
-                    "Checkout paused"
-                  )}
-                </ShadButton>
-                {!canSubscribe && (
+                {isFree ? (
+                  <ShadButton
+                    asChild
+                    disableAnimations
+                    variant="outline"
+                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground shadow-premium-button hover:border-[color:var(--wireline-color-border-strong)] hover:bg-muted hover-premium-glow wl-label wl-accent-subscribe"
+                  >
+                    <Link to="/studio">
+                      Open Free Builder <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </ShadButton>
+                ) : (
+                  <ShadButton
+                    type="button"
+                    disableAnimations
+                    variant="outline"
+                    onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
+                    disabled={isBusy || !canSubscribe}
+                    className={cn(
+                      "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
+                      !isBusy && canSubscribe && "wl-accent-subscribe",
+                    )}
+                  >
+                    {isBusy ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : canSubscribe ? (
+                      <>
+                        Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
+                      </>
+                    ) : checkoutReleased ? (
+                      "Contact sales"
+                    ) : (
+                      "Checkout paused"
+                    )}
+                  </ShadButton>
+                )}
+                {!isFree && !canSubscribe && (
                   <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
                     {checkoutReleased
                       ? "Online checkout is not yet available for this plan"

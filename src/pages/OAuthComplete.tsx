@@ -13,6 +13,7 @@ import MarketingChrome from "../components/marketing/MarketingChrome";
 import { WirelineLockup } from "../components/brand/WirelineBrand";
 import { PageMeta } from "../lib/page-meta";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
+import { clearFreshSignupSession, markFreshSignupSession } from "../lib/post-signup-onboarding";
 
 function readCompletionParams(search: string, hash: string): URLSearchParams {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
@@ -45,6 +46,7 @@ export default function OAuthComplete() {
 
     const params =
       completionParamsRef.current ?? readCompletionParams(location.search, location.hash);
+    clearFreshSignupSession();
     const errorParam = params.get("error");
     if (errorParam) {
       setError(sanitizeOAuthSignInError(errorParam));
@@ -79,6 +81,7 @@ export default function OAuthComplete() {
           return;
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
+        if (data.is_new_user === true) markFreshSignupSession();
         signIn({ user });
         navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), ""), {
           replace: true,
@@ -98,10 +101,7 @@ export default function OAuthComplete() {
         path="/auth/oauth-complete"
         noIndex
       />
-      <main
-        id="main-content"
-        className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24"
-      >
+      <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
         <section
           className="wl-auth-card w-full max-w-[420px] rounded-md p-6 text-center sm:p-8"
           aria-live="polite"
@@ -142,7 +142,7 @@ export default function OAuthComplete() {
             </Link>
           ) : null}
         </section>
-      </main>
+      </div>
     </MarketingChrome>
   );
 }

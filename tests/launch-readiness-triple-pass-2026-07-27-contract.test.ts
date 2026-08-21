@@ -35,8 +35,8 @@ describe("launch readiness triple-pass 2026-07-27", () => {
 
   it("disables annual Subscribe when annual Stripe price is not configured", () => {
     const card = read("src/components/StripeBillingCard.tsx");
-    expect(card).toContain(
-      "const canSubscribe = showAnnual ? plan.annual_configured : plan.configured",
+    expect(card.replace(/\s+/g, " ")).toContain(
+      "const canSubscribe = !isFree && (showAnnual ? plan.annual_configured : plan.configured)",
     );
     expect(card).toContain("disabled={isBusy || !canSubscribe}");
   });

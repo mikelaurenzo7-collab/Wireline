@@ -9,6 +9,7 @@ import {
   sanitizeSignupIntent,
 } from "../src/lib/signup-intent";
 import { signupSchema } from "../src/lib/api-validation";
+import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "../src/lib/legal-consent";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -30,6 +31,9 @@ describe("signup intent contract", () => {
         email: "legacy@example.com",
         password: "ValidPass1",
         preferredPlanId: "enterprise",
+        termsAccepted: true,
+        termsVersion: ACCOUNT_TERMS_VERSION,
+        privacyVersion: ACCOUNT_PRIVACY_VERSION,
       }).preferredPlanId,
     ).toBe("business");
     expect(
@@ -37,6 +41,9 @@ describe("signup intent contract", () => {
         email: "scale@example.com",
         password: "ValidPass1",
         preferredPlanId: "scale",
+        termsAccepted: true,
+        termsVersion: ACCOUNT_TERMS_VERSION,
+        privacyVersion: ACCOUNT_PRIVACY_VERSION,
       }).preferredPlanId,
     ).toBe("business");
   });

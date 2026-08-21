@@ -1,8 +1,4 @@
-import {
-  parseSignupIntent,
-  recommendedPlanFromIntent,
-  type SignupIntent,
-} from "./signup-intent";
+import { parseSignupIntent, recommendedPlanFromIntent, type SignupIntent } from "./signup-intent";
 import { clearFreshSignupSession, isFreshSignupSession } from "./post-signup-onboarding";
 
 /** Legacy capability profile retained for account, billing, and migration compatibility. */
@@ -61,6 +57,10 @@ export function isMcpOAuthRedirect(search: string): boolean {
   return isMcpOAuthPath(readRedirectFromSearch(search));
 }
 
+function isFreshSignupPreservedRedirect(value: string | null): value is string {
+  return isMcpOAuthPath(value) || value === "/accept-invite";
+}
+
 export function persistAuthRedirect(value: string | null) {
   if (typeof window === "undefined") return;
   if (isSafeInternalPath(value)) window.localStorage.setItem(AUTH_REDIRECT_KEY, value);
@@ -100,7 +100,7 @@ export function resolvePostAuthDestination(
   if (freshSignup) {
     const storedMcpRedirect =
       typeof window !== "undefined" ? window.localStorage.getItem(AUTH_REDIRECT_KEY) : null;
-    if (isMcpOAuthPath(storedMcpRedirect)) {
+    if (isFreshSignupPreservedRedirect(storedMcpRedirect)) {
       persistAuthRedirect(null);
       clearFreshSignupSession();
       return storedMcpRedirect;

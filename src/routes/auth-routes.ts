@@ -159,6 +159,8 @@ router.post(
         utmMedium,
         utmCampaign,
         demoSource,
+        termsVersion,
+        privacyVersion,
       } = req.body;
       // Body is now validated by Zod middleware (email already lowercased + trimmed).
 
@@ -174,14 +176,26 @@ router.post(
             .where(eq(schema.users.email, email))
             .limit(1);
           if (existing) return { kind: "taken" as const };
-          const result = await authService.signUp(email, password, fullName, {
-            preferredPlanId,
-            preferredBillingInterval,
-            signupWedge,
-            utmSource,
-            utmMedium,
-            utmCampaign,
-          });
+          const result = await authService.signUp(
+            email,
+            password,
+            fullName,
+            {
+              preferredPlanId,
+              preferredBillingInterval,
+              signupWedge,
+              utmSource,
+              utmMedium,
+              utmCampaign,
+            },
+            {
+              termsVersion,
+              privacyVersion,
+              source: "email_password",
+              ipAddress: req.ip || undefined,
+              userAgent: req.get("user-agent") || undefined,
+            },
+          );
           return { kind: "created" as const, result };
         })(),
         SIGNUP_MIN_DURATION_MS,

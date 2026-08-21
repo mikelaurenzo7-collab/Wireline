@@ -22,7 +22,7 @@ import {
   type SignupPlanId,
 } from "../../lib/signup-intent";
 import { getPasswordPolicyError } from "../../lib/password-policy";
-import { markFreshSignupSession } from "../../lib/post-signup-onboarding";
+import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import {
   captureDemoSourceFromLocation,
@@ -30,12 +30,19 @@ import {
 } from "../../lib/demo-attribution-client";
 import { emitProductEventOnce } from "../../lib/product-event-client";
 import { isAllowedOAuthUrl } from "../../lib/oauth-url";
+import {
+  ACCOUNT_PRIVACY_VERSION,
+  ACCOUNT_PRIVACY_VERSION_HEADER,
+  ACCOUNT_TERMS_VERSION,
+  ACCOUNT_TERMS_VERSION_HEADER,
+} from "../../lib/legal-consent";
 import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { WirelineLockup } from "../brand/WirelineBrand";
 
 type AuthMode = "signin" | "signup" | "reset";
 type OAuthProvider = "google" | "microsoft" | "yahoo";
+type OAuthProviderAvailability = Record<OAuthProvider, boolean>;
 
 export type AuthAccessPanelProps = {
   initialMode?: Exclude<AuthMode, "reset">;
@@ -73,7 +80,12 @@ function isSafeErrorMessage(message: string): boolean {
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const row = payload as Record<string, unknown>;
-  const candidates: unknown[] = [row.userMessage, row.error, row.message, (row.error as any)?.message];
+  const candidates: unknown[] = [
+    row.userMessage,
+    row.error,
+    row.message,
+    (row.error as any)?.message,
+  ];
   for (const candidate of candidates) {
     if (typeof candidate !== "string") continue;
     const message = candidate.trim();
@@ -90,8 +102,13 @@ function cleanThrownMessage(error: unknown): string | null {
   return message;
 }
 
-function signupPlanLabel(planId: SignupPlanId, interval: SignupIntent["preferredBillingInterval"]): string {
-  const plan = STRIPE_PLANS.find((candidate) => candidate.id === planId && candidate.public !== false);
+function signupPlanLabel(
+  planId: SignupPlanId,
+  interval: SignupIntent["preferredBillingInterval"],
+): string {
+  const plan = STRIPE_PLANS.find(
+    (candidate) => candidate.id === planId && candidate.public !== false,
+  );
   if (!plan) return planId;
   const name = plan.name.replace(/^WIRELINE\s+/i, "");
   if (plan.price_usd_monthly === 0) return name;
@@ -129,10 +146,22 @@ const PROVIDERS: Array<{
     label: "Google",
     mark: (
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-        <path d="M5.84 14.09a7.18 7.18 0 0 1 0-4.17V7.07H2.18A11.97 11.97 0 0 0 1 12c0 1.94.46 3.77 1.18 5.07l3.66-2.98z" fill="#FBBC05" />
-        <path d="M12 4.75c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.09 14.97 0 12 0 7.7 0 3.99 2.47 2.18 6.07l3.66 2.84c.87-2.6 3.3-4.16 6.16-4.16z" fill="#EA4335" />
+        <path
+          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+          fill="#4285F4"
+        />
+        <path
+          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          fill="#34A853"
+        />
+        <path
+          d="M5.84 14.09a7.18 7.18 0 0 1 0-4.17V7.07H2.18A11.97 11.97 0 0 0 1 12c0 1.94.46 3.77 1.18 5.07l3.66-2.98z"
+          fill="#FBBC05"
+        />
+        <path
+          d="M12 4.75c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.09 14.97 0 12 0 7.7 0 3.99 2.47 2.18 6.07l3.66 2.84c.87-2.6 3.3-4.16 6.16-4.16z"
+          fill="#EA4335"
+        />
       </svg>
     ),
   },
@@ -153,7 +182,11 @@ const PROVIDERS: Array<{
     label: "Yahoo",
     mark: (
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M2.2 5.6h4.6l3.65 6.55L14.1 5.6h4.5l-6.3 10.85V20.6H8.55v-4.15L2.2 5.6Z" fill="#6001D2" transform="scale(0.82 1)" />
+        <path
+          d="M2.2 5.6h4.6l3.65 6.55L14.1 5.6h4.5l-6.3 10.85V20.6H8.55v-4.15L2.2 5.6Z"
+          fill="#6001D2"
+          transform="scale(0.82 1)"
+        />
         <path d="M17.6 4.2h3.2l-.7 10.4h-1.8L17.6 4.2Z" fill="#6001D2" />
         <circle cx="19.2" cy="18.6" r="1.95" fill="#6001D2" />
       </svg>
@@ -175,6 +208,9 @@ export default function AuthAccessPanel({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthPending, setOauthPending] = useState<OAuthProvider | null>(null);
+  const [availableProviders, setAvailableProviders] = useState<OAuthProviderAvailability | null>(
+    null,
+  );
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -190,6 +226,9 @@ export default function AuthAccessPanel({
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
   const intentLabel = signupIntentLabel(signupIntent);
+  const oauthProviders = availableProviders
+    ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
+    : [];
 
   useEffect(() => {
     captureDemoSourceFromLocation();
@@ -204,6 +243,36 @@ export default function AuthAccessPanel({
   useEffect(() => {
     persistWorkspaceMode(workspaceMode);
   }, [workspaceMode]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/auth/providers", {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const payload = (await response.json().catch(() => null)) as {
+          providers?: Partial<OAuthProviderAvailability>;
+        } | null;
+        const providers = payload?.providers;
+        if (!providers) return null;
+        return {
+          google: providers.google === true,
+          microsoft: providers.microsoft === true,
+          yahoo: providers.yahoo === true,
+        } satisfies OAuthProviderAvailability;
+      })
+      .then((providers) => {
+        if (providers && !controller.signal.aborted) setAvailableProviders(providers);
+      })
+      .catch(() => {
+        // Fail closed: email remains available without rendering dead provider actions.
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -234,7 +303,16 @@ export default function AuthAccessPanel({
     setError(null);
     try {
       const response = await fetch(`/api/auth/${provider}/url`, {
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          ...(isSignUp
+            ? {
+                [ACCOUNT_TERMS_VERSION_HEADER]: ACCOUNT_TERMS_VERSION,
+                [ACCOUNT_PRIVACY_VERSION_HEADER]: ACCOUNT_PRIVACY_VERSION,
+              }
+            : {}),
+        },
+        credentials: "same-origin",
       });
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
@@ -243,12 +321,16 @@ export default function AuthAccessPanel({
       }
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(extractServerErrorMessage(payload) || `Could not start ${provider} sign-in.`);
+        throw new Error(
+          extractServerErrorMessage(payload) || `Could not start ${provider} sign-in.`,
+        );
       }
       if (!isAllowedOAuthUrl(payload?.url)) {
         throw new Error("Received an invalid sign-in URL.");
       }
-      if (isSignUp) markFreshSignupSession();
+      // OAuth completion receives the database-authoritative new-user result.
+      // Clear any abandoned/stale marker before leaving this browser context.
+      clearFreshSignupSession();
       window.location.assign(payload.url);
     } catch (caught) {
       setOauthPending(null);
@@ -293,7 +375,9 @@ export default function AuthAccessPanel({
         return;
       }
 
-      const effectiveIntent = isSignUp ? defaultFreeIntent(sanitizeSignupIntent(signupIntent)) : null;
+      const effectiveIntent = isSignUp
+        ? defaultFreeIntent(sanitizeSignupIntent(signupIntent))
+        : null;
       if (isSignUp && effectiveIntent !== signupIntent) setSignupIntent(effectiveIntent);
       const demoSource = isSignUp ? readDemoSourceCookie() : null;
       if (isSignUp) {
@@ -327,6 +411,13 @@ export default function AuthAccessPanel({
               }
             : {}),
           ...(demoSource ? { demoSource } : {}),
+          ...(isSignUp
+            ? {
+                termsAccepted: true,
+                termsVersion: ACCOUNT_TERMS_VERSION,
+                privacyVersion: ACCOUNT_PRIVACY_VERSION,
+              }
+            : {}),
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -338,7 +429,8 @@ export default function AuthAccessPanel({
               : "Authentication failed."),
         );
       }
-      if (!payload.user?.id) throw new Error("Authentication succeeded but user payload was missing.");
+      if (!payload.user?.id)
+        throw new Error("Authentication succeeded but user payload was missing.");
 
       if (isSignUp) {
         await syncSignupIntent(effectiveIntent).catch(() => {});
@@ -368,7 +460,10 @@ export default function AuthAccessPanel({
   const termsErrorId = `${termsId}-error`;
 
   return (
-    <section className={cn("wl-access-panel", embedded && "is-embedded", className)} aria-label="Account access">
+    <section
+      className={cn("wl-access-panel", embedded && "is-embedded", className)}
+      aria-label="Account access"
+    >
       <div className="wl-access-panel__brand">
         <Link to="/" aria-label="BotBound home">
           <WirelineLockup size={embedded ? "standard" : "large"} />
@@ -377,17 +472,29 @@ export default function AuthAccessPanel({
 
       <div className="wl-access-panel__card">
         <header className="wl-access-panel__heading">
-          <h1>{title}</h1>
+          {embedded ? <h2>{title}</h2> : <h1>{title}</h1>}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}
-          {isSignUp && intentLabel ? <span className="wl-access-panel__intent">{intentLabel}</span> : null}
+          {isSignUp && intentLabel ? (
+            <span className="wl-access-panel__intent">{intentLabel}</span>
+          ) : null}
         </header>
 
         {!isReset ? (
           <div className="wl-access-panel__tabs" role="tablist" aria-label="Account access">
-            <button type="button" role="tab" aria-selected={!isSignUp} onClick={() => changeMode("signin")}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!isSignUp}
+              onClick={() => changeMode("signin")}
+            >
               Sign In
             </button>
-            <button type="button" role="tab" aria-selected={isSignUp} onClick={() => changeMode("signup")}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isSignUp}
+              onClick={() => changeMode("signup")}
+            >
               Create Account
             </button>
           </div>
@@ -408,15 +515,22 @@ export default function AuthAccessPanel({
               }}
             />
             <span id={termsLabelId}>
-              I agree to the <Link to="/terms" target="_blank" rel="noopener">Terms</Link> and{" "}
-              <Link to="/privacy" target="_blank" rel="noopener">Privacy Policy</Link>.
+              I agree to the{" "}
+              <Link to="/terms" target="_blank" rel="noopener">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy" target="_blank" rel="noopener">
+                Privacy Policy
+              </Link>
+              .
             </span>
           </div>
         ) : null}
 
-        {!isReset ? (
+        {!isReset && oauthProviders.length > 0 ? (
           <div className="wl-access-panel__oauth" aria-label="Continue with provider">
-            {PROVIDERS.map((provider) => (
+            {oauthProviders.map((provider) => (
               <button
                 key={provider.id}
                 type="button"
@@ -424,14 +538,22 @@ export default function AuthAccessPanel({
                 onClick={() => startOAuth(provider.id)}
                 aria-label={`Continue with ${provider.label}`}
               >
-                {oauthPending === provider.id ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : provider.mark}
+                {oauthPending === provider.id ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  provider.mark
+                )}
                 <span>{provider.label}</span>
               </button>
             ))}
           </div>
         ) : null}
 
-        {!isReset ? <div className="wl-access-panel__divider"><span>or use email</span></div> : null}
+        {!isReset && oauthProviders.length > 0 ? (
+          <div className="wl-access-panel__divider">
+            <span>or use email</span>
+          </div>
+        ) : null}
 
         <form className="wl-access-panel__form" onSubmit={handleAuth}>
           <label>
@@ -442,7 +564,7 @@ export default function AuthAccessPanel({
                 type="email"
                 autoComplete="email"
                 spellCheck={false}
-                autoFocus
+                autoFocus={!embedded}
                 disabled={loading}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -531,7 +653,15 @@ export default function AuthAccessPanel({
 
           <button type="submit" className="wl-access-panel__submit" disabled={loading}>
             {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
-            <span>{loading ? "Working…" : isReset ? "Send Reset Link" : isSignUp ? "Create Account" : "Sign In"}</span>
+            <span>
+              {loading
+                ? "Working…"
+                : isReset
+                  ? "Send Reset Link"
+                  : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
+            </span>
             {!loading ? <ArrowRight aria-hidden="true" /> : null}
           </button>
         </form>

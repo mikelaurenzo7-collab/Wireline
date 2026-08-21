@@ -10,6 +10,15 @@ import {
 } from "../lib/oauth-bridge-cookie";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { createYahooOidcNonce } from "../lib/yahoo-openid";
+import { isOAuthBridgeCode } from "../lib/oauth-bridge-code";
+import {
+  ACCOUNT_PRIVACY_VERSION_HEADER,
+  ACCOUNT_TERMS_VERSION_HEADER,
+  isCurrentAccountLegalConsent,
+  withCurrentAccountLegalConsentState,
+} from "../lib/legal-consent";
+
+export { isOAuthBridgeCode } from "../lib/oauth-bridge-code";
 
 type SignInOAuthProvider = "google" | "microsoft" | "yahoo";
 
@@ -17,7 +26,6 @@ const START_ROUTE = /^\/api\/auth\/(google|microsoft|yahoo)\/url$/;
 const CALLBACK_ROUTE = /^\/api\/auth\/(google|microsoft|yahoo)\/callback$/;
 const EXCHANGE_ROUTE = "/api/auth/oauth/exchange";
 const INVALID_STATE_MESSAGE = "Invalid or expired sign-in state. Please try again.";
-const BRIDGE_CODE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function isSignInOAuthProvider(value: string): value is SignInOAuthProvider {
   return value === "google" || value === "microsoft" || value === "yahoo";
@@ -53,10 +61,6 @@ function setOAuthNoStoreHeaders(res: Response): void {
   res.set("Referrer-Policy", "no-referrer");
 }
 
-export function isOAuthBridgeCode(value: unknown): value is string {
-  return typeof value === "string" && BRIDGE_CODE_PATTERN.test(value);
-}
-
 export function isStoredBridgeStateHashMatch(
   storedHash: string | null | undefined,
   bridgeState: string | undefined,
@@ -79,9 +83,11 @@ export function createBoundOAuthSignInState(
   provider: SignInOAuthProvider,
   bridgeState: string,
   oidcNonce?: string,
+  legalConsentAccepted = false,
 ): string {
+  const marker = bindingMarker(provider, bridgeState);
   return generateOAuthState({
-    userId: bindingMarker(provider, bridgeState),
+    userId: legalConsentAccepted ? withCurrentAccountLegalConsentState(marker) : marker,
     pkceVerifier: oidcNonce,
   });
 }
@@ -100,7 +106,11 @@ export function isBoundOAuthSignInState(
   try {
     const verified = verifyOAuthState(state);
     if (!verified.ok || !verified.userId) return false;
-    return safeStringEqual(verified.userId, bindingMarker(provider, bridgeState));
+    const marker = bindingMarker(provider, bridgeState);
+    return (
+      safeStringEqual(verified.userId, marker) ||
+      safeStringEqual(verified.userId, withCurrentAccountLegalConsentState(marker))
+    );
   } catch {
     return false;
   }
@@ -114,9 +124,7 @@ export function isBoundOAuthSignInState(
 export function rewriteOAuthCompletionLocation(location: string): string {
   const isAbsolute = /^https?:\/\//i.test(location);
   try {
-    const url = isAbsolute
-      ? new URL(location)
-      : new URL(location, "https://wireline.invalid");
+    const url = isAbsolute ? new URL(location) : new URL(location, "https://wireline.invalid");
     if (url.pathname !== "/auth/oauth-complete") return location;
 
     const fragment = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
@@ -259,10 +267,15 @@ router.use((req: Request, res: Response, next: NextFunction) => {
       try {
         const authorizationUrl = new URL(payload.url);
         const oidcNonce = provider === "yahoo" ? createYahooOidcNonce() : undefined;
+        const legalConsentAccepted = isCurrentAccountLegalConsent(
+          true,
+          req.get(ACCOUNT_TERMS_VERSION_HEADER),
+          req.get(ACCOUNT_PRIVACY_VERSION_HEADER),
+        );
         if (oidcNonce) authorizationUrl.searchParams.set("nonce", oidcNonce);
         authorizationUrl.searchParams.set(
           "state",
-          createBoundOAuthSignInState(provider, bridgeState, oidcNonce),
+          createBoundOAuthSignInState(provider, bridgeState, oidcNonce, legalConsentAccepted),
         );
         return originalJson({ ...payload, url: authorizationUrl.toString() });
       } catch {

@@ -76,4 +76,13 @@ describe("auth-redirect", () => {
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
+
+  it("returns a fresh OAuth signup to its pending workspace invitation", () => {
+    localStorage.setItem(AUTH_REDIRECT_KEY, "/accept-invite");
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "")).toBe("/accept-invite");
+    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
+    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  });
 });

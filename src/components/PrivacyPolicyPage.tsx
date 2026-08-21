@@ -2,10 +2,11 @@ import { useState } from "react";
 import { ArrowLeft, Cookie, Shield } from "lucide-react";
 import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
+import { ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-const LAST_UPDATED = "August 17, 2026";
+const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED;
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
@@ -344,8 +345,7 @@ export default function PrivacyPolicyPage() {
               or object to processing, withdraw consent, and receive a portable copy of personal
               data. To exercise a right, use Delete Account in Settings or contact
               <strong> support@trywireline.com</strong>. Where processing relies on consent,
-              withdrawing
-              consent does not affect processing completed before withdrawal.
+              withdrawing consent does not affect processing completed before withdrawal.
             </p>
           </Section>
 

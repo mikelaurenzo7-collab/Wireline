@@ -479,8 +479,10 @@ export function plansForClient() {
       extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
       extra_agent_configured: !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
       features: plan.features,
-      configured: isFree || paidCheckoutAvailable,
-      annual_configured: isFree || (checkoutReleased && monthlyConfigured && annualConfigured),
+      // These flags describe Stripe Checkout availability. Free Builder is
+      // active without Stripe and must use the Studio path instead.
+      configured: !isFree && paidCheckoutAvailable,
+      annual_configured: !isFree && checkoutReleased && monthlyConfigured && annualConfigured,
       contact_sales: !isFree && !paidCheckoutAvailable,
       is_free: isFree,
       public: true,

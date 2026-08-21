@@ -16,6 +16,8 @@ import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
 import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
+import type { AccountLegalConsentEvidence } from "./legal-consent";
+import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "./legal-consent";
 export {
   getOwnerEmails,
   resetOwnerEmailCacheForTests,
@@ -228,6 +230,7 @@ export const authService = {
       utmMedium?: string | null;
       utmCampaign?: string | null;
     },
+    legalConsentEvidence?: AccountLegalConsentEvidence,
   ) {
     try {
       getJwtSecret();
@@ -249,6 +252,34 @@ export const authService = {
             .values({ email, passwordHash, fullName })
             .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
           const user = inserted[0];
+
+          if (legalConsentEvidence) {
+            if (
+              legalConsentEvidence.termsVersion !== ACCOUNT_TERMS_VERSION ||
+              legalConsentEvidence.privacyVersion !== ACCOUNT_PRIVACY_VERSION
+            ) {
+              throw new Error("CURRENT_ACCOUNT_LEGAL_CONSENT_REQUIRED");
+            }
+            const acceptedAt = new Date();
+            await tx.insert(schema.auditLog).values({
+              userId: user.id,
+              eventType: "auth.terms_accepted",
+              severity: "info",
+              action: "terms_accepted",
+              actorEmail: user.email,
+              resourceType: "account",
+              resourceId: user.id,
+              ipAddress: legalConsentEvidence.ipAddress || null,
+              userAgent: legalConsentEvidence.userAgent || null,
+              metadata: {
+                terms_version: legalConsentEvidence.termsVersion,
+                privacy_version: legalConsentEvidence.privacyVersion,
+                source: legalConsentEvidence.source,
+                accepted_at: acceptedAt.toISOString(),
+              },
+              createdAt: acceptedAt,
+            });
+          }
 
           const { startTrialForUser } = await import("./trial-gate");
           await startTrialForUser(user.id, signupAttribution, tx);

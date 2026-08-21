@@ -70,12 +70,16 @@ describe("OAuth signups get the same onboarding as email signups", () => {
     const oauthEnd = access.indexOf("const handleAuth = async", oauthStart);
     const oauthBlock = access.slice(oauthStart, oauthEnd);
 
-    expect(oauthBlock).toContain("markFreshSignupSession()");
-    expect(oauthBlock).toMatch(/if \(isSignUp\) markFreshSignupSession\(\)/);
-    const markIdx = oauthBlock.indexOf("markFreshSignupSession()");
+    expect(oauthBlock).toContain("clearFreshSignupSession()");
+    expect(oauthBlock).not.toContain("markFreshSignupSession()");
+    const clearIdx = oauthBlock.indexOf("clearFreshSignupSession()");
     const assignIdx = oauthBlock.indexOf("window.location.assign(payload.url)");
-    expect(markIdx).toBeGreaterThan(-1);
-    expect(assignIdx).toBeGreaterThan(markIdx);
+    expect(clearIdx).toBeGreaterThan(-1);
+    expect(assignIdx).toBeGreaterThan(clearIdx);
+
+    const completion = read("src/pages/OAuthComplete.tsx");
+    expect(completion).toContain("await syncSignupIntent(getStoredSignupIntent())");
+    expect(completion).toContain("if (data.is_new_user === true) markFreshSignupSession()");
   });
 });
 

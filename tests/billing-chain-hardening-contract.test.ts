@@ -62,6 +62,7 @@ describe("checkout operations complete instead of bricking the next purchase", (
 describe("entitlement delivery survives webhook failure", () => {
   const checkout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
   const billingPage = read("src/pages/BillingSettings.tsx");
+  const billingCard = read("src/components/StripeBillingCard.tsx");
   const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
   it("the success redirect proves its session server-side", () => {
@@ -80,6 +81,38 @@ describe("entitlement delivery survives webhook failure", () => {
     const statusIdx = billingPage.indexOf('authFetch("/api/billing/status")');
     expect(verifyIdx).toBeGreaterThan(-1);
     expect(statusIdx).toBeGreaterThan(verifyIdx);
+  });
+
+  it("gives BillingSettings sole ownership of Checkout return cleanup", () => {
+    const verifyIdx = billingPage.indexOf("/api/billing/checkout/verify");
+    const cleanupIdx = billingPage.indexOf("window.history.replaceState");
+
+    expect(verifyIdx).toBeGreaterThan(-1);
+    expect(cleanupIdx).toBeGreaterThan(verifyIdx);
+    expect(billingPage).toContain("setBillingReady(true)");
+    expect(billingPage).toContain("billingReady={billingReady}");
+    expect(billingPage).toContain("shouldFinalizeCheckoutReturn(checkoutOutcome)");
+    expect(billingPage).toContain("CHECKOUT_VERIFY_RETRY_DELAYS_MS");
+    expect(billingPage).toContain("window.history.state");
+    expect(billingCard).toContain("billingReady?: boolean");
+    expect(billingCard).toContain("if (billingReady) refresh()");
+    expect(billingCard).not.toContain("window.history.replaceState");
+  });
+
+  it("routes Free Builder to Studio without attempting Stripe Checkout", () => {
+    const catalog = read("src/lib/plan-catalog.ts");
+    const freeBranchStart = billingCard.indexOf("{isFree ? (");
+    const freeBranch = billingCard.slice(
+      freeBranchStart,
+      billingCard.indexOf(") : (", freeBranchStart),
+    );
+
+    expect(catalog).toContain("configured: !isFree && paidCheckoutAvailable");
+    expect(catalog).toContain("is_free: isFree");
+    expect(billingCard).toContain("const isFree = plan.is_free === true");
+    expect(freeBranch).toContain('<Link to="/studio">');
+    expect(freeBranch).toContain("Open Free Builder");
+    expect(freeBranch).not.toContain("onSelectPlan(plan.id");
   });
 });
 

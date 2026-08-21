@@ -8,6 +8,15 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
+import {
+  checkoutReturnFlowFromSearch,
+  checkoutReturnUrlWithoutProof,
+  classifyCheckoutReturn,
+  hasCheckoutReturnToVerify,
+  shouldFinalizeCheckoutReturn,
+  type CheckoutReturnOutcome,
+  type CheckoutReturnVerification,
+} from "../lib/billing-checkout-return";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -38,6 +47,12 @@ function isPaidPlan(planId: string | null | undefined) {
   return Boolean(planId && planId !== "personal");
 }
 
+const CHECKOUT_VERIFY_RETRY_DELAYS_MS = [0, 1_000, 2_500] as const;
+
+function waitForCheckoutRetry(delayMs: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, delayMs));
+}
+
 export default function BillingSettings() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
@@ -45,8 +60,13 @@ export default function BillingSettings() {
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(null);
+  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(
+    null,
+  );
   const [statusUnavailable, setStatusUnavailable] = useState(false);
+  const [billingReady, setBillingReady] = useState(() =>
+    typeof window === "undefined" ? true : !hasCheckoutReturnToVerify(window.location.search),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -57,30 +77,56 @@ export default function BillingSettings() {
       try {
         const params = new URLSearchParams(window.location.search);
         const returnedSessionId = params.get("session_id");
-        const returnFlow =
-          params.get("billing") === "success"
-            ? "plan"
-            : params.get("balance") === "success"
-              ? "runtime_balance"
-              : params.get("live_video") === "success"
-                ? "live_video"
-                : null;
+        const returnFlow = checkoutReturnFlowFromSearch(window.location.search);
+        let checkoutOutcome: CheckoutReturnOutcome | null = null;
+        let verification: CheckoutReturnVerification | null = null;
+
         if (returnFlow && returnedSessionId) {
-          const verifyResponse = await authFetch("/api/billing/checkout/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: returnedSessionId }),
-          }).catch(() => null);
-          const verification = verifyResponse?.ok
-            ? ((await verifyResponse.json().catch(() => null)) as {
-                payment_status?: string;
-                synced?: boolean;
-                credit_granted?: boolean;
-                live_video_enabled?: boolean;
-              } | null)
-            : null;
-          if (verification) {
-            if (verification.payment_status === "unpaid") {
+          for (const retryDelayMs of CHECKOUT_VERIFY_RETRY_DELAYS_MS) {
+            if (retryDelayMs > 0) await waitForCheckoutRetry(retryDelayMs);
+            if (cancelled) return;
+
+            const verifyResponse = await authFetch("/api/billing/checkout/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ session_id: returnedSessionId }),
+            }).catch(() => null);
+            const candidate = verifyResponse?.ok
+              ? ((await verifyResponse
+                  .json()
+                  .catch(() => null)) as CheckoutReturnVerification | null)
+              : null;
+            if (candidate) verification = candidate;
+            checkoutOutcome = classifyCheckoutReturn(
+              returnFlow,
+              verifyResponse?.status ?? null,
+              candidate,
+            );
+            if (shouldFinalizeCheckoutReturn(checkoutOutcome)) break;
+          }
+
+          if (!cancelled) {
+            if (checkoutOutcome === "fulfilled" && verification) {
+              if (returnFlow === "runtime_balance" && verification.credit_granted) {
+                setCheckoutReturnNotice({
+                  tone: "success",
+                  title: "Runtime Balance added",
+                  message: "Your prepaid balance is ready for calls, texts, and live work.",
+                });
+              } else if (returnFlow === "live_video" && verification.live_video_enabled) {
+                setCheckoutReturnNotice({
+                  tone: "success",
+                  title: "Live video activated",
+                  message: "Your workspace can now use the live video add-on.",
+                });
+              } else if (returnFlow === "plan" && verification.synced) {
+                setCheckoutReturnNotice({
+                  tone: "success",
+                  title: "Plan confirmed",
+                  message: "Your BotBound plan and workspace access are up to date.",
+                });
+              }
+            } else if (checkoutOutcome === "pending" || verification?.payment_status === "unpaid") {
               setCheckoutReturnNotice({
                 tone: "info",
                 title: "Payment processing",
@@ -91,15 +137,42 @@ export default function BillingSettings() {
                       ? "Live video will activate automatically after Stripe confirms the funds."
                       : "Your plan will activate automatically after Stripe confirms the funds.",
               });
-            } else if (returnFlow === "runtime_balance" && verification.credit_granted) {
-              setCheckoutReturnNotice({ tone: "success", title: "Runtime Balance added", message: "Your prepaid balance is ready for calls, texts, and live work." });
-            } else if (returnFlow === "live_video" && verification.live_video_enabled) {
-              setCheckoutReturnNotice({ tone: "success", title: "Live video activated", message: "Your workspace can now use the live video add-on." });
-            } else if (returnFlow === "plan" && verification.synced) {
-              setCheckoutReturnNotice({ tone: "success", title: "Plan confirmed", message: "Your BotBound plan and workspace access are up to date." });
+            } else if (checkoutOutcome === "invalid") {
+              setCheckoutReturnNotice({
+                tone: "info",
+                title: "Checkout reference unavailable",
+                message:
+                  "This checkout could not be matched to your account. Your current billing status is shown below.",
+              });
+            } else {
+              setCheckoutReturnNotice({
+                tone: "info",
+                title: "Still confirming checkout",
+                message:
+                  "We could not confirm this checkout yet. Its secure reference has been retained, so refreshing this page will retry safely.",
+              });
             }
           }
         }
+
+        const finalizeCheckoutReturn =
+          Boolean(returnFlow && !returnedSessionId) ||
+          Boolean(checkoutOutcome && shouldFinalizeCheckoutReturn(checkoutOutcome));
+        if (finalizeCheckoutReturn && !cancelled) {
+          // This page is the sole owner of Stripe return reconciliation and
+          // query cleanup. Keep session_id across transient/delayed outcomes;
+          // remove it only after fulfillment or a definitive invalid response.
+          window.history.replaceState(
+            window.history.state,
+            "",
+            checkoutReturnUrlWithoutProof(
+              window.location.pathname,
+              window.location.search,
+              window.location.hash,
+            ),
+          );
+        }
+        if (!cancelled) setBillingReady(true);
 
         const [statusRes, balanceRes] = await Promise.all([
           authFetch("/api/billing/status"),
@@ -144,24 +217,15 @@ export default function BillingSettings() {
     };
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (
-      params.get("balance") === "success" ||
-      params.get("billing") === "success" ||
-      params.get("live_video") === "success"
-    ) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
-
   const plan = useMemo(
     () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,
     [subscription?.plan_id],
   );
   const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const canAddBalance =
-    !statusUnavailable && paidPlan && (subscription?.status === "active" || subscription?.status === "trialing");
+    !statusUnavailable &&
+    paidPlan &&
+    (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
 
@@ -200,20 +264,32 @@ export default function BillingSettings() {
         <WorkspacePageIntro title="Billing" titleHidden />
 
         {checkoutReturnNotice ? (
-          <StatusNotice tone={checkoutReturnNotice.tone} title={checkoutReturnNotice.title} className="mb-6" aria-live="polite">
+          <StatusNotice
+            tone={checkoutReturnNotice.tone}
+            title={checkoutReturnNotice.title}
+            className="mb-6"
+            aria-live="polite"
+          >
             {checkoutReturnNotice.message}
           </StatusNotice>
         ) : null}
 
         {loadError ? (
-          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">{loadError}</StatusNotice>
+          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">
+            {loadError}
+          </StatusNotice>
         ) : null}
 
-        <StripeBillingCard showBalanceTopUp={false} showTrustFooter={false} />
+        <StripeBillingCard
+          showBalanceTopUp={false}
+          showTrustFooter={false}
+          billingReady={billingReady}
+        />
 
         {!loading && !statusUnavailable && paidPlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Plan capacity · {plan.included_phone_numbers} live number{plan.included_phone_numbers === 1 ? "" : "s"} included
+            Plan capacity · {plan.included_phone_numbers} live number
+            {plan.included_phone_numbers === 1 ? "" : "s"} included
           </p>
         ) : null}
 
@@ -221,7 +297,9 @@ export default function BillingSettings() {
           <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-eyebrow text-muted-foreground">{CONVERSATION_BALANCE_COPY.title}</p>
+                <p className="text-eyebrow text-muted-foreground">
+                  {CONVERSATION_BALANCE_COPY.title}
+                </p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   Prepaid coverage for live voice, SMS, and enrichment beyond included plan usage.
                 </p>
@@ -236,7 +314,9 @@ export default function BillingSettings() {
               </div>
             ) : (
               <>
-                <p className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}>
+                <p
+                  className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
+                >
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -252,7 +332,9 @@ export default function BillingSettings() {
                 {canAddBalance ? (
                   <div className="mt-5 flex flex-wrap gap-2">
                     {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
-                      const minutes = balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
+                      const minutes =
+                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ??
+                        0;
                       return (
                         <Button
                           key={amount}
@@ -263,9 +345,17 @@ export default function BillingSettings() {
                           onClick={() => void addBalance(amount)}
                           disabled={topUpBusy !== null}
                           className="gap-1.5"
-                          title={minutes > 0 ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate` : undefined}
+                          title={
+                            minutes > 0
+                              ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate`
+                              : undefined
+                          }
                         >
-                          {topUpBusy === amount ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Plus className="size-3.5" aria-hidden="true" />}
+                          {topUpBusy === amount ? (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                          ) : (
+                            <Plus className="size-3.5" aria-hidden="true" />
+                          )}
                           ${amount}
                         </Button>
                       );
@@ -278,10 +368,14 @@ export default function BillingSettings() {
         </section>
 
         {actionError ? (
-          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">{actionError}</StatusNotice>
+          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">
+            {actionError}
+          </StatusNotice>
         ) : null}
 
-        <div className="mt-8"><BillingTrustFooter /></div>
+        <div className="mt-8">
+          <BillingTrustFooter />
+        </div>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );
