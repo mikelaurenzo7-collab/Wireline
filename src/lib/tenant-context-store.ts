@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
- * Request-scoped tenant identity shared by database isolation and provider
- * safety attribution without making transport clients import database setup.
+ * Request-scoped tenant identity for database isolation. Provider attribution
+ * uses its own leaf context so background work cannot affect RLS behavior.
  */
 export const tenantStore = new AsyncLocalStorage<string>();
