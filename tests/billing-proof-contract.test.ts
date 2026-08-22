@@ -231,18 +231,34 @@ describe("billing proof contract", () => {
     expect(settings).not.toContain("Billing continues until purge");
   });
 
-  it("keeps Conversation Balance top-up metadata and refund/dispute recovery wired", () => {
+  it("keeps Conversation Balance top-up refund and dispute lifecycle recovery wired", () => {
     const balanceRoutes = read("src/routes/conversation-balance-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
     const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
+    const registry = read("src/server/register-api-routes.ts");
+    const preflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
 
     expect(balanceRoutes).toContain('purpose: "credit_topup"');
     expect(balanceRoutes).toContain("payment_intent_data: { metadata: creditMeta }");
     expect(balanceRoutes).toContain("metadata: creditMeta");
     expect(fulfillment).toContain("await addCredit(userId, creditUsd");
     expect(billingRoutes).toContain('case "charge.refunded"');
-    expect(billingRoutes).toContain('case "charge.dispute.created"');
-    expect(billingRoutes).toContain("await reverseCredit(userId");
+    expect(registry).toContain(
+      'app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight)',
+    );
+    expect(registry.indexOf("stripeRuntimeAllowanceRetryPreflight")).toBeLessThan(
+      registry.indexOf('app.use("/api", billingRouter)'),
+    );
+    expect(preflight).toContain('event.type === "charge.dispute.created"');
+    expect(preflight).toContain('eventType === "charge.dispute.funds_withdrawn"');
+    expect(preflight).toContain('eventType === "charge.dispute.funds_reinstated"');
+    expect(preflight).toContain("disputeBalanceMovementCents");
+    expect(preflight).toContain("await reverseCredit");
+    expect(preflight).toContain("await addCredit");
+    expect(preflight).not.toContain('expand: ["balance_transactions"]');
+    expect(billingRoutes).toContain(
+      "Stripe dispute balance movement reached the legacy webhook router without preflight accounting.",
+    );
   });
 
   it("blocks depleted live voice coverage with a clear recovery path", () => {
