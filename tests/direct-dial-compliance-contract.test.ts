@@ -10,16 +10,27 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("direct-dial compliance contract", () => {
-  it("does not treat a manual attestation as express-written-consent evidence", () => {
+  it("rejects client-supplied consent descriptions until the server verifies an artifact", () => {
     expect(hasAuditableExpressConsentArtifact({ consentSource: "manual_attestation" })).toBe(false);
     expect(
       hasAuditableExpressConsentArtifact({
         consentSource: "manual_attestation",
         consentLeadId: "lead-123",
       }),
-    ).toBe(true);
-    expect(hasAuditableExpressConsentArtifact({ consentSource: "web_form" })).toBe(true);
-    expect(hasAuditableExpressConsentArtifact({ consentLeadId: "lead-123" })).toBe(true);
+    ).toBe(false);
+    expect(hasAuditableExpressConsentArtifact({ consentSource: "web_form" })).toBe(false);
+    expect(
+      hasAuditableExpressConsentArtifact({
+        consentSource: "web_form",
+        consentLeadId: "lead-123",
+      }),
+    ).toBe(false);
+    expect(
+      hasAuditableExpressConsentArtifact({
+        consentSource: "crm",
+        consentLeadId: "arbitrary-client-value",
+      }),
+    ).toBe(false);
     expect(hasAuditableExpressConsentArtifact({})).toBe(false);
   });
 
@@ -43,7 +54,7 @@ describe("direct-dial compliance contract", () => {
         "requireFederalDncScreening: requiresFederalDncScreeningForDirectDial()",
       );
       expect(source).toContain("hasExpressWrittenConsent: expressConsent");
-      expect(source).toContain("manual attestation alone is not sufficient");
+      expect(source).toContain("client-supplied source or lead references are not accepted");
     }
   });
 });
