@@ -193,7 +193,6 @@ export function useProtectedPublicDemo(
   const attachRemoteAudio = useCallback((stream: MediaStream, attempt: number) => {
     const element = new Audio();
     element.autoplay = true;
-    element.playsInline = true;
     element.srcObject = stream;
     remoteAudio.current = element;
     void element.play().catch(() => undefined);
