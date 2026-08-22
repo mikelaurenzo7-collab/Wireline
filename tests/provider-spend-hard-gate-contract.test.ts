@@ -76,7 +76,7 @@ describe("provider spend launch kill switch", () => {
     const chatgpt = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(chatgpt).toContain("if (isLaunchHardBlocked())");
     expect(chatgpt.indexOf("if (isLaunchHardBlocked())")).toBeLessThan(
-      chatgpt.indexOf("createOpenAIRealtimeClientSecret({"),
+      chatgpt.indexOf("createOpenAIRealtimeSimulationCall({"),
     );
     expect(worker).toContain("isLaunchHardBlocked()");
     expect(worker.indexOf("isLaunchHardBlocked()")).toBeLessThan(
