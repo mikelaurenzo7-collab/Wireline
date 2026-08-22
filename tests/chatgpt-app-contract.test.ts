@@ -191,7 +191,9 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(privacyNotice).toContain("Information returned to ChatGPT");
     expect(privacyNotice).toContain("aggregate workspace summary");
     expect(privacyNotice).toContain("protected metadata");
-    expect(privacyNotice).toContain("not included in the model-visible conversation");
+    expect(privacyNotice).toContain(
+      "no OpenAI credential is returned to the widget or model-visible conversation",
+    );
     expect(privacyNotice).toContain("build their first Bot in ChatGPT");
     expect(privacyNotice).not.toMatch(/\bvoice agents?\b/i);
   });
