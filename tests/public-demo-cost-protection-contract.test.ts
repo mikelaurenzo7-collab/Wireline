@@ -69,12 +69,8 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("The live connection took too long");
     expect(hook).toContain("activePeer?.close()");
     expect(hook).toContain("microphone.current?.getTracks().forEach((track) => track.stop())");
-    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
-      "voice bridge error:",
-    );
-    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
-      "call start failed:",
-    );
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain("voice bridge error:");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain("call start failed:");
   });
 
   it("keeps cancellation reachable while a private session is connecting", () => {
@@ -134,7 +130,7 @@ describe("public browser demo cost protection", () => {
     expect(showcase).toContain("<BrowserCallWidget");
     expect(showcase).toContain('id="demo-lines"');
     expect(showcase).toContain("CALL A DEMO LINE");
-    expect(showcase).toContain('href={`tel:${agent.tel}`}');
+    expect(showcase).toContain("href={`tel:${agent.tel}`}");
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");

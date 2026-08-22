@@ -60,9 +60,7 @@ describe("OpenAI-first runtime cohesion across agent postures", () => {
     expect(architecture).toContain(
       "Primary: direct OpenAI Responses API using GPT-5.6 Terra by default",
     );
-    expect(architecture).toContain(
-      "Every Bot and call direction shares this same managed chain",
-    );
+    expect(architecture).toContain("Every Bot and call direction shares this same managed chain");
     expect(architecture).toContain("xAI Direct SIP");
     expect(grokDoc).toContain("it is not a Vapi live-call model id");
     expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");

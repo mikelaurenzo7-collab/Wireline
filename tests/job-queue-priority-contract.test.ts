@@ -12,8 +12,6 @@ describe("job queue claim priority", () => {
     expect(queue).toContain("when ${schema.jobs.type} = 'openai_realtime_hangup' then 0");
     expect(queue).toContain("when ${schema.jobs.type} = 'purge_old_data' then 2");
     expect(queue).toContain("else 1");
-    expect(queue).toContain(
-      ".orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)",
-    );
+    expect(queue).toContain(".orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)");
   });
 });

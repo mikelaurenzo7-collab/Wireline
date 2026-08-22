@@ -50,9 +50,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
       const hostWideRedirect = redirects.find(
         (candidate) =>
           candidate.source === "/:path*" &&
-          candidate.has?.some(
-            (condition) => condition.type === "host" && condition.value === host,
-          ),
+          candidate.has?.some((condition) => condition.type === "host" && condition.value === host),
       );
       expect(
         hostWideRedirect,
