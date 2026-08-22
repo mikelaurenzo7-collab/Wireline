@@ -4,7 +4,9 @@ import { PUBLIC_BROWSER_DEMO_MAX_SECONDS } from "../lib/public-browser-demo";
 import { emitProductEvent } from "../lib/product-event-client";
 
 const PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000;
-const PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 20_000;
+// The server may spend 15s minting a short-lived secret and then 20s exchanging SDP.
+// Keep the browser alive through that valid provider window plus transport overhead.
+const PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 40_000;
 const PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000;
 
 type PublicDemoSource = "landing_product_theater" | "showcase_browser_demo";
