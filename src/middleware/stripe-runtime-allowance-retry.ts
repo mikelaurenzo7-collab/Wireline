@@ -175,9 +175,11 @@ async function ledgerMovementAmountUsd(
 }
 
 async function retrieveAuthoritativeDispute(disputeId: string): Promise<Stripe.Dispute> {
-  return stripe.disputes.retrieve(disputeId, {
-    expand: ["balance_transactions"],
-  });
+  // Dispute balance_transactions are returned inline (zero, one, or two
+  // objects); Stripe does not document them as an expandable field. Passing
+  // an unsupported expand would turn every withdrawal/reinstatement webhook
+  // into a retry loop before financial accounting can run.
+  return stripe.disputes.retrieve(disputeId);
 }
 
 function disputeMovementCents(
