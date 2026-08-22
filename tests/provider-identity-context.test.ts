@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   currentProviderSafetyIdentifier,
+  openAISafetyIdentifierForIdentity,
   runWithProviderIdentity,
 } from "../src/lib/provider-identity-context";
 import { tenantStore } from "../src/lib/tenant-context-store";
@@ -12,7 +13,7 @@ import { tenantStore } from "../src/lib/tenant-context-store";
 const root = process.cwd();
 const read = (relativePath: string) => readFileSync(resolve(root, relativePath), "utf8");
 const expectedSafetyId = (identity: string) =>
-  createHash("sha256").update(`botbound:structured:${identity}`).digest("hex");
+  createHash("sha256").update(`botbound:${identity}`).digest("hex");
 
 describe("provider identity context", () => {
   it("hashes the normalized internal identity without leaking it", async () => {
@@ -25,6 +26,16 @@ describe("provider identity context", () => {
     expect(safetyId).toHaveLength(64);
     expect(safetyId).not.toContain("tenant-internal-123");
     expect(currentProviderSafetyIdentifier()).toBeUndefined();
+  });
+
+  it("uses one stable identifier across Responses and Realtime", () => {
+    expect(openAISafetyIdentifierForIdentity(" tenant-internal-123 ")).toBe(
+      expectedSafetyId("tenant-internal-123"),
+    );
+
+    const realtime = read("src/lib/voice/openai-realtime-call-control.ts");
+    expect(realtime).toContain("openAISafetyIdentifierForIdentity(");
+    expect(realtime).not.toContain('createHash("sha256")');
   });
 
   it("does not change the database tenant context", async () => {

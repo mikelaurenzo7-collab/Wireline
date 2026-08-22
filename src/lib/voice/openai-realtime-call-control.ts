@@ -1,7 +1,6 @@
-import { createHash } from "node:crypto";
-
 import { AppError } from "../api-error";
 import { enqueue } from "../job-queue";
+import { openAISafetyIdentifierForIdentity } from "../provider-identity-context";
 import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
 import { drizzle, fetchWithTimeout, log } from "../server-context";
 import {
@@ -52,10 +51,6 @@ function resolveApiKey(
     );
   }
   return key;
-}
-
-function safetyIdentifier(seed: string): string {
-  return createHash("sha256").update(`botbound:${seed}`).digest("hex");
 }
 
 function validCallId(callId: string): boolean {
@@ -156,7 +151,7 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
   const key = resolveApiKey(purpose);
   const sdp = validateSdp(input.sdp);
   const duration = Math.max(15, Math.min(3_600, Math.floor(input.maxDurationSeconds)));
-  const safetyId = safetyIdentifier(input.safetyIdentity || input.userId);
+  const safetyId = openAISafetyIdentifierForIdentity(input.safetyIdentity || input.userId);
 
   let providerCallRequested = false;
   try {

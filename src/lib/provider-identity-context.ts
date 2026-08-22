@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-const STRUCTURED_SAFETY_ID_DOMAIN = "botbound:structured:";
+const OPENAI_SAFETY_ID_DOMAIN = "botbound:";
 
 /**
  * Provider-only end-user identity. Unlike tenantStore, this context never
@@ -18,6 +18,11 @@ export function runWithProviderIdentity<T>(identity: string, operation: () => T)
   return providerIdentityStore.run(normalized, operation);
 }
 
+/** Stable OpenAI safety identifier shared by Responses and Realtime. */
+export function openAISafetyIdentifierForIdentity(identity: string): string {
+  return createHash("sha256").update(`${OPENAI_SAFETY_ID_DOMAIN}${identity.trim()}`).digest("hex");
+}
+
 /**
  * Stable, privacy-preserving OpenAI safety identifier for the current user.
  * The raw internal id never crosses the provider boundary.
@@ -25,5 +30,5 @@ export function runWithProviderIdentity<T>(identity: string, operation: () => T)
 export function currentProviderSafetyIdentifier(): string | undefined {
   const identity = providerIdentityStore.getStore()?.trim();
   if (!identity) return undefined;
-  return createHash("sha256").update(`${STRUCTURED_SAFETY_ID_DOMAIN}${identity}`).digest("hex");
+  return openAISafetyIdentifierForIdentity(identity);
 }

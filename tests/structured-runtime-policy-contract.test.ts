@@ -120,7 +120,7 @@ describe("structured runtime policy", () => {
     expect(bodyRead).toBeGreaterThan(-1);
     expect(responsesCall.indexOf("timer.dispose();", bodyRead)).toBeGreaterThan(bodyRead);
     expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
-    expect(providerContext).toContain('"botbound:structured:"');
+    expect(providerContext).toContain('OPENAI_SAFETY_ID_DOMAIN = "botbound:"');
     expect(providerContext).toContain("new AsyncLocalStorage<string>()");
     expect(providerContext).toContain('createHash("sha256")');
     expect(structured).toContain("tenantStore.getStore()");
