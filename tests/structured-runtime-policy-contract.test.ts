@@ -99,6 +99,8 @@ describe("structured runtime policy", () => {
     expect(client).toContain("safety_identifier");
     expect(client).toContain("botbound:structured:");
     expect(client).toContain("tenantStore.getStore()");
+    expect(client).toContain("disallowPromptTraining: true");
+    expect(client).toContain("await response.body.cancel()");
     expect(client).not.toContain("detail,");
     expect(client).toContain("Provider error bodies may echo customer content");
     expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
