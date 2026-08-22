@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 /* Provider-neutral structured runtime adapter. OpenAI is the managed
  * structured default, the Vercel AI Gateway is the governed continuity route,
  * xAI remains an optional structured continuity lane and voice provider, and
@@ -24,7 +23,7 @@ import {
 } from "./ai-gateway";
 import { normalizeResponsesUsage } from "./ai-usage";
 import { recordAmbiguousProviderAttempt } from "./ai-audit";
-import { tenantStore } from "./tenant-context-store";
+import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -479,9 +478,7 @@ async function callGateway(
 }
 
 function openAISafetyIdentifier(): string | undefined {
-  const tenantId = tenantStore.getStore()?.trim();
-  if (!tenantId) return undefined;
-  return createHash("sha256").update(`botbound:structured:${tenantId}`).digest("hex");
+  return currentProviderSafetyIdentifier();
 }
 
 async function callOpenAI(
@@ -678,8 +675,8 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
 };
 
 function configuredProviders(): RuntimeProvider[] {
-  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter(
-    (id) => RUNTIME_PROVIDER_REGISTRY[id].available(),
+  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter((id) =>
+    RUNTIME_PROVIDER_REGISTRY[id].available(),
   );
   return orderReasoningProviders(available, resolveReasoningPreference()).map(
     (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,
