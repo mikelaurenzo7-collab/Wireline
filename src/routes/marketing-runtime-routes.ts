@@ -29,6 +29,7 @@ import {
   publicOpenAIDemoConfigured,
 } from "../lib/voice/openai-public-demo-session";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 
 const router = Router();
 const assistantRateLimit = createIpRateLimiter({
@@ -146,6 +147,7 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
 
 router.post(
   "/api/public/demo-session",
+  enforceLaunchHardGate,
   asyncHandler(async (req, res) => {
     const host = requireSameOrigin(req);
     if (!publicDemoTicketingReady() || !publicOpenAIDemoConfigured()) {
@@ -179,6 +181,7 @@ router.post(
 
 router.post(
   "/api/public/demo-call",
+  enforceLaunchHardGate,
   asyncHandler(async (req, res) => {
     const host = requireSameOrigin(req);
     const token = bearerToken(req);
