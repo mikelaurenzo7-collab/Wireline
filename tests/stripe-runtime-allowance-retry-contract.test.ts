@@ -184,7 +184,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(withdrawn).toBeGreaterThan(created);
     expect(reinstated).toBeGreaterThan(withdrawn);
     expect(middleware).toContain("dispute_financial_movement: false");
-    expect(middleware).toContain('expand: ["balance_transactions"]');
+    expect(middleware).not.toContain('expand: ["balance_transactions"]');
     expect(middleware).not.toContain('eventType === "charge.dispute.closed"');
   });
 
