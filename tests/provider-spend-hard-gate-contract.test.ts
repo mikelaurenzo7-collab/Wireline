@@ -26,11 +26,22 @@ describe("provider spend launch kill switch", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
     const liveVoice = read("src/routes/grok-voice-routes.ts");
     const managedVoices = read("src/routes/voices-routes.ts");
+    const publicDemo = read("src/routes/marketing-runtime-routes.ts");
 
     expectMiddlewareBeforeHandler(
       openai,
       '"/api/voice/openai/session"',
       "async (req: AuthenticatedRequest, res: Response)",
+    );
+    expectMiddlewareBeforeHandler(
+      publicDemo,
+      '"/api/public/demo-session"',
+      "asyncHandler(async (req, res)",
+    );
+    expectMiddlewareBeforeHandler(
+      publicDemo,
+      '"/api/public/demo-call"',
+      "asyncHandler(async (req, res)",
     );
     expectMiddlewareBeforeHandler(
       liveVoice,
