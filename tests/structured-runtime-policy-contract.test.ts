@@ -94,11 +94,13 @@ describe("structured runtime policy", () => {
   it("keeps direct OpenAI structured calls stateless and privacy-preserving", () => {
     const client = read("src/lib/ai-client.ts");
     const tenantContext = read("src/lib/tenant-context-store.ts");
+    const providerContext = read("src/lib/provider-identity-context.ts");
+    const structured = read("src/lib/ai-structured.ts");
 
     expect(client).toContain("store: false");
     expect(client).toContain("safety_identifier");
-    expect(client).toContain("botbound:structured:");
-    expect(client).toContain("tenantStore.getStore()");
+    expect(client).toContain("currentProviderSafetyIdentifier()");
+    expect(client).not.toContain("tenantStore");
     expect(client).toContain("disallowPromptTraining: true");
     expect(client).toContain("await response.body.cancel()");
     expect(client).not.toContain("detail,");
@@ -118,6 +120,11 @@ describe("structured runtime policy", () => {
     expect(bodyRead).toBeGreaterThan(-1);
     expect(responsesCall.indexOf("timer.dispose();", bodyRead)).toBeGreaterThan(bodyRead);
     expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
+    expect(providerContext).toContain('"botbound:structured:"');
+    expect(providerContext).toContain("new AsyncLocalStorage<string>()");
+    expect(providerContext).toContain('createHash("sha256")');
+    expect(structured).toContain("tenantStore.getStore()");
+    expect(structured).toContain("runWithProviderIdentity(tenantId, operation)");
   });
 
   it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {
