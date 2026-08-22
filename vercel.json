@@ -77,30 +77,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "trywireline.com"
-        }
-      ],
-      "destination": "https://botbound.me/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.trywireline.com"
-        }
-      ],
-      "destination": "https://botbound.me/:path*",
-      "permanent": true
-    }
-  ],
   "functions": {
     "api/index.ts": {
       "maxDuration": 600,
