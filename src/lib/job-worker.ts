@@ -43,6 +43,7 @@ import {
   ProviderSpendPausedError,
   runtimeReservationReferenceForJob,
 } from "./provider-spend-job-pause";
+import { runWithProviderIdentity } from "./provider-identity-context";
 
 export * from "./job-worker-base";
 
@@ -324,7 +325,7 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 }
 
 /** Global durable-job dispatcher including launch reporting extensions. */
-async function dispatchJob(job: JobRow): Promise<void> {
+async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   if (job.type === "openai_realtime_hangup") {
     const startedAt = new Date();
     const execution = realtimeHangupExecution(job, startedAt);
@@ -422,6 +423,15 @@ async function dispatchJob(job: JobRow): Promise<void> {
   // the policy set, so the kill switch cannot block accounting or cost relief.
   assertLaunchProviderSpendAllowed(job);
   await handleBaseJob(job as never);
+}
+
+async function dispatchJob(job: JobRow): Promise<void> {
+  const userId = jobOwnerId(job).trim();
+  if (!userId || userId === SYSTEM_USER_ID) {
+    await dispatchJobInProviderContext(job);
+    return;
+  }
+  await runWithProviderIdentity(userId, () => dispatchJobInProviderContext(job));
 }
 
 /**
