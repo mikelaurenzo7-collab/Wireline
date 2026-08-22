@@ -145,7 +145,7 @@ router.post(
       return res.status(400).json({
         code: "CONSENT_ARTIFACT_REQUIRED",
         error:
-          "Marketing calls with express written consent require an auditable consent source or lead reference; manual attestation alone is not sufficient.",
+          "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
       });
     }
 
