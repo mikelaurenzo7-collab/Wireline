@@ -1,9 +1,7 @@
 {
   "version": 2,
   "buildCommand": "node scripts/vercel-deploy.mjs",
-  "regions": [
-    "cle1"
-  ],
+  "regions": ["cle1"],
   "build": {
     "env": {
       "NODE_VERSION": "22"
@@ -113,7 +111,7 @@
       "includeFiles": "dist/public-health-api.cjs"
     },
     "api/mcp.ts": {
-      "maxDuration": 60,
+      "maxDuration": 360,
       "includeFiles": "dist/chatgpt-mcp-api.cjs"
     }
   },

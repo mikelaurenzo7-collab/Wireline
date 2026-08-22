@@ -91,8 +91,8 @@ function getErrorMessage(err: unknown): string {
 
 /**
  * Daily aggregate ceiling on realtime simulation sessions (OpenAI Realtime
- * live-voice test paths; optional Grok experiment if enabled). Each session mints a vendor-metered 5-minute
- * client secret, so every mint charges 5 simulation minutes. The per-minute
+ * live-voice test paths; optional Grok experiment if enabled). Each session creates a vendor-metered
+ * call bounded to at most 5 minutes, so every call charges 5 simulation minutes. The per-minute
  * limiter above this stops bursts; without this cap a tenant could still run
  * back-to-back sessions all day on paid realtime keys with zero accounting.
  */
@@ -115,9 +115,9 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     }
     if (!decision.persisted) {
       // The tracker's read-only fallback allowed the request but could not
-      // record the increment (write-degraded DB). For a vendor-metered mint an
+      // record the increment (write-degraded DB). For a vendor-metered call an
       // unrecorded allowance is the same as no ceiling — refuse like an outage.
-      log.error("simulation quota increment not durable, refusing session mint", { userId });
+      log.error("simulation quota increment not durable, refusing session", { userId });
       return res.status(503).json({
         code: "SIMULATION_QUOTA_UNAVAILABLE",
         error:
@@ -139,13 +139,13 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     };
   } catch (err) {
     // checkAndIncrement already degrades internally; an exception here means
-    // the tracker itself is down. Every session mint charges a vendor-metered
-    // realtime client secret on platform keys — the same spend-sensitive class
+    // the tracker itself is down. Every session creates vendor-metered realtime
+    // audio on platform keys — the same spend-sensitive class
     // as dial/SMS/campaign buckets, which fail closed on limiter outage. With
     // the tracker down there is no daily ceiling at all, so allowing mints
     // here would hand out unbounded provider spend to $0 accounts exactly
     // when accounting is blind.
-    log.error("simulation quota tracker unavailable, refusing session mint", {
+    log.error("simulation quota tracker unavailable, refusing session", {
       userId,
       error: getErrorMessage(err),
     });

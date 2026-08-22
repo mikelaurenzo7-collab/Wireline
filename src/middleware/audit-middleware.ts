@@ -118,7 +118,7 @@ export function platformCostReserveUsd(kind: keyof typeof PLATFORM_COST_RESERVES
 }
 
 export async function persistPlatformCostRecord(opts: {
-  userId: string;
+  userId: string | null;
   action: string;
   provider: string;
   model: string;
@@ -149,9 +149,11 @@ export async function persistPlatformCostRecord(opts: {
     return;
   }
   recordDailySpend(opts.costUsd);
-  await evaluateSpend(opts.userId, opts.costUsd).catch((error: unknown) =>
-    log.error("Platform cost spend evaluation failed", { error: getErrorMessage(error) }),
-  );
+  if (opts.userId) {
+    await evaluateSpend(opts.userId, opts.costUsd).catch((error: unknown) =>
+      log.error("Platform cost spend evaluation failed", { error: getErrorMessage(error) }),
+    );
+  }
 }
 
 export type PlatformCostReservation = {
@@ -279,10 +281,47 @@ export async function releasePlatformCostReservation(
   clearBudgetCache(reservation.userId);
 }
 
+async function setPlatformCostReservationState(
+  reservation: PlatformCostReservation,
+  accountingState: "committed" | "provider_outcome_ambiguous",
+): Promise<void> {
+  try {
+    await drizzle
+      .update(schema.auditLog)
+      .set({
+        metadata: sql`coalesce(${schema.auditLog.metadata}, '{}'::jsonb) || ${JSON.stringify({
+          accounting_state: accountingState,
+        })}::jsonb`,
+      })
+      .where(
+        and(
+          eq(schema.auditLog.id, reservation.auditId),
+          eq(schema.auditLog.userId, reservation.userId),
+        ),
+      );
+  } catch (error) {
+    // Never delete or refund the reserve when state telemetry fails: provider
+    // spend may already exist, and the original row remains conservative.
+    log.error("Platform cost reservation state update failed", {
+      auditId: reservation.auditId.toString(),
+      userId: reservation.userId,
+      accountingState,
+      error: getErrorMessage(error),
+    });
+  }
+}
+
+export async function markPlatformCostReservationAmbiguous(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  await setPlatformCostReservationState(reservation, "provider_outcome_ambiguous");
+}
+
 /** Publish telemetry after the already-durable reservation becomes real spend. */
 export async function commitPlatformCostReservation(
   reservation: PlatformCostReservation,
 ): Promise<void> {
+  await setPlatformCostReservationState(reservation, "committed");
   recordDailySpend(reservation.costUsd);
   await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
     log.error("Reserved platform cost spend evaluation failed", {

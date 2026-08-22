@@ -1,4 +1,8 @@
 import type { ContactAgent } from "../../data/contact-agents";
+import {
+  persistPlatformCostRecord,
+  platformCostReserveUsd,
+} from "../../middleware/audit-middleware";
 import { runInBackground } from "../background-work";
 import { PUBLIC_BROWSER_DEMO_MAX_SECONDS } from "../public-browser-demo";
 import { OPENAI_REALTIME_DEFAULT_MODEL, type OpenAIRealtimeVoice } from "./openai-realtime-config";
@@ -76,12 +80,37 @@ export async function createPublicOpenAILiveDemoCall(input: {
   });
   const endsAt = new Date(Date.now() + call.maxDurationSeconds * 1_000);
 
-  // Vercel waitUntil owns the exact 45-second cutoff. The durable queue armed
-  // by createServerManagedOpenAIRealtimeCall remains the crash-recovery backstop.
+  // Register the exact safety deadline before any secondary persistence. The
+  // durable queue armed above remains the crash-recovery backstop.
   runInBackground(`public OpenAI Realtime deadline ${call.callId}`, async () => {
     await delay(Math.max(0, endsAt.getTime() - Date.now()));
-    await hangupOpenAIRealtimeCall({ callId: call.callId, keyPurpose: "chatgpt_demo" });
+    await hangupOpenAIRealtimeCall({
+      callId: call.callId,
+      keyPurpose: "chatgpt_demo",
+      keySource: call.keySource,
+      expectedKeyFingerprint: call.keyFingerprint,
+    });
   });
+
+  const estimatedCostUsd = Number(
+    ((platformCostReserveUsd("openai_realtime_session") * call.maxDurationSeconds) / 300).toFixed(
+      6,
+    ),
+  );
+  runInBackground(`public OpenAI Realtime cost ${call.callId}`, () =>
+    persistPlatformCostRecord({
+      userId: null,
+      action: "voice.realtime.public_demo",
+      provider: "openai",
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
+      costUsd: estimatedCostUsd,
+      requestMeta: {
+        surface: "public_demo",
+        max_duration_seconds: call.maxDurationSeconds,
+        accounting_basis: "maximum_session_duration",
+      },
+    }),
+  );
 
   return {
     sdp: call.sdp,

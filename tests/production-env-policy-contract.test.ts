@@ -24,7 +24,7 @@ const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
     },
   });
 
-const runProductionBoundary = (appUrl: string) =>
+const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}) =>
   spawnSync(process.execPath, [deploymentBoundaryPath], {
     encoding: "utf8",
     env: {
@@ -54,6 +54,7 @@ const runProductionBoundary = (appUrl: string) =>
       UPSTASH_REDIS_REST_TOKEN: "configured",
       CRON_SECRET: "configured",
       APP_URL: appUrl,
+      ...overrides,
     },
   });
 
@@ -69,6 +70,23 @@ describe("production environment launch policy", () => {
     expect(isProductionDeployment({ NODE_ENV: "production" })).toBe(true);
     expect(envValidator).toContain("isProductionDeployment()");
     expect(envValidator).not.toContain('process.env.VERCEL === "1"');
+  });
+
+  it("fails production closed if an operator override moves structured primary off OpenAI", () => {
+    for (const provider of ["xai", "grok", "gateway", "gemini"]) {
+      const result = runProductionBoundary("https://botbound.me", {
+        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
+      });
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toContain(
+        "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai",
+      );
+    }
+    expect(
+      runProductionBoundary("https://botbound.me", {
+        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "openai",
+      }).status,
+    ).toBe(0);
   });
 
   it("requires monetization and email delivery in production; Federal DNC is deferred checklist", () => {

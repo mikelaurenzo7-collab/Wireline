@@ -28,9 +28,15 @@ describe("OpenAI browser + native xAI PSTN voice architecture", () => {
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
     const widgetMeta = read("src/lib/mcp-app-metadata.ts");
     const widget = read("src/lib/chatgpt-mcp-account.ts");
-    expect(accountRoutes).toContain("createOpenAIRealtimeClientSecret");
-    expect(widgetMeta).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(accountRoutes).toContain("createOpenAIRealtimeSimulationCall");
+    expect(accountRoutes).toContain("offer_sdp");
+    expect(widgetMeta).toContain("connectDomains: []");
+    expect(widgetMeta).toContain("connect_domains: []");
     expect(widget).toContain("new RTCPeerConnection()");
+    expect(widget).toContain("offer_sdp: localSdp");
+    expect(widget).toContain("session.maxDurationSeconds");
+    expect(widget).not.toContain("https://api.openai.com/v1/realtime/calls");
+    expect(widget).not.toContain("session.client_secret");
     expect(widget).not.toContain("xai-client-secret.");
   });
 
@@ -78,10 +84,12 @@ describe("OpenAI browser + native xAI PSTN voice architecture", () => {
     expect(callControl).not.toContain("new FormData()");
   });
 
-  it("does not advertise tools on the generic OpenAI session mint", () => {
+  it("keeps the generic OpenAI simulation tool-free and server-managed", () => {
     const routes = read("src/routes/openai-realtime-routes.ts");
     const mint = routes.slice(routes.indexOf('"/api/voice/openai/session"'));
+    expect(mint).toContain("sdp: req.body.sdp");
     expect(mint).toContain("tools: []");
     expect(mint).toContain('toolChoice: "none"');
+    expect(mint).toContain("createOpenAIRealtimeSimulationCall");
   });
 });

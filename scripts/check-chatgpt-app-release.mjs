@@ -94,8 +94,9 @@ assert(
   "Privacy notice must disclose information returned to ChatGPT.",
 );
 assert(
-  privacy.body.includes("not included in the model-visible conversation"),
-  "Privacy notice must distinguish widget-only simulation credentials.",
+  privacy.body.includes("receives a session-bound connection answer") &&
+    privacy.body.includes("no OpenAI credential is returned"),
+  "Privacy notice must disclose server-mediated SDP without a widget credential.",
 );
 
 const mcpPrivacy = await request("/mcp-privacy.html", { headers: { Accept: "text/html" } });
@@ -335,8 +336,15 @@ assert(
   "Widget HTML is missing or malformed.",
 );
 assert(
-  content?._meta?.ui?.csp?.connectDomains?.includes("https://api.openai.com"),
-  "Widget CSP must explicitly allow the OpenAI Realtime HTTPS domain.",
+  Array.isArray(content?._meta?.ui?.csp?.connectDomains) &&
+    content._meta.ui.csp.connectDomains.length === 0,
+  "Widget CSP must not allow direct provider connections; Realtime signaling is server-mediated.",
+);
+assert(
+  content.text.includes("offer_sdp: localSdp") &&
+    !content.text.includes("https://api.openai.com/v1/realtime/calls") &&
+    !content.text.includes("session.client_secret"),
+  "Widget must exchange SDP through the authenticated MCP tool without receiving a provider credential.",
 );
 assert(
   content?._meta?.ui?.csp?.resourceDomains?.includes("https://assets.claude.ai"),

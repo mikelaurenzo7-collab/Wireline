@@ -3,34 +3,43 @@ import { describe, expect, it } from "vitest";
 import { mcpVoiceSimulationMeta } from "./mcp-voice-simulation-meta";
 
 const session = {
-  value: "ek_secret",
-  token: "ek_secret",
-  client_secret: "ek_secret",
-  endpoint: "https://api.openai.com/v1/realtime/calls",
+  sdp: "v=0\r\n" + "a".repeat(100),
+  maxDurationSeconds: 300,
+  endsAt: "2026-08-22T01:30:00.000Z",
+  wireline: { provider: "openai_realtime" },
 };
 
 describe("mcp voice simulation meta", () => {
-  it("keeps the ChatGPT widget secret in _meta only", () => {
+  it("gives the host widget only server-mediated signaling metadata", () => {
+    const sessionWithLegacyFields = {
+      ...session,
+      token: "ek_secret",
+      client_secret: "ek_secret",
+      endpoint: "https://api.openai.com/v1/realtime/calls",
+    };
     const meta = mcpVoiceSimulationMeta({
-      draftSource: "chatgpt_mcp",
+      session: sessionWithLegacyFields,
+      agentId: "agent-1",
+      greeting: "Hi",
+    });
+    expect(meta.agent_id).toBe("agent-1");
+    expect(meta.realtime_session).toMatchObject({
+      sdp: session.sdp,
+      maxDurationSeconds: 300,
+      endsAt: session.endsAt,
+      greeting: "Hi",
+    });
+    expect(JSON.stringify(meta)).not.toMatch(/ek_secret|token|client_secret|api\.openai\.com/);
+  });
+
+  it("keeps the SDP answer in protected metadata rather than model-visible content", () => {
+    const meta = mcpVoiceSimulationMeta({
       session,
       agentId: "agent-1",
       greeting: "Hi",
     });
     expect(meta.agent_id).toBe("agent-1");
-    expect(meta.realtime_session).toMatchObject({ token: "ek_secret", greeting: "Hi" });
-  });
-
-  it("omits Realtime secrets from Cursor and Claude results", () => {
-    for (const draftSource of ["cursor_mcp", "claude_mcp"] as const) {
-      const meta = mcpVoiceSimulationMeta({
-        draftSource,
-        session,
-        agentId: "agent-1",
-        greeting: "Hi",
-      });
-      expect(meta).toEqual({ agent_id: "agent-1" });
-      expect(JSON.stringify(meta)).not.toMatch(/ek_secret|token|client_secret/);
-    }
+    expect(meta.realtime_session.sdp).toBe(session.sdp);
+    expect(JSON.stringify(meta)).not.toMatch(/token|client_secret/);
   });
 });

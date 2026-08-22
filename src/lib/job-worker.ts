@@ -36,6 +36,7 @@ import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./acco
 import {
   hangupOpenAIRealtimeCall,
   type OpenAIRealtimeKeyPurpose,
+  type OpenAIRealtimeKeySource,
 } from "./voice/openai-realtime-call-control";
 import {
   isPausableProviderSpendJobType,
@@ -307,7 +308,20 @@ async function dispatchJob(job: JobRow): Promise<void> {
     const callId = typeof payload.callId === "string" ? payload.callId : "";
     const keyPurpose: OpenAIRealtimeKeyPurpose =
       payload.keyPurpose === "chatgpt_demo" ? "chatgpt_demo" : "runtime";
-    await hangupOpenAIRealtimeCall({ callId, keyPurpose });
+    const keySource: OpenAIRealtimeKeySource | undefined =
+      payload.keySource === "chatgpt_demo" || payload.keySource === "runtime"
+        ? payload.keySource
+        : undefined;
+    const expectedKeyFingerprint =
+      typeof payload.keyFingerprint === "string" && /^[a-f0-9]{24}$/.test(payload.keyFingerprint)
+        ? payload.keyFingerprint
+        : undefined;
+    await hangupOpenAIRealtimeCall({
+      callId,
+      keyPurpose,
+      keySource,
+      expectedKeyFingerprint,
+    });
     return;
   }
   if (job.type === "twilio_message_reconciliation") {

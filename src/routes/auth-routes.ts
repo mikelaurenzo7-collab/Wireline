@@ -47,6 +47,7 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { ensureDefaultAccount } from "../lib/account-service";
 import { PasswordRejectedError } from "../lib/breached-passwords";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
+import { emailMaskForLog } from "../lib/twilio-webhook-privacy";
 const router = Router();
 
 function sendAuthSuccess(
@@ -638,14 +639,14 @@ router.post(
             expiresAt: token.expiresAt,
           });
           log.info("Password reset token issued", {
-            email,
+            email: emailMaskForLog(email),
             expiresAt: token.expiresAt.toISOString(),
             transport: sendResult.provider,
             delivery_ok: sendResult.ok,
           });
           if (!sendResult.ok) {
             log.warn("Password reset email send failed", {
-              email,
+              email: emailMaskForLog(email),
               transport: sendResult.provider,
               error: sendResult.error,
             });

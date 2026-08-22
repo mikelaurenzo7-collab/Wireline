@@ -57,6 +57,14 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   canonicalProductionUrl("APP_URL", true);
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false);
+  if (
+    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER") &&
+    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER").toLowerCase() !== "openai"
+  ) {
+    failures.push(
+      "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai; other providers are continuity lanes only",
+    );
+  }
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(

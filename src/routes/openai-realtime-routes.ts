@@ -7,7 +7,7 @@ import { enforceSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
-  createOpenAIRealtimeClientSecret,
+  createOpenAIRealtimeSimulationCall,
   getOpenAIRealtimeStatus,
 } from "../lib/voice/openai-realtime-service";
 import {
@@ -29,6 +29,7 @@ const openaiRealtimeLimiter = createRateLimiter({
 });
 
 const openaiRealtimeSessionSchema = z.object({
+  sdp: z.string().min(100).max(60_000),
   agentName: z.string().min(1).max(120).optional(),
   model: z.string().min(1).max(80).optional(),
   voice: z.string().min(1).max(40).optional(),
@@ -48,11 +49,9 @@ router.post(
   authenticateUser,
   openaiRealtimeLimiter,
   enforceLaunchHardGate,
-  // The minted secret spends vendor-metered realtime audio on the platform
-  // key, and browser-to-vendor WebRTC audio never reaches the token audit
-  // path — so the mint itself must respect the tenant's AI-spend hard cap and
-  // land a reserve in the envelope. Without both, a tenant already 402'd on
-  // text AI could still mint voice sessions all day as invisible COGS.
+  // The server-created WebRTC call spends vendor-metered realtime audio on the
+  // platform key, so signaling must respect the tenant's AI-spend hard cap and
+  // land a reserve in the envelope before the provider call is created.
   // Cap BEFORE quota: the quota middleware durably debits five minutes, so a
   // capped tenant's rejected attempts must not eat the daily allowance they
   // would need after raising the cap.
@@ -61,10 +60,11 @@ router.post(
   simulationMinuteQuota,
   async (req: AuthenticatedRequest, res: Response) => {
     const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "studio_simulation");
-    let session: Awaited<ReturnType<typeof createOpenAIRealtimeClientSecret>>;
+    let session: Awaited<ReturnType<typeof createOpenAIRealtimeSimulationCall>>;
     try {
-      session = await createOpenAIRealtimeClientSecret({
+      session = await createOpenAIRealtimeSimulationCall({
         userId: req.user.id,
+        sdp: req.body.sdp,
         agentName: req.body.agentName,
         model: req.body.model,
         voice: req.body.voice,

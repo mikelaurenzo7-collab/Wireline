@@ -62,7 +62,7 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Creates a short-lived tool-free simulation credential without changing the saved agent draft.",
+        "read_only_justification": "Creates a short-lived tool-free WebRTC simulation and returns only a session-bound SDP answer without changing the saved agent draft or exposing a provider credential.",
         "open_world_justification": "Does not place calls, send messages, access business systems, or modify public internet state.",
         "destructive_justification": "Does not delete, overwrite, charge, revoke access, or perform an irreversible action."
       }

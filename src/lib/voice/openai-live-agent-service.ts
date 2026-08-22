@@ -291,7 +291,11 @@ export async function createOpenAILiveVoiceCall(input: {
   });
   runInBackground(`OpenAI Studio Realtime deadline ${call.callId}`, async () => {
     await delay(call.maxDurationSeconds * 1_000);
-    await hangupOpenAIRealtimeCall({ callId: call.callId });
+    await hangupOpenAIRealtimeCall({
+      callId: call.callId,
+      keySource: call.keySource,
+      expectedKeyFingerprint: call.keyFingerprint,
+    });
   });
   log.info("OpenAI live voice call created", {
     userId: input.userId,
@@ -303,7 +307,8 @@ export async function createOpenAILiveVoiceCall(input: {
     maxDurationSeconds: call.maxDurationSeconds,
   });
   return {
-    ...call,
+    sdp: call.sdp,
+    maxDurationSeconds: call.maxDurationSeconds,
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     voice,
     greeting:

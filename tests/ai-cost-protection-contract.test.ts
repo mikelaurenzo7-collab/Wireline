@@ -227,7 +227,7 @@ describe("AI cost-protection contract", () => {
     expect(read("src/routes/grok-voice-routes.ts")).toContain("simulationMinuteQuota");
     expect(read("src/routes/openai-realtime-routes.ts")).toContain("simulationMinuteQuota");
 
-    // Every session mint charges a vendor-metered realtime secret on platform
+    // Every session creates vendor-metered Realtime audio on platform
     // keys, so a quota-tracker outage must refuse the mint (matching the
     // fail-closed posture of the dial/SMS/campaign spend buckets), not hand
     // out unmetered sessions while accounting is blind.
@@ -240,7 +240,7 @@ describe("AI cost-protection contract", () => {
     expect(quotaFn).toContain("res.status(503)");
     expect(quotaFn).not.toContain("allowing session");
 
-    // The ChatGPT MCP simulation tool mints the same vendor-metered secrets
+    // The ChatGPT MCP simulation tool creates the same vendor-metered calls
     // and must draw from the same daily quota — its hourly limiter alone
     // allowed 8 mints/hour all day, 64× the web path's ceiling.
     const mcpAccount = read("src/routes/chatgpt-mcp-account-routes.ts");
@@ -252,11 +252,11 @@ describe("AI cost-protection contract", () => {
       'checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)',
     );
     expect(mcpSimulation.indexOf("checkAndIncrement")).toBeLessThan(
-      mcpSimulation.indexOf("createOpenAIRealtimeClientSecret"),
+      mcpSimulation.indexOf("createOpenAIRealtimeSimulationCall"),
     );
 
     // Minute quotas bound COUNT; dollars must be bounded too. Browser-to-vendor
-    // WebRTC audio never reaches the token audit path, so each mint must (a)
+    // WebRTC audio never reaches the token audit path, so each call must (a)
     // respect the tenant AI-spend hard cap and (b) land a platform cost reserve
     // in the envelope — otherwise a tenant 402'd on text AI keeps minting voice
     // as invisible COGS.
@@ -285,13 +285,14 @@ describe("AI cost-protection contract", () => {
     }
     expect(mcpSimulation).toContain("reservePlatformCostRecord({");
     expect(mcpSimulation.indexOf("reservePlatformCostRecord({")).toBeLessThan(
-      mcpSimulation.indexOf("createOpenAIRealtimeClientSecret({"),
+      mcpSimulation.indexOf("createOpenAIRealtimeSimulationCall({"),
     );
     // The locked cap reservation happens after the daily-minute debit, so a
     // cap refusal must return that exact-period quota reservation.
     expect(mcpSimulation).toContain("quotaTracker.releaseUsage(");
     expect(mcpSimulation).toContain("quota.period_key");
     expect(mcpSimulation).toContain("releasePlatformCostReservation(spendDecision.reservation)");
+    expect(mcpSimulation).toContain("shouldRetainRealtimeReservation(error)");
     expect(mcpSimulation).not.toContain("persistPlatformCostRecord({");
     expect(mcpSimulation).toContain('platformCostReserveUsd("openai_realtime_session")');
     const middleware = read("src/middleware/audit-middleware.ts");
