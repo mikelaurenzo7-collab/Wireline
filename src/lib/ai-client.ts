@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 /* Provider-neutral structured runtime adapter. OpenAI is the managed
  * structured default, the Vercel AI Gateway is the governed continuity route,
  * xAI remains an optional structured continuity lane and voice provider, and
@@ -23,6 +24,7 @@ import {
 } from "./ai-gateway";
 import { normalizeResponsesUsage } from "./ai-usage";
 import { recordAmbiguousProviderAttempt } from "./ai-audit";
+import { tenantStore } from "./tenant-context-store";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -277,6 +279,8 @@ async function callResponsesEndpoint(args: {
   options?: RuntimeRequestOptions;
   provider: RuntimeProviderName;
   gatewayModels?: readonly string[];
+  store?: boolean;
+  safetyIdentifier?: string;
 }): Promise<RuntimeMessage> {
   assertNotAborted(args.options?.signal);
   const tool = structuredOutputTool(args.body);
@@ -296,6 +300,8 @@ async function callResponsesEndpoint(args: {
           content: extractText(item.content),
         })),
         max_output_tokens: args.body.max_tokens ?? 4096,
+        ...(typeof args.store === "boolean" ? { store: args.store } : {}),
+        ...(args.safetyIdentifier ? { safety_identifier: args.safetyIdentifier } : {}),
         ...(args.gatewayModels?.length
           ? { providerOptions: { gateway: { models: args.gatewayModels } } }
           : {}),
@@ -326,17 +332,15 @@ async function callResponsesEndpoint(args: {
   timer.dispose();
 
   if (!response.ok) {
-    // Preserve the already-known HTTP classification even if the error body
-    // stream itself fails. A broken body read must not turn a definite 401/4xx
-    // rejection into an ambiguous, customer-funded provider attempt.
-    const detail = await response
-      .text()
-      .then((text) => text.slice(0, 500))
-      .catch(() => "response body unavailable");
+    // Provider error bodies may echo customer content. Keep classification and
+    // the bounded provider request id, but never copy response bodies into logs.
+    const requestId = String(response.headers.get("x-request-id") || "")
+      .trim()
+      .slice(0, 128);
     log.warn("[ai-runtime] provider request rejected", {
       provider: args.provider,
       status: response.status,
-      detail,
+      ...(requestId ? { requestId } : {}),
     });
     if (response.status >= 400 && response.status < 500) {
       throw new DefiniteProviderRejectionError(args.provider, response.status);
@@ -443,6 +447,12 @@ async function callGateway(
   });
 }
 
+function openAISafetyIdentifier(): string | undefined {
+  const tenantId = tenantStore.getStore()?.trim();
+  if (!tenantId) return undefined;
+  return createHash("sha256").update(`botbound:structured:${tenantId}`).digest("hex");
+}
+
 async function callOpenAI(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
@@ -458,6 +468,8 @@ async function callOpenAI(
     body,
     options,
     provider: "OpenAI",
+    store: false,
+    safetyIdentifier: openAISafetyIdentifier(),
   });
 }
 
