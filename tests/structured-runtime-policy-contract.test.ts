@@ -103,6 +103,20 @@ describe("structured runtime policy", () => {
     expect(client).toContain("await response.body.cancel()");
     expect(client).not.toContain("detail,");
     expect(client).toContain("Provider error bodies may echo customer content");
+
+    const gatewayCall = client.slice(
+      client.indexOf("async function callGateway"),
+      client.indexOf("function openAISafetyIdentifier"),
+    );
+    expect(gatewayCall).toContain("store: false");
+
+    const responsesCall = client.slice(
+      client.indexOf("async function callResponsesEndpoint"),
+      client.indexOf("async function callXAI"),
+    );
+    const bodyRead = responsesCall.indexOf("payload = (await response.json())");
+    expect(bodyRead).toBeGreaterThan(-1);
+    expect(responsesCall.indexOf("timer.dispose();", bodyRead)).toBeGreaterThan(bodyRead);
     expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
   });
 
