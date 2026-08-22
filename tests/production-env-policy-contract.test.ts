@@ -206,6 +206,7 @@ describe("production environment launch policy", () => {
       ["VAPI_PRIVATE_KEY", "configured"],
       ["VITE_VAPI_PUBLIC_KEY", "configured"],
       ["APP_URL", "https://trywireline.com"],
+      ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.me"],
       ["WIRELINE_SELF_SERVE_BILLING_ENABLED", "true"],
       ["WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA", "a".repeat(40)],
     ]) {
