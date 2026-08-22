@@ -303,7 +303,16 @@ async function callResponsesEndpoint(args: {
         ...(typeof args.store === "boolean" ? { store: args.store } : {}),
         ...(args.safetyIdentifier ? { safety_identifier: args.safetyIdentifier } : {}),
         ...(args.gatewayModels?.length
-          ? { providerOptions: { gateway: { models: args.gatewayModels } } }
+          ? {
+              providerOptions: {
+                gateway: {
+                  models: args.gatewayModels,
+                  // Keep the continuity route subject to the same no-training
+                  // boundary as direct managed-provider traffic.
+                  disallowPromptTraining: true,
+                },
+              },
+            }
           : {}),
         ...(tool
           ? {
@@ -334,6 +343,9 @@ async function callResponsesEndpoint(args: {
   if (!response.ok) {
     // Provider error bodies may echo customer content. Keep classification and
     // the bounded provider request id, but never copy response bodies into logs.
+    // Cancel the unread stream so the fetch implementation can release its
+    // resources without buffering sensitive error content.
+    if (response.body) await response.body.cancel().catch(() => undefined);
     const requestId = String(response.headers.get("x-request-id") || "")
       .trim()
       .slice(0, 128);
