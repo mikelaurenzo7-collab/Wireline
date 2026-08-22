@@ -1,6 +1,8 @@
 import { DEFAULT_MODEL, selectModelForTask, type TaskComplexity } from "./ai-models";
 import { recordUsage } from "./ai-audit";
 import { getRuntimeClient } from "./ai-client";
+import { providerIdentityStore, runWithProviderIdentity } from "./provider-identity-context";
+import { tenantStore } from "./tenant-context-store";
 
 export type StructuredToolSchema = {
   name: string;
@@ -37,6 +39,19 @@ type CompletionOptions = {
 };
 const modelFor = (opts: { model?: string; complexity?: TaskComplexity }) =>
   opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
+
+/**
+ * Authenticated routes already carry a tenantStore context for RLS. Copy that
+ * identity into the provider-only context for the duration of the actual model
+ * invocation. Durable workers set providerIdentityStore at dispatch instead,
+ * so they never need to enter the database/RLS context.
+ */
+function withStructuredProviderIdentity<T>(operation: () => T): T {
+  if (providerIdentityStore.getStore()?.trim()) return operation();
+  const tenantId = tenantStore.getStore()?.trim();
+  return tenantId ? runWithProviderIdentity(tenantId, operation) : operation();
+}
+
 function bodyFor(opts: StructuredOptions, model: string) {
   return {
     model,
@@ -65,9 +80,11 @@ export async function runStructuredWithThinking<T = unknown>(
 ): Promise<StructuredResult<T>> {
   const model = modelFor(opts),
     started = Date.now();
-  const response = await getRuntimeClient().messages.create(bodyFor(opts, model), {
-    signal: opts.signal,
-  });
+  const response = await withStructuredProviderIdentity(() =>
+    getRuntimeClient().messages.create(bodyFor(opts, model), {
+      signal: opts.signal,
+    }),
+  );
   recordUsage(model, response, Date.now() - started);
   return { result: structuredResult<T>(response, opts.tool.name) };
 }
@@ -80,9 +97,11 @@ export async function runStructuredStream<T = unknown>(
   try {
     callbacks.onThinkingStart?.();
     callbacks.onThinkingChunk?.("Preparing structured response…");
-    const stream = getRuntimeClient().messages.stream(bodyFor(opts, model), {
-      signal: opts.signal,
-    });
+    const stream = withStructuredProviderIdentity(() =>
+      getRuntimeClient().messages.stream(bodyFor(opts, model), {
+        signal: opts.signal,
+      }),
+    );
     for await (const _event of stream) {
       if (opts.signal?.aborted) throw new DOMException("Structured stream aborted", "AbortError");
     }
@@ -103,12 +122,14 @@ export async function runCompletion(
 ): Promise<{ text: string; cacheRead: number; cacheCreate: number }> {
   const model = modelFor(opts),
     started = Date.now();
-  const response = await getRuntimeClient().messages.create({
-    model,
-    max_tokens: opts.maxTokens ?? 4096,
-    system: opts.system,
-    messages: [{ role: "user", content: opts.user }],
-  });
+  const response = await withStructuredProviderIdentity(() =>
+    getRuntimeClient().messages.create({
+      model,
+      max_tokens: opts.maxTokens ?? 4096,
+      system: opts.system,
+      messages: [{ role: "user", content: opts.user }],
+    }),
+  );
   recordUsage(model, response, Date.now() - started);
   const text = (response.content || [])
     .filter((block): block is { type: "text"; text: string } => block.type === "text")
