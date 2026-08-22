@@ -49,6 +49,7 @@ export * from "./job-worker-base";
 const ARTIFACT_FORMATS = new Set<RuntimeArtifactFormat>(["pdf", "docx", "pptx", "xlsx"]);
 const ARTIFACT_DESTINATIONS = new Set(["google_drive", "onedrive"]);
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+const OPENAI_REALTIME_HANGUP_LATE_WARNING_MS = 90_000;
 
 /**
  * `post_call_digest` already holds this fence around every local/provider
@@ -81,6 +82,30 @@ function maxAttemptNumber(job: JobRow): number {
 function jobOwnerId(job: JobRow): string {
   const shaped = job as unknown as { userId?: string; user_id?: string };
   return String(shaped.userId || shaped.user_id || "");
+}
+
+function jobScheduledAt(job: JobRow): Date | null {
+  const shaped = job as unknown as {
+    runAt?: Date | string | null;
+    run_at?: Date | string | null;
+  };
+  const raw = shaped.runAt ?? shaped.run_at;
+  if (!raw) return null;
+  const scheduledAt = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(scheduledAt.getTime()) ? null : scheduledAt;
+}
+
+function realtimeHangupExecution(job: JobRow, startedAt: Date) {
+  const scheduledAt = jobScheduledAt(job);
+  return {
+    job_id: job.id,
+    job_type: job.type,
+    scheduled_at: scheduledAt?.toISOString() ?? null,
+    execution_started_at: startedAt.toISOString(),
+    lateness_ms: scheduledAt ? Math.max(0, startedAt.getTime() - scheduledAt.getTime()) : null,
+    attempt: attemptNumber(job),
+    max_attempts: maxAttemptNumber(job),
+  };
 }
 
 function assertLaunchProviderSpendAllowed(job: JobRow): void {
@@ -301,6 +326,8 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 /** Global durable-job dispatcher including launch reporting extensions. */
 async function dispatchJob(job: JobRow): Promise<void> {
   if (job.type === "openai_realtime_hangup") {
+    const startedAt = new Date();
+    const execution = realtimeHangupExecution(job, startedAt);
     const payload =
       job.payload && typeof job.payload === "object"
         ? (job.payload as Record<string, unknown>)
@@ -316,12 +343,49 @@ async function dispatchJob(job: JobRow): Promise<void> {
       typeof payload.keyFingerprint === "string" && /^[a-f0-9]{24}$/.test(payload.keyFingerprint)
         ? payload.keyFingerprint
         : undefined;
-    await hangupOpenAIRealtimeCall({
-      callId,
-      keyPurpose,
-      keySource,
-      expectedKeyFingerprint,
-    });
+
+    if (
+      typeof execution.lateness_ms === "number" &&
+      execution.lateness_ms > OPENAI_REALTIME_HANGUP_LATE_WARNING_MS
+    ) {
+      log.warn("OpenAI Realtime durable hangup started late", {
+        ...execution,
+        outcome: "started_late",
+      });
+    } else {
+      log.info("OpenAI Realtime durable hangup started", {
+        ...execution,
+        outcome: "started",
+      });
+    }
+
+    try {
+      await hangupOpenAIRealtimeCall({
+        callId,
+        keyPurpose,
+        keySource,
+        expectedKeyFingerprint,
+      });
+      const completedAt = new Date();
+      const result = {
+        ...execution,
+        outcome: "provider_hangup_confirmed_or_already_closed",
+        execution_completed_at: completedAt.toISOString(),
+        execution_duration_ms: Math.max(0, completedAt.getTime() - startedAt.getTime()),
+      };
+      await persistJobResult(job.id, result);
+      log.info("OpenAI Realtime durable hangup completed", result);
+    } catch (error) {
+      const failedAt = new Date();
+      log.error("OpenAI Realtime durable hangup failed", {
+        ...execution,
+        outcome: "failed_retryable",
+        execution_completed_at: failedAt.toISOString(),
+        execution_duration_ms: Math.max(0, failedAt.getTime() - startedAt.getTime()),
+        error: getErrorMessage(error),
+      });
+      throw error;
+    }
     return;
   }
   if (job.type === "twilio_message_reconciliation") {

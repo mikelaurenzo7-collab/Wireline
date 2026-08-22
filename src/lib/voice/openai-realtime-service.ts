@@ -11,6 +11,7 @@ import {
   createServerManagedOpenAIRealtimeCall,
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
+import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 
 export const OPENAI_REALTIME_SIMULATION_MAX_SECONDS = 300 as const;
 
@@ -48,6 +49,7 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeSimu
         buildOpenAIRealtimeInstructions(input.agentName),
       tools,
       tool_choice: input.toolChoice || "auto",
+      truncation: OPENAI_REALTIME_COST_TRUNCATION,
       audio: {
         input: {
           format: {

@@ -14,6 +14,7 @@ import {
   createServerManagedOpenAIRealtimeCall,
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
+import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 
 export const OPENAI_LIVE_VOICE_MAX_SECONDS = 300 as const;
 
@@ -265,6 +266,7 @@ export async function createOpenAILiveVoiceCall(input: {
     instructions,
     tools: LIVE_DEMO_TOOLS,
     tool_choice: "auto",
+    truncation: OPENAI_REALTIME_COST_TRUNCATION,
     audio: {
       input: {
         format: { type: "audio/pcm", rate: 24_000 },

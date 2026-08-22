@@ -67,9 +67,14 @@ const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
 const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
-// Daily retention creates one purge job per account. Keep maintenance fan-out
-// behind due customer/scheduler work so bounded serverless sweeps stay responsive.
-const claimPriority = sql`case when ${schema.jobs.type} = 'purge_old_data' then 1 else 0 end`;
+// A due Realtime hangup is a provider-spend safety deadline, not ordinary
+// background work. Claim it ahead of an older general backlog; keep daily
+// retention fan-out last so bounded serverless sweeps stay responsive.
+const claimPriority = sql`case
+  when ${schema.jobs.type} = 'openai_realtime_hangup' then 0
+  when ${schema.jobs.type} = 'purge_old_data' then 2
+  else 1
+end`;
 const claimOrder = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt}, ${claimTime})`;
 const attemptCountEquals = (expectedAttempts: number) =>

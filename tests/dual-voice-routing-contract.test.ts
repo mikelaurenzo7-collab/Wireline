@@ -77,13 +77,14 @@ describe("ChatGPT private voice simulation routing", () => {
   it("keeps server-managed Realtime calls draft-ready and spend-isolated", () => {
     const openaiService = read("src/lib/voice/openai-realtime-service.ts");
     const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
+    const keyring = read("src/lib/voice/openai-realtime-keyring.ts");
     expect(openaiService).toContain("instructions?: string | null");
     expect(openaiService).toContain("agentName?: string | null");
     expect(openaiService).toContain("tools?: OpenAIRealtimeToolDefinition[]");
     expect(openaiService).toContain('toolChoice?: "auto" | "none"');
     expect(openaiService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
-    expect(callControl).toContain("OPENAI_API_KEY_CHATKIT");
-    expect(callControl).toContain('source === "chatgpt_demo"');
+    expect(keyring).toContain("OPENAI_API_KEY_CHATKIT");
+    expect(keyring).toContain('source === "chatgpt_demo"');
     expect(callControl).toContain("expectedKeyFingerprint");
     expect(callControl).toContain("keySource: key.source");
     expect(openaiService).toContain("createServerManagedOpenAIRealtimeCall");

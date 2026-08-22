@@ -131,7 +131,7 @@ describe("structured runtime transport", () => {
     expect(models).toContain(
       "process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA",
     );
-    expect(realtime).toContain('OPENAI_REALTIME_MODEL || "gpt-realtime-2.1"');
+    expect(realtime).toContain("OPENAI_REALTIME_PRICING_MODEL");
     expect(realtime).toContain('OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe"');
   });
 

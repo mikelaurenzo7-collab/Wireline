@@ -97,11 +97,11 @@ describe("launch artifact privacy and operations truth", () => {
     };
     expect(vercel.crons).toEqual(
       expect.arrayContaining([
-        { path: "/api/jobs/sweep", schedule: "*/5 * * * *" },
+        { path: "/api/jobs/sweep", schedule: "* * * * *" },
         { path: "/api/daily-brief/schedule", schedule: "*/15 * * * *" },
       ]),
     );
-    expect(runbook).toContain("`/api/jobs/sweep` every **5 minutes**");
+    expect(runbook).toContain("`/api/jobs/sweep` every **minute**");
     expect(runbook).toContain("`/api/daily-brief/schedule` every **15 minutes**");
     expect(runbook).toContain("**nightly** schedule");
     expect(runbook).toContain("is **not** a paid synthetic call every 15 minutes");

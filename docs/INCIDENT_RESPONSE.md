@@ -20,7 +20,7 @@ This is an operator runbook. Response-time language below is prioritization guid
 
 The deployed Vercel schedule currently runs:
 
-- `/api/jobs/sweep` every **5 minutes** for durable background work.
+- `/api/jobs/sweep` every **minute** for durable background work.
 - `/api/daily-brief/schedule` every **15 minutes** for due daily-brief dispatch.
 - The demo-line canary is queued separately on its **nightly** schedule. It validates the public-line control-plane/assignment posture and recent reliability evidence; it is **not** a paid synthetic call every 15 minutes.
 

@@ -11,6 +11,11 @@ import {
   type RuntimeCallMeta,
 } from "../lib/ai-audit";
 import { clearBudgetCache, recordDailySpend, evaluateSpend } from "../lib/spend-guards";
+import {
+  OPENAI_REALTIME_RESERVE_ENV,
+  OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
+  resolveOpenAIRealtimeSessionReserveUsd,
+} from "../lib/voice/openai-realtime-pricing";
 
 function estimateAuditRecordCost(record: RuntimeCallMeta): number {
   // estimateCost normalizes gateway-prefixed ids ("xai/grok-4.5") to their bare
@@ -104,14 +109,20 @@ const PLATFORM_COST_RESERVES = {
   /**
    * One minted realtime voice session. Browser-to-vendor WebRTC audio never
    * flows through the token audit path (ai-models.ts documents this), so the
-   * mint is the only place the platform can meter it. Reserve basis: the same
-   * 5 charged minutes simulationMinuteQuota debits per mint, at a conservative
-   * blended GA realtime audio rate.
+   * mint is the only place the platform can meter it. The fallback is derived
+   * in openai-realtime-pricing.ts from official gpt-realtime-2.1 audio rates;
+   * explicit overrides below that floor fail closed.
    */
-  openai_realtime_session: { env: "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD", fallback: 0.3 },
+  openai_realtime_session: {
+    env: OPENAI_REALTIME_RESERVE_ENV,
+    fallback: OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
+  },
 } as const;
 
 export function platformCostReserveUsd(kind: keyof typeof PLATFORM_COST_RESERVES): number {
+  if (kind === "openai_realtime_session") {
+    return resolveOpenAIRealtimeSessionReserveUsd();
+  }
   const reserve = PLATFORM_COST_RESERVES[kind];
   const parsed = Number.parseFloat(process.env[reserve.env] || "");
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : reserve.fallback;

@@ -11,6 +11,10 @@ import {
   hangupOpenAIRealtimeCall,
   OPENAI_REALTIME_SYSTEM_USER_ID,
 } from "./openai-realtime-call-control";
+import {
+  OPENAI_REALTIME_COST_TRUNCATION,
+  OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
+} from "./openai-realtime-pricing";
 
 const PROFILE_BY_VIBE: Record<ContactAgent["defaultVibe"], OpenAIRealtimeVoice> = {
   warm: "marin",
@@ -44,6 +48,9 @@ export async function createPublicOpenAILiveDemoCall(input: {
   guestFingerprint: string;
   sdp: string;
 }) {
+  // Resolve before provider work so an explicitly underfunded deployment
+  // cannot mint a call and discover the pricing fault afterward.
+  const fiveMinuteReserveUsd = platformCostReserveUsd("openai_realtime_session");
   const voice = PROFILE_BY_VIBE[input.agent.defaultVibe];
   const session = {
     type: "realtime",
@@ -52,6 +59,7 @@ export async function createPublicOpenAILiveDemoCall(input: {
     instructions: publicDemoInstructions(input.agent),
     tools: [],
     tool_choice: "none",
+    truncation: OPENAI_REALTIME_COST_TRUNCATION,
     audio: {
       input: {
         format: { type: "audio/pcm", rate: 24_000 },
@@ -93,9 +101,10 @@ export async function createPublicOpenAILiveDemoCall(input: {
   });
 
   const estimatedCostUsd = Number(
-    ((platformCostReserveUsd("openai_realtime_session") * call.maxDurationSeconds) / 300).toFixed(
-      6,
-    ),
+    (
+      (fiveMinuteReserveUsd * call.maxDurationSeconds) /
+      OPENAI_REALTIME_RESERVE_WINDOW_SECONDS
+    ).toFixed(6),
   );
   runInBackground(`public OpenAI Realtime cost ${call.callId}`, () =>
     persistPlatformCostRecord({

@@ -4,15 +4,28 @@ import { AppError } from "../api-error";
 import { enqueue } from "../job-queue";
 import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
 import { drizzle, fetchWithTimeout, log } from "../server-context";
-import { getErrorMessage } from "../server-utils";
+import {
+  OpenAIRealtimeProviderError,
+  openAIRealtimeCallMayExistAfterResponse,
+  openAIRealtimeFailureFromError,
+  openAIRealtimeFailureLogFields,
+  openAIRealtimeProviderFailure,
+} from "./openai-realtime-provider-failure";
+import {
+  openAIRealtimeSourceForPurpose,
+  selectCurrentOpenAIRealtimeKey,
+  selectOpenAIRealtimeHangupKey,
+  type OpenAIRealtimeKeyPurpose,
+  type OpenAIRealtimeKeySource,
+} from "./openai-realtime-keyring";
+
+export type { OpenAIRealtimeKeyPurpose, OpenAIRealtimeKeySource } from "./openai-realtime-keyring";
 
 const OPENAI_REALTIME_CLIENT_SECRETS_URL = "https://api.openai.com/v1/realtime/client_secrets";
 const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
 const OPENAI_REALTIME_SECRET_TTL_SECONDS = 120;
 
 export const OPENAI_REALTIME_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
-export type OpenAIRealtimeKeyPurpose = "runtime" | "chatgpt_demo";
-export type OpenAIRealtimeKeySource = "runtime" | "chatgpt_demo";
 
 type ServerManagedRealtimeCallInput = {
   userId: string;
@@ -24,28 +37,13 @@ type ServerManagedRealtimeCallInput = {
   logContext?: Record<string, unknown>;
 };
 
-function keyFingerprint(apiKey: string): string {
-  return createHash("sha256")
-    .update("botbound:openai-realtime-key:v1:")
-    .update(apiKey)
-    .digest("hex")
-    .slice(0, 24);
-}
-
 function resolveApiKey(
   purpose: OpenAIRealtimeKeyPurpose,
   requiredSource?: OpenAIRealtimeKeySource,
 ): { value: string; source: OpenAIRealtimeKeySource; fingerprint: string } {
-  const source =
-    requiredSource ||
-    (purpose === "chatgpt_demo" && process.env.OPENAI_API_KEY_CHATKIT?.trim()
-      ? "chatgpt_demo"
-      : "runtime");
-  const apiKey =
-    source === "chatgpt_demo"
-      ? process.env.OPENAI_API_KEY_CHATKIT?.trim()
-      : process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
+  const source = openAIRealtimeSourceForPurpose(process.env, purpose, requiredSource);
+  const key = selectCurrentOpenAIRealtimeKey(process.env, purpose, requiredSource);
+  if (!source || !key) {
     throw AppError.fromHttpStatus(
       503,
       source === "chatgpt_demo"
@@ -53,7 +51,7 @@ function resolveApiKey(
         : "OpenAI Realtime is not configured.",
     );
   }
-  return { value: apiKey, source, fingerprint: keyFingerprint(apiKey) };
+  return key;
 }
 
 function safetyIdentifier(seed: string): string {
@@ -81,31 +79,45 @@ export async function hangupOpenAIRealtimeCall(input: {
   const callId = input.callId.trim();
   if (!validCallId(callId)) throw new Error("OpenAI Realtime hangup job has an invalid call id.");
   const purpose = input.keyPurpose || "runtime";
-  const key = resolveApiKey(purpose, input.keySource);
-  if (input.expectedKeyFingerprint && input.expectedKeyFingerprint !== key.fingerprint) {
+  const key = input.expectedKeyFingerprint
+    ? selectOpenAIRealtimeHangupKey(process.env, {
+        purpose,
+        requiredSource: input.keySource,
+        expectedFingerprint: input.expectedKeyFingerprint,
+      })
+    : resolveApiKey(purpose, input.keySource);
+  if (!key) {
     log.error("OpenAI Realtime hangup credential changed before deadline", {
       callId,
       purpose,
       expectedKeyFingerprint: input.expectedKeyFingerprint,
-      currentKeyFingerprint: key.fingerprint,
-      keySource: key.source,
+      keySource:
+        input.keySource || openAIRealtimeSourceForPurpose(process.env, purpose) || "unavailable",
       providerCallMayExist: true,
     });
-    throw new Error("OpenAI Realtime hangup credential no longer matches the creating key.");
+    throw new Error("OpenAI Realtime hangup credential is unavailable for the creating key.");
   }
-  const response = await fetchWithTimeout(
-    `${OPENAI_REALTIME_CALLS_URL}/${encodeURIComponent(callId)}/hangup`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key.value}` },
-    },
-    15_000,
-  );
-  const body = await response.text();
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(
+      `${OPENAI_REALTIME_CALLS_URL}/${encodeURIComponent(callId)}/hangup`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key.value}` },
+      },
+      15_000,
+    );
+  } catch (error) {
+    throw new OpenAIRealtimeProviderError(
+      "OpenAI Realtime hangup",
+      openAIRealtimeFailureFromError(error, "hangup_transport_failed"),
+    );
+  }
   // A provider retry after the peer already closed is an idempotent success.
   if (response.ok || response.status === 404 || response.status === 409) return;
-  throw new Error(
-    `OpenAI Realtime hangup failed (${response.status})${body ? `: ${body.slice(0, 300)}` : ""}`,
+  throw new OpenAIRealtimeProviderError(
+    "OpenAI Realtime hangup",
+    openAIRealtimeProviderFailure(response, "hangup_failed"),
   );
 }
 
@@ -167,6 +179,19 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
       },
       15_000,
     );
+    if (!secretResponse.ok) {
+      const failure = openAIRealtimeProviderFailure(secretResponse, "client_secret_mint_failed");
+      log.warn("OpenAI Realtime client secret mint failed", {
+        ...input.logContext,
+        purpose,
+        ...openAIRealtimeFailureLogFields(failure),
+      });
+      throw markRealtimeProviderCallOutcome(
+        AppError.fromHttpStatus(502, "Live voice session could not be created."),
+        false,
+      );
+    }
+
     const secretText = await secretResponse.text();
     let secretPayload: { value?: string } = {};
     if (secretText) {
@@ -176,13 +201,13 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
         secretPayload = {};
       }
     }
-    const ephemeralKey = secretPayload.value?.trim() || "";
-    if (!secretResponse.ok || !ephemeralKey) {
+    const ephemeralKey = typeof secretPayload.value === "string" ? secretPayload.value.trim() : "";
+    if (!ephemeralKey) {
+      const failure = openAIRealtimeProviderFailure(secretResponse, "client_secret_missing");
       log.warn("OpenAI Realtime client secret mint failed", {
         ...input.logContext,
         purpose,
-        status: secretResponse.status,
-        body: secretText.slice(0, 500),
+        ...openAIRealtimeFailureLogFields(failure),
       });
       throw markRealtimeProviderCallOutcome(
         AppError.fromHttpStatus(502, "Live voice session could not be created."),
@@ -204,26 +229,41 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
       },
       20_000,
     );
-    const answer = await response.text();
-    if (!response.ok || !answer.startsWith("v=")) {
+    if (!response.ok) {
+      const failure = openAIRealtimeProviderFailure(response, "webrtc_call_create_failed");
       log.warn("OpenAI Realtime WebRTC call creation failed", {
         ...input.logContext,
         purpose,
-        status: response.status,
-        body: answer.slice(0, 500),
+        ...openAIRealtimeFailureLogFields(failure),
       });
       throw markRealtimeProviderCallOutcome(
         AppError.fromHttpStatus(502, "Live voice session could not be created."),
-        response.ok,
+        openAIRealtimeCallMayExistAfterResponse(response),
+      );
+    }
+
+    const answer = await response.text();
+    if (!answer.startsWith("v=")) {
+      const failure = openAIRealtimeProviderFailure(response, "webrtc_answer_invalid");
+      log.warn("OpenAI Realtime WebRTC call creation failed", {
+        ...input.logContext,
+        purpose,
+        ...openAIRealtimeFailureLogFields(failure),
+      });
+      throw markRealtimeProviderCallOutcome(
+        AppError.fromHttpStatus(502, "Live voice session could not be created."),
+        true,
       );
     }
 
     const location = response.headers.get("location") || "";
     const callId = location.split("/").filter(Boolean).pop()?.trim() || "";
     if (!validCallId(callId)) {
+      const failure = openAIRealtimeProviderFailure(response, "controllable_call_id_missing");
       log.error("OpenAI Realtime call response omitted a controllable call id", {
         ...input.logContext,
         purpose,
+        ...openAIRealtimeFailureLogFields(failure),
       });
       throw markRealtimeProviderCallOutcome(
         AppError.fromHttpStatus(502, "Live voice session could not be controlled safely."),
@@ -254,7 +294,9 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
         log.error("OpenAI Realtime emergency hangup failed", {
           ...input.logContext,
           callId,
-          error: getErrorMessage(hangupError),
+          ...openAIRealtimeFailureLogFields(
+            openAIRealtimeFailureFromError(hangupError, "emergency_hangup_failed"),
+          ),
           providerCallMayExist: true,
         });
         // 502 is the caller contract for an ambiguous provider outcome. Both
@@ -280,7 +322,9 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
     log.error("OpenAI Realtime server-managed signaling failed", {
       ...input.logContext,
       purpose,
-      error: getErrorMessage(error),
+      ...openAIRealtimeFailureLogFields(
+        openAIRealtimeFailureFromError(error, "signaling_transport_failed"),
+      ),
     });
     throw markRealtimeProviderCallOutcome(
       AppError.fromHttpStatus(502, "Live voice session request failed."),

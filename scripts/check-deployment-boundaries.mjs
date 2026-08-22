@@ -57,6 +57,14 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   canonicalProductionUrl("APP_URL", true);
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false);
+  if (value("WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD")) {
+    const realtimeReserveUsd = Number(value("WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD"));
+    if (!Number.isFinite(realtimeReserveUsd) || realtimeReserveUsd < 1) {
+      failures.push(
+        "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: production must be a finite USD amount of at least 1.00 per five-minute gpt-realtime-2.1 session",
+      );
+    }
+  }
   if (
     value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER") &&
     value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER").toLowerCase() !== "openai"

@@ -168,7 +168,7 @@
   "crons": [
     {
       "path": "/api/jobs/sweep",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/daily-brief/schedule",

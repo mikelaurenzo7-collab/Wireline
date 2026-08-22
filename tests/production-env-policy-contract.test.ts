@@ -89,6 +89,23 @@ describe("production environment launch policy", () => {
     ).toBe(0);
   });
 
+  it("fails production closed when the Realtime admission reserve is below its derived floor", () => {
+    for (const reserve of ["0", "0.30", "0.999", "not-money"]) {
+      const result = runProductionBoundary("https://botbound.me", {
+        WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: reserve,
+      });
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toContain(
+        "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: production must be a finite USD amount of at least 1.00",
+      );
+    }
+    expect(
+      runProductionBoundary("https://botbound.me", {
+        WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: "1.00",
+      }).status,
+    ).toBe(0);
+  });
+
   it("requires monetization and email delivery in production; Federal DNC is deferred checklist", () => {
     for (const key of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "RESEND_API_KEY"]) {
       const start = envValidator.indexOf(`name: "${key}"`);
