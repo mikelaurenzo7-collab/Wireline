@@ -68,7 +68,11 @@ describe("OpenAI-first runtime cohesion across agent postures", () => {
     expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
     expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
     expect(grokDoc).toContain("xAI rate limits are per team and per model");
-    expect(grokDoc).toContain("ChatGPT Apps iframes may only connect");
+    expect(grokDoc).toContain(
+      "Hosted MCP private voice simulation: server-mediated OpenAI Realtime WebRTC",
+    );
+    expect(grokDoc).toContain("the widget needs no direct provider CSP permission");
+    expect(grokDoc).not.toContain("ChatGPT Apps iframes may only connect");
     expect(grokDoc).toContain("Studio fails closed when `OPENAI_API_KEY`");
     expect(grokDoc).toContain("PSTN independently fails closed");
     expect(vendor).toContain(
