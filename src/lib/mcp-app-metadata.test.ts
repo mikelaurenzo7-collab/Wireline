@@ -13,6 +13,6 @@ describe("mcp app widget metadata", () => {
     expect(meta).not.toHaveProperty("openai/widgetDomain");
     expect(meta["openai/widgetCSP"].resource_domains).toEqual([]);
     expect(meta["openai/widgetCSP"].redirect_domains).toEqual(["https://botbound.me"]);
-    expect(meta["openai/widgetCSP"].connect_domains).toEqual(["https://api.openai.com"]);
+    expect(meta["openai/widgetCSP"].connect_domains).toEqual([]);
   });
 });
