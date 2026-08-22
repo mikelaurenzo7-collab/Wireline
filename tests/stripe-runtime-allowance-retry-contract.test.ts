@@ -256,12 +256,14 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     ).toThrow(/inconsistent settlement currencies/);
   });
 
-  it("scales allowance by both movement share and base-plan share", () => {
-    expect(subscriptionDisputeAllowancePortion(2_500, 10_000, 0.8)).toBeCloseTo(0.2);
+  it("uses base-plan share for eligibility without double-discounting mixed invoices", () => {
+    expect(subscriptionDisputeAllowancePortion(2_500, 10_000, 0.8)).toBeCloseTo(0.25);
     expect(subscriptionDisputeAllowancePortion(5_000, 10_000, 1)).toBeCloseTo(0.5);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 1)).toBe(1);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 0)).toBe(0);
-    expect(subscriptionDisputeAllowancePortion(12_000, 10_000, 0.75)).toBe(0.75);
+    expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 0.75)).toBe(1);
+    expect(subscriptionDisputeAllowancePortion(12_000, 10_000, 0.75)).toBe(1);
+    expect(subscriptionDisputeAllowancePortion(500, 0, 0.75)).toBe(1);
     expect(subscriptionDisputeAllowancePortion(-1, 10_000, 1)).toBe(0);
   });
 
