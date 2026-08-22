@@ -338,14 +338,16 @@ async function callResponsesEndpoint(args: {
     timer.dispose();
     throw err;
   }
-  timer.dispose();
-
   if (!response.ok) {
     // Provider error bodies may echo customer content. Keep classification and
     // the bounded provider request id, but never copy response bodies into logs.
-    // Cancel the unread stream so the fetch implementation can release its
-    // resources without buffering sensitive error content.
-    if (response.body) await response.body.cancel().catch(() => undefined);
+    // Keep the timeout active through cancellation so a headers-only response
+    // cannot strand the request while its unread body stalls.
+    try {
+      if (response.body) await response.body.cancel().catch(() => undefined);
+    } finally {
+      timer.dispose();
+    }
     const requestId = String(response.headers.get("x-request-id") || "")
       .trim()
       .slice(0, 128);
@@ -360,7 +362,23 @@ async function callResponsesEndpoint(args: {
     throw new Error(`${args.provider} Responses request failed (${response.status})`);
   }
 
-  const payload = (await response.json()) as Record<string, unknown>;
+  let payload: Record<string, unknown>;
+  try {
+    // fetch() resolves when headers arrive. Keep the same timeout active until
+    // the JSON body is fully consumed so a provider cannot hold the worker
+    // forever with a headers-then-stalled-body response.
+    payload = (await response.json()) as Record<string, unknown>;
+  } catch (err) {
+    const timedOut = timer.timedOut();
+    timer.dispose();
+    if (timedOut) {
+      throw new Error(
+        `${args.provider} Responses request timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`,
+      );
+    }
+    throw err;
+  }
+  timer.dispose();
   const text = extractResponsesText(payload);
   if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
@@ -456,6 +474,7 @@ async function callGateway(
     body,
     options,
     provider: "AI Gateway",
+    store: false,
   });
 }
 
