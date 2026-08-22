@@ -39,7 +39,7 @@ describe("public live demo contract", () => {
 
   it("keeps demo sessions bounded, measured, and BotBound-branded", () => {
     const demo = read("src/hooks/useProtectedPublicDemo.ts");
-    const provider = read("src/lib/voice/xai-public-demo-session.ts");
+    const provider = read("src/lib/voice/openai-public-demo-session.ts");
 
     expect(demo).toContain('fetch("/api/public/demo-session"');
     expect(demo).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS");
