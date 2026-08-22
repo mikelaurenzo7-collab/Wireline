@@ -91,6 +91,19 @@ describe("structured runtime policy", () => {
     expect(existsSync(resolve(root, "src/routes/admin-purge-accounts-routes.ts"))).toBe(false);
   });
 
+  it("keeps direct OpenAI structured calls stateless and privacy-preserving", () => {
+    const client = read("src/lib/ai-client.ts");
+    const tenantContext = read("src/lib/tenant-context-store.ts");
+
+    expect(client).toContain("store: false");
+    expect(client).toContain("safety_identifier");
+    expect(client).toContain("botbound:structured:");
+    expect(client).toContain("tenantStore.getStore()");
+    expect(client).not.toContain("detail,");
+    expect(client).toContain("Provider error bodies may echo customer content");
+    expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
+  });
+
   it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {
     for (const path of ["src/lib/workspace-planner.ts", "src/routes/agent-workspace-routes.ts"]) {
       const source = read(path);
