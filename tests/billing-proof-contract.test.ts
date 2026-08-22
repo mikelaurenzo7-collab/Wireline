@@ -253,7 +253,8 @@ describe("billing proof contract", () => {
     expect(preflight).toContain('eventType === "charge.dispute.funds_withdrawn"');
     expect(preflight).toContain('eventType === "charge.dispute.funds_reinstated"');
     expect(preflight).toContain("disputeBalanceMovementCents");
-    expect(preflight).toContain("await reverseCredit");
+    expect(preflight).toContain("await tenantStore.run(userId");
+    expect(preflight).toContain("reverseCredit(userId");
     expect(preflight).toContain("await addCredit");
     expect(preflight).not.toContain('expand: ["balance_transactions"]');
     expect(billingRoutes).toContain(
