@@ -70,10 +70,11 @@ export function disputeBalanceMovementCents(input: {
  * Portion of a subscription-funded Runtime Allowance affected by an actual
  * Stripe balance movement.
  *
- * The movement share of the charge and the base-plan-funded share of the
- * invoice are independent factors. Multiplying both prevents a partial
- * chargeback or an add-on-bearing invoice from moving allowance it did not
- * fund.
+ * A base-plan invoice share greater than zero establishes eligibility: the
+ * invoice funded the plan allowance. The balance movement's share of the full
+ * charge already represents the same pro-rata share of that base plan, so
+ * multiplying by the base-plan share again would under-reverse mixed
+ * base-plan/add-on invoices.
  */
 export function subscriptionDisputeAllowancePortion(
   movementAmountCents: number,
@@ -82,8 +83,8 @@ export function subscriptionDisputeAllowancePortion(
 ): number {
   const fundedShare = clampUnitInterval(basePlanInvoiceShare);
   if (!(fundedShare > 0) || !(movementAmountCents > 0)) return 0;
-  if (!(chargeAmountCents > 0)) return fundedShare;
-  return clampUnitInterval(movementAmountCents / chargeAmountCents) * fundedShare;
+  if (!(chargeAmountCents > 0)) return 1;
+  return clampUnitInterval(movementAmountCents / chargeAmountCents);
 }
 
 /**
