@@ -35,9 +35,8 @@ const MICROSOFT_GRAPH_CALLBACKS = [
 ] as const;
 
 describe("BotBound domain and OAuth cutover boundary", () => {
-  it("permanently redirects both legacy hosts to the canonical host without dropping path or query", () => {
-    const source = read("vercel.json");
-    const vercel = JSON.parse(source) as {
+  it("defers host-wide legacy redirects until signed provider callbacks are reconciled", () => {
+    const vercel = JSON.parse(read("vercel.json")) as {
       redirects?: Array<{
         source?: string;
         destination?: string;
@@ -48,23 +47,18 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     const redirects = vercel.redirects ?? [];
 
     for (const host of ["trywireline.com", "www.trywireline.com"]) {
-      const redirect = redirects.find((candidate) =>
-        candidate.has?.some((condition) => condition.type === "host" && condition.value === host),
+      const hostWideRedirect = redirects.find(
+        (candidate) =>
+          candidate.source === "/:path*" &&
+          candidate.has?.some(
+            (condition) => condition.type === "host" && condition.value === host,
+          ),
       );
-      expect(redirect, `${host} must have a top-level Vercel host redirect`).toMatchObject({
-        source: "/:path*",
-        destination: "https://botbound.me/:path*",
-        permanent: true,
-      });
-
-      const request = new URL(`https://${host}/pricing/starter?interval=year&coupon=founder`);
-      const carriedPath = redirect?.destination?.replace(":path*", request.pathname.slice(1));
-      expect(`${carriedPath}${request.search}`).toBe(
-        "https://botbound.me/pricing/starter?interval=year&coupon=founder",
-      );
+      expect(
+        hostWideRedirect,
+        `${host} must keep signed callback URLs stable until provider inventory is certified`,
+      ).toBeUndefined();
     }
-
-    expect(source.indexOf('"redirects"')).toBeLessThan(source.indexOf('"rewrites"'));
   });
 
   it("keeps brand identity separate from the stable technical namespace", () => {
