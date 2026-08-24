@@ -505,24 +505,40 @@
   }
 
   .landing-prestige__entrance {
-    display: block;
-    min-height: 100dvh;
+    display: flex;
+    min-height: auto;
+    flex-direction: column;
   }
 
-  .landing-prestige__hero,
+  .landing-prestige__hero {
+    display: grid;
+    min-height: 38rem;
+    padding:
+      max(2rem, env(safe-area-inset-top))
+      max(1.25rem, env(safe-area-inset-right))
+      2.5rem
+      max(1.25rem, env(safe-area-inset-left));
+    border-right: 0;
+    border-bottom: 1px solid var(--wireline-color-border-default);
+  }
+
+  .landing-prestige__hero-copy h1 {
+    font-size: clamp(2.9rem, 14.5vw, 4.6rem);
+  }
+
   .landing-prestige__desktop-only {
-    display: none;
+    display: block;
   }
 
   .landing-prestige__auth {
     display: flex;
-    min-height: 100dvh;
+    min-height: auto;
     flex-direction: column;
     justify-content: center;
     padding:
-      max(1rem, env(safe-area-inset-top))
+      3rem
       max(1rem, env(safe-area-inset-right))
-      max(1rem, env(safe-area-inset-bottom))
+      max(3rem, env(safe-area-inset-bottom))
       max(1rem, env(safe-area-inset-left));
     background:
       radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent), transparent 20rem),
@@ -546,6 +562,13 @@
   .landing-prestige__mobile-links a {
     color: inherit;
     text-decoration: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-prestige__role-grid,
+  .landing-prestige__price-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
