@@ -655,22 +655,7 @@ export default function AuthAccessPanel({
 
           {!isReset ? (
             <div className="wl-access-panel__field-group">
-              <div className="wl-access-panel__label-row">
-                <label htmlFor={passwordInputId}>Password</label>
-                {!isSignUp ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode("reset");
-                      setError(null);
-                      setMessage(null);
-                      setInvalidField(null);
-                    }}
-                  >
-                    Forgot?
-                  </button>
-                ) : null}
-              </div>
+              <label htmlFor={passwordInputId}>Password</label>
               <div className="wl-access-panel__field">
                 <Lock aria-hidden="true" />
                 <input
@@ -702,6 +687,20 @@ export default function AuthAccessPanel({
                   {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                 </button>
               </div>
+              {!isSignUp ? (
+                <button
+                  type="button"
+                  className="wl-access-panel__forgot"
+                  onClick={() => {
+                    setMode("reset");
+                    setError(null);
+                    setMessage(null);
+                    setInvalidField(null);
+                  }}
+                >
+                  Forgot?
+                </button>
+              ) : null}
               {isSignUp && password ? (
                 <ul className="wl-access-panel__password-rules" aria-label="Password requirements">
                   {PASSWORD_RULES.map((rule) => (
