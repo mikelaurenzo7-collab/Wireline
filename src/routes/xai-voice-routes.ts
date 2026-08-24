@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import * as schema from "../db/schema";
 import { xaiPhoneBindings, type XAIPhoneBinding } from "../db/xai-voice-schema";
-import { createRateLimiter } from "../middleware/api-rate-limits";
+import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { AppError, asyncHandler } from "../lib/api-error";
@@ -33,7 +33,7 @@ import { verifyXAIWebhook } from "../lib/voice/xai-webhook-auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
-const webhookLimiter = createRateLimiter({
+const webhookLimiter = createIpRateLimiter({
   bucket: "provider:xai-voice-webhook",
   windowMs: 60_000,
   max: 300,
