@@ -187,7 +187,8 @@
   gap: 0.9rem;
 }
 
-.wl-access-panel__form > label {
+.wl-access-panel__form > label,
+.wl-access-panel__field-group {
   display: grid;
   gap: 0.42rem;
   color: var(--wireline-color-text-primary);
