@@ -501,6 +501,8 @@ export default function AuthAccessPanel({
   const termsErrorId = `${termsId}-error`;
   const emailErrorId = embedded ? "landing-auth-email-error" : "auth-email-error";
   const passwordErrorId = embedded ? "landing-auth-password-error" : "auth-password-error";
+  const emailInputId = embedded ? "landing-auth-email" : "auth-email";
+  const passwordInputId = embedded ? "landing-auth-password" : "auth-password";
   const errorId =
     error === TERMS_CONSENT_ERROR
       ? termsErrorId
@@ -623,11 +625,12 @@ export default function AuthAccessPanel({
         ) : null}
 
         <form className="wl-access-panel__form" onSubmit={handleAuth} noValidate>
-          <label>
-            <span>Email</span>
+          <div className="wl-access-panel__field-group">
+            <label htmlFor={emailInputId}>Email</label>
             <div className="wl-access-panel__field">
               <Mail aria-hidden="true" />
               <input
+                id={emailInputId}
                 ref={emailRef}
                 type="email"
                 required
@@ -648,12 +651,12 @@ export default function AuthAccessPanel({
                 placeholder="you@company.com"
               />
             </div>
-          </label>
+          </div>
 
           {!isReset ? (
-            <label>
-              <span className="wl-access-panel__label-row">
-                <span>Password</span>
+            <div className="wl-access-panel__field-group">
+              <div className="wl-access-panel__label-row">
+                <label htmlFor={passwordInputId}>Password</label>
                 {!isSignUp ? (
                   <button
                     type="button"
@@ -667,10 +670,11 @@ export default function AuthAccessPanel({
                     Forgot?
                   </button>
                 ) : null}
-              </span>
+              </div>
               <div className="wl-access-panel__field">
                 <Lock aria-hidden="true" />
                 <input
+                  id={passwordInputId}
                   ref={passwordRef}
                   type={showPassword ? "text" : "password"}
                   required
@@ -707,7 +711,7 @@ export default function AuthAccessPanel({
                   ))}
                 </ul>
               ) : null}
-            </label>
+            </div>
           ) : null}
 
           {isReset ? (
