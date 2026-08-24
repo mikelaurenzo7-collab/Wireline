@@ -196,20 +196,23 @@
   font-weight: 600;
 }
 
-.wl-access-panel__label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+.wl-access-panel__field-group {
+  position: relative;
 }
 
-.wl-access-panel__label-row button,
+.wl-access-panel__forgot,
 .wl-access-panel__back {
   border: 0;
   background: transparent;
   color: var(--wireline-color-text-secondary);
   font-size: 0.74rem;
   cursor: pointer;
+}
+
+.wl-access-panel__forgot {
+  position: absolute;
+  top: -0.1rem;
+  right: 0;
 }
 
 .wl-access-panel__field {
