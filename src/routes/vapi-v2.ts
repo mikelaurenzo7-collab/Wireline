@@ -41,6 +41,7 @@ import {
 import { dispatchAgentToolCall } from "../lib/agent-tool-dispatch";
 import { createAuditContext, runInAuditContext } from "../lib/ai-audit";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { runInBackground } from "../lib/background-work";
 import { sseBroadcaster } from "../services/sse-broadcaster";
 
@@ -50,6 +51,11 @@ import { conversationShapeForLog } from "../lib/twilio-webhook-privacy";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 
 const router = express.Router();
+const vapiWebhookRateLimiter = createIpRateLimiter({
+  bucket: "provider:vapi-webhook",
+  windowMs: 60_000,
+  max: 300,
+});
 
 /**
  * Grace window for usage recorded by a tool that outlived the 8s wrapper
@@ -141,7 +147,7 @@ function buildDurableTakeMessageAssistant(
   };
 }
 
-router.post("/api/vapi-webhook", async (req, res) => {
+router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
   const auth = evaluateVapiWebhookAuth(req);
   if (!auth.ok) {
     if (auth.status === 503) {
