@@ -28,7 +28,7 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
 
-  it("treats the homepage as a product entrance: desktop split, mobile auth only", () => {
+  it("treats the homepage as a product entrance on desktop and mobile", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const css = read("src/styles/landing-prestige.css");
 
@@ -38,10 +38,22 @@ describe("BotBound public iPhone prestige contract", () => {
       /\.landing-prestige__entrance\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*100dvh/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid,[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
+    );
+    expect(css).not.toMatch(
+      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
     );
   });
 
