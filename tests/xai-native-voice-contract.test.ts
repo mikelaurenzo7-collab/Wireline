@@ -312,7 +312,7 @@ describe("native Twilio + xAI voice contracts", () => {
     const limiterStart = route.indexOf("const webhookLimiter");
     const limiterEnd = route.indexOf("const provisioningLimiter", limiterStart);
     const webhookLimiter = route.slice(limiterStart, limiterEnd);
-    const routeStart = route.indexOf('router.post(\\n  "/api/webhooks/xai/voice"');
+    const routeStart = route.indexOf('"/api/webhooks/xai/voice"');
     const handlerStart = route.indexOf("asyncHandler", routeStart);
     const publicAdmission = route.slice(routeStart, handlerStart);
 
