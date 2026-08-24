@@ -306,4 +306,24 @@ describe("native Twilio + xAI voice contracts", () => {
       }),
     ).toEqual({ ok: false, reason: "expired" });
   });
+
+  it("admits native provider webhooks without requiring a user session", () => {
+    const route = read("src/routes/xai-voice-routes.ts");
+    const limiterStart = route.indexOf("const webhookLimiter");
+    const limiterEnd = route.indexOf("const provisioningLimiter", limiterStart);
+    const webhookLimiter = route.slice(limiterStart, limiterEnd);
+    const routeStart = route.indexOf('router.post(\\n  "/api/webhooks/xai/voice"');
+    const handlerStart = route.indexOf("asyncHandler", routeStart);
+    const publicAdmission = route.slice(routeStart, handlerStart);
+
+    expect(limiterStart).toBeGreaterThan(-1);
+    expect(limiterEnd).toBeGreaterThan(limiterStart);
+    expect(webhookLimiter).toContain("createIpRateLimiter({");
+    expect(webhookLimiter).not.toContain("createRateLimiter({");
+    expect(routeStart).toBeGreaterThan(-1);
+    expect(handlerStart).toBeGreaterThan(routeStart);
+    expect(publicAdmission).toContain("webhookLimiter");
+    expect(publicAdmission).not.toContain("authenticateUser");
+  });
+
 });
