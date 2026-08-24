@@ -325,5 +325,4 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(publicAdmission).toContain("webhookLimiter");
     expect(publicAdmission).not.toContain("authenticateUser");
   });
-
 });
