@@ -30,6 +30,8 @@ const INITIAL_BACKOFF_MS = 100;
 const MAX_BACKOFF_MS = 30_000;
 const DEFAULT_VALIDITY_SECONDS = 3_600;
 const MAX_VALIDITY_SECONDS = 36_000;
+const MESSAGE_STATUS_CONNECTION_OVERRIDES =
+  "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
 
 function defaultSleep(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -64,7 +66,8 @@ export function twilioMessageStatusCallbackUrl(
 ): string {
   const baseUrl = (configuredAppUrl?.trim() || getCanonicalAppUrl()).replace(/\/+$/, "");
   const callbackUrl = `${baseUrl}/api/twilio-webhook/message-status`;
-  return scope ? `${callbackUrl}?scope=${scope}` : callbackUrl;
+  const scopedUrl = scope ? `${callbackUrl}?scope=${scope}` : callbackUrl;
+  return `${scopedUrl}${MESSAGE_STATUS_CONNECTION_OVERRIDES}`;
 }
 
 /** Add delivery telemetry and a bounded stale-message lifetime to a payload. */

@@ -307,90 +307,92 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
 
     if (message?.userId) {
       const operationalAlert = operationalCallback || !message.threadId;
-      await tenantStore.run(message.userId, async () => {
-        await drizzle.insert(schema.webhookHealth).values({
-          userId: message.userId,
-          provider: operationalAlert ? "twilio_operational" : "twilio_messaging",
-          eventType: status,
-          outcome: errorCode ? `error_${errorCode}` : status,
-        });
+      await tenantStore.run(message.userId, () =>
+        drizzle.transaction(async (tx: typeof drizzle) => {
+          await tx.insert(schema.webhookHealth).values({
+            userId: message.userId,
+            provider: operationalAlert ? "twilio_operational" : "twilio_messaging",
+            eventType: status,
+            outcome: errorCode ? `error_${errorCode}` : status,
+          });
 
-        // Delivery telemetry shares one status column with the account
-        // holder's Outcome Center state. Telemetry must never move a thread
-        // off an operator-owned outcome: `escalated` is pinned to an active
-        // human-handoff task (sms-outcome-routes completes/reopens that task
-        // by status), and `booked`/`resolved` are terminal outcomes. A read
-        // receipt arriving hours after the operator resolved the thread used
-        // to silently flip it back to `open` while the handoff task stayed
-        // completed — Inbox and Approvals disagreed about ownership.
-        //
-        // Callbacks also arrive out of order across messages: a delayed
-        // receipt for an OLDER message must not overwrite what the thread's
-        // newest outbound already established (a late `delivered` clearing a
-        // current failure, or a late `failed` flagging a thread whose newer
-        // message went through). Only the latest outbound message speaks for
-        // the thread.
-        const relevantStatus = ["failed", "undelivered", "delivered", "read"].includes(status);
-        if (message.threadId && relevantStatus) {
-          const [latestOutbound] = await drizzle
-            .select({ id: schema.smsMessages.id })
-            .from(schema.smsMessages)
-            .where(
-              and(
-                eq(schema.smsMessages.threadId, message.threadId),
-                eq(schema.smsMessages.direction, "out"),
-              ),
-            )
-            .orderBy(desc(schema.smsMessages.createdAt), desc(schema.smsMessages.id))
-            .limit(1);
-          const speaksForThread = latestOutbound?.id === message.id;
-
-          if (speaksForThread && ["failed", "undelivered"].includes(status)) {
-            const failureSummary = `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`;
-            await drizzle
-              .update(schema.smsThreads)
-              .set({
-                status: "delivery_failed",
-                summary: failureSummary,
-              })
+          // Delivery telemetry shares one status column with the account
+          // holder's Outcome Center state. Telemetry must never move a thread
+          // off an operator-owned outcome: `escalated` is pinned to an active
+          // human-handoff task (sms-outcome-routes completes/reopens that task
+          // by status), and `booked`/`resolved` are terminal outcomes. A read
+          // receipt arriving hours after the operator resolved the thread used
+          // to silently flip it back to `open` while the handoff task stayed
+          // completed — Inbox and Approvals disagreed about ownership.
+          //
+          // Callbacks also arrive out of order across messages: a delayed
+          // receipt for an OLDER message must not overwrite what the thread's
+          // newest outbound already established (a late `delivered` clearing a
+          // current failure, or a late `failed` flagging a thread whose newer
+          // message went through). Only the latest outbound message speaks for
+          // the thread.
+          const relevantStatus = ["failed", "undelivered", "delivered", "read"].includes(status);
+          if (message.threadId && relevantStatus) {
+            const [latestOutbound] = await tx
+              .select({ id: schema.smsMessages.id })
+              .from(schema.smsMessages)
               .where(
                 and(
-                  eq(schema.smsThreads.id, message.threadId),
-                  or(
-                    isNull(schema.smsThreads.status),
-                    inArray(schema.smsThreads.status, ["open", "waiting", "delivery_failed"]),
+                  eq(schema.smsMessages.threadId, message.threadId),
+                  eq(schema.smsMessages.direction, "out"),
+                ),
+              )
+              .orderBy(desc(schema.smsMessages.createdAt), desc(schema.smsMessages.id))
+              .limit(1);
+            const speaksForThread = latestOutbound?.id === message.id;
+
+            if (speaksForThread && ["failed", "undelivered"].includes(status)) {
+              const failureSummary = `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`;
+              await tx
+                .update(schema.smsThreads)
+                .set({
+                  status: "delivery_failed",
+                  summary: failureSummary,
+                })
+                .where(
+                  and(
+                    eq(schema.smsThreads.id, message.threadId),
+                    or(
+                      isNull(schema.smsThreads.status),
+                      inArray(schema.smsThreads.status, ["open", "waiting", "delivery_failed"]),
+                    ),
                   ),
-                ),
-              );
-            // `escalated` is operator-ACTIVE, not final: a human is working
-            // this thread and their outbound just bounced. The status stays
-            // pinned (the handoff task is keyed to it), but the failure must
-            // still be visible where the operator is looking.
-            await drizzle
-              .update(schema.smsThreads)
-              .set({ summary: failureSummary })
-              .where(
-                and(
-                  eq(schema.smsThreads.id, message.threadId),
-                  eq(schema.smsThreads.status, "escalated"),
-                ),
-              );
-          } else if (speaksForThread && ["delivered", "read"].includes(status)) {
-            // `open` here only clears a stale delivery-failure flag once the
-            // latest message lands; it must not reopen live or operator-final
-            // threads.
-            await drizzle
-              .update(schema.smsThreads)
-              .set({ status: "open" })
-              .where(
-                and(
-                  eq(schema.smsThreads.id, message.threadId),
-                  eq(schema.smsThreads.status, "delivery_failed"),
-                ),
-              );
+                );
+              // `escalated` is operator-ACTIVE, not final: a human is working
+              // this thread and their outbound just bounced. The status stays
+              // pinned (the handoff task is keyed to it), but the failure must
+              // still be visible where the operator is looking.
+              await tx
+                .update(schema.smsThreads)
+                .set({ summary: failureSummary })
+                .where(
+                  and(
+                    eq(schema.smsThreads.id, message.threadId),
+                    eq(schema.smsThreads.status, "escalated"),
+                  ),
+                );
+            } else if (speaksForThread && ["delivered", "read"].includes(status)) {
+              // `open` here only clears a stale delivery-failure flag once the
+              // latest message lands; it must not reopen live or operator-final
+              // threads.
+              await tx
+                .update(schema.smsThreads)
+                .set({ status: "open" })
+                .where(
+                  and(
+                    eq(schema.smsThreads.id, message.threadId),
+                    eq(schema.smsThreads.status, "delivery_failed"),
+                  ),
+                );
+            }
           }
-        }
-      });
+        }),
+      );
 
       if (operationalAlert && deliveryFailed) {
         const context = {
@@ -427,16 +429,22 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
         provider: "twilio_operational",
         ...context,
       });
+    } else {
+      log.warn("Twilio message status correlation unavailable", {
+        messageSid: opaqueIdSuffixForLog(messageSid),
+        status,
+        operationalCallback,
+      });
+      return res.status(503).send("Message status correlation unavailable");
     }
   } catch (error) {
-    // Twilio retries non-2xx callbacks. Persisting telemetry is best-effort and
-    // must not create a callback storm when the database is transiently down.
     log.warn("Twilio message status persistence failed", {
       messageSid,
       status,
       errorCode,
       error: getErrorMessage(error),
     });
+    return res.status(503).send("Message status persistence unavailable");
   }
 
   return res.status(204).end();

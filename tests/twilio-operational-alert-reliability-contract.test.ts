@@ -41,4 +41,20 @@ describe("Twilio operational alert reliability contract", () => {
     expect(webhook).toContain('const operationalCallback = req.query.scope === "operational"');
     expect(webhook).toContain("else if (operationalCallback && deliveryFailed)");
   });
+
+  it("persists known status effects atomically and requests bounded retries", () => {
+    const webhook = read("src/routes/twilio-webhook.ts");
+    const route = webhook.indexOf('router.post("/api/twilio-webhook/message-status"');
+    const transaction = webhook.indexOf(
+      "drizzle.transaction(async (tx: typeof drizzle)",
+      route,
+    );
+    const healthInsert = webhook.indexOf("tx.insert(schema.webhookHealth)", transaction);
+
+    expect(route).toBeGreaterThan(-1);
+    expect(transaction).toBeGreaterThan(route);
+    expect(healthInsert).toBeGreaterThan(transaction);
+    expect(webhook).toContain('return res.status(503).send("Message status correlation unavailable")');
+    expect(webhook).toContain('return res.status(503).send("Message status persistence unavailable")');
+  });
 });
