@@ -78,6 +78,16 @@ describe("BotBound public iPhone prestige contract", () => {
     );
     expect(access).toContain("embedded ? <h2>{title}</h2> : <h1>{title}</h1>");
     expect(access).toContain("autoFocus={!embedded}");
+    expect(access).toContain("<label htmlFor={emailInputId}>Email</label>");
+    expect(access).toContain("<label htmlFor={passwordInputId}>Password</label>");
+    expect(access).toContain("id={emailInputId}");
+    expect(access).toContain("id={passwordInputId}");
+    const passwordInput = access.indexOf("id={passwordInputId}");
+    const passwordReveal = access.indexOf('className="wl-access-panel__reveal"', passwordInput);
+    const passwordRecovery = access.indexOf('className="wl-access-panel__forgot"', passwordInput);
+    expect(passwordInput).toBeGreaterThan(-1);
+    expect(passwordReveal).toBeGreaterThan(passwordInput);
+    expect(passwordRecovery).toBeGreaterThan(passwordReveal);
     expect(accessStyles).toContain(
       ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) :is(h1, h2)",
     );
