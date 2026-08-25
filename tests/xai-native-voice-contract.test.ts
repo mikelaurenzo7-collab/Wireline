@@ -320,6 +320,8 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(limiterEnd).toBeGreaterThan(limiterStart);
     expect(webhookLimiter).toContain("createIpRateLimiter({");
     expect(webhookLimiter).not.toContain("createRateLimiter({");
+    expect(webhookLimiter).toContain("failClosedOnError: false");
+    expect(webhookLimiter).not.toContain("failClosedOnError: true");
     expect(routeStart).toBeGreaterThan(-1);
     expect(handlerStart).toBeGreaterThan(routeStart);
     expect(publicAdmission).toContain("webhookLimiter");
