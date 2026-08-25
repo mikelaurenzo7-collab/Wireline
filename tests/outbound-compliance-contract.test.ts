@@ -82,6 +82,7 @@ describe("outbound compliance contract", () => {
     expect(bulk).not.toContain("hasExpressWrittenConsent: !!has_express_written_consent");
     expect(bulk).not.toContain('event: "consent_source_captured"');
     expect(campaignDialer).toContain("evaluateOutboundDialGate");
+    expect(campaignDialer).toContain("has_express_written_consent: false");
     expect(dialGate).toContain("is_marketing_call: isMarketingCall");
     expect(dialGate).toContain("hasExpressWrittenConsent");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');
