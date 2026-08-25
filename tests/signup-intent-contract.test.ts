@@ -9,6 +9,7 @@ import {
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
   signupHrefForPlan,
+  signupTemplateLabel,
 } from "../src/lib/signup-intent";
 import { signupSchema } from "../src/lib/api-validation";
 import { ACCOUNT_PRIVACY_VERSION, ACCOUNT_TERMS_VERSION } from "../src/lib/legal-consent";
@@ -58,6 +59,23 @@ describe("signup intent contract", () => {
         privacyVersion: ACCOUNT_PRIVACY_VERSION,
       }).preferredPlanId,
     ).toBe("business");
+  });
+
+  it("preserves a trusted role-template choice through signup", () => {
+    expect(signupHrefForPlan("personal", { template: "front-desk" })).toBe(
+      "/signup?plan=free&template=front-desk",
+    );
+    expect(parseSignupIntent("?plan=free&template=front-desk")).toMatchObject({
+      preferredPlanId: "personal",
+      preferredTemplateId: "front-desk",
+    });
+    expect(signupTemplateLabel("front-desk")).toBe("Front Desk");
+    expect(
+      parseSignupIntent("?plan=free&template=not-a-template")?.preferredTemplateId,
+    ).toBeUndefined();
+
+    const access = read("src/components/auth/AuthAccessPanel.tsx");
+    expect(access).toContain("signupTemplateLabel(intent.preferredTemplateId)");
   });
 
   it("never emits legacy audience-shaped plan ids from public conversion surfaces", () => {
@@ -129,6 +147,12 @@ describe("signup intent contract", () => {
     expect(
       sanitizeSignupIntent({
         preferredPlanId: "unknown" as never,
+        capturedAt: "x",
+      }),
+    ).toBeNull();
+    expect(
+      sanitizeSignupIntent({
+        preferredTemplateId: "not-a-template" as never,
         capturedAt: "x",
       }),
     ).toBeNull();
