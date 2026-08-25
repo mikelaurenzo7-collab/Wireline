@@ -101,7 +101,19 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain("wl-auth-form-panel flex min-h-[100dvh]");
     expect(authPortal).toContain("w-full max-w-[520px]");
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*100dvh/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+    );
+    expect(landingCss).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+    );
+    expect(landingCss).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+    );
+    expect(landingCss).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+    );
+    expect(landingCss).not.toMatch(
+      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
     );
     expect(mobile).toContain("env(safe-area-inset-left)");
   });
