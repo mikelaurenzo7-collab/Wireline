@@ -19,6 +19,7 @@ import {
   captureSignupIntentFromLocation,
   persistSignupIntent,
   sanitizeSignupIntent,
+  signupTemplateLabel,
   syncSignupIntent,
   type SignupIntent,
   type SignupPlanId,
@@ -121,10 +122,13 @@ function signupPlanLabel(
 }
 
 function signupIntentLabel(intent: SignupIntent | null): string | null {
-  if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
+  if (!intent?.preferredPlanId && !intent?.preferredTemplateId && !intent?.signupWedge) return null;
   const parts: string[] = [];
   if (intent.preferredPlanId) {
     parts.push(signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval));
+  }
+  if (intent.preferredTemplateId) {
+    parts.push(signupTemplateLabel(intent.preferredTemplateId));
   }
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
   return parts.join(" · ");
@@ -549,19 +553,17 @@ export default function AuthAccessPanel({
         </header>
 
         {!isReset ? (
-          <div className="wl-access-panel__tabs" role="tablist" aria-label="Account access">
+          <div className="wl-access-panel__tabs" role="group" aria-label="Account access mode">
             <button
               type="button"
-              role="tab"
-              aria-selected={!isSignUp}
+              aria-pressed={!isSignUp}
               onClick={() => changeMode("signin")}
             >
               Sign In
             </button>
             <button
               type="button"
-              role="tab"
-              aria-selected={isSignUp}
+              aria-pressed={isSignUp}
               onClick={() => changeMode("signup")}
             >
               Create Account
@@ -574,7 +576,9 @@ export default function AuthAccessPanel({
             <Checkbox
               ref={termsRef}
               id={termsId}
+              name="termsAccepted"
               checked={agreedToTerms}
+              required
               aria-labelledby={termsLabelId}
               aria-invalid={error === TERMS_CONSENT_ERROR}
               aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}
@@ -632,11 +636,11 @@ export default function AuthAccessPanel({
               <input
                 id={emailInputId}
                 ref={emailRef}
+                name="email"
                 type="email"
                 required
                 autoComplete="email"
                 spellCheck={false}
-                autoFocus={!embedded}
                 disabled={loading}
                 aria-invalid={invalidField === "email"}
                 aria-describedby={invalidField === "email" ? emailErrorId : undefined}
@@ -661,6 +665,7 @@ export default function AuthAccessPanel({
                 <input
                   id={passwordInputId}
                   ref={passwordRef}
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   autoComplete={isSignUp ? "new-password" : "current-password"}
