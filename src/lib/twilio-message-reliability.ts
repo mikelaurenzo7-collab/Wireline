@@ -33,6 +33,59 @@ const MAX_VALIDITY_SECONDS = 36_000;
 const MESSAGE_STATUS_CONNECTION_OVERRIDES =
   "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
 
+const OUTBOUND_MESSAGE_STATUS_ORDER = new Map<string, number>([
+  ["accepted", 10],
+  ["scheduled", 20],
+  ["queued", 30],
+  ["sending", 40],
+  ["sent", 50],
+  ["delivered", 60],
+  ["read", 70],
+]);
+const SUCCESS_TERMINAL_MESSAGE_STATUSES = new Set(["delivered", "read"]);
+const FAILURE_TERMINAL_MESSAGE_STATUSES = new Set(["failed", "undelivered", "canceled"]);
+
+function normalizedMessageStatus(status: string | null | undefined): string {
+  return String(status || "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Twilio callbacks are at-least-once and can arrive out of order. Accept only
+ * forward progress; once a success or failure branch is terminal, a retry from
+ * the other branch cannot rewrite delivery truth. The only terminal advance is
+ * delivered -> read.
+ */
+export function shouldApplyTwilioMessageStatusTransition(
+  previousStatus: string | null | undefined,
+  nextStatus: string,
+): boolean {
+  const previous = normalizedMessageStatus(previousStatus);
+  const next = normalizedMessageStatus(nextStatus);
+  const nextKnown =
+    OUTBOUND_MESSAGE_STATUS_ORDER.has(next) || FAILURE_TERMINAL_MESSAGE_STATUSES.has(next);
+  if (!nextKnown) return false;
+  if (!previous) return true;
+  if (previous === next) return false;
+
+  if (SUCCESS_TERMINAL_MESSAGE_STATUSES.has(previous)) {
+    return previous === "delivered" && next === "read";
+  }
+  if (FAILURE_TERMINAL_MESSAGE_STATUSES.has(previous)) return false;
+  if (
+    SUCCESS_TERMINAL_MESSAGE_STATUSES.has(next) ||
+    FAILURE_TERMINAL_MESSAGE_STATUSES.has(next)
+  ) {
+    return true;
+  }
+
+  const previousOrder = OUTBOUND_MESSAGE_STATUS_ORDER.get(previous);
+  const nextOrder = OUTBOUND_MESSAGE_STATUS_ORDER.get(next);
+  if (previousOrder === undefined || nextOrder === undefined) return false;
+  return nextOrder > previousOrder;
+}
+
 function defaultSleep(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
 }

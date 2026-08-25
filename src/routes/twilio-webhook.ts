@@ -9,6 +9,7 @@ import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
+import { shouldApplyTwilioMessageStatusTransition } from "../lib/twilio-message-reliability";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/vapi-helpers";
@@ -32,6 +33,58 @@ type ConsentControl = "stop" | "start" | "help";
 
 function emptyTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
+}
+
+async function recordTwilioMessageStatusReceipt(
+  tx: typeof drizzle,
+  input: {
+    userId: string | null;
+    messageSid: string;
+    status: string;
+    errorCode: string | null;
+    operational: boolean;
+  },
+): Promise<boolean> {
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`twilio-message-status:${input.messageSid}`}))`,
+  );
+
+  const [lastApplied] = await tx
+    .select({
+      status: sql<string>`${schema.auditLog.metadata} ->> 'status'`,
+    })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.provider, "twilio"),
+        eq(schema.auditLog.action, "twilio.message_status_applied"),
+        eq(schema.auditLog.resourceType, "twilio_message"),
+        eq(schema.auditLog.resourceId, input.messageSid),
+      ),
+    )
+    .orderBy(desc(schema.auditLog.createdAt), desc(schema.auditLog.id))
+    .limit(1);
+
+  const applied = shouldApplyTwilioMessageStatusTransition(lastApplied?.status, input.status);
+  const deliveryFailed = ["failed", "undelivered", "canceled"].includes(input.status);
+  await tx.insert(schema.auditLog).values({
+    userId: input.userId,
+    action: applied ? "twilio.message_status_applied" : "twilio.message_status_ignored",
+    provider: "twilio",
+    eventType: "provider.webhook",
+    severity: deliveryFailed || input.errorCode ? "error" : "info",
+    resourceType: "twilio_message",
+    resourceId: input.messageSid,
+    metadata: {
+      status: input.status,
+      previous_status: lastApplied?.status || null,
+      error_code: input.errorCode,
+      operational: input.operational,
+      applied,
+    },
+  });
+
+  return applied;
 }
 
 function optOutConfirmationTwiml(): string {
@@ -285,11 +338,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
 router.post("/api/twilio-webhook/message-status", async (req: Request, res: Response) => {
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send("Forbidden");
 
-  const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "");
+  const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "").trim();
   const status = String(req.body?.MessageStatus || req.body?.SmsStatus || "unknown").toLowerCase();
   const errorCode = String(req.body?.ErrorCode || "").trim() || null;
   if (!messageSid) return res.status(204).end();
-  const deliveryFailed = status === "failed" || status === "undelivered";
+  const deliveryFailed = ["failed", "undelivered", "canceled"].includes(status);
   // Scope is part of Twilio's signed callback URL, so a caller cannot promote
   // an arbitrary failed customer message into a platform operational alert.
   const operationalCallback = req.query.scope === "operational";
@@ -307,8 +360,17 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
 
     if (message?.userId) {
       const operationalAlert = operationalCallback || !message.threadId;
-      await tenantStore.run(message.userId, () =>
+      const statusApplied = await tenantStore.run(message.userId, () =>
         drizzle.transaction(async (tx: typeof drizzle) => {
+          const applied = await recordTwilioMessageStatusReceipt(tx, {
+            userId: message.userId,
+            messageSid,
+            status,
+            errorCode,
+            operational: operationalAlert,
+          });
+          if (!applied) return false;
+
           await tx.insert(schema.webhookHealth).values({
             userId: message.userId,
             provider: operationalAlert ? "twilio_operational" : "twilio_messaging",
@@ -327,11 +389,9 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
           //
           // Callbacks also arrive out of order across messages: a delayed
           // receipt for an OLDER message must not overwrite what the thread's
-          // newest outbound already established (a late `delivered` clearing a
-          // current failure, or a late `failed` flagging a thread whose newer
-          // message went through). Only the latest outbound message speaks for
-          // the thread.
-          const relevantStatus = ["failed", "undelivered", "delivered", "read"].includes(status);
+          // newest outbound already established. The durable receipt gate above
+          // also pins same-SID terminal truth before this thread projection.
+          const relevantStatus = ["failed", "undelivered", "canceled", "delivered", "read"].includes(status);
           if (message.threadId && relevantStatus) {
             const [latestOutbound] = await tx
               .select({ id: schema.smsMessages.id })
@@ -346,7 +406,7 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
               .limit(1);
             const speaksForThread = latestOutbound?.id === message.id;
 
-            if (speaksForThread && ["failed", "undelivered"].includes(status)) {
+            if (speaksForThread && ["failed", "undelivered", "canceled"].includes(status)) {
               const failureSummary = `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`;
               await tx
                 .update(schema.smsThreads)
@@ -391,10 +451,12 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
                 );
             }
           }
+
+          return true;
         }),
       );
 
-      if (operationalAlert && deliveryFailed) {
+      if (operationalAlert && deliveryFailed && statusApplied) {
         const context = {
           status,
           errorCode,
@@ -410,14 +472,27 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
       }
     } else if (operationalCallback && deliveryFailed) {
       // Platform-owner alerts can be sent even when the source number could not
-      // resolve to a tenant. Preserve and alert on the carrier failure instead
-      // of silently dropping the only post-acceptance signal.
-      await drizzle.insert(schema.webhookHealth).values({
-        userId: null,
-        provider: "twilio_operational",
-        eventType: status,
-        outcome: errorCode ? `error_${errorCode}` : status,
+      // resolve to a tenant. Preserve, deduplicate, and alert on the carrier
+      // failure instead of silently dropping the only post-acceptance signal.
+      const statusApplied = await drizzle.transaction(async (tx: typeof drizzle) => {
+        const applied = await recordTwilioMessageStatusReceipt(tx, {
+          userId: null,
+          messageSid,
+          status,
+          errorCode,
+          operational: true,
+        });
+        if (!applied) return false;
+        await tx.insert(schema.webhookHealth).values({
+          userId: null,
+          provider: "twilio_operational",
+          eventType: status,
+          outcome: errorCode ? `error_${errorCode}` : status,
+        });
+        return true;
       });
+      if (!statusApplied) return res.status(204).end();
+
       const context = {
         status,
         errorCode,
@@ -430,6 +505,20 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
         ...context,
       });
     } else {
+      await drizzle.insert(schema.auditLog).values({
+        userId: null,
+        action: "twilio.message_status_uncorrelated",
+        provider: "twilio",
+        eventType: "provider.webhook",
+        severity: "warning",
+        resourceType: "twilio_message",
+        resourceId: messageSid,
+        metadata: {
+          status,
+          error_code: errorCode,
+          operational: operationalCallback,
+        },
+      });
       log.warn("Twilio message status correlation unavailable", {
         messageSid: opaqueIdSuffixForLog(messageSid),
         status,
@@ -439,7 +528,7 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
     }
   } catch (error) {
     log.warn("Twilio message status persistence failed", {
-      messageSid,
+      messageSid: opaqueIdSuffixForLog(messageSid),
       status,
       errorCode,
       error: getErrorMessage(error),

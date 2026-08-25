@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   boundedTwilioMessageValidityPeriod,
   createTwilioMessageWithRateLimitRetry,
+  shouldApplyTwilioMessageStatusTransition,
   twilioMessageStatusCallbackUrl,
   twilioRateLimitBackoffMs,
   withTwilioMessageReliability,
@@ -111,5 +112,22 @@ describe("Twilio message reliability", () => {
     ).rejects.toBe(failure);
     expect(create).toHaveBeenCalledTimes(3);
     expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts only monotonic delivery transitions and pins terminal truth", () => {
+    expect(shouldApplyTwilioMessageStatusTransition(null, "queued")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("queued", "sent")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "queued")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "sent")).toBe(false);
+
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "delivered")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("delivered", "read")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("delivered", "failed")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("read", "undelivered")).toBe(false);
+
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "failed")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("failed", "delivered")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("undelivered", "read")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("queued", "mystery")).toBe(false);
   });
 });
