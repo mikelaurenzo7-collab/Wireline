@@ -6,7 +6,7 @@ import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import {
   stripe,
   stripeAvailable,
@@ -634,16 +634,33 @@ async function claimStripeEventForPreflight(event: Stripe.Event): Promise<Stripe
     const abandonedAfterMs = 5 * 60 * 1000;
     const isProcessing = prior?.status === "processing";
     const stale = isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
-    if (isProcessing && stale) {
-      await releaseStripeEventClaim(event.id);
+    if (!isProcessing || !stale) return "in_flight";
+
+    const cutoff = new Date(Date.now() - abandonedAfterMs);
+    const reclaimed = await drizzle
+      .delete(schema.stripeEvents)
+      .where(
+        and(
+          eq(schema.stripeEvents.eventId, event.id),
+          eq(schema.stripeEvents.status, "processing"),
+          lt(schema.stripeEvents.processedAt, cutoff),
+        ),
+      )
+      .returning({ eventId: schema.stripeEvents.eventId });
+    if (reclaimed.length === 0) return "in_flight";
+
+    try {
       await drizzle.insert(schema.stripeEvents).values({
         eventId: event.id,
         eventType: event.type,
         status: "processing",
       });
       return "claimed";
+    } catch {
+      // Another delivery can claim the brief delete/insert gap. It owns the
+      // event; this delivery must return 503 so Stripe retries safely.
+      return "in_flight";
     }
-    return "in_flight";
   }
 }
 
