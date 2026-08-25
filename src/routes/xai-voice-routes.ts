@@ -37,7 +37,9 @@ const webhookLimiter = createIpRateLimiter({
   bucket: "provider:xai-voice-webhook",
   windowMs: 60_000,
   max: 300,
-  failClosedOnError: true,
+  // Signature verification remains authoritative; a limiter outage must not
+  // reject every valid provider delivery before authentication can run.
+  failClosedOnError: false,
 });
 const provisioningLimiter = createRateLimiter({
   bucket: "api:xai-phone-provision",
