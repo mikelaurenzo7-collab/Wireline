@@ -356,9 +356,19 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(failureBlock).not.toContain("res.json");
   });
 
-  it("claims events before acknowledging movements", () => {
+  it("claims events before acknowledging movements and reclaims stale work once", () => {
     expect(middleware).toContain("claimStripeEventForPreflight");
     expect(middleware).toContain("markStripeEventProcessed");
     expect(middleware).toContain("releaseStripeEventClaim");
+
+    const claimStart = middleware.indexOf("async function claimStripeEventForPreflight");
+    const claimEnd = middleware.indexOf("async function markStripeEventProcessed", claimStart);
+    const claim = middleware.slice(claimStart, claimEnd);
+    expect(claimStart).toBeGreaterThan(-1);
+    expect(claimEnd).toBeGreaterThan(claimStart);
+    expect(claim).toContain("lt(schema.stripeEvents.processedAt, cutoff)");
+    expect(claim).toContain(".returning({ eventId: schema.stripeEvents.eventId })");
+    expect(claim).toContain('return "in_flight"');
+    expect(claim).not.toContain("releaseStripeEventClaim(event.id)");
   });
 });
