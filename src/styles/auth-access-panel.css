@@ -112,7 +112,7 @@
   cursor: pointer;
 }
 
-.wl-access-panel__tabs button[aria-selected="true"] {
+.wl-access-panel__tabs button[aria-pressed="true"] {
   background: var(--wireline-color-surface-default);
   color: var(--wireline-color-text-primary);
   box-shadow: 0 0.35rem 1.1rem color-mix(in srgb, #000 18%, transparent);
