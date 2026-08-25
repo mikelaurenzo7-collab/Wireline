@@ -69,5 +69,15 @@ describe("auth journey hardening contract", () => {
     expect(panel).toContain("showPasswordError(passwordPolicyError)");
     expect(panel).toContain("passwordRef.current?.focus()");
     expect(panel).toContain("id={errorId}");
+
+    expect(panel).toContain('role="group"');
+    expect(panel).toContain("aria-pressed={!isSignUp}");
+    expect(panel).toContain("aria-pressed={isSignUp}");
+    expect(panel).not.toContain('role="tab"');
+    expect(panel).not.toContain("aria-selected");
+    expect(panel).toContain('name="email"');
+    expect(panel).toContain('name="password"');
+    expect(panel).toContain('name="termsAccepted"');
+    expect(panel).not.toContain("autoFocus");
   });
 });
