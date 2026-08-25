@@ -294,6 +294,17 @@ router.post(
       }
       const { leads, campaign_id, has_express_written_consent } = validation.data!;
 
+      // A request boolean is not auditable, per-recipient written-consent proof.
+      // Until bulk imports resolve immutable server-owned artifacts, import the
+      // leads as unconsented so the campaign dial gate fails closed.
+      if (has_express_written_consent) {
+        return res.status(400).json({
+          code: "CONSENT_ARTIFACT_REQUIRED",
+          error:
+            "Bulk consent attestation is not accepted as proof. Attach a verified consent artifact to each recipient before marketing calls.",
+        });
+      }
+
       const [userSettings] = await drizzle
         .select({ subscriptionStatus: schema.settings.subscriptionStatus })
         .from(schema.settings)
@@ -348,7 +359,7 @@ router.post(
           ...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {}),
           ...outboundConsentMetadata({
             callPurpose: "marketing_or_sales",
-            hasExpressWrittenConsent: !!has_express_written_consent,
+            hasExpressWrittenConsent: false,
             source: "bulk",
           }),
         },
@@ -381,15 +392,6 @@ router.post(
             campaign_id: campaign_id ?? null,
           },
         });
-        if (has_express_written_consent) {
-          emitServerProductEventOnce({
-            event: "consent_source_captured",
-            userId: req.user.id,
-            agentId: agent?.id,
-            audience: "sales",
-            metadata: { consent_source: "lead_import", campaign_id: campaign_id ?? null },
-          });
-        }
       }
 
       res.json({ success: true, inserted: insertedLeads.length });
