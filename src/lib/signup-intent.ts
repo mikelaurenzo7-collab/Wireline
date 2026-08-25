@@ -1,9 +1,21 @@
+import { BOT_ROLE_TEMPLATES } from "./bot-product";
+
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
 // Signup attribution stores stable billing ids. Customer-facing URLs use the
 // clean launch names below, while old links remain resolver-compatible.
 export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
+export type SignupTemplateId = (typeof BOT_ROLE_TEMPLATES)[number]["key"];
+
+const SIGNUP_TEMPLATE_SET = new Set<string>(BOT_ROLE_TEMPLATES.map((template) => template.key));
+
+export function signupTemplateLabel(templateId: SignupTemplateId): string {
+  return (
+    BOT_ROLE_TEMPLATES.find((template) => template.key === templateId)?.name ||
+    templateId.replace(/-/g, " ")
+  );
+}
 
 export const PUBLIC_SIGNUP_PLAN_SLUGS = {
   personal: "free",
@@ -42,6 +54,7 @@ export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 export type SignupIntent = {
   preferredPlanId?: SignupPlanId;
   preferredBillingInterval?: "month" | "year";
+  preferredTemplateId?: SignupTemplateId;
   signupWedge?: SignupWedgeKey;
   utmSource?: string;
   utmMedium?: string;
@@ -169,6 +182,10 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
     out.preferredBillingInterval = intent.preferredBillingInterval;
   }
 
+  if (intent.preferredTemplateId && SIGNUP_TEMPLATE_SET.has(intent.preferredTemplateId)) {
+    out.preferredTemplateId = intent.preferredTemplateId;
+  }
+
   if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
     out.signupWedge = intent.signupWedge;
   }
@@ -192,6 +209,7 @@ function cleanCampaignValue(value: string | null): string | undefined {
 export function parseSignupIntent(search: string): SignupIntent | null {
   const params = new URLSearchParams(search);
   const rawPlan = params.get("plan");
+  const rawTemplate = params.get("template")?.trim().toLowerCase();
   const rawWedge = params.get("wedge")?.trim().toLowerCase();
 
   const intent: SignupIntent = {
@@ -204,6 +222,10 @@ export function parseSignupIntent(search: string): SignupIntent | null {
   const rawInterval = params.get("interval")?.trim().toLowerCase();
   if (rawInterval === "year" || rawInterval === "month") {
     intent.preferredBillingInterval = rawInterval;
+  }
+
+  if (rawTemplate && SIGNUP_TEMPLATE_SET.has(rawTemplate)) {
+    intent.preferredTemplateId = rawTemplate as SignupTemplateId;
   }
 
   if (rawWedge && WEDGE_SET.has(rawWedge)) {
@@ -224,6 +246,7 @@ export function hasSignupIntent(intent: SignupIntent | null | undefined): intent
   return !!(
     intent?.preferredPlanId ||
     intent?.preferredBillingInterval ||
+    intent?.preferredTemplateId ||
     intent?.signupWedge ||
     intent?.utmSource ||
     intent?.utmMedium ||
