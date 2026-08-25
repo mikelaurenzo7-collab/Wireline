@@ -9,8 +9,7 @@ import {
   withTwilioMessageReliability,
 } from "../src/lib/twilio-message-reliability";
 
-const MESSAGE_STATUS_CONNECTION_OVERRIDES =
-  "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
+const MESSAGE_STATUS_CONNECTION_OVERRIDES = "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
 
 describe("Twilio message reliability", () => {
   it("attaches the canonical signed callback target and a bounded validity period", () => {

@@ -391,7 +391,13 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
           // receipt for an OLDER message must not overwrite what the thread's
           // newest outbound already established. The durable receipt gate above
           // also pins same-SID terminal truth before this thread projection.
-          const relevantStatus = ["failed", "undelivered", "canceled", "delivered", "read"].includes(status);
+          const relevantStatus = [
+            "failed",
+            "undelivered",
+            "canceled",
+            "delivered",
+            "read",
+          ].includes(status);
           if (message.threadId && relevantStatus) {
             const [latestOutbound] = await tx
               .select({ id: schema.smsMessages.id })

@@ -30,8 +30,7 @@ const INITIAL_BACKOFF_MS = 100;
 const MAX_BACKOFF_MS = 30_000;
 const DEFAULT_VALIDITY_SECONDS = 3_600;
 const MAX_VALIDITY_SECONDS = 36_000;
-const MESSAGE_STATUS_CONNECTION_OVERRIDES =
-  "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
+const MESSAGE_STATUS_CONNECTION_OVERRIDES = "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
 
 const OUTBOUND_MESSAGE_STATUS_ORDER = new Map<string, number>([
   ["accepted", 10],
@@ -73,10 +72,7 @@ export function shouldApplyTwilioMessageStatusTransition(
     return previous === "delivered" && next === "read";
   }
   if (FAILURE_TERMINAL_MESSAGE_STATUSES.has(previous)) return false;
-  if (
-    SUCCESS_TERMINAL_MESSAGE_STATUSES.has(next) ||
-    FAILURE_TERMINAL_MESSAGE_STATUSES.has(next)
-  ) {
+  if (SUCCESS_TERMINAL_MESSAGE_STATUSES.has(next) || FAILURE_TERMINAL_MESSAGE_STATUSES.has(next)) {
     return true;
   }
 
