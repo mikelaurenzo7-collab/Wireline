@@ -22,6 +22,34 @@ database migrations and production-only schema/environment gates; changing its a
 rebuild it. `npm run vercel:promote-production -- <deploymentId> <exactCommitSha>` therefore
 accepts only a READY, `main`, production-target deployment at the expected SHA.
 
+### Environment-only production redeploys
+
+An environment repair must rebuild one operator-selected source deployment; it must never search
+for the "latest READY main" deployment. That shortcut can silently rebuild a stale commit when the
+intended exact deployment failed the environment gate.
+
+Before creating the redeployment, run `VERCEL_TOKEN=... npm run vercel:env:health` and inspect the
+Vercel target metadata. `APP_URL=https://botbound.me` and, when the optional Twilio proxy override
+is configured, `TWILIO_WEBHOOK_BASE_URL=https://botbound.me` must have no trailing slash and must be
+scoped to **Production only**, never Preview or Development. `TWILIO_WEBHOOK_BASE_URL` remains
+optional at runtime; configuring it does not permit broader target scope. The build-time deployment
+boundary remains fail-closed and independently verifies the actual injected values.
+
+Use the exact existing `main`, production-target deployment ID at the intended 40-character SHA.
+The source may be `ERROR` (for example, after an environment gate stopped the exact build) or
+`READY`; every other state, project, target, branch, or SHA is rejected before the redeploy request.
+
+```bash
+VERCEL_TOKEN=... npm run vercel:redeploy-production -- <sourceDeploymentId> <exactCommitSha>
+VERCEL_TOKEN=... npm run vercel:wait-deployment -- <newDeploymentId> <exactCommitSha> --production
+```
+
+The redeploy command reports a new deployment ID but does not claim it is live. The waiter succeeds
+only when that same ID is cleanly READY in the canonical project, remains bound to `main` and the
+exact SHA, owns `botbound.me`, and the cache-busted canonical health response returns the same
+`X-Wireline-Source-Commit`. Preserve both structured outputs as release evidence. Do not deploy or
+promote a different artifact to make either check pass.
+
 ## Vercel project boundary
 
 Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `botbound.me` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.
