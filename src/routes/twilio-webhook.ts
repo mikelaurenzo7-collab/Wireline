@@ -56,6 +56,9 @@ async function recordTwilioMessageStatusReceipt(
     .from(schema.auditLog)
     .where(
       and(
+        input.userId === null
+          ? isNull(schema.auditLog.userId)
+          : eq(schema.auditLog.userId, input.userId),
         eq(schema.auditLog.provider, "twilio"),
         eq(schema.auditLog.action, "twilio.message_status_applied"),
         eq(schema.auditLog.resourceType, "twilio_message"),
@@ -345,7 +348,10 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
   const deliveryFailed = ["failed", "undelivered", "canceled"].includes(status);
   // Scope is part of Twilio's signed callback URL, so a caller cannot promote
   // an arbitrary failed customer message into a platform operational alert.
-  const operationalCallback = req.query.scope === "operational";
+  const callbackScope = String(req.query.scope || "");
+  const legacyOperationalCallback = callbackScope === "operational";
+  const systemOperationalCallback = callbackScope === "operational-system";
+  const operationalCallback = legacyOperationalCallback || systemOperationalCallback;
 
   try {
     const [message] = await drizzle
@@ -476,10 +482,11 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
           ...context,
         });
       }
-    } else if (operationalCallback && deliveryFailed) {
-      // Platform-owner alerts can be sent even when the source number could not
-      // resolve to a tenant. Preserve, deduplicate, and alert on the carrier
-      // failure instead of silently dropping the only post-acceptance signal.
+    } else if (systemOperationalCallback || (legacyOperationalCallback && deliveryFailed)) {
+      // Intentionally unattributed platform alerts carry a distinct signed
+      // scope, so every forward status converges in the system receipt ledger.
+      // Keep the legacy operational failure arm during rollout for messages
+      // accepted before the sender began emitting operational-system.
       const statusApplied = await drizzle.transaction(async (tx: typeof drizzle) => {
         const applied = await recordTwilioMessageStatusReceipt(tx, {
           userId: null,
@@ -497,7 +504,7 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
         });
         return true;
       });
-      if (!statusApplied) return res.status(204).end();
+      if (!statusApplied || !deliveryFailed) return res.status(204).end();
 
       const context = {
         status,

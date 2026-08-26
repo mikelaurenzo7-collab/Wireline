@@ -43,6 +43,19 @@ describe("Twilio webhook external-origin binding", () => {
     expect(evaluateTwilioWebhookAuth(requestFor(url), AUTH_TOKEN)).toEqual({ ok: true });
   });
 
+  it("binds system-owned callback scope to the signed query", () => {
+    const system = "https://botbound.me/api/twilio-webhook/message-status?scope=operational-system";
+    const tenant = "https://botbound.me/api/twilio-webhook/message-status?scope=operational";
+
+    expect(evaluateTwilioWebhookAuth(requestFor(system), AUTH_TOKEN)).toEqual({ ok: true });
+    expect(evaluateTwilioWebhookAuth(requestFor(tenant, system), AUTH_TOKEN)).toEqual({
+      ok: false,
+    });
+    expect(evaluateTwilioWebhookAuth(requestFor(system, tenant), AUTH_TOKEN)).toEqual({
+      ok: false,
+    });
+  });
+
   it("rejects canonical and legacy signatures when the incoming hosts are crossed", () => {
     const canonical = "https://botbound.me/api/twilio-webhook/sms";
     const legacy = "https://trywireline.com/api/twilio-webhook/sms";

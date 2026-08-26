@@ -23,7 +23,7 @@ export interface TwilioMessageRetryOptions {
   onRetry?: (context: TwilioMessageRetryContext) => void;
 }
 
-export type TwilioMessageCallbackScope = "operational";
+export type TwilioMessageCallbackScope = "operational" | "operational-system";
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const INITIAL_BACKOFF_MS = 100;
