@@ -77,7 +77,7 @@ describe("BotBound public iPhone prestige contract", () => {
       "aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}",
     );
     expect(access).toContain("embedded ? <h2>{title}</h2> : <h1>{title}</h1>");
-    expect(access).toContain("autoFocus={!embedded}");
+    expect(access).not.toContain("autoFocus");
     expect(access).toContain("<label htmlFor={emailInputId}>Email</label>");
     expect(access).toContain("<label htmlFor={passwordInputId}>Password</label>");
     expect(access).toContain("id={emailInputId}");

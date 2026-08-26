@@ -631,7 +631,6 @@ export default function AuthAccessPanel({
                 name="email"
                 type="email"
                 required
-                autoFocus={!embedded}
                 autoComplete="email"
                 spellCheck={false}
                 disabled={loading}
