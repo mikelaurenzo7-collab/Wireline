@@ -330,7 +330,7 @@ router.post(
  * the expired path they also lost the resend affordance the banner
  * offers.
  */
-const VERIFY_EMAIL_LANDING_PATH = "/overview";
+const VERIFY_EMAIL_LANDING_PATH = "/studio";
 
 router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) => {
   const token = String(req.params.token || "");

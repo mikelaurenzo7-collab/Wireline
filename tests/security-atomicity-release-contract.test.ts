@@ -42,9 +42,7 @@ describe("security and external-operation atomicity", () => {
       "drizzle/migrations/0123_team_workspace_rls_policy_consolidation.sql",
     );
     const claimFunction = read("drizzle/migrations/0124_team_invitation_claim_function.sql");
-    const directoryFunction = read(
-      "drizzle/migrations/0125_user_workspace_directory_function.sql",
-    );
+    const directoryFunction = read("drizzle/migrations/0125_user_workspace_directory_function.sql");
 
     expect(source).toContain("wireline_accept_team_invitation");
     expect(source).toContain("wireline_list_user_workspaces");
@@ -57,7 +55,7 @@ describe("security and external-operation atomicity", () => {
     expect(source).toContain("emailRateLimiter");
     expect(page).toContain("wireline_pending_invitation");
     expect(page).toContain("window.history.replaceState");
-    expect(page).toContain('window.location.assign("/overview")');
+    expect(page).toContain('window.location.assign("/studio")');
     expect(baseRls).toContain("REVOKE ALL ON TABLE public.wireline_team_members");
     expect(consolidatedRls).toContain("CREATE POLICY workspace_read");
     expect(consolidatedRls).toContain("tenant_id = (SELECT public.wireline_current_user_id())");
@@ -93,7 +91,9 @@ describe("security and external-operation atomicity", () => {
     expect(source).toContain("type DeniedOutboundDialGate = Extract<");
     expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
     expect(source).toContain(".onConflictDoNothing()");
-    expect(source).toContain('status: "dialing",\n            failureCode: "provider_outcome_ambiguous"');
+    expect(source).toContain(
+      'status: "dialing",\n            failureCode: "provider_outcome_ambiguous"',
+    );
     expect(source).toContain('failureCode: "post_provider_persistence_failed"');
     expect(source).toContain('code: "DIAL_STATUS_UNCERTAIN"');
     expect(source).toContain('code: "DIAL_ACCEPTED_RECONCILING"');
@@ -155,7 +155,7 @@ describe("security and external-operation atomicity", () => {
       ["app.use(authOAuthExchangeAtomicRouter)", "app.use(authOAuthBrowserBindingRouter)"],
       ["app.use(authSessionHardeningRouter)", "app.use(authRouter)"],
       ["app.use(launchBillingCheckoutAtomicRouter)", "app.use(launchBillingCheckoutRouter)"],
-      ["webhookTestRouter", "app.use(\"/api/webhooks\", webhookRouter)"],
+      ["webhookTestRouter", 'app.use("/api/webhooks", webhookRouter)'],
       ["app.use(outboundDialAtomicRouter)", "app.use(outboundRouter)"],
     ];
     for (const [owner, legacy] of pairs) {

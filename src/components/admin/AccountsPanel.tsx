@@ -75,7 +75,7 @@ export function AccountsPanel() {
 
   const handleSwitch = (account: Account) => {
     switchAccount(account.id);
-    navigate("/overview", { replace: true });
+    navigate("/studio", { replace: true });
   };
 
   const handleAdd = async (type: "personal" | "business") => {
@@ -83,7 +83,7 @@ export function AccountsPanel() {
     const created = await addAccount(type);
     setCreating(null);
     if (created) {
-      navigate("/overview", { replace: true });
+      navigate("/studio", { replace: true });
     }
   };
 
@@ -120,8 +120,8 @@ export function AccountsPanel() {
         <section className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5">
           <p className="text-sm font-semibold text-foreground">Add another workspace</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Add another profile when you want different creation defaults. Existing Bots and
-            billing stay account-wide.
+            Add another profile when you want different creation defaults. Existing Bots and billing
+            stay account-wide.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button

@@ -36,6 +36,21 @@ function EmailToInboxRedirect() {
   return <Navigate to={`/inbox${location.search}${location.hash}`} replace />;
 }
 
+/** Keep retired settings deep links useful without dropping anchors or filters. */
+function PhoneSettingsRedirect() {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  search.set("tab", "setup");
+  return <Navigate to={`/phone?${search.toString()}${location.hash}`} replace />;
+}
+
+/** Apps lives under Settings; preserve old bookmarks without maintaining two chromes. */
+function AppsToSettingsRedirect({ command = false }: { command?: boolean }) {
+  const location = useLocation();
+  const suffix = command ? "/command" : "";
+  return <Navigate to={`/settings/apps${suffix}${location.search}${location.hash}`} replace />;
+}
+
 function AuthNotFound() {
   return (
     <WorkspaceShell>
@@ -81,14 +96,14 @@ export default function AppRoutes() {
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<EmailToInboxRedirect />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
-        <Route path="/apps" element={<ClientAppsPage />} />
-        <Route path="/apps/command" element={<BrowserCommandInstallPage />} />
+        <Route path="/apps" element={<AppsToSettingsRedirect />} />
+        <Route path="/apps/command" element={<AppsToSettingsRedirect command />} />
         <Route path="/settings/apps/command" element={<BrowserCommandInstallPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
         {/* Phone lines are operational work; keep old settings links compatible. */}
-        <Route path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />} />
+        <Route path="/settings/phone" element={<PhoneSettingsRedirect />} />
         <Route path="/settings/team" element={<TeamSettings />} />
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />

@@ -37,12 +37,12 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("defaults to /overview (Home) for returning users; fresh signups are sent to Studio create once then default to overview", () => {
-    expect(resolvePostAuthDestination("business", "")).toBe("/overview");
-    expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
+  it("defaults to Studio for returning users; fresh signups enter Studio create once", () => {
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1");
-    expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
 
   it("ignores a stale sign-in redirect when a direct personal signup completes", () => {
@@ -63,7 +63,7 @@ describe("auth-redirect", () => {
     );
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
-    expect(resolvePostAuthDestination("business", "")).toBe("/overview");
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
   });
 
   it("returns stored MCP OAuth consent after Connect signup", () => {

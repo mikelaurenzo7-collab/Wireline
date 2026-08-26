@@ -85,9 +85,7 @@ export default function StudioAgentReviewPanel({
       })
       .catch((reason) => {
         if (!cancelled) {
-          setError(
-            reason instanceof Error ? reason.message : "Setup summary could not be loaded.",
-          );
+          setError(reason instanceof Error ? reason.message : "Setup summary could not be loaded.");
         }
       })
       .finally(() => {
@@ -156,7 +154,9 @@ export default function StudioAgentReviewPanel({
                   className={`rounded-xl border border-border bg-background ${compact ? "p-3" : "p-4"}`}
                 >
                   <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
-                  <dd className="mt-1.5 text-sm font-semibold leading-5 text-foreground">{item.value}</dd>
+                  <dd className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
+                    {item.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -165,7 +165,9 @@ export default function StudioAgentReviewPanel({
 
         <StatusNotice
           tone={hasPhone ? "success" : "warning"}
-          title={hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"}
+          title={
+            hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"
+          }
         >
           {hasPhone
             ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
@@ -174,8 +176,12 @@ export default function StudioAgentReviewPanel({
 
         <section className={sectionClass} aria-label="Next actions">
           <div className="flex flex-col gap-2.5">
-            <Button asChild size={compact ? "sm" : undefined} className="w-full justify-center sm:w-auto sm:self-start">
-              <Link to={hasPhone ? "/phone?tab=logs" : "/settings/phone"}>
+            <Button
+              asChild
+              size={compact ? "sm" : undefined}
+              className="w-full justify-center sm:w-auto sm:self-start"
+            >
+              <Link to={hasPhone ? "/phone?tab=logs" : "/phone?tab=setup"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
                 ) : (
@@ -212,7 +218,10 @@ export default function StudioAgentReviewPanel({
               compact ? "gap-x-3 gap-y-1.5" : "gap-x-4 gap-y-2"
             }`}
           >
-            <Link to="/settings/phone#company-identity" className="font-medium text-primary hover:underline">
+            <Link
+              to="/phone?tab=setup#company-identity"
+              className="font-medium text-primary hover:underline"
+            >
               Caller identity
             </Link>
             <Link
@@ -225,7 +234,10 @@ export default function StudioAgentReviewPanel({
               Connections
             </Link>
             {!compact ? (
-              <Link to="/settings/customization" className="font-medium text-primary hover:underline">
+              <Link
+                to="/settings/customization"
+                className="font-medium text-primary hover:underline"
+              >
                 Appearance & brand
               </Link>
             ) : null}

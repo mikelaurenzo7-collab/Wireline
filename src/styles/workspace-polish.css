@@ -54,8 +54,7 @@
  * `system-hardening.css`, and `prestige-polish.css`: a 44px tap floor and a
  * recessed field background belong to text fields, and applied to a 16px box
  * they produce a tall blank pill instead of a checkbox. */
-.wl-workspace-main
-  :where(input, textarea, select):not([type="checkbox"]):not([type="radio"]) {
+.wl-workspace-main :where(input, textarea, select):not([type="checkbox"]):not([type="radio"]) {
   min-height: 44px;
   color: var(--wireline-color-text-primary);
   background: color-mix(
@@ -99,7 +98,13 @@
 
 /* Remove display fringing and keep product titles crisp at every scale. */
 .wl-workspace-shell
-  :where(.wl-display-2, .wl-display-3, .wl-display-4, .wl-workspace-page-intro h1, .wl-operate-surface h1) {
+  :where(
+    .wl-display-2,
+    .wl-display-3,
+    .wl-display-4,
+    .wl-workspace-page-intro h1,
+    .wl-operate-surface h1
+  ) {
   text-shadow: none;
   -webkit-text-stroke: 0;
   font-synthesis: none;
@@ -153,7 +158,7 @@
  * Tailwind's shell class intentionally clips horizontal overflow; this layer
  * restores vertical access without introducing a second page scroll owner. */
 @media (min-width: 1024px) {
-  .wl-workspace-shell > div > aside[aria-label="Workspace navigation"] {
+  .wl-workspace-shell .wl-workspace-rail-panel > aside[aria-label="Workspace navigation"] {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -163,7 +168,7 @@
 }
 
 @media (min-width: 1024px) and (max-height: 760px) {
-  .wl-workspace-shell > div > aside[aria-label="Workspace navigation"] {
+  .wl-workspace-shell .wl-workspace-rail-panel > aside[aria-label="Workspace navigation"] {
     padding-block: 0.875rem;
   }
 
@@ -194,7 +199,8 @@
   }
 
   .wl-workspace-shell nav[aria-label="Workspace navigation"] a[data-wireline-nav-active="true"] {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
   }
 }
 

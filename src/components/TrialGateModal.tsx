@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
@@ -94,7 +95,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "ACTIVATION_REQUIRED":
       return {
         title: "Activate live work",
-        body: "Create and train stay free. Choose a live plan to add a production number and paid provider actions.",
+        body: "Create and train stay free. Choose a live plan when your Bot is ready for a live number and customer conversations.",
       };
     case "EMAIL_UNVERIFIED":
       return {
@@ -571,12 +572,9 @@ export default function TrialGateModal() {
                   <span>&middot;</span>
                   <span>Cancel anytime</span>
                   <span>&middot;</span>
-                  <a
-                    href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
-                    className="text-brand transition-colors hover:text-brand/80"
-                  >
+                  <Link to="/contact" className="text-brand transition-colors hover:text-brand/80">
                     Need Enterprise?
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

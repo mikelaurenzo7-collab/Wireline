@@ -266,7 +266,7 @@ export default function BillingSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Billing" titleHidden />
 

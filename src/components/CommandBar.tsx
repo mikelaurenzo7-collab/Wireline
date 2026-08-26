@@ -15,7 +15,6 @@ import {
   CreditCard,
   Database,
   Inbox,
-  LayoutDashboard,
   MonitorDown,
   Phone,
   Search,
@@ -51,17 +50,9 @@ const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Workspace", "Create", "
 
 const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
-    id: "overview",
-    label: "Overview",
-    keywords: "home dashboard status state",
-    icon: LayoutDashboard,
-    href: "/overview",
-    category: "Workspace",
-  },
-  {
     id: "agents",
-    label: "Agent Studio",
-    keywords: "studio agents voice manage live",
+    label: "Bot Studio",
+    keywords: "studio bots agents voice manage live home",
     icon: Bot,
     href: "/studio",
     category: "Workspace",

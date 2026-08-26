@@ -6,16 +6,6 @@ export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 // clean launch names below, while old links remain resolver-compatible.
 export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
-export type SignupTemplateId = (typeof BOT_ROLE_TEMPLATES)[number]["key"];
-
-const SIGNUP_TEMPLATE_SET = new Set<string>(BOT_ROLE_TEMPLATES.map((template) => template.key));
-
-export function signupTemplateLabel(templateId: SignupTemplateId): string {
-  return (
-    BOT_ROLE_TEMPLATES.find((template) => template.key === templateId)?.name ||
-    templateId.replace(/-/g, " ")
-  );
-}
 
 export const PUBLIC_SIGNUP_PLAN_SLUGS = {
   personal: "free",
@@ -54,7 +44,7 @@ export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 export type SignupIntent = {
   preferredPlanId?: SignupPlanId;
   preferredBillingInterval?: "month" | "year";
-  preferredTemplateId?: SignupTemplateId;
+  preferredTemplateId?: string;
   signupWedge?: SignupWedgeKey;
   utmSource?: string;
   utmMedium?: string;
@@ -130,6 +120,9 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
+const TEMPLATE_LABELS = new Map<string, string>(
+  BOT_ROLE_TEMPLATES.map((template) => [template.key, template.name] as const),
+);
 const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   free: "personal",
   builder: "personal",
@@ -164,6 +157,15 @@ function normalizePlanId(value: string | null | undefined): SignupPlanId | undef
   return LEGACY_PLAN_ALIASES[aliasKey] || LEGACY_PLAN_ALIASES[cleaned];
 }
 
+function normalizeTemplateId(value: string | null | undefined): string | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  return cleaned && TEMPLATE_LABELS.has(cleaned) ? cleaned : undefined;
+}
+
+export function signupTemplateLabel(templateId: string): string {
+  return TEMPLATE_LABELS.get(templateId) || "Selected role";
+}
+
 /**
  * Drop or normalize plan/wedge values outside the current allowlist. Stale
  * localStorage and old marketing URLs can otherwise make signup fail silently.
@@ -182,9 +184,8 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
     out.preferredBillingInterval = intent.preferredBillingInterval;
   }
 
-  if (intent.preferredTemplateId && SIGNUP_TEMPLATE_SET.has(intent.preferredTemplateId)) {
-    out.preferredTemplateId = intent.preferredTemplateId;
-  }
+  const normalizedTemplate = normalizeTemplateId(intent.preferredTemplateId);
+  if (normalizedTemplate) out.preferredTemplateId = normalizedTemplate;
 
   if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
     out.signupWedge = intent.signupWedge;
@@ -209,7 +210,6 @@ function cleanCampaignValue(value: string | null): string | undefined {
 export function parseSignupIntent(search: string): SignupIntent | null {
   const params = new URLSearchParams(search);
   const rawPlan = params.get("plan");
-  const rawTemplate = params.get("template")?.trim().toLowerCase();
   const rawWedge = params.get("wedge")?.trim().toLowerCase();
 
   const intent: SignupIntent = {
@@ -224,9 +224,8 @@ export function parseSignupIntent(search: string): SignupIntent | null {
     intent.preferredBillingInterval = rawInterval;
   }
 
-  if (rawTemplate && SIGNUP_TEMPLATE_SET.has(rawTemplate)) {
-    intent.preferredTemplateId = rawTemplate as SignupTemplateId;
-  }
+  const normalizedTemplate = normalizeTemplateId(params.get("template"));
+  if (normalizedTemplate) intent.preferredTemplateId = normalizedTemplate;
 
   if (rawWedge && WEDGE_SET.has(rawWedge)) {
     intent.signupWedge = rawWedge as SignupWedgeKey;

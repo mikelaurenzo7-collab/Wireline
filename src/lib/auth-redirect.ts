@@ -127,5 +127,5 @@ export function resolvePostAuthDestination(
     }
   }
 
-  return "/overview";
+  return "/studio";
 }

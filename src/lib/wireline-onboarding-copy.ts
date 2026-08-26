@@ -15,9 +15,9 @@ export const ACTIVATION_PENDING_COPY = {
   browserTestDetail:
     "Preview voice and script in Studio. Simulator calls do not count toward activation.",
   browserTestAction: "Open Studio",
-  opsTitle: "Watch Recaps",
+  opsTitle: "Watch Activity",
   opsDetail: "See the call land in real time once you dial in.",
-  opsAction: "Open Recaps",
+  opsAction: "Open Activity",
 } as const;
 
 export const ACTIVATION_NUDGE_COPY = {

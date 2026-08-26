@@ -93,7 +93,7 @@ export const OPS_CHANNEL_EMPTY = {
   phone: {
     title: "No calls yet",
     actions: [
-      { label: "Configure a number", to: "/settings/phone", primary: true },
+      { label: "Configure a number", to: "/phone?tab=setup", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -103,7 +103,7 @@ export const OPS_CHANNEL_EMPTY = {
   sms: {
     title: "No SMS yet",
     actions: [
-      { label: "Configure SMS sender", to: "/settings/phone", primary: true },
+      { label: "Configure SMS sender", to: "/phone?tab=setup", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -135,7 +135,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "Audit trail is quiet",
     actions: [
       { label: "Deploy an agent", to: "/studio?create=1", primary: true },
-      { label: "Open Recaps", to: "/overview" },
+      { label: "Open Activity", to: "/insights" },
     ],
   },
   auditNoMatch: {
@@ -144,7 +144,7 @@ export const OPS_CHANNEL_EMPTY = {
   intel: {
     title: "All clear",
     actions: [
-      { label: "Open Recaps", to: "/overview", primary: true },
+      { label: "Open Activity", to: "/insights", primary: true },
       { label: "Open Studio", to: "/studio" },
     ],
   },
@@ -221,7 +221,7 @@ export const OPS_TRIAGE_EMPTY = {
     title: "No hot leads yet",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Monitor floor", to: "/overview?tab=floor" },
+      { label: "Call activity", to: "/phone?tab=logs" },
     ],
   },
   compliance: {
@@ -229,7 +229,7 @@ export const OPS_TRIAGE_EMPTY = {
   },
   openTasks: {
     title: "Inbox zero",
-    actions: [{ label: "View action queue", to: "/overview?tab=intel" }],
+    actions: [{ label: "View action queue", to: "/approvals" }],
   },
   knowledgeGaps: {
     title: "Coverage looks solid",
@@ -237,7 +237,7 @@ export const OPS_TRIAGE_EMPTY = {
   },
   escalations: {
     title: "No escalations",
-    actions: [{ label: "Active calls", to: "/overview?tab=floor" }],
+    actions: [{ label: "Active calls", to: "/phone" }],
   },
 } as const;
 
@@ -596,7 +596,7 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No funnel data",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Overview", to: "/overview" },
+      { label: "Bot Studio", to: "/studio" },
     ],
   },
   leaderboard: {
@@ -609,14 +609,14 @@ export const OPS_INSIGHTS_EMPTY = {
   latency: {
     title: "No latency samples",
     actions: [
-      { label: "Overview", to: "/overview", primary: true },
+      { label: "Bot Studio", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   reliability: {
     title: "No reliability samples",
     actions: [
-      { label: "Overview", to: "/overview", primary: true },
+      { label: "Bot Studio", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
@@ -624,13 +624,13 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No AI usage",
     actions: [
       { label: "Studio", to: "/studio", primary: true },
-      { label: "Overview", to: "/overview" },
+      { label: "Calls", to: "/phone" },
     ],
   },
   attribution: {
     title: "No tagged calls",
     actions: [
-      { label: "Phone settings", to: "/settings/phone", primary: true },
+      { label: "Call setup", to: "/phone?tab=setup", primary: true },
       { label: "Outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -638,14 +638,14 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No QA scores",
     actions: [
       { label: "Call history", to: "/phone?tab=logs" },
-      { label: "Overview", to: "/overview" },
+      { label: "Bot Studio", to: "/studio" },
     ],
   },
   heatmap: {
     title: "No call activity",
     actions: [
       { label: "Call history", to: "/phone?tab=logs", primary: true },
-      { label: "Overview", to: "/overview" },
+      { label: "Bot Studio", to: "/studio" },
     ],
   },
   topics: {
@@ -657,6 +657,6 @@ export const OPS_INSIGHTS_EMPTY = {
   },
   failureModesOk: {
     title: "No failure clusters",
-    actions: [{ label: "Overview", to: "/overview", primary: true }],
+    actions: [{ label: "Calls", to: "/phone?tab=logs", primary: true }],
   },
 } as const;

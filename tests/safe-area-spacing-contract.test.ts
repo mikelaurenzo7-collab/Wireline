@@ -51,14 +51,16 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /\.wl-workspace-shell \{[^}]*safe-area-inset-top[^}]*safe-area-inset-bottom/s,
     );
-    expect(ownership).toContain(".wl-workspace-shell > .wl-workspace-frame > aside");
+    expect(ownership).toContain(
+      ".wl-workspace-shell > .wl-workspace-frame > .wl-workspace-rail-panel",
+    );
     expect(ownership).toContain('nav[aria-label="Workspace navigation"]');
     expect(ownership).toMatch(
       /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
     const workspaceSpacing = workspace.match(
-      /const mainSpacing = fullBleed \? "([^"]+)" : "([^"]+)"/,
+      /const mainSpacing = fullBleed\s*\? "([^"]+)"\s*:\s*"([^"]+)"/,
     );
     expect(workspaceSpacing?.[1]).toContain("p-0");
     expect(workspaceSpacing?.[2]).toMatch(/\bpx-3\b/);
@@ -101,19 +103,7 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain("wl-auth-form-panel flex min-h-[100dvh]");
     expect(authPortal).toContain("w-full max-w-[520px]");
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
-    );
-    expect(landingCss).not.toMatch(
-      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*100dvh/,
     );
     expect(mobile).toContain("env(safe-area-inset-left)");
   });

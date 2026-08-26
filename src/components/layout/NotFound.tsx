@@ -1,7 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "react-router";
 import { motion } from "motion/react";
-import { ChevronRight, Compass, Home, LayoutGrid, MessageSquare, Phone } from "lucide-react";
+import {
+  ChevronRight,
+  Compass,
+  Home,
+  LayoutGrid,
+  MessageSquare,
+  Phone,
+  Settings,
+} from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
@@ -120,23 +128,16 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         ) : (
           <>
             <NotFoundCard
-              to="/overview"
-              icon={Home}
-              label="Home"
-              hint="Workspace overview"
-              accent={BRAND.colors.primary}
-            />
-            <NotFoundCard
               to="/studio"
               icon={LayoutGrid}
-              label="Studio"
+              label="Bot Studio"
               hint="Create, run & approve"
               accent={BRAND.colors.primary}
             />
             <NotFoundCard
               to="/phone"
               icon={Phone}
-              label="Phone"
+              label="Calls"
               hint="Calls, campaigns, logs"
               accent={BRAND.colors.primary}
             />
@@ -145,6 +146,13 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={MessageSquare}
               label="Inbox"
               hint="Conversations"
+              accent={BRAND.colors.primary}
+            />
+            <NotFoundCard
+              to="/settings"
+              icon={Settings}
+              label="Settings"
+              hint="Account and workspace"
               accent={BRAND.colors.primary}
             />
           </>

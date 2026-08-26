@@ -18,7 +18,7 @@ describe("authenticated Bot navigation contract", () => {
   const copy = read("src/lib/product-copy.ts");
 
   it("keeps daily IA small and moves management destinations below it", () => {
-    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Agent Studio"/);
+    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Bot Studio"/);
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);

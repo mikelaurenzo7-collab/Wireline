@@ -57,7 +57,7 @@ describe("the paywall is visible when it fires", () => {
 describe("email verification confirms itself", () => {
   it("lands in the workspace, where the verify banner is actually mounted", () => {
     const routes = read("src/routes/auth-routes.ts");
-    expect(routes).toContain('const VERIFY_EMAIL_LANDING_PATH = "/overview"');
+    expect(routes).toContain('const VERIFY_EMAIL_LANDING_PATH = "/studio"');
     expect(routes).not.toMatch(/\$\{baseUrl\}\/\?verified=/);
 
     const banner = read("src/components/layout/EmailVerifyBanner.tsx");

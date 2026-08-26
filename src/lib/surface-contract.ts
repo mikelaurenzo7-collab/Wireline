@@ -53,7 +53,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     narrow: {
       maxWidth: "700px",
       header: "Settings tabs + intro",
-      surfaces: ["Account", "Billing", "Team", "Compliance"],
+      surfaces: ["Account", "Billing", "Team", "Appearance", "Compliance"],
     },
     operate: {
       fullBleed: true,

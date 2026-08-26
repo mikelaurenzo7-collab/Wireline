@@ -16,7 +16,8 @@ describe("empty-state route hygiene", () => {
     const sms = read("src/components/SmsThreads.tsx");
 
     expect(ops).not.toContain("/settings?tab=carrier");
-    expect(ops).toContain('to: "/settings/phone"');
+    expect(ops).toContain('to: "/phone?tab=setup"');
+    expect(ops).not.toContain('to: "/overview');
     expect(ops).not.toMatch(/to: "\/agents"/);
     expect(ops).toContain("directorAssistHref");
     expect(ops).toContain("`/studio?agent=");

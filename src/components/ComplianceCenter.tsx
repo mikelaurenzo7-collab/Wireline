@@ -188,7 +188,7 @@ export default function ComplianceCenter() {
                   Events appear after customer calls or messages record a disclosure, consent, or
                   opt-out.{" "}
                   <Link
-                    to="/settings/phone"
+                    to="/phone?tab=setup"
                     className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
                   >
                     Review phone setup

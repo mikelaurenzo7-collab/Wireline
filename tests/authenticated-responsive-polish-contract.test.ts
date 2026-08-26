@@ -152,8 +152,8 @@ describe("authenticated responsive polish contract", () => {
     const account = read("src/pages/SettingsPage.tsx");
     const team = read("src/pages/TeamSettings.tsx");
 
-    expect(account).toContain('<WorkspacePageFrame mode="standard">');
-    expect(team).toContain('<WorkspacePageFrame mode="standard">');
+    expect(account).toContain('<WorkspacePageFrame mode="narrow">');
+    expect(team).toContain('<WorkspacePageFrame mode="narrow">');
   });
 
   it("shows an actionable carrier state instead of a false empty inventory", () => {

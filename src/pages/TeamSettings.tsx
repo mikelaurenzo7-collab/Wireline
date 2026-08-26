@@ -150,7 +150,7 @@ export default function TeamSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         {/* The selected Settings tab already reads "Team"; the heading stays
             for assistive tech only so the page is not labelled twice on screen. */}

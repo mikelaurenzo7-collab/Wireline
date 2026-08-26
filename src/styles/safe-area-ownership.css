@@ -62,7 +62,8 @@
 
 /* The rail fills the shell's safe content box. A nested 100dvh rail would undo
  * the shell padding and clip its account control at the bottom. */
-.wl-workspace-shell > .wl-workspace-frame > aside {
+.wl-workspace-shell > .wl-workspace-frame > .wl-workspace-rail-panel,
+.wl-workspace-shell > .wl-workspace-frame > .wl-workspace-rail-panel > aside {
   height: 100%;
 }
 

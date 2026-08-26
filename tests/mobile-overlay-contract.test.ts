@@ -37,18 +37,18 @@ describe("canonical mobile overlay system", () => {
     expect(component).not.toContain("ShadButton");
   });
 
-  it("keeps WorkspaceShell on the canonical desktop rail plus native/mobile utility split", () => {
+  it("keeps WorkspaceShell on the canonical desktop rail plus one mobile More owner", () => {
     const shell = source("src/components/WorkspaceShell.tsx");
     const signature = source("src/styles/wireline-app-signature.css");
 
     expect(shell).toContain("function DesktopRail");
-    // Claude Design mobile chrome: one unified MobileDock + a native-shell gate
-    // around MobileBrowserUtilities (which surfaces billing/integrations in the
-    // mobile browser but is hidden inside native app shells).
+    // Mobile chrome has one dock and one More sheet. A second floating gear
+    // duplicated the same settings/actions and broke the rhythm at tablet sizes.
     expect(shell).toContain("function MobileDock");
-    expect(shell).toContain("function isNativeAppShell");
-    expect(shell).toContain("!nativeAppShell ? <MobileBrowserUtilities />");
+    expect(shell).not.toContain("MobileBrowserUtilities");
+    expect(shell).not.toContain("function isNativeAppShell");
     expect(shell).toContain("<MobileDock");
+    expect(shell).toContain("<MobileNavMoreSheet");
     // Full Claude Design sidebar IA, posture-aware.
     expect(shell).toContain("WORKSPACE_NAV");
     expect(shell).toContain("OPERATE_NAV");

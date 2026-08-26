@@ -67,7 +67,7 @@ export default function AcceptInvite() {
         sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
-        window.setTimeout(() => window.location.assign("/overview"), 900);
+        window.setTimeout(() => window.location.assign("/studio"), 900);
       })
       .catch((error: unknown) => {
         sessionStorage.removeItem(PENDING_INVITE_KEY);

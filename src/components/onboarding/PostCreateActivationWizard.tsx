@@ -634,7 +634,7 @@ export default function PostCreateActivationWizard({
             <>
               {!hasLine ? (
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/settings/phone">{POST_CREATE_WIZARD_COPY.complete.phoneCta}</Link>
+                  <Link to="/phone?tab=setup">{POST_CREATE_WIZARD_COPY.complete.phoneCta}</Link>
                 </Button>
               ) : null}
               <Button type="button" size="sm" onClick={dismiss} disabled={provisioning}>

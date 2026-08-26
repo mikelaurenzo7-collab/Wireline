@@ -1131,7 +1131,7 @@ router.post("/mcp", async (req, res) => {
           texting_configured: row?.texting_configured === true,
           email_connected: row?.email_connected === true,
           latest_activity_at: isoDateOrEmpty(row?.latest_activity_at),
-          open_in_wireline_url: `${issuer(req)}/overview`,
+          open_in_wireline_url: `${issuer(req)}/studio`,
         };
       });
       const recentTotal =

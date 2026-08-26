@@ -295,11 +295,11 @@ export default function StripeBillingCard({
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
           You can keep using BotBound. We'll email you the moment self-serve plan changes are
-          available, or write to{" "}
-          <a href="mailto:sales@trywireline.com" className="text-brand hover:underline">
-            sales@trywireline.com
-          </a>{" "}
-          if you'd like to talk to us about a plan today.
+          available, or{" "}
+          <Link to="/contact" className="text-brand hover:underline">
+            talk to BotBound
+          </Link>{" "}
+          about a plan today.
         </p>
       </div>
     );

@@ -115,9 +115,8 @@ describe("authenticated workspace design architecture", () => {
   it("keeps phone line management canonical in Calls rather than duplicated in Settings", () => {
     const routes = read("src/routes/AppRoutes.tsx");
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
-    expect(routes).toContain(
-      'path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />}',
-    );
+    expect(routes).toContain('path="/settings/phone" element={<PhoneSettingsRedirect />}');
+    expect(routes).toContain('search.set("tab", "setup")');
     expect(routes).not.toContain("const PhoneSettings = lazy");
     expect(settingsTabs).not.toContain('href: "/settings/phone"');
     expect(settingsTabs).toContain("WorkspaceControlBand");

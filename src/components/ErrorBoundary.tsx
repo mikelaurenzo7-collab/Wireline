@@ -59,7 +59,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   /**
    * ErrorBoundary sits above AuthProvider so it catches marketing crashes too.
    * If the crashed route is public (marketing, legal, auth), the recovery link
-   * should go home — not `/overview`, which forces a redirect to /signin for
+   * should go home — not `/studio`, which forces a redirect to /signin for
    * signed-out visitors and drops them into a login wall on top of the crash.
    */
   private recoveryHref(): { href: string; label: string } {
@@ -69,7 +69,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       /^\/(?:overview|studio|agents|approvals|call-logs|logs|inbox|phone|knowledge|insights|connections|settings|apps|admin|billing|audit|dnc|templates|onboarding)/.test(
         path,
       );
-    if (isWorkspace) return { href: "/overview", label: "Back to workspace" };
+    if (isWorkspace) return { href: "/studio", label: "Back to workspace" };
     return { href: "/", label: "Back home" };
   }
 

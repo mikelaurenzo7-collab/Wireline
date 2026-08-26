@@ -10,7 +10,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const responsiveCss = read("src/styles/responsive.css");
   const safeAreaOwnership = read("src/styles/safe-area-ownership.css");
   const navigation = read("src/constants/navigation.ts");
-  const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
   const authPortal = read("src/components/AuthPortal.tsx");
   const authAccessPanel = read("src/components/auth/AuthAccessPanel.tsx");
   const authRedirect = read("src/lib/auth-redirect.ts");
@@ -64,17 +63,17 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /MOBILE_PRIMARY_NAV/,
     "workspace shell must use centralized navigation constants",
   );
-  mustInclude(
+  mustExclude(
     "src/components/WorkspaceShell.tsx",
     workspaceShell,
-    /function isNativeAppShell/,
-    "browser-only utilities must be gated for native shells",
+    /MobileBrowserUtilities|function isNativeAppShell/,
+    "workspace shell must not mount a second mobile utility control beside More",
   );
   mustInclude(
     "src/components/WorkspaceShell.tsx",
     workspaceShell,
-    /!nativeAppShell \?\s*<MobileBrowserUtilities/,
-    "MobileBrowserUtilities must be gated by native shell detection",
+    /<MobileNavMoreSheet/,
+    "mobile More must remain the single secondary-navigation owner",
   );
   mustInclude(
     "src/styles/safe-area-ownership.css",
@@ -106,19 +105,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /wl-workspace-shell--studio|studioParams|isStudioOperationsRoute/,
     "shell must not switch visual systems by Studio route state",
   );
-  mustInclude(
-    "src/components/MobileBrowserUtilities.tsx",
-    mobileBrowserUtilities,
-    /Billing[\s\S]*Usage \+ balance/,
-    "mobile browser utilities must expose billing and usage controls",
-  );
-  mustInclude(
-    "src/components/MobileBrowserUtilities.tsx",
-    mobileBrowserUtilities,
-    /\/connections[\s\S]*Connected tools|Connected tools[\s\S]*\/connections/,
-    "mobile browser utilities must expose connected tools",
-  );
-
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,

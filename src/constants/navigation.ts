@@ -70,7 +70,7 @@ export function desktopNavParentHref(pathname: string): string | null {
 export const WORKSPACE_NAV: ShellNavItem[] = [
   {
     href: "/studio",
-    label: "Agent Studio",
+    label: "Bot Studio",
     shortLabel: "Studio",
     icon: "Bot",
     matches: ["/studio", "/agents", "/overview"],
@@ -100,7 +100,7 @@ export const OPERATE_NAV: ShellNavItem[] = [
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: "/studio",
-    label: "Agent Studio",
+    label: "Bot Studio",
     shortLabel: "Studio",
     icon: "Bot",
     matches: ["/studio", "/agents", "/overview"],
@@ -206,10 +206,10 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/overview": "Agent Studio",
-  "/studio": "Agent Studio",
+  "/overview": "Bot Studio",
+  "/studio": "Bot Studio",
   "/studio/handoff": "Browser handoff",
-  "/studio/live-video": "Agent Studio",
+  "/studio/live-video": "Bot Studio",
   "/templates": "Templates",
   "/knowledge": "Knowledge",
   "/connections": "Connections",

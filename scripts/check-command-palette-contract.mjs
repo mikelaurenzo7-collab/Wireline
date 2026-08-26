@@ -92,11 +92,17 @@ requirePattern(
   /isTopmostTrap/,
   "must isolate keyboard handling to the topmost dialog",
 );
-requirePattern(
+forbidPattern(
   "src/components/CommandBar.tsx",
   commandBar,
   /href: "\/overview"/,
-  "must include the active Overview route",
+  "must not expose retired Overview as a duplicate Studio command",
+);
+requirePattern(
+  "src/components/CommandBar.tsx",
+  commandBar,
+  /label: "Bot Studio"[\s\S]*href: "\/studio"/,
+  "must expose Bot Studio as the workspace home",
 );
 requirePattern(
   "src/components/CommandBar.tsx",

@@ -554,18 +554,10 @@ export default function AuthAccessPanel({
 
         {!isReset ? (
           <div className="wl-access-panel__tabs" role="group" aria-label="Account access mode">
-            <button
-              type="button"
-              aria-pressed={!isSignUp}
-              onClick={() => changeMode("signin")}
-            >
+            <button type="button" aria-pressed={!isSignUp} onClick={() => changeMode("signin")}>
               Sign In
             </button>
-            <button
-              type="button"
-              aria-pressed={isSignUp}
-              onClick={() => changeMode("signup")}
-            >
+            <button type="button" aria-pressed={isSignUp} onClick={() => changeMode("signup")}>
               Create Account
             </button>
           </div>
@@ -639,6 +631,7 @@ export default function AuthAccessPanel({
                 name="email"
                 type="email"
                 required
+                autoFocus={!embedded}
                 autoComplete="email"
                 spellCheck={false}
                 disabled={loading}

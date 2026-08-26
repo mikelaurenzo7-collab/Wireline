@@ -1,13 +1,5 @@
 import { Link } from "react-router";
-import {
-  ArrowRight,
-  Building2,
-  Mic2,
-  Phone,
-  PlugZap,
-  ShieldCheck,
-  Target,
-} from "lucide-react";
+import { ArrowRight, Building2, Mic2, Phone, PlugZap, ShieldCheck, Target } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -19,7 +11,7 @@ const customizationLinks = [
   {
     label: "Caller identity",
     detail: "Legal name, CNAM, support channels for live calls.",
-    href: "/settings/phone#company-identity",
+    href: "/phone?tab=setup#company-identity",
     icon: Building2,
   },
   {
@@ -31,7 +23,7 @@ const customizationLinks = [
   {
     label: "Phone line",
     detail: "Provision a number and connect it to your Bot.",
-    href: "/settings/phone",
+    href: "/phone?tab=setup",
     icon: Phone,
   },
   {
@@ -57,7 +49,7 @@ const customizationLinks = [
 export default function CustomizationSettings() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-5">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Appearance & brand" titleHidden />
 

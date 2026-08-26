@@ -72,7 +72,7 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.android.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.android.action,
-    href: "mailto:support@trywireline.com?subject=BotBound%20for%20Android%20internal%20beta",
+    href: "/support",
     emphasis: "muted" as const,
   },
   {
@@ -82,15 +82,13 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.ios.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.ios.action,
-    href: "mailto:support@trywireline.com?subject=BotBound%20for%20iPhone%20waitlist",
+    href: "/support",
     emphasis: "muted" as const,
   },
 ] as const;
 
 export default function ClientAppsPage() {
   const location = useLocation();
-  const inSettings = location.pathname.startsWith("/settings");
-
   useEffect(() => {
     if (location.hash !== "#chatgpt-mcp") return;
     const id = window.setTimeout(() => {
@@ -105,8 +103,8 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard">
-        {inSettings ? <SettingsTabs /> : null}
-        <WorkspacePageIntro title="Apps" titleHidden={inSettings} />
+        <SettingsTabs />
+        <WorkspacePageIntro title="Apps" titleHidden />
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="BotBound apps and companion surfaces"
