@@ -79,8 +79,8 @@ export const POST_CREATE_WIZARD_COPY = {
       `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
     deferredTitle: "Ready in Studio",
     deferredDetail: (agentName: string) =>
-      `${agentName} is trained and waiting. Connect a number under Settings → Phone when you're ready to go live.`,
+      `${agentName} is trained and waiting. Connect a number under Calls → Setup when you're ready to go live.`,
     studioCta: "Continue in Studio",
-    phoneCta: "Phone settings",
+    phoneCta: "Connect a number",
   },
 } as const;

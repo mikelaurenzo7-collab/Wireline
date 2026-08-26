@@ -22,17 +22,17 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage mobile access path has clear branding and no serious axe violations", async ({
+test("homepage mobile product and access path has clear branding and no serious axe violations", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await gotoHomepageWithMain(page);
 
-  await expect(page.locator(".landing-prestige__hero")).toBeHidden();
+  await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Sign In", exact: true })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Create Account", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Account", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
@@ -59,7 +59,9 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
-    const headline = document.querySelector(".landing-prestige__hero-copy h1")?.getBoundingClientRect();
+    const headline = document
+      .querySelector(".landing-prestige__hero-copy h1")
+      ?.getBoundingClientRect();
     const hero = document.querySelector(".landing-prestige__hero")?.getBoundingClientRect();
     const auth = document.querySelector(".landing-prestige__auth")?.getBoundingClientRect();
     return {
@@ -101,9 +103,9 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);
-  await page.getByRole("tab", { name: "Create Account", exact: true }).click();
-  await expect(page.getByRole("tab", { name: "Create Account", exact: true })).toHaveAttribute(
-    "aria-selected",
+  await page.getByRole("button", { name: "Create Account", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Create Account", exact: true })).toHaveAttribute(
+    "aria-pressed",
     "true",
   );
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeAttached();

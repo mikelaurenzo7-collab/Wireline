@@ -25,6 +25,20 @@ const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"
 
 const loading = <RouteFallback />;
 
+function PreservingRedirect({
+  to,
+  searchParams,
+}: {
+  to: string;
+  searchParams?: Record<string, string>;
+}) {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  for (const [key, value] of Object.entries(searchParams ?? {})) search.set(key, value);
+  const query = search.toString();
+  return <Navigate to={`${to}${query ? `?${query}` : ""}${location.hash}`} replace />;
+}
+
 function ToStudioRedirect() {
   const location = useLocation();
   return <Navigate to={`/studio${location.search}${location.hash}`} replace />;
@@ -88,9 +102,14 @@ export default function AppRoutes() {
 
         <Route path="/connections" element={<ConnectionsPage />} />
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
-        <Route path="/connections/*" element={<ConnectionsPage />} />
-        <Route path="/call-logs" element={<Navigate to="/phone?tab=logs" replace />} />
-        <Route path="/logs" element={<Navigate to="/phone?tab=logs" replace />} />
+        <Route
+          path="/call-logs"
+          element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
+        />
+        <Route
+          path="/logs"
+          element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
+        />
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
@@ -108,9 +127,11 @@ export default function AppRoutes() {
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />
         <Route path="/settings/apps" element={<ClientAppsPage />} />
-        <Route path="/settings/*" element={<SettingsPage />} />
-        <Route path="/dnc" element={<Navigate to="/settings/compliance" replace />} />
-        <Route path="/audit" element={<Navigate to="/admin?tab=activity" replace />} />
+        <Route path="/dnc" element={<PreservingRedirect to="/settings/compliance" />} />
+        <Route
+          path="/audit"
+          element={<PreservingRedirect to="/admin" searchParams={{ tab: "activity" }} />}
+        />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
 

@@ -129,7 +129,7 @@ function providerStatusLabel(status: ProviderStatus): string {
     case "review_requested":
       return "Review requested";
     case "in_review":
-      return "Provider review";
+      return "Identity review";
     case "approved":
       return "Approved";
     case "rejected":
@@ -173,7 +173,7 @@ function reviewSummary(identity: IdentityResponse | null) {
   }
   if (statuses.includes("in_review")) {
     return {
-      label: "Provider review",
+      label: "Identity review",
       className:
         "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground",
     };
@@ -286,7 +286,7 @@ export default function CompanyIdentityPack() {
       setForm(formFromIdentity(body));
       if (body.review_state_invalidated) {
         setMessage(
-          "A company identity field or dedicated number changed after the prior review request, so BotBound reset the stale provider state.",
+          "A company identity field or dedicated number changed after the prior review request, so BotBound reset the previous verification state.",
         );
       }
     } catch (err) {

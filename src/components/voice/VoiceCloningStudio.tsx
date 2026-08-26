@@ -276,7 +276,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
       if (!response.ok) throw new Error(body?.error || "Voice could not be revoked.");
       setNotice(
         body?.status === "deletion_pending"
-          ? "Live use stopped. Provider deletion is pending; retry revoke."
+          ? "Live use stopped. Deletion is still pending; retry revoke."
           : "Voice revoked and deleted.",
       );
       await onChanged().catch(() => {
@@ -317,7 +317,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
           {/* A disabled control with no reason reads as a broken button. Say why. */}
           {!configured ? (
             <p id="create-voice-unavailable" className="text-xs text-muted-foreground">
-              Custom voices need the voice provider connected.
+              Custom voice creation is not connected yet.
             </p>
           ) : null}
         </div>
@@ -453,7 +453,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
                   <p className="truncate text-sm font-semibold text-foreground">{voice.name}</p>
                   <p className="text-xs capitalize text-muted-foreground">
                     {statusLabel(voice.status)}
-                    {voice.provider_verification_required ? " · provider check" : ""}
+                    {voice.provider_verification_required ? " · verification required" : ""}
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
@@ -464,7 +464,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
                       disabled={!reviewed || providerBlocked || Boolean(busy)}
                       title={
                         providerBlocked
-                          ? "Provider verification is required"
+                          ? "Voice verification is required"
                           : reviewed
                             ? "Approve for live calls"
                             : "Play the full proof first"

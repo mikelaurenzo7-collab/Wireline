@@ -216,8 +216,8 @@ export default function RecentCallArtifactRequests() {
       }));
 
       // Serverless workers otherwise wait for the periodic queue sweep. Start this
-      // owned job immediately, but do not block the interface while OpenAI and the
-      // connected storage provider finish. Polling remains the source of UI truth.
+      // owned job immediately, but do not block the interface while BotBound creates
+      // and stores the file. Polling remains the source of UI truth.
       void authFetch(`/api/jobs/${encodeURIComponent(jobId)}/run`, {
         method: "POST",
         timeoutMs: 540_000,

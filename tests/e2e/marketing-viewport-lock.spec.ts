@@ -93,9 +93,7 @@ async function publicMetrics(page: Page) {
       prestigeAuthHeight: prestigeAuthRect?.height ?? 0,
       prestigeDemoWidth: prestigeDemoRect?.width ?? 0,
       prestigeDemoHeight: prestigeDemoRect?.height ?? 0,
-      prestigeEntranceDisplay: prestigeEntrance
-        ? getComputedStyle(prestigeEntrance).display
-        : "",
+      prestigeEntranceDisplay: prestigeEntrance ? getComputedStyle(prestigeEntrance).display : "",
       prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
       prestigeMobileLinksDisplay: prestigeMobileLinks
         ? getComputedStyle(prestigeMobileLinks).display
@@ -202,7 +200,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." })).toBeAttached();
+  await expect(
+    page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." }),
+  ).toBeAttached();
 
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "desktop home");
@@ -226,22 +226,22 @@ test("home remains usable on a short laptop", async ({ page }) => {
   expect(metrics.prestigeDemoWidth).toBeGreaterThan(240);
 });
 
-test("home becomes an uncluttered access-first experience on phone", async ({ page }) => {
+test("home keeps the BotBound promise and account path in one mobile flow", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await openPublicRoute(page, "/");
 
-  await expect(page.locator(".landing-prestige__hero")).toBeHidden();
-  await expect(page.locator(".landing-prestige__desktop-only")).toBeHidden();
+  await expect(page.locator(".landing-prestige__hero")).toBeVisible();
+  await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Create Account" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Account" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "phone home");
-  expect(metrics.prestigeEntranceDisplay).toBe("block");
-  expect(metrics.prestigeHeroDisplay).toBe("none");
-  expect(metrics.prestigeHeroWidth).toBe(0);
+  expect(metrics.prestigeEntranceDisplay).toBe("flex");
+  expect(metrics.prestigeHeroDisplay).toBe("grid");
+  expect(metrics.prestigeHeroWidth).toBeGreaterThan(320);
   expect(metrics.prestigeAuthWidth).toBeGreaterThan(320);
   expect(metrics.prestigeAuthWidth).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.prestigeMobileLinksDisplay).toBe("flex");

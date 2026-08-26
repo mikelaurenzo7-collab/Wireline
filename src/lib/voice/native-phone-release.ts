@@ -18,7 +18,7 @@ function twilioStatus(error: unknown): number | null {
 
 async function releaseTwilioLine(sid: string): Promise<void> {
   const client = getTwilioClient();
-  if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!client) throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
   try {
     await client.incomingPhoneNumbers(sid).remove();
   } catch (error) {
@@ -37,12 +37,7 @@ async function retireBinding(userId: string, phoneNumber: string): Promise<void>
       lastError: null,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(xaiPhoneBindings.userId, userId),
-        eq(xaiPhoneBindings.phoneNumber, phoneNumber),
-      ),
-    );
+    .where(and(eq(xaiPhoneBindings.userId, userId), eq(xaiPhoneBindings.phoneNumber, phoneNumber)));
 }
 
 export async function releaseNativeTenantNumber(
@@ -107,10 +102,7 @@ export async function releaseNativeTenantNumber(
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(xaiPhoneBindings.userId, userId),
-            eq(xaiPhoneBindings.phoneNumber, phoneNumber),
-          ),
+          and(eq(xaiPhoneBindings.userId, userId), eq(xaiPhoneBindings.phoneNumber, phoneNumber)),
         );
       await tx
         .delete(schema.phoneNumbers)

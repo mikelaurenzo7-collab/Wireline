@@ -46,7 +46,7 @@ describe("safe-area spacing ownership", () => {
 
     expect(ownership).toContain(".wl-stitch-auth-shell {");
     expect(ownership).toMatch(
-      /\.wl-stitch-auth-shell \.wl-auth-form-panel \{[^}]*height: 100% !important;[^}]*max-height: 100% !important;/s,
+      /\.wl-stitch-auth-shell \.wl-auth-form-panel \{[^}]*height: 100% !important;[^}]*min-height: 100% !important;[^}]*max-height: 100% !important;/s,
     );
     expect(ownership).toMatch(
       /\.wl-workspace-shell \{[^}]*safe-area-inset-top[^}]*safe-area-inset-bottom/s,
@@ -56,7 +56,7 @@ describe("safe-area spacing ownership", () => {
     );
     expect(ownership).toContain('nav[aria-label="Workspace navigation"]');
     expect(ownership).toMatch(
-      /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
+      /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
     const workspaceSpacing = workspace.match(
@@ -92,6 +92,7 @@ describe("safe-area spacing ownership", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const landingCss = read("src/styles/landing-prestige.css");
     const mobile = read("src/styles/public-mobile-refinement.css");
+    const ownership = read("src/styles/safe-area-ownership.css");
 
     expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
     expect(documentFlow).toContain('body[data-wireline-viewport="document"]');
@@ -100,11 +101,20 @@ describe("safe-area spacing ownership", () => {
     for (const path of ["src/pages/Features.tsx", "src/pages/Pricing.tsx", "src/pages/About.tsx"]) {
       expect(read(path), path).not.toContain('className="pt-16"');
     }
-    expect(authPortal).toContain("wl-auth-form-panel flex min-h-[100dvh]");
+    expect(authPortal).toContain("wl-auth-form-panel flex min-h-full");
     expect(authPortal).toContain("w-full max-w-[520px]");
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*100dvh/,
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*auto/,
     );
-    expect(mobile).toContain("env(safe-area-inset-left)");
+    expect(ownership).toMatch(
+      /\.marketing-surface \{[\s\S]*padding-left: env\(safe-area-inset-left[\s\S]*padding-right: env\(safe-area-inset-right/,
+    );
+    expect(ownership).toMatch(
+      /\.marketing-surface\.auth-portal-canvas \{[\s\S]*--wl-marketing-chrome-top: env\(safe-area-inset-top[\s\S]*padding-bottom: env\(safe-area-inset-bottom/,
+    );
+    expect(mobile).toContain("padding-left: 1.15rem");
+    expect(mobile).toContain("padding-right: 1.15rem");
+    expect(mobile).not.toContain("env(safe-area-inset-left)");
+    expect(mobile).not.toContain("env(safe-area-inset-right)");
   });
 });

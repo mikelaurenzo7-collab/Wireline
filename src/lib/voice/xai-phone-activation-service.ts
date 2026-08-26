@@ -20,8 +20,7 @@ export { getNativeXAIPhoneStatus };
 export type { NativeXAIPhoneStatus };
 
 const XAI_DEACTIVATION_FAILED = "XAI_PHONE_DEACTIVATION_FAILED";
-const XAI_DEACTIVATION_OUTCOME_AMBIGUOUS =
-  "XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS";
+const XAI_DEACTIVATION_OUTCOME_AMBIGUOUS = "XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS";
 
 type DeactivationClaimRow = {
   binding_id: string;
@@ -147,7 +146,9 @@ export async function deactivateNativeXAIPhoneLine(input: {
   try {
     if (claim.twilioSipTrunkSid && claim.twilioPhoneNumberSid) {
       const client = getTwilioClient();
-      if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+      if (!client) {
+        throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
+      }
       const trunk = client.trunking.v1.trunks(claim.twilioSipTrunkSid);
       const attached = await trunk.phoneNumbers.list({ limit: 1_000 });
       // Twilio's Elastic SIP Trunk PhoneNumber resource is identified by its

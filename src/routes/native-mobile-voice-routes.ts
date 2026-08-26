@@ -117,7 +117,7 @@ router.post(
       return res.status(400).json({
         code: "CONSENT_ARTIFACT_REQUIRED",
         error:
-          "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
+          "Marketing calls with express written consent require an auditable consent source or lead reference; manual attestation alone is not sufficient.",
       });
     }
 
@@ -365,7 +365,7 @@ router.post(
     if (!callId) {
       return res.status(409).json({
         code: "HANDOFF_UNAVAILABLE",
-        error: "This call is not controlled by the native xAI runtime.",
+        error: "This call cannot be transferred from its current session.",
       });
     }
 

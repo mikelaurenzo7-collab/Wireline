@@ -62,6 +62,11 @@ function UnknownRoute() {
   return user ? <AppShell /> : <PublicNotFound />;
 }
 
+function PreservingRedirect({ to }: { to: string }) {
+  const location = useLocation();
+  return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
+}
+
 function ViewportModeRoot({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { user } = useAuth();
@@ -93,18 +98,18 @@ function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/features" element={<Features />} />
         <Route path="/pricing" element={<Pricing />} />
-        <Route path="/billing" element={<Navigate to="/settings/billing" replace />} />
+        <Route path="/billing" element={<PreservingRedirect to="/settings/billing" />} />
         <Route path="/showcase" element={<Showcase />} />
         <Route path="/compare" element={<Compare />} />
-        <Route path="/solutions" element={<Navigate to="/solutions/support" replace />} />
-        <Route path="/use-cases" element={<Navigate to="/solutions/support" replace />} />
-        <Route path="/use-cases/*" element={<Navigate to="/solutions/support" replace />} />
+        <Route path="/solutions" element={<PreservingRedirect to="/solutions/support" />} />
+        <Route path="/use-cases" element={<PreservingRedirect to="/solutions/support" />} />
+        <Route path="/use-cases/*" element={<PreservingRedirect to="/solutions/support" />} />
         <Route path="/solutions/:wedge" element={<SolutionsPage />} />
         <Route
           path="/for/everyday"
           element={<VerticalLanding slug="personal" canonicalPath="/for/everyday" />}
         />
-        <Route path="/for/personal" element={<Navigate to="/for/everyday" replace />} />
+        <Route path="/for/personal" element={<PreservingRedirect to="/for/everyday" />} />
         <Route path="/for/home-services" element={<VerticalLanding slug="home-services" />} />
         <Route path="/for/medical" element={<VerticalLanding slug="medical" />} />
         <Route path="/for/legal" element={<VerticalLanding slug="legal" />} />
@@ -112,10 +117,10 @@ function AppRouter() {
         <Route path="/for/insurance" element={<VerticalLanding slug="insurance" />} />
         <Route path="/for/restaurants" element={<VerticalLanding slug="restaurants" />} />
         <Route path="/for/sales" element={<VerticalLanding slug="sales" />} />
-        <Route path="/for/*" element={<Navigate to="/for/everyday" replace />} />
+        <Route path="/for/*" element={<PreservingRedirect to="/for/everyday" />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/*" element={<Navigate to="/blog" replace />} />
+        <Route path="/blog/*" element={<PreservingRedirect to="/blog" />} />
         <Route path="/changelog" element={<PublicChangelog />} />
         <Route path="/security" element={<Security />} />
         <Route path="/trust" element={<Security />} />
@@ -129,8 +134,8 @@ function AppRouter() {
         <Route path="/signup/*" element={<AuthPortalRoute />} />
         <Route path="/get-started" element={<AuthPortalRoute />} />
         <Route path="/auth" element={<AuthPortalRoute />} />
-        <Route path="/login" element={<Navigate to="/signin" replace />} />
-        <Route path="/reset" element={<Navigate to="/signin" replace />} />
+        <Route path="/login" element={<PreservingRedirect to="/signin" />} />
+        <Route path="/reset" element={<PreservingRedirect to="/signin" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />

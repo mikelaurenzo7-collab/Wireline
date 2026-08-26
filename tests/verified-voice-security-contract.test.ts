@@ -82,7 +82,7 @@ describe("verified private voice security contract", () => {
     // The Create voice button is disabled whenever the provider credential is
     // absent. Without a reason next to it, an admin sees a greyed control and
     // reads it as broken.
-    expect(studio).toContain("Custom voices need the voice provider connected.");
+    expect(studio).toContain("Custom voice creation is not connected yet.");
     expect(studio).toContain('id="create-voice-unavailable"');
     expect(studio).toMatch(
       /aria-describedby=\{configured \? undefined : "create-voice-unavailable"\}/,

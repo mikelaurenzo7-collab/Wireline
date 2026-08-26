@@ -139,7 +139,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
             status: 503,
             body: {
               code: "SERVICE_UNAVAILABLE",
-              error: "Stripe is not configured, so extra-agent entitlement changes are paused.",
+              error: "Billing is temporarily unavailable, so Bot-capacity changes are paused.",
             },
           };
         }
@@ -310,7 +310,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           status: 502,
           body: {
             code: "BAD_GATEWAY",
-            error: "Stripe could not update agent capacity. No local entitlement was changed.",
+            error: "Billing could not update Bot capacity. No local entitlement was changed.",
           },
         };
       }
@@ -338,7 +338,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           body: {
             code: "BILLING_RECONCILIATION_REQUIRED",
             error:
-              "Stripe did not confirm the requested capacity. No local entitlement was changed.",
+              "Billing did not confirm the requested capacity. No local entitlement was changed.",
           },
         };
       }

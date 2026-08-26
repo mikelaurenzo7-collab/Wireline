@@ -123,7 +123,7 @@ describe("authenticated Bot navigation contract", () => {
     const knowledge = read("src/pages/KnowledgePage.tsx");
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(connections).toContain("IntegrationOperatingMap");
+    expect(connections).not.toContain("IntegrationOperatingMap");
     expect(connections).toContain("CrmConnectionCard");
     expect(knowledge).toContain("WorkspaceControlBand");
     expect(knowledge).toContain("WorkspaceTabStrip");

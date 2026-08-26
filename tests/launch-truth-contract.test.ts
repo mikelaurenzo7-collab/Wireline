@@ -58,7 +58,8 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("the full test suite");
     expect(changelog).not.toContain("live service health before promotion");
     expect(changelog).not.toContain("Every PR now runs");
-    expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
+    expect(changelog).toContain("automated screenshot capture and responsive-layout auditing");
+    expect(changelog).not.toContain("Playwright screenshot capture");
     expect(changelog).not.toContain("committed baselines");
     expect(changelog).toContain('title: "BotBound runtime monitoring"');
     expect(changelog).toContain("Customer-impacting issues surface through BotBound");

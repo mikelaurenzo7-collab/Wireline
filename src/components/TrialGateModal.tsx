@@ -118,7 +118,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "SUBSCRIPTION_REQUIRED":
       return {
         title: "Subscription paused",
-        body: "Your subscription is past due. Open Stripe billing to update your payment method and restore live work.",
+        body: "Your subscription is past due. Open BotBound Billing to update your payment method and restore live work.",
       };
     default:
       return { title: "Capacity required", body: detail.error };
@@ -306,7 +306,7 @@ export default function TrialGateModal() {
       } | null;
       const portalUrl = data?.url;
       if (!response.ok || !portalUrl) {
-        setError(data?.error || "Stripe billing could not be opened. Try again shortly.");
+        setError(data?.error || "Billing could not be opened. Try again shortly.");
         setPending(null);
         return;
       }
@@ -314,9 +314,7 @@ export default function TrialGateModal() {
     } catch (portalError: unknown) {
       if (controller.signal.aborted) return;
       setError(
-        portalError instanceof Error
-          ? portalError.message
-          : "Network error opening Stripe billing.",
+        portalError instanceof Error ? portalError.message : "Network error opening billing.",
       );
       setPending(null);
     } finally {
@@ -462,12 +460,12 @@ export default function TrialGateModal() {
                     {pending === "billing-portal" ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Opening Stripe billing
+                        Opening billing
                       </>
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4" />
-                        Update payment in Stripe
+                        Update payment
                       </>
                     )}
                   </ShadButton>
@@ -568,7 +566,7 @@ export default function TrialGateModal() {
 
               {showPlanCheckout && (
                 <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                  <span>Secure checkout in Stripe</span>
+                  <span>Secure checkout</span>
                   <span>&middot;</span>
                   <span>Cancel anytime</span>
                   <span>&middot;</span>

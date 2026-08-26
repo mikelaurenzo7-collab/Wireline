@@ -60,7 +60,9 @@ router.post(
   enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe is not configured.");
+      if (!stripeAvailable()) {
+        throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
+      }
 
       const amountUsd = Number(req.body?.amount_usd);
       if (!isConversationBalanceAmount(amountUsd)) {

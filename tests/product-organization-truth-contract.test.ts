@@ -62,7 +62,8 @@ describe("product organization truth contracts", () => {
     expect(stripeCard).toContain("GrantedPlanAccessCard");
     expect(stripeCard).toContain("Plan access is active");
     expect(stripeCard).toContain("Paid-plan access is granted directly to this workspace");
-    expect(stripeCard.replace(/\s+/g, " ")).toContain("No recurring Stripe invoice is scheduled");
+    expect(stripeCard.replace(/\s+/g, " ")).toContain("No recurring invoice is scheduled");
+    expect(stripeCard).not.toContain("Stripe invoice");
     expect(stripeCard).toContain("!hasPlanAccess ? (");
   });
 });

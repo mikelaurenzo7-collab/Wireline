@@ -21,7 +21,7 @@ import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const MCP_SERVER_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/mcp`;
 const CURSOR_MCP_INSTALL_URL =
-  "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
+  "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
 
 const clientSurfaces = [
   {
@@ -102,11 +102,11 @@ export default function ClientAppsPage() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Apps" titleHidden />
         <section
-          className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+          className="grid gap-3 md:grid-cols-2"
           aria-label="BotBound apps and companion surfaces"
         >
           {clientSurfaces.map(

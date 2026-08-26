@@ -81,19 +81,17 @@ function ambiguousResult(leadId: bigint): PlaceCallResult {
  * xAI SIP number. The placement claim is durable before the carrier request,
  * so overlapping campaign/cadence/callback workers cannot double-dial a lead.
  */
-export async function placeOutboundCall(
-  input: PlaceOutboundCallInput,
-): Promise<PlaceCallResult> {
+export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<PlaceCallResult> {
   const customerNumber = normalizeXAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
   }
   if (!xaiOutboundTokenReady()) {
-    return { ok: false, status: 503, error: "Native outbound calling is not configured." };
+    return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };
   }
   const twilio = getTwilioClient();
   if (!twilio) {
-    return { ok: false, status: 503, error: "Twilio voice is not configured." };
+    return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };
   }
 
   const [[settings], [agent], [binding]] = await Promise.all([
@@ -137,7 +135,7 @@ export async function placeOutboundCall(
     return {
       ok: false,
       status: 409,
-      error: "Activate this agent's native Twilio and realtime voice line before dialing.",
+      error: "Connect this Bot's live voice line before dialing.",
     };
   }
   if (await isDncBlocked(input.userId, customerNumber)) {

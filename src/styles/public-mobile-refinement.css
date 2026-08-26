@@ -1,7 +1,7 @@
-/* WIRELINE public mobile refinement ----------------------------------------
+/* BotBound public mobile refinement ----------------------------------------
  * Public phone surfaces prioritize entry and reading. Remove decorative card
  * weight while preserving contrast, focus, touch targets, and the single
- * WIRELINE visual language.
+ * BotBound visual language.
  */
 
 /* The field shell owns the focus treatment. Suppressing the nested native
@@ -16,7 +16,8 @@
   .landing-prestige__auth {
     align-items: stretch;
     justify-content: center;
-    padding-inline: max(1.15rem, env(safe-area-inset-left));
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
   }
 
   .landing-prestige__auth .wl-access-panel.is-embedded {
@@ -49,11 +50,7 @@
 
   .landing-prestige__auth .wl-access-panel__tabs {
     margin-top: 1.4rem;
-    background: color-mix(
-      in srgb,
-      var(--wireline-color-surface-subtle) 58%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--wireline-color-surface-subtle) 58%, transparent);
   }
 
   .landing-prestige__auth .wl-access-panel__tabs button {
@@ -69,11 +66,7 @@
     min-width: 0;
     min-height: 2.9rem;
     padding-inline: 0.45rem;
-    background: color-mix(
-      in srgb,
-      var(--wireline-color-surface-default) 72%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--wireline-color-surface-default) 72%, transparent);
     font-size: 0.74rem;
   }
 
@@ -107,11 +100,7 @@
   }
 
   .landing-prestige__auth .wl-access-panel__terms {
-    background: color-mix(
-      in srgb,
-      var(--wireline-color-surface-subtle) 42%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--wireline-color-surface-subtle) 42%, transparent);
   }
 
   .landing-prestige__mobile-links {

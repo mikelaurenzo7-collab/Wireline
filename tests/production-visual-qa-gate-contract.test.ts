@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("production visual QA safety gate", () => {
   const capture = read("scripts/capture-prod-visual-qa.mjs");
+  const gate = read("scripts/check-visual-qa-manifest.mjs");
   const workflow = read(".github/workflows/production-visual-qa.yml");
 
   it("uses a stable QA sign-in without creating or mutating production records", () => {
@@ -20,6 +21,11 @@ describe("production visual QA safety gate", () => {
   it("writes a stable manifest and makes CI enforce every P0", () => {
     expect(capture).toContain('path.join(outputRoot, "latest-manifest.json")');
     expect(capture).toContain('kind: "auth"');
+    expect(capture).toContain('"/settings/not-a-route"');
+    expect(capture).toContain('"phone,desktop,laptop,breakpoint,short"');
+    expect(capture).toContain("path: `${prefix}-scroll-end.png`");
+    expect(gate).toContain('"pageerror"');
+    expect(gate).toContain('"console"');
     expect(workflow).toContain("WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}");
     expect(workflow).toContain("WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}");
     expect(workflow).toContain(

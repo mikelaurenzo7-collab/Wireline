@@ -37,7 +37,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/routes/AppRoutes.tsx",
     appRoutes,
-    /to="\/phone\?tab=logs"/,
+    /to="\/phone" searchParams=\{\{ tab: "logs" \}\}/,
     "legacy call-log routes must redirect to Phone logs",
   );
   mustInclude(
@@ -84,8 +84,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/styles/safe-area-ownership.css",
     safeAreaOwnership,
-    /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
-    "mobile workspace scroller must clear the fixed dock once",
+    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
+    "mobile and tablet workspace scrollers must clear the fixed dock once",
   );
   mustExclude(
     "src/styles/responsive.css",

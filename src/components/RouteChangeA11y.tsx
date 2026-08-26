@@ -15,7 +15,20 @@ export default function RouteChangeA11y() {
 
   useEffect(() => {
     const id = window.setTimeout(() => {
-      if (!location.hash) {
+      if (location.hash) {
+        let targetId = "";
+        try {
+          targetId = decodeURIComponent(location.hash.slice(1));
+        } catch {
+          targetId = location.hash.slice(1);
+        }
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (target) {
+          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          target.scrollIntoView({ block: "start" });
+          target.focus({ preventScroll: true });
+        }
+      } else {
         window.scrollTo({ top: 0, left: 0 });
 
         const target = document.querySelector<HTMLElement>("main h1, h1, main");

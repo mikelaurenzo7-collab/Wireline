@@ -11,7 +11,7 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 - **Privacy:** `https://botbound.me/mcp-privacy.html`
 - **Icon:** `https://botbound.me/botbound-icon-512.png`
 - **Support:** `support@trywireline.com`
-- **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9`
+- **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9`
 
 ## Directory form copy
 
@@ -25,13 +25,13 @@ Paste these values if the auto-detect form asks for them. Do not invent a second
 
 `botbound.me` is the **authorization server**. Cursor is the **OAuth client**. Do not register `https://botbound.me/...` as Cursor's redirect URI. That would send the authorization code to BotBound instead of Cursor, and Connect would fail.
 
-| Role | URL | Register? |
-| --- | --- | --- |
-| MCP / OAuth server (what Cursor calls) | `https://botbound.me/mcp` | Yes - this is the Directory MCP URL |
-| BotBound login/consent return (our page) | `https://botbound.me/mcp/oauth/callback` | Already owned by BotBound. Not a Cursor client redirect. |
-| Cursor desktop callback | `http://localhost:8787/callback` | Yes - keep in DCR allowlist. RFC 8252 loopback. Do not replace with the BotBound server origin. |
-| Cursor web / Agents callback | `https://www.cursor.com/agents/mcp/oauth/callback` | Yes — keep in DCR allowlist |
-| Older Cursor protocol callback | `cursor://anysphere.cursor-mcp/oauth/callback` | Yes — keep in DCR allowlist |
+| Role                                     | URL                                                | Register?                                                                                       |
+| ---------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| MCP / OAuth server (what Cursor calls)   | `https://botbound.me/mcp`                          | Yes - this is the Directory MCP URL                                                             |
+| BotBound login/consent return (our page) | `https://botbound.me/mcp/oauth/callback`           | Already owned by BotBound. Not a Cursor client redirect.                                        |
+| Cursor desktop callback                  | `http://localhost:8787/callback`                   | Yes - keep in DCR allowlist. RFC 8252 loopback. Do not replace with the BotBound server origin. |
+| Cursor web / Agents callback             | `https://www.cursor.com/agents/mcp/oauth/callback` | Yes — keep in DCR allowlist                                                                     |
+| Older Cursor protocol callback           | `cursor://anysphere.cursor-mcp/oauth/callback`     | Yes — keep in DCR allowlist                                                                     |
 
 Do **not** put Cursor's localhost callback in `MCP_OAUTH_ALLOWED_REDIRECT_URIS`. That env list is ChatGPT CIMD only. Cursor uses DCR, which already allowlists the three Cursor redirects in `src/lib/mcp-client-registry.ts`.
 

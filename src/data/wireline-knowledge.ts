@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "BotBound runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live phone calls run through Twilio plus xAI Direct SIP Speech-to-Speech (grok-voice-think-fast-2.0). Private Studio and ChatGPT browser tests use OpenAI Realtime. Browser tests never take over the phone Bot runtime.";
+  "Live calls and private browser tests run on separate BotBound-managed voice paths, so testing cannot take over a customer phone Bot.";
 
 export const WIRELINE_PLANS = [
   {

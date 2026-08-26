@@ -239,6 +239,10 @@ export default function AuthAccessPanel({
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
   const legacyBrowserHandoffUrl =
     typeof window === "undefined" ? null : canonicalLegacyBrowserHandoff(window.location);
 
@@ -594,7 +598,7 @@ export default function AuthAccessPanel({
         ) : null}
 
         {!isReset && oauthProviders.length > 0 ? (
-          <div className="wl-access-panel__oauth" aria-label="Continue with provider">
+          <div className="wl-access-panel__oauth" role="group" aria-label="Single sign-on options">
             {oauthProviders.map((provider) => (
               <button
                 key={provider.id}
@@ -700,11 +704,15 @@ export default function AuthAccessPanel({
               ) : null}
               {isSignUp && password ? (
                 <ul className="wl-access-panel__password-rules" aria-label="Password requirements">
-                  {PASSWORD_RULES.map((rule) => (
-                    <li key={rule.label} data-met={rule.test(password) ? "true" : "false"}>
-                      {rule.label}
-                    </li>
-                  ))}
+                  {PASSWORD_RULES.map((rule) => {
+                    const met = rule.test(password);
+                    return (
+                      <li key={rule.label} data-met={met ? "true" : "false"}>
+                        {rule.label}
+                        <span className="sr-only"> ({met ? "met" : "not met"})</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : null}
             </div>

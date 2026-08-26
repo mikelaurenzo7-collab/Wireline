@@ -151,6 +151,7 @@ function DesktopRail({
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const secondaryRouteParent = desktopNavParentHref(pathname);
   const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
+  const settingsActive = isNavActive(pathname, "/settings");
 
   return (
     <aside
@@ -270,7 +271,10 @@ function DesktopRail({
       <div className="min-h-4 flex-1" />
       <Link
         to="/settings"
-        className={`flex min-h-[44px] shrink-0 items-center border-t border-border/70 transition-colors hover:text-foreground ${collapsed ? "justify-center pt-3 text-muted-foreground" : "gap-2.5 px-1 pt-3 text-foreground"}`}
+        aria-current={settingsActive ? "page" : undefined}
+        data-wireline-nav-href="/settings"
+        data-wireline-nav-active={settingsActive ? "true" : undefined}
+        className={`wl-rail-link min-h-[44px] shrink-0 border-t border-border/70 transition-colors hover:text-foreground ${collapsed ? "justify-center !px-0 pt-3 text-muted-foreground" : "gap-2.5 px-1 pt-3 text-foreground"}`}
         aria-label="Account settings"
         title={collapsed ? "Account settings" : undefined}
       >

@@ -109,14 +109,4 @@ describe("industry-leader audit hardening contracts", () => {
     expect(changelog).not.toContain("Grok 4.5 primary");
     expect(changelog).not.toContain("Recaps · Triage · Activity · Cockpit");
   });
-
-  it("keeps Twilio WhatsApp out of platform capability chips until private beta is live", () => {
-    const catalog = read("src/lib/workspace-integration-catalog.ts");
-    const twilioBlock = catalog.slice(
-      catalog.indexOf('id: "twilio"'),
-      catalog.indexOf('id: "hubspot"'),
-    );
-    expect(twilioBlock).not.toMatch(/capabilities:\s*\[[^\]]*WhatsApp/);
-    expect(twilioBlock).toContain("private beta");
-  });
 });

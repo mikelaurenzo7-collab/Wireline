@@ -78,8 +78,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     res.status(410).json({
       code: "NATIVE_PHONE_REQUIRED",
-      error:
-        "Phone lines are provisioned through native Twilio and xAI. Use Phone setup to search and provision a number.",
+      error: "Use BotBound Phone setup to search for and provision a number.",
     });
   },
 );

@@ -44,7 +44,7 @@ describe("studio chat stream settlement", () => {
       'data: {"agentId":"a1"}',
       "",
       "event: error",
-      'data: {"message":"AI is temporarily unavailable. Configure a reachable AI provider (xAI, OpenAI, Gemini, or AI Gateway), then try again."}',
+      'data: {"message":"BotBound AI is temporarily unavailable. Try again shortly."}',
       "",
       "",
     ].join("\n");

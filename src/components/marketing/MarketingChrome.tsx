@@ -40,7 +40,7 @@ export default function MarketingChrome({
         className,
       )}
     >
-      <PrecisionPublicHeader />
+      {authCanvas ? null : <PrecisionPublicHeader />}
       <main
         id="main-content"
         tabIndex={-1}

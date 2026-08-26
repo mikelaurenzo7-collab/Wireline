@@ -63,12 +63,13 @@ describe("authenticated responsive polish contract", () => {
     expect(css).toContain("padding-inline-start: 2.75rem");
   });
 
-  it("reserves enough desktop width for the compliance action rail", () => {
+  it("keeps the narrow settings compliance surface in one readable column", () => {
     const compliance = read("src/components/ComplianceCenter.tsx");
     const dnc = read("src/components/DncManager.tsx");
 
-    expect(compliance).toContain("minmax(448px,.9fr)");
-    expect(compliance).not.toContain("minmax(320px,.9fr)");
+    expect(compliance).toContain('<div className="grid gap-4">');
+    expect(compliance).not.toContain("minmax(448px,.9fr)");
+    expect(compliance).not.toContain('className="grid gap-4 xl:grid-cols-[');
     expect(dnc).toContain("grid shrink-0 grid-cols-2 gap-2");
     expect(dnc).not.toContain("sm:grid-cols-4");
   });

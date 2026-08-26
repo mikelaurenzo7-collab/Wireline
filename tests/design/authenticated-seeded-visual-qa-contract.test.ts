@@ -13,19 +13,11 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(tabs).not.toContain("bg-primary text-primary-foreground");
   });
 
-  it("keeps the technical integration inventory behind progressive disclosure", () => {
+  it("keeps the technical integration inventory out of customer Connections", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
-    expect(connections).toContain(
-      '<Accordion type="single" collapsible data-wireline-integration-map>',
-    );
-    const advancedInventory = connections.slice(
-      connections.indexOf("data-wireline-integration-map"),
-    );
-    expect(advancedInventory).toMatch(
-      /<AccordionTrigger[^>]*>[\s\S]*?Advanced[\s\S]*?<\/AccordionTrigger>/,
-    );
-    expect(advancedInventory).toContain("<AccordionContent");
-    expect(connections).toContain("<IntegrationOperatingMap />");
+    expect(connections).toContain("MailboxConnectionCard");
+    expect(connections).toContain("CrmConnectionCard");
+    expect(connections).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
   });
 
   it("keeps insights range selection visually secondary to the data", () => {

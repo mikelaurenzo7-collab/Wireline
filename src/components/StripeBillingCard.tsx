@@ -329,7 +329,7 @@ export default function StripeBillingCard({
         >
           <AlertTriangle className="mt-0.5 w-4 h-4 text-[var(--wireline-color-status-warning)] shrink-0" />
           <p className="text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-foreground/75">
-            {CHECKOUT_RELEASE_MESSAGE} Existing subscriptions and Stripe billing management remain
+            {CHECKOUT_RELEASE_MESSAGE} Existing subscriptions and secure billing management remain
             available.
           </p>
         </div>
@@ -376,13 +376,13 @@ export default function StripeBillingCard({
   );
 }
 
-/** Shared Stripe/PCI trust + legal row for billing surfaces. */
+/** Shared payment-security + legal row for billing surfaces. */
 export function BillingTrustFooter() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
       <div className="flex items-center gap-2">
         <Shield className="w-3 h-3" />
-        Stripe · PCI DSS Level 1 · Cancel anytime
+        Encrypted payments · Cancel anytime
       </div>
       <div className="flex items-center gap-3">
         <a href="/privacy" className="hover:text-foreground transition-colors">
@@ -460,7 +460,7 @@ function PlanPicker({
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
   return (
-    <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
+    <div className="rounded-md wl-panel border border-border p-6 sm:p-8 space-y-8">
       <div className="border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Plans</h3>
@@ -498,7 +498,7 @@ function PlanPicker({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
         {plans
           .filter((p) => p.public !== false)
           .map((plan) => {
@@ -522,7 +522,7 @@ function PlanPicker({
                 whileHover={{ y: -4 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
+                  "relative rounded-md wl-panel border p-6 flex flex-col gap-5 transition-all group overflow-hidden",
                   isSignupMatch
                     ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
                     : "border-border hover:border-[color:var(--wireline-color-border-strong)]",
@@ -659,7 +659,7 @@ function GrantedPlanAccessCard({
             </h3>
             <p className="text-sm font-semibold text-foreground">Plan access is active</p>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Paid-plan access is granted directly to this workspace. No recurring Stripe invoice is
+              Paid-plan access is granted directly to this workspace. No recurring invoice is
               scheduled.
             </p>
             {sub.max_agents ? (

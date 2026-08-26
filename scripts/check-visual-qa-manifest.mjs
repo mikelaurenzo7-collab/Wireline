@@ -19,6 +19,8 @@ const P0_KINDS = new Set([
   "control-overflow",
   "redirect",
   "auth",
+  "console",
+  "pageerror",
   // The capture script records this when #root never mounted — a screenshot of
   // a proxy/gateway interstitial is not evidence the app rendered, and the
   // gate must agree with the capture script about what counts as P0.

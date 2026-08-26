@@ -209,7 +209,8 @@ async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string
  */
 router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRequest, res) => {
   try {
-    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+    if (!stripeAvailable())
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
 
     const [subscription] = await drizzle
       .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
@@ -219,7 +220,7 @@ router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRe
 
     if (!subscription?.stripeCustomerId) {
       return res.status(404).json({
-        error: "No Stripe customer exists for this workspace yet. Complete checkout first.",
+        error: "No billing account exists for this workspace yet. Complete checkout first.",
         code: "STRIPE_CUSTOMER_REQUIRED",
       });
     }
@@ -230,13 +231,13 @@ router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRe
     } catch (error) {
       if (!isMissingStripeResource(error)) throw error;
       return res.status(404).json({
-        error: "Stripe customer record is missing. Complete checkout to recreate it.",
+        error: "The billing account is missing. Complete checkout to recreate it.",
         code: "STRIPE_CUSTOMER_MISSING",
       });
     }
     if ("deleted" in customer && customer.deleted) {
       return res.status(404).json({
-        error: "Stripe customer record is missing. Complete checkout to recreate it.",
+        error: "The billing account is missing. Complete checkout to recreate it.",
         code: "STRIPE_CUSTOMER_MISSING",
       });
     }
@@ -306,7 +307,7 @@ router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRe
 
     if (stripeError.type === "StripeAuthenticationError") {
       return res.status(503).json({
-        error: "Stripe authentication failed. Billing is temporarily unavailable.",
+        error: "Billing is temporarily unavailable.",
         code: "STRIPE_AUTH_ERROR",
       });
     }

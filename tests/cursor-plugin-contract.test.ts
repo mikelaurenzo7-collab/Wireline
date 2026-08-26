@@ -68,7 +68,7 @@ describe("Cursor Directory plugin contract", () => {
 
   it("publishes a one-click Cursor install link without secrets", () => {
     const install =
-      "cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
     const encodedConfig = new URL(install).searchParams.get("config");
     expect(encodedConfig).not.toBeNull();
     expect(JSON.parse(Buffer.from(encodedConfig!, "base64").toString("utf8"))).toEqual({

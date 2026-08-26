@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES, providerLabel } from "../lib/voice-catalog";
+import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Input } from "./ui/shadcn/Input";
@@ -279,9 +279,6 @@ export default function DeployAgentModal({
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="wl-micro-meta shrink-0">
-                                  {providerLabel(v.provider)}
-                                </span>
                               </ShadButton>
                             );
                           })}

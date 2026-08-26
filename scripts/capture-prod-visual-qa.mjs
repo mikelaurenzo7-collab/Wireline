@@ -73,6 +73,7 @@ const authenticatedRoutes = [
   "/settings/compliance",
   "/settings/apps",
   "/settings/apps/command",
+  "/settings/not-a-route",
   "/admin",
   "/admin?tab=subscription",
   "/admin?tab=team",
@@ -104,7 +105,7 @@ const allViewports = [
   { name: "short", width: 1365, height: 650, isMobile: false, hasTouch: false },
 ];
 const viewportFilter = new Set(
-  (process.env.WIRELINE_VISUAL_VIEWPORTS || "phone,desktop")
+  (process.env.WIRELINE_VISUAL_VIEWPORTS || "phone,desktop,laptop,breakpoint,short")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean),
@@ -311,6 +312,20 @@ async function captureRoute(page, viewportName, route, issues, mode) {
       animations: "disabled",
     });
     await page.screenshot({ path: `${prefix}-full.png`, fullPage: true, animations: "disabled" });
+    if (mode === "authenticated") {
+      const workspaceScrollport = page.locator(".wl-workspace-content").first();
+      if ((await workspaceScrollport.count()) > 0 && (await workspaceScrollport.isVisible())) {
+        await workspaceScrollport.evaluate((element) => {
+          element.scrollTop = element.scrollHeight;
+        });
+        await page.waitForTimeout(150);
+        await page.screenshot({
+          path: `${prefix}-scroll-end.png`,
+          fullPage: false,
+          animations: "disabled",
+        });
+      }
+    }
   } catch (error) {
     pushIssue(issues, {
       viewport: viewportName,
