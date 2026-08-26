@@ -23,7 +23,6 @@ const About = lazy(() => import("./pages/About"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Security = lazy(() => import("./components/Security"));
 const TrustPackPage = lazy(() => import("./components/TrustPackPage"));
-const Status = lazy(() => import("./components/Status"));
 const SupportPage = lazy(() =>
   import("./components/SupportPage").then((module) => ({ default: module.SupportPage })),
 );
@@ -121,7 +120,6 @@ function AppRouter() {
         <Route path="/security" element={<Security />} />
         <Route path="/trust" element={<Security />} />
         <Route path="/trust/:vertical" element={<TrustPackPage />} />
-        <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

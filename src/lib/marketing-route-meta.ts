@@ -87,11 +87,6 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     title: "Contact BotBound",
     description: "Talk to BotBound about building a Bot, a team rollout, partnerships, or support.",
   },
-  "/status": {
-    title: "Provider Status | BotBound",
-    description:
-      "Live access checks for BotBound's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
-  },
   "/security": {
     title: "Security and Compliance | BotBound",
     description:

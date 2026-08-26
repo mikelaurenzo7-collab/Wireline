@@ -189,13 +189,14 @@ describe("a provider's auth failure is never dressed up as the tenant's", () => 
     expect(branch).not.toContain("detail ||");
   });
 
-  it("routes all three provider clients through it", () => {
-    for (const path of ["src/lib/voice/openai-realtime-service.ts"]) {
-      const source = read(path);
-      expect(source).toContain("providerHttpError");
-      // The old shape: reuse the provider's status for anything under 500.
-      expect(source).not.toContain("response.status >= 500 ? 502 : response.status");
-    }
+  it("keeps the shared Realtime call boundary generic on provider failure", () => {
+    const source = read("src/lib/voice/openai-realtime-call-control.ts");
+    expect(source).toContain("openAIRealtimeProviderFailure");
+    expect(source).toContain(
+      'AppError.fromHttpStatus(502, "Live voice session could not be created.")',
+    );
+    // The old shape reused the provider's status for anything under 500.
+    expect(source).not.toContain("response.status >= 500 ? 502 : response.status");
   });
 });
 
@@ -316,7 +317,7 @@ describe("retired Live Video does not load a presenter SDK or session path", () 
     expect(page).toContain('<Navigate to="/studio" replace />');
     expect(page).not.toContain("@heygen/liveavatar-web-sdk");
     expect(page).not.toContain('lazy(() => import("../components/LiveVideoPresenter"))');
-    expect(page).not.toContain('import AgentFace from');
+    expect(page).not.toContain("import AgentFace from");
     expect(page).not.toContain("<AgentFace");
     expect(page).not.toContain("/video-presenter/session");
     expect(page).not.toContain("Draft clip script");

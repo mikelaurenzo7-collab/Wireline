@@ -33,7 +33,6 @@ const marketingRoutes = [
   "/trust/legal",
   "/trust/insurance",
   "/trust/enterprise",
-  "/status",
   "/privacy",
   "/terms",
   "/developers",
@@ -555,10 +554,10 @@ if (bypassToken) {
   const seedContext = await browser.newContext();
   try {
     const seedPage = await seedContext.newPage();
-    await seedPage.goto(
-      `${baseUrl}/?_vercel_share=${encodeURIComponent(bypassToken)}`,
-      { waitUntil: "domcontentloaded", timeout: 45_000 },
-    );
+    await seedPage.goto(`${baseUrl}/?_vercel_share=${encodeURIComponent(bypassToken)}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 45_000,
+    });
     protectionCookies = (await seedContext.cookies()).filter((cookie) =>
       cookie.name.startsWith("_vercel"),
     );

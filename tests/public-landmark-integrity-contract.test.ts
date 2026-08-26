@@ -9,11 +9,7 @@ describe("public landmark integrity", () => {
     const chrome = read("src/components/marketing/MarketingChrome.tsx");
     expect(chrome).toContain('<main\n        id="main-content"');
 
-    for (const path of [
-      "src/pages/OAuthComplete.tsx",
-      "src/pages/AcceptInvite.tsx",
-      "src/components/Status.tsx",
-    ]) {
+    for (const path of ["src/pages/OAuthComplete.tsx", "src/pages/AcceptInvite.tsx"]) {
       const surface = read(path);
       expect(surface).toContain("<MarketingChrome");
       expect(surface).not.toContain('<main id="main-content"');

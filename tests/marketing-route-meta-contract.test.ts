@@ -124,7 +124,6 @@ describe("route meta prerendering", () => {
       "/blog": "src/pages/Blog.tsx",
       "/support": "src/components/SupportPage.tsx",
       "/contact": "src/components/ContactPage.tsx",
-      "/status": "src/components/Status.tsx",
       "/security": "src/components/Security.tsx",
       "/trust": "src/components/Security.tsx",
       "/developers": "src/pages/Developers.tsx",

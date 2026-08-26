@@ -131,7 +131,9 @@ describe("caller-requested callbacks execute end-to-end", () => {
     // calls (which callbacks are), so the gate must enforce federal DNC
     // explicitly for the callback path — fail-closed, matching the platform.
     const gate = read("src/lib/outbound-dial-gate.ts");
-    expect(gate).toMatch(/isRequestedCallback\s*&&\s*isFederalDnc/);
+    expect(gate).toMatch(
+      /\(requiresFederalDncScreening\s*\|\|\s*isRequestedCallback\)\s*&&\s*isFederalDnc/,
+    );
     expect(gate).toContain("federal_dnc_blocked");
   });
 

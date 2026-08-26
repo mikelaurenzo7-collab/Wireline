@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -93,54 +93,35 @@ describe("launch completeness contracts", () => {
     expect(mediaKit).toContain("Raw output is not release-certified.");
   });
 
-  it("keeps public status cadence and claims aligned with the probes and BotBound brand", () => {
-    const status = source("src/components/Status.tsx");
+  it("keeps runtime health backstage after retiring the customer-facing provider page", () => {
+    const app = source("src/App.tsx");
     const probe = source("src/lib/public-health-probe.ts");
     const marketingMeta = source("src/lib/marketing-route-meta.ts");
-    expect(status).toContain("const STATUS_REFRESH_MS = 60_000;");
-    expect(status).toContain('cache: "no-store"');
-    expect(status).toMatch(/window\.setInterval\([\s\S]*STATUS_REFRESH_MS\)/);
-    expect(status).toContain("Page refreshes every 60 seconds.");
-    expect(status).toContain("page refreshes every 60s.");
-    expect(status).toContain("Page refresh · 60s");
-    expect(status).toContain("Normal cache · 120s");
-    expect(status).toContain("Server fallback · up to 5m");
-    expect(status).toContain("edge stale-while-revalidate");
-    expect(status).toContain("timestamp above is the authoritative age");
-    expect(status).toContain("non-persistent inference against the managed reasoning provider");
-    expect(marketingMeta).toContain(
-      "Live access checks for BotBound's managed voice control plane and reasoning runtime.",
-    );
+    const publicRoutes = source("src/lib/public-routes.ts");
+    const apiRoutes = source("src/server/register-api-routes.ts");
+    const sitemap = source("public/sitemap.xml");
+    const publicSurfaces = [
+      "src/components/marketing/MarketingChromeBar.tsx",
+      "src/components/marketing/MarketingFooter.tsx",
+      "src/components/marketing/TrustSignals.tsx",
+      "src/components/marketing/WireAgentLanding.tsx",
+      "src/components/auth/AuthAccessPanel.tsx",
+      "src/components/Security.tsx",
+      "src/components/PublicChangelog.tsx",
+    ];
+
+    expect(existsSync(resolve(root, "src/components/Status.tsx"))).toBe(false);
+    expect(app).not.toContain('import("./components/Status")');
+    expect(app).not.toContain('path="/status"');
+    expect(marketingMeta).not.toContain('"/status":');
+    expect(publicRoutes).not.toContain('"/status"');
+    expect(sitemap).not.toContain("botbound.me/status");
+    for (const surface of publicSurfaces) {
+      expect(source(surface)).not.toContain('"/status"');
+    }
+    expect(apiRoutes).toContain('app.all("/api/health/public"');
     expect(probe).toContain('fetch("https://api.openai.com/v1/responses"');
     expect(probe).toContain("store: false");
-    expect(status).toContain("Provider checks operational");
-    expect(status).toContain("Managed call access");
-    expect(status).toContain("Reasoning model access");
-    expect(status).toContain("end-to-end customer call");
-    expect(status).not.toContain("All systems operational");
-    expect(status).not.toContain("pings each production LLM tier");
-    expect(status).not.toContain("configured fallback remains available");
-    expect(status).not.toContain("without placing a call or generating content");
-  });
-
-  it("keeps the public status poll bounded and leak-free", () => {
-    const status = source("src/components/Status.tsx");
-    expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
-    expect(status).toContain("const controller = new AbortController();");
-    expect(status).toContain(
-      "window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)",
-    );
-    expect(status).toContain("signal: controller.signal,");
-    expect(status).toContain("window.clearTimeout(timeout);");
-    expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
-    expect(status).not.toMatch(/=\s*AbortSignal\.timeout\(/);
-    expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
-    expect(status).toContain("JSON.parse(rawText)");
-    expect(status).toContain("normalizeHealth(parsed)");
-    expect(status).toContain(
-      "Showing the last reported snapshot while the live probe cache is unavailable.",
-    );
-    expect(status).toContain("{error && data ? (");
   });
 
   it("makes agent/account ownership a database-owned invariant", () => {

@@ -43,7 +43,6 @@ const RESOURCE_LINKS = [
 /** Always visible in the bar itself — the four a visitor reaches for by name. */
 const BAR_LINKS = [
   { to: "/trust", label: "Trust" },
-  { to: "/status", label: "Status" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
 ] as const;

@@ -764,7 +764,7 @@ export default function AuthAccessPanel({
         <nav className="wl-access-panel__links" aria-label="Public links">
           <Link to="/">Home</Link>
           <Link to="/pricing">Pricing</Link>
-          <Link to="/status">Status</Link>
+          <Link to="/support">Support</Link>
         </nav>
       ) : null}
     </section>

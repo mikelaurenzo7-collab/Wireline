@@ -137,14 +137,15 @@ describe("SMS reply failure reasons", () => {
 
 describe("realtime session mint bounds", () => {
   const realtime = read("src/lib/voice/openai-realtime-service.ts");
+  const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
 
   it("the ephemeral client secret has an explicit, short lifetime", () => {
     // Every mint durably debits five simulation minutes and books a platform
     // cost reserve BEFORE the secret is handed out. An unbounded secret let a
     // client stockpile paid-for tokens and redeem them long after the debit.
-    expect(realtime).toContain("OPENAI_REALTIME_SECRET_TTL_SECONDS");
-    expect(realtime).toContain(
-      'expires_after: { anchor: "created_at", seconds: OPENAI_REALTIME_SECRET_TTL_SECONDS }',
+    expect(callControl).toContain("OPENAI_REALTIME_SECRET_TTL_SECONDS");
+    expect(callControl).toMatch(
+      /expires_after:\s*\{[\s\S]*anchor:\s*"created_at",[\s\S]*seconds:\s*OPENAI_REALTIME_SECRET_TTL_SECONDS/,
     );
     // The model pin the earlier audit installed must survive this change.
     expect(realtime).toContain("model: OPENAI_REALTIME_DEFAULT_MODEL");

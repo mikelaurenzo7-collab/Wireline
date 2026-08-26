@@ -351,7 +351,7 @@ export const OPS_HELP = {
     { label: "Studio", to: "/studio", hint: "Open your Bot workspace" },
     { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
     { label: "Training", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
-    { label: "System status", to: "/status", hint: "Public uptime feed" },
+    { label: "Support", to: "/support", hint: "Get help with your BotBound workspace" },
   ],
 } as const;
 

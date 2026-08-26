@@ -95,6 +95,8 @@ describe("structured runtime transport", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
     expect(client).toContain("gatewayModels: models");
+    expect(client).toContain("providerOptions:");
+    expect(client).toContain("gateway:");
     expect(client).toContain("models: args.gatewayModels");
     expect(client).toContain("disallowPromptTraining: true");
     expect(client).toContain('provider: { name: "AI Gateway", call: callGateway');

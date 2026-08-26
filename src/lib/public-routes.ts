@@ -13,7 +13,6 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/showcase",
   "/developers",
   "/blog",
-  "/status",
   "/changelog",
   "/security",
   "/trust",

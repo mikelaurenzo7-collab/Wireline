@@ -16,7 +16,7 @@ type Props = {
 
 /**
  * Header, pinned chrome bar, and an optional mobile sticky CTA, for pages that
- * bring their own content width: legal, trust, status, changelog, support.
+ * bring their own content width: legal, trust, changelog, support.
  *
  * These are the long-form routes, and they are exactly why the frame is a frame
  * rather than a per-page decision. A terms-of-service page has to scroll; what

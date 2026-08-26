@@ -119,7 +119,7 @@
  * lose the same race for the same reason — a single class cannot outrank
  * `.marketing-surface :is(p, li, …)` — and re-measuring found 88 more label-tier
  * nodes still rendering at body tracking across /about, /compare, /developers,
- * /showcase, /pricing, /security, /status and /changelog. Fixing a tier two
+ * /showcase, /pricing, /security and /changelog. Fixing a tier two
  * members at a time is how it stays broken. */
 .marketing-surface
   :is(

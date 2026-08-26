@@ -3,9 +3,10 @@
 Public acquisition routes use MarketingChrome and MarketingPageFrame. Authenticated routes use AppShell with WorkspacePageFrame and its shared chrome. The following are complete source files.
 
 ## src/components/layout/AppShell.tsx
+
 - Description: Authenticated application shell. It composes error recovery, skip navigation, route announcements, email verification, and the registered authenticated routes.
 
-~~~tsx
+```tsx
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
@@ -49,12 +50,13 @@ export default function AppShell() {
     </>
   );
 }
-~~~
+```
 
 ## src/components/layout/WorkspacePageFrame.tsx
+
 - Description: Primary authenticated page frame with title rail, actions, content regions, responsive sizing, and workspace rhythm.
 
-~~~tsx
+```tsx
 import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
@@ -226,12 +228,13 @@ export function WorkspaceOperateIntro({
     </header>
   );
 }
-~~~
+```
 
 ## src/components/layout/MarketingPageFrame.tsx
+
 - Description: Public page frame with precision header, content landmark, sticky CTA, footer, and cookie consent.
 
-~~~tsx
+```tsx
 import type { ReactNode } from "react";
 import { useLocation } from "react-router";
 import PrecisionPublicHeader from "../marketing/PrecisionPublicHeader";
@@ -331,12 +334,13 @@ export default function MarketingPageFrame({
     </div>
   );
 }
-~~~
+```
 
 ## src/components/marketing/MarketingChrome.tsx
+
 - Description: Composable marketing shell used when pages own their body but share global header/footer behavior.
 
-~~~tsx
+```tsx
 import type { ReactNode } from "react";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import MarketingFooter from "./MarketingFooter";
@@ -394,12 +398,13 @@ export default function MarketingChrome({
     </div>
   );
 }
-~~~
+```
 
 ## src/components/marketing/PrecisionPublicHeader.tsx
+
 - Description: Responsive public navigation, mobile menu, identity lockup, and acquisition calls to action.
 
-~~~tsx
+```tsx
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
@@ -554,12 +559,13 @@ export default function PrecisionPublicHeader() {
     </Dialog>
   );
 }
-~~~
+```
 
 ## src/components/marketing/MarketingFooter.tsx
+
 - Description: Public footer with product, company, legal, and trust navigation.
 
-~~~tsx
+```tsx
 import { Link } from "react-router";
 import { cn } from "../../lib/utils";
 import WirelineMark from "../brand/WirelineMark";
@@ -590,7 +596,6 @@ const RESOURCE_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { to: "/status", label: "Status" },
   { to: "/security", label: "Security" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
@@ -709,4 +714,4 @@ export default function MarketingFooter({
     </footer>
   );
 }
-~~~
+```

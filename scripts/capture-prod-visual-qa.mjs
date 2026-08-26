@@ -3,10 +3,7 @@ import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(
-  /\/$/,
-  "",
-);
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(/\/$/, "");
 const outputRoot = path.resolve(
   process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa-prod",
 );
@@ -42,7 +39,6 @@ const marketingRoutes = [
   "/trust/legal",
   "/trust/insurance",
   "/trust/enterprise",
-  "/status",
   "/support",
   "/contact",
   "/privacy",

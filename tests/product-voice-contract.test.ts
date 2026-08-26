@@ -278,7 +278,6 @@ describe("BotBound product voice", () => {
       "/showcase",
       "/developers",
       "/blog",
-      "/status",
       "/changelog",
       "/security",
       "/trust",

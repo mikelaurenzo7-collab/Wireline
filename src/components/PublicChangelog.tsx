@@ -116,8 +116,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Public system status page",
-    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at botbound.me/status. Uses small, bounded health checks for each managed reasoning tier. External uptime monitors are welcome.",
+    title: "BotBound runtime monitoring",
+    body: "BotBound now monitors calling and reasoning readiness behind the scenes with small, bounded checks. Customer-impacting issues surface through BotBound product messaging and support.",
   },
   {
     date: "Jan 27, 2026",
