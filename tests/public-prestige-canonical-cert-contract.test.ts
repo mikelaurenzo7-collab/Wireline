@@ -27,13 +27,19 @@ describe("canonical BotBound public prestige certification", () => {
     expect(botMarkCss).toContain("prefers-reduced-motion: reduce");
 
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero\s*\{[\s\S]*display:\s*grid/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
     );
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__desktop-only\s*\{[\s\S]*display:\s*block/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
     );
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*auto/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+    );
+    expect(landingCss).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+    );
+    expect(landingCss).not.toMatch(
+      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
     );
 
     expect(designVision).toContain("BotBound Design System");

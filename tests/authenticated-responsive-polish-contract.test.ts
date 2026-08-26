@@ -74,6 +74,16 @@ describe("authenticated responsive polish contract", () => {
     expect(dnc).not.toContain("sm:grid-cols-4");
   });
 
+  it("keeps the account rail separator outside the active-link border", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const settingsStart = shell.indexOf('to="/settings"');
+    const settingsBlock = shell.slice(settingsStart - 120, settingsStart + 1_200);
+
+    expect(settingsBlock).toContain('className="shrink-0 border-t border-border/70 pt-3"');
+    expect(settingsBlock).toContain("wl-rail-link min-h-[44px]");
+    expect(settingsBlock).not.toContain("wl-rail-link min-h-[44px] shrink-0 border-t");
+  });
+
   it("lets a selected BotBound line wrap before its number gets squeezed", () => {
     const panel = read("src/components/PhoneSetupPanel.tsx");
 

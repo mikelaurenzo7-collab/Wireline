@@ -145,7 +145,19 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
     expect(prestige).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)");
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__entrance[\s\S]*display:\s*flex[\s\S]*\.landing-prestige__hero[\s\S]*display:\s*grid[\s\S]*\.landing-prestige__desktop-only[\s\S]*display:\s*block[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*auto/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+    );
+    expect(prestige).not.toMatch(
+      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
     );
     expect(auth).toContain("grid-template-columns: repeat(3");
   });

@@ -112,6 +112,9 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /\.marketing-surface\.auth-portal-canvas \{[\s\S]*--wl-marketing-chrome-top: env\(safe-area-inset-top[\s\S]*padding-bottom: env\(safe-area-inset-bottom/,
     );
+    expect(ownership).toMatch(
+      /\.marketing-surface\.auth-portal-canvas[\s\S]*\.marketing-flow \{[\s\S]*display: flex;[\s\S]*min-height: calc\(100dvh - env\(safe-area-inset-bottom/,
+    );
     expect(mobile).toContain("padding-left: 1.15rem");
     expect(mobile).toContain("padding-right: 1.15rem");
     expect(mobile).not.toContain("env(safe-area-inset-left)");

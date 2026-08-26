@@ -109,4 +109,14 @@ describe("industry-leader audit hardening contracts", () => {
     expect(changelog).not.toContain("Grok 4.5 primary");
     expect(changelog).not.toContain("Recaps · Triage · Activity · Cockpit");
   });
+
+  it("keeps WhatsApp out of live platform claims until private beta is operational", () => {
+    const registry = read("src/lib/runtime-integrations-registry.ts");
+    const twilioBlock = registry.slice(
+      registry.indexOf('"twilio"'),
+      registry.indexOf('"deepgram-flux"'),
+    );
+
+    expect(twilioBlock).toContain("WhatsApp remains private beta");
+  });
 });

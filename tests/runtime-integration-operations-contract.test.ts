@@ -76,6 +76,10 @@ describe("runtime integration operations", () => {
   });
 
   it("refuses to report federal DNC configured on credential shape the runtime rejects", () => {
+    // Presence-only registry checks previously diverged from
+    // isFederalDncVendorConfigured(): a pasted Vercel token or an http URL
+    // read as "configured" in /api/health/internal while campaign outbound
+    // stayed fail-closed. The registry must apply the runtime's rule.
     const saved = {
       url: process.env.FEDERAL_DNC_API_URL,
       key: process.env.FEDERAL_DNC_API_KEY,
@@ -100,6 +104,9 @@ describe("runtime integration operations", () => {
   });
 
   it("follows the runtime's Perplexity key policy instead of raw presence", () => {
+    // Production Perplexity keys are intentionally inert on Vercel previews
+    // (src/lib/perplexity-platform.ts); the registry must not report the
+    // integration configured from a key the runtime refuses to use.
     const saved = {
       vercelEnv: process.env.VERCEL_ENV,
       key: process.env.PERPLEXITY_API_KEY,

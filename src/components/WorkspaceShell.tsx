@@ -269,25 +269,27 @@ function DesktopRail({
       </nav>
 
       <div className="min-h-4 flex-1" />
-      <Link
-        to="/settings"
-        aria-current={settingsActive ? "page" : undefined}
-        data-wireline-nav-href="/settings"
-        data-wireline-nav-active={settingsActive ? "true" : undefined}
-        className={`wl-rail-link min-h-[44px] shrink-0 border-t border-border/70 transition-colors hover:text-foreground ${collapsed ? "justify-center !px-0 pt-3 text-muted-foreground" : "gap-2.5 px-1 pt-3 text-foreground"}`}
-        aria-label="Account settings"
-        title={collapsed ? "Account settings" : undefined}
-      >
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
-          {userInitial(user?.full_name, user?.email)}
-        </span>
-        {!collapsed ? (
-          <span className="min-w-0">
-            <span className="block truncate text-[13px] font-medium">{displayName}</span>
-            <span className="block text-[10px] text-muted-foreground">Settings</span>
+      <div className="shrink-0 border-t border-border/70 pt-3">
+        <Link
+          to="/settings"
+          aria-current={settingsActive ? "page" : undefined}
+          data-wireline-nav-href="/settings"
+          data-wireline-nav-active={settingsActive ? "true" : undefined}
+          className={`wl-rail-link min-h-[44px] transition-colors hover:text-foreground ${collapsed ? "justify-center !px-0 text-muted-foreground" : "gap-2.5 px-1 text-foreground"}`}
+          aria-label="Account settings"
+          title={collapsed ? "Account settings" : undefined}
+        >
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
+            {userInitial(user?.full_name, user?.email)}
           </span>
-        ) : null}
-      </Link>
+          {!collapsed ? (
+            <span className="min-w-0">
+              <span className="block truncate text-[13px] font-medium">{displayName}</span>
+              <span className="block text-[10px] text-muted-foreground">Settings</span>
+            </span>
+          ) : null}
+        </Link>
+      </div>
     </aside>
   );
 }
