@@ -18,6 +18,7 @@ import {
   exchangeSquareCode,
   disconnectSquare,
 } from "../../lib/square-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ router.get(
   "/api/oauth/square/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!squareOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -47,6 +48,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Square");
     const authUrl = getSquareAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -59,33 +61,27 @@ router.get(
   "/api/ecommerce/oauth/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-  const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
+    const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
 
-  if (oauthError) {
-    log.warn("Square OAuth authorization was not completed");
-    return res
-      .status(400)
-      .type("text/plain")
-      .send("Square authorization was not completed. Please restart the connection.");
-  }
-  if (!state) {
-    return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
-  }
-  const vs = await verifyAndClaimOAuthState(state as string | undefined);
-  if (!vs.ok) {
-    return res.status(400).send("Invalid or expired OAuth state. Please restart the connect flow.");
-  }
-  if (!code || typeof code !== "string") {
-    return res.status(400).send("No authorization code provided by Square.");
-  }
-
-  try {
-    const baseUrl =
-      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
-      `${req.protocol}://${req.get("host")}`;
-    const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
-
-    const tokens = await exchangeSquareCode(code, redirectUri);
+    if (oauthError) {
+      log.warn("Square OAuth authorization was not completed");
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("Square authorization was not completed. Please restart the connection.");
+    }
+    if (!state) {
+      return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
+    }
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the connect flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No authorization code provided by Square.");
+    }
 
     const userId = await resolveLinkedOAuthUserId(req, vs);
     if (!userId) {
@@ -93,37 +89,46 @@ router.get(
         .status(401)
         .send("Complete this connection in the same browser and BotBound account that started it.");
     }
+    await assertOAuthProviderConnectAllowed(userId, "Square");
 
-    await drizzle
-      .insert(schema.crmConnections)
-      .values({
-        userId,
-        provider: "square",
-        accessToken: encryptSecret(tokens.access_token),
-        refreshToken: encryptSecret(tokens.refresh_token),
-        expiresAt: new Date(tokens.expires_at),
-        connectedEmail: tokens.merchant_id,
-        metadata: { merchant_id: tokens.merchant_id },
-      })
-      .onConflictDoUpdate({
-        target: [schema.crmConnections.userId, schema.crmConnections.provider],
-        set: {
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
+
+      const tokens = await exchangeSquareCode(code, redirectUri);
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "square",
           accessToken: encryptSecret(tokens.access_token),
           refreshToken: encryptSecret(tokens.refresh_token),
           expiresAt: new Date(tokens.expires_at),
           connectedEmail: tokens.merchant_id,
           metadata: { merchant_id: tokens.merchant_id },
-          updatedAt: new Date(),
-          active: true,
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            accessToken: encryptSecret(tokens.access_token),
+            refreshToken: encryptSecret(tokens.refresh_token),
+            expiresAt: new Date(tokens.expires_at),
+            connectedEmail: tokens.merchant_id,
+            metadata: { merchant_id: tokens.merchant_id },
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
 
-    const targetOrigin =
-      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
-      `${req.protocol}://${req.get("host")}`;
-    const cspNonce = generateCspNonce();
-    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
-    res.send(`
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
       <html><body><script nonce="${cspNonce}">
         if (window.opener) {
           window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'square' }, ${JSON.stringify(targetOrigin)});
@@ -131,10 +136,10 @@ router.get(
         } else { window.location.href = '/'; }
       </script><p>Square connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: any) {
-    log.error("Square OAuth callback failed", { error: e?.message || String(e) });
-    res.status(500).send("Square authentication failed. Please try again.");
-  }
+    } catch (e: any) {
+      log.error("Square OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Square authentication failed. Please try again.");
+    }
   },
 );
 

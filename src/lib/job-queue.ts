@@ -30,11 +30,14 @@ export type {
 
 export type JobType =
   | base.JobType
+  | "ai_spend_accounting"
+  | "intake_auto_dial"
   | "post_call_artifact"
   | "post_call_digest"
   | "scheduled_report"
   | "twilio_message_reconciliation"
-  | "openai_realtime_hangup";
+  | "openai_realtime_hangup"
+  | "account_deletion_billing_reconciliation";
 export interface JobRow extends Omit<base.JobRow, "type"> {
   type: JobType;
 }

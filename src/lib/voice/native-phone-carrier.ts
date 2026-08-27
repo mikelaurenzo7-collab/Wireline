@@ -1,9 +1,15 @@
 import { randomUUID } from "node:crypto";
 
 import { AppError } from "../api-error";
+import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
 import { getCanonicalAppUrl } from "../app-url";
-import { recordPendingOrphanCarrierResource } from "../orphan-carrier-ledger";
+import {
+  clearNativeTwilioPurchaseClaim,
+  createPendingNativeTwilioPurchaseClaim,
+  retainNativeTwilioPurchaseClaim,
+  type NativeTwilioPurchaseClaim,
+} from "../orphan-carrier-ledger";
 import { log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
@@ -21,6 +27,7 @@ export type NativeAvailableLocalNumber = {
 export type PurchasedNativeNumber = {
   phoneNumber: string;
   sid: string;
+  claim: NativeTwilioPurchaseClaim;
 };
 
 type TwilioMutationError = {
@@ -55,6 +62,15 @@ function purchaseFields(friendlyName: string) {
 }
 
 export async function listNativeAvailableLocalNumbers(
+  userId: string,
+  areaCode?: string,
+  limit = 8,
+): Promise<NativeAvailableLocalNumber[]> {
+  await assertNativePhoneExternalActionAllowed(userId, "native_phone_inventory_search");
+  return listNativeAvailableLocalNumbersAfterAuthorization(areaCode, limit);
+}
+
+async function listNativeAvailableLocalNumbersAfterAuthorization(
   areaCode?: string,
   limit = 8,
 ): Promise<NativeAvailableLocalNumber[]> {
@@ -79,13 +95,31 @@ export async function listNativeAvailableLocalNumbers(
     .filter((row) => /^\+1\d{10}$/.test(row.phoneNumber));
 }
 
+async function assertNativePhoneExternalActionAllowed(
+  userId: string,
+  action: string,
+): Promise<void> {
+  const policy = await liveExternalActionPolicyForUser(userId);
+  if (policy.allowed) return;
+  log.warn("Native phone provider access blocked by account environment", {
+    userId,
+    action,
+    accountEnvironment: policy.environment ?? "missing",
+    code: policy.code,
+  });
+  throw new AppError(policy.status, policy.code, policy.message);
+}
+
 async function recoverAcceptedPurchase(input: {
   phoneNumber: string;
   friendlyName: string;
-}): Promise<PurchasedNativeNumber | null> {
+}): Promise<Omit<PurchasedNativeNumber, "claim"> | null> {
   const client = getTwilioClient();
   if (!client) return null;
-  const rows = await client.incomingPhoneNumbers.list({ phoneNumber: input.phoneNumber, limit: 10 });
+  const rows = await client.incomingPhoneNumbers.list({
+    phoneNumber: input.phoneNumber,
+    limit: 10,
+  });
   const matching = rows.filter(
     (row) =>
       String(row.phoneNumber || "") === input.phoneNumber &&
@@ -96,24 +130,22 @@ async function recoverAcceptedPurchase(input: {
   return isTwilioPhoneNumberSid(sid) ? { phoneNumber: input.phoneNumber, sid } : null;
 }
 
-async function recordAmbiguousPurchase(input: {
-  userId: string;
-  phoneNumber: string;
-  error: unknown;
-}): Promise<void> {
+async function retainPurchaseClaimOrRaise(
+  claim: NativeTwilioPurchaseClaim,
+  phase: "provider_accepted" | "provider_outcome_ambiguous" | "compensation_pending",
+): Promise<void> {
   try {
-    await recordPendingOrphanCarrierResource({
-      userId: input.userId,
-      phoneNumber: input.phoneNumber,
-      carrierId: null,
-      error: `Ambiguous native Twilio purchase: ${getErrorMessage(input.error)}`,
-    });
+    await retainNativeTwilioPurchaseClaim(claim, phase);
   } catch (ledgerError) {
-    log.error("Ambiguous native phone purchase could not be written to the orphan ledger", {
-      userId: input.userId,
-      phoneSuffix: input.phoneNumber.slice(-4),
+    log.error("Native phone purchase claim could not be retained", {
+      userId: claim.userId,
+      operationId: claim.operationId,
+      phase,
       error: getErrorMessage(ledgerError),
     });
+    // Never make a second provider attempt when durable reconciliation state
+    // is uncertain. The pre-provider claim remains the terminal cleanup fence.
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
   }
 }
 
@@ -122,6 +154,7 @@ export async function purchaseNativeNumber(input: {
   areaCode?: string;
   preferredPhoneNumber?: string;
 }): Promise<PurchasedNativeNumber> {
+  await assertNativePhoneExternalActionAllowed(input.userId, "native_phone_purchase");
   const client = getTwilioClient();
   if (!client) throw AppError.serviceUnavailable("Twilio number purchasing is not configured.");
 
@@ -132,7 +165,7 @@ export async function purchaseNativeNumber(input: {
   }
   let phoneNumber = preferred;
   if (!phoneNumber) {
-    const candidates = await listNativeAvailableLocalNumbers(input.areaCode, 5);
+    const candidates = await listNativeAvailableLocalNumbersAfterAuthorization(input.areaCode, 5);
     phoneNumber = candidates[0]?.phoneNumber || null;
   }
   if (!phoneNumber) {
@@ -145,40 +178,78 @@ export async function purchaseNativeNumber(input: {
   }
 
   const operationId = randomUUID();
-  const friendlyName = `BotBound native ${operationId.slice(0, 12)} · ${input.userId.slice(0, 8)}`.slice(
-    0,
-    64,
-  );
+  let claim: NativeTwilioPurchaseClaim;
   try {
-    const created = await client.incomingPhoneNumbers.create({
+    claim = await createPendingNativeTwilioPurchaseClaim({
+      userId: input.userId,
+      operationId,
       phoneNumber,
-      ...purchaseFields(friendlyName),
     });
-    const sid = String(created.sid || "").trim();
-    const e164 = normalizeXAIPhoneNumber(created.phoneNumber) || phoneNumber;
-    if (isTwilioPhoneNumberSid(sid)) return { phoneNumber: e164, sid };
-
-    const recovered = await recoverAcceptedPurchase({ phoneNumber: e164, friendlyName });
-    if (recovered) return recovered;
-    const error = new Error("Twilio accepted the purchase but returned no valid phone-number SID.");
-    await recordAmbiguousPurchase({ userId: input.userId, phoneNumber: e164, error });
-    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    const recovered = await recoverAcceptedPurchase({ phoneNumber, friendlyName }).catch(() => null);
-    if (recovered) return recovered;
-
-    if (isAmbiguousTwilioPhoneMutationError(error)) {
-      await recordAmbiguousPurchase({ userId: input.userId, phoneNumber, error });
-      throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
-    }
-    throw AppError.fromHttpStatus(
-      twilioStatus(error) === 400 || twilioStatus(error) === 404 ? 409 : 502,
-      preferred
-        ? "That phone number is no longer available. Search again and choose another."
-        : "The carrier rejected the phone-number purchase.",
-    );
+    log.error("Native phone purchase was stopped before the provider mutation", {
+      userId: input.userId,
+      operationId,
+      phoneSuffix: phoneNumber.slice(-4),
+      error: getErrorMessage(error),
+    });
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
   }
+
+  let created: { sid?: string | null; phoneNumber?: string | null };
+  try {
+    created = await client.incomingPhoneNumbers.create({
+      phoneNumber,
+      ...purchaseFields(claim.friendlyName),
+    });
+  } catch (error) {
+    if (!isAmbiguousTwilioPhoneMutationError(error)) {
+      try {
+        await clearNativeTwilioPurchaseClaim(claim);
+      } catch (ledgerError) {
+        log.error("Rejected native phone purchase claim could not be cleared", {
+          userId: input.userId,
+          operationId,
+          error: getErrorMessage(ledgerError),
+        });
+        throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
+      }
+      throw AppError.fromHttpStatus(
+        twilioStatus(error) === 400 || twilioStatus(error) === 404 ? 409 : 502,
+        preferred
+          ? "That phone number is no longer available. Search again and choose another."
+          : "The carrier rejected the phone-number purchase.",
+      );
+    }
+
+    const recovered = await recoverAcceptedPurchase({
+      phoneNumber,
+      friendlyName: claim.friendlyName,
+    }).catch(() => null);
+    if (recovered) {
+      await retainPurchaseClaimOrRaise(claim, "provider_accepted");
+      return { ...recovered, claim };
+    }
+    await retainPurchaseClaimOrRaise(claim, "provider_outcome_ambiguous");
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
+  }
+
+  const sid = String(created.sid || "").trim();
+  const e164 = normalizeXAIPhoneNumber(created.phoneNumber) || phoneNumber;
+  if (isTwilioPhoneNumberSid(sid)) {
+    await retainPurchaseClaimOrRaise(claim, "provider_accepted");
+    return { phoneNumber: e164, sid, claim };
+  }
+
+  const recovered = await recoverAcceptedPurchase({
+    phoneNumber: e164,
+    friendlyName: claim.friendlyName,
+  }).catch(() => null);
+  if (recovered) {
+    await retainPurchaseClaimOrRaise(claim, "provider_accepted");
+    return { ...recovered, claim };
+  }
+  await retainPurchaseClaimOrRaise(claim, "provider_outcome_ambiguous");
+  throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
 }
 
 export async function releasePurchasedNativeNumber(input: {
@@ -188,26 +259,26 @@ export async function releasePurchasedNativeNumber(input: {
 }): Promise<void> {
   const client = getTwilioClient();
   if (!client) {
-    await recordPendingOrphanCarrierResource({
-      userId: input.userId,
-      phoneNumber: input.purchase.phoneNumber,
-      carrierId: input.purchase.sid,
-      error: `Native provisioning compensation unavailable: ${getErrorMessage(input.cause)}`,
-    });
-    return;
+    await retainPurchaseClaimOrRaise(input.purchase.claim, "compensation_pending");
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
   }
 
   try {
     await client.incomingPhoneNumbers(input.purchase.sid).remove();
+    await clearNativeTwilioPurchaseClaim(input.purchase.claim);
   } catch (error) {
-    if (twilioStatus(error) === 404) return;
-    await recordPendingOrphanCarrierResource({
+    if (twilioStatus(error) === 404) {
+      await clearNativeTwilioPurchaseClaim(input.purchase.claim);
+      return;
+    }
+    await retainPurchaseClaimOrRaise(input.purchase.claim, "compensation_pending");
+    log.error("Native phone purchase compensation remains pending", {
       userId: input.userId,
-      phoneNumber: input.purchase.phoneNumber,
-      carrierId: input.purchase.sid,
-      error: `Native provisioning compensation failed: ${getErrorMessage(error)} | cause: ${getErrorMessage(
-        input.cause,
-      )}`,
+      operationId: input.purchase.claim.operationId,
+      phoneSuffix: input.purchase.phoneNumber.slice(-4),
+      error: getErrorMessage(error),
+      cause: getErrorMessage(input.cause),
     });
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
   }
 }

@@ -16,12 +16,15 @@ import {
   jsonb,
   unique,
   uniqueIndex,
+  index,
+  check,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
+// `drizzle/migrations/0163_guard_account_environment_promotion.sql`.
+// Runtime voice defaults are established by 0156_openai_runtime_cohesion.sql.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -323,6 +326,36 @@ export const deletionQueue = pgTable(
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_deletion_queue_user ON wireline_deletion_queue USING btree (user_id)`,
   }),
 );
+
+// 1.4 SHORT-LIVED ACCOUNT OPERATION LEASES
+//
+// Provider and payable-billing calls must not hold a pooled Postgres
+// transaction open while waiting on an external API. These durable leases are
+// created under the account-deletion advisory lock, then released after the
+// external operation settles. Terminal erasure refuses an unexpired lease.
+export const accountOperationLeases = pgTable(
+  "wireline_account_operation_leases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["billing", "provider"] }).notNull(),
+    operation: text("operation").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    activeUserIdx: index("idx_account_operation_leases_active_user").on(
+      table.userId,
+      table.expiresAt,
+    ),
+    kindCheck: check(
+      "wireline_account_operation_leases_kind_check",
+      sql`${table.kind} IN ('billing', 'provider')`,
+    ),
+  }),
+).enableRLS();
 
 // 2. Assistants INVENTORY (AGENTS)
 export const agents = pgTable(
@@ -863,7 +896,7 @@ export const webhookHealth = pgTable(
   "wireline_webhook_health",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     provider: text("provider").notNull(),
     eventType: text("event_type").notNull(),
     outcome: text("outcome").notNull(),
@@ -1510,11 +1543,10 @@ export const auditLog = pgTable(
   "wireline_audit_log",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    // Nullable in the DB (see migration 0075): system security events —
-    // failed logins, unauthenticated rate-limit hits, cron auth rejections —
-    // legitimately carry no user id. `actor_email` captures the pre-auth
-    // identity when we have one.
-    userId: uuid("user_id"),
+    // Migration 0157 codifies the nullable state already used in production:
+    // pre-auth security events and terminal erasure receipts have no surviving
+    // tenant owner. RLS still hides NULL-owned system rows from browser roles.
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     action: text("action").notNull(),
     provider: text("provider"),
     model: text("model"),
@@ -1534,13 +1566,18 @@ export const auditLog = pgTable(
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  () => ({
+  (table) => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON wireline_audit_log USING btree (user_id)`,
     eventTypeIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON wireline_audit_log USING btree (event_type)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_user_created ON wireline_audit_log USING btree (user_id, created_at)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON wireline_audit_log USING btree (created_at)`,
+    deletionReceiptUnique: uniqueIndex("uq_audit_account_deletion_receipt")
+      .on(table.eventType, table.resourceType, table.resourceId)
+      .where(
+        sql`${table.eventType} = 'account.deletion.completed' AND ${table.resourceType} = 'account_deletion_receipt' AND ${table.resourceId} IS NOT NULL`,
+      ),
   }),
-);
+).enableRLS();
 
 // 4.1 WEBHOOKS
 export const webhooks = pgTable(
@@ -1711,7 +1748,9 @@ export const onboardingProgress = pgTable(
 
 // 4.4 BILLING CACHE
 export const subscriptions = pgTable("wireline_subscriptions", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   plan: text("plan"),

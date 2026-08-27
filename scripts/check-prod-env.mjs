@@ -57,11 +57,27 @@ const required = [
     process.env.POSTGRES_URL,
   ],
   [
+    "DATABASE_POOL_URL",
+    "Serverless transaction-pool connection for production runtime traffic",
+    process.env.DATABASE_POOL_URL,
+  ],
+  [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing - canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
   ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
+  [
+    "OAUTH_BRIDGE_SECRET",
+    "MCP authorization bridge signing secret",
+    process.env.OAUTH_BRIDGE_SECRET,
+  ],
+  [
+    "MCP_OAUTH_TOKEN_PEPPER",
+    "Pepper for irreversibly hashing MCP OAuth tokens",
+    process.env.MCP_OAUTH_TOKEN_PEPPER,
+  ],
+  ["WIRELINE_DATA_KEY", "AES-256-GCM key for tenant credentials", process.env.WIRELINE_DATA_KEY],
   [
     "UPSTASH_REDIS_REST_URL",
     "Distributed rate-limit store for Vercel",
@@ -98,6 +114,22 @@ const required = [
     "Twilio inbound webhook signature validation; rotate after any disclosure",
     process.env.TWILIO_AUTH_TOKEN,
   ],
+  ["TWILIO_API_KEY", "Scoped Twilio REST API key SID", process.env.TWILIO_API_KEY],
+  [
+    "TWILIO_API_SECRET",
+    "Secret paired with the scoped Twilio REST API key",
+    process.env.TWILIO_API_SECRET,
+  ],
+  [
+    "TWILIO_WEBHOOK_BASE_URL",
+    "Canonical BotBound origin for Twilio signatures and callback delivery",
+    process.env.TWILIO_WEBHOOK_BASE_URL,
+  ],
+  [
+    "PLATFORM_SMS_FROM",
+    "BotBound-owned sender for operational escalation",
+    process.env.PLATFORM_SMS_FROM,
+  ],
   [
     "STRIPE_SECRET_KEY",
     "Stripe subscriptions, prepaid balances, and billing portal",
@@ -113,6 +145,27 @@ const required = [
     "Transactional email for verification, billing, and lifecycle delivery",
     process.env.RESEND_API_KEY,
   ],
+  [
+    "AGENTMAIL_API_KEY",
+    "Production-only platform credential for paid Bot managed mailboxes",
+    process.env.AGENTMAIL_API_KEY,
+  ],
+  [
+    "AGENTMAIL_DEFAULT_DOMAIN",
+    "Verified botbound.me domain or subdomain for managed Bot mailboxes",
+    process.env.AGENTMAIL_DEFAULT_DOMAIN,
+  ],
+  [
+    "VITE_STRIPE_PUBLIC_KEY",
+    "Live Stripe publishable key for checkout UI",
+    process.env.VITE_STRIPE_PUBLIC_KEY,
+  ],
+  ["CRON_SECRET", "Bearer token for scheduled-job authentication", process.env.CRON_SECRET],
+  [
+    "WIRELINE_RECONCILE_STRIPE_PORTAL",
+    "Fail-closed managed Customer Portal verification gate",
+    process.env.WIRELINE_RECONCILE_STRIPE_PORTAL,
+  ],
 ];
 
 const recommended = [
@@ -124,24 +177,13 @@ const recommended = [
     "FEDERAL_DNC_API_KEY",
     "DNCScrub loginId — deferred checklist until business registration; never paste a Vercel vcp_ token here",
   ],
-  [
-    "DATABASE_POOL_URL",
-    "Pooler URL the runtime prefers; POSTGRES_URL remains the supported fallback",
-  ],
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
-  ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
-  ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
   [
     "WIRELINE_POSTAL_ADDRESS",
     "Valid physical postal address required before commercial email can send",
-  ],
-  ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
-  [
-    "WIRELINE_RECONCILE_STRIPE_PORTAL",
-    "Production fail-closed, read-only managed Customer Portal verification gate",
   ],
 
   // Canonical Founder Early Access catalog. These keys mirror
@@ -156,9 +198,6 @@ const recommended = [
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Wireline Business annual price"],
   ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
   ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Retired Live Video SKU for leftover webhook matching"],
-
-  ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
-  ["CRON_SECRET", "Bearer token for cron job authentication"],
 ];
 
 const optional = [
@@ -201,11 +240,13 @@ const optional = [
 
 const formatHints = new Map([
   ["APP_URL", "https://botbound.me (exactly; no path, port, credentials, or trailing slash)"],
+  ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.me (exactly)"],
   ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
   ["TWILIO_API_KEY", "SK followed by 32 hexadecimal characters"],
   ["FEDERAL_DNC_API_URL", "https://vendor.example/api/dnc-check"],
+  ["AGENTMAIL_DEFAULT_DOMAIN", "botbound.me or a subdomain such as mail.botbound.me"],
 ]);
 
 function configuredValue([key, _description, value]) {
@@ -214,7 +255,9 @@ function configuredValue([key, _description, value]) {
 
 function isValidEnvValue(key, value) {
   if (!value) return true;
-  if (key === "APP_URL") return String(value) === "https://botbound.me";
+  if (key === "APP_URL" || key === "TWILIO_WEBHOOK_BASE_URL") {
+    return String(value) === "https://botbound.me";
+  }
   if (key === "POSTGRES_URL" || key === "DATABASE_POOL_URL") {
     return isPostgresConnectionString(value);
   }
@@ -236,6 +279,14 @@ function isValidEnvValue(key, value) {
   }
   if (key === "STRIPE_SECRET_KEY") {
     return /^(?:sk|rk)_(?:test|live)_/.test(String(value).trim());
+  }
+  if (key === "VITE_STRIPE_PUBLIC_KEY") return /^pk_live_/.test(String(value).trim());
+  if (key === "AGENTMAIL_DEFAULT_DOMAIN") {
+    const domain = String(value).trim().toLowerCase().replace(/^@/, "");
+    return domain === "botbound.me" || domain.endsWith(".botbound.me");
+  }
+  if (key === "WIRELINE_RECONCILE_STRIPE_PORTAL") {
+    return String(value).trim().toLowerCase() === "true";
   }
   return true;
 }

@@ -10,10 +10,12 @@ import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { shouldApplyTwilioMessageStatusTransition } from "../lib/twilio-message-reliability";
+import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
+import { persistInboundSmsEvidence } from "./twilio-webhook-base";
 
 const router = Router();
 const LEGACY_OPT_OUT_KEYWORDS = new Set([
@@ -28,6 +30,7 @@ const LEGACY_OPT_OUT_KEYWORDS = new Set([
   "opt out",
 ]);
 const LEGACY_OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
+const LEGACY_HELP_KEYWORDS = new Set(["help", "info", "support"]);
 
 type ConsentControl = "stop" | "start" | "help";
 
@@ -106,6 +109,10 @@ function optInRetryTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`;
 }
 
+function helpConfirmationTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.</Message></Response>`;
+}
+
 async function tenantForSender(toValue: string): Promise<string | null> {
   const normalized = sanitizePhone(String(toValue || "").replace(/^whatsapp:/i, ""));
   if (!normalized) return null;
@@ -144,13 +151,15 @@ function resolveConsentControl(
   if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)) {
     return { control: "stop", legacy: true };
   }
-  // Exact only. A legacy opt-in is a consent GRANT written to the TCPA ledger,
-  // and this branch also swallows the message (the handler answers the webhook
-  // instead of calling next(), so the base route never stores the inbound SMS).
-  // Leading-word matching turned "Yes please, Tuesday works" into a fabricated
-  // consent record plus a lost customer reply.
+  // Exact only. A legacy opt-in is a consent GRANT written to the TCPA ledger.
+  // Leading-word matching once turned "Yes please, Tuesday works" into a
+  // fabricated consent record. Every intercepted control is persisted below as
+  // inbox evidence before an optional application reply is returned.
   if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_IN_KEYWORDS, "exact")) {
     return { control: "start", legacy: true };
+  }
+  if (matchesCarrierKeyword(bodyKeyword, LEGACY_HELP_KEYWORDS, "exact")) {
+    return { control: "help", legacy: true };
   }
   return { control: null, legacy: false };
 }
@@ -162,6 +171,7 @@ async function persistConsentControl(input: {
   messageSid: string;
   optOutType: string;
   bodyKeyword: string;
+  body: string;
   control: ConsentControl;
   legacy: boolean;
 }): Promise<"applied" | "duplicate"> {
@@ -193,7 +203,15 @@ async function persistConsentControl(input: {
           ),
         )
         .limit(1);
-      if (existing) return "duplicate";
+      if (existing) {
+        await persistInboundSmsEvidence(tx, {
+          userId: input.userId,
+          customerNumber: input.customerNumber,
+          body: input.body,
+          messageSid: input.messageSid,
+        });
+        return "duplicate";
+      }
     }
 
     if (input.control === "stop") {
@@ -233,7 +251,9 @@ async function persistConsentControl(input: {
       rule: input.legacy
         ? input.control === "stop"
           ? "legacy_stop_keyword"
-          : "legacy_start_keyword"
+          : input.control === "start"
+            ? "legacy_start_keyword"
+            : "legacy_help_keyword"
         : "twilio_advanced_opt_out",
       ruleVersion: "v1",
       state:
@@ -249,13 +269,20 @@ async function persistConsentControl(input: {
       },
     });
 
+    await persistInboundSmsEvidence(tx, {
+      userId: input.userId,
+      customerNumber: input.customerNumber,
+      body: input.body,
+      messageSid: input.messageSid,
+    });
+
     return "applied";
   });
 }
 
 /**
  * Twilio Advanced Opt-Out has already sent its own carrier confirmation when
- * OptOutType is present. Legacy STOP/START replies are intercepted here too so
+ * OptOutType is present. Legacy STOP/START/HELP replies are intercepted here too so
  * every DNC mutation and consent event commits atomically through one path.
  */
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
@@ -263,6 +290,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
   const bodyKeyword = String(req.body?.Body || "")
     .trim()
     .toLowerCase();
+  const body = String(req.body?.Body || "");
   const { control, legacy } = resolveConsentControl(optOutType, bodyKeyword);
   if (!control) return next();
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
@@ -273,6 +301,17 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
   const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "").trim();
   if (!userId || !customerNumber) return res.status(200).send(emptyTwiml());
 
+  const replyEnvironment = await resolveTwilioInboundEnvironment(userId);
+  if (!replyEnvironment.allowed) {
+    log.warn("Signed Twilio consent reply suppressed by account environment", {
+      tenant_suffix: opaqueIdSuffixForLog(userId),
+      account_environment: replyEnvironment.environment ?? "missing",
+      code: replyEnvironment.code,
+    });
+  }
+  const productionReply = (twiml: string): string =>
+    replyEnvironment.allowed ? twiml : emptyTwiml();
+
   return tenantStore.run(userId, async () => {
     try {
       await persistConsentControl({
@@ -282,6 +321,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         messageSid,
         optOutType,
         bodyKeyword,
+        body,
         control,
         legacy,
       });
@@ -320,20 +360,24 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
 
       res.setHeader("Content-Type", "text/xml");
       if (control === "stop") {
-        if (legacy) return res.status(200).send(optOutRetryTwiml());
+        if (legacy) return res.status(200).send(productionReply(optOutRetryTwiml()));
         return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
       }
       if (control === "start") {
-        return res.status(200).send(legacy ? optInRetryTwiml() : emptyTwiml());
+        return res.status(200).send(legacy ? productionReply(optInRetryTwiml()) : emptyTwiml());
       }
-      return res.status(200).send(emptyTwiml());
+      return res.status(503).send(emptyTwiml());
     }
 
     res.setHeader("Content-Type", "text/xml");
     if (!legacy) return res.status(200).send(emptyTwiml());
-    return res
-      .status(200)
-      .send(control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml());
+    const confirmation =
+      control === "stop"
+        ? optOutConfirmationTwiml()
+        : control === "start"
+          ? optInConfirmationTwiml()
+          : helpConfirmationTwiml();
+    return res.status(200).send(productionReply(confirmation));
   });
 });
 

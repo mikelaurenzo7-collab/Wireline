@@ -309,10 +309,12 @@ describe("AI cost-protection contract", () => {
     // so the ledger row must land on every outcome — skipping 5xx responses
     // left unmetered COGS under exactly the retry loops likeliest to burn money.
     expect(finishHandler).not.toContain("res.statusCode >= 500");
-    // On Vercel the instance can freeze the moment the response flushes; a
-    // detached promise here is a silently lost spend record. The write must ride
-    // waitUntil via runInBackground like every other post-response path.
-    expect(finishHandler).toContain('runInBackground("ai spend accounting"');
+    // On Vercel the instance can freeze the moment the response finishes. Keep
+    // the terminal response boundary open until the durable queue row exists;
+    // waitUntil from a finish listener still starts after the acknowledgement.
+    expect(finishHandler).toContain("holdResponseEndForRuntimeAudit(res");
+    expect(finishHandler).toContain("ctx.records.splice(0, ctx.records.length)");
+    expect(finishHandler).not.toContain('runInBackground("ai spend accounting"');
     expect(finishHandler).not.toContain("void persistRuntimeAuditRecords");
   });
 

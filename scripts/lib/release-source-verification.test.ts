@@ -10,6 +10,7 @@ import {
   normalizeBaseURL,
   resolveSourceCommit,
   verifyRemoteSourceCommit,
+  waitForRemoteSourceCommit,
 } from "./release-source-verification.mjs";
 
 describe("launch media source verification", () => {
@@ -80,5 +81,33 @@ describe("launch media source verification", () => {
       verifyRemoteSourceCommit(sourceCommit, "https://botbound.me"),
     ).resolves.toMatchObject({ baseURL: "https://botbound.me", deployedCommit: sourceCommit });
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("waits through a stale production alias until the checkout commit is live", async () => {
+    const sourceCommit = resolveSourceCommit(repoRoot);
+    const staleCommit = "f".repeat(40);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 200,
+          headers: { "X-Wireline-Source-Commit": staleCommit },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 200,
+          headers: { "X-Wireline-Source-Commit": sourceCommit },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      waitForRemoteSourceCommit(sourceCommit, "https://botbound.me", {
+        timeoutMs: 100,
+        pollIntervalMs: 0,
+      }),
+    ).resolves.toMatchObject({ deployedCommit: sourceCommit });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

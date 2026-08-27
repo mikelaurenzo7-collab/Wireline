@@ -1,9 +1,9 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 17, 2026.
+**Updated:** August 26, 2026.
 
-This document records Wireline's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
+This document records BotBound's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
 ## Runtime stack
 
@@ -35,7 +35,7 @@ Leftover Stripe Live Video price IDs may still exist so webhooks do not brick bi
 ## Billing and commercial truth
 
 - Public paid plans are the canonical Founder catalog in `src/lib/plan-catalog.ts` and `scripts/lib/stripe-founder-catalog.mjs`.
-- Voice overflow uses prepaid Runtime Balance; Wireline does not create surprise postpaid voice overage invoices.
+- Voice overflow uses prepaid Runtime Balance; BotBound does not create surprise postpaid voice overage invoices.
 - Leftover Live Video price IDs are reconciliation-only legacy records. No checkout, entitlement, or session can be created.
 - Stripe checkout, webhook, entitlement, portal, cancellation, and refund/dispute handling must remain server-owned and idempotent.
 - Run `npm run stripe:catalog:check` before any catalog mutation and the read-only live Stripe audit before a billing release.

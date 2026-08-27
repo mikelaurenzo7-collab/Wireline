@@ -17,12 +17,43 @@ import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import {
+  ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../lib/account-environment-policy";
 import { sendTenantMessage } from "../lib/twilio-service";
 import { customerSafeSmsFailureReason } from "../lib/sms-customer-errors";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+
+/**
+ * Manual replies are authenticated, but authentication alone must never make
+ * a demo/test workspace or inert showcase contact eligible for live carrier
+ * work. Keep this admission check ahead of the shared compliance gate because
+ * that gate may consult the Federal DNC service. Unknown classification
+ * failures are mapped to the same stable, fail-closed response as a missing
+ * account environment.
+ */
+async function assertSmsReplyExternalActionAllowed(userId: string, phone: string): Promise<void> {
+  try {
+    await assertLiveExternalActionAllowed(userId, "sms_thread_reply");
+    await assertExternalEntityActionAllowed(userId, "sms_thread_reply", { phone });
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    log.warn("SMS reply account environment or target could not be verified", {
+      userId,
+      error: getErrorMessage(error),
+    });
+    throw new AppError(
+      503,
+      ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+      "SMS replies are temporarily unavailable until this workspace can be verified.",
+    );
+  }
+}
 
 router.get(
   "/api/sms/threads",
@@ -99,6 +130,8 @@ router.post(
         .where(and(eq(schema.smsThreads.id, threadId), eq(schema.smsThreads.userId, req.user.id)))
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
+
+      await assertSmsReplyExternalActionAllowed(req.user.id, thread.customerNumber!);
 
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,

@@ -82,6 +82,13 @@ function installTwilioMocks(
     dncPhoneCandidates: () => ["+13125550123"],
   }));
   vi.doMock("../src/lib/launch-readiness", () => ({ isLaunchHardBlocked: () => false }));
+  vi.doMock("../src/lib/account-environment-policy", () => ({
+    liveExternalActionPolicyForUser: vi.fn(async () => ({
+      allowed: true,
+      environment: "production",
+    })),
+    externalEntityActionPolicyForUser: vi.fn(async () => ({ allowed: true })),
+  }));
   vi.doMock("../src/lib/trial-gate", () => ({
     assertLiveWorkEntitlementForUser: vi.fn(async () => ({ ok: true, status: "active" })),
   }));

@@ -10,6 +10,13 @@ const TARGET_0051_PATH = resolve(ROOT, "drizzle/migrations/meta/0051_snapshot.js
 const TARGET_0052_PATH = resolve(ROOT, "drizzle/migrations/meta/0052_snapshot.json");
 const TARGET_0053_PATH = resolve(ROOT, "drizzle/migrations/meta/0053_snapshot.json");
 const TARGET_0054_PATH = resolve(ROOT, "drizzle/migrations/meta/0054_snapshot.json");
+const TARGET_0055_PATH = resolve(ROOT, "drizzle/migrations/meta/0055_snapshot.json");
+const TARGET_0056_PATH = resolve(ROOT, "drizzle/migrations/meta/0056_snapshot.json");
+const TARGET_0057_PATH = resolve(ROOT, "drizzle/migrations/meta/0057_snapshot.json");
+const TARGET_0058_PATH = resolve(ROOT, "drizzle/migrations/meta/0058_snapshot.json");
+const TARGET_0059_PATH = resolve(ROOT, "drizzle/migrations/meta/0059_snapshot.json");
+const TARGET_0060_PATH = resolve(ROOT, "drizzle/migrations/meta/0060_snapshot.json");
+const TARGET_0061_PATH = resolve(ROOT, "drizzle/migrations/meta/0061_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -20,6 +27,20 @@ const TARGET_0053_ID = "f8a73de7-740c-4d49-b5eb-cdcaab8c03ce";
 const TARGET_0053_SHA256 = "75a6916995f0e973998e4c170b6da445acb00add28b1133a4a01114e33e41b20";
 const TARGET_0054_ID = "3d2b8f06-4a7f-4d76-9e31-6c5b8071a942";
 const TARGET_0054_SHA256 = "8081f5bab348dd484e15e6e6780aa13edfc3993c0f8f22fff7e524ad80d86757";
+const TARGET_0055_ID = "53c88e83-547e-4a92-bcfe-3cf5c4af9348";
+const TARGET_0055_SHA256 = "8c36f3aa40d6fe815f64f70c07e2834b8eabb6f465c9e9ad2cf6c2cc91efedd8";
+const TARGET_0056_ID = "b7c9f8a1-3e52-4d86-9b47-1a2f6e5c8d30";
+const TARGET_0056_SHA256 = "cdac9aed8da908488c960ada9603fe29b11686ade57f6d8dd2998cdef8e853e5";
+const TARGET_0057_ID = "e4a2d671-9b35-4f08-8c2e-6d1a7f934b50";
+const TARGET_0057_SHA256 = "a322c3bbf0f2bedd18ae362a25cbf484dfe14d4b184eb647d6bea5e663ed1331";
+const TARGET_0058_ID = "7d73fe9a-4a4f-4aac-82b2-9b2c46b04a17";
+const TARGET_0058_SHA256 = "f1d426d1694617aec08552e1130754ffae2b8fa77127eb5b5cbb917a4b3dc758";
+const TARGET_0059_ID = "a91c5e76-13ac-4d43-bd80-7fb8d864c9a1";
+const TARGET_0059_SHA256 = "8e03fd5268b0991b279297d80be736224a9d0a164ea0e22dd5df78864012508f";
+const TARGET_0060_ID = "b6d92ed4-2df5-43b6-a8b2-f4816dc34fa2";
+const TARGET_0060_SHA256 = "2b11dbd447336abc4ccb4301b00a0abe87e12996417e9eefa42a5349fe81e212";
+const TARGET_0061_ID = "7564a2ba-adb5-47fe-9abb-990b35c20b69";
+const TARGET_0061_SHA256 = "c3f10b6940fef1e026e4c837fb3a4ba1ff9cdc3f479351c2cd841fc20b8a2090";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -101,37 +122,13 @@ export function buildNativeXAISnapshot(previous) {
           ),
           last_error: column("last_error", "text", false),
           activated_at: column("activated_at", "timestamp with time zone", false),
-          created_at: column(
-            "created_at",
-            "timestamp with time zone",
-            true,
-            false,
-            "now()",
-          ),
-          updated_at: column(
-            "updated_at",
-            "timestamp with time zone",
-            true,
-            false,
-            "now()",
-          ),
+          created_at: column("created_at", "timestamp with time zone", true, false, "now()"),
+          updated_at: column("updated_at", "timestamp with time zone", true, false, "now()"),
         },
         indexes: {
-          idx_xai_phone_bindings_user: index(
-            "idx_xai_phone_bindings_user",
-            "user_id",
-            false,
-          ),
-          idx_xai_phone_bindings_agent: index(
-            "idx_xai_phone_bindings_agent",
-            "agent_id",
-            false,
-          ),
-          uq_xai_phone_bindings_phone: index(
-            "uq_xai_phone_bindings_phone",
-            "phone_number",
-            true,
-          ),
+          idx_xai_phone_bindings_user: index("idx_xai_phone_bindings_user", "user_id", false),
+          idx_xai_phone_bindings_agent: index("idx_xai_phone_bindings_agent", "agent_id", false),
+          uq_xai_phone_bindings_phone: index("uq_xai_phone_bindings_phone", "phone_number", true),
           uq_xai_phone_bindings_twilio_phone: index(
             "uq_xai_phone_bindings_twilio_phone",
             "twilio_phone_number_sid",
@@ -207,7 +204,11 @@ export function buildHotPathIndexSnapshot(grok46Snapshot) {
 }
 
 export function buildOpenAIRuntimeCohesionSnapshot(hotPathSnapshot) {
-  if (!hotPathSnapshot || hotPathSnapshot.id !== TARGET_0053_ID || hotPathSnapshot.version !== "7") {
+  if (
+    !hotPathSnapshot ||
+    hotPathSnapshot.id !== TARGET_0053_ID ||
+    hotPathSnapshot.version !== "7"
+  ) {
     throw new Error("0053 snapshot identity changed; refusing to synthesize 0054.");
   }
   const snapshot = structuredClone(hotPathSnapshot);
@@ -219,10 +220,188 @@ export function buildOpenAIRuntimeCohesionSnapshot(hotPathSnapshot) {
   return snapshot;
 }
 
+export function buildAuditSystemReceiptSnapshot(openaiRuntimeSnapshot) {
+  if (
+    !openaiRuntimeSnapshot ||
+    openaiRuntimeSnapshot.id !== TARGET_0054_ID ||
+    openaiRuntimeSnapshot.version !== "7"
+  ) {
+    throw new Error("0054 snapshot identity changed; refusing to synthesize 0055.");
+  }
+  const snapshot = structuredClone(openaiRuntimeSnapshot);
+  snapshot.id = TARGET_0055_ID;
+  snapshot.prevId = openaiRuntimeSnapshot.id;
+  const auditLog = snapshot.tables["public.wireline_audit_log"];
+  auditLog.columns.user_id.notNull = false;
+  auditLog.isRLSEnabled = true;
+  auditLog.indexes.uq_audit_account_deletion_receipt = {
+    name: "uq_audit_account_deletion_receipt",
+    columns: [
+      { expression: "event_type", isExpression: false, asc: true, nulls: "last" },
+      { expression: "resource_type", isExpression: false, asc: true, nulls: "last" },
+      { expression: "resource_id", isExpression: false, asc: true, nulls: "last" },
+    ],
+    isUnique: true,
+    where:
+      "event_type = 'account.deletion.completed' AND resource_type = 'account_deletion_receipt' AND resource_id IS NOT NULL",
+    concurrently: false,
+    method: "btree",
+    with: {},
+  };
+  return snapshot;
+}
+
+export function buildResolvedOrphanScrubSnapshot(auditSystemReceiptSnapshot) {
+  if (
+    !auditSystemReceiptSnapshot ||
+    auditSystemReceiptSnapshot.id !== TARGET_0055_ID ||
+    auditSystemReceiptSnapshot.version !== "7"
+  ) {
+    throw new Error("0055 snapshot identity changed; refusing to synthesize 0056.");
+  }
+  const snapshot = structuredClone(auditSystemReceiptSnapshot);
+  snapshot.id = TARGET_0056_ID;
+  snapshot.prevId = auditSystemReceiptSnapshot.id;
+  return snapshot;
+}
+
+export function buildRetiredXAIBindingIdentitySnapshot(resolvedOrphanScrubSnapshot) {
+  if (
+    !resolvedOrphanScrubSnapshot ||
+    resolvedOrphanScrubSnapshot.id !== TARGET_0056_ID ||
+    resolvedOrphanScrubSnapshot.version !== "7"
+  ) {
+    throw new Error("0056 snapshot identity changed; refusing to synthesize 0057.");
+  }
+  const snapshot = structuredClone(resolvedOrphanScrubSnapshot);
+  snapshot.id = TARGET_0057_ID;
+  snapshot.prevId = resolvedOrphanScrubSnapshot.id;
+  snapshot.tables[TABLE_NAME].checkConstraints.wireline_xai_binding_owner_identity = {
+    name: "wireline_xai_binding_owner_identity",
+    value:
+      "(((user_id = id AND agent_id = ('retired:' || id::text)) AND status IN ('retired', 'error')) OR ((user_id <> id AND agent_id <> ('retired:' || id::text)) AND status <> 'retired'))",
+  };
+  return snapshot;
+}
+
+export function buildAuditCascadeSnapshot(retiredXAIBindingIdentitySnapshot) {
+  if (
+    !retiredXAIBindingIdentitySnapshot ||
+    retiredXAIBindingIdentitySnapshot.id !== TARGET_0057_ID ||
+    retiredXAIBindingIdentitySnapshot.version !== "7"
+  ) {
+    throw new Error("0057 snapshot identity changed; refusing to synthesize 0058.");
+  }
+  const snapshot = structuredClone(retiredXAIBindingIdentitySnapshot);
+  snapshot.id = TARGET_0058_ID;
+  snapshot.prevId = retiredXAIBindingIdentitySnapshot.id;
+  snapshot.tables["public.wireline_audit_log"].foreignKeys = {
+    wireline_audit_log_user_id_wireline_users_id_fk: {
+      name: "wireline_audit_log_user_id_wireline_users_id_fk",
+      tableFrom: "wireline_audit_log",
+      tableTo: "wireline_users",
+      columnsFrom: ["user_id"],
+      columnsTo: ["id"],
+      onDelete: "cascade",
+      onUpdate: "no action",
+    },
+  };
+  return snapshot;
+}
+
+export function buildAccountOperationLeaseSnapshot(auditCascadeSnapshot) {
+  if (!auditCascadeSnapshot || auditCascadeSnapshot.id !== TARGET_0058_ID) {
+    throw new Error("0058 snapshot identity changed; refusing to synthesize 0059.");
+  }
+  const snapshot = structuredClone(auditCascadeSnapshot);
+  snapshot.id = TARGET_0059_ID;
+  snapshot.prevId = auditCascadeSnapshot.id;
+  snapshot.tables["public.wireline_account_operation_leases"] = {
+    name: "wireline_account_operation_leases",
+    schema: "",
+    columns: {
+      id: column("id", "uuid", true, true, "gen_random_uuid()"),
+      user_id: column("user_id", "uuid", true),
+      kind: column("kind", "text", true),
+      operation: column("operation", "text", true),
+      expires_at: column("expires_at", "timestamp with time zone", true),
+      created_at: column("created_at", "timestamp with time zone", true, false, "now()"),
+    },
+    indexes: {
+      idx_account_operation_leases_active_user: {
+        name: "idx_account_operation_leases_active_user",
+        columns: [
+          { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+          { expression: "expires_at", isExpression: false, asc: true, nulls: "last" },
+        ],
+        isUnique: false,
+        concurrently: false,
+        method: "btree",
+        with: {},
+      },
+    },
+    foreignKeys: {
+      wireline_account_operation_leases_user_id_wireline_users_id_fk: {
+        name: "wireline_account_operation_leases_user_id_wireline_users_id_fk",
+        tableFrom: "wireline_account_operation_leases",
+        tableTo: "wireline_users",
+        columnsFrom: ["user_id"],
+        columnsTo: ["id"],
+        onDelete: "cascade",
+        onUpdate: "no action",
+      },
+    },
+    compositePrimaryKeys: {},
+    uniqueConstraints: {},
+    policies: {},
+    checkConstraints: {
+      wireline_account_operation_leases_kind_check: {
+        name: "wireline_account_operation_leases_kind_check",
+        value: "kind IN ('billing', 'provider')",
+      },
+    },
+    isRLSEnabled: true,
+  };
+  return snapshot;
+}
+
+export function buildSubscriptionCascadeSnapshot(accountOperationLeaseSnapshot) {
+  if (!accountOperationLeaseSnapshot || accountOperationLeaseSnapshot.id !== TARGET_0059_ID) {
+    throw new Error("0059 snapshot identity changed; refusing to synthesize 0060.");
+  }
+  const snapshot = structuredClone(accountOperationLeaseSnapshot);
+  snapshot.id = TARGET_0060_ID;
+  snapshot.prevId = accountOperationLeaseSnapshot.id;
+  snapshot.tables["public.wireline_subscriptions"].foreignKeys = {
+    wireline_subscriptions_user_id_wireline_users_id_fk: {
+      name: "wireline_subscriptions_user_id_wireline_users_id_fk",
+      tableFrom: "wireline_subscriptions",
+      tableTo: "wireline_users",
+      columnsFrom: ["user_id"],
+      columnsTo: ["id"],
+      onDelete: "cascade",
+      onUpdate: "no action",
+    },
+  };
+  return snapshot;
+}
+
+export function buildAccountEnvironmentPromotionGuardSnapshot(subscriptionCascadeSnapshot) {
+  if (!subscriptionCascadeSnapshot || subscriptionCascadeSnapshot.id !== TARGET_0060_ID) {
+    throw new Error("0060 snapshot identity changed; refusing to synthesize 0061.");
+  }
+  const snapshot = structuredClone(subscriptionCascadeSnapshot);
+  snapshot.id = TARGET_0061_ID;
+  snapshot.prevId = subscriptionCascadeSnapshot.id;
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
-    throw new Error(`Generated snapshot hash mismatch for ${path}: expected ${expectedHash}, got ${actualHash}.`);
+    throw new Error(
+      `Generated snapshot hash mismatch for ${path}: expected ${expectedHash}, got ${actualHash}.`,
+    );
   }
   if (existsSync(path) && hash(readFileSync(path, "utf8")) === actualHash) {
     return { changed: false, path, sha256: actualHash };
@@ -243,7 +422,28 @@ export function materializeDrizzleMeta() {
   const grok46Serialized = `${JSON.stringify(grok46Snapshot, null, 2)}\n`;
   const hotPathSnapshot = buildHotPathIndexSnapshot(grok46Snapshot);
   const hotPathSerialized = `${JSON.stringify(hotPathSnapshot, null, 2)}\n`;
-  const openaiRuntimeSerialized = `${JSON.stringify(buildOpenAIRuntimeCohesionSnapshot(hotPathSnapshot), null, 2)}\n`;
+  const openaiRuntimeSnapshot = buildOpenAIRuntimeCohesionSnapshot(hotPathSnapshot);
+  const openaiRuntimeSerialized = `${JSON.stringify(openaiRuntimeSnapshot, null, 2)}\n`;
+  const auditSystemReceiptSnapshot = buildAuditSystemReceiptSnapshot(openaiRuntimeSnapshot);
+  const auditSystemReceiptSerialized = `${JSON.stringify(auditSystemReceiptSnapshot, null, 2)}\n`;
+  const resolvedOrphanScrubSnapshot = buildResolvedOrphanScrubSnapshot(auditSystemReceiptSnapshot);
+  const resolvedOrphanScrubSerialized = `${JSON.stringify(resolvedOrphanScrubSnapshot, null, 2)}\n`;
+  const retiredXAIBindingIdentitySnapshot = buildRetiredXAIBindingIdentitySnapshot(
+    resolvedOrphanScrubSnapshot,
+  );
+  const retiredXAIBindingIdentitySerialized = `${JSON.stringify(retiredXAIBindingIdentitySnapshot, null, 2)}\n`;
+  const auditCascadeSnapshot = buildAuditCascadeSnapshot(retiredXAIBindingIdentitySnapshot);
+  const auditCascadeSerialized = `${JSON.stringify(auditCascadeSnapshot, null, 2)}\n`;
+  const accountOperationLeaseSnapshot = buildAccountOperationLeaseSnapshot(auditCascadeSnapshot);
+  const accountOperationLeaseSerialized = `${JSON.stringify(accountOperationLeaseSnapshot, null, 2)}\n`;
+  const subscriptionCascadeSnapshot = buildSubscriptionCascadeSnapshot(
+    accountOperationLeaseSnapshot,
+  );
+  const subscriptionCascadeSerialized = `${JSON.stringify(subscriptionCascadeSnapshot, null, 2)}\n`;
+  const accountEnvironmentPromotionGuardSnapshot = buildAccountEnvironmentPromotionGuardSnapshot(
+    subscriptionCascadeSnapshot,
+  );
+  const accountEnvironmentPromotionGuardSerialized = `${JSON.stringify(accountEnvironmentPromotionGuardSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
@@ -253,7 +453,51 @@ export function materializeDrizzleMeta() {
     openaiRuntimeSerialized,
     TARGET_0054_SHA256,
   );
-  return { native, preserved, grok46, hotPath, openaiRuntime };
+  const auditSystemReceipt = writeSnapshot(
+    TARGET_0055_PATH,
+    auditSystemReceiptSerialized,
+    TARGET_0055_SHA256,
+  );
+  const resolvedOrphanScrub = writeSnapshot(
+    TARGET_0056_PATH,
+    resolvedOrphanScrubSerialized,
+    TARGET_0056_SHA256,
+  );
+  const retiredXAIBindingIdentity = writeSnapshot(
+    TARGET_0057_PATH,
+    retiredXAIBindingIdentitySerialized,
+    TARGET_0057_SHA256,
+  );
+  const auditCascade = writeSnapshot(TARGET_0058_PATH, auditCascadeSerialized, TARGET_0058_SHA256);
+  const accountOperationLease = writeSnapshot(
+    TARGET_0059_PATH,
+    accountOperationLeaseSerialized,
+    TARGET_0059_SHA256,
+  );
+  const subscriptionCascade = writeSnapshot(
+    TARGET_0060_PATH,
+    subscriptionCascadeSerialized,
+    TARGET_0060_SHA256,
+  );
+  const accountEnvironmentPromotionGuard = writeSnapshot(
+    TARGET_0061_PATH,
+    accountEnvironmentPromotionGuardSerialized,
+    TARGET_0061_SHA256,
+  );
+  return {
+    native,
+    preserved,
+    grok46,
+    hotPath,
+    openaiRuntime,
+    auditSystemReceipt,
+    resolvedOrphanScrub,
+    retiredXAIBindingIdentity,
+    auditCascade,
+    accountOperationLease,
+    subscriptionCascade,
+    accountEnvironmentPromotionGuard,
+  };
 }
 
 const result = materializeDrizzleMeta();
@@ -270,7 +514,38 @@ if (result.hotPath.changed) {
   console.log(`Materialized Drizzle snapshot 0053 (${result.hotPath.sha256.slice(0, 12)}…).`);
 }
 if (result.openaiRuntime.changed) {
+  console.log(`Materialized Drizzle snapshot 0054 (${result.openaiRuntime.sha256.slice(0, 12)}…).`);
+}
+if (result.auditSystemReceipt.changed) {
   console.log(
-    `Materialized Drizzle snapshot 0054 (${result.openaiRuntime.sha256.slice(0, 12)}…).`,
+    `Materialized Drizzle snapshot 0055 (${result.auditSystemReceipt.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.resolvedOrphanScrub.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0056 (${result.resolvedOrphanScrub.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.retiredXAIBindingIdentity.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0057 (${result.retiredXAIBindingIdentity.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.auditCascade.changed) {
+  console.log(`Materialized Drizzle snapshot 0058 (${result.auditCascade.sha256.slice(0, 12)}…).`);
+}
+if (result.accountOperationLease.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0059 (${result.accountOperationLease.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.subscriptionCascade.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0060 (${result.subscriptionCascade.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.accountEnvironmentPromotionGuard.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0061 (${result.accountEnvironmentPromotionGuard.sha256.slice(0, 12)}…).`,
   );
 }

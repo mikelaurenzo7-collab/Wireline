@@ -13,10 +13,9 @@ import { invalidateDashboard } from "../lib/dashboard-cache";
 import { seedFounderAssistant, resolveFounderUserId } from "../lib/founder-fleet-seed";
 import {
   DEFAULT_DEMO_EMAIL,
-  DEMO_SMS_NUMBERS,
+  ALL_DEMO_SMS_NUMBERS,
   resolveDemoUserId,
   seedDemoAccountData,
-  ensureDemoProSubscription,
 } from "../lib/demo-account-seed";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -46,7 +45,6 @@ router.post(
     }
 
     try {
-      await ensureDemoProSubscription(userId);
       const { agentId, report } = await seedDemoAccountData(userId);
       return res.json({
         ok: true,
@@ -156,7 +154,7 @@ router.delete(
             .where(
               and(
                 eq(smsThreads.userId, userId),
-                inArray(smsThreads.customerNumber, DEMO_SMS_NUMBERS),
+                inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
               ),
             )
         ).length;
@@ -222,7 +220,7 @@ router.delete(
           .where(
             and(
               eq(smsThreads.userId, userId),
-              inArray(smsThreads.customerNumber, DEMO_SMS_NUMBERS),
+              inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
             ),
           );
         for (const row of seedSms) {
@@ -233,7 +231,7 @@ router.delete(
           .where(
             and(
               eq(smsThreads.userId, userId),
-              inArray(smsThreads.customerNumber, DEMO_SMS_NUMBERS),
+              inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
             ),
           )
           .returning({ id: smsThreads.id });

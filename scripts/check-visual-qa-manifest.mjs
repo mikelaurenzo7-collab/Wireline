@@ -30,6 +30,28 @@ const P0_KINDS = new Set([
 const manifest = JSON.parse(readFileSync(path.resolve(manifestPath), "utf8"));
 const issues = Array.isArray(manifest.issues) ? manifest.issues : [];
 const p0 = issues.filter((issue) => P0_KINDS.has(issue.kind));
+const exactCommit = /^[0-9a-f]{40}$/i;
+const sourceCommit = String(manifest.sourceCommit || "").toLowerCase();
+const sourceBefore = String(manifest.sourceVerificationBefore?.deployedCommit || "").toLowerCase();
+const sourceAfter = String(manifest.sourceVerificationAfter?.deployedCommit || "").toLowerCase();
+
+if (manifest.qaAccountConfigured !== true || manifest.authenticatedCapture !== true) {
+  console.error(
+    "Visual QA authentication gate failed: a verified dedicated demo account was not captured.",
+  );
+  process.exit(1);
+}
+
+if (
+  !exactCommit.test(sourceCommit) ||
+  sourceBefore !== sourceCommit ||
+  sourceAfter !== sourceCommit
+) {
+  console.error(
+    "Visual QA source gate failed: the checkout and pre/post-capture production commits do not match.",
+  );
+  process.exit(1);
+}
 
 if (p0.length) {
   console.error(`Visual QA P0 gate failed: ${p0.length} issue(s)`);

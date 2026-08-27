@@ -102,9 +102,16 @@ describe("round-9 subscription allowance reversal", () => {
     // fell straight through and left the allowance spendable after the money
     // went back — e.g. a refunded annual Business kept $120 of Runtime Balance.
     const billing = read("src/routes/billing-routes.ts");
+    const strictPreflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
     expect(billing).toContain("async function reverseRuntimeAllowanceForCharge");
     expect(billing).toContain('reverseRuntimeAllowanceForCharge(charge, "refund")');
-    expect(billing).toContain('reverseRuntimeAllowanceForCharge(disputedCharge, "dispute"');
+    expect(strictPreflight).toContain(
+      "export async function reverseSubscriptionRuntimeAllowanceForChargeStrict",
+    );
+    expect(strictPreflight).toContain('eventType === "charge.dispute.funds_withdrawn"');
+    expect(strictPreflight).toMatch(
+      /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"dispute",\s*dispute\.id,\s*movementCents,\s*event\.id/,
+    );
   });
 
   it("resolves plan and interval from the subscription behind the charge", () => {

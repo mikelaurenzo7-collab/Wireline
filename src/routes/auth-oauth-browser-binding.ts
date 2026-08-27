@@ -56,7 +56,7 @@ function bindingMarker(provider: SignInOAuthProvider, bridgeState: string): stri
 }
 
 function setOAuthNoStoreHeaders(res: Response): void {
-  res.set("Cache-Control", "no-store, max-age=0");
+  res.set("Cache-Control", "private, no-store, max-age=0");
   res.set("Pragma", "no-cache");
   res.set("Referrer-Policy", "no-referrer");
 }

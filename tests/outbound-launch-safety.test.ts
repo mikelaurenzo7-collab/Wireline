@@ -76,7 +76,7 @@ describe("outbound launch safety", () => {
   });
 
   it("gates intake auto-dial through shared outbound compliance helper", () => {
-    const intake = read("src/routes/intake-routes.ts");
+    const intake = read("src/lib/intake-auto-dial.ts");
     expect(intake).toContain("evaluateOutboundDialGate");
     expect(intake).toMatch(/evaluateOutboundDialGate[\s\S]*placeOutboundCall/s);
     const gate = read("src/lib/outbound-dial-gate.ts");

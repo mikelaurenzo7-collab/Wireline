@@ -14,6 +14,7 @@ import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator
 import { getErrorMessage } from "./server-utils";
 import { resolveHardSpendCapStatus } from "./spend-budget-policy";
 import { resolveAiDailySpendAlertUsd } from "./ai-spend-alert";
+import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 
 interface BudgetRow {
   monthly_limit_usd: number;
@@ -201,6 +202,14 @@ function sendSpendGuardUnavailable(res: Response) {
 export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
   const userId = req.user?.id;
   if (!userId) return next();
+
+  // This middleware is the common admission boundary for customer-triggered
+  // provider spend. Only a workspace explicitly classified as production may
+  // reach the budget check and, eventually, a paid provider. Keep the account
+  // environment lookup outside the spend-budget catch below so its specific
+  // 403/503 AppError is preserved instead of being flattened into a generic
+  // spend-guard outage.
+  await assertLiveExternalActionAllowed(userId, "provider_spend_admission");
 
   try {
     const snap = await getAuthoritativeBudgetSnapshot(userId);

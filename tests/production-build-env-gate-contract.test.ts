@@ -25,6 +25,10 @@ describe("production build environment gate", () => {
 
     expect(validator).toContain('"UPSTASH_REDIS_REST_URL"');
     expect(validator).toContain('"UPSTASH_REDIS_REST_TOKEN"');
+    expect(validator).toContain('"AGENTMAIL_API_KEY"');
+    expect(validator).toContain('"AGENTMAIL_DEFAULT_DOMAIN"');
+    expect(validator).toContain('"TWILIO_WEBHOOK_BASE_URL"');
+    expect(validator).toContain('"WIRELINE_RECONCILE_STRIPE_PORTAL"');
   });
 
   it("keeps preview builds isolated from production-only credentials", () => {
@@ -88,7 +92,7 @@ describe("production build environment gate", () => {
     expect(build).toContain('"tests/outbound-compliance-contract.test.ts"');
     expect(build).not.toContain('run("npx", [\n  "vitest",\n  "run"');
 
-    expect(runner).toContain('import { buildTestEstateEnvironment }');
+    expect(runner).toContain("import { buildTestEstateEnvironment }");
     expect(runner).toContain("mkdtempSync");
     expect(runner).toContain('writeFileSync(env.NPM_CONFIG_USERCONFIG, ""');
     expect(runner).toContain('writeFileSync(env.GIT_CONFIG_GLOBAL, ""');

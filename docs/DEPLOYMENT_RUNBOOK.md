@@ -1,4 +1,4 @@
-# Wireline Deployment Runbook
+# BotBound Deployment Runbook
 
 Status: **Canonical production runbook**
 
@@ -121,7 +121,7 @@ Do not ignore a named GitHub job that actually ran and found an application defe
 
 New credential-like variables are blocked in preview by default until `scripts/check-deployment-boundaries.mjs` explicitly classifies them. Never widen a production secret to all targets as a shortcut.
 
-`XAI_API_KEY` has a reviewed Preview sandbox policy: Preview may carry a dedicated sandbox key for structured chat, TTS, and ephemeral browser sessions. Twilio carrier credentials remain production-only, so Preview cannot place native PSTN calls. `PERPLEXITY_API_KEY` may appear in Preview project configuration but stays inert unless `PERPLEXITY_PREVIEW_API_KEY` is set.
+`XAI_API_KEY` is Production-only. Preview and Development must not inherit the live xAI credential; preview product work must remain provider-free or use a separately named, explicitly classified sandbox variable. Twilio carrier credentials are also Production-only, so Preview cannot place native PSTN calls. `PERPLEXITY_API_KEY` may appear in Preview project configuration but stays inert unless `PERPLEXITY_PREVIEW_API_KEY` is set.
 
 `INTERNAL_JWT_SECRET` is the canonical session-signing secret. Legacy aliases must not coexist with a different value.
 

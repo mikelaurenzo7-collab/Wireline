@@ -2,8 +2,10 @@
 import { drizzle, log, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { runInBackground } from "../lib/background-work";
+import { enqueue, writeTransactionConfig } from "../lib/job-queue";
+import { reportError } from "../lib/error-reporter";
 import { getErrorMessage } from "../lib/server-utils";
+import { dailyPeriodKey } from "../lib/tenant-quotas";
 import {
   createAuditContext,
   estimateCost,
@@ -31,14 +33,18 @@ function estimateAuditRecordCost(record: RuntimeCallMeta): number {
   );
 }
 
-export async function persistRuntimeAuditRecords(opts: {
+export type AiSpendAccountingJobPayload = {
   userId: string;
   action: string;
   records: RuntimeCallMeta[];
   requestMeta?: Record<string, unknown>;
-}): Promise<void> {
-  if (!opts.records.length) return;
-  const rows = opts.records.map((record) => ({
+};
+
+const AI_SPEND_ACCOUNTING_RECEIPT = "ai_spend_accounting_persisted";
+const AI_TOKEN_DIMENSION = "claude_tokens_daily";
+
+function runtimeAuditRows(opts: AiSpendAccountingJobPayload) {
+  return opts.records.map((record) => ({
     userId: opts.userId,
     action: opts.action,
     provider: record.provider,
@@ -51,13 +57,11 @@ export async function persistRuntimeAuditRecords(opts: {
     latencyMs: record.latency_ms,
     metadata: { ...(opts.requestMeta || {}) },
   }));
+}
+
+async function applyRuntimeAuditCounters(opts: AiSpendAccountingJobPayload): Promise<void> {
+  const rows = runtimeAuditRows(opts);
   const deltaUsd = rows.reduce((sum: number, row: any) => sum + Number(row.costUsd || 0), 0);
-  try {
-    await drizzle.insert(schema.auditLog).values(rows);
-  } catch (error) {
-    log.error("Runtime audit insert failed", { error: getErrorMessage(error) });
-    return;
-  }
   const tokenDelta = opts.records.reduce(
     (sum, record) => sum + record.input_tokens + record.output_tokens,
     0,
@@ -86,6 +90,230 @@ export async function persistRuntimeAuditRecords(opts: {
   await evaluateSpend(opts.userId, deltaUsd).catch((error: unknown) =>
     log.error("Runtime spend evaluation failed", { error: getErrorMessage(error) }),
   );
+}
+
+function runtimeTokenDelta(opts: AiSpendAccountingJobPayload): number {
+  return opts.records.reduce((sum, record) => sum + record.input_tokens + record.output_tokens, 0);
+}
+
+async function publishRuntimeAuditTelemetry(opts: AiSpendAccountingJobPayload): Promise<void> {
+  const deltaUsd = runtimeAuditRows(opts).reduce(
+    (sum: number, row: any) => sum + Number(row.costUsd || 0),
+    0,
+  );
+  // This rolling Redis/memory accumulator is explicitly telemetry-only. The
+  // authoritative tenant spend ledger is wireline_audit_log, persisted in the
+  // worker transaction below. Keeping this outside the Postgres transaction
+  // avoids pretending two different stores can commit atomically.
+  recordDailySpend(deltaUsd);
+  await evaluateSpend(opts.userId, deltaUsd).catch((error: unknown) =>
+    log.error("Runtime spend evaluation failed", { error: getErrorMessage(error) }),
+  );
+}
+
+export async function persistRuntimeAuditRecords(opts: {
+  userId: string;
+  action: string;
+  records: RuntimeCallMeta[];
+  requestMeta?: Record<string, unknown>;
+}): Promise<void> {
+  if (!opts.records.length) return;
+  const rows = runtimeAuditRows(opts);
+  try {
+    await drizzle.insert(schema.auditLog).values(rows);
+  } catch (error) {
+    log.error("Runtime audit insert failed", { error: getErrorMessage(error) });
+    return;
+  }
+  await applyRuntimeAuditCounters(opts);
+}
+
+/**
+ * Persist one queued request's usage and its completion marker atomically.
+ * The job marker is the retry receipt: if a worker dies after this transaction
+ * but before queue completion, the next attempt observes it and cannot insert
+ * the same spend twice.
+ */
+export async function persistRuntimeAuditRecordsForJob(
+  input: AiSpendAccountingJobPayload & { jobId: string; attempt: number },
+  deps: {
+    db?: Pick<typeof drizzle, "transaction">;
+    publishTelemetry?: (payload: AiSpendAccountingJobPayload) => Promise<void>;
+  } = {},
+): Promise<boolean> {
+  if (!input.records.length) return false;
+  const db = deps.db ?? drizzle;
+  const rows = runtimeAuditRows(input).map((row) => ({
+    ...row,
+    metadata: { ...row.metadata, accounting_job_id: input.jobId },
+  }));
+  const persisted = await db.transaction(async (tx) => {
+    const [job] = await tx
+      .select({
+        status: schema.jobs.status,
+        attempts: schema.jobs.attempts,
+        result: schema.jobs.result,
+      })
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, input.jobId))
+      .limit(1)
+      .for("update");
+    if (!job) throw new Error("AI spend accounting job disappeared before persistence.");
+    const priorResult =
+      job.result && typeof job.result === "object" && !Array.isArray(job.result)
+        ? (job.result as Record<string, unknown>)
+        : {};
+    if (priorResult[AI_SPEND_ACCOUNTING_RECEIPT] === true) return false;
+    if (job.status !== "running" || Number(job.attempts || 0) !== input.attempt) {
+      throw new Error("AI spend accounting job lost its durable attempt claim.");
+    }
+
+    await tx.insert(schema.auditLog).values(rows);
+    const tokenDelta = runtimeTokenDelta(input);
+    if (tokenDelta > 0) {
+      // The aggregate and the per-call ledger share the job receipt's exact
+      // transaction. A worker crash can therefore leave all three committed or
+      // all three retryable, never an audit row without its daily quota usage.
+      await tx
+        .insert(schema.quotaUsage)
+        .values({
+          userId: input.userId,
+          dimension: AI_TOKEN_DIMENSION,
+          periodKey: dailyPeriodKey(),
+          used: BigInt(tokenDelta),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [
+            schema.quotaUsage.userId,
+            schema.quotaUsage.dimension,
+            schema.quotaUsage.periodKey,
+          ],
+          set: {
+            used: sql`${schema.quotaUsage.used} + ${BigInt(tokenDelta)}`,
+            updatedAt: new Date(),
+          },
+        });
+    }
+    const [marked] = await tx
+      .update(schema.jobs)
+      .set({
+        result: {
+          ...priorResult,
+          [AI_SPEND_ACCOUNTING_RECEIPT]: true,
+          accounting_attempt: input.attempt,
+        },
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.jobs.id, input.jobId),
+          eq(schema.jobs.status, "running"),
+          eq(schema.jobs.attempts, input.attempt),
+        ),
+      )
+      .returning({ id: schema.jobs.id });
+    if (!marked) throw new Error("AI spend accounting receipt lost its attempt fence.");
+    return true;
+  }, writeTransactionConfig());
+
+  if (persisted) await (deps.publishTelemetry ?? publishRuntimeAuditTelemetry)(input);
+  return persisted;
+}
+
+type RuntimeAuditEndDeps = {
+  enqueueJob?: (payload: AiSpendAccountingJobPayload) => Promise<unknown>;
+  reportFailure?: (error: unknown, payload: AiSpendAccountingJobPayload) => void;
+};
+
+/**
+ * Hold only the final Express response boundary until its minimal durable job
+ * exists. This preserves every `res.end` overload and lets streaming routes
+ * flush events normally; only their terminal FIN waits for one queue INSERT.
+ */
+export function holdResponseEndForRuntimeAudit(
+  res: any,
+  takePayload: () => AiSpendAccountingJobPayload | null,
+  deps: RuntimeAuditEndDeps = {},
+): void {
+  const originalEnd = res.end.bind(res);
+  let endRequested = false;
+  let endReleased = false;
+
+  res.end = (...args: any[]) => {
+    // Express/Node occasionally reaches end twice through nested error paths.
+    // The first caller owns both persistence and the original end invocation.
+    if (endRequested || endReleased) return res;
+    endRequested = true;
+
+    let payload: AiSpendAccountingJobPayload | null;
+    try {
+      payload = takePayload();
+    } catch (error) {
+      log.error("AI spend accounting payload capture failed before response end", {
+        error: getErrorMessage(error),
+      });
+      try {
+        reportError(error, {
+          tags: { surface: "response_boundary", operation: "ai_spend_accounting_capture" },
+        });
+      } catch (reportingError) {
+        log.error("AI spend accounting payload failure reporting failed", {
+          error: getErrorMessage(reportingError),
+        });
+      }
+      endReleased = true;
+      return originalEnd(...args);
+    }
+    if (!payload) {
+      endReleased = true;
+      return originalEnd(...args);
+    }
+
+    const enqueueJob =
+      deps.enqueueJob ??
+      ((jobPayload: AiSpendAccountingJobPayload) =>
+        enqueue(drizzle, {
+          userId: jobPayload.userId,
+          type: "ai_spend_accounting",
+          payload: jobPayload,
+        }));
+    const reportFailure =
+      deps.reportFailure ??
+      ((error: unknown, jobPayload: AiSpendAccountingJobPayload) => {
+        log.error("AI spend accounting enqueue failed before response end", {
+          userId: jobPayload.userId,
+          action: jobPayload.action,
+          error: getErrorMessage(error),
+        });
+        reportError(error, {
+          tags: { surface: "response_boundary", operation: "ai_spend_accounting_enqueue" },
+        });
+      });
+
+    // An async IIFE converts synchronous producer throws into the same rejection
+    // path. `finally` releases the socket exactly once, so a queue outage is
+    // visible but can never strand an HTTP/SSE response indefinitely.
+    void (async () => enqueueJob(payload))()
+      .catch((error: unknown) => {
+        try {
+          reportFailure(error, payload);
+        } catch (reportingError) {
+          log.error("AI spend accounting enqueue failure reporting failed", {
+            error: getErrorMessage(reportingError),
+          });
+        }
+      })
+      .finally(() => {
+        if (endReleased) return;
+        endReleased = true;
+        originalEnd(...args);
+      });
+
+    // Node's ServerResponse.end() returns the response. Preserve that contract
+    // while persistence completes asynchronously behind this final boundary.
+    return res;
+  };
 }
 
 /**
@@ -413,24 +641,25 @@ export function withAudit(actionPrefix: string) {
       }
     }
     const ctx = createAuditContext();
-    res.on("finish", () => {
+    holdResponseEndForRuntimeAudit(res, () => {
       // Persist on 5xx too: the provider already billed the model call, so a
       // handler failure after the model returned must still land in the spend
       // ledger or the tenant's budget drifts under exactly the retry loops
-      // most likely to burn money.
-      if (!ctx.records.length || !req?.user?.id) return;
+      // most likely to burn money. Take and clear the records at finalization;
+      // streaming writes remain immediate and cannot grow a post-end buffer.
+      if (!ctx.records.length || !req?.user?.id) return null;
       const subpath = req.path.replace(/\//g, ".").replace(/^\.+/, "");
-      // runInBackground, not a detached promise: on Vercel the instance can
-      // freeze as soon as the response flushes, and a suspended audit INSERT
-      // is unmetered COGS with no ledger trace.
-      runInBackground("ai spend accounting", () =>
-        persistRuntimeAuditRecords({
-          userId: req.user.id,
-          action: actionPrefix ? `${actionPrefix}.${subpath}` : subpath,
-          records: ctx.records,
-          requestMeta: { method: req.method, path: req.path, status: res.statusCode },
-        }),
-      );
+      const records = ctx.records.splice(0, ctx.records.length).map((record) => ({ ...record }));
+      // Keep the response open for the queue INSERT, then let the durable worker
+      // atomically persist usage, its quota aggregate, and the retry receipt.
+      // Vercel cannot freeze the invocation between provider spend and enqueue.
+      const payload: AiSpendAccountingJobPayload = {
+        userId: req.user.id,
+        action: actionPrefix ? `${actionPrefix}.${subpath}` : subpath,
+        records,
+        requestMeta: { method: req.method, path: req.path, status: res.statusCode },
+      };
+      return payload;
     });
     runInAuditContext(ctx, () => next());
   };

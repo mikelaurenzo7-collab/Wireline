@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 396
+**Routes scanned:** 397
 **Protected:** 320
-**Public (allowlisted):** 76
+**Public (allowlisted):** 77
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -48,8 +48,8 @@
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
+| `POST /api/public/demo-call` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/public/demo-session` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/public/demo-call` | Same-origin, signed one-use ticket + IP/global budget; tool-free server-mediated OpenAI WebRTC |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
@@ -87,6 +87,7 @@
 | `GET /api/health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /api/voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
 | `POST /api/twilio-webhook/xai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/xai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/xai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/webhooks/xai/voice` | xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission |
 
@@ -306,8 +307,8 @@
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
-| marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-call` | — | — | yes | Public (allowlisted) |
+| marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | mcp-coaching-settings-routes.ts | POST | `/api/mcp/coaching-writes` | inline | — | — | Protected |
 | mcp-coaching-settings-routes.ts | GET | `/api/mcp/connections` | inline | — | — | Protected |
@@ -486,6 +487,7 @@
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
 | xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-bridge` | — | — | yes | Public (allowlisted) |
+| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-fallback` | — | — | yes | Public (allowlisted) |
 | xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-status` | — | — | yes | Public (allowlisted) |
 | xai-voice-routes.ts | POST | `/api/voice/native/phone/provision` | inline | — | — | Protected |
 | xai-voice-routes.ts | GET | `/api/voice/native/phone/status` | inline | — | — | Protected |

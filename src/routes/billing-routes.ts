@@ -36,6 +36,8 @@ import {
 } from "../lib/stripe-checkout-fulfillment";
 import { checkoutOperations } from "../db/security-schema";
 import { listCurrentLiveVideoAddons } from "../lib/stripe-live-video-addon";
+import { enforcePendingDeletionBillingForSubscription } from "../lib/account-deletion-billing";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 
 const router = express.Router();
 const LIVE_VIDEO_CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -495,14 +497,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 .where(eq(schema.agents.userId, userId));
             }
           }
+          await enforcePendingDeletionBillingForSubscription(sub);
           break;
         }
         if (event.type === "customer.subscription.created")
           (sub as unknown as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
+        const deletionBillingEnforced = await enforcePendingDeletionBillingForSubscription(sub);
         const subscriptionUserId = sub.metadata?.wireline_user_id;
         const subscriptionPlan = planById(sub.metadata?.wireline_plan);
         if (
+          !deletionBillingEnforced &&
           subscriptionUserId &&
           subscriptionPlan &&
           (sub.status === "active" || sub.status === "trialing")
@@ -568,6 +573,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   );
                 }
                 const delivery = await sendPaymentFailedEmail({
+                  userId: row.userId,
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
@@ -1101,6 +1107,10 @@ router.post(
             "Live talking-head video is retired. Identity badges stay. Phone, email, and text are unaffected.",
         });
       }
+      // The catalog is currently retired, but keep this dormant checkout path
+      // safe if it is ever re-enabled: demo/test workspaces must never create a
+      // Stripe customer or subscription with the deployment's live key.
+      await assertLiveExternalActionAllowed(req.user.id, "live_video_checkout");
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
       // is accepted as an alias so ops can standardize on the SKU-shaped name.
       const configuredPriceId =

@@ -1,6 +1,8 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
+ * Latest committed migration: `drizzle/migrations/0163_guard_account_environment_promotion.sql`.
+ * Runtime voice defaults remain defined by
+ * `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,
@@ -190,7 +192,9 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
  * atomic upsert that activates it.
  */
 export const subscriptions = pgTable("wireline_subscriptions", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripePriceId: text("stripe_price_id"),

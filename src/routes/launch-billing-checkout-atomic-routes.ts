@@ -14,6 +14,7 @@ import {
 } from "../lib/stripe-helpers";
 import type Stripe from "stripe";
 import { authenticateUser } from "../middleware/auth";
+import { fencePayableBillingDuringAccountDeletion } from "../middleware/account-deletion-billing-fence";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { checkoutOperations } from "../db/security-schema";
 import * as schema from "../db/schema";
@@ -135,6 +136,7 @@ router.post(
   "/api/billing/checkout",
   authenticateUser,
   enforceLaunchHardGate,
+  fencePayableBillingDuringAccountDeletion,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!stripeAvailable())
       throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");

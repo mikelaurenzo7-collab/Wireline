@@ -4,6 +4,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { xaiPhoneBindings } from "../db/xai-voice-schema";
 import { formatCallbackNumberForSpeech } from "../lib/agent-runtime";
+import { liveExternalActionPolicy } from "../lib/account-environment-policy";
 import { AppError, asyncHandler } from "../lib/api-error";
 import { isMarketingCallPurpose } from "../lib/outbound-call-purpose";
 import {
@@ -17,12 +18,19 @@ import {
   nativeCallPurposeFromMetadata,
   resolveNativeAmdBridgeAction,
 } from "../lib/voice/native-outbound-amd";
-import { verifyXAIOutboundToken } from "../lib/voice/xai-outbound-token";
+import {
+  verifyXAIOutboundToken,
+  xaiOutboundPlacementMatches,
+} from "../lib/voice/xai-outbound-token";
 import {
   buildXAIOutboundSipUri,
   normalizeXAIPhoneNumber,
   resolveXAISipSessionMaxSeconds,
 } from "../lib/voice/xai-sip-config";
+import {
+  persistXAIOutboundTwiMLReplay,
+  resolveXAIOutboundTwiMLReplay,
+} from "../lib/voice/xai-outbound-twiml-replay";
 import { buildOutboundVoicemailMessage } from "../lib/voice-agent-profile";
 import { trackVoiceMinutes } from "../lib/voice-usage";
 
@@ -103,7 +111,13 @@ function callSidFromRequest(req: Request): string {
 }
 
 function carrierRank(status: unknown): number {
-  return CARRIER_STATUS_RANK[String(status || "unknown").trim().toLowerCase()] ?? 0;
+  return (
+    CARRIER_STATUS_RANK[
+      String(status || "unknown")
+        .trim()
+        .toLowerCase()
+    ] ?? 0
+  );
 }
 
 function answeredByFromRequest(req: Request): string {
@@ -160,7 +174,8 @@ async function loadCampaignMaxAttempts(
 type BridgeDecision =
   | { kind: "bridge"; callerId: string; sipUri: string }
   | { kind: "drop"; answeredBy: string; userId: string }
-  | { kind: "voicemail"; answeredBy: string; message: string; userId: string };
+  | { kind: "voicemail"; answeredBy: string; message: string; userId: string }
+  | { kind: "hangup"; userId: string; accountEnvironment: string | null };
 
 const AMD_ERROR_CLAIM_STATUSES = [LEAD_STATUS.ERROR] as const;
 
@@ -182,12 +197,47 @@ async function resolveBridgeContext(
       .from(schema.outboundLeads)
       .where(eq(schema.outboundLeads.id, leadId))
       .limit(1);
-    if (!lead?.agentId) throw AppError.notFound("Outbound lead not found.");
+    if (!lead) throw AppError.notFound("Outbound lead not found.");
     if (lead.callId && lead.callId !== callSid) {
       throw AppError.forbidden("Outbound bridge call identity does not match.");
     }
     const metadata = asRecord(lead.metadata);
     const nativeVoice = asRecord(metadata.native_voice);
+    if (!xaiOutboundPlacementMatches(nativeVoice, verification.claims)) {
+      throw AppError.conflict("This outbound bridge belongs to an earlier placement.");
+    }
+    const [workspace] = await tx
+      .select({ accountEnvironment: schema.settings.accountEnvironment })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, lead.userId))
+      .limit(1);
+    const environmentPolicy = liveExternalActionPolicy(workspace?.accountEnvironment);
+    if (!environmentPolicy.allowed) {
+      // The signed status callback remains authoritative evidence, but a
+      // workspace reclassified after carrier acceptance cannot replay a
+      // persisted bridge/voicemail or create new TwiML state.
+      return {
+        kind: "hangup",
+        userId: lead.userId,
+        accountEnvironment: environmentPolicy.environment,
+      };
+    }
+    const replay = resolveXAIOutboundTwiMLReplay({
+      nativeVoice,
+      leadCallSid: lead.callId,
+      callbackCallSid: callSid,
+      token,
+    });
+    if (replay?.kind === "drop") {
+      return { ...replay, userId: lead.userId };
+    }
+    if (replay?.kind === "voicemail") {
+      return { ...replay, userId: lead.userId };
+    }
+    if (replay?.kind === "bridge") {
+      return { kind: "bridge", callerId: replay.callerId, sipUri: replay.sipUri };
+    }
+    if (!lead.agentId) throw AppError.notFound("Outbound lead not found.");
     const recoverableCompletedRace =
       lead.status === LEAD_STATUS.ERROR &&
       !nativeVoice.amd_action &&
@@ -255,6 +305,10 @@ async function resolveBridgeContext(
     if (amdAction === "drop") {
       amdNativeVoice.state = "amd_no_message";
       amdNativeVoice.amd_completed_at = now.toISOString();
+      amdNativeVoice.twiml_replay = persistXAIOutboundTwiMLReplay({
+        callSid,
+        decision: { kind: "drop", answeredBy },
+      });
       const fax = answeredBy.trim().toLowerCase() === "fax";
       const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
       const dropStatus = fax
@@ -286,6 +340,10 @@ async function resolveBridgeContext(
     if (amdAction === "voicemail") {
       amdNativeVoice.state = "voicemail_left";
       amdNativeVoice.amd_completed_at = now.toISOString();
+      amdNativeVoice.twiml_replay = persistXAIOutboundTwiMLReplay({
+        callSid,
+        decision: { kind: "voicemail", answeredBy, message: voicemailMessage },
+      });
       const [left] = await tx
         .update(schema.outboundLeads)
         .set({
@@ -311,6 +369,10 @@ async function resolveBridgeContext(
 
     amdNativeVoice.state = "bridging";
     amdNativeVoice.bridge_served_at = now.toISOString();
+    amdNativeVoice.twiml_replay = persistXAIOutboundTwiMLReplay({
+      callSid,
+      decision: { kind: "bridge", answeredBy, callerId },
+    });
     const [claimed] = await tx
       .update(schema.outboundLeads)
       .set({
@@ -356,6 +418,19 @@ router.post(
 
     try {
       const decision = await resolveBridgeContext(token, callSid, answeredBy);
+      if (decision.kind === "hangup") {
+        // Twilio has already accepted this carrier attempt even though a
+        // reclassification now forbids any xAI bridge work. Preserve the
+        // incurred minimum minute through the same per-CallSid idempotent
+        // ledger used by AMD drop/voicemail and status reconciliation.
+        await meterNativeCarrierAttempt(decision.userId, callSid);
+        log.warn("Native outbound bridge hard-hung up by account environment", {
+          callSidSuffix: callSid.slice(-8),
+          accountEnvironment: decision.accountEnvironment ?? "missing",
+        });
+        res.status(200).send(emptyTwiml());
+        return;
+      }
       if (decision.kind === "drop") {
         await meterNativeCarrierAttempt(decision.userId, callSid);
         log.info("Native outbound AMD dropped without a message", {
@@ -379,17 +454,27 @@ router.post(
     } catch (error) {
       const verification = verifyXAIOutboundToken(token);
       if (verification.ok && error instanceof AppError && error.status === 409) {
-        const [lead] = await drizzle
-          .select({
-            userId: schema.outboundLeads.userId,
-            metadata: schema.outboundLeads.metadata,
-          })
-          .from(schema.outboundLeads)
-          .where(eq(schema.outboundLeads.id, BigInt(verification.claims.leadId)))
-          .limit(1);
-        if (lead && shouldMeterUnansweredNativeVoice(asRecord(asRecord(lead.metadata).native_voice))) {
-          await meterNativeCarrierAttempt(lead.userId, callSid);
-        }
+        const leadId = BigInt(verification.claims.leadId);
+        const meterOwner = await drizzle.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(leadId)}`}))`,
+          );
+          const [lead] = await tx
+            .select({
+              userId: schema.outboundLeads.userId,
+              metadata: schema.outboundLeads.metadata,
+            })
+            .from(schema.outboundLeads)
+            .where(eq(schema.outboundLeads.id, leadId))
+            .limit(1);
+          const nativeVoice = asRecord(asRecord(lead?.metadata).native_voice);
+          return lead &&
+            xaiOutboundPlacementMatches(nativeVoice, verification.claims) &&
+            shouldMeterUnansweredNativeVoice(nativeVoice)
+            ? lead.userId
+            : null;
+        });
+        if (meterOwner) await meterNativeCarrierAttempt(meterOwner, callSid);
       }
       log.warn("Native outbound bridge refused", {
         callSidSuffix: callSid.slice(-8),
@@ -399,6 +484,24 @@ router.post(
     }
   }),
 );
+
+/**
+ * Static, provider-authenticated last resort when the primary TwiML callback
+ * cannot be served after its bounded retry budget. A fallback must never
+ * create fresh customer-facing speech after the tenant's environment can no
+ * longer be resolved, so every valid invocation is Hangup-only.
+ */
+router.post("/api/twilio-webhook/xai-outbound-fallback", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!evaluateTwilioWebhookAuth(req).ok) {
+    return res.status(403).send(emptyTwiml());
+  }
+  const verification = verifyXAIOutboundToken(tokenFromRequest(req));
+  if (!verification.ok || !callSidFromRequest(req)) {
+    return res.status(400).send(emptyTwiml());
+  }
+  return res.status(200).send(emptyTwiml());
+});
 
 router.post(
   "/api/twilio-webhook/xai-outbound-status",
@@ -416,7 +519,9 @@ router.post(
     }
 
     const leadId = BigInt(verification.claims.leadId);
-    const carrierStatus = String(req.body?.CallStatus || "unknown").trim().toLowerCase();
+    const carrierStatus = String(req.body?.CallStatus || "unknown")
+      .trim()
+      .toLowerCase();
     const meter = await drizzle.transaction(async (tx) => {
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(leadId)}`}))`,
@@ -426,9 +531,15 @@ router.post(
         .from(schema.outboundLeads)
         .where(eq(schema.outboundLeads.id, leadId))
         .limit(1);
-      if (!lead || (lead.callId && lead.callId !== callSid)) return null;
+      if (!lead) return null;
       const metadata = asRecord(lead.metadata);
       const nativeVoice = asRecord(metadata.native_voice);
+      if (
+        !xaiOutboundPlacementMatches(nativeVoice, verification.claims) ||
+        (lead.callId && lead.callId !== callSid)
+      ) {
+        return null;
+      }
       if (!(IN_FLIGHT_LEAD_STATUSES as readonly string[]).includes(lead.status || "")) {
         return shouldMeterUnansweredNativeVoice(nativeVoice)
           ? { userId: lead.userId, callSid }
@@ -461,10 +572,7 @@ router.post(
 
       if (isMonotonic && (carrierStatus === "initiated" || carrierStatus === "ringing")) {
         if (lead.status !== LEAD_STATUS.CONNECTED) patch.status = LEAD_STATUS.DIALING;
-      } else if (
-        isMonotonic &&
-        (carrierStatus === "in-progress" || carrierStatus === "answered")
-      ) {
+      } else if (isMonotonic && (carrierStatus === "in-progress" || carrierStatus === "answered")) {
         // Customer answer is not yet a live conversation: synchronous AMD may
         // still be classifying the called party. CONNECTED is reserved for the
         // SIP bridge (human/unknown) or later xAI attachment.
@@ -498,15 +606,13 @@ router.post(
           } else if (neverBridgedNativeVoice(nativeVoice)) {
             const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
             patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
-            patch.lastContactSummary =
-              "The customer leg ended before native voice was confirmed.";
+            patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
             nextNativeVoice.state = "carrier_completed_without_xai_confirmation";
           } else {
             // Bridged or identity-voicemail: keep a recoverable Error so a late
             // xAI attach can still claim a live conversation.
             patch.status = LEAD_STATUS.ERROR;
-            patch.lastContactSummary =
-              "The customer leg ended before native voice was confirmed.";
+            patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
             nextNativeVoice.state = "carrier_completed_without_xai_confirmation";
           }
         }

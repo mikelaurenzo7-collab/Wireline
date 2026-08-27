@@ -4,7 +4,9 @@
 
 /* Keep authenticated cards crisp and quiet even though system-hardening loads
  * later in the CSS stack. Higher route specificity intentionally wins. */
-.wl-workspace-shell .wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-panel-elevated) {
+.wl-workspace-shell
+  .wl-workspace-page
+  :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-panel-elevated) {
   border-radius: var(--wireline-radius-lg);
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
   box-shadow: none;
@@ -82,10 +84,7 @@
   display: none !important;
 }
 
-.wl-overview
-  [aria-label="Customer readiness checklist"]
-  ol
-  a[class*="feedback-success-surface"] {
+.wl-overview [aria-label="Customer readiness checklist"] ol a[class*="feedback-success-surface"] {
   background: color-mix(
     in srgb,
     var(--wireline-color-status-success) 5%,
@@ -133,7 +132,8 @@
 /* Insights: keep filters secondary to the data and reduce the wide-screen
  * visual weight of the toolbar and segmented controls. */
 [data-wireline-route="/insights"] .app-segment-strip [aria-pressed="true"] {
-  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
   background: color-mix(
     in srgb,
     var(--wireline-color-action-primary-default) 12%,
@@ -171,41 +171,22 @@
 }
 
 /* Inbox: an empty channel is one state, not an empty list beside an empty
- * detail pane. Modern supported browsers collapse the split grid whenever the
- * list owns the only empty state. */
-.wl-inbox-route
-  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state) {
+ * detail pane. The component owns this explicit state so loading, errors, and
+ * search misses behave consistently without a fragile :has() DOM contract. */
+.wl-inbox-route .wl-channel-inbox-grid[data-empty="true"] {
   grid-template-columns: minmax(0, 1fr);
   min-height: 24rem;
 }
 
-.wl-inbox-route
-  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
-  > section:last-child {
+.wl-inbox-route .wl-channel-inbox-grid[data-empty="true"] > div:last-child {
   display: none;
 }
 
-.wl-inbox-route
-  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
-  > section:first-child {
-  border: 0;
-  border-radius: 0;
-}
-
-.wl-inbox-route
-  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
-  > section:first-child
-  > div:first-child {
-  display: none;
-}
-
-.wl-inbox-route
-  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
-  > section:first-child
-  > div:last-child {
+.wl-inbox-route .wl-channel-inbox-grid[data-empty="true"] > div:first-child {
   display: grid;
   place-items: center;
   overflow: visible;
+  border-right: 0;
   padding: 2rem;
 }
 
@@ -244,7 +225,6 @@
     min-height: 3rem;
   }
 }
-
 
 /*
  * Overview, first run.

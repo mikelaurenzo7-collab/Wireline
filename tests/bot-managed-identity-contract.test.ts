@@ -34,10 +34,27 @@ describe("BotBound managed Bot identity", () => {
   it("uses the configured custom domain as a launch invariant and fails closed when it is not ready", () => {
     const routes = read("src/routes/agentmail-routes.ts");
     expect(routes).toContain("managedMailboxDomain()");
-    expect(routes).toContain("AGENTMAIL_FREE_DOMAIN");
+    expect(routes).toContain('value === "botbound.me" || value.endsWith(".botbound.me")');
+    expect(routes).not.toContain("AGENTMAIL_FREE_DOMAIN");
     expect(routes).toContain("Managed AgentMail custom-domain provisioning failed closed");
     expect(routes).toContain("throw error");
     expect(routes).not.toContain("custom-domain provisioning fell back to AgentMail domain");
+  });
+
+  it("never allocates a managed mailbox for an inactive or free Bot", () => {
+    const routes = read("src/routes/agentmail-routes.ts");
+    const endpoint = routes.slice(
+      routes.indexOf('"/api/agents/:agentId/managed-mailbox"'),
+      routes.indexOf('"/api/integrations/agentmail/connect"'),
+    );
+
+    expect(routes).toContain("hasManagedMailboxEntitlement");
+    expect(routes).toContain("plan.price_usd_monthly > 0");
+    expect(routes).toContain("plan.included_phone_numbers > 0");
+    expect(endpoint).toContain('"ACTIVATION_REQUIRED"');
+    expect(endpoint.indexOf("hasManagedMailboxEntitlement")).toBeLessThan(
+      endpoint.indexOf("resolveManagedBotInbox"),
+    );
   });
 
   it("protects platform-managed mailboxes from the legacy AgentMail disconnect path", () => {

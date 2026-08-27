@@ -132,5 +132,6 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     }
     expect(inventory).toContain("process.env.APP_URL");
     expect(inventory).toContain("BotBound");
+    expect(inventory).not.toContain("VITE_PUBLIC_SITE_URL");
   });
 });

@@ -20,6 +20,7 @@ import {
   normalizeShopDomain,
   disconnectShopify,
 } from "../../lib/shopify-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.get(
   "/api/oauth/shopify/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!shopifyOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -70,6 +71,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/shopify/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Shopify");
     try {
       const authUrl = getShopifyAuthUrl(
         shop,
@@ -123,15 +125,16 @@ router.get(
       return res.status(400).send("Shopify returned an invalid store domain.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Shopify");
+
     try {
       const tokens = await exchangeShopifyCode(shopDomain, code);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       // Shopify tokens never expire — no expiresAt, no refresh token.
       // Store the shop domain on instanceUrl (full origin, so the

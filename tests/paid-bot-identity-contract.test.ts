@@ -18,7 +18,7 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("plan.included_phone_numbers > 0");
     expect(identity).toContain("if (!plan.eligible)");
     expect(pricing).toContain('id: "personal"');
-    expect(pricing).toContain('included_phone_numbers: 0');
+    expect(pricing).toContain("included_phone_numbers: 0");
   });
 
   it("requires every accepted paid-Bot line to be owned by the configured Twilio account", () => {
@@ -36,8 +36,20 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("createAgentMailInbox");
     expect(identity).toContain("domain,");
     expect(identity).toContain('platform: "BotBound"');
+    expect(identity).toContain("must be botbound.me or a BotBound subdomain");
+    expect(identity).toContain("Existing managed mailbox is not on the configured BotBound domain");
     expect(identity).toContain("AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL");
-    expect(mail).toContain('AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"');
+    expect(mail).toContain(
+      'AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"',
+    );
+  });
+
+  it("documents the production-owned AgentMail credential and BotBound domain", () => {
+    const env = read(".env.example");
+    expect(env).toContain("AGENTMAIL_API_KEY=");
+    expect(env).toContain("AGENTMAIL_DEFAULT_DOMAIN=");
+    expect(env).toContain("production-only platform credential");
+    expect(env).not.toContain("do not set a shared AGENTMAIL_API_KEY");
   });
 
   it("reuses existing provider resources while reconciling missing delivery state", () => {
@@ -45,7 +57,9 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("refreshToken: schema.emailAccounts.refreshToken");
     expect(identity).toContain("hasStoredSecret: Boolean(existing.refreshToken)");
     expect(identity).toContain("ensureManagedDeliveryWebhook");
-    expect(identity).toContain("Managed AgentMail inbox is missing from the configured AgentMail organization");
+    expect(identity).toContain(
+      "Managed AgentMail inbox is missing from the configured AgentMail organization",
+    );
     expect(identity).toContain("AgentMail webhook registration requires a public APP_URL");
     expect(identity).toContain("if (!ensured.secret && input.hasStoredSecret) return");
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
@@ -73,7 +87,9 @@ describe("paid Bot identity reconciliation", () => {
     expect(ops).toContain('const APPLY = process.argv.includes("--apply")');
     expect(ops).toContain('mode: APPLY ? "apply" : "dry-run"');
     expect(ops).toContain("if (!APPLY)");
-    expect(ops).toContain("Re-run with --apply only after Twilio and the verified AgentMail custom domain are production-ready");
+    expect(ops).toContain(
+      "Re-run with --apply only after Twilio and the verified AgentMail custom domain are production-ready",
+    );
     expect(ops).toContain("ensurePaidBotIdentity");
   });
 
@@ -81,7 +97,9 @@ describe("paid Bot identity reconciliation", () => {
     const worker = read("src/lib/job-worker.ts");
     const createRoute = read("src/routes/agent-routes-v2.ts");
     const checkout = read("src/lib/stripe-checkout-fulfillment.ts");
-    const wired = [worker, createRoute, checkout].some((source) => source.includes("ensurePaidBotIdentity"));
+    const wired = [worker, createRoute, checkout].some((source) =>
+      source.includes("ensurePaidBotIdentity"),
+    );
     // Flip this contract only when create/checkout enqueue and the durable worker executes the job.
     expect(wired).toBe(false);
   });

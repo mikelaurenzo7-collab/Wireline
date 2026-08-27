@@ -120,7 +120,7 @@ describe("auth OAuth browser binding contract", () => {
     expect(binding).not.toContain("verifyAndClaimOAuthState(state)");
     expect(binding).toContain("protectOAuthCompletionRedirect(res)");
     expect(binding).toContain("clearOAuthBridgeStateCookie(res)");
-    expect(binding).toContain('res.set("Cache-Control", "no-store, max-age=0")');
+    expect(binding).toContain('res.set("Cache-Control", "private, no-store, max-age=0")');
     expect(binding).toContain("guardOAuthExchangeBrowserBinding");
     expect(binding).toContain("gt(schema.oauthPendingCodes.expiresAt, new Date())");
     expect(binding).toContain("wrong-cookie request must never consume");
@@ -160,6 +160,20 @@ describe("auth OAuth browser binding contract", () => {
     expect(access).toContain("if (legacyBrowserHandoffUrl) return");
     expect(persistReturnIndex).toBeGreaterThan(allowedUrlIndex);
     expect(providerNavigationIndex).toBeGreaterThan(persistReturnIndex);
+
+    const main = read("src/main.tsx");
+    const canonicalHandoffIndex = main.indexOf("canonicalLegacyBrowserHandoff(window.location)");
+    const originReplaceIndex = main.indexOf("window.location.replace(legacyBrowserHandoffUrl)");
+    const hydrationIndex = main.indexOf("createRoot(document.getElementById");
+    expect(canonicalHandoffIndex).toBeGreaterThan(-1);
+    expect(originReplaceIndex).toBeGreaterThan(canonicalHandoffIndex);
+    expect(hydrationIndex).toBeGreaterThan(originReplaceIndex);
+    expect(main).toContain("if (!legacyBrowserHandoffUrl)");
+
+    const canonicalOrigin = read("src/lib/canonical-browser-origin.ts");
+    expect(canonicalOrigin).toContain('routePath.startsWith("/api/")');
+    expect(canonicalOrigin).toContain("HOST_BOUND_COMPLETION_PATHS.has(routePath)");
+    expect(canonicalOrigin).toContain("${pathname}${search}${hash}");
   });
 
   it("requires integration-link callbacks to complete as the initiating account", () => {

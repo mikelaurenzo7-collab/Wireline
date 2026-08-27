@@ -211,11 +211,13 @@ describe("billing proof contract", () => {
     const accountRoutes = read("src/routes/account-routes.ts");
     const settingsRoutes = read("src/routes/settings-routes.ts");
     const deletionBilling = read("src/lib/account-deletion-billing.ts");
+    const deletionRequest = read("src/lib/account-deletion-request.ts");
     const settings = read("src/pages/SettingsPage.tsx");
 
-    expect(accountRoutes).toContain("stopRenewalForDeletion");
-    expect(accountRoutes).toContain("renewal_stopped: renewal.confirmed");
-    expect(settingsRoutes).toContain("stopRenewalForDeletion");
+    expect(accountRoutes).toContain("ensurePendingAccountDeletion");
+    expect(accountRoutes).toContain("renewal_stopped: deletion.renewal.confirmed");
+    expect(settingsRoutes).toContain("ensurePendingAccountDeletion");
+    expect(deletionRequest).toContain("stopRenewalForDeletion");
     expect(settingsRoutes).toContain("resumeRenewalAfterDeletionCancellation");
     expect(settingsRoutes).toContain("renewal_resumed: renewal.confirmed");
     expect(deletionBilling).toContain("cancel_at_period_end: true");

@@ -11,7 +11,9 @@ const bodyParsers = readFileSync("src/lib/body-parsers.ts", "utf8");
 describe("BotBound managed AgentMail contract", () => {
   it("owns the platform credential server-side without copying it into managed tenant rows", () => {
     expect(agentmailRoutes).toContain("process.env.AGENTMAIL_API_KEY");
-    expect(agentmailLib).toContain('AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"');
+    expect(agentmailLib).toContain(
+      'AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"',
+    );
     expect(agentmailLib).toContain("resolveAgentMailCredential");
     expect(agentmailLib).toContain("process.env.AGENTMAIL_API_KEY");
     expect(agentmailRoutes).toContain("encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL)");
@@ -34,23 +36,21 @@ describe("BotBound managed AgentMail contract", () => {
     expect(agentmailRoutes).toContain("EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE");
   });
 
-  it("fails closed when a configured custom domain is not ready", () => {
+  it("requires a BotBound custom domain and never falls back to a provider address", () => {
     const resolver = agentmailRoutes.slice(
       agentmailRoutes.indexOf("async function resolveManagedBotInbox"),
       agentmailRoutes.indexOf("/**\n * POST /api/agents/:agentId/managed-mailbox"),
     );
     expect(agentmailRoutes).toContain("Managed AgentMail custom-domain provisioning failed closed");
-    expect(resolver).toMatch(
-      /if \(preferredDomain && preferredDomain !== AGENTMAIL_FREE_DOMAIN\)[\s\S]*throw error;/,
-    );
+    expect(resolver).toContain("if (!preferredDomain)");
+    expect(resolver).toContain("BotBound managed email domain is not ready");
+    expect(resolver).not.toContain("AGENTMAIL_FREE_DOMAIN");
     const failureBranch = resolver.slice(
       resolver.indexOf("Managed AgentMail custom-domain provisioning failed closed"),
       resolver.indexOf("throw error;") + "throw error;".length,
     );
     expect(failureBranch).not.toContain("createManagedInboxAttempt");
-    expect(resolver.indexOf("throw error;")).toBeLessThan(
-      resolver.indexOf("createManagedInboxAttempt({ ...input, username })"),
-    );
+    expect(resolver).toContain("usedCustomDomain: true");
     expect(agentmailLib).toContain("Confirm the domain is verified in the AgentMail organization");
   });
 
@@ -68,7 +68,10 @@ describe("BotBound managed AgentMail contract", () => {
 
   it("retains the tenant-owned AgentMail connect path only as legacy compatibility", () => {
     const legacySection = agentmailRoutes.slice(
-      agentmailRoutes.lastIndexOf("/**", agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"')),
+      agentmailRoutes.lastIndexOf(
+        "/**",
+        agentmailRoutes.indexOf('"/api/integrations/agentmail/connect"'),
+      ),
     );
     expect(legacySection).toContain("Legacy/advanced compatibility path");
     expect(legacySection).toContain("encryptSecret(apiKey)");

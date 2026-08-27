@@ -79,7 +79,10 @@ describe("subscription entitlement provenance", () => {
     expect(founderBootstrap).toContain('grantReason: "founder_dogfood"');
     expect(demoSeed).toContain('entitlementSource: "demo"');
     expect(demoSeed).toContain('grantReason: "admin_demo_seed"');
-    expect(demoSeed).toContain('accountEnvironment: "demo"');
+    expect(demoSeed).not.toContain('accountEnvironment: "demo"');
+    expect(demoSeed).toContain('eq(schema.settings.accountEnvironment, "demo")');
+    expect(demoSeed).toContain("isNull(subscriptions.stripeCustomerId)");
+    expect(demoSeed).toContain("isNull(subscriptions.stripeSubscriptionId)");
     expect(demoSeed).toContain('subscriptionStatus: "active"');
   });
 

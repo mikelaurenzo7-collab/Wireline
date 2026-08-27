@@ -15,6 +15,7 @@ import { invalidateRoleCache } from "../middleware/require-role";
 import { canGrantRole, resolveStoredRole, type AccessRole } from "../lib/soc2-controls";
 import { getPostgresErrorCode } from "../lib/pg-errors";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 
 const router = Router();
 const INVITE_TTL_MS = 7 * 24 * 60 * 60_000;
@@ -87,6 +88,7 @@ router.post(
   emailRateLimiter,
   validateBody(inviteTeamMemberSchema),
   async (req: AuthenticatedRequest, res: Response) => {
+    await assertLiveExternalActionAllowed(req.tenantId, "team_invitation_email");
     const { email, role } = req.body;
     if (email === req.user.email.toLowerCase()) {
       throw AppError.fromHttpStatus(400, "You already own this workspace.");

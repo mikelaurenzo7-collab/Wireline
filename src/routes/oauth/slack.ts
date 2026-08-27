@@ -22,6 +22,7 @@ import {
   setDefaultChannel as setSlackDefaultChannel,
   bootstrapDefaultChannel,
 } from "../../lib/slack-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get(
   "/api/oauth/slack/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -41,6 +42,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Slack");
     const authUrl = getSlackAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -69,19 +71,20 @@ router.get(
       return res.status(400).send("No code provided by Slack.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Slack");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
       const tokens = await exchangeSlackCode(code, redirectUri);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const slackInstanceUrl = `https://${tokens.team.name}.slack.com`;
       const accessTokenSlack = encryptSecret(tokens.access_token);

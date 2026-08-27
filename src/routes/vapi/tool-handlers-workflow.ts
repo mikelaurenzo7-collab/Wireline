@@ -6,8 +6,33 @@ import { NotificationService } from "../../lib/notifications";
 import { createMeeting as createZoomMeeting } from "../../lib/zoom-service";
 import { sanitizePhone } from "../../lib/vapi-helpers";
 import { recordEscalationOutcome } from "../../lib/call-reliability-capture";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "../../lib/account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+async function warmTransferExternalActionBlock(
+  userId: string,
+  phone: string | null,
+): Promise<string | null> {
+  try {
+    const environmentPolicy = await liveExternalActionPolicyForUser(userId);
+    if (!environmentPolicy.allowed) {
+      return "I recorded this for the team's queue. Live alerts and transfers are disabled in this workspace.";
+    }
+    if (phone) {
+      const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
+      if (!entityPolicy.allowed) {
+        return "I recorded this for the team's queue, but that transfer destination is a showcase fixture and cannot be dialed.";
+      }
+    }
+    return null;
+  } catch {
+    return "I recorded this for the team's queue. Live transfer eligibility could not be verified, so no transfer was started.";
+  }
+}
 
 export async function handleWorkflowToolCall(
   fn: string,
@@ -299,6 +324,18 @@ export async function handleWorkflowToolCall(
         });
       }
 
+      // The durable operator task above is safe showcase behavior. Live
+      // channel fan-out and Vapi warm transfer are not: keep both disabled for
+      // demo/test workspaces, and keep reserved fixture destinations inert
+      // even after an unsafe workspace promotion.
+      const initialExternalActionBlock = await warmTransferExternalActionBlock(
+        agent.user_id,
+        warmTransferPhone,
+      );
+      if (initialExternalActionBlock) {
+        return { toolCallId, result: initialExternalActionBlock };
+      }
+
       // Pass agent.id so per-agent escalation overrides route the alert to the
       // right human. Channel fan-out improves speed, while the task above is
       // the durable source of truth if every provider is unavailable.
@@ -312,14 +349,50 @@ export async function handleWorkflowToolCall(
       });
 
       if (warmTransferPhone) {
+        // Notification fan-out can take long enough for an operator to
+        // reclassify the tenant. Re-check after that await, then once more
+        // after reliability persistence so the final check is adjacent to the
+        // Vapi transfer directive that can cause live provider work.
+        const postNotificationBlock = await warmTransferExternalActionBlock(
+          agent.user_id,
+          warmTransferPhone,
+        );
+        if (postNotificationBlock) {
+          if (callId) {
+            await recordEscalationOutcome({
+              vapiCallId: callId,
+              userId: agent.user_id,
+              succeeded: false,
+            });
+          }
+          return { toolCallId, result: postNotificationBlock };
+        }
+
         // Vapi tool-result schema supports a `destination` field per result.
         // When present, Vapi speaks `result` then transfers the call.
-        if (callId && agent?.user_id) {
+        if (callId) {
           await recordEscalationOutcome({
             vapiCallId: callId,
             userId: agent.user_id,
             succeeded: true,
           });
+        }
+
+        const finalExternalActionBlock = await warmTransferExternalActionBlock(
+          agent.user_id,
+          warmTransferPhone,
+        );
+        if (finalExternalActionBlock) {
+          if (callId) {
+            // Do not introduce another awaited gap after the final policy
+            // decision. The durable task already records the obligation.
+            void recordEscalationOutcome({
+              vapiCallId: callId,
+              userId: agent.user_id,
+              succeeded: false,
+            });
+          }
+          return { toolCallId, result: finalExternalActionBlock };
         }
         return {
           toolCallId,

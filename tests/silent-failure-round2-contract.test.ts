@@ -353,9 +353,14 @@ describe("the retention purge deletes event data, never live configuration", () 
         tag: "0154_xai_grok_46_persisted_defaults",
       }),
     );
-    expect(journal.entries.at(-1)).toMatchObject({
-      idx: 54,
-      tag: "0156_openai_runtime_cohesion",
-    });
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({ idx: 54, tag: "0156_openai_runtime_cohesion" }),
+    );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 55,
+        tag: "0157_audit_log_system_receipts",
+      }),
+    );
   });
 });

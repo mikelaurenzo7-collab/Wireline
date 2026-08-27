@@ -42,6 +42,7 @@ import {
   resolveVapiRecordingUrl,
   resolveVapiTranscript,
 } from "./vapi-report-normalization";
+import { runVapiExternalEffectsIfAllowed } from "./vapi-external-effect-policy";
 
 export interface CallReportPayload {
   message: {
@@ -637,37 +638,44 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     vapiCallId,
   });
 
-  // Customer follow-up must survive serverless teardown and provider outages.
-  // Enqueue on both the winning delivery and redeliveries: migration 0150 makes
-  // the tenant+call row unique, so a retry repairs a failed enqueue without
-  // ever creating a second owner email/CSAT workflow.
+  // Production customer follow-up must survive serverless teardown and
+  // provider outages. Enqueue on both the winning delivery and redeliveries:
+  // migration 0150 makes the tenant+call row unique, so a retry repairs a
+  // failed enqueue without creating a second owner email/CSAT workflow. The
+  // account/subscription gate deliberately sits after evidence and accounting.
   if (insertedCallLogId === null) {
     throw new Error("End-of-call report has no durable call log for post-call follow-up.");
   }
-  const postCallDigest = await enqueuePostCallDigest({
+  await runVapiExternalEffectsIfAllowed({
     userId,
-    callLogId: insertedCallLogId,
-    agentId: webhookAgentId || null,
-    dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
-    customerNumber: call?.customer?.number || null,
-    customerName: call?.customer?.name || null,
-    agentName: call?.assistant?.name || null,
-    direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-    durationSeconds: duration,
-    summary: analysis?.summary || null,
-    transcript: transcript || null,
-    sentiment: null,
-    intentLabel: null,
-    endedReason,
-    vapiCallType: call?.type || null,
-    demo: false,
-    vapiCallId,
-  });
-  log.info("Post-call digest durably queued", {
-    userId,
-    callId: vapiCallId,
-    jobId: postCallDigest.jobId,
-    deduplicated: postCallDigest.deduplicated,
+    action: "vapi_post_call_digest",
+    perform: async () => {
+      const postCallDigest = await enqueuePostCallDigest({
+        userId,
+        callLogId: insertedCallLogId,
+        agentId: webhookAgentId || null,
+        dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
+        customerNumber: call?.customer?.number || null,
+        customerName: call?.customer?.name || null,
+        agentName: call?.assistant?.name || null,
+        direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+        durationSeconds: duration,
+        summary: analysis?.summary || null,
+        transcript: transcript || null,
+        sentiment: null,
+        intentLabel: null,
+        endedReason,
+        vapiCallType: call?.type || null,
+        demo: false,
+        vapiCallId,
+      });
+      log.info("Post-call digest durably queued", {
+        userId,
+        callId: vapiCallId,
+        jobId: postCallDigest.jobId,
+        deduplicated: postCallDigest.deduplicated,
+      });
+    },
   });
 
   if (!insertedFresh) {
@@ -701,213 +709,221 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
   });
 
-  const direction =
-    call?.type === "outboundPhoneCall" ? ("outbound" as const) : ("inbound" as const);
-  let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
+  await runVapiExternalEffectsIfAllowed({
+    userId,
+    action: "vapi_end_of_call_external_effects",
+    perform: async () => {
+      const direction =
+        call?.type === "outboundPhoneCall" ? ("outbound" as const) : ("inbound" as const);
+      let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
 
-  // 2. AI Enrichment (Claude Opus or Gemini Flash when hard-capped / Claude offline)
-  if (transcript) {
-    try {
-      const [agentDetail] = await drizzle
-        .select({
-          name: schema.agents.name,
-          archetype: schema.agents.archetype,
-          role: schema.agents.role,
-        })
-        .from(schema.agents)
-        .where(eq(schema.agents.id, webhookAgentId))
-        .limit(1);
+      // 2. AI Enrichment (Claude Opus or Gemini Flash when hard-capped / Claude offline)
+      if (transcript) {
+        try {
+          const [agentDetail] = await drizzle
+            .select({
+              name: schema.agents.name,
+              archetype: schema.agents.archetype,
+              role: schema.agents.role,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.id, webhookAgentId))
+            .limit(1);
 
-      const hardCapped = await isHardSpendCapExceeded(userId);
-      const useGeminiFlash = hardCapped || !claudeBrain.isBrainAvailable();
+          const hardCapped = await isHardSpendCapExceeded(userId);
+          const useGeminiFlash = hardCapped || !claudeBrain.isBrainAvailable();
 
-      const cap = await claudeBrain.withAuditCapture(async () => {
-        if (useGeminiFlash) {
-          return geminiPostCallAnalysis({
-            transcript: transcript || "",
+          const cap = await claudeBrain.withAuditCapture(async () => {
+            if (useGeminiFlash) {
+              return geminiPostCallAnalysis({
+                transcript: transcript || "",
+                summary: analysis?.summary || "",
+              });
+            }
+            return claudeBrain.postCallAnalysis({
+              agentName: agentDetail?.name || "BotBound Bot",
+              archetype: agentDetail?.archetype || "Receptionist",
+              role: agentDetail?.role || undefined,
+              customerNumber: call?.customer?.number,
+              durationSeconds: duration,
+              summary: analysis?.summary || "",
+              transcript: transcript || "",
+            });
+          });
+          const result = cap.result;
+
+          // QA score: agent-quality assessment (vs leadScore which is
+          // customer-intent). Derived from the analysis output so we don't
+          // burn another LLM round-trip per call. Surfaced on CallLogs as
+          // a colored score badge so account holders see at a glance which calls
+          // need coaching review.
+          const baseScore = 60;
+          const sentimentDelta =
+            result.sentiment === "positive" ? 20 : result.sentiment === "negative" ? -20 : 0;
+          const intentDelta = result.intent_label === "high" ? 10 : 0;
+          const coachingHint = (result.coaching_note || "").toLowerCase();
+          const missDelta = /\bmiss(ed|ing)?\b|\bshould have\b|\bdid not\b|\bfailed to\b/.test(
+            coachingHint,
+          )
+            ? -10
+            : 0;
+          const qaScore = Math.max(
+            0,
+            Math.min(100, baseScore + sentimentDelta + intentDelta + missDelta),
+          );
+          const qaBreakdown = {
+            // Provisional. The `auto_qa_score` job replaces this with the real
+            // five-dimension rubric; without the stamp its idempotency guard reads
+            // this row as "already scored" and the rubric never runs at all.
+            source: QA_SCORE_SOURCE_HEURISTIC,
+            base: baseScore,
+            sentiment_delta: sentimentDelta,
+            intent_delta: intentDelta,
+            miss_delta: missDelta,
+            rationale: result.coaching_note || "Routine call, no specific coaching note.",
+            scored_at: new Date().toISOString(),
+          };
+
+          await drizzle
+            .update(schema.callLogs)
+            .set({
+              leadScore: result.lead_score,
+              intentLabel: result.intent_label,
+              sentiment: result.sentiment,
+              coachingNote: result.coaching_note,
+              qaScore,
+              qaBreakdown,
+            })
+            .where(eq(schema.callLogs.vapiCallId, call?.id));
+
+          await persistRuntimeAuditRecords({
+            userId,
+            action: "vapi.post_call_analysis",
+            records: cap.records,
+            requestMeta: {
+              vapi_call_id: call?.id,
+              agent_id: webhookAgentId,
+            },
+          }).catch((e: unknown) =>
+            log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }),
+          );
+
+          enrichment = {
+            lead_score: result.lead_score,
+            intent_label: result.intent_label,
+            sentiment: result.sentiment,
+            coaching_note: result.coaching_note,
+            lesson_extracted: !!(result.lesson && result.lesson.trim()),
+          };
+        } catch (err: any) {
+          log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
+        }
+      }
+
+      // 3. Webhook Dispatch & Notifications
+      const baseOutcome = buildCallCompletedOutcome({
+        vapi_call_id: call?.id || "unknown",
+        agent_id: webhookAgentId,
+        customer_number: call?.customer?.number || null,
+        direction,
+        duration_seconds: duration,
+        enrichment_source: "sync_vapi_webhook",
+        enrichment,
+      });
+
+      void dispatchWebhook(userId, "call.completed", baseOutcome);
+
+      const score = enrichment?.lead_score;
+      if (typeof score === "number" && score >= 70) {
+        void dispatchWebhook(userId, "lead.hot", {
+          vapi_call_id: call?.id,
+          lead_score: score,
+          customer_number: baseOutcome.customer_number,
+        });
+        if (score >= 80) {
+          try {
+            const { NotificationService } = await import("./notifications");
+            const notif = new NotificationService(userId);
+            void notif.sendUrgentAlert({
+              title: "🔥 Hot lead",
+              message: `Score ${score} · ${baseOutcome.customer_number || "unknown caller"} · ${enrichment?.intent_label || "lead detected"}`,
+              callId: call?.id,
+            });
+          } catch {
+            /* best-effort */
+          }
+        }
+      }
+
+      // Escalation fires off the RECORDED escalation outcome, not off intent_label.
+      // intent_label is a constrained enum ("high" | "medium" | "low" | "none"), so
+      // the previous comparison against the literal escalation labels could never
+      // be true — the documented call.escalated webhook and the Slack escalation
+      // alert were both unreachable for every tenant since they shipped, and no
+      // amount of real escalations would have produced one. escalationAttempted is set
+      // by recordEscalationOutcome the moment the agent tries to hand off, and a
+      // FAILED handoff is exactly the case an operator most needs to see, so the
+      // alert fires on attempted and reports whether it connected.
+      if (escalationOutcome.attempted) {
+        void dispatchWebhook(userId, "call.escalated", {
+          vapi_call_id: call?.id,
+          escalation_succeeded: escalationOutcome.succeeded,
+          intent_label: enrichment?.intent_label,
+          customer_number: baseOutcome.customer_number,
+        });
+        void (async () => {
+          const ch = await getDefaultChannel(userId);
+          if (ch) {
+            await slackPostMessage(
+              userId,
+              ch,
+              `🚨 *Call escalation*\nCaller: ${baseOutcome.customer_number || "unknown"}\nHandoff: ${
+                escalationOutcome.succeeded ? "connected" : "did not connect"
+              }\nCall: ${call?.id || ""}`,
+            );
+          }
+        })();
+      }
+
+      // 4. Compliance evidence (TCPA disclosure + opt-out ledger rows) is written
+      // in the retry-safe section above the duplicate return, so it survives a
+      // failed first delivery. See persistComplianceEvidence.
+
+      // 5. Gemini Fallback
+      if (!enrichment && transcript) {
+        try {
+          const geminiResult = await geminiPostCallAnalysis({
+            transcript,
             summary: analysis?.summary || "",
           });
+
+          await drizzle
+            .update(schema.callLogs)
+            .set({
+              leadScore: geminiResult.lead_score,
+              intentLabel: geminiResult.intent_label,
+              sentiment: geminiResult.sentiment,
+              coachingNote: geminiResult.coaching_note,
+            })
+            .where(eq(schema.callLogs.vapiCallId, call?.id));
+
+          if (geminiResult.lesson && geminiResult.lesson.trim()) {
+            await drizzle.insert(schema.agentLessons).values({
+              userId,
+              agentId: webhookAgentId,
+              lesson: geminiResult.lesson,
+              sourceCallId: call?.id,
+              lessonStatus: "pending",
+            });
+          }
+        } catch (gemErr) {
+          log.warn("Gemini fallback post-call analysis failed", {
+            error: getErrorMessage(gemErr),
+          });
         }
-        return claudeBrain.postCallAnalysis({
-          agentName: agentDetail?.name || "BotBound Bot",
-          archetype: agentDetail?.archetype || "Receptionist",
-          role: agentDetail?.role || undefined,
-          customerNumber: call?.customer?.number,
-          durationSeconds: duration,
-          summary: analysis?.summary || "",
-          transcript: transcript || "",
-        });
-      });
-      const result = cap.result;
-
-      // QA score: agent-quality assessment (vs leadScore which is
-      // customer-intent). Derived from the analysis output so we don't
-      // burn another LLM round-trip per call. Surfaced on CallLogs as
-      // a colored score badge so account holders see at a glance which calls
-      // need coaching review.
-      const baseScore = 60;
-      const sentimentDelta =
-        result.sentiment === "positive" ? 20 : result.sentiment === "negative" ? -20 : 0;
-      const intentDelta = result.intent_label === "high" ? 10 : 0;
-      const coachingHint = (result.coaching_note || "").toLowerCase();
-      const missDelta = /\bmiss(ed|ing)?\b|\bshould have\b|\bdid not\b|\bfailed to\b/.test(
-        coachingHint,
-      )
-        ? -10
-        : 0;
-      const qaScore = Math.max(
-        0,
-        Math.min(100, baseScore + sentimentDelta + intentDelta + missDelta),
-      );
-      const qaBreakdown = {
-        // Provisional. The `auto_qa_score` job replaces this with the real
-        // five-dimension rubric; without the stamp its idempotency guard reads
-        // this row as "already scored" and the rubric never runs at all.
-        source: QA_SCORE_SOURCE_HEURISTIC,
-        base: baseScore,
-        sentiment_delta: sentimentDelta,
-        intent_delta: intentDelta,
-        miss_delta: missDelta,
-        rationale: result.coaching_note || "Routine call, no specific coaching note.",
-        scored_at: new Date().toISOString(),
-      };
-
-      await drizzle
-        .update(schema.callLogs)
-        .set({
-          leadScore: result.lead_score,
-          intentLabel: result.intent_label,
-          sentiment: result.sentiment,
-          coachingNote: result.coaching_note,
-          qaScore,
-          qaBreakdown,
-        })
-        .where(eq(schema.callLogs.vapiCallId, call?.id));
-
-      await persistRuntimeAuditRecords({
-        userId,
-        action: "vapi.post_call_analysis",
-        records: cap.records,
-        requestMeta: {
-          vapi_call_id: call?.id,
-          agent_id: webhookAgentId,
-        },
-      }).catch((e: unknown) =>
-        log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }),
-      );
-
-      enrichment = {
-        lead_score: result.lead_score,
-        intent_label: result.intent_label,
-        sentiment: result.sentiment,
-        coaching_note: result.coaching_note,
-        lesson_extracted: !!(result.lesson && result.lesson.trim()),
-      };
-    } catch (err: any) {
-      log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
-    }
-  }
-
-  // 3. Webhook Dispatch & Notifications
-  const baseOutcome = buildCallCompletedOutcome({
-    vapi_call_id: call?.id || "unknown",
-    agent_id: webhookAgentId,
-    customer_number: call?.customer?.number || null,
-    direction,
-    duration_seconds: duration,
-    enrichment_source: "sync_vapi_webhook",
-    enrichment,
+      }
+    },
   });
-
-  void dispatchWebhook(userId, "call.completed", baseOutcome);
-
-  const score = enrichment?.lead_score;
-  if (typeof score === "number" && score >= 70) {
-    void dispatchWebhook(userId, "lead.hot", {
-      vapi_call_id: call?.id,
-      lead_score: score,
-      customer_number: baseOutcome.customer_number,
-    });
-    if (score >= 80) {
-      try {
-        const { NotificationService } = await import("./notifications");
-        const notif = new NotificationService(userId);
-        void notif.sendUrgentAlert({
-          title: "🔥 Hot lead",
-          message: `Score ${score} · ${baseOutcome.customer_number || "unknown caller"} · ${enrichment?.intent_label || "lead detected"}`,
-          callId: call?.id,
-        });
-      } catch {
-        /* best-effort */
-      }
-    }
-  }
-
-  // Escalation fires off the RECORDED escalation outcome, not off intent_label.
-  // intent_label is a constrained enum ("high" | "medium" | "low" | "none"), so
-  // the previous comparison against the literal escalation labels could never
-  // be true — the documented call.escalated webhook and the Slack escalation
-  // alert were both unreachable for every tenant since they shipped, and no
-  // amount of real escalations would have produced one. escalationAttempted is set
-  // by recordEscalationOutcome the moment the agent tries to hand off, and a
-  // FAILED handoff is exactly the case an operator most needs to see, so the
-  // alert fires on attempted and reports whether it connected.
-  if (escalationOutcome.attempted) {
-    void dispatchWebhook(userId, "call.escalated", {
-      vapi_call_id: call?.id,
-      escalation_succeeded: escalationOutcome.succeeded,
-      intent_label: enrichment?.intent_label,
-      customer_number: baseOutcome.customer_number,
-    });
-    void (async () => {
-      const ch = await getDefaultChannel(userId);
-      if (ch) {
-        await slackPostMessage(
-          userId,
-          ch,
-          `🚨 *Call escalation*\nCaller: ${baseOutcome.customer_number || "unknown"}\nHandoff: ${
-            escalationOutcome.succeeded ? "connected" : "did not connect"
-          }\nCall: ${call?.id || ""}`,
-        );
-      }
-    })();
-  }
-
-  // 4. Compliance evidence (TCPA disclosure + opt-out ledger rows) is written
-  // in the retry-safe section above the duplicate return, so it survives a
-  // failed first delivery. See persistComplianceEvidence.
-
-  // 5. Gemini Fallback
-  if (!enrichment && transcript) {
-    try {
-      const geminiResult = await geminiPostCallAnalysis({
-        transcript,
-        summary: analysis?.summary || "",
-      });
-
-      await drizzle
-        .update(schema.callLogs)
-        .set({
-          leadScore: geminiResult.lead_score,
-          intentLabel: geminiResult.intent_label,
-          sentiment: geminiResult.sentiment,
-          coachingNote: geminiResult.coaching_note,
-        })
-        .where(eq(schema.callLogs.vapiCallId, call?.id));
-
-      if (geminiResult.lesson && geminiResult.lesson.trim()) {
-        await drizzle.insert(schema.agentLessons).values({
-          userId,
-          agentId: webhookAgentId,
-          lesson: geminiResult.lesson,
-          sourceCallId: call?.id,
-          lessonStatus: "pending",
-        });
-      }
-    } catch (gemErr) {
-      log.warn("Gemini fallback post-call analysis failed", { error: getErrorMessage(gemErr) });
-    }
-  }
 
   invalidateDashboard(userId);
 }

@@ -3,6 +3,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
+import {
+  assertCleanCheckout,
+  resolveSourceCommit,
+  verifyRemoteSourceCommit,
+  waitForRemoteSourceCommit,
+} from "./lib/release-source-verification.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(/\/$/, "");
 const outputRoot = path.resolve(
@@ -12,6 +18,18 @@ const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const outputDir = path.join(outputRoot, timestamp);
 const qaEmail = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const qaPassword = process.env.WIRELINE_VISUAL_PASSWORD;
+const expectedQaEmail = process.env.WIRELINE_VISUAL_EXPECTED_EMAIL?.trim().toLowerCase();
+const qaAccountConfigured = Boolean(
+  qaEmail && qaPassword && expectedQaEmail && qaEmail.toLowerCase() === expectedQaEmail,
+);
+const sourceWaitMs = Number(process.env.WIRELINE_VISUAL_SOURCE_WAIT_MS || 10 * 60_000);
+const repoRoot = process.cwd();
+const sourceCommit = resolveSourceCommit(repoRoot);
+
+assertCleanCheckout(repoRoot, sourceCommit);
+const sourceVerificationBefore = await waitForRemoteSourceCommit(sourceCommit, baseUrl, {
+  timeoutMs: sourceWaitMs,
+});
 
 const marketingRoutes = [
   "/",
@@ -92,7 +110,7 @@ const compatibilityRoutes = [
 const expectedRedirects = new Map([
   ["/overview", "/studio"],
   ["/studio/live-video", "/studio"],
-  ["/settings/phone", "/phone"],
+  ["/settings/phone", "/phone?tab=setup"],
   ["/apps", "/settings/apps"],
   ["/apps/command", "/settings/apps/command"],
 ]);
@@ -168,9 +186,27 @@ async function blockThirdPartyBeacons(page) {
 }
 
 function routeReached(route, finalUrl) {
-  const requestedPath = route.split(/[?#]/)[0];
-  const expectedPath = expectedRedirects.get(requestedPath) || requestedPath;
-  return finalUrl.startsWith(`${baseUrl}${expectedPath}`);
+  try {
+    const requested = new URL(route, `${baseUrl}/`);
+    const redirectTarget = new URL(
+      expectedRedirects.get(requested.pathname) || requested.pathname,
+      requested.origin,
+    );
+    const expectedSearchParams = new URLSearchParams(requested.search);
+    for (const [key, value] of redirectTarget.searchParams) expectedSearchParams.set(key, value);
+    const expectedSearchValue = expectedSearchParams.toString();
+    const expectedSearch = expectedSearchValue ? `?${expectedSearchValue}` : "";
+    const expectedHash = redirectTarget.hash || requested.hash;
+    const final = new URL(finalUrl);
+    return (
+      final.origin === requested.origin &&
+      final.pathname === redirectTarget.pathname &&
+      final.search === expectedSearch &&
+      final.hash === expectedHash
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function auditResponsiveLayout(page, viewportName, route, issues) {
@@ -319,6 +355,7 @@ async function captureRoute(page, viewportName, route, issues, mode) {
           element.scrollTop = element.scrollHeight;
         });
         await page.waitForTimeout(150);
+        authenticatedScrollCaptureCount += 1;
         await page.screenshot({
           path: `${prefix}-scroll-end.png`,
           fullPage: false,
@@ -357,14 +394,14 @@ async function createContext(browser, viewport, storageState) {
 }
 
 async function signIn(page, issues) {
-  if (!qaEmail || !qaPassword) {
+  if (!qaAccountConfigured) {
     pushIssue(issues, {
       viewport: "auth-seed",
       route: "/signin",
       mode: "authenticated",
       kind: "auth",
       detail:
-        "WIRELINE_VISUAL_EMAIL and WIRELINE_VISUAL_PASSWORD must identify a dedicated QA account.",
+        "Production visual QA requires credentials whose email exactly matches WIRELINE_VISUAL_EXPECTED_EMAIL.",
     });
     return false;
   }
@@ -380,6 +417,21 @@ async function signIn(page, issues) {
     await page.locator('form button[type="submit"]').click();
     await page.waitForURL(/\/studio(?:\?|$)/, { timeout: 45_000 });
     await settle(page);
+
+    const accountEnvironment = await page.evaluate(async () => {
+      const response = await fetch("/api/settings", { credentials: "same-origin" });
+      if (!response.ok) return null;
+      const body = await response.json().catch(() => null);
+      if (!body || typeof body !== "object") return null;
+      const nested =
+        "settings" in body && body.settings && typeof body.settings === "object"
+          ? body.settings
+          : body;
+      return "account_environment" in nested ? nested.account_environment : null;
+    });
+    if (accountEnvironment !== "demo") {
+      throw new Error("Authenticated visual QA refused a non-demo account.");
+    }
     return true;
   } catch (error) {
     pushIssue(issues, {
@@ -403,6 +455,7 @@ const browser = await chromium.launch({
 });
 
 let storageState = null;
+let authenticatedScrollCaptureCount = 0;
 try {
   const seedViewport = allViewports.find((viewport) => viewport.name === "desktop");
   const seedContext = await createContext(browser, seedViewport);
@@ -436,20 +489,27 @@ try {
   await browser.close();
 }
 
+const sourceVerificationAfter = await verifyRemoteSourceCommit(sourceCommit, baseUrl);
+assertCleanCheckout(repoRoot, sourceCommit);
+
 const authenticatedCaptureRoutes = [...authenticatedRoutes, ...compatibilityRoutes];
-const routeCount =
-  marketingRoutes.length * viewports.length +
-  (storageState ? authenticatedCaptureRoutes.length * viewports.length : 0);
+const publicScreenshotCountExpected = marketingRoutes.length * viewports.length * 2;
+const authenticatedScreenshotCountExpected = storageState
+  ? authenticatedCaptureRoutes.length * viewports.length * 2 + authenticatedScrollCaptureCount
+  : 0;
 const manifest = {
   baseUrl,
   outputDir,
-  qaAccountConfigured: Boolean(qaEmail && qaPassword),
+  sourceCommit,
+  sourceVerificationBefore,
+  sourceVerificationAfter,
+  qaAccountConfigured,
   authenticatedCapture: Boolean(storageState),
   viewports: viewports.map(({ name, width, height }) => ({ name, width, height })),
   marketingRoutes,
   authenticatedRoutes,
   compatibilityRoutes,
-  screenshotCountExpected: routeCount * 2,
+  screenshotCountExpected: publicScreenshotCountExpected + authenticatedScreenshotCountExpected,
   issues,
 };
 const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`;

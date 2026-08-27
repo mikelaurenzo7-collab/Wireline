@@ -19,6 +19,7 @@ import {
   exchangeZoomCode,
   disconnectZoom,
 } from "../../lib/zoom-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get(
   "/api/oauth/zoom/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!zoomOAuthConfigured()) {
       return res
         .status(500)
@@ -41,6 +42,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/zoom/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Zoom");
     const authUrl = getZoomAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -69,19 +71,20 @@ router.get(
       return res.status(400).send("No code provided by Zoom.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Zoom");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/zoom/callback`;
       const tokens = await exchangeZoomCode(code, redirectUri);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const accessTokenZoom = encryptSecret(tokens.access_token);
       const refreshTokenZoom = encryptSecret(tokens.refresh_token);

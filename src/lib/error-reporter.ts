@@ -16,7 +16,7 @@
  */
 
 import { IS_PROD } from "./server-logger";
-import { getErrorMessage } from "./server-utils";
+import { getErrorMessage, sanitizeErrorMessage } from "./server-utils";
 
 export interface ErrorContext {
   /** Indexed, low-cardinality labels (searchable/filterable in Sentry). */
@@ -77,6 +77,155 @@ function fallbackEventId(): string {
   return s;
 }
 
+const REDACTED = "[REDACTED]";
+const MAX_CONTEXT_DEPTH = 8;
+const MAX_COLLECTION_ITEMS = 100;
+const MAX_TELEMETRY_STRING_LENGTH = 2_000;
+const TELEMETRY_TRUNCATION_MARKER = "…[truncated]";
+
+// `sanitizeErrorMessage` owns the common log-boundary patterns (email, UUID,
+// Authorization headers, signed query values, and Drizzle parameter tails).
+// These additional patterns cover telemetry-only structures such as arbitrary
+// context strings and provider error stacks. They intentionally require either
+// a credential label or a recognizable phone shape so useful numbers such as
+// HTTP statuses, retry counts, durations, and source locations survive.
+const SECRET_HEADER_RE = /\b(authorization|cookie|set-cookie)\s*:\s*[^\r\n]*/gi;
+const NAMED_SECRET_VALUE_RE =
+  /(\b(?:access[_\s-]?token|refresh[_\s-]?token|api[_\s-]?key|authorization|auth|cookie|credential|password|passwd|secret|session|signature|token)\b["']?\s*[:=]\s*)(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;}\]\r\n]+)/gi;
+const JWT_RE = /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}\b/g;
+const PREFIXED_CREDENTIAL_RE =
+  /\b(?:(?:sk|rk|pk)_(?:live|test)_[A-Za-z0-9_-]{8,}|(?:gh[pousr]|github_pat)_[A-Za-z0-9_]{10,}|SG\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b/g;
+const INTERNATIONAL_PHONE_RE = /(^|[^\dA-Za-z])\+\d(?:[\s().-]*\d){7,14}(?!\d)/g;
+const FORMATTED_PHONE_RE = /(^|[^\d])(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}(?!\d)/g;
+
+const SENSITIVE_FIELD_SEGMENTS = new Set([
+  "auth",
+  "authorization",
+  "cookie",
+  "credential",
+  "credentials",
+  "email",
+  "key",
+  "mobile",
+  "otp",
+  "parameter",
+  "parameters",
+  "params",
+  "passcode",
+  "passwd",
+  "password",
+  "phone",
+  "secret",
+  "session",
+  "signature",
+  "token",
+]);
+
+function sanitizeTelemetryText(value: string): string {
+  const sanitized = sanitizeErrorMessage(value)
+    .replace(SECRET_HEADER_RE, "$1: [REDACTED]")
+    .replace(NAMED_SECRET_VALUE_RE, "$1[REDACTED]")
+    .replace(JWT_RE, REDACTED)
+    .replace(PREFIXED_CREDENTIAL_RE, REDACTED)
+    .replace(INTERNATIONAL_PHONE_RE, "$1[redacted-phone]")
+    .replace(FORMATTED_PHONE_RE, "$1[redacted-phone]");
+
+  if (sanitized.length <= MAX_TELEMETRY_STRING_LENGTH) return sanitized;
+  return `${sanitized.slice(
+    0,
+    MAX_TELEMETRY_STRING_LENGTH - TELEMETRY_TRUNCATION_MARKER.length,
+  )}${TELEMETRY_TRUNCATION_MARKER}`;
+}
+
+function isSensitiveFieldName(key: string): boolean {
+  const segments = key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  return segments.some((segment) => SENSITIVE_FIELD_SEGMENTS.has(segment));
+}
+
+/**
+ * Convert arbitrary telemetry context into a bounded, JSON-safe, recursively
+ * redacted value. This is deliberately applied to the final event, not only
+ * user-supplied `extra`, so future payload fields cannot bypass the boundary.
+ */
+function sanitizeTelemetryValue(
+  value: unknown,
+  depth = 0,
+  ancestors = new WeakSet<object>(),
+): unknown {
+  if (value === null || value === undefined || typeof value === "boolean") return value;
+  if (typeof value === "string") return sanitizeTelemetryText(value);
+  if (typeof value === "number") return Number.isFinite(value) ? value : String(value);
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "symbol" || typeof value === "function") return `[${typeof value}]`;
+  if (depth >= MAX_CONTEXT_DEPTH) return "[Truncated]";
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "Invalid Date" : value.toISOString();
+  }
+  if (value instanceof URL) return sanitizeTelemetryText(value.toString());
+  if (value instanceof Error) {
+    return {
+      name: sanitizeTelemetryText(value.name || "Error"),
+      message: sanitizeTelemetryText(value.message),
+      ...(value.stack ? { stack: sanitizeTelemetryText(value.stack) } : {}),
+    };
+  }
+
+  if (ancestors.has(value)) return "[Circular]";
+  ancestors.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const items = value
+        .slice(0, MAX_COLLECTION_ITEMS)
+        .map((item) => sanitizeTelemetryValue(item, depth + 1, ancestors));
+      if (value.length > MAX_COLLECTION_ITEMS) {
+        items.push(`[Truncated ${value.length - MAX_COLLECTION_ITEMS} items]`);
+      }
+      return items;
+    }
+
+    if (value instanceof Map) {
+      return sanitizeTelemetryValue(
+        Array.from(value.entries()).slice(0, MAX_COLLECTION_ITEMS),
+        depth + 1,
+        ancestors,
+      );
+    }
+    if (value instanceof Set) {
+      return sanitizeTelemetryValue(
+        Array.from(value.values()).slice(0, MAX_COLLECTION_ITEMS),
+        depth + 1,
+        ancestors,
+      );
+    }
+
+    let entries: [string, unknown][];
+    try {
+      entries = Object.entries(value as Record<string, unknown>);
+    } catch {
+      return "[Unserializable]";
+    }
+
+    const out = Object.create(null) as Record<string, unknown>;
+    for (const [rawKey, item] of entries.slice(0, MAX_COLLECTION_ITEMS)) {
+      const safeKey = sanitizeTelemetryText(rawKey);
+      out[safeKey] = isSensitiveFieldName(rawKey)
+        ? REDACTED
+        : sanitizeTelemetryValue(item, depth + 1, ancestors);
+    }
+    if (entries.length > MAX_COLLECTION_ITEMS) {
+      out._truncated = `${entries.length - MAX_COLLECTION_ITEMS} fields`;
+    }
+    return out;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
 /**
  * Build the Sentry "store" event payload from an error + context. Pure and
  * deterministic apart from the generated event id / timestamp, so the shape
@@ -89,14 +238,14 @@ export function buildSentryStorePayload(
   const { tags, ...rest } = context;
   const err = error instanceof Error ? error : new Error(getErrorMessage(error));
   // Surface the stack as `extra` rather than a synthetic stacktrace object —
-  // we don't parse frames, so a real raw stack in `extra` is more useful (and
-  // honest) than an empty `frames: []`. Only attach it for genuine Error
+  // we don't parse frames, so a real redacted stack in `extra` is more useful
+  // (and honest) than an empty `frames: []`. Only attach it for genuine Error
   // instances: a stack synthesized for a non-Error throwable would point at
   // this reporter, not the real throw site, which is worse than none.
   const realStack = error instanceof Error ? error.stack : undefined;
   const extra = realStack ? { ...rest, stack: realStack } : rest;
 
-  return {
+  const payload = {
     event_id: newEventId(),
     timestamp: Date.now() / 1000,
     platform: "node",
@@ -115,6 +264,8 @@ export function buildSentryStorePayload(
     ...(tags && Object.keys(tags).length ? { tags: cleanTags(tags) } : {}),
     ...(Object.keys(extra).length ? { extra } : {}),
   };
+
+  return sanitizeTelemetryValue(payload) as Record<string, unknown>;
 }
 
 function cleanTags(

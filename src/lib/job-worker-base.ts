@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
-import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
+import { log, quotaTracker, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
-import { startWorker, type JobRow, enqueue } from "./job-queue";
+import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
@@ -17,7 +17,7 @@ import {
   purgeAccount,
   releaseExternalResourcesForPurge,
 } from "./account-deletion";
-import { runTerminalDeletionSequence } from "./account-deletion-fence";
+import { acquireAccountDeletionFence, runTerminalDeletionSequence } from "./account-deletion-fence";
 import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 import { getCanonicalAppUrl } from "./app-url";
 
@@ -481,6 +481,44 @@ export async function handleJob(job: JobRow): Promise<void> {
           { db: drizzle },
         );
         if (!claim.ready) {
+          if (claim.reason === "account_operation_in_flight") {
+            const runAt = new Date(Math.max(claim.retryAt.getTime() + 1_000, Date.now() + 30_000));
+            await tenantStore.run(p.user_id, () =>
+              drizzle.transaction(async (tx) => {
+                await acquireAccountDeletionFence(tx, p.user_id);
+                const [waiting] = await tx
+                  .select({ id: schema.jobs.id })
+                  .from(schema.jobs)
+                  .where(
+                    and(
+                      eq(schema.jobs.userId, p.user_id),
+                      eq(schema.jobs.type, "purge_deleted_account"),
+                      eq(schema.jobs.status, "pending"),
+                    ),
+                  )
+                  .limit(1);
+                if (!waiting) {
+                  await tx.insert(schema.jobs).values({
+                    userId: p.user_id,
+                    type: "purge_deleted_account",
+                    status: "pending",
+                    payload: {
+                      user_id: p.user_id,
+                      ...(p.queue_id ? { queue_id: p.queue_id } : {}),
+                    },
+                    runAt,
+                    maxAttempts: 3,
+                  });
+                }
+              }, writeTransactionConfig()),
+            );
+            log.info("purge_deleted_account rescheduled after active account operation", {
+              jobId: job.id,
+              user_id: p.user_id,
+              retry_at: runAt.toISOString(),
+            });
+            return null;
+          }
           log.info("purge_deleted_account skipped, terminal claim unavailable", {
             jobId: job.id,
             user_id: p.user_id,
@@ -503,6 +541,11 @@ export async function handleJob(job: JobRow): Promise<void> {
           jobId: job.id,
           user_id: p.user_id,
           subscriptions_canceled: release.subscriptionsCanceled,
+          checkout_sessions_expired: release.checkoutSessionsExpired,
+          stripe_customers_deleted: release.stripeCustomersDeleted,
+          realtime_calls_hung_up: release.realtimeCallsHungUp,
+          twilio_calls_hung_up: release.twilioCallsHungUp,
+          xai_calls_hung_up: release.xaiCallsHungUp,
           numbers_released: release.numbersReleased,
           number_errors: release.numberErrors.length,
           oauth_attempted: release.oauthAttempted,
@@ -520,16 +563,6 @@ export async function handleJob(job: JobRow): Promise<void> {
           });
           throw new Error(result.error ?? "account purge failed");
         }
-
-        // Audit BEFORE marking the queue row purged so the audit row is still
-        // owned by a (now-deleted) user — historical record of the action.
-        void auditLogger
-          .logAccountDeletion({
-            userId: p.user_id,
-            tablesTouched: result.tablesTouched,
-            ip: queueRow.ip ?? undefined,
-          })
-          .catch(() => {});
 
         // The local purge normally deletes this PII-bearing row. This update
         // documents terminal state for schemas where the row is retained.
@@ -873,6 +906,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       const appUrl = getCanonicalAppUrl();
       const { sendTrialEndingSoonEmail } = await import("./email-service");
       const result = await sendTrialEndingSoonEmail({
+        userId: p.userId,
         to: userRow.email,
         daysLeft: p.daysLeft ?? 3,
         checkoutUrl: `${appUrl}/pricing`,

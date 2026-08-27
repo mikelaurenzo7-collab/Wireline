@@ -10,6 +10,7 @@ import { decryptSecret } from "../lib/secret-vault";
 import { getErrorMessage } from "../lib/server-utils";
 import { runInBackground } from "../lib/background-work";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
+import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 
 // Targeted rate limit for Meta leadgen webhooks.
 // Meta retries failed deliveries with exponential backoff.
@@ -170,6 +171,28 @@ async function fetchMetaLead(
   }
 }
 
+export async function metaTenantExternalIngestAllowed(
+  userId: string,
+  policyForUser: typeof liveExternalActionPolicyForUser = liveExternalActionPolicyForUser,
+): Promise<boolean> {
+  try {
+    const policy = await policyForUser(userId);
+    if (policy.allowed) return true;
+    log.warn("Meta webhook ingest blocked by account environment", {
+      userId,
+      accountEnvironment: policy.environment ?? "missing",
+      code: policy.code,
+    });
+    return false;
+  } catch (error) {
+    log.error("Meta webhook account-environment lookup failed, failing closed", {
+      userId,
+      error: getErrorMessage(error),
+    });
+    return false;
+  }
+}
+
 function pickField(fields: MetaLeadField[], names: string[]): string | null {
   for (const n of names) {
     const f = fields.find((x) => x.name.toLowerCase() === n.toLowerCase());
@@ -246,6 +269,13 @@ async function processMetaPageEntries(entries: any[]): Promise<void> {
         log.info("Meta event for unsubscribed page", { pageId, field });
         continue;
       }
+
+      // Signature verification authenticates Meta and page resolution binds
+      // the event to a tenant. Only an explicitly production-classified tenant
+      // may perform the subsequent Graph fetch or persist provider PII/new
+      // action work. Deletion/revocation callbacks use their separate cleanup
+      // route and deliberately remain available in every environment.
+      if (!(await metaTenantExternalIngestAllowed(tenant.userId))) continue;
 
       try {
         if (field === "leadgen" || field === "leadgen_update") {

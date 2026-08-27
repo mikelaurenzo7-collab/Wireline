@@ -33,7 +33,7 @@ const numericPrefix = (tag: string): number => {
  * committed but absent from meta/_journal.json therefore never executes on that
  * path, silently and with no error to notice.
  *
- * The repository is in that state today for 105 of its 139 migrations: they were
+ * The repository is in that state today for 105 historical migrations: they were
  * applied out of band through the authenticated Supabase migration tool (the
  * urgent path in docs/DATABASE_OPERATIONS.md) and the journal was never
  * back-filled. That history is NOT something to "repair" from here — adding those
@@ -166,10 +166,12 @@ describe("migration journal integrity contract", () => {
   });
 
   it("journals and materializes the OpenAI runtime-cohesion defaults", () => {
-    expect(journal.entries.at(-1)).toMatchObject({
-      idx: 54,
-      tag: "0156_openai_runtime_cohesion",
-    });
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 54,
+        tag: "0156_openai_runtime_cohesion",
+      }),
+    );
     const materializer = readFileSync(
       resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
       "utf8",
@@ -179,6 +181,123 @@ describe("migration journal integrity contract", () => {
     expect(materializer).toContain("settings.voice_llm_provider.default = \"'openai'\"");
     expect(materializer).toContain("settings.voice_llm_model.default = \"'gpt-4o'\"");
     expect(materializer).not.toContain('TARGET_0054_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes nullable server-owned audit receipts", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 55,
+        tag: "0157_audit_log_system_receipts",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0055_PATH");
+    expect(materializer).toContain("buildAuditSystemReceiptSnapshot");
+    expect(materializer).toContain("auditLog.columns.user_id.notNull = false");
+    expect(materializer).toContain("auditLog.isRLSEnabled = true");
+    expect(materializer).toContain("uq_audit_account_deletion_receipt");
+    expect(materializer).not.toContain('TARGET_0055_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals the resolved orphan-carrier scrub with a data-only snapshot", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 56,
+        tag: "0158_scrub_resolved_orphan_carrier_resources",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0056_PATH");
+    expect(materializer).toContain("buildResolvedOrphanScrubSnapshot");
+    expect(materializer).not.toContain('TARGET_0056_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes retired xAI binding de-identification", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 57,
+        tag: "0159_deidentify_retired_xai_bindings",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0057_PATH");
+    expect(materializer).toContain("buildRetiredXAIBindingIdentitySnapshot");
+    expect(materializer).toContain("wireline_xai_binding_owner_identity");
+    expect(materializer).not.toContain('TARGET_0057_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes the tenant-audit cascade boundary", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 58,
+        tag: "0160_cascade_tenant_audit_erasure",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0058_PATH");
+    expect(materializer).toContain("buildAuditCascadeSnapshot");
+    expect(materializer).toContain("wireline_audit_log_user_id_wireline_users_id_fk");
+    expect(materializer).not.toContain('TARGET_0058_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes durable account-operation leases", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 59,
+        tag: "0161_account_operation_leases",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0059_PATH");
+    expect(materializer).toContain("buildAccountOperationLeaseSnapshot");
+    expect(materializer).toContain("wireline_account_operation_leases");
+    expect(materializer).not.toContain('TARGET_0059_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals and materializes subscription ownership", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 60,
+        tag: "0162_cascade_subscription_user_erasure",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0060_PATH");
+    expect(materializer).toContain("buildSubscriptionCascadeSnapshot");
+    expect(materializer).toContain("wireline_subscriptions_user_id_wireline_users_id_fk");
+    expect(materializer).not.toContain('TARGET_0060_SHA256 = "PENDING_COMPUTE"');
+  });
+
+  it("journals the account-environment promotion guard with a data-only snapshot", () => {
+    expect(journal.entries.at(-1)).toMatchObject({
+      idx: 61,
+      tag: "0163_guard_account_environment_promotion",
+    });
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0061_PATH");
+    expect(materializer).toContain("buildAccountEnvironmentPromotionGuardSnapshot");
+    expect(materializer).not.toContain('TARGET_0061_SHA256 = "PENDING_COMPUTE"');
   });
 
   it("documents the split so the journal is not read as the whole history", () => {

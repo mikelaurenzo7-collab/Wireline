@@ -157,6 +157,7 @@ describe("account deletion versus post-call provider work", () => {
     const dispatcher = read("src/lib/job-worker.ts");
     const digest = read("src/lib/post-call-digest.ts");
     const tenantFence = read("src/lib/tenant-provider-deletion-fence.ts");
+    const operationLease = read("src/lib/account-operation-lease.ts");
     const cadence = read("src/lib/cadence-engine.ts");
     const callback = read("src/lib/callback-engine.ts");
     const terminalLock = purge.indexOf("await acquireAccountDeletionFence(tx, input.userId)");
@@ -171,14 +172,25 @@ describe("account deletion versus post-call provider work", () => {
     expect(externalRelease).toBeGreaterThan(-1);
     expect(worker).toContain("runTerminalDeletionSequence");
     expect(worker).toContain("claimTerminalAccountPurge");
+    expect(purge).toContain('eq(schema.jobs.type, "openai_realtime_hangup")');
+    expect(purge).toContain("await hangupOpenAIRealtimeCall");
+    expect(purge).toContain("realtimeCallsHungUp");
+    expect(read("src/lib/voice/openai-realtime-call-control.ts")).toContain(
+      "runTenantProviderWorkWithDeletionFence",
+    );
+    expect(read("src/lib/voice/xai-phone-activation-service.ts")).toContain(
+      "runTenantProviderWorkWithDeletionFence",
+    );
     expect(dispatcher).toContain("withAccountDeletionFence(tx, userId");
     expect(dispatcher).toContain("runTenantJobAfterDeletionCheck");
     expect(dispatcher).toContain("tenant job skipped, terminal account deletion has begun");
     expect(dispatcher).toContain('"twilio_message_reconciliation"');
-    expect(tenantFence).toContain("runTenantProviderWorkAfterDeletionFence");
-    expect(tenantFence).toContain("deletionQueue.status} = 'purging'");
-    expect(tenantFence).toContain("deletionQueue.scheduledPurgeAt} IS NULL");
-    expect(tenantFence).toContain("deletionQueue.scheduledPurgeAt} <= now()");
+    expect(tenantFence).toContain("runTenantProviderWorkWithDeletionFence");
+    expect(tenantFence).toContain("acquireAccountOperationLease");
+    expect(operationLease).toContain("await acquireAccountDeletionFence(tx, input.userId)");
+    expect(operationLease).toContain("deletionQueue.status} = 'purging'");
+    expect(operationLease).toContain("deletionQueue.scheduledPurgeAt} IS NULL");
+    expect(operationLease).toContain("deletionQueue.scheduledPurgeAt} <= now()");
     expect(cadence).toContain("runTenantProviderWorkWithDeletionFence");
     expect(cadence.indexOf("runTenantProviderWorkWithDeletionFence")).toBeLessThan(
       cadence.indexOf(

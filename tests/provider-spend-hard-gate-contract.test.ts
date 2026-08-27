@@ -106,7 +106,6 @@ describe("provider spend launch kill switch", () => {
       "proactive_lead_enrichment",
       "autonomous_prospecting",
       "knowledge_from_url",
-      "vapi_webhook",
       "campaign_dial",
       "cadence_tick",
       "callback_tick",
@@ -123,6 +122,7 @@ describe("provider spend launch kill switch", () => {
       "sweep_orphan_supervisor_subs",
       "reclaim_canceled_numbers",
       "demo_line_canary",
+      "vapi_webhook",
     ]) {
       expect(isPausableProviderSpendJobType(type), type).toBe(false);
     }

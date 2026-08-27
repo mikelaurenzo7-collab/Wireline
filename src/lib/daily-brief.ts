@@ -16,6 +16,7 @@ import { decryptSecret } from "./secret-vault";
 import { cachedInsight, setCachedInsight } from "./insights-cache";
 import { BRAND } from "../constants/brand-colors";
 import { localDateKey } from "./date-display";
+import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 
 export async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   const today = localDateKey(new Date());
@@ -391,6 +392,7 @@ export async function sendDailyBriefEmail(
   userId: string,
   opts?: { force?: boolean; onProviderSendAttempt?: () => void },
 ) {
+  await assertLiveExternalActionAllowed(userId, "daily_brief_email");
   // Pull settings + the Account Holder's connected Gmail account.
   const [settingsRow, accountRow] = await Promise.all([
     drizzle

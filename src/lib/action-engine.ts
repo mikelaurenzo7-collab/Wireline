@@ -23,6 +23,10 @@ import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import { sendTenantMessage } from "./twilio-service";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
 
 /**
  * Insert a follow-up task and emit the advertised `task.created` webhook.
@@ -74,6 +78,15 @@ const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
   prospect_leads: "enrich_lead",
   notify_slack: "send_slack_notification",
 };
+
+const AUTONOMOUS_LIVE_EXTERNAL_ACTIONS = new Set([
+  "send_email",
+  "send_text_message",
+  "schedule_calendar",
+  "update_crm_lead",
+  "prospect_leads",
+  "notify_slack",
+]);
 
 type ResolvedActionPolicy = {
   action: ActionItem;
@@ -267,9 +280,26 @@ async function executeAutonomousAction(
   context: { sourceId: string; sourceType: string },
   agentTimeZone: string | null,
 ): Promise<ActionResult> {
+  if (AUTONOMOUS_LIVE_EXTERNAL_ACTIONS.has(action.type)) {
+    const environmentPolicy = await liveExternalActionPolicyForUser(userId);
+    if (!environmentPolicy.allowed) {
+      log.warn("Autonomous action blocked by account environment", {
+        userId,
+        actionType: action.type,
+        accountEnvironment: environmentPolicy.environment ?? "missing",
+        code: environmentPolicy.code,
+      });
+      return { success: false, error: environmentPolicy.message };
+    }
+  }
+
   const service = new IntegrationService(userId);
   switch (action.type) {
     case "send_email": {
+      const entityPolicy = await externalEntityActionPolicyForUser(userId, {
+        email: action.payload.to,
+      });
+      if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
       let reviewed;
       try {
         reviewed = await superviseClientCommunication({
@@ -409,6 +439,8 @@ async function handleSendTextMessage(
   if (!phone) {
     return { success: false, error: "A destination number is required." };
   }
+  const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
+  if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
 
   // Match cadence-engine: every auto-sent SMS clears the shared TCPA / DNC /
   // quiet-hours / duplicate gate. Non-service roles are marketing (federal
@@ -627,10 +659,10 @@ async function handleProspectLeads(
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
   const channel = await getDefaultChannel(userId);
   if (!channel) return { success: false, error: "No Slack channel is configured." };
-  await postAgentNotification(
+  const sent = await postAgentNotification(
     userId,
-    channel,
     action.payload.message || action.reasoning || "BotBound action requires review.",
+    { outcome: action.reasoning || undefined },
   );
-  return { success: true };
+  return sent ? { success: true } : { success: false, error: "Slack notification failed." };
 }

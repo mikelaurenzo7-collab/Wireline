@@ -9,6 +9,10 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../lib/account-environment-policy";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
@@ -321,6 +325,11 @@ router.post(
   mobileSensitiveRateLimiter,
   validate({ body: handoffSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
+    // Never claim presence for a provider transfer after a tenant has been
+    // reclassified. The shared REFER helper performs a second last-moment
+    // check to close the race between this preflight and provider control.
+    await assertLiveExternalActionAllowed(req.user.id, "native_mobile_call_handoff");
+
     const [presence] = await drizzle
       .select({
         controlUrl: schema.signalPresence.controlUrl,
@@ -361,6 +370,10 @@ router.post(
       });
     }
 
+    await assertExternalEntityActionAllowed(req.user.id, "native_mobile_call_handoff", {
+      phone: normalizedDestination,
+    });
+
     const callId = xaiCallId(presence.controlUrl);
     if (!callId) {
       return res.status(409).json({
@@ -388,7 +401,7 @@ router.post(
     }
 
     try {
-      await referXAISipCall(callId, normalizedDestination);
+      await referXAISipCall(req.user.id, callId, normalizedDestination);
       notifyXAISipCallTransferred(callId);
       await drizzle
         .update(schema.signalPresence)

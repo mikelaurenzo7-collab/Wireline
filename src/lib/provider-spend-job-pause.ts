@@ -2,6 +2,9 @@
  * Durable queue policy for work whose primary purpose is creating new paid
  * provider activity. Pure reconciliation and teardown jobs that only settle
  * already-incurred usage or reduce billable resources stay out of this list.
+ * `vapi_webhook` also stays out: its end-of-call arm owns mandatory signed
+ * evidence, compliance, and retry-safe voice accounting. Optional model and
+ * notification effects are gated inside that handler after evidence lands.
  */
 export const PAUSABLE_PROVIDER_SPEND_JOB_TYPES = [
   "post_call_artifact",
@@ -13,7 +16,7 @@ export const PAUSABLE_PROVIDER_SPEND_JOB_TYPES = [
   "proactive_lead_enrichment",
   "autonomous_prospecting",
   "knowledge_from_url",
-  "vapi_webhook",
+  "intake_auto_dial",
   "campaign_dial",
   "cadence_tick",
   "callback_tick",

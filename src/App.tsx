@@ -1,5 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
+import { MotionConfig } from "motion/react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
@@ -151,25 +152,27 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ViewportModeRoot>
-          <RouteChangeA11y />
-          <ThemeProvider>
-            <ToastProvider>
-              <BrandingProvider>
-                <AccountProvider>
-                  <AgentsProvider>
-                    <AppRouter />
-                    <ToastStack />
-                    <CookieConsent />
-                  </AgentsProvider>
-                </AccountProvider>
-              </BrandingProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </ViewportModeRoot>
-      </AuthProvider>
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <AuthProvider>
+          <ViewportModeRoot>
+            <RouteChangeA11y />
+            <ThemeProvider>
+              <ToastProvider>
+                <BrandingProvider>
+                  <AccountProvider>
+                    <AgentsProvider>
+                      <AppRouter />
+                      <ToastStack />
+                      <CookieConsent />
+                    </AgentsProvider>
+                  </AccountProvider>
+                </BrandingProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </ViewportModeRoot>
+        </AuthProvider>
+      </BrowserRouter>
+    </MotionConfig>
   );
 }

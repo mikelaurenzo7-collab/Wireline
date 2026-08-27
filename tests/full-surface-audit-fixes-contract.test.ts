@@ -75,9 +75,9 @@ describe("suspended tenant compliance evidence", () => {
     // real call happens. 403-ing its end-of-call-report threw away the call
     // log, the transcript DNC/opt-out capture, and the TCPA evidence. A legal
     // opt-out is not conditional on billing state.
-    expect(webhook).toContain('if (message?.type !== "end-of-call-report") {');
+    expect(webhook).toContain("isVapiTenantEvidenceMessage");
     expect(flat("src/routes/vapi-v2.ts")).toContain(
-      "// end-of-call-report is deliberately NOT denied.",
+      "Evidence callbacks remain accepted. A suspended line still answers",
     );
     // Everything else on a suspended line stays denied.
     expect(webhook).toContain(

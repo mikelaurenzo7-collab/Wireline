@@ -5,7 +5,6 @@ import { AppError } from "../lib/api-error";
 import { validateBody, agentmailConnectSchema } from "../lib/api-validation";
 import {
   AGENTMAIL_API_BASE,
-  AGENTMAIL_FREE_DOMAIN,
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   AgentMailConnectError,
   agentmailGrantedScopes,
@@ -24,11 +23,13 @@ import {
 } from "../lib/owned-email-account";
 import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
+import { planById } from "../lib/plan-catalog";
 import { encryptSecret, decryptSecret, isVaultConfigured } from "../lib/secret-vault";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 
 const router = Router();
 const MANAGED_SCOPE_MARKER = "managed-botbound";
@@ -137,19 +138,41 @@ function managedMailboxDomain(): string | null {
     .toLowerCase()
     .replace(/^@/, "");
   if (!value) return null;
-  return /^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(value) && value.includes(".")
-    ? value
-    : null;
+  if (!/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(value) || !value.includes(".")) {
+    return null;
+  }
+  return value === "botbound.me" || value.endsWith(".botbound.me") ? value : null;
+}
+
+async function hasManagedMailboxEntitlement(userId: string): Promise<boolean> {
+  const [subscription] = await drizzle
+    .select({ planId: schema.subscriptions.plan, status: schema.subscriptions.status })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+  const plan = planById(subscription?.planId);
+  return Boolean(
+    subscription &&
+    (subscription.status === "active" || subscription.status === "trialing") &&
+    plan &&
+    plan.price_usd_monthly > 0 &&
+    plan.included_phone_numbers > 0,
+  );
 }
 
 function managedMailboxUsername(agentName: string, agentId: string): string {
-  const suffix = agentId.replace(/[^a-z0-9]/gi, "").toLowerCase().slice(-8) || "bot";
-  const base = agentName
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "bot";
+  const suffix =
+    agentId
+      .replace(/[^a-z0-9]/gi, "")
+      .toLowerCase()
+      .slice(-8) || "bot";
+  const base =
+    agentName
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "bot";
   const maxBaseLength = Math.max(1, 62 - suffix.length);
   return `${base.slice(0, maxBaseLength).replace(/-+$/g, "")}-${suffix}`.slice(0, 63);
 }
@@ -157,11 +180,11 @@ function managedMailboxUsername(agentName: string, agentId: string): string {
 async function createManagedInboxAttempt(input: {
   apiKey: string;
   username: string;
-  domain?: string;
+  domain: string;
   agentId: string;
   agentName: string;
 }): Promise<{ inboxId: string; email: string }> {
-  const clientId = `botbound-agent:${input.agentId}:${input.domain || AGENTMAIL_FREE_DOMAIN}`;
+  const clientId = `botbound-agent:${input.agentId}:${input.domain}`;
   const response = await fetchWithTimeout(`${AGENTMAIL_API_BASE}/inboxes`, {
     method: "POST",
     headers: {
@@ -171,7 +194,7 @@ async function createManagedInboxAttempt(input: {
     },
     body: JSON.stringify({
       username: input.username,
-      ...(input.domain ? { domain: input.domain } : {}),
+      domain: input.domain,
       display_name: input.agentName,
       client_id: clientId,
       metadata: {
@@ -191,14 +214,12 @@ async function createManagedInboxAttempt(input: {
     }
   }
   if (response.status === 401 || response.status === 403) {
-    throw new AgentMailConnectError("BotBound managed email credentials were rejected by AgentMail.");
+    throw new AgentMailConnectError(
+      "BotBound managed email credentials were rejected by AgentMail.",
+    );
   }
   if (!response.ok) {
-    throw new AgentMailConnectError(
-      input.domain
-        ? `AgentMail could not create a mailbox on ${input.domain}.`
-        : "AgentMail could not create the managed Bot mailbox.",
-    );
+    throw new AgentMailConnectError(`AgentMail could not create a mailbox on ${input.domain}.`);
   }
   const row = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
   const created = normalizeAgentMailInbox(body) ?? normalizeAgentMailInbox(row?.inbox);
@@ -215,39 +236,31 @@ async function resolveManagedBotInbox(input: {
 }): Promise<{ inboxId: string; email: string; usedCustomDomain: boolean }> {
   const username = managedMailboxUsername(input.agentName, input.agentId);
   const preferredDomain = managedMailboxDomain();
-  const preferredEmail = `${username}@${preferredDomain || AGENTMAIL_FREE_DOMAIN}`;
-  const fallbackEmail = `${username}@${AGENTMAIL_FREE_DOMAIN}`;
+  if (!preferredDomain) {
+    throw new AgentMailConnectError("BotBound managed email domain is not ready.");
+  }
+  const preferredEmail = `${username}@${preferredDomain}`;
   const existing = await listAgentMailInboxes(input.apiKey);
-  const current = existing.find(
-    (inbox) => inbox.email === preferredEmail || (!preferredDomain && inbox.email === fallbackEmail),
-  );
+  const current = existing.find((inbox) => inbox.email === preferredEmail);
   if (current) {
-    return {
-      ...current,
-      usedCustomDomain: Boolean(preferredDomain && current.email.endsWith(`@${preferredDomain}`)),
-    };
+    return { ...current, usedCustomDomain: true };
   }
 
-  if (preferredDomain && preferredDomain !== AGENTMAIL_FREE_DOMAIN) {
-    try {
-      const inbox = await createManagedInboxAttempt({
-        ...input,
-        username,
-        domain: preferredDomain,
-      });
-      return { ...inbox, usedCustomDomain: true };
-    } catch (error) {
-      log.warn("Managed AgentMail custom-domain provisioning failed closed", {
-        agentId: input.agentId,
-        domain: preferredDomain,
-        error: getErrorMessage(error),
-      });
-      throw error;
-    }
+  try {
+    const inbox = await createManagedInboxAttempt({
+      ...input,
+      username,
+      domain: preferredDomain,
+    });
+    return { ...inbox, usedCustomDomain: true };
+  } catch (error) {
+    log.warn("Managed AgentMail custom-domain provisioning failed closed", {
+      agentId: input.agentId,
+      domain: preferredDomain,
+      error: getErrorMessage(error),
+    });
+    throw error;
   }
-
-  const inbox = await createManagedInboxAttempt({ ...input, username });
-  return { ...inbox, usedCustomDomain: false };
 }
 
 /**
@@ -255,15 +268,17 @@ async function resolveManagedBotInbox(input: {
  *
  * Platform-managed Bot identity. New users should never need to know AgentMail
  * exists: BotBound provisions the mailbox, binds it to the Bot, and registers
- * delivery push. A verified AGENTMAIL_DEFAULT_DOMAIN is preferred when present;
- * if a custom domain is configured but not ready, provisioning fails closed
- * instead of silently degrading to a provider-branded address.
+ * delivery push. A paid entitlement and verified BotBound-domain
+ * AGENTMAIL_DEFAULT_DOMAIN are mandatory; provider-branded fallback is never a
+ * customer-facing identity.
  */
 router.post(
   "/api/agents/:agentId/managed-mailbox",
   authenticateUser,
   managedMailboxRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.id;
+    await assertLiveExternalActionAllowed(userId, "managed_agentmail_mailbox_provision");
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
     }
@@ -272,7 +287,6 @@ router.post(
       throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
     }
 
-    const userId = req.user.id;
     const agentId = String(req.params.agentId || "").trim();
     const [agent] = await drizzle
       .select({ id: schema.agents.id, name: schema.agents.name })
@@ -280,6 +294,17 @@ router.post(
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
       .limit(1);
     if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
+    if (!(await hasManagedMailboxEntitlement(userId))) {
+      throw new AppError(
+        402,
+        "ACTIVATION_REQUIRED",
+        "Activate a paid Bot before provisioning its managed email identity.",
+      );
+    }
+    const requiredDomain = managedMailboxDomain();
+    if (!requiredDomain) {
+      throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+    }
 
     const [existingManaged] = await drizzle
       .select({
@@ -297,6 +322,9 @@ router.post(
       )
       .limit(1);
     if (existingManaged?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
+      if (!existingManaged.emailAddress.toLowerCase().endsWith(`@${requiredDomain}`)) {
+        throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+      }
       try {
         const inbox = await resolveAgentMailInbox(apiKey, existingManaged.emailAddress);
         await verifyAgentMailCredentials(inbox.email, apiKey);
@@ -385,6 +413,8 @@ router.post(
   agentmailConnectRateLimiter,
   validateBody(agentmailConnectSchema),
   async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.id;
+    await assertLiveExternalActionAllowed(userId, "agentmail_mailbox_connect");
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(
         503,
@@ -392,7 +422,6 @@ router.post(
       );
     }
 
-    const userId = req.user.id;
     const requestedEmail = req.body.email_address.trim().toLowerCase();
     const apiKey = req.body.api_key.replace(/\s+/g, "");
 
@@ -482,7 +511,9 @@ router.post(
         }
         await drizzle
           .delete(schema.emailAccounts)
-          .where(and(eq(schema.emailAccounts.id, account.id), eq(schema.emailAccounts.userId, userId)));
+          .where(
+            and(eq(schema.emailAccounts.id, account.id), eq(schema.emailAccounts.userId, userId)),
+          );
       }
       res.json({ ok: true, removed: legacyAccounts.length });
     } catch (err) {

@@ -74,6 +74,7 @@ router.get(
   authenticateUser,
   previewLimiter,
   enforceLaunchHardGate,
+  enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
     const provider = typeof req.query.provider === "string" ? req.query.provider : "";
     const voiceId = typeof req.query.voiceId === "string" ? req.query.voiceId.trim() : "";

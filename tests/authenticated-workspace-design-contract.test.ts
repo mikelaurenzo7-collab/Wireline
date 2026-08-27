@@ -19,6 +19,7 @@ describe("authenticated workspace design architecture", () => {
 
   it("makes the global rail foldable and resizable instead of a fixed desktop column", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
+    const polish = read("src/styles/application-polish.css");
     expect(shell).toContain("WorkspaceResizablePanel");
     expect(shell).toContain("defaultSize={232}");
     expect(shell).toContain("minSize={208}");
@@ -26,6 +27,55 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).toContain("collapsedSize={68}");
     expect(shell).toContain("wireline:workspace-rail:v1");
     expect(shell).not.toContain("lg:grid-cols-[236px_minmax(0,1fr)]");
+    expect(polish).not.toContain("grid-template-columns: 224px");
+    expect(polish).not.toMatch(
+      /aside\[aria-label="Workspace navigation"\][^{]*\{[^}]*width:\s*224px/s,
+    );
+  });
+
+  it("keeps Inbox empty, search-miss, and initial-error states on one intentional pane", () => {
+    const email = read("src/components/EmailInbox.tsx");
+    const sms = read("src/components/SmsThreads.tsx");
+    const polish = read("src/styles/authenticated-visual-qa.css");
+
+    for (const source of [email, sms]) {
+      expect(source).toContain("wl-channel-inbox-grid");
+      expect(source).toContain('data-empty={listOwnsOnlyState ? "true" : undefined}');
+    }
+    expect(email).toContain('title="No matching email"');
+    expect(email).toContain("setDetail(null);");
+    expect(email).toContain("setDetailError(null);");
+    expect(email).toContain("detailError && !detail");
+    expect(email).toContain("function EmailBackButton");
+    expect(email).toContain('title="Conversation needs attention"');
+    expect(email).toContain("onClick={() => void loadThreadDetail(selectedId)}");
+    expect(sms).toContain('title="No matching texts"');
+    expect(sms).toContain('title="Texts unavailable"');
+    expect(sms).toContain("onClick={() => void fetchThreads()}");
+    expect(polish).toContain('.wl-channel-inbox-grid[data-empty="true"]');
+    expect(polish).not.toContain(".wl-channel-inbox-grid:has(");
+  });
+
+  it("keeps the custom Team invite dialog scrollable on short viewports", () => {
+    const team = read("src/pages/TeamSettings.tsx");
+    expect(team).toContain("px-[max(0.75rem,env(safe-area-inset-left))]");
+    expect(team).toContain("pb-[max(0.75rem,env(safe-area-inset-bottom))]");
+    expect(team).toContain("pt-[max(0.75rem,env(safe-area-inset-top))]");
+    expect(team).toContain(
+      "max-h-[calc(100dvh-max(1.5rem,env(safe-area-inset-top))-max(1.5rem,env(safe-area-inset-bottom)))]",
+    );
+    expect(team).toContain("overflow-y-auto overscroll-contain");
+  });
+
+  it("keeps a Studio page heading when the active Bot name becomes a switcher", () => {
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+    const multipleAgents = chrome.slice(
+      chrome.indexOf("{agents.length > 1 ? ("),
+      chrome.indexOf(") : (", chrome.indexOf("{agents.length > 1 ? (")),
+    );
+
+    expect(multipleAgents).toContain('<h1 className="sr-only">{activeAgent.name}</h1>');
+    expect(multipleAgents).toContain('aria-label="Switch Bot"');
   });
 
   it("keeps daily navigation focused on Studio, Inbox, then Calls", () => {

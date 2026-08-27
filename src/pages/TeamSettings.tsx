@@ -275,12 +275,12 @@ export default function TeamSettings() {
 
       {isInviteOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-[max(0.75rem,env(safe-area-inset-left))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm sm:px-[max(1rem,env(safe-area-inset-left))] sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-[max(1rem,env(safe-area-inset-top))]"
           role="presentation"
         >
           <div
             ref={inviteDialogRef}
-            className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl"
+            className="max-h-[calc(100dvh-max(1.5rem,env(safe-area-inset-top))-max(1.5rem,env(safe-area-inset-bottom)))] w-full max-w-md overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-6 shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="team-invite-title"

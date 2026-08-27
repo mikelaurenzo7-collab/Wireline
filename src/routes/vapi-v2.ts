@@ -30,6 +30,10 @@ import { evaluateVapiWebhookAuth } from "../lib/vapi-webhook-auth";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
+import {
+  isVapiTenantEvidenceMessage,
+  vapiTenantWebhookPolicy,
+} from "../lib/vapi-tenant-webhook-policy";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { notifyInboundCall } from "../lib/mobile-push";
 import { clearVapiAssistantSpeaking, setVapiAssistantSpeaking } from "../lib/vapi-listen-gate";
@@ -274,6 +278,7 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
     const [userSettings] = await drizzle
       .select({
         subscriptionStatus: schema.settings.subscriptionStatus,
+        accountEnvironment: schema.settings.accountEnvironment,
         aiTier: schema.settings.aiTier,
         voiceLlmProvider: schema.settings.voiceLlmProvider,
         voiceLlmModel: schema.settings.voiceLlmModel,
@@ -286,6 +291,29 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
       .limit(1);
 
     const subscriptionStatus = userSettings?.subscriptionStatus ?? "pending_activation";
+    // The public showcase branches return above this tenant boundary and keep
+    // their explicit aggregate canary ceiling. For a resolved tenant, only an
+    // explicit production classification may create a new assistant, run a
+    // tool, or introduce a future callback as new work. Signed evidence and
+    // local call-state callbacks remain accepted so demo/test/unclassified
+    // workspaces cannot lose transcripts, DNC/consent truth, or call history.
+    const environmentAdmission = vapiTenantWebhookPolicy(
+      userSettings?.accountEnvironment,
+      String(message?.type || "unknown"),
+    );
+    if (!environmentAdmission.allowed) {
+      log.warn("Tenant Vapi new-work callback blocked by account environment", {
+        agentId: webhookAgentId,
+        userId: agent.user_id,
+        messageType: message?.type || "unknown",
+        code: environmentAdmission.code,
+      });
+      return res.status(environmentAdmission.status).json({
+        code: environmentAdmission.code,
+        error: environmentAdmission.message,
+      });
+    }
+    let externalEffectsAllowed = environmentAdmission.externalEffectsAllowed;
 
     if (subscriptionStatus !== "active") {
       if (message?.type === "assistant-request") {
@@ -301,20 +329,18 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
           },
         });
       }
-      // end-of-call-report is deliberately NOT denied. A suspended line still
-      // answers (with the suspension assistant above), so a real call really
-      // happened — and 403-ing its report threw away the call log, the
-      // transcript DNC/opt-out capture, and the TCPA compliance evidence for
-      // that call. A legal opt-out is not conditional on the tenant's billing
-      // state, and a tenant who reactivates must not find a hole in their
-      // history. Every other message type stays denied: a suspended line must
-      // not run tools, transfers, or live enrichment.
-      if (message?.type !== "end-of-call-report") {
+      // Evidence callbacks remain accepted. A suspended line still answers
+      // with the bounded assistant above, so its status, transcript, and final
+      // report are real records. New tools, transfers, and enrichment stay
+      // denied, and optional effects on accepted evidence stay disabled.
+      if (!isVapiTenantEvidenceMessage(String(message?.type || "unknown"))) {
         return res.status(403).json({ code: "ERROR", error: "Access Denied" });
       }
-      log.info("Suspended tenant end-of-call-report accepted for logging and compliance", {
+      externalEffectsAllowed = false;
+      log.info("Suspended tenant Vapi evidence accepted for logging and compliance", {
         agentId: webhookAgentId,
         subscriptionStatus,
+        messageType: message?.type || "unknown",
       });
     }
 
@@ -596,7 +622,12 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
 
           const callType = payload.call?.type;
           const isInbound = callType ? callType.toLowerCase().includes("inbound") : false;
-          if (isInbound && ["ringing", "queued"].includes(status || "") && agent?.user_id) {
+          if (
+            externalEffectsAllowed &&
+            isInbound &&
+            ["ringing", "queued"].includes(status || "") &&
+            agent?.user_id
+          ) {
             void notifyInboundCall(agent.user_id, {
               callId: id,
               fromNumber: customerNumber || "Unknown",
@@ -623,7 +654,7 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
               );
           }
 
-          if (customerNumber && agent?.user_id) {
+          if (externalEffectsAllowed && customerNumber && agent?.user_id) {
             const shouldEnrich = await claimLeadEnrichmentSlot(agent.user_id, customerNumber);
             if (shouldEnrich) {
               await enqueue(drizzle, {
@@ -678,7 +709,11 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
           );
         }
 
-        if (negativeHits >= 1 && shouldQueueWebhook("conversation-update")) {
+        if (
+          externalEffectsAllowed &&
+          negativeHits >= 1 &&
+          shouldQueueWebhook("conversation-update")
+        ) {
           try {
             await enqueue(drizzle, {
               userId: agent.user_id,

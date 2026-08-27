@@ -14,6 +14,7 @@
  */
 
 import { log } from "./server-context";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 import { getErrorMessage } from "./server-utils";
 import {
   isEmailSuppressed,
@@ -37,6 +38,23 @@ export interface SendResult {
   disposition: "accepted" | "suppressed" | "failed";
   id?: string;
   error?: string;
+}
+
+async function tenantEmailPolicyBlock(userId: string, action: string): Promise<SendResult | null> {
+  const policy = await liveExternalActionPolicyForUser(userId);
+  if (policy.allowed) return null;
+  log.info("[email-service] tenant email suppressed by account environment", {
+    userId,
+    action,
+    accountEnvironment: policy.environment ?? "missing",
+    code: policy.code,
+  });
+  return {
+    ok: false,
+    provider: "no-transport",
+    disposition: "suppressed",
+    error: policy.message,
+  };
 }
 
 function emailLogContext(email: string): {
@@ -175,6 +193,29 @@ export async function sendEmail(opts: {
     };
   }
   return await sendViaResend(opts);
+}
+
+/** Provider-backed platform email explicitly owned by one tenant workspace. */
+export async function sendTenantEmail(opts: {
+  userId: string;
+  action: string;
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  headers?: Record<string, string>;
+  idempotencyKey?: string;
+}): Promise<SendResult> {
+  const blocked = await tenantEmailPolicyBlock(opts.userId, opts.action);
+  if (blocked) return blocked;
+  return sendEmail({
+    to: opts.to,
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
+    headers: opts.headers,
+    idempotencyKey: opts.idempotencyKey,
+  });
 }
 
 export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Promise<SendResult> {
@@ -402,11 +443,14 @@ export async function sendEmailVerification(opts: {
 }
 
 export async function sendUrgentEscalationEmail(opts: {
+  userId: string;
   to: string;
   title: string;
   message: string;
   callId?: string;
 }): Promise<SendResult> {
+  const blocked = await tenantEmailPolicyBlock(opts.userId, "urgent_escalation_email");
+  if (blocked) return blocked;
   const subject = `🚨 ${opts.title}`;
   const callIdLine = opts.callId ? `Call ID: ${opts.callId}` : "";
   const text = [
@@ -451,12 +495,15 @@ export async function sendUrgentEscalationEmail(opts: {
 }
 
 export async function sendPaymentFailedEmail(opts: {
+  userId: string;
   to: string;
   amountDisplay: string;
   invoiceUrl?: string;
   updateCardUrl: string;
   idempotencyKey?: string;
 }): Promise<SendResult> {
+  const blocked = await tenantEmailPolicyBlock(opts.userId, "payment_failed_email");
+  if (blocked) return blocked;
   const subject = "Your BotBound payment failed";
   const text = [
     "Hi,",
@@ -506,11 +553,14 @@ export async function sendPaymentFailedEmail(opts: {
 }
 
 export async function sendTrialEndingSoonEmail(opts: {
+  userId: string;
   to: string;
   daysLeft: number;
   checkoutUrl: string;
   idempotencyKey?: string;
 }): Promise<SendResult> {
+  const blocked = await tenantEmailPolicyBlock(opts.userId, "trial_ending_soon_email");
+  if (blocked) return blocked;
   if (!getPostalAddress()) {
     log.error("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing", {
       ...emailLogContext(opts.to),

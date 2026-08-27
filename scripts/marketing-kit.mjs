@@ -143,8 +143,8 @@ function mockApi(pathname) {
   }
   if (pathname === "/api/oauth/crm/status") {
     return json({
-      salesforce: { connected: true, email: "ops@northstarmfg.com", connected_at: now },
-      hubspot: { connected: true, email: "jordan@apexrealty.io", connected_at: now },
+      salesforce: { connected: true, email: "salesforce@example.com", connected_at: now },
+      hubspot: { connected: true, email: "hubspot@example.com", connected_at: now },
       slack: { connected: true, team: "BotBound Revenue", connected_at: now },
       zoom: { connected: false, configured: true },
       apollo: { connected: true, platform_active: true },
@@ -166,13 +166,13 @@ function mockApi(pathname) {
         {
           id: "e1",
           provider: "google",
-          email_address: "ops@botbound.test",
+          email_address: "ops@example.com",
           agent_id: "demo-avery-2f85",
         },
         {
           id: "e2",
           provider: "microsoft",
-          email_address: "billing@botbound.test",
+          email_address: "billing@example.com",
           agent_id: "demo-riley-2f85",
         },
       ],
@@ -184,7 +184,7 @@ function mockApi(pathname) {
         {
           id: "h1",
           agent_id: "demo-avery-2f85",
-          customer_number: "+14155551011",
+          customer_number: "+14155550111",
           lead_score: 94,
           intent_label: "schedule_demo",
           summary: "Qualified inbound — booked demo Thursday 2pm",
@@ -193,7 +193,7 @@ function mockApi(pathname) {
         {
           id: "h2",
           agent_id: "demo-riley-2f85",
-          customer_number: "+16175552031",
+          customer_number: "+16175550112",
           lead_score: 88,
           intent_label: "buy_now",
           summary: "Discovery — HIPAA + compliance walkthrough",
@@ -222,7 +222,7 @@ function mockApi(pathname) {
       logs: Array.from({ length: 8 }, (_, i) => ({
         id: String(1000 + i),
         agent_id: i % 2 ? "demo-riley-2f85" : "demo-avery-2f85",
-        customer_number: "+14155551011",
+        customer_number: "+14155550111",
         direction: i % 2 ? "inbound" : "outbound",
         duration_seconds: 120 + i * 40,
         summary: "Demo showcase call — qualified lead, booked follow up",

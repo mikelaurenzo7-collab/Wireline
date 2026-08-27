@@ -2,9 +2,14 @@ import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { xaiPhoneBindings } from "../../db/xai-voice-schema";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../account-environment-policy";
 import { isDncBlocked } from "../compliance";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { drizzle, log } from "../server-context";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { nativeOutboundAmdParams } from "./native-outbound-amd";
 import { issueXAIOutboundToken, xaiOutboundTokenReady } from "./xai-outbound-token";
@@ -16,6 +21,7 @@ import {
 import {
   normalizeXAIPhoneNumber,
   twilioXAIOutboundBridgeUrl,
+  twilioXAIOutboundFallbackUrl,
   twilioXAIOutboundStatusUrl,
 } from "./xai-sip-config";
 
@@ -81,7 +87,9 @@ function ambiguousResult(leadId: bigint): PlaceCallResult {
  * xAI SIP number. The placement claim is durable before the carrier request,
  * so overlapping campaign/cadence/callback workers cannot double-dial a lead.
  */
-export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<PlaceCallResult> {
+async function placeOutboundCallAfterDeletionFence(
+  input: PlaceOutboundCallInput,
+): Promise<PlaceCallResult> {
   const customerNumber = normalizeXAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
@@ -145,7 +153,7 @@ export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<
   const claim = await claimNativeOutboundPlacement({ ...input, customerNumber });
   if (!claim.ok) return claim;
   const { lead, created, placementId } = claim;
-  const { token } = issueXAIOutboundToken({ leadId: lead.id });
+  const { token } = issueXAIOutboundToken({ leadId: lead.id, placementId });
   const telemarketing = isMarketingCallPurpose(input.callPurpose);
   const amd = nativeOutboundAmdParams(input.callPurpose);
 
@@ -155,6 +163,8 @@ export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<
       from: fromNumber,
       url: twilioXAIOutboundBridgeUrl(token),
       method: "POST",
+      fallbackUrl: twilioXAIOutboundFallbackUrl(token),
+      fallbackMethod: "POST",
       statusCallback: twilioXAIOutboundStatusUrl(token),
       statusCallbackMethod: "POST",
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
@@ -251,4 +261,34 @@ export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<
           leadId: String(lead.id),
         };
   }
+}
+
+/**
+ * Every Twilio call-create path crosses one durable account-deletion lease at
+ * this shared boundary. Accepted and ambiguous carrier outcomes retain the
+ * lease through the native call safety horizon; definite local/provider
+ * rejections release it immediately. Cadence/callback leases are reused by
+ * the provider-fence context, so those paths do not double-lease.
+ */
+export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<PlaceCallResult> {
+  await assertLiveExternalActionAllowed(input.userId, "twilio_outbound_call_create");
+  await assertExternalEntityActionAllowed(input.userId, "twilio_outbound_call_create", {
+    phone: input.customerNumber,
+    leadId: input.leadId,
+  });
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId: input.userId,
+    operation: "twilio_outbound_call_create",
+    ttlMs: 15 * 60_000,
+    retainOnSuccess: (result) => Boolean(result.ok || result.providerOutcomeAmbiguous),
+    perform: () => placeOutboundCallAfterDeletionFence(input),
+  });
+  return outcome.performed
+    ? outcome.result
+    : {
+        ok: false,
+        status: 409,
+        error: "Outbound calling is unavailable while terminal account deletion is in progress.",
+        doNotRetry: true,
+      };
 }

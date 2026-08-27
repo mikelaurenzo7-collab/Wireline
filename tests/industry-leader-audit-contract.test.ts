@@ -35,10 +35,12 @@ describe("industry-leader audit hardening contracts", () => {
 
   it("persists failover voicemail recordings instead of log-only", () => {
     const webhook = read("src/routes/twilio-webhook-base.ts");
-    expect(webhook).toContain("Voicemail left during voice failover");
+    expect(webhook).toContain("Voicemail left during BotBound call failover");
+    expect(webhook).not.toContain("Voicemail left during voice failover (Vapi unavailable)");
     expect(webhook).toContain("schema.callLogs");
     expect(webhook).toContain("recordingUrl");
-    expect(webhook).toContain("sendEmail");
+    expect(webhook).toContain("sendTenantEmail");
+    expect(webhook).toContain('action: "voicemail_failover_owner_notification"');
     // tenantStore is AsyncLocalStorage<string> — must pass userId string, not an object.
     expect(webhook).toMatch(/tenantStore\.run\(tenantUserId,\s*async\s*\(\)\s*=>/);
     expect(webhook).not.toContain("tenantStore.run({ userId:");

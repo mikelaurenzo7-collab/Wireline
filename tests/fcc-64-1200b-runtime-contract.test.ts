@@ -36,7 +36,7 @@ describe("64.1200(b) runtime wiring", () => {
       // recorded request earns the "callback" class — which drops the (b)(3)
       // announcement. Everything else stays marketing and keeps it.
       ["src/lib/callback-engine.ts", /consumerRequested \? "callback" : "marketing_or_sales"/],
-      ["src/routes/intake-routes.ts", /callPurpose: "marketing_or_sales"/],
+      ["src/lib/intake-auto-dial.ts", /callPurpose: "marketing_or_sales"/],
       // Web/mobile manual dials pass the request's validated purpose through.
       ["src/routes/outbound-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
       [
@@ -44,7 +44,10 @@ describe("64.1200(b) runtime wiring", () => {
         /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/,
       ],
       ["src/routes/mobile-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
-      ["src/routes/native-mobile-voice-routes.ts", /placeOutboundCall\(\{[\s\S]{0,280}callPurpose,/],
+      [
+        "src/routes/native-mobile-voice-routes.ts",
+        /placeOutboundCall\(\{[\s\S]{0,280}callPurpose,/,
+      ],
     ];
     for (const [file, pattern] of sites) {
       expect(read(file), `${file} must state a call purpose`).toMatch(pattern);
@@ -134,7 +137,9 @@ describe("(b)(3) applies to answering machines", () => {
     expect(bridge).toContain("emptyTwiml()");
     expect(bridge).toContain("resolveRetryableLeadStatus");
     expect(bridge).toContain("IN_FLIGHT_LEAD_STATUSES");
-    expect(read("src/lib/outbound-status.ts")).toContain("export function resolveRetryableLeadStatus");
+    expect(read("src/lib/outbound-status.ts")).toContain(
+      "export function resolveRetryableLeadStatus",
+    );
   });
 
   it("tells the model the same rule, so it cannot speak one anyway", () => {

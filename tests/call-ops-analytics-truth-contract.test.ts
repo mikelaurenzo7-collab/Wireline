@@ -57,4 +57,17 @@ describe("Call Ops analytics truth", () => {
     expect(callOps).not.toContain("/api/calls?limit=500");
     expect(callOps).not.toContain("function AnalyticsContent()");
   });
+
+  it("keeps analytics recoverable without erasing the last successful view", () => {
+    expect(analytics).toContain("const loadAnalytics = useCallback");
+    expect(analytics).toContain("if (loading && !analytics && !error) return <CardRowSkeleton />");
+    expect(analytics).not.toContain("setAnalytics(null)");
+    expect(analytics).toContain('aria-label="Retry call analytics"');
+    expect(analytics).toContain("onClick={() => void loadAnalytics()}");
+    expect(analytics).toContain('title="Analytics may be out of date"');
+    expect(analytics).toContain("Your last loaded metrics remain available below.");
+    expect(analytics.indexOf("{staleDataNotice}")).toBeLessThan(
+      analytics.indexOf('className="grid grid-cols-2 gap-3 sm:grid-cols-4"'),
+    );
+  });
 });

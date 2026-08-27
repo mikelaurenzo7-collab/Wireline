@@ -57,6 +57,36 @@ function placementLeaseActive(nativeVoice: Record<string, unknown>, nowMs: numbe
   );
 }
 
+/**
+ * Start each carrier placement with a fresh attempt record. Lead-level metadata
+ * survives, but no CallSid, xAI id, AMD outcome, bridge marker, or TwiML replay
+ * from a prior attempt may be mistaken for acceptance of the new request.
+ */
+export function resetNativeOutboundPlacementMetadata(
+  metadata: Record<string, unknown>,
+  input: {
+    callPurpose: OutboundCallPurpose;
+    placementId: string;
+    claimedAt: Date;
+    created: boolean;
+  },
+): Record<string, unknown> {
+  const claimedAt = input.claimedAt.toISOString();
+  return {
+    ...metadata,
+    native_voice: {
+      provider: "twilio_xai_sip",
+      call_purpose: input.callPurpose,
+      placement_id: input.placementId,
+      placement_claimed_at: claimedAt,
+      state: "creating",
+      do_not_retry: false,
+      ...(input.created ? { created_at: claimedAt } : {}),
+      updated_at: claimedAt,
+    },
+  };
+}
+
 export async function claimNativeOutboundPlacement(input: {
   userId: string;
   agentId: string;
@@ -85,17 +115,12 @@ export async function claimNativeOutboundPlacement(input: {
         context: input.context?.trim() || null,
         status: LEAD_STATUS.DIALING,
         attempts: 1,
-        metadata: {
-          ...asRecord(input.leadMetadata),
-          native_voice: {
-            provider: "twilio_xai_sip",
-            call_purpose: input.callPurpose,
-            placement_id: placementId,
-            placement_claimed_at: now.toISOString(),
-            state: "creating",
-            created_at: now.toISOString(),
-          },
-        },
+        metadata: resetNativeOutboundPlacementMetadata(asRecord(input.leadMetadata), {
+          callPurpose: input.callPurpose,
+          placementId,
+          claimedAt: now,
+          created: true,
+        }),
       })
       .returning();
     if (!lead) {
@@ -145,25 +170,15 @@ export async function claimNativeOutboundPlacement(input: {
         context: input.context?.trim() || lead.context,
         callId: null,
         status: LEAD_STATUS.DIALING,
-        metadata: {
-          ...metadata,
-          native_voice: {
-            ...nativeVoice,
-            provider: "twilio_xai_sip",
-            call_purpose: input.callPurpose,
-            placement_id: placementId,
-            placement_claimed_at: now.toISOString(),
-            state: "creating",
-            do_not_retry: false,
-            updated_at: now.toISOString(),
-          },
-        },
+        metadata: resetNativeOutboundPlacementMetadata(metadata, {
+          callPurpose: input.callPurpose,
+          placementId,
+          claimedAt: now,
+          created: false,
+        }),
       })
       .where(
-        and(
-          eq(schema.outboundLeads.id, lead.id),
-          eq(schema.outboundLeads.userId, input.userId),
-        ),
+        and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, input.userId)),
       )
       .returning();
     if (!claimed) {
@@ -233,10 +248,7 @@ export async function markNativeOutboundPlacementAccepted(input: {
         },
       })
       .where(
-        and(
-          eq(schema.outboundLeads.id, lead.id),
-          eq(schema.outboundLeads.userId, input.userId),
-        ),
+        and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, input.userId)),
       );
     return { accepted: true, callId: input.callSid };
   });
@@ -299,10 +311,7 @@ export async function markNativeOutboundPlacementFailure(input: {
         },
       })
       .where(
-        and(
-          eq(schema.outboundLeads.id, lead.id),
-          eq(schema.outboundLeads.userId, input.userId),
-        ),
+        and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, input.userId)),
       );
     return { accepted: false, callId: null };
   });

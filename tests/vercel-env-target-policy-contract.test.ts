@@ -34,5 +34,19 @@ describe("Vercel env target policy stays mutually satisfiable", () => {
       'const missingTargets = ["production"].filter((t) => !covered.has(t));',
     );
     expect(health).toContain("check-deployment-boundaries.mjs");
+    for (const key of [
+      "OPENAI_API_KEY",
+      "XAI_API_KEY",
+      "TWILIO_WEBHOOK_BASE_URL",
+      "STRIPE_WEBHOOK_SECRET",
+      "RESEND_API_KEY",
+      "AGENTMAIL_DEFAULT_DOMAIN",
+      "CRON_SECRET",
+      "WIRELINE_RECONCILE_STRIPE_PORTAL",
+    ]) {
+      expect(health).toContain(`"${key}"`);
+    }
+    expect(health).not.toContain("CORE READY");
+    expect(health).toContain("METADATA COMPLETE");
   });
 });

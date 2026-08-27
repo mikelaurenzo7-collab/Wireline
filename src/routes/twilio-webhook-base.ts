@@ -39,6 +39,7 @@ import {
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
 import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
+import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
 
 const router = Router();
 
@@ -204,6 +205,40 @@ async function lookupTenant(toNumber: string): Promise<string | null> {
   return null;
 }
 
+async function resolveProductionInboundTenant(
+  toNumber: string,
+  route: string,
+): Promise<string | null> {
+  try {
+    const tenantUserId = toNumber ? await lookupTenant(toNumber) : null;
+    if (!tenantUserId) {
+      log.warn("Signed Twilio inbound callback has no tenant", {
+        route,
+        to_suffix: phoneSuffixForLog(toNumber),
+      });
+      return null;
+    }
+    const decision = await resolveTwilioInboundEnvironment(tenantUserId);
+    if (!decision.allowed) {
+      log.warn("Signed Twilio inbound media suppressed by account environment", {
+        route,
+        tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+        account_environment: decision.environment ?? "missing",
+        code: decision.code,
+      });
+      return null;
+    }
+    return tenantUserId;
+  } catch (error) {
+    log.error("Signed Twilio inbound tenant lookup failed closed", {
+      route,
+      to_suffix: phoneSuffixForLog(toNumber),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const auth = evaluateTwilioWebhookAuth(req);
   if (!auth.ok) {
@@ -223,6 +258,9 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const body = (req.body?.Body as string | undefined) || "";
   const messageSid = (req.body?.MessageSid as string | undefined) || "";
   const trimmed = body.trim().toLowerCase();
+  const isOptOut = matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS);
+  const isOptIn = matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact");
+  const isHelp = matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact");
 
   log.info("Twilio inbound SMS", {
     from_suffix: phoneSuffixForLog(from),
@@ -240,9 +278,20 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   }
 
   const fromNormalized = sanitizePhone(from);
+  const replyEnvironment =
+    isOptOut || isOptIn || isHelp ? await resolveTwilioInboundEnvironment(tenantUserId) : null;
+  if (replyEnvironment && !replyEnvironment.allowed) {
+    log.warn("Signed Twilio inbound SMS reply suppressed by account environment", {
+      tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+      account_environment: replyEnvironment.environment ?? "missing",
+      code: replyEnvironment.code,
+    });
+  }
+  const appReply = (message: string): string =>
+    replyEnvironment?.allowed ? twimlReply(message) : twimlEmpty();
 
   return tenantStore.run(tenantUserId, async () => {
-    if (matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS)) {
+    if (isOptOut) {
       try {
         await drizzle
           .insert(schema.dncList)
@@ -264,6 +313,15 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           state: "opted_out",
         });
 
+        await drizzle.transaction(async (tx) =>
+          persistInboundSmsEvidence(tx, {
+            userId: tenantUserId,
+            customerNumber: fromNormalized,
+            body,
+            messageSid,
+          }),
+        );
+
         log.info("SMS opt-out processed", {
           tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
           from_suffix: phoneSuffixForLog(fromNormalized),
@@ -278,7 +336,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         return res
           .status(200)
           .send(
-            twimlReply(
+            appReply(
               "We couldn't process your unsubscribe request just now. Please reply STOP again in a few minutes.",
             ),
           );
@@ -287,18 +345,17 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       return res
         .status(200)
         .send(
-          twimlReply(
+          appReply(
             "You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.",
           ),
         );
     }
 
-    // Exact only — see matchesCarrierKeyword. Both this branch and the HELP
-    // branch below answer the webhook and return, so a leading-word match on an
-    // ordinary reply ("Yes please, 3pm works", "Help me reschedule") wrote a
-    // consent event the consumer never sent and dropped their message before it
-    // could reach the inbound store further down this handler.
-    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS, "exact")) {
+    // Exact only — see matchesCarrierKeyword. A leading-word match on an
+    // ordinary reply ("Yes please, 3pm works", "Help me reschedule") would
+    // fabricate a consent event. Control messages are still stored as inbox
+    // evidence before this handler returns its environment-gated reply.
+    if (isOptIn) {
       try {
         await drizzle
           .delete(schema.dncList)
@@ -323,6 +380,15 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           state: "opted_in",
         });
 
+        await drizzle.transaction(async (tx) =>
+          persistInboundSmsEvidence(tx, {
+            userId: tenantUserId,
+            customerNumber: fromNormalized,
+            body,
+            messageSid,
+          }),
+        );
+
         log.info("SMS opt-in processed", {
           tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
           from_suffix: phoneSuffixForLog(fromNormalized),
@@ -332,20 +398,35 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         return res
           .status(200)
           .send(
-            twimlReply(
+            appReply(
               "We couldn't process your resubscribe request just now. Please reply START again in a few minutes.",
             ),
           );
       }
 
-      return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
+      return res.status(200).send(appReply("You have been resubscribed. Welcome back."));
     }
 
-    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS, "exact")) {
+    if (isHelp) {
+      try {
+        await drizzle.transaction(async (tx) =>
+          persistInboundSmsEvidence(tx, {
+            userId: tenantUserId,
+            customerNumber: fromNormalized,
+            body,
+            messageSid,
+          }),
+        );
+      } catch (e: any) {
+        log.error("Inbound SMS HELP evidence persist failed, requesting Twilio redelivery", {
+          error: e?.message,
+        });
+        return res.status(503).send(twimlEmpty());
+      }
       return res
         .status(200)
         .send(
-          twimlReply(
+          appReply(
             "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
           ),
         );
@@ -365,59 +446,14 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     }
 
     try {
-      await drizzle.transaction(async (tx) => {
-        // Establish the conversation row without racing another first message.
-        // A conflicting insert is expected when two messages arrive together;
-        // the unique (user_id, customer_number) index selects the canonical row.
-        const [createdThread] = await tx
-          .insert(schema.smsThreads)
-          .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 0 })
-          .onConflictDoNothing({
-            target: [schema.smsThreads.userId, schema.smsThreads.customerNumber],
-          })
-          .returning({ id: schema.smsThreads.id });
-
-        const [thread] = createdThread
-          ? [createdThread]
-          : await tx
-              .select({ id: schema.smsThreads.id })
-              .from(schema.smsThreads)
-              .where(
-                and(
-                  eq(schema.smsThreads.userId, tenantUserId),
-                  eq(schema.smsThreads.customerNumber, fromNormalized),
-                ),
-              )
-              .limit(1);
-        if (!thread?.id) throw new Error("SMS thread could not be resolved after insert conflict");
-
-        // Let the provider SID unique index arbitrate concurrent webhook retries.
-        // Only the transaction that actually persists the message increments the
-        // unread counter, preventing both duplicate over-counts and lost updates.
-        const [insertedMessage] = await tx
-          .insert(schema.smsMessages)
-          .values({
-            userId: tenantUserId,
-            threadId: thread.id,
-            direction: "in",
-            body,
-            twilioSid: messageSid || null,
-          })
-          .onConflictDoNothing()
-          .returning({ id: schema.smsMessages.id });
-        if (!insertedMessage) return;
-
-        await tx
-          .update(schema.smsThreads)
-          .set({
-            lastMessageAt: new Date(),
-            unreadCount: sql`coalesce(${schema.smsThreads.unreadCount}, 0) + 1`,
-            status: "open",
-          })
-          .where(
-            and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, tenantUserId)),
-          );
-      });
+      await drizzle.transaction(async (tx) =>
+        persistInboundSmsEvidence(tx, {
+          userId: tenantUserId,
+          customerNumber: fromNormalized,
+          body,
+          messageSid,
+        }),
+      );
     } catch (e: any) {
       // Provisioned Messaging URLs opt into 5xx retries. Combined with the
       // provider-SID unique index above, a transient database failure becomes
@@ -432,6 +468,65 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   });
 });
 
+export async function persistInboundSmsEvidence(
+  tx: typeof drizzle,
+  input: {
+    userId: string;
+    customerNumber: string;
+    body: string;
+    messageSid: string;
+  },
+): Promise<void> {
+  // Establish the conversation row without racing another first message. A
+  // conflicting insert is expected when two messages arrive together; the
+  // unique tenant + customer index selects the canonical row.
+  const [createdThread] = await tx
+    .insert(schema.smsThreads)
+    .values({ userId: input.userId, customerNumber: input.customerNumber, unreadCount: 0 })
+    .onConflictDoNothing({
+      target: [schema.smsThreads.userId, schema.smsThreads.customerNumber],
+    })
+    .returning({ id: schema.smsThreads.id });
+
+  const [thread] = createdThread
+    ? [createdThread]
+    : await tx
+        .select({ id: schema.smsThreads.id })
+        .from(schema.smsThreads)
+        .where(
+          and(
+            eq(schema.smsThreads.userId, input.userId),
+            eq(schema.smsThreads.customerNumber, input.customerNumber),
+          ),
+        )
+        .limit(1);
+  if (!thread?.id) throw new Error("SMS thread could not be resolved after insert conflict");
+
+  // Let the provider SID unique index arbitrate concurrent webhook retries.
+  // Only the transaction that persists the message increments unread state.
+  const [insertedMessage] = await tx
+    .insert(schema.smsMessages)
+    .values({
+      userId: input.userId,
+      threadId: thread.id,
+      direction: "in",
+      body: input.body,
+      twilioSid: input.messageSid || null,
+    })
+    .onConflictDoNothing()
+    .returning({ id: schema.smsMessages.id });
+  if (!insertedMessage) return;
+
+  await tx
+    .update(schema.smsThreads)
+    .set({
+      lastMessageAt: new Date(),
+      unreadCount: sql`coalesce(${schema.smsThreads.unreadCount}, 0) + 1`,
+      status: "open",
+    })
+    .where(and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, input.userId)));
+}
+
 router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
@@ -441,6 +536,9 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   const to = (req.body?.To as string | undefined) || "";
   const from = (req.body?.From as string | undefined) || "";
+  const tenantUserId = await resolveProductionInboundTenant(to, req.path);
+  if (!tenantUserId) return res.status(200).send(twimlHangup());
+
   log.error("VAPI FAILOVER TRIGGERED", {
     to_suffix: phoneSuffixForLog(to),
     from_suffix: phoneSuffixForLog(from),
@@ -448,22 +546,19 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   let fallbackNumber: string | null = null;
   try {
-    const tenantUserId = await lookupTenant(to);
-    if (tenantUserId) {
-      const [settings] = await drizzle
-        .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, tenantUserId))
-        .limit(1);
-      fallbackNumber = validE164(settings?.humanFallbackNumber);
-      if (settings?.humanFallbackNumber && !fallbackNumber) {
-        log.warn("Failover number is not valid E.164; degrading to voicemail", {
-          tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
-        });
-      }
+    const [settings] = await drizzle
+      .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, tenantUserId))
+      .limit(1);
+    fallbackNumber = validE164(settings?.humanFallbackNumber);
+    if (settings?.humanFallbackNumber && !fallbackNumber) {
+      log.warn("Failover number is not valid E.164; degrading to voicemail", {
+        tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+      });
     }
   } catch (error) {
-    log.error("Failover tenant lookup failed; degrading to voicemail", {
+    log.error("Failover settings lookup failed; degrading to voicemail", {
       error: error instanceof Error ? error.message : String(error),
       to_suffix: phoneSuffixForLog(to),
     });
@@ -491,6 +586,10 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
     return res.status(403).send(twimlHangup());
   }
 
+  const to = typeof req.body?.To === "string" ? req.body.To : "";
+  const tenantUserId = await resolveProductionInboundTenant(to, req.path);
+  if (!tenantUserId) return res.status(200).send(twimlHangup());
+
   const dialStatus =
     typeof req.body?.DialCallStatus === "string"
       ? req.body.DialCallStatus.trim().toLowerCase()
@@ -499,7 +598,6 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
 
   if (dialStatus === "completed") return res.status(200).send(twimlHangup());
 
-  const to = typeof req.body?.To === "string" ? req.body.To : "";
   return res.status(200).send(failoverVoicemailTwiml(false, await resolveFailoverCompliance(to)));
 });
 
@@ -555,7 +653,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
           durationSeconds,
           recordingUrl,
           transcript: transcription || null,
-          summary: "Voicemail left during voice failover (Vapi unavailable).",
+          summary: "Voicemail left during BotBound call failover.",
           outcomeTag: "voicemail",
           intentLabel: "voicemail",
         })
@@ -585,7 +683,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         .where(eq(schema.users.id, tenantUserId))
         .limit(1);
       if (owner?.email) {
-        const { sendEmail } = await import("../lib/email-service");
+        const { sendTenantEmail } = await import("../lib/email-service");
         const voicemailEmail = buildFailoverVoicemailEmail({
           from,
           to,
@@ -593,7 +691,9 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
           recordingUrl: publicAssetUrl(`/api/calls/${String(voicemail.id)}/recording`),
           transcription,
         });
-        const notification = await sendEmail({
+        const notification = await sendTenantEmail({
+          userId: tenantUserId,
+          action: "voicemail_failover_owner_notification",
           to: owner.email,
           subject: "BotBound: voicemail left during call failover",
           ...voicemailEmail,
@@ -747,7 +847,7 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     // into an unbounded Twilio + Vapi session.
     twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
-    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. This demo line is taking a quick break while we finish its connection. Please try again soon. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
   }
   twiml += `</Response>`;

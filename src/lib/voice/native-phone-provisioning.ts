@@ -1,13 +1,19 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { ensureTenantTelecomDefaults, findAgentPhoneLine } from "../agent-phone-lines";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { getIncludedPhoneLineSlots } from "../phone-line-entitlements";
+import {
+  clearNativeTwilioPurchaseClaim,
+  NATIVE_TWILIO_PURCHASE_OPERATION_LEASE_MS,
+} from "../orphan-carrier-ledger";
 import { isVaultConfigured } from "../secret-vault";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import {
   NATIVE_PROVISIONING_UNAVAILABLE,
@@ -147,7 +153,7 @@ async function activateLine(input: {
   }
 }
 
-export async function provisionNativeTenantNumber(input: {
+async function provisionNativeTenantNumberUnfenced(input: {
   userId: string;
   agentId?: string;
   areaCode?: string;
@@ -155,7 +161,11 @@ export async function provisionNativeTenantNumber(input: {
   campaignLabel?: string;
 }): Promise<NativePhoneProvisionResult> {
   if (!autoProvisioningEnabled()) {
-    return { ok: false, code: "PHONE_PROVISIONING_DISABLED", error: NATIVE_PROVISIONING_UNAVAILABLE };
+    return {
+      ok: false,
+      code: "PHONE_PROVISIONING_DISABLED",
+      error: NATIVE_PROVISIONING_UNAVAILABLE,
+    };
   }
   if (!getTwilioClient()) {
     return { ok: false, code: "TWILIO_NOT_CONFIGURED", error: NATIVE_PROVISIONING_UNAVAILABLE };
@@ -201,10 +211,7 @@ export async function provisionNativeTenantNumber(input: {
         .select()
         .from(schema.phoneNumbers)
         .where(
-          and(
-            eq(schema.phoneNumbers.userId, input.userId),
-            isNull(schema.phoneNumbers.agentId),
-          ),
+          and(eq(schema.phoneNumbers.userId, input.userId), isNull(schema.phoneNumbers.agentId)),
         )
         .limit(1);
       if (reusable) {
@@ -268,7 +275,8 @@ export async function provisionNativeTenantNumber(input: {
     return {
       ok: false,
       code: "PHONE_PERSISTENCE_FAILED",
-      error: "The number could not be saved, so its carrier allocation was released or queued for cleanup.",
+      error:
+        "The number could not be saved, so its carrier allocation was released or queued for cleanup.",
     };
   }
 
@@ -296,6 +304,21 @@ export async function provisionNativeTenantNumber(input: {
     }
   }
 
+  try {
+    // Only canonical ownership or confirmed carrier removal may retire the
+    // pre-provider claim. If this write fails, raise rather than invite a
+    // duplicate purchase; the canonical row lets reconciliation settle safely.
+    await clearNativeTwilioPurchaseClaim(purchase.claim);
+  } catch (error) {
+    log.error("Native phone ownership persisted but its purchase claim could not be cleared", {
+      userId: input.userId,
+      operationId: purchase.claim.operationId,
+      phoneSuffix: purchase.phoneNumber.slice(-4),
+      error: getErrorMessage(error),
+    });
+    throw AppError.serviceUnavailable(NATIVE_PROVISIONING_UNAVAILABLE);
+  }
+
   await ensureTenantTelecomDefaults(input.userId, {
     phoneNumberE164: purchase.phoneNumber,
     smsCapable: true,
@@ -316,4 +339,39 @@ export async function provisionNativeTenantNumber(input: {
     carrierNumberId: purchase.sid,
     reused: false,
   });
+}
+
+export async function provisionNativeTenantNumber(input: {
+  userId: string;
+  agentId?: string;
+  areaCode?: string;
+  preferredPhoneNumber?: string;
+  campaignLabel?: string;
+}): Promise<NativePhoneProvisionResult> {
+  const environmentPolicy = await liveExternalActionPolicyForUser(input.userId);
+  if (!environmentPolicy.allowed) {
+    log.warn("Native phone provisioning blocked by account environment", {
+      userId: input.userId,
+      accountEnvironment: environmentPolicy.environment ?? "missing",
+      code: environmentPolicy.code,
+    });
+    return {
+      ok: false,
+      code: environmentPolicy.code,
+      error: environmentPolicy.message,
+    };
+  }
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId: input.userId,
+    operation: "native_phone_provision",
+    ttlMs: NATIVE_TWILIO_PURCHASE_OPERATION_LEASE_MS,
+    perform: () => provisionNativeTenantNumberUnfenced(input),
+  });
+  return outcome.performed
+    ? outcome.result
+    : {
+        ok: false,
+        code: "ACCOUNT_DELETION_PENDING",
+        error: "Phone provisioning is unavailable while terminal account deletion is in progress.",
+      };
 }

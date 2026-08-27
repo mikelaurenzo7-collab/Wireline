@@ -18,9 +18,17 @@ describe("stripe sync cannot silently swallow a paying customer", () => {
     // mapping row lost to the customer-recovery upsert (or deletion) must be
     // rebuilt from the event, not warned about and acked — Stripe never
     // redelivers an acked event.
-    expect(helpers).toMatch(
-      /if \(!existing\?\.userId\) \{[\s\S]{0,900}wireline_user_id[\s\S]{0,900}onConflictDoUpdate/,
-    );
+    const missingMapping = helpers.indexOf("if (!existing?.userId)");
+    const metadataOwner = helpers.indexOf("wireline_user_id", missingMapping);
+    const liveOwnerGate = helpers.indexOf("stripeOwnerUserExists(metadataUserId)", metadataOwner);
+    const repair = helpers.indexOf(".insert(schema.subscriptions)", liveOwnerGate);
+    const upsert = helpers.indexOf(".onConflictDoUpdate", repair);
+
+    expect(missingMapping).toBeGreaterThan(-1);
+    expect(metadataOwner).toBeGreaterThan(missingMapping);
+    expect(liveOwnerGate).toBeGreaterThan(metadataOwner);
+    expect(repair).toBeGreaterThan(liveOwnerGate);
+    expect(upsert).toBeGreaterThan(repair);
     expect(helpers).not.toContain("no subscription row for customer — skipping mirror");
   });
 

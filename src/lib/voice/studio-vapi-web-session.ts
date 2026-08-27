@@ -2,9 +2,11 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { buildVapiAssistant } from "../vapi-assistant-factory-v2";
 import {
   STUDIO_BROWSER_TEST_MAX_SECONDS,
@@ -89,10 +91,7 @@ export function verifyStudioVapiWebTicket(token: string): StudioVapiWebTicketVer
   }
 }
 
-export async function createStudioVapiWebSession(input: {
-  userId: string;
-  agentId: string;
-}) {
+export async function createStudioVapiWebSession(input: { userId: string; agentId: string }) {
   if (!studioVapiWebTicketingReady()) {
     throw AppError.fromHttpStatus(503, "The live phone test is temporarily unavailable.");
   }
@@ -127,65 +126,80 @@ export async function proxyStudioVapiWebCall(token: string): Promise<{
     throw AppError.fromHttpStatus(401, "The live test ticket is invalid or expired.");
   }
 
+  await assertLiveExternalActionAllowed(verification.claims.userId, "vapi_studio_web_call_create");
+
   const privateKey = String(process.env.VAPI_PRIVATE_KEY || "").trim();
   if (!privateKey) {
     throw AppError.fromHttpStatus(503, "The live phone test is temporarily unavailable.");
   }
 
-  return tenantStore.run(verification.claims.userId, async () => {
-    const [agent] = await drizzle
-      .select({ id: schema.agents.id })
-      .from(schema.agents)
-      .where(
-        and(
-          eq(schema.agents.id, verification.claims.agentId),
-          eq(schema.agents.userId, verification.claims.userId),
-        ),
-      )
-      .limit(1);
-    if (!agent) throw AppError.fromHttpStatus(404, "That live test profile was not found.");
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId: verification.claims.userId,
+    operation: "vapi_studio_web_call_create",
+    ttlMs: 10 * 60_000,
+    retainOnSuccess: (result) => result.status >= 200 && result.status < 300,
+    perform: () =>
+      tenantStore.run(verification.claims.userId, async () => {
+        const [agent] = await drizzle
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(
+            and(
+              eq(schema.agents.id, verification.claims.agentId),
+              eq(schema.agents.userId, verification.claims.userId),
+            ),
+          )
+          .limit(1);
+        if (!agent) throw AppError.fromHttpStatus(404, "That live test profile was not found.");
 
-    const [userSettings] = await drizzle
-      .select({
-        subscriptionStatus: schema.settings.subscriptionStatus,
-        aiTier: schema.settings.aiTier,
-        voiceLlmProvider: schema.settings.voiceLlmProvider,
-        voiceLlmModel: schema.settings.voiceLlmModel,
-        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
-        twilioLookupEnabled: schema.settings.twilioLookupEnabled,
-        businessName: schema.settings.businessName,
-      })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, verification.claims.userId))
-      .limit(1);
+        const [userSettings] = await drizzle
+          .select({
+            subscriptionStatus: schema.settings.subscriptionStatus,
+            aiTier: schema.settings.aiTier,
+            voiceLlmProvider: schema.settings.voiceLlmProvider,
+            voiceLlmModel: schema.settings.voiceLlmModel,
+            twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+            twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+            businessName: schema.settings.businessName,
+          })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, verification.claims.userId))
+          .limit(1);
 
-    const assistant = await buildVapiAssistant({
-      message: { type: "webCall" },
-      agent: { id: verification.claims.agentId, user_id: verification.claims.userId },
-      userSettings: userSettings || {},
-      surface: "browser_test",
-    });
+        const assistant = await buildVapiAssistant({
+          message: { type: "webCall" },
+          agent: { id: verification.claims.agentId, user_id: verification.claims.userId },
+          userSettings: userSettings || {},
+          surface: "browser_test",
+        });
 
-    let upstream: globalThis.Response;
-    try {
-      upstream = await fetch("https://api.vapi.ai/call/web", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${privateKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ assistant }),
-        signal: AbortSignal.timeout(15_000),
-      });
-    } catch (error: unknown) {
-      log.error("studio vapi web proxy failed", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(502, "The live phone test could not start.");
-    }
+        let upstream: globalThis.Response;
+        try {
+          upstream = await fetch("https://api.vapi.ai/call/web", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${privateKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ assistant }),
+            signal: AbortSignal.timeout(15_000),
+          });
+        } catch (error: unknown) {
+          log.error("studio vapi web proxy failed", { error: getErrorMessage(error) });
+          throw AppError.fromHttpStatus(502, "The live phone test could not start.");
+        }
 
-    return {
-      status: upstream.status,
-      contentType: upstream.headers.get("content-type") || "application/json",
-      body: await upstream.text(),
-    };
+        return {
+          status: upstream.status,
+          contentType: upstream.headers.get("content-type") || "application/json",
+          body: await upstream.text(),
+        };
+      }),
   });
+  if (!outcome.performed) {
+    throw AppError.conflict(
+      "This workspace has reached its account-deletion deadline. A new live test cannot start.",
+    );
+  }
+  return outcome.result;
 }

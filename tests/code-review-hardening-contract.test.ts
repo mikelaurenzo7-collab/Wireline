@@ -69,7 +69,7 @@ describe("code review hardening contracts", () => {
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
     const twilio = read("src/routes/twilio-webhook-base.ts");
-    expect(twilio).toContain("twilioSid: messageSid || null");
+    expect(twilio).toContain("twilioSid: input.messageSid || null");
     expect(twilio).toContain(".onConflictDoNothing()");
     expect(twilio).toContain("if (!insertedMessage) return;");
     expect(twilio).toContain("tenantStore.run(tenantUserId");
@@ -83,9 +83,10 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain('eq(schema.dncList.source, "sms_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.reason, "opt-out")');
     expect(twilio).toContain("if (!legacy) return res.status(200).send(emptyTwiml());");
-    expect(twilio).toContain(
-      '.send(control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml());',
-    );
+    expect(twilio).toContain("const confirmation =");
+    expect(twilio).toContain('control === "stop"');
+    expect(twilio).toContain("helpConfirmationTwiml()");
+    expect(twilio).toContain(".send(productionReply(confirmation))");
   });
 
   it("purges every credential and tenant-data surface found in the live schema audit", () => {

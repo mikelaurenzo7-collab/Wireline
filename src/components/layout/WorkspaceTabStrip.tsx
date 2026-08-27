@@ -200,7 +200,7 @@ export function WorkspaceTabStrip({
               type="button"
               aria-label={accessibleLabel}
               title={fullLabel}
-              aria-current={active ? "page" : undefined}
+              aria-pressed={active}
               data-active={active ? "true" : "false"}
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}

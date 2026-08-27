@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Wireline Vercel environment health audit.
+ * BotBound Vercel environment health audit.
  *
  * Reads environment-variable metadata only. Secret values are never printed.
  * Production is the only target this report may require; preview credential
@@ -20,24 +20,41 @@ if (!token) {
 }
 
 const required = [
+  "APP_URL",
   "POSTGRES_URL",
   "DATABASE_POOL_URL",
   "INTERNAL_JWT_SECRET",
+  "OAUTH_STATE_SECRET",
+  "OAUTH_BRIDGE_SECRET",
+  "MCP_OAUTH_TOKEN_PEPPER",
+  "WIRELINE_DATA_KEY",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
+  "OPENAI_API_KEY",
+  "XAI_API_KEY",
+  "XAI_SIP_ALLOWED_ADDRESSES",
+  "ELEVENLABS_API_KEY",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_API_KEY",
+  "TWILIO_API_SECRET",
+  "TWILIO_WEBHOOK_BASE_URL",
+  "PLATFORM_SMS_FROM",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "VITE_STRIPE_PUBLIC_KEY",
+  "RESEND_API_KEY",
+  "AGENTMAIL_API_KEY",
+  "AGENTMAIL_DEFAULT_DOMAIN",
+  "CRON_SECRET",
+  "WIRELINE_RECONCILE_STRIPE_PORTAL",
 ];
 
 const gateway = ["AI_GATEWAY_API_KEY", "WIRELINE_GATEWAY_STRUCTURED_MODEL"];
 
 const recommended = [
-  "OAUTH_STATE_SECRET",
-  "APP_URL",
   "CORS_ORIGINS",
-  "WIRELINE_DATA_KEY",
-  "CRON_SECRET",
   "SENTRY_DSN",
-  "STRIPE_SECRET_KEY",
-  "STRIPE_WEBHOOK_SECRET",
 ];
 
 // Voice is independently fail-closed. All platform-funded Vapi paths are now
@@ -111,7 +128,7 @@ async function main() {
     return configured;
   };
 
-  console.log("\nWIRELINE · VERCEL ENVIRONMENT HEALTH");
+  console.log("\nBOTBOUND · VERCEL ENVIRONMENT HEALTH");
   console.log("Metadata only. No secret values were requested or printed.");
 
   const missingCore = report("CORE PLATFORM", required, true);
@@ -129,7 +146,12 @@ async function main() {
     console.log("  ROTATION REQUIRED — remove retired browser credentials before production release.");
     process.exitCode = 2;
   } else {
-    console.log("  CORE READY — no required platform variable is missing or retired browser key remains.");
+    console.log(
+      "  METADATA COMPLETE — all required production keys are targeted correctly and no retired browser key remains.",
+    );
+    console.log(
+      "  Secret values, canonical URL equality, provider account state, and end-to-end canaries still require the fail-closed production build and launch checks.",
+    );
   }
   console.log(
     "  AI Gateway: deployed Vercel functions can use VERCEL_OIDC_TOKEN; AI_GATEWAY_API_KEY remains recommended for local and non-Vercel execution.",

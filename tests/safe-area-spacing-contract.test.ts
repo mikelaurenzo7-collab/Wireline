@@ -56,6 +56,12 @@ describe("safe-area spacing ownership", () => {
     );
     expect(ownership).toContain('nav[aria-label="Workspace navigation"]');
     expect(ownership).toMatch(
+      /\.wl-workspace-shell > nav\[aria-label="Workspace navigation"\] \{[^}]*padding-left: 0\.5rem;[^}]*padding-right: 0\.5rem;/s,
+    );
+    expect(ownership).not.toMatch(
+      /\.wl-workspace-shell > nav\[aria-label="Workspace navigation"\] \{[^}]*safe-area-inset-(?:left|right)/s,
+    );
+    expect(ownership).toMatch(
       /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
     );
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
@@ -85,6 +91,15 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /\.wl-transition-shell \.wl-transition-rail \{[\s\S]*min-height: calc\([\s\S]*safe-area-inset-top[\s\S]*safe-area-inset-bottom/,
     );
+  });
+
+  it("keeps the team invite dialog inside device cutouts", () => {
+    const team = read("src/pages/TeamSettings.tsx");
+
+    expect(team).toContain("env(safe-area-inset-top)");
+    expect(team).toContain("env(safe-area-inset-bottom)");
+    expect(team).toContain("env(safe-area-inset-left)");
+    expect(team).toContain("max-h-[calc(100dvh-");
   });
 
   it("preserves the public document and bounded form contracts", () => {

@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("server-owned OpenAI Realtime call control", () => {
+  it("serializes tenant call admission with terminal account deletion", () => {
+    const control = read("src/lib/voice/openai-realtime-call-control.ts");
+
+    expect(control).toContain("runTenantProviderWorkWithDeletionFence");
+    expect(control).toContain("createServerManagedOpenAIRealtimeCallUnfenced");
+    expect(control).toContain("has reached its account-deletion deadline");
+  });
+
   it("never returns a provider credential and fails closed without durable hangup", () => {
     const control = read("src/lib/voice/openai-realtime-call-control.ts");
     const creation = control.slice(

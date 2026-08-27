@@ -73,6 +73,18 @@ describe("launch reel capture contract", () => {
     expect(kit).not.toContain('full_name: "Wireline Demo Showcase"');
     expect(kit).not.toContain("@wireline.test");
     expect(kit).toContain('const LEGACY_SEEDED_DEMO_EMAIL = "composer.demo@trywireline.com"');
+    expect(kit).toContain('email: "salesforce@example.com"');
+    expect(kit).toContain('email: "hubspot@example.com"');
+    expect(kit).toContain('email_address: "ops@example.com"');
+    expect(kit).toContain('email_address: "billing@example.com"');
+    expect(kit).not.toMatch(/northstarmfg\.com|apexrealty\.io/i);
+    const mockContactPhones = [...kit.matchAll(/customer_number:\s*"([^"\n]+)"/g)].map(
+      (match) => match[1],
+    );
+    expect(mockContactPhones.length).toBeGreaterThan(0);
+    for (const phone of mockContactPhones) {
+      expect(phone).toMatch(/^\+1[2-9]\d{2}55501\d{2}$/);
+    }
   });
 
   it("does not film the competitor comparison table", () => {

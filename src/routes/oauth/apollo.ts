@@ -21,6 +21,7 @@ import {
   disconnectApollo,
 } from "../../lib/apollo-service";
 import { bootstrapDefaultChannel } from "../../lib/slack-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get(
   "/api/oauth/apollo/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!apolloOAuthConfigured()) {
       return res
         .status(503)
@@ -39,6 +40,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Apollo");
     const authUrl = getApolloAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -68,21 +70,23 @@ router.get(
     if (!code || typeof code !== "string") {
       return res.status(400).send("No code provided by Apollo.");
     }
+
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send(
+          `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it.`,
+        );
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Apollo");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
       const tokens = await exchangeApolloCode(code, redirectUri);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send(
-            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it.`,
-          );
-      }
 
       const info = await getApolloUserInfo(tokens.access_token);
       const accessTokenA = encryptSecret(tokens.access_token);

@@ -128,8 +128,9 @@ router.post(
         const quotaHit =
           typeof result.error === "string" &&
           (/includes \d+ dedicated/i.test(result.error) || /upgrade to add/i.test(result.error));
-        return res.status(quotaHit ? 403 : 503).json({
-          code: "ERROR",
+        const environmentBlocked = result.code === "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED";
+        return res.status(quotaHit || environmentBlocked ? 403 : 503).json({
+          code: result.code || "ERROR",
           ok: false,
           error: result.error ?? "Could not provision a phone number.",
         });

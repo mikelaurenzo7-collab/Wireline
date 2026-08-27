@@ -12,7 +12,7 @@ import {
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { stopRenewalForDeletion } from "../lib/account-deletion-billing";
+import { ensurePendingAccountDeletion } from "../lib/account-deletion-request";
 import { getErrorMessage } from "../lib/server-utils";
 
 type AuthedRequest = Request & { user?: { id: string } };
@@ -85,48 +85,28 @@ router.post(
     const requestedAt = new Date();
     const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
 
-    const [existing] = await drizzle
-      .select({
-        id: schema.deletionQueue.id,
-        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
-      })
-      .from(schema.deletionQueue)
-      .where(
-        and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")),
-      )
-      .limit(1);
+    const deletion = await ensurePendingAccountDeletion({
+      userId,
+      requestedAt,
+      scheduledPurgeAt,
+      ip: req.ip || null,
+      userAgent: req.get("user-agent") || null,
+    });
 
-    if (existing) {
-      const renewal = await stopRenewalForDeletion(userId);
+    if (deletion.alreadyPending) {
       return res.json({
         ok: true,
         already_pending: true,
-        scheduled_purge_at: existing.scheduledPurgeAt,
-        renewal_stopped: renewal.confirmed,
-        billing_period_end: renewal.billingPeriodEnd,
+        scheduled_purge_at: deletion.row.scheduledPurgeAt,
+        renewal_stopped: deletion.renewal.confirmed,
+        billing_period_end: deletion.renewal.billingPeriodEnd,
+        checkout_sessions_expired: deletion.renewal.checkoutSessionsExpired ?? 0,
       });
     }
-
-    const [row] = await drizzle
-      .insert(schema.deletionQueue)
-      .values({
-        userId,
-        requestedAt,
-        scheduledPurgeAt,
-        status: "pending",
-        ip: req.ip,
-        userAgent: req.get("user-agent") || null,
-      })
-      .returning({
-        id: schema.deletionQueue.id,
-        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
-      });
-
-    const renewal = await stopRenewalForDeletion(userId);
     log.warn("account deletion requested", {
       userId,
-      deletionRequestId: row?.id,
-      renewalStopped: renewal.confirmed,
+      deletionRequestId: deletion.row.id,
+      renewalStopped: deletion.renewal.confirmed,
     });
     // This is the deletion path the UI actually calls, and cancellation
     // already audits — without this the trail records cancellations for
@@ -139,7 +119,7 @@ router.post(
     await auditLogger
       .logAccountDeletionRequested({
         userId,
-        scheduledPurgeAt: (row?.scheduledPurgeAt ?? scheduledPurgeAt).toISOString(),
+        scheduledPurgeAt: (deletion.row.scheduledPurgeAt ?? scheduledPurgeAt).toISOString(),
         ip: req.ip,
       })
       .catch((err: unknown) =>
@@ -150,9 +130,10 @@ router.post(
       );
     res.status(202).json({
       ok: true,
-      scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt,
-      renewal_stopped: renewal.confirmed,
-      billing_period_end: renewal.billingPeriodEnd,
+      scheduled_purge_at: deletion.row.scheduledPurgeAt ?? scheduledPurgeAt,
+      renewal_stopped: deletion.renewal.confirmed,
+      billing_period_end: deletion.renewal.billingPeriodEnd,
+      checkout_sessions_expired: deletion.renewal.checkoutSessionsExpired ?? 0,
     });
   },
 );

@@ -39,6 +39,7 @@ import { maybePublishCallRecap } from "./shareable-artifact/publish-call-recap";
 import { sanitizePhone } from "./vapi-helpers";
 import { emitServerProductEventOnce } from "./product-event-server";
 import { ProviderSpendPausedError } from "./provider-spend-job-pause";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
@@ -282,6 +283,11 @@ async function withPostCallExternalFence<T>(
   ctx: Pick<CallContext, "userId" | "callLogId">,
   perform: () => Promise<T>,
 ): Promise<T> {
+  const environmentPolicy = await liveExternalActionPolicyForUser(ctx.userId);
+  if (!environmentPolicy.allowed) {
+    throw new PostCallTerminalStop("non_production_external_actions_disabled");
+  }
+
   let callLogId: bigint;
   try {
     callLogId = BigInt(ctx.callLogId as any);
@@ -1283,7 +1289,7 @@ export async function handlePostCallDigestJob(job: JobRow): Promise<void> {
     await handleActivePostCallDigestJob(job);
   } catch (error) {
     if (error instanceof PostCallTerminalStop) {
-      log.info("Post-call delivery stopped at the account-deletion fence", {
+      log.info("Post-call external delivery stopped terminally", {
         jobId: job.id,
         userId: jobOwnerId(job),
         reason: error.reason,

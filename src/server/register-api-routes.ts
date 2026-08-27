@@ -99,6 +99,7 @@ import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
 import soc2Router from "../routes/soc2-routes";
 import integrationsCertRouter from "../routes/integrations-cert-routes";
 import gatewayCatalogRouter from "../routes/gateway-catalog-routes";
+import { protectAuthResponseFromCaching } from "../middleware/auth-response-cache";
 
 /** Canonical API route order. Express resolves routes in registration order. */
 export function registerApiRoutes(app: Express): void {
@@ -111,6 +112,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(grokVoiceRouter);
   app.use(voicesRouter);
 
+  app.use("/api/auth", protectAuthResponseFromCaching);
   app.use(authOAuthExchangeAtomicRouter);
   app.use(authOAuthBrowserBindingRouter);
   app.use(authOAuthRouter);

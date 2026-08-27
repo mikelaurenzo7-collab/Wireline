@@ -21,10 +21,8 @@ const read = (path: string) =>
  */
 describe("final e2e bugfix contracts", () => {
   it("intake auto-dial passes the shared outbound voice spend/quota gate", () => {
-    const intake = read("src/routes/intake-routes.ts");
-    expect(intake).toContain(
-      'import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control"',
-    );
+    const intake = read("src/lib/intake-auto-dial.ts");
+    expect(intake).toContain('import { assertOutboundVoiceAllowed } from "./voice-spend-control"');
     // The guard must run BEFORE placeOutboundCall, not after.
     const guardAt = intake.indexOf("assertOutboundVoiceAllowed({");
     const dialAt = intake.indexOf("placeOutboundCall({");

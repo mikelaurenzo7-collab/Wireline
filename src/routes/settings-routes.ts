@@ -13,10 +13,8 @@ import { isPlatformAdmin } from "../middleware/platform-admin";
 import { enqueue } from "../lib/job-queue";
 import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
-import {
-  resumeRenewalAfterDeletionCancellation,
-  stopRenewalForDeletion,
-} from "../lib/account-deletion-billing";
+import { resumeRenewalAfterDeletionCancellation } from "../lib/account-deletion-billing";
+import { ensurePendingAccountDeletion } from "../lib/account-deletion-request";
 import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
 
@@ -592,36 +590,16 @@ router.delete(
       const requestedAt = new Date();
       const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
 
-      const [existing] = await drizzle
-        .select()
-        .from(deletionQueue)
-        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
-        .limit(1);
-
-      let queueRow: typeof deletionQueue.$inferSelect;
-      if (existing) {
-        queueRow = existing;
-      } else {
-        const [inserted] = (await drizzle
-          .insert(deletionQueue)
-          .values({
-            userId: uid,
-            requestedAt,
-            scheduledPurgeAt,
-            status: "pending",
-            ip: req.ip ?? null,
-            userAgent: req.headers?.["user-agent"] ?? null,
-          })
-          .returning()) as any[];
-
-        if (!inserted) {
-          log.error("account deletion: enqueue failed", { uid });
-          throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
-        }
-        queueRow = inserted;
-      }
-
-      const renewal = await stopRenewalForDeletion(uid);
+      const deletion = await ensurePendingAccountDeletion({
+        userId: uid,
+        requestedAt,
+        scheduledPurgeAt,
+        ip: req.ip ?? null,
+        userAgent:
+          typeof req.headers?.["user-agent"] === "string" ? req.headers["user-agent"] : null,
+      });
+      const queueRow = deletion.row;
+      const renewal = deletion.renewal;
 
       // Awaited: a detached audit write can be frozen mid-flight on Vercel
       // once the response goes out, losing the request evidence.
@@ -645,9 +623,11 @@ router.delete(
         cancel_endpoint: "/api/account/cancel-deletion",
         renewal_stopped: renewal.confirmed,
         billing_period_end: renewal.billingPeriodEnd,
+        checkout_sessions_expired: renewal.checkoutSessionsExpired ?? 0,
       });
     } catch (err: any) {
       log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
+      if (err instanceof AppError) throw err;
       throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
     }
   },

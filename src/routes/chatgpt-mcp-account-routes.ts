@@ -51,6 +51,7 @@ import { mcpVoiceSimulationMeta } from "../lib/mcp-voice-simulation-meta";
 import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
 import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import { shouldRetainRealtimeReservation } from "../lib/realtime-provider-outcome";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -889,6 +890,7 @@ router.post("/mcp", async (req, res) => {
       const authed = requireScope(principal, "demo.voice");
       assertRehearsalConfirmation(args.confirmed);
       const draft = await getAgentDraft(authed, text(args.agent_id, 256));
+      await assertLiveExternalActionAllowed(authed.userId, "chatgpt_private_voice_simulation");
       if (isLaunchHardBlocked()) {
         throw new AppError(
           503,

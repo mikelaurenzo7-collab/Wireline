@@ -52,6 +52,20 @@ describe("sms inbox error honesty", () => {
     expect(component).not.toMatch(/mark-read[^]*?\.catch\(\s*\(\) => \{\}/);
   });
 
+  it("clears the prior transcript before loading a newly selected thread", () => {
+    const component = read("src/components/SmsThreads.tsx");
+    const selectionEffect = component.slice(
+      component.indexOf("activeThreadFetchRef.current?.abort()"),
+      component.indexOf("}, [activeId, fetchMessages]);"),
+    );
+    const clearAt = selectionEffect.indexOf("setMessages([])", selectionEffect.indexOf("if (!activeId)"));
+    const fetchAt = selectionEffect.indexOf("fetchMessages(activeId");
+
+    expect(clearAt).toBeGreaterThan(-1);
+    expect(fetchAt).toBeGreaterThan(clearAt);
+    expect(selectionEffect.slice(clearAt, fetchAt)).toContain("setThreadErr(null)");
+  });
+
   it("turns ambiguous carrier outcomes into an explicit non-resend state", () => {
     const route = read("src/routes/sms-routes.ts");
     const component = read("src/components/SmsThreads.tsx");

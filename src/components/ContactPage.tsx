@@ -193,19 +193,22 @@ export function ContactPage() {
             </div>
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {INQUIRY_TYPES.map((item) => (
-                  <button
-                    type="button"
-                    key={item.value}
-                    aria-pressed={inquiryType === item.value}
-                    onClick={() => setInquiryType(item.value)}
-                    className={`min-h-11 min-w-0 rounded border px-2 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 focus-visible:outline-offset-2 sm:px-3 sm:text-sm ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+              <fieldset>
+                <legend className="mb-2 block wl-stitch-label">What can we help with?</legend>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {INQUIRY_TYPES.map((item) => (
+                    <button
+                      type="button"
+                      key={item.value}
+                      aria-pressed={inquiryType === item.value}
+                      onClick={() => setInquiryType(item.value)}
+                      className={`min-h-11 min-w-0 rounded border px-2 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 focus-visible:outline-offset-2 sm:px-3 sm:text-sm ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
                   Email

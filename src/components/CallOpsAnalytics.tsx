@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { authFetch } from "../lib/api";
+import { Button } from "./atoms";
 import { CardRowSkeleton } from "./atoms/skeleton-presets";
+import { StatusNotice } from "./molecules";
 import { EmptyState } from "./ui/EmptyState";
 
 type CallOpsAnalyticsResponse = {
@@ -20,52 +22,86 @@ export default function CallOpsAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadAnalytics = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
-    setError(null);
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    authFetch(`/api/call-ops/analytics?timezone=${encodeURIComponent(timeZone)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load call analytics.");
-        return response.json() as Promise<CallOpsAnalyticsResponse>;
-      })
-      .then((body) => {
-        if (cancelled) return;
-        setAnalytics(body);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setAnalytics(null);
-        setError("Could not load call analytics.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const response = await authFetch(
+        `/api/call-ops/analytics?timezone=${encodeURIComponent(timeZone)}`,
+        { signal },
+      );
+      if (!response.ok) throw new Error("Could not load call analytics.");
+      const body = (await response.json()) as CallOpsAnalyticsResponse;
+      if (signal?.aborted) return;
+      setAnalytics(body);
+      setError(null);
+    } catch {
+      if (signal?.aborted) return;
+      // Keep the last successful aggregate visible. A refresh outage should
+      // not turn known metrics into a false empty state.
+      setError("Could not load call analytics.");
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
   }, []);
 
-  if (loading) return <CardRowSkeleton />;
-  if (error || !analytics) {
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadAnalytics(controller.signal);
+    return () => controller.abort();
+  }, [loadAnalytics]);
+
+  if (loading && !analytics && !error) return <CardRowSkeleton />;
+
+  const retryAction = (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      disabled={loading}
+      aria-label="Retry call analytics"
+      onClick={() => void loadAnalytics()}
+    >
+      {loading ? "Retrying…" : "Retry"}
+    </Button>
+  );
+
+  if (!analytics) {
     return (
-      <EmptyState
-        title="Analytics unavailable"
-        description={error || "Could not load call analytics."}
-        density="compact"
-        withHalo={false}
-      />
+      <div role="alert">
+        <EmptyState
+          title="Analytics unavailable"
+          description={error || "Could not load call analytics."}
+          density="compact"
+          withHalo={false}
+          action={retryAction}
+        />
+      </div>
     );
   }
+
+  const staleDataNotice = error ? (
+    <StatusNotice
+      tone="warning"
+      title="Analytics may be out of date"
+      action={retryAction}
+      aria-live="polite"
+    >
+      The latest refresh failed. Your last loaded metrics remain available below.
+    </StatusNotice>
+  ) : null;
+
   if (analytics.totalCalls === 0) {
     return (
-      <EmptyState
-        title="No call history yet"
-        description="Metrics will appear when calls are logged."
-        density="compact"
-        withHalo={false}
-      />
+      <div className="space-y-3">
+        {staleDataNotice}
+        <EmptyState
+          title="No call history yet"
+          description="Metrics will appear when calls are logged."
+          density="compact"
+          withHalo={false}
+        />
+      </div>
     );
   }
 
@@ -97,6 +133,7 @@ export default function CallOpsAnalytics() {
 
   return (
     <div className="space-y-5">
+      {staleDataNotice}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {metrics.map((metric) => (
           <div

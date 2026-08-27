@@ -1,8 +1,10 @@
 import { AppError } from "../api-error";
+import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { enqueue } from "../job-queue";
 import { openAISafetyIdentifierForIdentity } from "../provider-identity-context";
 import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
 import { drizzle, fetchWithTimeout, log } from "../server-context";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import {
   OpenAIRealtimeProviderError,
   openAIRealtimeCallMayExistAfterResponse,
@@ -146,7 +148,32 @@ async function scheduleAuthoritativeHangup(input: {
  * provider billing cannot silently continue to the 60-minute platform maximum
  * when a tab disappears or a client ignores its local timer.
  */
+const TENANT_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function createServerManagedOpenAIRealtimeCall(input: ServerManagedRealtimeCallInput) {
+  const isTenantCall =
+    input.userId !== OPENAI_REALTIME_SYSTEM_USER_ID && TENANT_UUID_RE.test(input.userId);
+  if (!isTenantCall) return createServerManagedOpenAIRealtimeCallUnfenced(input);
+
+  await assertLiveExternalActionAllowed(input.userId, "openai_realtime_call_create");
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId: input.userId,
+    operation: "openai_realtime_call_create",
+    ttlMs: 65 * 60_000,
+    retainOnSuccess: true,
+    perform: () => createServerManagedOpenAIRealtimeCallUnfenced(input),
+  });
+  if (!outcome.performed) {
+    throw AppError.conflict(
+      "This workspace has reached its account-deletion deadline. A new live call cannot start.",
+    );
+  }
+  return outcome.result;
+}
+
+async function createServerManagedOpenAIRealtimeCallUnfenced(
+  input: ServerManagedRealtimeCallInput,
+) {
   const purpose = input.keyPurpose || "runtime";
   const key = resolveApiKey(purpose);
   const sdp = validateSdp(input.sdp);

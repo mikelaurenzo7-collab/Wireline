@@ -8,6 +8,10 @@
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
 import { IntegrationService } from "./integrations";
 import { evaluateOutboundDialGate, mergeLeadMetadata } from "./outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
@@ -54,7 +58,12 @@ function applyVars(template: string, lead: LeadRow): string {
 async function stampCadenceComplianceDenial(
   cadence: CadenceRow,
   lead: LeadRow,
-  gate: { status: string; reason: string; metadataPatch?: Record<string, unknown>; consentLogEvent?: string },
+  gate: {
+    status: string;
+    reason: string;
+    metadataPatch?: Record<string, unknown>;
+    consentLogEvent?: string;
+  },
 ): Promise<void> {
   await drizzle
     .update(schema.outboundLeads)
@@ -63,7 +72,9 @@ async function stampCadenceComplianceDenial(
       lastContactSummary: `Cadence blocked: ${gate.reason}.`,
       metadata: toJsonbSafe(mergeLeadMetadata(lead.metadata || {}, gate.metadataPatch)) as any,
     })
-    .where(and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, cadence.userId)));
+    .where(
+      and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, cadence.userId)),
+    );
   if (gate.consentLogEvent && lead.customerNumber) {
     await drizzle.insert(schema.consentLog).values({
       userId: cadence.userId,
@@ -86,11 +97,59 @@ async function stampCadenceComplianceDenial(
  * so a cadence never places a second marketing call merely because the first
  * carrier response was lost.
  */
-async function executeStep(
+export async function executeStep(
   step: CadenceStep,
   cadence: CadenceRow,
   lead: LeadRow,
-): Promise<{ ok: boolean; result: string; defer?: boolean; retryable?: boolean; failRun?: boolean }> {
+): Promise<{
+  ok: boolean;
+  result: string;
+  defer?: boolean;
+  retryable?: boolean;
+  failRun?: boolean;
+}> {
+  // cadence_tick is a system job, so the worker-level tenant environment guard
+  // cannot classify the account that owns this individual step. Recheck after
+  // the deletion-fenced ownership admission and before Federal DNC lookup,
+  // spend controls, or any provider transport. A policy lookup outage pauses
+  // the run at the same step instead of retrying into a paid side effect.
+  try {
+    const environmentPolicy = await liveExternalActionPolicyForUser(cadence.userId);
+    if (!environmentPolicy.allowed) {
+      return {
+        ok: false,
+        result: `paused: ${environmentPolicy.message}`,
+        failRun: true,
+      };
+    }
+
+    const entityPolicy = await externalEntityActionPolicyForUser(cadence.userId, {
+      leadId: lead.id,
+      ...(step.type === "email" ? { email: lead.email } : { phone: lead.customerNumber }),
+    });
+    if (!entityPolicy.allowed) {
+      // Showcase fixtures are terminal for this run. Pausing with nextDueAt
+      // cleared follows the existing cadence block convention and prevents a
+      // scheduler hot loop from repeatedly reaching compliance/provider code.
+      return {
+        ok: false,
+        result: `blocked: ${entityPolicy.message}`,
+        failRun: true,
+      };
+    }
+  } catch (error) {
+    log.warn("cadence account environment admission failed, failing closed", {
+      userId: cadence.userId,
+      leadId: jsonSafeId(lead.id),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      ok: false,
+      result: "paused: account environment could not be verified",
+      failRun: true,
+    };
+  }
+
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
   if ((step.type === "call" || step.type === "sms") && lead.customerNumber) {
@@ -332,6 +391,9 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
 
       const fencedStep = await runTenantProviderWorkWithDeletionFence({
         userId: run.userId,
+        operation: "cadence_provider_step",
+        ttlMs: 15 * 60_000,
+        retainOnSuccess: true,
         perform: () => executeStep(step, cadenceRow as any, leadRow as any),
       });
       if (!fencedStep.performed) {

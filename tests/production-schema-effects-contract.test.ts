@@ -77,6 +77,7 @@ describe("production schema effects", () => {
       "director_message_orphans",
       "dnc_orphans",
       "audit_orphans",
+      "subscription_orphans",
       "training_backup_orphans",
     ]) {
       expect(verifierSource).toContain(orphanCheck);
@@ -93,9 +94,7 @@ describe("production schema effects", () => {
     expect(emailThreadSchema).toContain('accountId: uuid("account_id").references');
     expect(emailThreadSchema).toContain('onDelete: "cascade"');
     expect(mailboxPersistence).toContain("accountId: message.accountId");
-    expect(mailboxPersistence).toContain(
-      "${schema.emailThreads.accountId} = excluded.account_id",
-    );
+    expect(mailboxPersistence).toContain("${schema.emailThreads.accountId} = excluded.account_id");
   });
 
   it("certifies the live retention routine body, not merely its function name", () => {
@@ -106,6 +105,99 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("retention:live_intake_key_configuration_purgeable");
     expect(verifierSource).toContain("retention:purge_errors_suppressed");
     expect(verifierSource).toContain("retention:purge_function_search_path_not_pinned");
+  });
+
+  it("certifies migration 0156 runtime-cohesion effects on the live schema", () => {
+    expect(verifierSource).toContain("voice_llm_provider");
+    expect(verifierSource).toContain("voice_llm_model");
+    expect(verifierSource).toContain("runtime_cohesion:wrong_voice_llm_provider_default");
+    expect(verifierSource).toContain("runtime_cohesion:wrong_voice_llm_model_default");
+    expect(verifierSource).toContain("runtime_cohesion:invalid_xai_grok_46_pairs");
+    expect(verifierSource).toContain("lower(coalesce(voice_llm_provider, '')) = 'xai'");
+    expect(verifierSource).toContain("lower(coalesce(voice_llm_model, '')) = 'grok-4.6'");
+  });
+
+  it("certifies the nullable, server-only terminal audit-receipt boundary", () => {
+    expect(verifierSource).toContain("wireline_audit_log");
+    expect(verifierSource).toContain("server_audit_insert");
+    expect(verifierSource).toContain("relrowsecurity");
+    expect(verifierSource).toContain("indisunique");
+    expect(verifierSource).toContain("indisvalid");
+    expect(verifierSource).toContain("pg_get_expr");
+    expect(verifierSource).toContain("convalidated");
+    expect(verifierSource).toContain("confdeltype");
+    expect(verifierSource).toContain("constraint_row.conkey");
+    expect(verifierSource).toContain("constraint_row.confkey");
+    expect(verifierSource).toContain("audit_receipt:missing_user_id_column");
+    expect(verifierSource).toContain("audit_receipt:user_id_not_nullable");
+    expect(verifierSource).toContain("audit_receipt:missing_server_insert_policy");
+    expect(verifierSource).toContain("audit_receipt:rls_disabled");
+    expect(verifierSource).toContain("audit_receipt:missing_deletion_receipt_unique_index");
+    expect(verifierSource).toContain("audit_receipt:missing_user_fk");
+    expect(verifierSource).toContain("audit_receipt:wrong_user_fk_definition");
+    expect(verifierSource).toContain("carrier_orphan:resolved_pii_retained");
+  });
+
+  it("certifies subscription ownership cannot survive or follow account erasure", () => {
+    expect(verifierSource).toContain("wireline_subscriptions_user_id_wireline_users_id_fk");
+    expect(verifierSource).toContain("subscription_orphans");
+    expect(verifierSource).toContain("subscription_erasure:missing_user_fk");
+    expect(verifierSource).toContain("subscription_erasure:wrong_user_fk_definition");
+    expect(verifierSource).toContain("competing_user_fks");
+  });
+
+  it("certifies the live account-environment promotion body and ACL", () => {
+    expect(verifierSource).toContain("wireline_account_environment_promotion_preflight");
+    expect(verifierSource).toContain("wireline_set_account_environment");
+    expect(verifierSource).toContain("account_environment:missing_function");
+    expect(verifierSource).toContain("account_environment:wrong_function_acl");
+    expect(verifierSource).toContain("account_environment:preflight_is_mutating");
+    expect(verifierSource).toContain("account_environment:mutation_missing_${checkName}");
+    expect(verifierSource).toContain('"promotion_preflight"');
+    expect(verifierSource).toContain('"account_lock"');
+    expect(verifierSource).toContain('"audit_proof"');
+    expect(verifierSource).toContain("DEMO_ENTITLEMENT");
+    expect(verifierSource).toContain("RESERVED_DEMO_CONTACTS");
+    expect(verifierSource).toContain("PENDING_RISKY_STATE");
+    expect(verifierSource).toContain("general_nanp_555_01xx");
+    expect(verifierSource).toContain("example_domain_families");
+    expect(verifierSource).toContain("lead_dossier_contacts");
+    expect(verifierSource).toContain("consent_ledger_contacts");
+  });
+
+  it("certifies retained-provider de-identification as a structural security boundary", () => {
+    expect(verifierSource).toContain("pg_get_constraintdef");
+    expect(verifierSource).toContain("carrier_orphan:non_pending_status_retained");
+    expect(verifierSource).toContain("carrier_orphan:missing_pending_only_constraint");
+    expect(verifierSource).toContain("xai_binding:wrong_owner_identity_constraint");
+    expect(verifierSource).toContain("xai_binding:missing_tenant_policy");
+    expect(verifierSource).toContain("xai_binding:wrong_tenant_policy_definition");
+
+    expect(verifierSource).toContain("pg_get_function_identity_arguments");
+    expect(verifierSource).toContain("pg_get_functiondef");
+    expect(verifierSource).toContain("prosecdef");
+    expect(verifierSource).toContain("proconfig");
+    expect(verifierSource).toContain("rolsuper OR owner_role.rolbypassrls");
+    expect(verifierSource).toContain("has_function_privilege");
+    expect(verifierSource).toContain("aclexplode");
+    expect(verifierSource).toContain("public_execute_revoked");
+
+    for (const boundary of [
+      "wireline_retire_xai_phone_binding",
+      "wireline_scrub_xai_phone_bindings_for_purge",
+      "function_not_security_definer",
+      "function_search_path_not_pinned",
+      "function_owner_not_trusted",
+      "wrong_function_acl",
+      '"phone_lock"',
+      '"account_lock"',
+      '"purging_gate"',
+      '"ordered_phone_locks"',
+      '"sentinel_user"',
+      '"sentinel_agent"',
+    ]) {
+      expect(verifierSource).toContain(boundary);
+    }
   });
 
   it("runs the read-only schema assertion on every real production build against runtime-selected DB truth", () => {

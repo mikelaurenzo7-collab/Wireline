@@ -31,9 +31,7 @@
 /* Document-mode public pages deliberately flatten their flow. Auth transition
  * pages still need a flex column so their flex-1 card wrapper can center in the
  * safe viewport after the public header is removed. */
-.wl-ui-caps.wl-ui-caps--document
-  .marketing-surface.auth-portal-canvas
-  .marketing-flow {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.auth-portal-canvas .marketing-flow {
   display: flex;
   min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
   flex-direction: column;
@@ -97,8 +95,11 @@
 }
 
 .wl-workspace-shell > nav[aria-label="Workspace navigation"] {
-  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+  /* workspace-polish positions this fixed dock inside the physical left/right
+   * safe area. Keep its internal gutter constant so landscape notches are not
+   * charged a second time between the dock edge and its destinations. */
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 @media (max-width: 1023px) {

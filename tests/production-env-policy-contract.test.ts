@@ -45,14 +45,18 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
       TWILIO_API_KEY: "configured",
       TWILIO_API_SECRET: "configured",
       TWILIO_AUTH_TOKEN: "configured",
+      TWILIO_WEBHOOK_BASE_URL: "https://botbound.me",
       PLATFORM_SMS_FROM: "+13125550100",
       STRIPE_SECRET_KEY: "sk_live_configured",
       STRIPE_WEBHOOK_SECRET: "configured",
       VITE_STRIPE_PUBLIC_KEY: "pk_live_configured",
       RESEND_API_KEY: "configured",
+      AGENTMAIL_API_KEY: "configured",
+      AGENTMAIL_DEFAULT_DOMAIN: "mail.botbound.me",
       UPSTASH_REDIS_REST_URL: "https://launch.invalid",
       UPSTASH_REDIS_REST_TOKEN: "configured",
       CRON_SECRET: "configured",
+      WIRELINE_RECONCILE_STRIPE_PORTAL: "true",
       APP_URL: appUrl,
       ...overrides,
     },
@@ -143,9 +147,7 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).toContain(
       'const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me"',
     );
-    expect(deploymentBoundary).toContain(
-      'canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false)',
-    );
+    expect(deploymentBoundary).toContain('canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true)');
 
     const canonical = runProductionBoundary("https://botbound.me");
     expect(`${canonical.stdout}${canonical.stderr}`).toContain(
@@ -226,6 +228,8 @@ describe("production environment launch policy", () => {
       ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.me"],
       ["WIRELINE_SELF_SERVE_BILLING_ENABLED", "true"],
       ["WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA", "a".repeat(40)],
+      ["AGENTMAIL_DEFAULT_DOMAIN", "mail.botbound.me"],
+      ["WIRELINE_RECONCILE_STRIPE_PORTAL", "true"],
     ]) {
       const result = runPreviewBoundary({ [name]: configuredValue });
       expect(result.status).toBe(1);
@@ -235,11 +239,9 @@ describe("production environment launch policy", () => {
     const cleanPreview = runPreviewBoundary();
     expect(cleanPreview.status).toBe(0);
 
-    const xaiSandboxPreview = runPreviewBoundary({ XAI_API_KEY: "sandbox-xai-key" });
-    expect(xaiSandboxPreview.status).toBe(0);
-    expect(`${xaiSandboxPreview.stdout}${xaiSandboxPreview.stderr}`).toContain(
-      "Deployment-boundary check passed for preview",
-    );
+    const xaiPreview = runPreviewBoundary({ XAI_API_KEY: "sandbox-xai-key" });
+    expect(xaiPreview.status).toBe(1);
+    expect(`${xaiPreview.stdout}${xaiPreview.stderr}`).toContain("XAI_API_KEY");
 
     const openaiPreview = runPreviewBoundary({ OPENAI_API_KEY: "sk-live-configured" });
     expect(openaiPreview.status).toBe(1);

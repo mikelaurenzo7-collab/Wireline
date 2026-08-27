@@ -8,12 +8,14 @@ import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-l
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { AppError, asyncHandler } from "../lib/api-error";
+import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
+import {
+  acquireAccountOperationLease,
+  releaseAccountOperationLease,
+} from "../lib/account-operation-lease";
 import { validateBody } from "../lib/api-validation";
 import { runInBackground } from "../lib/background-work";
-import {
-  isOutboundCallPurpose,
-  type OutboundCallPurpose,
-} from "../lib/outbound-call-purpose";
+import { isOutboundCallPurpose, type OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { decryptSecret } from "../lib/secret-vault";
 import { drizzle, log, tenantStore } from "../lib/server-context";
@@ -22,13 +24,20 @@ import {
   getNativeXAIPhoneStatus,
   provisionNativeXAIPhone,
 } from "../lib/voice/xai-phone-activation-service";
-import { verifyXAIOutboundToken } from "../lib/voice/xai-outbound-token";
+import {
+  verifyXAIOutboundToken,
+  xaiOutboundPlacementMatches,
+} from "../lib/voice/xai-outbound-token";
 import {
   XAI_OUTBOUND_SIP_TOKEN_HEADER,
   normalizeXAIPhoneNumber,
 } from "../lib/voice/xai-sip-config";
 import { resolveNativeInboundAdmission } from "../lib/voice/native-inbound-admission";
-import { runXAISipCallSession, type XAISipIncomingCall } from "../lib/voice/xai-sip-session";
+import {
+  hangupXAISipCall,
+  runXAISipCallSession,
+  type XAISipIncomingCall,
+} from "../lib/voice/xai-sip-session";
 import { verifyXAIWebhook } from "../lib/voice/xai-webhook-auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -80,6 +89,59 @@ type AgentContext = {
   businessName: string | null;
   complianceMode: string | null;
 };
+
+type XAIInboundEnvironmentDependencies = {
+  policyForUser: typeof liveExternalActionPolicyForUser;
+  hangup: typeof hangupXAISipCall;
+  warn: typeof log.warn;
+};
+
+const defaultXAIInboundEnvironmentDependencies: XAIInboundEnvironmentDependencies = {
+  policyForUser: liveExternalActionPolicyForUser,
+  hangup: hangupXAISipCall,
+  warn: log.warn.bind(log),
+};
+
+/**
+ * A valid provider signature proves who sent the webhook, not that its stale
+ * phone binding still belongs to a live workspace. Fail closed after signature
+ * verification and hard-hangup the already-created xAI call before any tenant
+ * session, admission lookup, or account-operation lease can start.
+ */
+export async function enforceXAIInboundProductionEnvironment(
+  input: { userId: string; callId: string; bindingId: string; calledNumber: string },
+  deps: XAIInboundEnvironmentDependencies = defaultXAIInboundEnvironmentDependencies,
+): Promise<boolean> {
+  let policy: Awaited<ReturnType<typeof liveExternalActionPolicyForUser>> | null = null;
+  try {
+    policy = await deps.policyForUser(input.userId);
+  } catch (error) {
+    deps.warn("xAI signed incoming call account environment lookup failed closed", {
+      bindingId: input.bindingId,
+      calledSuffix: phoneSuffixForLog(input.calledNumber),
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  if (policy?.allowed) return true;
+
+  deps.warn("xAI signed incoming call rejected by account environment", {
+    bindingId: input.bindingId,
+    calledSuffix: phoneSuffixForLog(input.calledNumber),
+    accountEnvironment: policy?.environment ?? "missing",
+    code: policy?.allowed === false ? policy.code : "ACCOUNT_ENVIRONMENT_UNAVAILABLE",
+  });
+  try {
+    await deps.hangup(input.callId);
+  } catch (error) {
+    deps.warn("xAI signed incoming call hard-hangup could not be confirmed", {
+      bindingId: input.bindingId,
+      callIdSuffix: input.callId.slice(-8),
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+  return false;
+}
 
 function rawBody(req: Request): Buffer | null {
   return Buffer.isBuffer(req.body) ? req.body : null;
@@ -133,12 +195,7 @@ async function resolveAgentContext(binding: XAIPhoneBinding): Promise<AgentConte
     })
     .from(schema.agents)
     .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
-    .where(
-      and(
-        eq(schema.agents.id, binding.agentId),
-        eq(schema.agents.userId, binding.userId),
-      ),
-    )
+    .where(and(eq(schema.agents.id, binding.agentId), eq(schema.agents.userId, binding.userId)))
     .limit(1);
   if (!agentContext) {
     log.error("xAI incoming call rejected: native binding points to a missing agent", {
@@ -186,6 +243,9 @@ async function resolveOutboundSession(input: {
 
     const metadata = asRecord(lead.metadata);
     const nativeVoice = asRecord(metadata.native_voice);
+    if (!xaiOutboundPlacementMatches(nativeVoice, verification.claims)) {
+      throw AppError.conflict("This outbound voice token belongs to an earlier placement.");
+    }
     const recoverableCarrierRace =
       lead.status === LEAD_STATUS.ERROR &&
       nativeVoice.state === "carrier_completed_without_xai_confirmation";
@@ -261,17 +321,16 @@ router.post(
     const calledNumber = phoneFromSipValue(sipHeader(payload, "To"));
     const callerNumber = phoneFromSipValue(sipHeader(payload, "From"));
     if (!callId || callId.length > 200 || !calledNumber) {
-      throw AppError.badRequest("The incoming call event is missing a valid call or dialed number.");
+      throw AppError.badRequest(
+        "The incoming call event is missing a valid call or dialed number.",
+      );
     }
 
     const [binding] = await drizzle
       .select()
       .from(xaiPhoneBindings)
       .where(
-        and(
-          eq(xaiPhoneBindings.phoneNumber, calledNumber),
-          eq(xaiPhoneBindings.status, "active"),
-        ),
+        and(eq(xaiPhoneBindings.phoneNumber, calledNumber), eq(xaiPhoneBindings.status, "active")),
       )
       .limit(1);
     if (!binding?.webhookSecretEncrypted || !binding.xaiWebhookId) {
@@ -314,6 +373,17 @@ router.post(
       throw AppError.unauthorized("Invalid xAI webhook signature.");
     }
 
+    const productionEnvironment = await enforceXAIInboundProductionEnvironment({
+      userId: binding.userId,
+      callId,
+      bindingId: binding.id,
+      calledNumber,
+    });
+    if (!productionEnvironment) {
+      res.status(202).json({ received: true, handled: false });
+      return;
+    }
+
     const agentContext = await resolveAgentContext(binding);
     const outboundToken = sipHeader(payload, XAI_OUTBOUND_SIP_TOKEN_HEADER);
     const sessionInput = outboundToken
@@ -346,7 +416,32 @@ router.post(
       });
     }
 
-    runInBackground("xai-sip-call-session", () => runXAISipCallSession(sessionInput));
+    const sessionLease = await acquireAccountOperationLease({
+      userId: sessionInput.userId,
+      kind: "provider",
+      operation: "xai_sip_call_session",
+      ttlMs: 15 * 60_000,
+    });
+    if (!sessionLease) {
+      await hangupXAISipCall(callId).catch((error) => {
+        log.warn("xAI incoming call could not be hung up after terminal deletion admission", {
+          callIdSuffix: callId.slice(-8),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+      res.status(202).json({ received: true, handled: false });
+      return;
+    }
+    runInBackground("xai-sip-call-session", async () => {
+      try {
+        await runXAISipCallSession(sessionInput);
+      } finally {
+        await releaseAccountOperationLease({
+          id: sessionLease.id,
+          userId: sessionInput.userId,
+        });
+      }
+    });
     res.status(202).json({ received: true, handled: true });
   }),
 );

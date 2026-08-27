@@ -5,19 +5,13 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
-import {
-  createIntakeKeySchema,
-  updateIntakeKeySchema,
-  validateBody,
-} from "../lib/api-validation";
+import { createIntakeKeySchema, updateIntakeKeySchema, validateBody } from "../lib/api-validation";
 import { runInBackground } from "../lib/background-work";
 import { CALLBACK_REQUEST_MARKER } from "../lib/callback-engine";
-import { evaluateOutboundDialGate, mergeLeadMetadata } from "../lib/outbound-dial-gate";
+import { enqueueIntakeAutoDial, intakeAutoDialJobExists } from "../lib/intake-auto-dial";
 import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
 import { auditLogger, drizzle, log, tenantStore } from "../lib/server-context";
-import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
-import { placeOutboundCall } from "../lib/voice/outbound-call-service";
-import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
+import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -196,60 +190,6 @@ type IntakeLeadResult = {
   code?: string;
 };
 
-function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-async function writeAutoDialFailure(input: {
-  leadId: bigint;
-  userId: string;
-  status: string;
-  error: string;
-  providerStatus?: number;
-  doNotRetry?: boolean;
-}) {
-  await drizzle.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(input.leadId)}`}))`,
-    );
-    const [lead] = await tx
-      .select({ metadata: schema.outboundLeads.metadata })
-      .from(schema.outboundLeads)
-      .where(
-        and(
-          eq(schema.outboundLeads.id, input.leadId),
-          eq(schema.outboundLeads.userId, input.userId),
-        ),
-      )
-      .limit(1);
-    const metadata = record(lead?.metadata);
-    const nativeVoice = record(metadata.native_voice);
-    await tx
-      .update(schema.outboundLeads)
-      .set({
-        status: input.status,
-        metadata: toJsonbSafe({
-          ...metadata,
-          native_voice: {
-            ...nativeVoice,
-            ...(input.doNotRetry ? { do_not_retry: true } : {}),
-          },
-          auto_dial_error: input.error,
-          auto_dial_status: input.providerStatus ?? "internal_error",
-          auto_dial_do_not_retry: input.doNotRetry === true,
-        }) as any,
-      })
-      .where(
-        and(
-          eq(schema.outboundLeads.id, input.leadId),
-          eq(schema.outboundLeads.userId, input.userId),
-        ),
-      );
-  });
-}
-
 async function processIntakeLead(
   key: IntakeKey,
   input: IntakeLeadInput,
@@ -285,16 +225,39 @@ async function processIntakeLead(
   const agentId = input.agent_id || key.default_agent_id || null;
   const idempotencyKey =
     idemHeaderOverride !== undefined ? idemHeaderOverride : input.idempotency_key || null;
-  const idempotencyKeyTrimmed = idempotencyKey
-    ? String(idempotencyKey).trim().slice(0, 255)
-    : null;
+  const idempotencyKeyTrimmed = idempotencyKey ? String(idempotencyKey).trim().slice(0, 255) : null;
+
+  const replayAutoDialState = async (lead: {
+    id: bigint;
+    agentId: string | null;
+    callId: string | null;
+    status: string | null;
+    metadata: unknown;
+  }): Promise<boolean> => {
+    if (!key.auto_dial || !lead.agentId) return false;
+    if (lead.callId) return true;
+    const persistedMetadata =
+      lead.metadata && typeof lead.metadata === "object" && !Array.isArray(lead.metadata)
+        ? (lead.metadata as Record<string, unknown>)
+        : {};
+    if (lead.status === "Pending" || persistedMetadata.auto_dial_status === "enqueue_failed") {
+      return enqueueIntakeAutoDial({
+        userId: key.user_id,
+        leadId: String(lead.id),
+        intakeKeyName: key.name,
+      });
+    }
+    return intakeAutoDialJobExists({ userId: key.user_id, leadId: String(lead.id) });
+  };
 
   if (idempotencyKeyTrimmed) {
     const [existing] = await drizzle
       .select({
         id: schema.outboundLeads.id,
+        agentId: schema.outboundLeads.agentId,
         callId: schema.outboundLeads.callId,
         status: schema.outboundLeads.status,
+        metadata: schema.outboundLeads.metadata,
       })
       .from(schema.outboundLeads)
       .where(
@@ -305,13 +268,14 @@ async function processIntakeLead(
       )
       .limit(1);
     if (existing) {
+      const autoDialInitiated = await replayAutoDialState(existing);
       return {
         ok: true,
         lead_id: Number(existing.id),
         idempotent_replay: true,
         status: existing.status ?? undefined,
         call_id: existing.callId,
-        auto_dial_initiated: false,
+        auto_dial_initiated: autoDialInitiated,
       };
     }
   }
@@ -344,8 +308,10 @@ async function processIntakeLead(
       const [replay] = await drizzle
         .select({
           id: schema.outboundLeads.id,
+          agentId: schema.outboundLeads.agentId,
           callId: schema.outboundLeads.callId,
           status: schema.outboundLeads.status,
+          metadata: schema.outboundLeads.metadata,
         })
         .from(schema.outboundLeads)
         .where(
@@ -356,13 +322,14 @@ async function processIntakeLead(
         )
         .limit(1);
       if (replay) {
+        const autoDialInitiated = await replayAutoDialState(replay);
         return {
           ok: true,
           lead_id: Number(replay.id),
           idempotent_replay: true,
           status: replay.status ?? undefined,
           call_id: replay.callId,
-          auto_dial_initiated: false,
+          auto_dial_initiated: autoDialInitiated,
         };
       }
     }
@@ -386,125 +353,10 @@ async function processIntakeLead(
 
   let autoDialInitiated = false;
   if (key.auto_dial && agentId && insertedId) {
-    autoDialInitiated = true;
-    runInBackground("intake auto-dial", async () => {
-      try {
-        const gate = await evaluateOutboundDialGate({
-          userId: key.user_id,
-          phone: customerNumber,
-          leadId: insertedId!,
-          metadata: (metadata || {}) as Record<string, unknown>,
-        });
-
-        if (!gate.allowed) {
-          if (gate.reason === "outside_permitted_calling_hours") {
-            await drizzle
-              .update(schema.outboundLeads)
-              .set({
-                callbackScheduledAt: new Date(Date.now() + 60 * 60 * 1000),
-                metadata: toJsonbSafe({
-                  ...mergeLeadMetadata(
-                    (metadata || {}) as Record<string, unknown>,
-                    gate.metadataPatch,
-                  ),
-                  auto_dial_status: "deferred_quiet_hours",
-                }) as any,
-              })
-              .where(eq(schema.outboundLeads.id, insertedId!));
-            log.info("Auto-dial deferred to next permitted window", {
-              leadId: String(insertedId),
-            });
-            return;
-          }
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({
-              status: gate.status,
-              metadata: toJsonbSafe(
-                mergeLeadMetadata((metadata || {}) as Record<string, unknown>, gate.metadataPatch),
-              ) as any,
-            })
-            .where(eq(schema.outboundLeads.id, insertedId!));
-          log.warn("Auto-dial blocked by outbound gate", {
-            leadId: String(insertedId),
-            reason: gate.reason,
-            status: gate.status,
-          });
-          return;
-        }
-
-        try {
-          await assertOutboundVoiceAllowed({
-            userId: key.user_id,
-            source: "automation",
-            units: 0,
-          });
-        } catch (spendError) {
-          await writeAutoDialFailure({
-            leadId: insertedId!,
-            userId: key.user_id,
-            status: "AutoDialFailed",
-            error:
-              spendError instanceof Error ? spendError.message : "voice spend controls blocked",
-          });
-          log.warn("Auto-dial blocked by voice spend controls", {
-            leadId: String(insertedId),
-            error: spendError instanceof Error ? spendError.message : String(spendError),
-          });
-          return;
-        }
-
-        const result = await placeOutboundCall({
-          userId: key.user_id,
-          agentId,
-          customerName: customerName || null,
-          customerNumber,
-          context: context || `Inbound lead via ${key.name}`,
-          callPurpose: "marketing_or_sales",
-          leadId: insertedId,
-        });
-        if (result.ok && result.callId) {
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({
-              callId: result.callId,
-              status: "Dialing",
-              lastCalledAt: new Date(),
-            })
-            .where(eq(schema.outboundLeads.id, insertedId!));
-          return;
-        }
-
-        const doNotRetry =
-          result.doNotRetry === true ||
-          result.providerOutcomeAmbiguous === true ||
-          (result.ok && !result.callId);
-        await writeAutoDialFailure({
-          leadId: insertedId!,
-          userId: key.user_id,
-          status: doNotRetry ? "Error" : "AutoDialFailed",
-          error: result.error || "Native voice placement did not return a call id.",
-          providerStatus: result.status,
-          doNotRetry,
-        });
-        log.warn("Auto-dial failed for lead", {
-          leadId: String(insertedId),
-          status: result.status,
-          doNotRetry,
-          error: result.error,
-        });
-      } catch (error: any) {
-        await writeAutoDialFailure({
-          leadId: insertedId!,
-          userId: key.user_id,
-          status: "AutoDialFailed",
-          error: getErrorMessage(error),
-        }).catch(() => {});
-        log.warn("Auto-dial threw for lead", {
-          leadId: String(insertedId),
-          error: getErrorMessage(error),
-        });
-      }
+    autoDialInitiated = await enqueueIntakeAutoDial({
+      userId: key.user_id,
+      leadId: String(insertedId),
+      intakeKeyName: key.name,
     });
   }
 

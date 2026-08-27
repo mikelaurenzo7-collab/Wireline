@@ -19,6 +19,7 @@ import {
   exchangeSalesforceCode,
   disconnectSalesforce,
 } from "../../lib/salesforce-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get(
   "/api/oauth/salesforce/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!sfOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -43,6 +44,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/salesforce/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Salesforce");
     const authUrl = getSalesforceAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -74,6 +76,14 @@ router.get(
       return res.status(400).send("No code provided by Salesforce.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Salesforce");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
@@ -88,14 +98,6 @@ router.get(
       });
       const identity = idRes.ok ? ((await idRes.json()) as any) : {};
       const connectedEmail = identity.email || "";
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const accessTokenSf = encryptSecret(tokens.access_token);
       const refreshTokenSf = encryptSecret(tokens.refresh_token);

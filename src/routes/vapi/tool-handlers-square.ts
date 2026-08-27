@@ -5,8 +5,16 @@ import {
   squareLookupCustomer,
   squareLookupOrder,
 } from "../../lib/square-service";
+import { assertLiveExternalActionAllowed } from "../../lib/account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+const LIVE_SQUARE_TOOLS = new Set([
+  "square_lookup_order",
+  "square_lookup_customer",
+  "square_check_inventory",
+  "square_create_payment_link",
+]);
 
 export async function handleSquareToolCall(
   fn: string,
@@ -14,6 +22,24 @@ export async function handleSquareToolCall(
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
   const { agent, message, payload, toolCallId } = context;
+
+  if (LIVE_SQUARE_TOOLS.has(fn)) {
+    if (!agent?.user_id) {
+      return {
+        toolCallId,
+        result: "That payment action isn't available on this line right now.",
+      };
+    }
+    try {
+      await assertLiveExternalActionAllowed(agent.user_id, `vapi_${fn}`);
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "That payment action is disabled in this workspace. Do not claim it ran; offer a manual follow-up.",
+      };
+    }
+  }
 
   // ──────────────────────────────────────────────────────────────
   //  Square e-commerce handlers — order/customer/inventory lookups

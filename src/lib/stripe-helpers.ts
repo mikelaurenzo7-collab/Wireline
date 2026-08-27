@@ -19,6 +19,7 @@ import {
   type SubscriptionBillingInterval,
 } from "./subscription-welcome-credit";
 import { STRIPE_API_VERSION } from "./stripe-api-version";
+import { stripeOwnerUserExists } from "./stripe-owner-liveness";
 
 export { STRIPE_API_VERSION };
 
@@ -555,6 +556,18 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       );
       return;
     }
+    if (!(await stripeOwnerUserExists(metadataUserId))) {
+      // Stripe retries can outlive BotBound's terminal account erasure. A
+      // stamped user id is attribution, not proof that the tenant still
+      // exists; acknowledging this terminal no-op prevents a late webhook
+      // from rebuilding the deleted subscription projection.
+      log.info("Stripe sync: ignoring late subscription for deleted account", {
+        customerId,
+        subscriptionId: incomingSub.id,
+        userId: metadataUserId,
+      });
+      return;
+    }
     log.warn("Stripe sync: repairing missing customer mapping from subscription metadata", {
       customerId,
       subscriptionId: incomingSub.id,
@@ -573,6 +586,16 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       stripeSubscriptionId: null,
       cancelAtPeriodEnd: false,
     };
+  } else if (!(await stripeOwnerUserExists(existing.userId))) {
+    // The database FK removes this legacy/orphan possibility once migration
+    // 0162 is live. Keep the code gate for deploy-order safety and defense in
+    // depth while older rows or a late event are still in flight.
+    log.info("Stripe sync: ignoring subscription projection for deleted account", {
+      customerId,
+      subscriptionId: incomingSub.id,
+      userId: existing.userId,
+    });
+    return;
   }
 
   let sub = incomingSub;

@@ -12,12 +12,20 @@ import {
   requestDomReconciliationReload,
 } from "./lib/dom-reconciliation-recovery";
 import { captureException } from "./lib/sentry";
+import { canonicalLegacyBrowserHandoff } from "./lib/canonical-browser-origin";
 
 // One CSS entrypoint owns the complete design-system cascade. Keeping the
 // import graph centralized prevents duplicated foundations and order drift.
 import "./index.css";
 
-if (typeof window !== "undefined") {
+const legacyBrowserHandoffUrl =
+  typeof window === "undefined" ? null : canonicalLegacyBrowserHandoff(window.location);
+
+if (legacyBrowserHandoffUrl) {
+  window.location.replace(legacyBrowserHandoffUrl);
+}
+
+if (!legacyBrowserHandoffUrl && typeof window !== "undefined") {
   // Preserve campaign and plan intent before a public landing-page CTA changes
   // the URL. Signup can then persist first-touch attribution server-side.
   const signupIntent = captureSignupIntentFromLocation();
@@ -60,18 +68,20 @@ if (typeof window !== "undefined") {
   clearDomReconciliationReloadGuardAfterStableRender();
 }
 
-createRoot(document.getElementById("root")!, {
-  onRecoverableError(error, errorInfo) {
-    captureException(error, {
-      errorClass: isDomReconciliationError(error) ? "dom_reconciliation" : "react_recoverable",
-      componentStack: errorInfo.componentStack,
-    });
-    requestDomReconciliationReload(error, "react-recoverable");
-  },
-}).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
-);
+if (!legacyBrowserHandoffUrl) {
+  createRoot(document.getElementById("root")!, {
+    onRecoverableError(error, errorInfo) {
+      captureException(error, {
+        errorClass: isDomReconciliationError(error) ? "dom_reconciliation" : "react_recoverable",
+        componentStack: errorInfo.componentStack,
+      });
+      requestDomReconciliationReload(error, "react-recoverable");
+    },
+  }).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+}

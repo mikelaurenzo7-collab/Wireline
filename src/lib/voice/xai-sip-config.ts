@@ -12,6 +12,19 @@ export const XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token";
 const E164_PATTERN = /^\+[1-9]\d{7,14}$/;
 const TWILIO_SIP_URI_MAX_LENGTH = 255;
 const XAI_CALL_ID_PATTERN = /^[A-Za-z0-9._:-]{1,200}$/;
+/**
+ * Twilio connection overrides live in the URL fragment and are interpreted by
+ * Twilio rather than sent to BotBound. Retrying TwiML/status callbacks is safe:
+ * both handlers authenticate the provider and apply the same call/token
+ * identity; TwiML decisions are durably replayed, and status transitions are
+ * monotonic and idempotent.
+ */
+export const TWILIO_XAI_OUTBOUND_CONNECTION_OVERRIDES =
+  "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx" as const;
+
+function withTwilioConnectionOverrides(url: URL): string {
+  return `${url.toString()}${TWILIO_XAI_OUTBOUND_CONNECTION_OVERRIDES}`;
+}
 
 export function normalizeXAIPhoneNumber(value: unknown): string | null {
   const phone = String(value || "")
@@ -59,13 +72,19 @@ export function xaiVoiceWebhookUrl(): string {
 export function twilioXAIOutboundBridgeUrl(token: string): string {
   const url = new URL("/api/twilio-webhook/xai-outbound-bridge", `${getCanonicalAppUrl()}/`);
   url.searchParams.set("token", token);
-  return url.toString();
+  return withTwilioConnectionOverrides(url);
 }
 
 export function twilioXAIOutboundStatusUrl(token: string): string {
   const url = new URL("/api/twilio-webhook/xai-outbound-status", `${getCanonicalAppUrl()}/`);
   url.searchParams.set("token", token);
-  return url.toString();
+  return withTwilioConnectionOverrides(url);
+}
+
+export function twilioXAIOutboundFallbackUrl(token: string): string {
+  const url = new URL("/api/twilio-webhook/xai-outbound-fallback", `${getCanonicalAppUrl()}/`);
+  url.searchParams.set("token", token);
+  return withTwilioConnectionOverrides(url);
 }
 
 export function twilioVoiceFallbackUrl(): string {
@@ -80,12 +99,7 @@ export function isValidXAISipAllowedAddress(value: string): boolean {
   const octets = parts[0].split(".");
   if (
     octets.length !== 4 ||
-    octets.some(
-      (octet) =>
-        !/^\d{1,3}$/.test(octet) ||
-        Number(octet) < 0 ||
-        Number(octet) > 255,
-    )
+    octets.some((octet) => !/^\d{1,3}$/.test(octet) || Number(octet) < 0 || Number(octet) > 255)
   ) {
     return false;
   }
@@ -97,9 +111,7 @@ export function isValidXAISipAllowedAddress(value: string): boolean {
   return length >= 8 && length <= 32;
 }
 
-export function resolveXAISipAllowedAddresses(
-  env: NodeJS.ProcessEnv = process.env,
-): string[] {
+export function resolveXAISipAllowedAddresses(env: NodeJS.ProcessEnv = process.env): string[] {
   const entries = String(env.XAI_SIP_ALLOWED_ADDRESSES || "")
     .split(/[\s,]+/)
     .map((entry) => entry.trim())
@@ -116,17 +128,13 @@ export function resolveXAISipAllowedAddresses(
   return unique;
 }
 
-export function resolveXAISipSessionMaxSeconds(
-  env: NodeJS.ProcessEnv = process.env,
-): number {
+export function resolveXAISipSessionMaxSeconds(env: NodeJS.ProcessEnv = process.env): number {
   const configured = Number(env.WIRELINE_XAI_SIP_MAX_SECONDS);
   if (!Number.isFinite(configured)) return 540;
   return Math.max(60, Math.min(540, Math.floor(configured)));
 }
 
-export function xaiSecureTrunkingEnabled(
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
+export function xaiSecureTrunkingEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   const value = String(env.WIRELINE_XAI_SIP_SECURE_TRUNKING || "")
     .trim()
     .toLowerCase();

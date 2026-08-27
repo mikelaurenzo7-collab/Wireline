@@ -14,6 +14,7 @@ import { authenticateUser } from "../middleware/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 
 const router = Router();
 
@@ -37,6 +38,9 @@ router.post(
   authenticateUser,
   validateBody(icloudMailConnectSchema),
   async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.id;
+    await assertLiveExternalActionAllowed(userId, "icloud_mail_connect");
+
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(
         503,
@@ -44,7 +48,6 @@ router.post(
       );
     }
 
-    const userId = req.user.id;
     const emailAddress = req.body.email_address.trim().toLowerCase();
     const appPassword = req.body.app_password.replace(/\s+/g, "");
 
@@ -74,11 +77,7 @@ router.post(
       oauthGrantedScopes: icloudGrantedScopes(),
     });
     if (!emailAccountConnected) {
-      throw new AppError(
-        409,
-        "EMAIL_ACCOUNT_IN_USE",
-        EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
-      );
+      throw new AppError(409, "EMAIL_ACCOUNT_IN_USE", EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
     }
 
     res.json({ ok: true, email: emailAddress, provider: "icloud" });

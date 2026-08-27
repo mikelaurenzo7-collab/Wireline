@@ -25,6 +25,7 @@ import {
   bootstrapTeamsNotifyTarget,
   type MsGraphProvider,
 } from "../../lib/microsoft-graph-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -45,13 +46,14 @@ function msGraphRedirectUri(req: express.Request, provider: MsGraphProvider): st
 }
 
 function buildMsGraphUrlRoute(provider: MsGraphProvider) {
-  return (req: express.Request, res: express.Response) => {
+  return async (req: express.Request, res: express.Response) => {
     if (!microsoftGraphConfigured()) {
       return res
         .status(500)
         .json({ error: "Missing MICROSOFT_CLIENT_ID or MICROSOFT_CLIENT_SECRET" });
     }
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, provider);
     const redirectUri = msGraphRedirectUri(req, provider);
     const state = generateOAuthState(uid ? { userId: uid } : undefined);
     const url =
@@ -83,16 +85,17 @@ async function handleMsGraphCallback(
     return res.status(400).send("No authorization code provided by Microsoft.");
   }
 
+  const userId = await resolveLinkedOAuthUserId(req, vs);
+  if (!userId) {
+    return res
+      .status(401)
+      .send("Complete this connection in the same browser and BotBound account that started it.");
+  }
+  await assertOAuthProviderConnectAllowed(userId, provider);
+
   try {
     const redirectUri = msGraphRedirectUri(req, provider);
     const tokens = await exchangeMicrosoftGraphCode(code, redirectUri);
-
-    const userId = await resolveLinkedOAuthUserId(req, vs);
-    if (!userId) {
-      return res
-        .status(401)
-        .send("Complete this connection in the same browser and BotBound account that started it.");
-    }
 
     const email = await getMicrosoftAccountEmail(tokens.access_token);
     const accessTokenEnc = encryptSecret(tokens.access_token);

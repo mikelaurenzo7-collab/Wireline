@@ -132,7 +132,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((value) => !value)}
-            className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="ml-auto inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Sitemap
             <ChevronUp

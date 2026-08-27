@@ -35,16 +35,15 @@ Grok 4.6 (chat) and `grok-voice-think-fast-2.0` (Speech-to-Speech) are different
 | Work                                                                     | Credential                                     | Notes                                                                                                                                                |
 | ------------------------------------------------------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Structured continuity (`grok-4.6`)                                       | `XAI_API_KEY`                                  | Optional direct Responses API lane after OpenAI and the Gateway                                                                                      |
-| Browser preview TTS (`/v1/tts`)                                          | `XAI_API_KEY`                                  | Same key; grant the voice endpoint ACL                                                                                                               |
+| Server-managed TTS (`/v1/tts`)                                           | `XAI_API_KEY`                                  | Same production-only key; grant the voice endpoint ACL                                                                                               |
 | Live PSTN native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` plus `XAI_SIP_ALLOWED_ADDRESSES` | SIP sessions authenticate with the API key. Studio does not use this credential.                                                                     |
 | Isolated xAI experiments                                                 | `XAI_API_KEY_CHATKIT`                          | Optional. Not required to split chat from voice.                                                                                                     |
-| Vercel Preview sandbox                                                   | `XAI_API_KEY`                                  | Dedicated sandbox key only. Reviewed at `scripts/check-deployment-boundaries.mjs`. Native PSTN stays fail-closed without Twilio Preview credentials. |
 | Imagine photos and video                                                 | none                                           | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key.                             |
 | Vapi rollback                                                            | `VAPI_PRIVATE_KEY`                             | Optional. Not a production launch requirement.                                                                                                       |
 
-Do not add `XAI_API_KEY_VOICE`. Optional Grok continuity, preview TTS, and native PSTN share `XAI_API_KEY`; Studio uses `OPENAI_API_KEY`.
+Do not add `XAI_API_KEY_VOICE`. Optional Grok continuity, server-managed TTS, and native PSTN share the Production-only `XAI_API_KEY`; Studio uses `OPENAI_API_KEY`.
 
-## Speech-to-Speech (Wireline production PSTN)
+## Speech-to-Speech (BotBound production PSTN)
 
 Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech and linked pages (ephemeral tokens, SIP, custom voices, pricing, REST voice reference).
 
