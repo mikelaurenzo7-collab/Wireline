@@ -3,6 +3,11 @@ import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
 import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
+import {
+  isSafeOpenAIRealtimeSessionReserve,
+  OPENAI_REALTIME_PRICING_MODEL,
+  OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
+} from "./voice/openai-realtime-pricing";
 
 export type EnvGroup =
   | "core"
@@ -96,6 +101,38 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description: "Scoped OpenAI credential for ChatGPT app realtime voice spend isolation",
     validate: (value) => value.startsWith("sk-"),
     formatHint: "sk-...",
+  },
+  {
+    name: "OPENAI_API_KEY_PREVIOUS",
+    group: "ai",
+    required: false,
+    description: "Hangup-only drain slot for the previous runtime OpenAI key",
+    validate: (value) => value.startsWith("sk-"),
+    formatHint: "sk-...",
+  },
+  {
+    name: "OPENAI_API_KEY_CHATKIT_PREVIOUS",
+    group: "ai",
+    required: false,
+    description: "Hangup-only drain slot for the previous ChatGPT/demo OpenAI key",
+    validate: (value) => value.startsWith("sk-"),
+    formatHint: "sk-...",
+  },
+  {
+    name: "OPENAI_REALTIME_MODEL",
+    group: "ai",
+    required: false,
+    description: "Pinned OpenAI Realtime model covered by the admission-reserve contract",
+    validate: (value) => value.trim() === OPENAI_REALTIME_PRICING_MODEL,
+    formatHint: OPENAI_REALTIME_PRICING_MODEL,
+  },
+  {
+    name: "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD",
+    group: "ai",
+    required: false,
+    description: "Five-minute OpenAI Realtime admission reserve; unset uses the safe derived floor",
+    validate: isSafeOpenAIRealtimeSessionReserve,
+    formatHint: `USD amount >= ${OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD.toFixed(2)}`,
   },
   {
     name: "GEMINI_API_KEY",
@@ -500,7 +537,7 @@ export function validateEnv(): EnvValidationResult {
   }
 
   // This credential used to be intentionally browser-exposed. Public voice
-  // now uses server-minted one-use tickets and native ephemeral sessions, so
+  // now uses server-minted one-use tickets and server-mediated OpenAI WebRTC, so
   // accepting the retired key here would contradict the deployment boundary
   // and could make a leaked configuration look healthy.
   if (process.env.VITE_VAPI_PUBLIC_KEY?.trim()) {
@@ -511,7 +548,7 @@ export function validateEnv(): EnvValidationResult {
       var: "VITE_VAPI_PUBLIC_KEY",
       group: "voice",
       message:
-        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and native ephemeral sessions",
+        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and server-mediated OpenAI WebRTC",
     });
   }
 

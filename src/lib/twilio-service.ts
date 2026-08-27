@@ -14,6 +14,10 @@ import { isLaunchHardBlocked } from "./launch-readiness";
 import { assertLiveWorkEntitlementForUser } from "./trial-gate";
 import { finalizeAcceptedTwilioMessage } from "./twilio-message-reconciliation";
 import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
+import {
   createTwilioMessageWithRateLimitRetry,
   withTwilioMessageReliability,
 } from "./twilio-message-reliability";
@@ -312,6 +316,42 @@ export async function sendTenantMessage(
       enabled: false,
       reason: "Messaging is temporarily paused while launch readiness is restored.",
       code: "LAUNCH_NOT_READY",
+      channel,
+    };
+  }
+
+  const environmentPolicy = await liveExternalActionPolicyForUser(userId);
+  if (!environmentPolicy.allowed) {
+    log.warn("Outbound tenant message blocked by account environment", {
+      userId,
+      channel,
+      accountEnvironment: environmentPolicy.environment ?? "missing",
+      code: environmentPolicy.code,
+    });
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: environmentPolicy.message,
+      code: environmentPolicy.code,
+      channel,
+    };
+  }
+
+  const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
+  if (!entityPolicy.allowed) {
+    log.warn("Outbound tenant message blocked for showcase entity", {
+      userId,
+      channel,
+      reason: entityPolicy.reason,
+      code: entityPolicy.code,
+    });
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: entityPolicy.message,
+      code: entityPolicy.code,
       channel,
     };
   }

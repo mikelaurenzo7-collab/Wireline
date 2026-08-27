@@ -154,7 +154,7 @@ export default function AdminSettings() {
       return "activity";
     }
     if (isLegacyAdminTabRedirect(qsRaw ?? "")) {
-      queueMicrotask(() => navigate("/overview", { replace: true }));
+      queueMicrotask(() => navigate("/studio", { replace: true }));
       return "accounts";
     }
     if (qsRaw === "growth") return "flywheel";

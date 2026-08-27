@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -50,11 +50,12 @@ describe("double-pass residual hardening", () => {
     expect(wrapper).toContain("delete childEnv.DATABASE_URL");
   });
 
-  it("describes public status freshness without understating edge staleness", () => {
-    const status = read("src/components/Status.tsx");
-    expect(status).toContain("Normal cache · 120s");
-    expect(status).toContain("Server fallback · up to 5m");
-    expect(status).toContain("edge stale-while-revalidate");
-    expect(status).toContain("timestamp above is the authoritative age");
+  it("keeps service monitoring operational without a provider-branded customer page", () => {
+    const app = read("src/App.tsx");
+    const registration = read("src/server/register-api-routes.ts");
+
+    expect(existsSync(resolve(process.cwd(), "src/components/Status.tsx"))).toBe(false);
+    expect(app).not.toContain('path="/status"');
+    expect(registration).toContain('app.all("/api/health/public"');
   });
 });

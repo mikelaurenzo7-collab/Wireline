@@ -18,7 +18,6 @@ const PUBLIC_ROUTES = [
   "/changelog",
   "/security",
   "/trust",
-  "/status",
   "/support",
   "/contact",
   "/privacy",

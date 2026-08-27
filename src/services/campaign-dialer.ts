@@ -312,7 +312,13 @@ export class CampaignDialerService {
         return;
       }
       const priorStatus = lead.status as string;
-      const metadata = record(lead.metadata);
+      // Existing lead metadata can predate the server-owned consent boundary.
+      // Campaigns are marketing-only, so a stored/client boolean is never legal
+      // authority; keep it false until a verified per-recipient artifact exists.
+      const metadata = {
+        ...record(lead.metadata),
+        has_express_written_consent: false,
+      };
       const gate = await evaluateOutboundDialGate({
         userId: lead.userId!,
         phone: lead.customerNumber,

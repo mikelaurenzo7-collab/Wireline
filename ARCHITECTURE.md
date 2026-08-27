@@ -73,7 +73,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
   - Production PSTN calls: Twilio buys and owns the number, then registers it with xAI Direct SIP (`sip.voice.x.ai`). Inbound `realtime.call.incoming` webhooks and outbound Twilio `<Sip>` bridges join `wss://api.x.ai/v1/realtime?call_id=…`.
   - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live PSTN brain. Grok 4.6 is an optional structured-continuity model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
   - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - Studio live tests and ChatGPT private simulation use OpenAI Realtime (`gpt-realtime-2.1`) over WebRTC. The server mints short-lived credentials and exchanges Studio SDP; the browser never receives a platform key. This does not alter the separate PSTN lane.
+  - Studio live tests and hosted MCP private simulation use OpenAI Realtime (`gpt-realtime-2.1`) over server-mediated WebRTC. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser. This does not alter the separate PSTN lane.
   - Direct `/v1/tts` is preview and marketing-audio only. It is not the PSTN engine.
   - Neither OpenAI Realtime nor Vapi is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
@@ -99,15 +99,15 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 
 ## Source-of-truth discipline
 
-| Concern              | Canonical source                                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------------------------- |
-| Product language     | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
-| Pricing              | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`                                  |
+| Concern                                       | Canonical source                                                                                      |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Product language                              | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
+| Pricing                                       | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`                                  |
 | Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                     |
-| Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Models               | `src/lib/ai-models.ts`                                                                                |
-| Retired presenter compatibility | `docs/PRODUCT_SHOWCASE_MATRIX.md`, `src/lib/video-presenter/copy.ts`                                 |
-| Repo hygiene         | `CODEBASE_HEALTH.md`                                                                                  |
+| Design                                        | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
+| Models                                        | `src/lib/ai-models.ts`                                                                                |
+| Retired presenter compatibility               | `docs/PRODUCT_SHOWCASE_MATRIX.md`, `src/lib/video-presenter/copy.ts`                                  |
+| Repo hygiene                                  | `CODEBASE_HEALTH.md`                                                                                  |
 
 ## Verification
 

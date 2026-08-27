@@ -63,6 +63,7 @@ function xaiCallIdFromControlToken(value: string): string | null {
  * rejected, eliminating the legacy SSRF-prone monitor-control surface.
  */
 export async function transferLiveCall(
+  userId: string,
   controlToken: string,
   toNumber: string,
   _content = "Transferring your call now, please hold.",
@@ -81,7 +82,7 @@ export async function transferLiveCall(
   }
 
   try {
-    await referXAISipCall(callId, destination);
+    await referXAISipCall(userId, callId, destination);
     return { ok: true, status: 200 };
   } catch (error) {
     return {

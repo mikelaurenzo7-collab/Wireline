@@ -130,7 +130,7 @@ export function InsightEmpty({
           ? [{ label: "Create Bot", to: "/studio?create=1", primary: true }]
           : !agents.some((agent) => agent.phone_number)
             ? [
-                { label: "Connect phone", to: "/settings/phone", primary: true },
+                { label: "Connect phone", to: "/phone?tab=setup", primary: true },
                 { label: "Test Bot", to: "/studio?section=test" },
               ]
             : [...config.actions]);

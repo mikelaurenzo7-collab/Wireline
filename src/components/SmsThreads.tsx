@@ -148,6 +148,11 @@ export default function SmsThreads({
       setThreadErr(null);
       return;
     }
+    // Never render thread A's transcript beneath thread B's header while the
+    // new fetch is in flight—or after it fails. The selected conversation owns
+    // its own truthful loading/error state from the first frame.
+    setMessages([]);
+    setThreadErr(null);
     const controller = new AbortController();
     activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
@@ -171,6 +176,8 @@ export default function SmsThreads({
   }, [search, threads]);
 
   const activeThread = threads.find((thread) => thread.id === activeId) || null;
+  const hasSearch = search.trim().length > 0;
+  const listOwnsOnlyState = visibleThreads.length === 0;
 
   async function sendReply() {
     if (!activeId || !reply.trim() || sending) return;
@@ -215,10 +222,7 @@ export default function SmsThreads({
       }
 
       success("SMS queued", "The carrier accepted the message for delivery.");
-      await Promise.all([
-        fetchMessages(threadId, sentThreadController?.signal),
-        fetchThreads(),
-      ]);
+      await Promise.all([fetchMessages(threadId, sentThreadController?.signal), fetchThreads()]);
     } catch (reason: any) {
       setMessages((current) => current.filter((message) => message.id !== optimistic.id));
       setReply(body);
@@ -257,18 +261,38 @@ export default function SmsThreads({
         </Button>
       </div>
 
-      {fetchErr ? (
+      {fetchErr && threads.length ? (
         <StatusNotice tone="destructive" title="Texts unavailable" className="m-3 sm:m-4">
           {fetchErr}
         </StatusNotice>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
+      <div
+        className="wl-channel-inbox-grid grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]"
+        data-empty={listOwnsOnlyState ? "true" : undefined}
+      >
         <div
-          className={`${activeId ? "hidden lg:block" : "block"} min-h-0 overflow-y-auto border-r border-border`}
+          className={`${listOwnsOnlyState ? "block" : activeId ? "hidden lg:block" : "block"} min-h-0 overflow-y-auto border-r border-border`}
         >
-          {loading && !threads.length ? (
-            <div className="space-y-2 p-3" aria-busy="true">
+          {fetchErr && !threads.length ? (
+            <EmptyState
+              icon={<MessageSquare className="size-5" aria-hidden="true" />}
+              title="Texts unavailable"
+              description={fetchErr}
+              density="compact"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void fetchThreads()}
+                >
+                  Retry
+                </Button>
+              }
+            />
+          ) : loading && !threads.length ? (
+            <div className="w-full max-w-lg space-y-2 p-3" aria-busy="true">
               {Array.from({ length: 5 }, (_, index) => (
                 <div key={index} className="rounded-xl border border-border p-3">
                   <Skeleton shape="text" className="h-4 w-32" />
@@ -276,6 +300,13 @@ export default function SmsThreads({
                 </div>
               ))}
             </div>
+          ) : hasSearch && !visibleThreads.length ? (
+            <EmptyState
+              icon={<MessageSquare className="size-5" aria-hidden="true" />}
+              title="No matching texts"
+              description="Try a different number or status."
+              density="compact"
+            />
           ) : !visibleThreads.length && !fetchErr ? (
             <EmptyState
               icon={<MessageSquare className="size-5" aria-hidden="true" />}
@@ -317,7 +348,9 @@ export default function SmsThreads({
           )}
         </div>
 
-        <div className={`${activeId ? "block" : "hidden lg:block"} min-h-0`}>
+        <div
+          className={`${listOwnsOnlyState ? "hidden" : activeId ? "block" : "hidden lg:block"} min-h-0`}
+        >
           {!activeThread ? (
             <EmptyState title="Select a conversation" density="compact" />
           ) : (
@@ -337,7 +370,11 @@ export default function SmsThreads({
               </header>
 
               {threadErr ? (
-                <StatusNotice tone="destructive" title="Conversation unavailable" className="m-3 sm:m-4">
+                <StatusNotice
+                  tone="destructive"
+                  title="Conversation unavailable"
+                  className="m-3 sm:m-4"
+                >
                   {threadErr}
                 </StatusNotice>
               ) : null}
@@ -408,7 +445,11 @@ export default function SmsThreads({
                   className="min-w-0 flex-1"
                 />
                 <Button type="submit" disabled={sending || !reply.trim()} aria-label="Send text">
-                  {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {sending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
                 </Button>
               </form>
             </div>

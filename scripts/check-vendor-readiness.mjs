@@ -414,7 +414,10 @@ const onlineWhatsappSenders = whatsappSenders.filter(
 );
 const twilioBalanceUsd = Number(twilioBalance?.body?.balance ?? Number.NaN);
 const twilioFunded = Boolean(
-  twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) && twilioBalanceUsd >= 0,
+  // A zero balance is readable but cannot fund a customer call or message.
+  // Require positive runway; autorecharge and Usage Triggers remain owner
+  // launch checks because the balance endpoint cannot prove either control.
+  twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) && twilioBalanceUsd > 0,
 );
 const twilioVoiceSmsReady = Boolean(
   twilioAccountReady &&
@@ -436,11 +439,11 @@ record(
   twilioVoiceSmsReady
     ? "Keep the paid account and payment method current; configure Usage Triggers and sender webhooks."
     : twilioAccountReady && !twilioFunded
-      ? "Restore a non-negative Twilio balance and successful recharge posture before launch."
+      ? "Restore a positive Twilio balance and successful recharge posture before launch."
       : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
   {
     balance_usd: twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) ? twilioBalanceUsd : null,
-    balance_non_negative: twilioFunded,
+    balance_positive: twilioFunded,
     incoming_number_count: twilioIncomingNumbers.length,
     voice_capable_number_count: voiceCapableNumbers.length,
     sms_capable_number_count: smsCapableNumbers.length,
@@ -449,8 +452,7 @@ record(
 );
 const wirelineDirectSmsNumbers = smsCapableNumbers.filter(
   (number) =>
-    typeof number?.sms_url === "string" &&
-    number.sms_url.includes("/api/twilio-webhook/sms"),
+    typeof number?.sms_url === "string" && number.sms_url.includes("/api/twilio-webhook/sms"),
 );
 const wirelineSmsRetryReady =
   wirelineDirectSmsNumbers.length > 0 &&
@@ -587,9 +589,9 @@ const stripeActiveTaxRegistrations = stripeTaxRegistrations?.ok
   : [];
 const stripeTaxProviderReady = Boolean(
   stripeTaxSettings?.ok &&
-    stripeTaxSettings.body?.status === "active" &&
-    stripeTaxRegistrations?.ok &&
-    stripeActiveTaxRegistrations.length > 0,
+  stripeTaxSettings.body?.status === "active" &&
+  stripeTaxRegistrations?.ok &&
+  stripeActiveTaxRegistrations.length > 0,
 );
 // Tax collection is launch-safe when it is deliberately off, or when the
 // operator deliberately enabled it after both provider prerequisites exist.

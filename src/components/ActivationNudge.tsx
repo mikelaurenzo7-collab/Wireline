@@ -60,7 +60,7 @@ function writeDismissed(scopeId: string | null): void {
 
 function shouldYieldToFirstSession(): boolean {
   if (typeof window === "undefined") return false;
-  return window.location.pathname === "/overview";
+  return window.location.pathname === "/studio";
 }
 
 export default function ActivationNudge({ className }: { className?: string }) {

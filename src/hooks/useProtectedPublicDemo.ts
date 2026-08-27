@@ -2,16 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PUBLIC_BROWSER_DEMO_MAX_SECONDS } from "../lib/public-browser-demo";
 import { emitProductEvent } from "../lib/product-event-client";
-import {
-  XAI_BROWSER_PCM_RATE_HZ,
-  XAIStreamingPcmEncoder,
-  base64Pcm16LeToFloat32,
-} from "../lib/voice/browser-pcm";
 
 const PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000;
-const PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 15_000;
+// The server may spend 15s minting a short-lived secret and then 20s exchanging SDP.
+// Keep the browser alive through that valid provider window plus transport overhead.
+const PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 40_000;
 const PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000;
-const CAPTURE_BUFFER_SIZE = 4_096;
 
 type PublicDemoSource = "landing_product_theater" | "showcase_browser_demo";
 
@@ -23,11 +19,10 @@ type DemoTicketResponse = {
 };
 
 type DemoProviderSession = {
-  clientSecret: string;
-  websocketUrl: string;
+  sdp: string;
   greeting?: string;
-  session: Record<string, unknown>;
   maxDurationSeconds: number;
+  endsAt: string;
   error?: string;
 };
 
@@ -78,14 +73,20 @@ async function responseMessage(response: Response): Promise<string> {
   return "The protected live demo could not start.";
 }
 
-function rms(samples: Float32Array): number {
-  if (!samples.length) return 0;
-  let sum = 0;
-  for (let index = 0; index < samples.length; index += 1) {
-    const sample = samples[index] || 0;
-    sum += sample * sample;
-  }
-  return Math.min(1, Math.sqrt(sum / samples.length) * 2.5);
+function waitForIceGathering(peer: RTCPeerConnection): Promise<void> {
+  if (peer.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    const timeout = window.setTimeout(done, 5_000);
+    function done() {
+      window.clearTimeout(timeout);
+      peer.removeEventListener("icegatheringstatechange", onChange);
+      resolve();
+    }
+    function onChange() {
+      if (peer.iceGatheringState === "complete") done();
+    }
+    peer.addEventListener("icegatheringstatechange", onChange);
+  });
 }
 
 export function useProtectedPublicDemo(
@@ -102,18 +103,14 @@ export function useProtectedPublicDemo(
     PUBLIC_BROWSER_DEMO_MAX_SECONDS,
   );
 
-  const socket = useRef<WebSocket | null>(null);
+  const peer = useRef<RTCPeerConnection | null>(null);
+  const channel = useRef<RTCDataChannel | null>(null);
   const microphone = useRef<MediaStream | null>(null);
-  const audioContext = useRef<AudioContext | null>(null);
-  const captureSource = useRef<MediaStreamAudioSourceNode | null>(null);
-  const captureProcessor = useRef<ScriptProcessorNode | null>(null);
-  const captureSink = useRef<GainNode | null>(null);
-  const captureEncoder = useRef<XAIStreamingPcmEncoder | null>(null);
-  const playbackSource = useRef<AudioBufferSourceNode | null>(null);
-  const playbackQueue = useRef<Float32Array[]>([]);
-  const playbackActive = useRef(false);
-  const responseActive = useRef(false);
-  const sessionReady = useRef(false);
+  const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const analysisContext = useRef<AudioContext | null>(null);
+  const analysisSource = useRef<MediaStreamAudioSourceNode | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const volumeFrame = useRef<number | null>(null);
   const sessionAbortRef = useRef<AbortController | null>(null);
   const watchdogRef = useRef<number | null>(null);
   const wrapUpTimerRef = useRef<number | null>(null);
@@ -132,78 +129,36 @@ export function useProtectedPublicDemo(
     }
   }, []);
 
-  const stopPlayback = useCallback(() => {
-    try {
-      playbackSource.current?.stop();
-    } catch {
-      // A source may have already ended naturally.
-    }
-    playbackSource.current?.disconnect();
-    playbackSource.current = null;
-    playbackQueue.current = [];
-    playbackActive.current = false;
-    setSpeakerActive(false);
-    setVolume(0);
-  }, []);
-
-  const playNextChunk = useCallback(() => {
-    const context = audioContext.current;
-    const chunk = playbackQueue.current.shift();
-    if (!context || !chunk) {
-      playbackActive.current = false;
-      playbackSource.current = null;
-      setSpeakerActive(false);
-      setVolume(0);
-      return;
-    }
-
-    playbackActive.current = true;
-    setSpeakerActive(true);
-    setVolume(rms(chunk));
-    const buffer = context.createBuffer(1, chunk.length, XAI_BROWSER_PCM_RATE_HZ);
-    buffer.getChannelData(0).set(chunk);
-    const sourceNode = context.createBufferSource();
-    sourceNode.buffer = buffer;
-    sourceNode.connect(context.destination);
-    playbackSource.current = sourceNode;
-    sourceNode.onended = () => {
-      if (playbackSource.current === sourceNode) playbackSource.current = null;
-      playNextChunk();
-    };
-    sourceNode.start();
-  }, []);
-
-  const playAudio = useCallback(
-    (base64: string) => {
-      if (!base64 || !audioContext.current) return;
-      playbackQueue.current.push(base64Pcm16LeToFloat32(base64));
-      if (!playbackActive.current) playNextChunk();
-    },
-    [playNextChunk],
-  );
-
   const releaseTransport = useCallback(() => {
     clearTimers();
-    responseActive.current = false;
-    sessionReady.current = false;
     sessionAbortRef.current?.abort();
     sessionAbortRef.current = null;
-    captureEncoder.current?.reset();
-    captureEncoder.current = null;
-    socket.current?.close(1000, "BotBound protected demo ended");
-    socket.current = null;
+    if (volumeFrame.current !== null) window.cancelAnimationFrame(volumeFrame.current);
+    volumeFrame.current = null;
+
+    const activeChannel = channel.current;
+    const activePeer = peer.current;
+    channel.current = null;
+    peer.current = null;
+    activeChannel?.close();
+    activePeer?.close();
+
     microphone.current?.getTracks().forEach((track) => track.stop());
     microphone.current = null;
-    captureProcessor.current?.disconnect();
-    captureProcessor.current = null;
-    captureSource.current?.disconnect();
-    captureSource.current = null;
-    captureSink.current?.disconnect();
-    captureSink.current = null;
-    stopPlayback();
-    void audioContext.current?.close();
-    audioContext.current = null;
-  }, [clearTimers, stopPlayback]);
+    if (remoteAudio.current) {
+      remoteAudio.current.pause();
+      remoteAudio.current.srcObject = null;
+    }
+    remoteAudio.current = null;
+    analysisSource.current?.disconnect();
+    analyser.current?.disconnect();
+    analysisSource.current = null;
+    analyser.current = null;
+    void analysisContext.current?.close();
+    analysisContext.current = null;
+    setSpeakerActive(false);
+    setVolume(0);
+  }, [clearTimers]);
 
   const resetCallState = useCallback(() => {
     setCallActive(false);
@@ -235,36 +190,35 @@ export function useProtectedPublicDemo(
     [releaseTransport, resetCallState],
   );
 
-  const startCapture = useCallback(async (stream: MediaStream, ws: WebSocket, attempt: number) => {
+  const attachRemoteAudio = useCallback((stream: MediaStream, attempt: number) => {
+    const element = new Audio();
+    element.autoplay = true;
+    element.srcObject = stream;
+    remoteAudio.current = element;
+    void element.play().catch(() => undefined);
+
     const context = new AudioContext();
-    if (context.state === "suspended") await context.resume();
-    if (attempt !== attemptRef.current) {
-      stream.getTracks().forEach((track) => track.stop());
-      await context.close();
-      return;
-    }
-
-    const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
     const sourceNode = context.createMediaStreamSource(stream);
-    const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
-    const sink = context.createGain();
-    sink.gain.value = 0;
-    processor.onaudioprocess = (event) => {
-      if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
-      for (const audio of encoder.push(event.inputBuffer.getChannelData(0))) {
-        ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
-      }
-    };
-    sourceNode.connect(processor);
-    processor.connect(sink);
-    sink.connect(context.destination);
+    const analyserNode = context.createAnalyser();
+    analyserNode.fftSize = 256;
+    sourceNode.connect(analyserNode);
+    analysisContext.current = context;
+    analysisSource.current = sourceNode;
+    analyser.current = analyserNode;
 
-    microphone.current = stream;
-    audioContext.current = context;
-    captureSource.current = sourceNode;
-    captureProcessor.current = processor;
-    captureSink.current = sink;
-    captureEncoder.current = encoder;
+    const samples = new Uint8Array(analyserNode.fftSize);
+    const sampleVolume = () => {
+      if (attempt !== attemptRef.current || analyser.current !== analyserNode) return;
+      analyserNode.getByteTimeDomainData(samples);
+      let sum = 0;
+      for (const sample of samples) {
+        const centered = (sample - 128) / 128;
+        sum += centered * centered;
+      }
+      setVolume(Math.min(1, Math.sqrt(sum / samples.length) * 3));
+      volumeFrame.current = window.requestAnimationFrame(sampleVolume);
+    };
+    sampleVolume();
   }, []);
 
   useEffect(() => {
@@ -280,7 +234,6 @@ export function useProtectedPublicDemo(
     const attempt = attemptRef.current + 1;
     attemptRef.current = attempt;
     startedRef.current = false;
-    responseActive.current = false;
     setConnecting(true);
     setError(null);
     emitProductEvent({
@@ -316,7 +269,7 @@ export function useProtectedPublicDemo(
         throw new Error("The protected live demo is temporarily unavailable.");
       }
 
-      if (!navigator.mediaDevices?.getUserMedia) {
+      if (!navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === "undefined") {
         throw new Error("This browser does not support microphone-based voice demos.");
       }
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -331,10 +284,62 @@ export function useProtectedPublicDemo(
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
-      // Provider session mint happens after mic permission to avoid burning a
-      // one-use ticket when the visitor declines. Retain the stream immediately
-      // so every timeout/network failure is still covered by shared cleanup.
+
+      const connection = new RTCPeerConnection();
+      const events = connection.createDataChannel("oai-events");
       microphone.current = stream;
+      peer.current = connection;
+      channel.current = events;
+      stream.getTracks().forEach((track) => connection.addTrack(track, stream));
+
+      connection.ontrack = (event) => {
+        const remoteStream = event.streams[0] || new MediaStream([event.track]);
+        attachRemoteAudio(remoteStream, attempt);
+      };
+      connection.onconnectionstatechange = () => {
+        if (attempt !== attemptRef.current) return;
+        if (connection.connectionState === "failed") {
+          fail("The live connection ended. Try the public demo line instead.");
+        }
+      };
+      events.onmessage = (message) => {
+        if (attempt !== attemptRef.current) return;
+        let event: Record<string, unknown>;
+        try {
+          event = JSON.parse(String(message.data)) as Record<string, unknown>;
+        } catch {
+          return;
+        }
+        const type = String(event.type || "");
+        if (type === "output_audio_buffer.started" || type === "response.created") {
+          setSpeakerActive(true);
+        }
+        if (
+          type === "output_audio_buffer.stopped" ||
+          type === "response.done" ||
+          type === "response.cancelled" ||
+          type === "response.failed" ||
+          type === "input_audio_buffer.speech_started"
+        ) {
+          setSpeakerActive(false);
+        }
+        if (type === "error") {
+          fail("The live connection ended. Try the public demo line instead.");
+        }
+      };
+      events.onerror = () => {
+        if (attempt === attemptRef.current) {
+          fail("The live connection ended. Try the public demo line instead.");
+        }
+      };
+      events.onclose = () => {
+        if (attempt === attemptRef.current && startedRef.current) finish(true);
+      };
+
+      const offer = await connection.createOffer();
+      await connection.setLocalDescription(offer);
+      await waitForIceGathering(connection);
+      const sdp = connection.localDescription?.sdp || offer.sdp || "";
 
       const providerController = new AbortController();
       sessionAbortRef.current = providerController;
@@ -351,171 +356,104 @@ export function useProtectedPublicDemo(
             "Content-Type": "application/json",
           },
           credentials: "same-origin",
-          body: "{}",
+          body: JSON.stringify({ sdp }),
           signal: providerController.signal,
         });
       } finally {
         window.clearTimeout(providerTimeout);
         if (sessionAbortRef.current === providerController) sessionAbortRef.current = null;
       }
-      if (!providerResponse.ok) {
-        throw new Error(await responseMessage(providerResponse));
-      }
+      if (!providerResponse.ok) throw new Error(await responseMessage(providerResponse));
       const session = (await providerResponse.json()) as DemoProviderSession;
-      if (!session.clientSecret || !session.websocketUrl || !session.session) {
+      if (!session.sdp?.startsWith("v=") || !session.endsAt) {
         throw new Error(session.error || "The protected live demo is temporarily unavailable.");
       }
-      if (attempt !== attemptRef.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
+      if (attempt !== attemptRef.current) return;
 
-      const duration = Math.max(
+      const configuredDuration = Math.max(
         15,
         Math.min(
           PUBLIC_BROWSER_DEMO_MAX_SECONDS,
           Number(session.maxDurationSeconds || ticket.maxDurationSeconds) || 0,
         ),
       );
-      setMaxDurationSeconds(duration);
-
-      const ws = new WebSocket(session.websocketUrl, [`xai-client-secret.${session.clientSecret}`]);
-      socket.current = ws;
-      await startCapture(stream, ws, attempt);
-      if (attempt !== attemptRef.current) return;
+      const serverRemainingMs = new Date(session.endsAt).getTime() - Date.now();
+      const remainingMs = Math.min(configuredDuration * 1_000, serverRemainingMs);
+      if (!Number.isFinite(remainingMs) || remainingMs < 1_000) {
+        throw new Error("The protected live demo took too long to start. Try again.");
+      }
+      setMaxDurationSeconds(configuredDuration);
 
       clearTimers();
       watchdogRef.current = window.setTimeout(() => {
-        if (attempt === attemptRef.current && !sessionReady.current) {
+        if (attempt === attemptRef.current && !startedRef.current) {
           fail("The live connection took too long. Try the public demo line instead.");
         }
       }, PUBLIC_DEMO_CONNECTION_TIMEOUT_MS);
 
-      ws.onmessage = (message) => {
+      events.onopen = () => {
         if (attempt !== attemptRef.current) return;
-        let event: Record<string, unknown>;
-        try {
-          event = JSON.parse(String(message.data)) as Record<string, unknown>;
-        } catch {
-          return;
+        if (watchdogRef.current !== null) {
+          window.clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
         }
-        const type = String(event.type || "");
-        if (type === "conversation.created") {
-          ws.send(JSON.stringify({ type: "session.update", session: session.session }));
-        }
-        if (type === "response.created") responseActive.current = true;
-        if (
-          type === "response.done" ||
-          type === "response.cancelled" ||
-          type === "response.failed"
-        ) {
-          responseActive.current = false;
-        }
-        if (type === "session.updated" && !sessionReady.current) {
-          if (watchdogRef.current !== null) {
-            window.clearTimeout(watchdogRef.current);
-            watchdogRef.current = null;
-          }
-          sessionReady.current = true;
-          startedRef.current = true;
-          setConnecting(false);
-          setCallActive(true);
-          setError(null);
+        startedRef.current = true;
+        setConnecting(false);
+        setCallActive(true);
+        setError(null);
 
-          const analytics = window as AnalyticsWindow;
-          analytics.fbq?.("trackCustom", "BrowserCallStart", { agent: agentNameRef.current });
-          analytics.plausible?.("BrowserCallStart", {
-            props: { agent: agentNameRef.current, source },
-          });
+        const analytics = window as AnalyticsWindow;
+        analytics.fbq?.("trackCustom", "BrowserCallStart", { agent: agentNameRef.current });
+        analytics.plausible?.("BrowserCallStart", {
+          props: { agent: agentNameRef.current, source },
+        });
 
-          const greeting = session.greeting?.trim();
-          if (greeting) {
-            ws.send(
+        const greeting = session.greeting?.trim();
+        if (greeting) {
+          events.send(
+            JSON.stringify({
+              type: "response.create",
+              response: { instructions: `Begin the conversation with this greeting: ${greeting}` },
+            }),
+          );
+        }
+
+        wrapUpTimerRef.current = window.setTimeout(
+          () => {
+            if (attempt !== attemptRef.current || events.readyState !== "open") return;
+            events.send(
               JSON.stringify({
-                type: "conversation.item.create",
-                item: {
-                  type: "force_message",
-                  role: "assistant",
-                  interruptible: true,
-                  content: [{ type: "output_text", text: greeting }],
+                type: "response.create",
+                response: {
+                  instructions:
+                    "End the demo now in one short sentence and invite the visitor to build a Bot free.",
                 },
               }),
             );
-          }
+          },
+          Math.max(1_000, remainingMs - 7_000),
+        );
+        endTimerRef.current = window.setTimeout(() => finish(true), remainingMs + 500);
+      };
 
-          wrapUpTimerRef.current = window.setTimeout(
-            () => {
-              if (attempt !== attemptRef.current || ws.readyState !== WebSocket.OPEN) return;
-              if (responseActive.current) {
-                ws.send(JSON.stringify({ type: "response.cancel" }));
-                responseActive.current = false;
-              }
-              ws.send(
-                JSON.stringify({
-                  type: "conversation.item.create",
-                  item: {
-                    type: "force_message",
-                    role: "assistant",
-                    interruptible: false,
-                    content: [
-                      {
-                        type: "output_text",
-                        text: "That’s the demo. Build your Bot free when you’re ready.",
-                      },
-                    ],
-                  },
-                }),
-              );
-            },
-            Math.max(8, duration - 7) * 1_000,
-          );
-          endTimerRef.current = window.setTimeout(() => finish(true), (duration + 1) * 1_000);
-        }
-        if (
-          (type === "response.output_audio.delta" || type === "response.audio.delta") &&
-          typeof event.delta === "string"
-        ) {
-          playAudio(event.delta);
-        }
-        if (type === "input_audio_buffer.speech_started") {
-          stopPlayback();
-        }
-        if (type === "error") {
-          fail("The live connection ended. Try the public demo line instead.");
-        }
-      };
-      ws.onerror = () => {
-        if (attempt === attemptRef.current) {
-          fail("The live connection ended. Try the public demo line instead.");
-        }
-      };
-      ws.onclose = (event) => {
-        if (attempt !== attemptRef.current) return;
-        if (event.code === 1000) {
-          finish(true);
-        } else {
-          fail("The live connection ended. Try the public demo line instead.");
-        }
-      };
+      await connection.setRemoteDescription({ type: "answer", sdp: session.sdp });
     } catch (reason: unknown) {
       if (attempt !== attemptRef.current) return;
-      console.error("[wireline:public-demo] call start failed", {
+      console.error("[botbound:public-demo] call start failed", {
         name: reason instanceof Error ? reason.name : "unknown",
       });
       fail(callStartErrorMessage(reason));
     }
   }, [
     agentName,
+    attachRemoteAudio,
     callActive,
     clearTimers,
     completed,
     connecting,
     fail,
     finish,
-    playAudio,
     source,
-    startCapture,
-    stopPlayback,
   ]);
 
   const stop = useCallback(() => {

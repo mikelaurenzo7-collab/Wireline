@@ -4,9 +4,11 @@ import type Stripe from "stripe";
 import { checkoutOperations } from "../db/security-schema";
 import * as schema from "../db/schema";
 import { addCredit } from "./credit-wallet";
-import { drizzle, tenantStore } from "./server-context";
+import { drizzle, log, tenantStore } from "./server-context";
 import { stripe, syncSubscriptionFromStripe } from "./stripe-helpers";
 import { resolveCurrentLiveVideoCheckoutEntitlement } from "./stripe-live-video-addon";
+import { transitionRuntimeBalanceOperation } from "./runtime-balance-operation";
+import { stripeOwnerUserExists } from "./stripe-owner-liveness";
 
 const CHECKOUT_OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
 
@@ -31,9 +33,38 @@ function checkoutSubscriptionId(session: Stripe.Checkout.Session): string | null
   return typeof session.subscription === "string" ? session.subscription : session.subscription.id;
 }
 
+async function checkoutOwnerStillExists(
+  session: Stripe.Checkout.Session,
+  userId: string,
+): Promise<boolean> {
+  if (await stripeOwnerUserExists(userId)) return true;
+
+  // A settled Stripe event may arrive after terminal account erasure. This is
+  // a permanent no-op, not a retryable outage: never recreate entitlements,
+  // settings, wallet credit, or checkout-operation state for a deleted owner.
+  log.info("Stripe Checkout fulfillment: ignoring late event for deleted account", {
+    checkoutSessionId: session.id,
+    mode: session.mode,
+    purpose: session.metadata?.purpose,
+    userId,
+  });
+  return false;
+}
+
 async function markCheckoutOperationCompleted(session: Stripe.Checkout.Session): Promise<void> {
   const operationId = checkoutOperationId(session);
-  if (!operationId) return;
+  const userId = session.metadata?.wireline_user_id?.trim();
+  if (!operationId || !userId) return;
+
+  if (session.mode === "payment" && session.metadata?.purpose === "credit_topup") {
+    await transitionRuntimeBalanceOperation({
+      id: operationId,
+      userId,
+      allowedFrom: ["creating", "open", "failed", "expired"],
+      values: { status: "completed", failureCode: null },
+    });
+    return;
+  }
 
   await drizzle
     .update(checkoutOperations)
@@ -41,22 +72,41 @@ async function markCheckoutOperationCompleted(session: Stripe.Checkout.Session):
     .where(
       and(
         eq(checkoutOperations.id, operationId),
+        eq(checkoutOperations.userId, userId),
         inArray(checkoutOperations.status, ["creating", "open"]),
       ),
     );
 }
 
 /**
- * Release a durable plan-checkout operation after Stripe confirms a delayed
- * payment failed. Only the stamped owner and an active operation can change;
- * completed operations and unrelated Stripe sessions are immutable no-ops.
+ * Release a durable plan or Runtime Balance Checkout operation after Stripe
+ * confirms a delayed payment failed. Only the stamped owner and an active
+ * operation can change; completed operations and unrelated Stripe sessions
+ * are immutable no-ops.
  */
 export async function failStripeCheckoutSession(
   session: Stripe.Checkout.Session,
 ): Promise<boolean> {
   const operationId = checkoutOperationId(session);
   const userId = session.metadata?.wireline_user_id?.trim();
-  if (!operationId || !userId || session.mode !== "subscription") return false;
+  const supportedOperation =
+    session.mode === "subscription" ||
+    (session.mode === "payment" && session.metadata?.purpose === "credit_topup");
+  if (!operationId || !userId || !supportedOperation) return false;
+
+  if (session.mode === "payment") {
+    return tenantStore.run(userId, () =>
+      transitionRuntimeBalanceOperation({
+        id: operationId,
+        userId,
+        allowedFrom: ["creating", "open"],
+        values: {
+          status: "failed",
+          failureCode: "stripe_async_payment_failed",
+        },
+      }),
+    );
+  }
 
   const updated = await tenantStore.run(userId, () =>
     drizzle
@@ -109,6 +159,7 @@ export async function fulfillStripeCheckoutSession(
       // Wireline-stamped subscriptions belong in our local projection.
       return result;
     }
+    if (!(await checkoutOwnerStillExists(session, userId))) return result;
 
     if (session.metadata?.purpose === "live_video_addon") {
       const subscriptionId = checkoutSubscriptionId(session);
@@ -177,6 +228,7 @@ export async function fulfillStripeCheckoutSession(
     // silently accepting would strand customer funds permanently.
     throw new Error(`Settled Runtime Balance Checkout ${session.id} has invalid metadata.`);
   }
+  if (!(await checkoutOwnerStillExists(session, userId))) return result;
 
   await tenantStore.run(userId, async () => {
     await addCredit(userId, creditUsd, "web_topup", {
@@ -196,6 +248,7 @@ export async function fulfillStripeCheckoutSession(
             : session.payment_intent?.id,
       },
     });
+    await markCheckoutOperationCompleted(session);
   });
   result.creditGranted = true;
   return result;

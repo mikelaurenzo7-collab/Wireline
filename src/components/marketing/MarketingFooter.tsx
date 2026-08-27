@@ -42,7 +42,6 @@ const RESOURCE_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { to: "/status", label: "Status" },
   { to: "/security", label: "Security" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },

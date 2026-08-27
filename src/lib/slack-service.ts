@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 /**
  * Slack Integration Service — real OAuth 2.0 flow.
@@ -114,7 +115,29 @@ async function getToken(userId: string): Promise<string | null> {
 //  Slack API Operations
 // ────────────────────────────────────────────────────────────────────
 
+async function tenantSlackAllowed(userId: string, action: string): Promise<boolean> {
+  try {
+    const policy = await liveExternalActionPolicyForUser(userId);
+    if (policy.allowed) return true;
+    log.warn("Slack action blocked by account environment", {
+      userId,
+      action,
+      accountEnvironment: policy.environment ?? "missing",
+      code: policy.code,
+    });
+    return false;
+  } catch (error) {
+    log.error("Slack account-environment lookup failed, failing closed", {
+      userId,
+      action,
+      error: getErrorMessage(error),
+    });
+    return false;
+  }
+}
+
 export async function listChannels(userId: string): Promise<SlackChannel[]> {
+  if (!(await tenantSlackAllowed(userId, "slack_channel_list"))) return [];
   const token = await getToken(userId);
   if (!token) return [];
 
@@ -156,6 +179,7 @@ export function pickDefaultChannelId(channels: SlackChannel[]): string | null {
 }
 
 export async function bootstrapDefaultChannel(userId: string): Promise<string | null> {
+  if (!(await tenantSlackAllowed(userId, "slack_default_channel_bootstrap"))) return null;
   const existing = await getDefaultChannel(userId);
   if (existing) return existing;
   const channels = await listChannels(userId);
@@ -191,6 +215,7 @@ export async function postAgentNotification(
   message: string,
   ctx?: SlackNotifyContext,
 ): Promise<boolean> {
+  if (!(await tenantSlackAllowed(userId, "slack_agent_notification"))) return false;
   const channel = (await getDefaultChannel(userId)) || (await bootstrapDefaultChannel(userId));
   if (!channel) {
     log.warn("Slack: no default channel, connect Slack and pick a channel in Admin");
@@ -206,6 +231,7 @@ export async function postMessage(
   text: string,
   blocks?: any[],
 ): Promise<boolean> {
+  if (!(await tenantSlackAllowed(userId, "slack_message_send"))) return false;
   const token = await getToken(userId);
   if (!token) {
     log.warn("Slack not connected, skipping message");

@@ -14,13 +14,15 @@ const read = (path: string) =>
  * handlers used to reverse the GROSS Stripe amount (refund.amount /
  * dispute.amount / amount_refunded), so with exclusive tax a fully-refunded
  * customer landed at a negative wallet and was blocked on completion-grace
- * debt they never spent. Every reversal must flow through creditPortionUsd,
- * which scales gross → credited using the PaymentIntent's credit_usd
- * metadata and rounds down so partial reversals can never exceed the grant.
+ * debt they never spent. Refunds flow through creditPortionUsd; authoritative
+ * dispute balance movements flow through proportionalTopUpCreditUsd in the
+ * strict preflight. Both scale gross → credited using the PaymentIntent's
+ * credit_usd metadata and round down so partial reversals cannot exceed grant.
  */
 describe("refund tax-clamp contract", () => {
   const billing = read("src/routes/billing-routes.ts");
   const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
+  const strictPreflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
 
   it("defines the proportional clamp against PaymentIntent credit_usd metadata", () => {
     expect(billing).toContain("function creditPortionUsd");
@@ -32,18 +34,22 @@ describe("refund tax-clamp contract", () => {
   });
 
   it("every refund and dispute reversal flows through the clamp — no raw gross amounts", () => {
-    // Three reversal sites (inline refunds, fetched fallback, dispute) must use
-    // creditPortionUsd. The fourth — a cumulative "last resort" keyed on
-    // charge.id — is gone: it double-debited on top of the per-refund.id
-    // reversals a later charge.refunded wrote. That path now throws.
+    // Both refund paths use the local clamp. Dispute withdrawal/reinstatement
+    // moved into the strict preflight so provider balance movements cannot be
+    // acknowledged without authoritative, idempotent accounting.
     const calls = billing.match(/creditPortionUsd\(/g) || [];
-    expect(calls.length).toBeGreaterThanOrEqual(4); // definition + 3 sites
+    expect(calls.length).toBeGreaterThanOrEqual(3); // definition + 2 refund sites
+    expect(strictPreflight).toContain("proportionalTopUpCreditUsd(");
+    expect(strictPreflight).toMatch(
+      /proportionalTopUpCreditUsd\(\s*withdrawnCents,\s*paymentIntent\.amount \|\| 0,\s*purchasedCreditUsd/,
+    );
     // The old raw-gross patterns must be gone from reverseCredit call sites.
     expect(billing).not.toMatch(/reverseCredit\(userId,\s*\(refund\.amount \?\? 0\) \/ 100/);
     expect(billing).not.toMatch(
       /reverseCredit\(\s*userId,\s*\(charge\.amount_refunded \?\? 0\) \/ 100/,
     );
     expect(billing).not.toMatch(/const disputedUsd = \(dispute\.amount \?\? 0\) \/ 100/);
+    expect(strictPreflight).not.toMatch(/reverseCredit\([^)]*\(dispute\.amount \?\? 0\) \/ 100/);
   });
 
   it("the top-up grant stays pre-tax so the clamp numerator matches the grant", () => {

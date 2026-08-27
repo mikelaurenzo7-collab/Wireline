@@ -100,7 +100,7 @@ const FREE_BUILDER_HIGHLIGHTS = [
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `Every active paid Bot gets its own BotBound production number, provisioned through Twilio and imported into the voice runtime. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
+    body: `Every active paid Bot gets its own BotBound production number. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     title: "Text / SMS",
@@ -131,7 +131,7 @@ const FAQ = [
   ],
   [
     "Does every paid Bot get a phone number?",
-    "Yes. Every active paid Bot gets one dedicated production number through BotBound's Twilio account. Unused plan capacity does not allocate a carrier number until a Bot actually exists and is active, so you pay for the plan capacity without orphan line spend.",
+    "Yes. Every active paid Bot gets one dedicated BotBound production number. Unused plan capacity does not allocate a number until a Bot actually exists and is active, so you never carry orphan line spend.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -143,11 +143,11 @@ const FAQ = [
   ],
   [
     "Why keep live usage prepaid?",
-    "Calls and messages carry real carrier and AI costs. One subscription unlocks every channel, included capacity gets you live, and extra provider usage stays prepaid and visible.",
+    "Calls and messages carry real operating costs. One subscription unlocks every channel, included capacity gets you live, and extra usage stays prepaid and visible.",
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
   ],
   [
     "What is the Scale plan?",
@@ -252,7 +252,7 @@ export default function Pricing() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Every active paid Bot gets its own production number
+                Every active paid Bot gets its own BotBound production number
               </p>
             </div>
 

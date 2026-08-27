@@ -308,6 +308,9 @@ export function getIntegrationLogo(name: string): React.ReactNode | null {
   const logo = ALL_LOGOS[normName] || ALL_LOGOS[name.toLowerCase()];
   if (!logo) return null;
   return React.cloneElement(logo.svg as React.ReactElement<any>, {
+    "aria-hidden": true,
+    "aria-label": undefined,
+    focusable: false,
     style: { height: "100%", width: "auto", display: "block", fill: "currentColor" },
   });
 }

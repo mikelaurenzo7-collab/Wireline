@@ -91,6 +91,42 @@ describe("structured runtime policy", () => {
     expect(existsSync(resolve(root, "src/routes/admin-purge-accounts-routes.ts"))).toBe(false);
   });
 
+  it("keeps direct OpenAI structured calls stateless and privacy-preserving", () => {
+    const client = read("src/lib/ai-client.ts");
+    const tenantContext = read("src/lib/tenant-context-store.ts");
+    const providerContext = read("src/lib/provider-identity-context.ts");
+    const structured = read("src/lib/ai-structured.ts");
+
+    expect(client).toContain("store: false");
+    expect(client).toContain("safety_identifier");
+    expect(client).toContain("currentProviderSafetyIdentifier()");
+    expect(client).not.toContain("tenantStore");
+    expect(client).toContain("disallowPromptTraining: true");
+    expect(client).toContain("await response.body.cancel()");
+    expect(client).not.toContain("detail,");
+    expect(client).toContain("Provider error bodies may echo customer content");
+
+    const gatewayCall = client.slice(
+      client.indexOf("async function callGateway"),
+      client.indexOf("function openAISafetyIdentifier"),
+    );
+    expect(gatewayCall).toContain("store: false");
+
+    const responsesCall = client.slice(
+      client.indexOf("async function callResponsesEndpoint"),
+      client.indexOf("async function callXAI"),
+    );
+    const bodyRead = responsesCall.indexOf("payload = (await response.json())");
+    expect(bodyRead).toBeGreaterThan(-1);
+    expect(responsesCall.indexOf("timer.dispose();", bodyRead)).toBeGreaterThan(bodyRead);
+    expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
+    expect(providerContext).toContain('OPENAI_SAFETY_ID_DOMAIN = "botbound:"');
+    expect(providerContext).toContain("new AsyncLocalStorage<string>()");
+    expect(providerContext).toContain('createHash("sha256")');
+    expect(structured).toContain("tenantStore.getStore()");
+    expect(structured).toContain("runWithProviderIdentity(tenantId, operation)");
+  });
+
   it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {
     for (const path of ["src/lib/workspace-planner.ts", "src/routes/agent-workspace-routes.ts"]) {
       const source = read(path);

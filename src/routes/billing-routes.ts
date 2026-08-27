@@ -36,6 +36,8 @@ import {
 } from "../lib/stripe-checkout-fulfillment";
 import { checkoutOperations } from "../db/security-schema";
 import { listCurrentLiveVideoAddons } from "../lib/stripe-live-video-addon";
+import { enforcePendingDeletionBillingForSubscription } from "../lib/account-deletion-billing";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 
 const router = express.Router();
 const LIVE_VIDEO_CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -423,41 +425,19 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         break;
       }
       case "charge.dispute.created": {
-        // Chargeback on a credit top-up — claw the credit back so a disputed
-        // (often fraudulent) payment can't leave spendable balance behind.
-        // Mirrors charge.refunded; idempotent via stripe_events + (user, ref).
-        const dispute = event.data.object as Stripe.Dispute;
-        const piId =
-          typeof dispute.payment_intent === "string"
-            ? dispute.payment_intent
-            : dispute.payment_intent?.id;
-        if (!piId) break;
-        const pi = await stripe.paymentIntents.retrieve(piId);
-        if (pi.metadata?.purpose === "credit_topup") {
-          const userId = pi.metadata.wireline_user_id;
-          const disputedUsd = creditPortionUsd(dispute.amount ?? 0, pi);
-          if (userId && disputedUsd > 0) {
-            await tenantStore.run(userId, async () => {
-              await reverseCredit(userId, disputedUsd, "web_topup_dispute", {
-                type: "stripe_dispute",
-                id: dispute.id,
-                entryKind: "reversal",
-                source: "stripe",
-                provider: "stripe",
-                providerEventId: event.id,
-                providerObjectId: dispute.id,
-                customerReason: "Runtime Balance dispute reversal",
-                metadata: { payment_intent_id: piId },
-              });
-            });
-          }
-        } else if (dispute.charge) {
-          const disputedCharge = await stripe.charges.retrieve(
-            typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
-          );
-          await reverseRuntimeAllowanceForCharge(disputedCharge, "dispute", dispute.id);
-        }
+        // Notification only. A dispute can begin as an inquiry without any
+        // funds moving. The registered financial-integrity preflight consumes
+        // this event and accounts only from Stripe's authoritative
+        // funds_withdrawn/funds_reinstated balance movements.
         break;
+      }
+      case "charge.dispute.funds_withdrawn":
+      case "charge.dispute.funds_reinstated": {
+        // These events must never fall through and be marked processed without
+        // the strict Runtime Balance mutations in stripeRuntimeAllowanceRetryPreflight.
+        throw new Error(
+          "Stripe dispute balance movement reached the legacy webhook router without preflight accounting.",
+        );
       }
       case "customer.subscription.created":
       case "customer.subscription.updated":
@@ -517,14 +497,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 .where(eq(schema.agents.userId, userId));
             }
           }
+          await enforcePendingDeletionBillingForSubscription(sub);
           break;
         }
         if (event.type === "customer.subscription.created")
           (sub as unknown as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
+        const deletionBillingEnforced = await enforcePendingDeletionBillingForSubscription(sub);
         const subscriptionUserId = sub.metadata?.wireline_user_id;
         const subscriptionPlan = planById(sub.metadata?.wireline_plan);
         if (
+          !deletionBillingEnforced &&
           subscriptionUserId &&
           subscriptionPlan &&
           (sub.status === "active" || sub.status === "trialing")
@@ -590,6 +573,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   );
                 }
                 const delivery = await sendPaymentFailedEmail({
+                  userId: row.userId,
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
@@ -1063,7 +1047,7 @@ router.get(
   requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!stripeAvailable()) {
-      throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
     }
     try {
       const rows = await drizzle
@@ -1113,7 +1097,9 @@ router.post(
   enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      if (!stripeAvailable()) {
+        throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
+      }
       if (!isLiveVideoCatalogReady()) {
         return res.status(503).json({
           code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
@@ -1121,6 +1107,10 @@ router.post(
             "Live talking-head video is retired. Identity badges stay. Phone, email, and text are unaffected.",
         });
       }
+      // The catalog is currently retired, but keep this dormant checkout path
+      // safe if it is ever re-enabled: demo/test workspaces must never create a
+      // Stripe customer or subscription with the deployment's live key.
+      await assertLiveExternalActionAllowed(req.user.id, "live_video_checkout");
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
       // is accepted as an alias so ops can standardize on the SKU-shaped name.
       const configuredPriceId =
@@ -1384,7 +1374,7 @@ router.post(
           });
           return res.status(202).json({
             code: "CHECKOUT_RECONCILING",
-            error: "Stripe is preparing the hosted checkout. Retry to resume it safely.",
+            error: "Checkout is being prepared. Retry to resume it safely.",
             operation_id: operationId,
           });
         }
@@ -1437,8 +1427,7 @@ router.post(
           });
           return res.status(202).json({
             code: "CHECKOUT_RECONCILING",
-            error:
-              "Stripe did not return a definitive result. Retry to resume this checkout safely.",
+            error: "Checkout did not return a definitive result. Retry to resume safely.",
             operation_id: operationId,
           });
         }

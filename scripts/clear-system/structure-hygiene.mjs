@@ -110,8 +110,8 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/styles/safe-area-ownership.css",
     safeAreaOwnership,
-    /@media \(max-width: 767px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
-    "mobile workspace scroller must clear the fixed dock",
+    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
+    "mobile and tablet workspace scrollers must clear the fixed dock",
   );
   mustExclude(
     "src/styles/responsive.css",
@@ -124,7 +124,12 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     ["src/components/atoms/NativeSelect.tsx", nativeSelect],
   ]) {
     mustInclude(file, source, /h-11/, "shared form control must be at least 44px tall");
-    mustInclude(file, source, /text-base[\s\S]*md:text-sm/, "shared form control must use 16px mobile text");
+    mustInclude(
+      file,
+      source,
+      /text-base[\s\S]*md:text-sm/,
+      "shared form control must use 16px mobile text",
+    );
   }
   mustInclude(
     "src/components/atoms/Textarea.tsx",
@@ -230,9 +235,15 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     ["src/components/marketing/HeroCallPreview.tsx", "retired call preview must stay deleted"],
     ["src/components/StudioAssistantWorkspace.tsx", "dead legacy Studio rail must stay deleted"],
     ["src/components/ui/NebulaPulse.tsx", "unused nebula primitive must stay deleted"],
-    ["src/components/ui/AssistantConstellation.tsx", "unused constellation primitive must stay deleted"],
+    [
+      "src/components/ui/AssistantConstellation.tsx",
+      "unused constellation primitive must stay deleted",
+    ],
     ["src/components/ui/ConstellationField.tsx", "unused constellation field must stay deleted"],
-    ["src/components/migration/ZipLanding.tsx", "wrong-palette migration landing must stay deleted"],
+    [
+      "src/components/migration/ZipLanding.tsx",
+      "wrong-palette migration landing must stay deleted",
+    ],
     ["src/styles/zip-platform-tokens.css", "wrong-palette token shim must stay deleted"],
     ["src/styles/zip-landing.css", "wrong-palette landing CSS must stay deleted"],
     ["src/styles/zip-landing-sections.css", "wrong-palette section CSS must stay deleted"],

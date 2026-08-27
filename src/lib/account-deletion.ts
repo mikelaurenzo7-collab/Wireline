@@ -5,6 +5,7 @@
 // invoked from the delayed `purge_deleted_account` job after the 30-day grace
 // period. All normal callers should use POST /api/account/delete instead.
 
+import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
@@ -111,6 +112,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_director_artifact_objects", userColumns: ["user_id"] },
   { table: "wireline_director_profile", userColumns: ["user_id"] },
   { table: "wireline_checkout_operations", userColumns: ["user_id"] },
+  { table: "wireline_account_operation_leases", userColumns: ["user_id"] },
   { table: "wireline_subscriptions", userColumns: ["user_id"] },
   { table: "wireline_onboarding_progress", userColumns: ["user_id"] },
   { table: "wireline_user_preferences", userColumns: ["user_id"] },
@@ -183,6 +185,20 @@ export interface PurgeAccountResult {
   authRemoved: boolean;
 }
 
+/**
+ * Stable, pseudonymous correlation for a terminal erasure receipt.
+ *
+ * Wireline user ids are random UUIDs, so a one-way digest does not expose an
+ * email, phone number, or other customer identifier. The versioned domain
+ * separator also prevents this value from being confused with a raw UUID hash
+ * used by another subsystem.
+ */
+export function accountDeletionReceiptId(userId: string): string {
+  return createHash("sha256")
+    .update(`botbound:account-deletion-receipt:v1:${userId}`, "utf8")
+    .digest("hex");
+}
+
 export interface TerminalAccountPurgeQueueRow {
   id: string;
   userId: string;
@@ -193,6 +209,7 @@ export interface TerminalAccountPurgeQueueRow {
 
 export type TerminalAccountPurgeClaim =
   | { ready: true; resumed: boolean; queueRow: TerminalAccountPurgeQueueRow }
+  | { ready: false; reason: "account_operation_in_flight"; retryAt: Date }
   | {
       ready: false;
       reason: "queue_row_missing" | "queue_state_changed" | "grace_period_active";
@@ -213,9 +230,28 @@ export async function claimTerminalAccountPurge(
   input: { userId: string; queueId?: string },
   deps: Pick<PurgeAccountDeps, "db">,
 ): Promise<TerminalAccountPurgeClaim> {
-  return tenantStore.exit(() =>
+  return tenantStore.run(input.userId, () =>
     deps.db.transaction(async (tx) => {
       await acquireAccountDeletionFence(tx, input.userId);
+
+      const [activeOperation] = await tx
+        .select({ expiresAt: schema.accountOperationLeases.expiresAt })
+        .from(schema.accountOperationLeases)
+        .where(
+          and(
+            eq(schema.accountOperationLeases.userId, input.userId),
+            sql`${schema.accountOperationLeases.expiresAt} > now()`,
+          ),
+        )
+        .orderBy(schema.accountOperationLeases.expiresAt)
+        .limit(1);
+      if (activeOperation) {
+        return {
+          ready: false,
+          reason: "account_operation_in_flight",
+          retryAt: activeOperation.expiresAt,
+        } as const;
+      }
 
       const [existing] = await tx
         .select({
@@ -294,6 +330,12 @@ export async function claimTerminalAccountPurge(
 
 export interface ExternalReleaseSummary {
   subscriptionsCanceled: number;
+  checkoutSessionsExpired: number;
+  stripeCustomersDeleted: number;
+  realtimeCallsHungUp: number;
+  twilioCallsHungUp: number;
+  xaiCallsHungUp: number;
+  nativePurchaseClaimsReconciled: number;
   numbersReleased: number;
   /** Non-fatal number-release failures (carrier orphans, retried out-of-band). */
   numberErrors: string[];
@@ -357,6 +399,12 @@ async function releaseExternalResourcesOutsideTenantContext(
   const { db, log } = deps;
   const numberErrors: string[] = [];
   let subscriptionsCanceled = 0;
+  let checkoutSessionsExpired = 0;
+  let stripeCustomersDeleted = 0;
+  let realtimeCallsHungUp = 0;
+  let twilioCallsHungUp = 0;
+  let xaiCallsHungUp = 0;
+  let nativePurchaseClaimsReconciled = 0;
   let numbersReleased = 0;
   let oauthRevoked = 0;
   let oauthAttempted = 0;
@@ -373,6 +421,15 @@ async function releaseExternalResourcesOutsideTenantContext(
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
+
+  const { expireOpenCheckoutSessionsForDeletion } = await import("./account-deletion-billing");
+  const checkoutClosure = await expireOpenCheckoutSessionsForDeletion(userId);
+  if (!checkoutClosure.confirmed) {
+    throw new Error(
+      "Open Stripe Checkout Sessions could not be closed; deferring purge so no payable URL outlives the account.",
+    );
+  }
+  checkoutSessionsExpired = checkoutClosure.expired;
 
   if (sub?.stripeCustomerId || sub?.stripeSubscriptionId) {
     const { stripe, stripeAvailable } = await import("./stripe-helpers");
@@ -391,13 +448,12 @@ async function releaseExternalResourcesOutsideTenantContext(
       // status:"all" then filter — "active" alone misses trialing/past_due/
       // unpaid subscriptions, each of which is still a live billing
       // relationship that must be torn down on account deletion.
-      const all = await stripe.subscriptions.list({
+      const terminal = new Set<string>();
+      for await (const s of stripe.subscriptions.list({
         customer: sub.stripeCustomerId,
         status: "all",
         limit: 100,
-      });
-      const terminal = new Set<string>();
-      for (const s of all.data) {
+      })) {
         if (s.status === "canceled" || s.status === "incomplete_expired") terminal.add(s.id);
         else ids.add(s.id);
       }
@@ -429,6 +485,128 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
+  if (checkoutClosure.customerIds.length) {
+    const { stripe, stripeAvailable } = await import("./stripe-helpers");
+    if (!stripeAvailable()) {
+      throw new Error("Stripe customer erasure is unavailable; deferring account purge.");
+    }
+    for (const customerId of checkoutClosure.customerIds) {
+      try {
+        await stripe.customers.del(customerId);
+        stripeCustomersDeleted++;
+      } catch (error) {
+        if (!isStripeAlreadyGone(error)) throw error;
+      }
+    }
+  }
+
+  // 1.5 A Realtime call created immediately before the deletion deadline owns
+  // a future tenant job that is the only authoritative server-side hangup. The
+  // terminal claim drained any running handler and blocks new call admission;
+  // execute every remaining non-done hangup now, before the generic table sweep
+  // deletes its only provider call id. Provider failure defers the purge.
+  const realtimeHangupJobs = await db
+    .select({ id: schema.jobs.id, payload: schema.jobs.payload })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.userId, userId),
+        eq(schema.jobs.type, "openai_realtime_hangup"),
+        sql`${schema.jobs.status} IS DISTINCT FROM 'done'`,
+      ),
+    );
+  if (realtimeHangupJobs.length) {
+    const { hangupOpenAIRealtimeCall } = await import("./voice/openai-realtime-call-control");
+    for (const job of realtimeHangupJobs) {
+      const payload =
+        job.payload && typeof job.payload === "object"
+          ? (job.payload as Record<string, unknown>)
+          : {};
+      const callId = typeof payload.callId === "string" ? payload.callId : "";
+      if (!callId) {
+        throw new Error(
+          `OpenAI Realtime hangup job ${job.id} has no call id; deferring purge for reconciliation.`,
+        );
+      }
+      await hangupOpenAIRealtimeCall({
+        callId,
+        keyPurpose: payload.keyPurpose === "chatgpt_demo" ? "chatgpt_demo" : "runtime",
+        keySource:
+          payload.keySource === "chatgpt_demo" || payload.keySource === "runtime"
+            ? payload.keySource
+            : undefined,
+        expectedKeyFingerprint:
+          typeof payload.keyFingerprint === "string" ? payload.keyFingerprint : undefined,
+      });
+      realtimeCallsHungUp++;
+    }
+  }
+
+  const activeXAISessions = await db
+    .select({ presenceId: schema.signalPresence.id })
+    .from(schema.signalPresence)
+    .where(
+      and(eq(schema.signalPresence.userId, userId), sql`${schema.signalPresence.id} LIKE 'xai:%'`),
+    );
+  if (activeXAISessions.length) {
+    const { hangupXAISipCall } = await import("./voice/xai-sip-session");
+    for (const row of activeXAISessions) {
+      const callId = row.presenceId.slice(4);
+      if (!callId) continue;
+      await hangupXAISipCall(callId);
+      xaiCallsHungUp++;
+    }
+  }
+
+  // Native outbound placement persists the Twilio CallSid on the lead before
+  // its customer-facing success response. Calls can still be queued/ringing/
+  // in-progress when the deletion deadline arrives, so terminate every
+  // non-terminal tenant pointer before phone-number release and local erasure.
+  const activeCarrierCalls = await db
+    .select({ callSid: schema.outboundLeads.callId })
+    .from(schema.outboundLeads)
+    .where(
+      and(
+        eq(schema.outboundLeads.userId, userId),
+        inArray(schema.outboundLeads.status, ["Queued", "Dialing", "Connected"]),
+        sql`${schema.outboundLeads.callId} ~ '^CA[0-9a-fA-F]{32}$'`,
+      ),
+    );
+  if (activeCarrierCalls.length) {
+    const { getTwilioClient } = await import("./twilio-service");
+    const client = getTwilioClient();
+    if (!client) {
+      throw new Error("Twilio call cleanup is unavailable; deferring account purge.");
+    }
+    const terminalStatuses = new Set(["completed", "busy", "failed", "no-answer", "canceled"]);
+    for (const row of activeCarrierCalls) {
+      const callSid = String(row.callSid || "").trim();
+      if (!callSid) continue;
+      try {
+        const call = await client.calls(callSid).fetch();
+        if (!terminalStatuses.has(String(call.status || "").toLowerCase())) {
+          await client.calls(callSid).update({ status: "completed" });
+          twilioCallsHungUp++;
+        }
+      } catch (error) {
+        const carrierError = error as { status?: unknown; statusCode?: unknown } | null;
+        const status = Number(carrierError?.status ?? carrierError?.statusCode);
+        if (status !== 404) throw error;
+      }
+    }
+  }
+
+  // A provider-operation lease is a bounded admission/drain mechanism, not
+  // proof that a timed-out Twilio purchase was rejected. Before normal number
+  // teardown, authoritatively list every durable pre-provider purchase claim
+  // by its exact E.164 + non-PII friendly name and release any accepted rental.
+  // Any provider or ledger failure defers the terminal purge.
+  const { reconcileNativeTwilioPurchaseClaimsForTerminalDeletion } =
+    await import("./orphan-carrier-retry");
+  const nativePurchaseClaimReconciliation =
+    await reconcileNativeTwilioPurchaseClaimsForTerminalDeletion(userId);
+  nativePurchaseClaimsReconciled = nativePurchaseClaimReconciliation.attempted;
+
   // 2. Release provisioned numbers at the carrier (Twilio + native xAI). A
   //    carrier failure does not block GDPR erasure by itself, but the platform
   //    must durably retain the ownership/provider identifiers before hard-delete.
@@ -443,10 +621,18 @@ async function releaseExternalResourcesOutsideTenantContext(
   if (numbers.length) {
     const { releaseNativeTenantNumber } = await import("./voice/native-phone-release");
     for (const { phoneNumber, vapiNumberId } of numbers) {
-      const res = await releaseNativeTenantNumber(userId, phoneNumber).catch((err) => ({
-        ok: false as const,
-        error: getErrorMessage(err),
-      }));
+      // Native xAI claim/retirement functions deliberately require the tenant
+      // GUC even when the surrounding deletion coordinator is running as the
+      // root worker. Re-enter only for this ownership-bound provider teardown;
+      // the discovery and final purge remain outside every ambient tenant.
+      const res = await tenantStore
+        .run(userId, () =>
+          releaseNativeTenantNumber(userId, phoneNumber, { terminalCleanup: true }),
+        )
+        .catch((err) => ({
+          ok: false as const,
+          error: getErrorMessage(err),
+        }));
       if (res.ok) {
         numbersReleased++;
       } else {
@@ -571,6 +757,12 @@ async function releaseExternalResourcesOutsideTenantContext(
 
   return {
     subscriptionsCanceled,
+    checkoutSessionsExpired,
+    stripeCustomersDeleted,
+    realtimeCallsHungUp,
+    twilioCallsHungUp,
+    xaiCallsHungUp,
+    nativePurchaseClaimsReconciled,
     numbersReleased,
     numberErrors,
     oauthRevoked,
@@ -612,6 +804,13 @@ async function purgeAccountOutsideTenantContext(
       // boundary, while a worker arriving after this lock waits for erasure and
       // then observes that the user/call no longer exists.
       await acquireAccountDeletionFence(tx, userId);
+      // Retained xAI provider registrations outlive the tenant only because
+      // their one-time verification secret cannot be recovered. Remove former
+      // tenant/agent ownership before the user row disappears; unresolved
+      // registrations become non-routable reconciliation records.
+      await tx.execute(
+        sql`SELECT public.wireline_scrub_xai_phone_bindings_for_purge(${userId}::uuid)`,
+      );
       for (const target of ACCOUNT_DELETION_TARGETS) {
         if (!(await tableExists(tx, target.table))) {
           log.warn("account purge skipped missing table", { table: target.table, userId });
@@ -643,6 +842,26 @@ async function purgeAccountOutsideTenantContext(
       }
 
       await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
+      // Migration 0157 permits NULL only for server-owned system events. Write
+      // the pseudonymous receipt inside this same transaction: if the receipt
+      // cannot be retained, the destructive purge rolls back rather than
+      // claiming an erasure that has no durable terminal evidence.
+      await tx
+        .insert(schema.auditLog)
+        .values({
+          userId: null,
+          action: "account.purge.completed",
+          eventType: "account.deletion.completed",
+          severity: "info",
+          resourceType: "account_deletion_receipt",
+          resourceId: accountDeletionReceiptId(userId),
+          metadata: {
+            receipt_version: 1,
+            auth_removed: true,
+            tables_touched: [...tablesTouched],
+          },
+        })
+        .onConflictDoNothing();
       return { ok: true, tablesTouched, authRemoved: true };
     });
   } catch (error: unknown) {

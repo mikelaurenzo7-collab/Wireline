@@ -67,7 +67,7 @@ export default function AcceptInvite() {
         sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
-        window.setTimeout(() => window.location.assign("/overview"), 900);
+        window.setTimeout(() => window.location.assign("/studio"), 900);
       })
       .catch((error: unknown) => {
         sessionStorage.removeItem(PENDING_INVITE_KEY);
@@ -88,7 +88,7 @@ export default function AcceptInvite() {
         path="/accept-invite"
         noIndex
       />
-      <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
         <section
           className="wl-auth-card w-full max-w-[420px] rounded-md p-6 text-center sm:p-8"
           aria-live="polite"

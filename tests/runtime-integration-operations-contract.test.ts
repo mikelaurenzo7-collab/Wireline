@@ -2,57 +2,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { AGENT_TOOL_CATALOG } from "../src/lib/agent-capabilities";
 import { buyerTierForIntegration } from "../src/lib/integrations-certification";
 import { validatePlaybookCoverage } from "../src/lib/integration-playbooks";
 import {
   RUNTIME_INTEGRATIONS,
   getRuntimeCapabilities,
 } from "../src/lib/runtime-integrations-registry";
-import {
-  WORKSPACE_INTEGRATION_CATALOG,
-  workspaceCatalogCoversIntegration,
-} from "../src/lib/workspace-integration-catalog";
 
-describe("integration vendor operating map", () => {
-  it("keeps authenticated integration UI operational instead of explanatory", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/components/integrations/IntegrationOperatingMap.tsx"),
-      "utf8",
-    );
-
-    expect(source).not.toContain("entry.purpose");
-    expect(source).not.toContain("entry.detail");
-    expect(source).not.toContain("entry.agentScope");
-    expect(source).not.toContain("entry.guardrail");
-    expect(source).not.toContain("entry.nextStep");
-  });
-
-  it("keeps canonical connector metadata complete", () => {
-    expect(WORKSPACE_INTEGRATION_CATALOG.length).toBeGreaterThanOrEqual(16);
-
-    for (const entry of WORKSPACE_INTEGRATION_CATALOG) {
-      expect(entry.label).toBeTruthy();
-      expect(entry.family).toBeTruthy();
-      expect(entry.purpose.length).toBeGreaterThan(24);
-      expect(entry.agentScope.length).toBeGreaterThan(24);
-      expect(entry.guardrail.length).toBeGreaterThan(24);
-      expect(entry.nextStep.length).toBeGreaterThan(24);
-      expect(entry.capabilities.length).toBeGreaterThan(0);
-      expect(["live", "beta", "planned", "platform"]).toContain(entry.readiness);
-    }
-  });
-
-  it("covers every integration-scoped agent tool in the user-facing operating map", () => {
-    const toolIntegrations = new Set(
-      AGENT_TOOL_CATALOG.map((tool) => tool.integration).filter(Boolean),
-    );
-
-    const missing = [...toolIntegrations].filter(
-      (integration) => integration && !workspaceCatalogCoversIntegration(integration),
-    );
-
-    expect(missing).toEqual([]);
+describe("runtime integration operations", () => {
+  it("keeps playbook coverage complete without a customer-facing provider-status map", () => {
     expect(validatePlaybookCoverage()).toEqual([]);
   });
 

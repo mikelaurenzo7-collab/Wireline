@@ -1,11 +1,13 @@
 import { and, eq, isNull } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { isVaultConfigured } from "../secret-vault";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import {
   deactivateNativeXAIPhoneLine,
   provisionNativeXAIPhone,
@@ -52,7 +54,7 @@ async function restorePreviousRouting(input: {
   }
 }
 
-export async function assignNativePhoneLine(input: {
+async function assignNativePhoneLineUnfenced(input: {
   userId: string;
   lineId: bigint;
   agentId?: string | null;
@@ -62,10 +64,7 @@ export async function assignNativePhoneLine(input: {
     .select()
     .from(schema.phoneNumbers)
     .where(
-      and(
-        eq(schema.phoneNumbers.id, input.lineId),
-        eq(schema.phoneNumbers.userId, input.userId),
-      ),
+      and(eq(schema.phoneNumbers.id, input.lineId), eq(schema.phoneNumbers.userId, input.userId)),
     )
     .limit(1);
   if (!current) throw AppError.notFound("Phone number not found");
@@ -96,26 +95,23 @@ export async function assignNativePhoneLine(input: {
     : isNull(schema.phoneNumbers.agentId);
   let updated: typeof schema.phoneNumbers.$inferSelect;
   try {
-    [updated] = await runCompanyIdentityMutation(
-      input.userId,
-      "phone_number_changed",
-      (tx) =>
-        tx
-          .update(schema.phoneNumbers)
-          .set({
-            ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
-            ...(input.campaignLabel !== undefined
-              ? { campaignLabel: input.campaignLabel.trim() || null }
-              : {}),
-          })
-          .where(
-            and(
-              eq(schema.phoneNumbers.id, input.lineId),
-              eq(schema.phoneNumbers.userId, input.userId),
-              currentAgentPredicate,
-            ),
-          )
-          .returning(),
+    [updated] = await runCompanyIdentityMutation(input.userId, "phone_number_changed", (tx) =>
+      tx
+        .update(schema.phoneNumbers)
+        .set({
+          ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
+          ...(input.campaignLabel !== undefined
+            ? { campaignLabel: input.campaignLabel.trim() || null }
+            : {}),
+        })
+        .where(
+          and(
+            eq(schema.phoneNumbers.id, input.lineId),
+            eq(schema.phoneNumbers.userId, input.userId),
+            currentAgentPredicate,
+          ),
+        )
+        .returning(),
     );
     if (!updated) throw AppError.conflict("The phone assignment changed in another request.");
   } catch (error) {
@@ -175,4 +171,25 @@ export async function assignNativePhoneLine(input: {
   }
 
   return { line: updated, nativeVoice: null };
+}
+
+export async function assignNativePhoneLine(input: {
+  userId: string;
+  lineId: bigint;
+  agentId?: string | null;
+  campaignLabel?: string;
+}): Promise<NativePhoneAssignmentResult> {
+  await assertLiveExternalActionAllowed(input.userId, "native_phone_assignment");
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId: input.userId,
+    operation: "native_phone_assignment",
+    ttlMs: 20 * 60_000,
+    perform: () => assignNativePhoneLineUnfenced(input),
+  });
+  if (!outcome.performed) {
+    throw AppError.conflict(
+      "This workspace has reached its account-deletion deadline. Phone assignment cannot start.",
+    );
+  }
+  return outcome.result;
 }

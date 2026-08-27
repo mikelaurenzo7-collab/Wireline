@@ -1,3 +1,5 @@
+import { BOT_ROLE_TEMPLATES } from "./bot-product";
+
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
 // Signup attribution stores stable billing ids. Customer-facing URLs use the
@@ -42,6 +44,7 @@ export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 export type SignupIntent = {
   preferredPlanId?: SignupPlanId;
   preferredBillingInterval?: "month" | "year";
+  preferredTemplateId?: string;
   signupWedge?: SignupWedgeKey;
   utmSource?: string;
   utmMedium?: string;
@@ -117,6 +120,9 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
+const TEMPLATE_LABELS = new Map<string, string>(
+  BOT_ROLE_TEMPLATES.map((template) => [template.key, template.name] as const),
+);
 const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   free: "personal",
   builder: "personal",
@@ -151,6 +157,15 @@ function normalizePlanId(value: string | null | undefined): SignupPlanId | undef
   return LEGACY_PLAN_ALIASES[aliasKey] || LEGACY_PLAN_ALIASES[cleaned];
 }
 
+function normalizeTemplateId(value: string | null | undefined): string | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  return cleaned && TEMPLATE_LABELS.has(cleaned) ? cleaned : undefined;
+}
+
+export function signupTemplateLabel(templateId: string): string {
+  return TEMPLATE_LABELS.get(templateId) || "Selected role";
+}
+
 /**
  * Drop or normalize plan/wedge values outside the current allowlist. Stale
  * localStorage and old marketing URLs can otherwise make signup fail silently.
@@ -168,6 +183,9 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
   if (intent.preferredBillingInterval === "year" || intent.preferredBillingInterval === "month") {
     out.preferredBillingInterval = intent.preferredBillingInterval;
   }
+
+  const normalizedTemplate = normalizeTemplateId(intent.preferredTemplateId);
+  if (normalizedTemplate) out.preferredTemplateId = normalizedTemplate;
 
   if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
     out.signupWedge = intent.signupWedge;
@@ -206,6 +224,9 @@ export function parseSignupIntent(search: string): SignupIntent | null {
     intent.preferredBillingInterval = rawInterval;
   }
 
+  const normalizedTemplate = normalizeTemplateId(params.get("template"));
+  if (normalizedTemplate) intent.preferredTemplateId = normalizedTemplate;
+
   if (rawWedge && WEDGE_SET.has(rawWedge)) {
     intent.signupWedge = rawWedge as SignupWedgeKey;
   }
@@ -224,6 +245,7 @@ export function hasSignupIntent(intent: SignupIntent | null | undefined): intent
   return !!(
     intent?.preferredPlanId ||
     intent?.preferredBillingInterval ||
+    intent?.preferredTemplateId ||
     intent?.signupWedge ||
     intent?.utmSource ||
     intent?.utmMedium ||

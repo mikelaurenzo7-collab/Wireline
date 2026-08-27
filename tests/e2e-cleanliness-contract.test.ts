@@ -59,7 +59,7 @@ describe("E2E cleanliness contracts", () => {
     expect(hook).toContain("JSON.stringify({ agentName, source })");
     expect(hook).toContain("microphone.current?.getTracks()");
     expect(hook).toContain("track.stop()");
-    expect(hook).toContain("xai-client-secret.");
+    expect(hook).not.toContain("xai-client-secret.");
     expect(hook).not.toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
     expect(hook).not.toContain("permissionStream.getTracks()");
     expect(widget).toContain("useProtectedPublicDemo");

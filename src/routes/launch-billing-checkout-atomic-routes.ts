@@ -14,6 +14,7 @@ import {
 } from "../lib/stripe-helpers";
 import type Stripe from "stripe";
 import { authenticateUser } from "../middleware/auth";
+import { fencePayableBillingDuringAccountDeletion } from "../middleware/account-deletion-billing-fence";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { checkoutOperations } from "../db/security-schema";
 import * as schema from "../db/schema";
@@ -135,8 +136,10 @@ router.post(
   "/api/billing/checkout",
   authenticateUser,
   enforceLaunchHardGate,
+  fencePayableBillingDuringAccountDeletion,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+    if (!stripeAvailable())
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
 
     const requestedPlanId = String(req.body?.plan_id || "").trim();
     const interval = req.body?.interval === "year" ? "year" : "month";
@@ -539,7 +542,7 @@ router.post(
         return res.status(202).json({
           code: "CHECKOUT_RECONCILING",
           error:
-            "Stripe did not return a definitive billing-profile result. Retry the same plan to resume safely.",
+            "Billing did not return a definitive account result. Retry the same plan to resume safely.",
           operation_id: operationId,
         });
       }
@@ -558,7 +561,7 @@ router.post(
         return res.status(202).json({
           code: "CHECKOUT_RECONCILING",
           error:
-            "Stripe did not return a definitive result. Retry the same plan to resume this checkout safely.",
+            "Checkout did not return a definitive result. Retry the same plan to resume safely.",
           operation_id: operationId,
         });
       }
@@ -591,7 +594,8 @@ router.post(
   "/api/billing/checkout/verify",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+    if (!stripeAvailable())
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
     const sessionId = String(req.body?.session_id || "").trim();
     if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
       throw AppError.fromHttpStatus(400, "A Stripe checkout session id is required.");

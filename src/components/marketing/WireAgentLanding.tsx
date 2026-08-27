@@ -117,7 +117,7 @@ export default function WireAgentLanding() {
             <nav className="landing-prestige__mobile-links" aria-label="Public information">
               <Link to="/privacy">Privacy</Link>
               <Link to="/terms">Terms</Link>
-              <Link to="/status">Status</Link>
+              <Link to="/trust">Trust</Link>
             </nav>
           </div>
         </section>
@@ -221,7 +221,7 @@ export default function WireAgentLanding() {
               <nav aria-label="Trust links">
                 <Link to="/security">Security</Link>
                 <Link to="/privacy">Privacy</Link>
-                <Link to="/status">Status</Link>
+                <Link to="/support">Support</Link>
               </nav>
             </div>
           </section>

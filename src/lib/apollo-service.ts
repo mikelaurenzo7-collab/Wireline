@@ -4,6 +4,11 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+  type ExternalEntityTarget,
+} from "./account-environment-policy";
 
 /**
  * Apollo.io Lead Intelligence Service.
@@ -271,6 +276,48 @@ export async function disconnectApollo(userId: string): Promise<void> {
 //  Data calls
 // ────────────────────────────────────────────────────────────────────
 
+async function tenantApolloAllowed(
+  userId: string | undefined,
+  action: string,
+  target?: ExternalEntityTarget,
+): Promise<boolean> {
+  // Calls without a tenant identity are explicit platform operations (for
+  // example the public showcase). Do not silently bind them to a demo tenant.
+  if (!userId) return true;
+  try {
+    const policy = await liveExternalActionPolicyForUser(userId);
+    if (!policy.allowed) {
+      log.warn("Apollo action blocked by account environment", {
+        userId,
+        action,
+        accountEnvironment: policy.environment ?? "missing",
+        code: policy.code,
+      });
+      return false;
+    }
+    if (target) {
+      const entityPolicy = await externalEntityActionPolicyForUser(userId, target);
+      if (!entityPolicy.allowed) {
+        log.warn("Apollo action blocked for showcase entity", {
+          userId,
+          action,
+          reason: entityPolicy.reason,
+          code: entityPolicy.code,
+        });
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    log.error("Apollo account-environment lookup failed, failing closed", {
+      userId,
+      action,
+      error: getErrorMessage(error),
+    });
+    return false;
+  }
+}
+
 /**
  * Search Apollo.io for new leads matching the provided ICP criteria.
  *
@@ -282,6 +329,7 @@ export async function searchLeads(
   params: ApolloSearchParams,
   userId?: string,
 ): Promise<ApolloContact[]> {
+  if (!(await tenantApolloAllowed(userId, "apollo_lead_search"))) return [];
   const auth = await getApolloAuth(userId);
   if (!auth) {
     log.warn("Apollo not configured, skipping lead search");
@@ -344,6 +392,7 @@ export async function enrichLead(
   phone: string,
   userId?: string,
 ): Promise<Partial<ApolloContact> | null> {
+  if (!(await tenantApolloAllowed(userId, "apollo_lead_enrichment", { phone }))) return null;
   const auth = await getApolloAuth(userId);
   if (!auth) return null;
 

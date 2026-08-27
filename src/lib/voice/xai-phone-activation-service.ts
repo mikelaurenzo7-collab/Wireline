@@ -3,9 +3,11 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 
 import { xaiPhoneBindings } from "../../db/xai-voice-schema";
+import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { isAmbiguousTwilioPhoneMutationError } from "./native-phone-carrier";
 import { normalizeXAIPhoneNumber } from "./xai-sip-config";
@@ -20,8 +22,18 @@ export { getNativeXAIPhoneStatus };
 export type { NativeXAIPhoneStatus };
 
 const XAI_DEACTIVATION_FAILED = "XAI_PHONE_DEACTIVATION_FAILED";
-const XAI_DEACTIVATION_OUTCOME_AMBIGUOUS =
-  "XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS";
+const XAI_DEACTIVATION_OUTCOME_AMBIGUOUS = "XAI_PHONE_DEACTIVATION_OUTCOME_AMBIGUOUS";
+
+/**
+ * A stale provisioning claim with no persisted one-time xAI registration result
+ * is promoted to XAI_OUTCOME_AMBIGUOUS by the database claim function. Preserve
+ * that marker after Twilio detachment: xAI exposes no registration-delete API,
+ * so a retained phone correlation must stay blocked from automatic reuse until
+ * provider inventory is reconciled.
+ */
+export function retainedXAIRegistrationError(priorLastError: string | null): string | null {
+  return priorLastError === XAI_OUTCOME_AMBIGUOUS ? XAI_OUTCOME_AMBIGUOUS : null;
+}
 
 type DeactivationClaimRow = {
   binding_id: string;
@@ -122,6 +134,26 @@ async function settleDeactivation(
   }
 }
 
+async function retireDeactivation(
+  userId: string,
+  phoneNumber: string,
+  claim: DeactivationClaim,
+  lastError: string | null,
+) {
+  const result = (await drizzle.execute(sql`
+    SELECT binding_id
+    FROM public.wireline_retire_xai_phone_binding(
+      ${userId}::uuid,
+      ${phoneNumber},
+      ${claim.token}::uuid,
+      ${lastError}
+    )
+  `)) as unknown as { rows?: Array<{ binding_id?: string }> };
+  if (result.rows?.[0]?.binding_id !== claim.bindingId) {
+    throw AppError.conflict("The native phone retirement lease expired or was replaced.");
+  }
+}
+
 /**
  * Detach a line from the native SIP trunk before it becomes unassigned. xAI's
  * public Direct SIP API documents registration but no deletion endpoint, so the
@@ -147,7 +179,9 @@ export async function deactivateNativeXAIPhoneLine(input: {
   try {
     if (claim.twilioSipTrunkSid && claim.twilioPhoneNumberSid) {
       const client = getTwilioClient();
-      if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+      if (!client) {
+        throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
+      }
       const trunk = client.trunking.v1.trunks(claim.twilioSipTrunkSid);
       const attached = await trunk.phoneNumbers.list({ limit: 1_000 });
       // Twilio's Elastic SIP Trunk PhoneNumber resource is identified by its
@@ -164,14 +198,12 @@ export async function deactivateNativeXAIPhoneLine(input: {
       }
     }
 
-    await settleDeactivation(input.userId, claim, {
-      status: "retired",
-      provisioningToken: null,
-      provisioningClaimedAt: null,
-      // A registration whose one-time xAI result was ambiguous may be detached
-      // from Twilio, but it must never become automatically reusable.
-      lastError: claim.priorLastError === XAI_OUTCOME_AMBIGUOUS ? XAI_OUTCOME_AMBIGUOUS : null,
-    });
+    await retireDeactivation(
+      input.userId,
+      phoneNumber,
+      claim,
+      retainedXAIRegistrationError(claim.priorLastError),
+    );
 
     log.info("Native Twilio routing detached and registration retired", {
       userId: input.userId,
@@ -229,7 +261,19 @@ export async function provisionNativeXAIPhone(input: {
   agentId: string;
 }): Promise<NativeXAIPhoneStatus> {
   try {
-    return await provisionNativeXAIPhoneLowLevel(input);
+    await assertLiveExternalActionAllowed(input.userId, "native_xai_phone_activation");
+    const outcome = await runTenantProviderWorkWithDeletionFence({
+      userId: input.userId,
+      operation: "xai_phone_activation",
+      ttlMs: 15 * 60_000,
+      perform: () => provisionNativeXAIPhoneLowLevel(input),
+    });
+    if (!outcome.performed) {
+      throw AppError.conflict(
+        "This workspace has reached its account-deletion deadline. Phone activation cannot start.",
+      );
+    }
+    return outcome.result;
   } catch (error) {
     const message = getErrorMessage(error);
     if (message.includes("XAI_PHONE_DEACTIVATION_UNRESOLVED")) {

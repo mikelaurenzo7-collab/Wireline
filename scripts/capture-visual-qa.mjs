@@ -33,7 +33,6 @@ const marketingRoutes = [
   "/trust/legal",
   "/trust/insurance",
   "/trust/enterprise",
-  "/status",
   "/privacy",
   "/terms",
   "/developers",
@@ -52,10 +51,8 @@ const marketingRoutes = [
 ];
 
 const authenticatedRoutes = [
-  "/overview",
   "/studio",
   "/studio?create=1",
-  "/studio/live-video",
   "/templates",
   "/knowledge",
   "/knowledge?tab=reports",
@@ -67,11 +64,9 @@ const authenticatedRoutes = [
   "/inbox",
   "/inbox?tab=sms",
   "/approvals",
-  "/apps",
-  "/apps/command",
   "/settings",
   "/settings/billing",
-  "/settings/phone",
+  "/phone?tab=setup#company-identity",
   "/settings/team",
   "/settings/customization",
   "/settings/apps",
@@ -83,14 +78,26 @@ const authenticatedRoutes = [
   "/admin?tab=carrier",
 ];
 
+/** Retired URLs are verified as redirects, not counted as product surfaces. */
+const authenticatedCompatibilityRoutes = [
+  "/overview",
+  "/studio/live-video",
+  "/settings/phone#company-identity",
+  "/apps",
+  "/apps/command",
+];
+
 const viewports = [
   { name: "phone-360", width: 360, height: 800, isMobile: true, hasTouch: true },
   { name: "phone-390", width: 390, height: 844, isMobile: true, hasTouch: true },
   { name: "phone-430", width: 430, height: 932, isMobile: true, hasTouch: true },
   { name: "tablet-768", width: 768, height: 1024, isMobile: true, hasTouch: true },
   { name: "tablet-834", width: 834, height: 1112, isMobile: true, hasTouch: true },
+  { name: "breakpoint-1023", width: 1023, height: 768, isMobile: false, hasTouch: false },
   { name: "laptop-1024", width: 1024, height: 768, isMobile: false, hasTouch: false },
+  { name: "short-1024", width: 1024, height: 700, isMobile: false, hasTouch: false },
   { name: "laptop-1280", width: 1280, height: 900, isMobile: false, hasTouch: false },
+  { name: "short-1365", width: 1365, height: 650, isMobile: false, hasTouch: false },
   { name: "desktop-1440", width: 1440, height: 1100, isMobile: false, hasTouch: false },
   { name: "desktop-1920", width: 1920, height: 1080, isMobile: false, hasTouch: false },
 ];
@@ -107,12 +114,13 @@ function parseList(value) {
 const viewportFilter = parseList(process.env.WIRELINE_VISUAL_VIEWPORTS);
 const marketingRouteFilter = parseList(process.env.WIRELINE_VISUAL_MARKETING_ROUTES);
 const authenticatedRouteFilter = parseList(process.env.WIRELINE_VISUAL_AUTH_ROUTES);
+const allAuthenticatedRoutes = [...authenticatedRoutes, ...authenticatedCompatibilityRoutes];
 const activeMarketingRoutes = marketingRouteFilter.size
   ? marketingRoutes.filter((route) => marketingRouteFilter.has(route))
   : marketingRoutes;
 const activeAuthenticatedRoutes = authenticatedRouteFilter.size
-  ? authenticatedRoutes.filter((route) => authenticatedRouteFilter.has(route))
-  : authenticatedRoutes;
+  ? allAuthenticatedRoutes.filter((route) => authenticatedRouteFilter.has(route))
+  : allAuthenticatedRoutes;
 const activeViewports = viewportFilter.size
   ? viewports.filter((viewport) => viewportFilter.has(viewport.name))
   : viewports;
@@ -143,7 +151,16 @@ const LEGACY_ROUTE_PREFIXES = new Set([
 ]);
 
 function routeReached(base, requestedRoute, finalUrl) {
-  const requestedPath = requestedRoute.split("?")[0];
+  const requestedPath = requestedRoute.split(/[?#]/)[0];
+  const expectedRedirects = new Map([
+    ["/overview", "/studio"],
+    ["/studio/live-video", "/studio"],
+    ["/settings/phone", "/phone"],
+    ["/apps", "/settings/apps"],
+    ["/apps/command", "/settings/apps/command"],
+  ]);
+  const expectedPath = expectedRedirects.get(requestedPath);
+  if (expectedPath && finalUrl.startsWith(`${base}${expectedPath}`)) return true;
   if (finalUrl.startsWith(`${base}${requestedPath}`)) return true;
   if (LEGACY_ROUTE_PREFIXES.has(requestedPath)) return true;
   return false;
@@ -492,7 +509,7 @@ async function signIn(page, viewportName, issues) {
     // not go through captureRouteInFreshPage, which is where the blocking was
     // installed), and a failed seed now degrades to "public routes only".
     await blockThirdPartyBeacons(page);
-    await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, {
+    await page.goto(`${baseUrl}/signin?redirect=%2Fstudio`, {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
     });
@@ -500,7 +517,7 @@ async function signIn(page, viewportName, issues) {
     await page.locator("#auth-email").fill(email);
     await page.locator("#auth-password").fill(password);
     await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/overview(?:\?|$)/, { timeout: 25_000 });
+    await page.waitForURL(/\/studio(?:\?|$)/, { timeout: 25_000 });
     await settle(page);
     return true;
   } catch (error) {
@@ -555,10 +572,10 @@ if (bypassToken) {
   const seedContext = await browser.newContext();
   try {
     const seedPage = await seedContext.newPage();
-    await seedPage.goto(
-      `${baseUrl}/?_vercel_share=${encodeURIComponent(bypassToken)}`,
-      { waitUntil: "domcontentloaded", timeout: 45_000 },
-    );
+    await seedPage.goto(`${baseUrl}/?_vercel_share=${encodeURIComponent(bypassToken)}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 45_000,
+    });
     protectionCookies = (await seedContext.cookies()).filter((cookie) =>
       cookie.name.startsWith("_vercel"),
     );
@@ -666,10 +683,17 @@ const manifest = {
   viewports: activeViewports.map(({ name, width, height }) => ({ name, width, height })),
   marketingRoutes: activeMarketingRoutes,
   authenticatedRoutes: activeAuthenticatedRoutes,
+  compatibilityRoutes: authenticatedCompatibilityRoutes.filter((route) =>
+    activeAuthenticatedRoutes.includes(route),
+  ),
   issues,
   p0_count: issues.filter((i) => i.severity === "P0").length,
 };
 await writeFile(path.join(outputDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+await writeFile(
+  path.join(outputRoot, "latest-manifest.json"),
+  `${JSON.stringify(manifest, null, 2)}\n`,
+);
 console.log(`Visual QA screenshots written to ${outputDir}`);
 const p0Count = manifest.p0_count;
 if (p0Count) {

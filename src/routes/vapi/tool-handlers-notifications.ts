@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { sendTeamsMessage, logToExcel } from "../../lib/microsoft-graph-service";
 import { postAgentNotification as slackPostAgentNotification } from "../../lib/slack-service";
+import { assertLiveExternalActionAllowed } from "../../lib/account-environment-policy";
 import type { ToolCallContext, ToolCallResult } from "./types";
 
 export async function handleNotificationToolCall(
@@ -21,6 +22,7 @@ export async function handleNotificationToolCall(
             "That action isn't available on this line right now. Help the caller another way.",
         };
       }
+      await assertLiveExternalActionAllowed(agent.user_id, "vapi_slack_notification");
       const callerNumber =
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
@@ -56,6 +58,7 @@ export async function handleNotificationToolCall(
             "That action isn't available on this line right now. Help the caller another way.",
         };
       }
+      await assertLiveExternalActionAllowed(agent.user_id, "vapi_teams_notification");
       const callerNumber =
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
@@ -92,6 +95,7 @@ export async function handleNotificationToolCall(
             "That action isn't available on this line right now. Help the caller another way.",
         };
       }
+      await assertLiveExternalActionAllowed(agent.user_id, "vapi_excel_call_log");
       const ok = await logToExcel({
         userId: agent.user_id,
         caller: String(caller || "Unknown caller"),
@@ -119,6 +123,7 @@ export async function handleNotificationToolCall(
             "That action isn't available on this line right now. Help the caller another way.",
         };
       }
+      await assertLiveExternalActionAllowed(agent.user_id, "vapi_google_sheets_call_log");
       const { logToGoogleSheets } = await import("../../lib/google-sheets-service");
       const ok = await logToGoogleSheets({
         userId: agent.user_id,

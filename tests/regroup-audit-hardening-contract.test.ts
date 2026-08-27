@@ -34,7 +34,9 @@ describe("outbound engine hardening", () => {
     expect(dial).toContain("if (claimed.length === 0)");
     // Whitespace-tolerant: prettier wraps the ternary across lines.
     expect(dial).toMatch(/LEAD_STATUS\.MAX_ATTEMPTS\s*:\s*LEAD_STATUS\.RETRYING/);
-    expect(dial).toContain("result.doNotRetry === true || result.providerOutcomeAmbiguous === true");
+    expect(dial).toContain(
+      "result.doNotRetry === true || result.providerOutcomeAmbiguous === true",
+    );
     expect(dial).toContain("? LEAD_STATUS.ERROR");
     // A failed placement must not stamp lastCalledAt (no call happened) —
     // the 24h window would otherwise suppress the retry for a day. After the
@@ -82,7 +84,7 @@ describe("outbound engine hardening", () => {
   });
 
   it("intake auto-dial defers quiet-hours leads instead of retiring them", () => {
-    const intake = read("src/routes/intake-routes.ts");
+    const intake = read("src/lib/intake-auto-dial.ts");
     expect(intake).toContain('gate.reason === "outside_permitted_calling_hours"');
     expect(intake).toContain("deferred_quiet_hours");
   });

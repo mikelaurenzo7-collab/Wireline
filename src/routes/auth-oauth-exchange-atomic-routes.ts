@@ -30,82 +30,77 @@ function hashOAuthBridgeValue(value: string): string {
   return createHmac("sha256", oauthBridgeSecret()).update(value, "utf8").digest("hex");
 }
 
-router.post(
-  "/api/auth/oauth/exchange",
-  oauthRateLimiter,
-  async (req: Request, res: Response) => {
-    res.set("Cache-Control", "no-store, max-age=0");
-    res.set("Pragma", "no-cache");
-    res.set("Referrer-Policy", "no-referrer");
+router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, res: Response) => {
+  res.set("Cache-Control", "private, no-store, max-age=0");
+  res.set("Pragma", "no-cache");
+  res.set("Referrer-Policy", "no-referrer");
 
-    const code = req.body?.code;
-    const bridgeState = readOAuthBridgeStateCookie(req);
-    if (!isOAuthBridgeCode(code) || !bridgeState) {
-      throw AppError.fromHttpStatus(400, "Invalid or expired code");
-    }
+  const code = req.body?.code;
+  const bridgeState = readOAuthBridgeStateCookie(req);
+  if (!isOAuthBridgeCode(code) || !bridgeState) {
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
+  }
 
-    const consumed = (await drizzle.execute(sql`
+  const consumed = (await drizzle.execute(sql`
       SELECT user_id, email, full_name, is_owner
       FROM public.wireline_consume_oauth_pending_code(
         ${hashOAuthBridgeValue(code)},
         ${hashOAuthBridgeValue(bridgeState)}
       )
     `)) as unknown as {
-      rows?: Array<{
-        user_id: string;
-        email: string;
-        full_name: string | null;
-        is_owner: boolean;
-      }>;
-    };
-    const entry = consumed.rows?.[0];
-    if (!entry) throw AppError.fromHttpStatus(400, "Invalid or expired code");
+    rows?: Array<{
+      user_id: string;
+      email: string;
+      full_name: string | null;
+      is_owner: boolean;
+    }>;
+  };
+  const entry = consumed.rows?.[0];
+  if (!entry) throw AppError.fromHttpStatus(400, "Invalid or expired code");
 
-    const session = await tenantStore.run(entry.user_id, async () => {
-      const [[state], [sub]] = await Promise.all([
-        drizzle
-          .select({ sessionVersion: sessionUsers.sessionVersion })
-          .from(sessionUsers)
-          .where(eq(sessionUsers.id, entry.user_id))
-          .limit(1),
-        drizzle
-          .select({ plan: schema.subscriptions.plan })
-          .from(schema.subscriptions)
-          .where(eq(schema.subscriptions.userId, entry.user_id))
-          .limit(1),
-      ]);
-      if (!state) throw new Error("OAuth user session state is unavailable");
-      const { resolveAccountType } = await import("../lib/account-type");
-      const { ensureDefaultAccount } = await import("../lib/account-service");
-      const accountType = (
-        await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan))
-      ).type;
-      return { accountType, sessionVersion: state.sessionVersion };
-    });
+  const session = await tenantStore.run(entry.user_id, async () => {
+    const [[state], [sub]] = await Promise.all([
+      drizzle
+        .select({ sessionVersion: sessionUsers.sessionVersion })
+        .from(sessionUsers)
+        .where(eq(sessionUsers.id, entry.user_id))
+        .limit(1),
+      drizzle
+        .select({ plan: schema.subscriptions.plan })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, entry.user_id))
+        .limit(1),
+    ]);
+    if (!state) throw new Error("OAuth user session state is unavailable");
+    const { resolveAccountType } = await import("../lib/account-type");
+    const { ensureDefaultAccount } = await import("../lib/account-service");
+    const accountType = (await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan)))
+      .type;
+    return { accountType, sessionVersion: state.sessionVersion };
+  });
 
-    clearOAuthBridgeStateCookie(res);
-    const sessionToken = generateToken({
+  clearOAuthBridgeStateCookie(res);
+  const sessionToken = generateToken({
+    id: entry.user_id,
+    email: entry.email,
+    sessionVersion: session.sessionVersion,
+  });
+  setSessionCookie(res, sessionToken);
+
+  return res.json({
+    ...authSuccessBody({
       id: entry.user_id,
       email: entry.email,
-      sessionVersion: session.sessionVersion,
-    });
-    setSessionCookie(res, sessionToken);
-
-    return res.json({
-      ...authSuccessBody({
-        id: entry.user_id,
-        email: entry.email,
-        full_name: entry.full_name,
-        is_owner: entry.is_owner,
-        account_type: session.accountType,
-      }),
-      user_id: entry.user_id,
-      email: entry.email,
-      name: entry.full_name ?? "",
-      is_owner: entry.is_owner ? "1" : "0",
-      is_new_user: isNewUserOAuthBridgeCode(code),
-    });
-  },
-);
+      full_name: entry.full_name,
+      is_owner: entry.is_owner,
+      account_type: session.accountType,
+    }),
+    user_id: entry.user_id,
+    email: entry.email,
+    name: entry.full_name ?? "",
+    is_owner: entry.is_owner ? "1" : "0",
+    is_new_user: isNewUserOAuthBridgeCode(code),
+  });
+});
 
 export default router;

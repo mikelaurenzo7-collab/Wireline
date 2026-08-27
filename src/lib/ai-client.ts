@@ -23,6 +23,7 @@ import {
 } from "./ai-gateway";
 import { normalizeResponsesUsage } from "./ai-usage";
 import { recordAmbiguousProviderAttempt } from "./ai-audit";
+import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -277,6 +278,8 @@ async function callResponsesEndpoint(args: {
   options?: RuntimeRequestOptions;
   provider: RuntimeProviderName;
   gatewayModels?: readonly string[];
+  store?: boolean;
+  safetyIdentifier?: string;
 }): Promise<RuntimeMessage> {
   assertNotAborted(args.options?.signal);
   const tool = structuredOutputTool(args.body);
@@ -296,8 +299,19 @@ async function callResponsesEndpoint(args: {
           content: extractText(item.content),
         })),
         max_output_tokens: args.body.max_tokens ?? 4096,
+        ...(typeof args.store === "boolean" ? { store: args.store } : {}),
+        ...(args.safetyIdentifier ? { safety_identifier: args.safetyIdentifier } : {}),
         ...(args.gatewayModels?.length
-          ? { providerOptions: { gateway: { models: args.gatewayModels } } }
+          ? {
+              providerOptions: {
+                gateway: {
+                  models: args.gatewayModels,
+                  // Keep the continuity route subject to the same no-training
+                  // boundary as direct managed-provider traffic.
+                  disallowPromptTraining: true,
+                },
+              },
+            }
           : {}),
         ...(tool
           ? {
@@ -323,20 +337,23 @@ async function callResponsesEndpoint(args: {
     timer.dispose();
     throw err;
   }
-  timer.dispose();
-
   if (!response.ok) {
-    // Preserve the already-known HTTP classification even if the error body
-    // stream itself fails. A broken body read must not turn a definite 401/4xx
-    // rejection into an ambiguous, customer-funded provider attempt.
-    const detail = await response
-      .text()
-      .then((text) => text.slice(0, 500))
-      .catch(() => "response body unavailable");
+    // Provider error bodies may echo customer content. Keep classification and
+    // the bounded provider request id, but never copy response bodies into logs.
+    // Keep the timeout active through cancellation so a headers-only response
+    // cannot strand the request while its unread body stalls.
+    try {
+      if (response.body) await response.body.cancel().catch(() => undefined);
+    } finally {
+      timer.dispose();
+    }
+    const requestId = String(response.headers.get("x-request-id") || "")
+      .trim()
+      .slice(0, 128);
     log.warn("[ai-runtime] provider request rejected", {
       provider: args.provider,
       status: response.status,
-      detail,
+      ...(requestId ? { requestId } : {}),
     });
     if (response.status >= 400 && response.status < 500) {
       throw new DefiniteProviderRejectionError(args.provider, response.status);
@@ -344,7 +361,23 @@ async function callResponsesEndpoint(args: {
     throw new Error(`${args.provider} Responses request failed (${response.status})`);
   }
 
-  const payload = (await response.json()) as Record<string, unknown>;
+  let payload: Record<string, unknown>;
+  try {
+    // fetch() resolves when headers arrive. Keep the same timeout active until
+    // the JSON body is fully consumed so a provider cannot hold the worker
+    // forever with a headers-then-stalled-body response.
+    payload = (await response.json()) as Record<string, unknown>;
+  } catch (err) {
+    const timedOut = timer.timedOut();
+    timer.dispose();
+    if (timedOut) {
+      throw new Error(
+        `${args.provider} Responses request timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`,
+      );
+    }
+    throw err;
+  }
+  timer.dispose();
   const text = extractResponsesText(payload);
   if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
@@ -440,7 +473,12 @@ async function callGateway(
     body,
     options,
     provider: "AI Gateway",
+    store: false,
   });
+}
+
+function openAISafetyIdentifier(): string | undefined {
+  return currentProviderSafetyIdentifier();
 }
 
 async function callOpenAI(
@@ -458,6 +496,8 @@ async function callOpenAI(
     body,
     options,
     provider: "OpenAI",
+    store: false,
+    safetyIdentifier: openAISafetyIdentifier(),
   });
 }
 
@@ -635,8 +675,8 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
 };
 
 function configuredProviders(): RuntimeProvider[] {
-  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter(
-    (id) => RUNTIME_PROVIDER_REGISTRY[id].available(),
+  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter((id) =>
+    RUNTIME_PROVIDER_REGISTRY[id].available(),
   );
   return orderReasoningProviders(available, resolveReasoningPreference()).map(
     (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,

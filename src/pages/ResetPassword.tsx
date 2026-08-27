@@ -110,7 +110,7 @@ export default function ResetPassword() {
         path="/reset-password"
         noIndex
       />
-      <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
         <div className="w-full max-w-[420px] wl-auth-card rounded-md p-6 sm:p-8">
           <div className="wl-auth-card-header mb-6">
             <WirelineLockup size="compact" surface="tile" />
@@ -119,7 +119,7 @@ export default function ResetPassword() {
                 Reset password
               </h1>
               <p className="text-caption mt-1.5">
-                Choose a new password for your <WirelineWordmark inline /> account.
+                Secure your <WirelineWordmark inline /> account.
               </p>
             </div>
           </div>

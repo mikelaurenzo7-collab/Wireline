@@ -135,3 +135,39 @@ export async function verifyRemoteSourceCommit(sourceCommit, requestedBaseURL) {
     verifiedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * A push workflow and its Vercel deployment begin independently. Wait for the
+ * canonical domain to serve the checkout commit instead of certifying whichever
+ * production artifact happened to be live when the workflow started.
+ */
+export async function waitForRemoteSourceCommit(
+  sourceCommit,
+  requestedBaseURL,
+  { timeoutMs = 10 * 60_000, pollIntervalMs = 10_000 } = {},
+) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
+    throw new Error("Remote source wait timeout must be a non-negative finite number.");
+  }
+  if (!Number.isFinite(pollIntervalMs) || pollIntervalMs < 0) {
+    throw new Error("Remote source poll interval must be a non-negative finite number.");
+  }
+
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  do {
+    try {
+      return await verifyRemoteSourceCommit(sourceCommit, requestedBaseURL);
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (Date.now() >= deadline) break;
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  } while (Date.now() <= deadline);
+
+  const detail = lastError instanceof Error ? lastError.message : String(lastError || "unknown");
+  throw new Error(
+    `Timed out waiting for ${normalizeBaseURL(requestedBaseURL)} to serve ${sourceCommit}: ${detail}`,
+  );
+}

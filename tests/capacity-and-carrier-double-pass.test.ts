@@ -162,7 +162,7 @@ describe("carrier teardown integration", () => {
 
   it("hands a failed provider release to the durable orphan ledger before purge", () => {
     const source = read("src/lib/account-deletion.ts");
-    const releaseCall = source.indexOf("releaseNativeTenantNumber(userId, phoneNumber)");
+    const releaseCall = source.indexOf("releaseNativeTenantNumber(userId, phoneNumber, {");
     const failureBranch = source.indexOf("if (res.ok)", releaseCall);
     const orphanInsert = source.indexOf(
       "INSERT INTO public.wireline_orphan_carrier_resources",
@@ -170,6 +170,7 @@ describe("carrier teardown integration", () => {
     );
 
     expect(releaseCall).toBeGreaterThan(-1);
+    expect(source.slice(releaseCall, releaseCall + 180)).toContain("terminalCleanup: true");
     expect(failureBranch).toBeGreaterThan(releaseCall);
     expect(orphanInsert).toBeGreaterThan(failureBranch);
   });
@@ -184,7 +185,9 @@ describe("carrier teardown integration", () => {
     expect(rediscovery).toBeGreaterThan(ownerCheck);
     expect(providerRelease).toBeGreaterThan(rediscovery);
     expect(retry).toContain("FROM public.wireline_phone_numbers");
-    expect(retry).toContain("Cleanup skipped: phone number has a current canonical owner.");
+    expect(retry).toMatch(
+      /hasCurrentCanonicalOwner\(row\.phone_number\)[\s\S]*DELETE FROM public\.wireline_orphan_carrier_resources/,
+    );
     expect(retry).toContain("created_at = now()");
   });
 
@@ -199,8 +202,13 @@ describe("carrier teardown integration", () => {
     expect(janitorIntercept).toBeGreaterThan(tenantIsolatedIntercept);
     expect(finalBaseDispatch).toBeGreaterThan(janitorIntercept);
     expect(worker).toContain("retryPendingOrphanCarrierResources()");
-    expect(retry).toContain("WHERE status = 'pending'");
-    expect(retry).toContain("SET status = 'resolved', resolved_at = now(), last_error = NULL");
+    expect(retry).toContain("orphan.status = 'pending'");
+    expect(retry).toContain("wireline_account_operation_leases AS lease");
+    expect(retry).toContain("lease.expires_at > now()");
+    expect(retry).toContain("NATIVE_TWILIO_PURCHASE_CLAIM_JANITOR_DELAY_MS");
+    expect(
+      retry.match(/DELETE FROM public\.wireline_orphan_carrier_resources/g)?.length,
+    ).toBeGreaterThanOrEqual(2);
     expect(retry).toContain("SET last_error = ${error}");
     expect(retry).toContain("throw new Error(");
   });

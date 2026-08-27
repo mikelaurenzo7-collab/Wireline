@@ -30,6 +30,10 @@ import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { placeOutboundCall } from "./voice/outbound-call-service";
 import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
 
 /** Deferrals (quiet hours or tenant insolvency) push the callback forward
  *  instead of dropping it, up to MAX_DEFERRALS so a permanently-blocked lead
@@ -194,9 +198,7 @@ export async function tickDueCallbacks({
           .where(eq(schema.outboundLeads.id, lead.id))
           .limit(1);
         const latestMetadata = record(current?.metadata);
-        const mergedPatch = patch.metadata
-          ? { ...latestMetadata, ...patch.metadata }
-          : undefined;
+        const mergedPatch = patch.metadata ? { ...latestMetadata, ...patch.metadata } : undefined;
         const nextMetadata = nextCallbackLeadMetadata({
           terminal: patch.callbackScheduledAt === null,
           patchMetadata: mergedPatch,
@@ -246,7 +248,68 @@ export async function tickDueCallbacks({
 
       const fencedCallback = await runTenantProviderWorkWithDeletionFence({
         userId: lead.userId,
+        operation: "callback_provider_step",
+        ttlMs: 15 * 60_000,
+        retainOnSuccess: true,
         perform: async (): Promise<"placed" | "deferred" | "skipped"> => {
+          // callback_tick is queued under the system user. Reclassify the
+          // tenant and destination inside the deletion-fenced execution,
+          // before Federal DNC lookup, spend controls, or provider transport.
+          // Environment lookup failures restore the exact due timestamp so a
+          // callback is neither consumed nor silently advanced.
+          let environmentPolicy: Awaited<ReturnType<typeof liveExternalActionPolicyForUser>>;
+          try {
+            environmentPolicy = await liveExternalActionPolicyForUser(lead.userId);
+          } catch (error) {
+            log.warn("callback account environment admission failed, failing closed", {
+              userId: lead.userId,
+              leadId: String(lead.id),
+              error: error instanceof Error ? error.message : String(error),
+            });
+            await finish({
+              callbackScheduledAt: lead.callbackScheduledAt,
+              summary: "Callback paused: account environment could not be verified.",
+            });
+            return "skipped";
+          }
+          if (!environmentPolicy.allowed) {
+            await finish({
+              callbackScheduledAt: lead.callbackScheduledAt,
+              summary: `Callback paused: ${environmentPolicy.message}`,
+            });
+            return "skipped";
+          }
+
+          let entityPolicy: Awaited<ReturnType<typeof externalEntityActionPolicyForUser>>;
+          try {
+            entityPolicy = await externalEntityActionPolicyForUser(lead.userId, {
+              leadId: lead.id,
+              phone: lead.customerNumber,
+            });
+          } catch (error) {
+            log.warn("callback target admission failed, failing closed", {
+              userId: lead.userId,
+              leadId: String(lead.id),
+              error: error instanceof Error ? error.message : String(error),
+            });
+            await finish({
+              callbackScheduledAt: lead.callbackScheduledAt,
+              summary: "Callback paused: destination policy could not be verified.",
+            });
+            return "skipped";
+          }
+          if (!entityPolicy.allowed) {
+            // A reserved/demo entity cannot ever become a real callback target.
+            // Clear this schedule through the existing terminal finish path so
+            // it cannot hot-loop, while consuming any one-shot request marker.
+            await finish({
+              callbackScheduledAt: null,
+              summary: `Callback blocked: ${entityPolicy.message}`,
+              metadata: { callback_deferrals: 0 },
+            });
+            return "skipped";
+          }
+
           if (!lead.customerNumber) {
             await finish({
               callbackScheduledAt: null,

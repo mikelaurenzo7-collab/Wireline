@@ -71,10 +71,18 @@ describe("outbound compliance contract", () => {
     const campaignDialer = read("src/services/campaign-dialer.ts");
     const dialGate = read("src/lib/outbound-dial-gate.ts");
 
-    expect(outbound).toContain('callPurpose: "marketing_or_sales"');
-    expect(outbound).toContain('source: "bulk"');
-    expect(outbound).toContain("has_express_written_consent: req.body.has_express_written_consent");
+    const bulkStart = outbound.indexOf('"/api/outbound/bulk"');
+    const bulk = outbound.slice(bulkStart);
+    expect(bulkStart).toBeGreaterThan(-1);
+    expect(bulk).toContain('callPurpose: "marketing_or_sales"');
+    expect(bulk).toContain('source: "bulk"');
+    expect(bulk).toContain('code: "CONSENT_ARTIFACT_REQUIRED"');
+    expect(bulk).toContain("if (has_express_written_consent)");
+    expect(bulk).toContain("hasExpressWrittenConsent: false");
+    expect(bulk).not.toContain("hasExpressWrittenConsent: !!has_express_written_consent");
+    expect(bulk).not.toContain('event: "consent_source_captured"');
     expect(campaignDialer).toContain("evaluateOutboundDialGate");
+    expect(campaignDialer).toContain("has_express_written_consent: false");
     expect(dialGate).toContain("is_marketing_call: isMarketingCall");
     expect(dialGate).toContain("hasExpressWrittenConsent");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');

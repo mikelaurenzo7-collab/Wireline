@@ -1,7 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { CRMService } from "../../lib/crm-service";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+  type ExternalEntityTarget,
+} from "../../lib/account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+async function assertTenantEnrichmentAction(
+  userId: string | null | undefined,
+  action: string,
+  target?: ExternalEntityTarget,
+): Promise<void> {
+  if (!userId) throw new Error("Tenant identity is unavailable");
+  await assertLiveExternalActionAllowed(userId, action);
+  if (target) await assertExternalEntityActionAllowed(userId, action, target);
+}
 
 export async function handleEnrichmentToolCall(
   fn: string,
@@ -13,6 +28,9 @@ export async function handleEnrichmentToolCall(
   if (fn === "enrich_lead") {
     try {
       const { phone_number } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_apollo_lead_enrichment", {
+        phone: phone_number,
+      });
       const { enrichLead } = await import("../../lib/apollo-service");
       const profile = await enrichLead(phone_number, agent?.user_id);
       if (profile) {
@@ -40,6 +58,8 @@ export async function handleEnrichmentToolCall(
         };
       }
 
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_live_public_research");
+
       const { freshPublicResearch } = await import("../../lib/fresh-public-research");
       const grounded = await freshPublicResearch(query);
       const sourceTail =
@@ -66,6 +86,7 @@ export async function handleEnrichmentToolCall(
   if (fn === "crm_search_contacts") {
     try {
       const { query } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_contact_search");
       const service = new CRMService(agent.user_id);
       const { contacts } = await service.searchContacts(query);
       return {
@@ -86,10 +107,13 @@ export async function handleEnrichmentToolCall(
   if (fn === "crm_log_call") {
     try {
       const { contact_id, subject, notes } = args || {};
-      const service = new CRMService(agent.user_id);
       const fallbackNumber =
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_call_log", {
+        phone: fallbackNumber,
+      });
+      const service = new CRMService(agent.user_id);
       const success = await service.logCall({
         crmType: "auto",
         subject,
@@ -111,6 +135,7 @@ export async function handleEnrichmentToolCall(
   if (fn === "crm_create_opportunity") {
     try {
       const { name, contact_id, stage, amount } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_opportunity_create");
       const service = new CRMService(agent.user_id);
       const success = await service.createOpportunity({
         crmType: "auto",
@@ -136,6 +161,10 @@ export async function handleEnrichmentToolCall(
   if (fn === "meta_submit_lead") {
     try {
       const { email, phone, event_name, value } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_meta_lead_submit", {
+        email,
+        phone,
+      });
       // We import sendMetaConversion from "../../lib/meta-service"
       // Wait, we need to import it if it's not imported.
       const { sendMetaConversion } = await import("../../lib/meta-service");
@@ -157,6 +186,10 @@ export async function handleEnrichmentToolCall(
   if (fn === "crm_create_contact") {
     try {
       const { first_name, last_name, email, phone, company } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_contact_create", {
+        email,
+        phone,
+      });
       const service = new CRMService(agent.user_id);
       const id = await service.createContact({
         crmType: "auto",
@@ -178,6 +211,7 @@ export async function handleEnrichmentToolCall(
   if (fn === "crm_update_deal_stage") {
     try {
       const { deal_id, stage } = args || {};
+      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_deal_update");
       const service = new CRMService(agent.user_id);
       const ok = await service.updateDealStage({ crmType: "auto", deal_id, stage });
       return {

@@ -101,7 +101,7 @@ export default function OAuthComplete() {
         path="/auth/oauth-complete"
         noIndex
       />
-      <div className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
         <section
           className="wl-auth-card w-full max-w-[420px] rounded-md p-6 text-center sm:p-8"
           aria-live="polite"

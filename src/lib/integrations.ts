@@ -9,6 +9,10 @@ import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
 import { fetchAgentMailInbox, sendAgentMail } from "./agentmail-mail";
 import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from "./calendar-time";
+import {
+  assertExternalEntityActionAllowed,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -124,6 +128,15 @@ export class IntegrationService {
    */
   async checkAvailability(input: { date: unknown; timeZone: unknown }): Promise<string> {
     try {
+      const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+      if (!environmentPolicy.allowed) {
+        log.warn("Calendar availability blocked by account environment", {
+          userId: this.userId,
+          accountEnvironment: environmentPolicy.environment ?? "missing",
+          code: environmentPolicy.code,
+        });
+        return "Calendar access is disabled in this demo or test workspace.";
+      }
       const accounts = await this.getAccounts("calendar");
       if (accounts.length === 0) return "No calendar accounts connected.";
 
@@ -167,6 +180,20 @@ export class IntegrationService {
     agentId?: string;
   }): Promise<boolean> {
     try {
+      const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+      if (!environmentPolicy.allowed) {
+        log.warn("Calendar booking blocked by account environment", {
+          userId: this.userId,
+          accountEnvironment: environmentPolicy.environment ?? "missing",
+          code: environmentPolicy.code,
+        });
+        return false;
+      }
+      for (const attendee of params.attendees || []) {
+        await assertExternalEntityActionAllowed(this.userId, "calendar_attendee_invitation", {
+          email: attendee,
+        });
+      }
       const accounts = await this.getAccounts("calendar");
       if (accounts.length === 0) return false;
 
@@ -421,6 +448,19 @@ export class IntegrationService {
     marketing?: boolean;
   }): Promise<boolean> {
     try {
+      const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+      if (!environmentPolicy.allowed) {
+        log.warn("Outbound tenant email blocked by account environment", {
+          userId: this.userId,
+          accountEnvironment: environmentPolicy.environment ?? "missing",
+          code: environmentPolicy.code,
+        });
+        return false;
+      }
+      await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
+        email: params.to,
+      });
+
       const accounts = await this.getAccounts("mail");
       // Fallback: If no mail account, try calendar accounts (many have mail too)
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");

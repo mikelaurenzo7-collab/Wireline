@@ -12,7 +12,7 @@ describe("native phone-number claim validation", () => {
     expect(carrier).toContain("if (preferredRaw && (!preferred");
     expect(carrier).toContain("phone_number must be a US E.164 number");
     expect(carrier.indexOf("phone_number must be a US E.164 number")).toBeLessThan(
-      carrier.indexOf("listNativeAvailableLocalNumbers(input.areaCode, 5)"),
+      carrier.indexOf("listNativeAvailableLocalNumbersAfterAuthorization(input.areaCode, 5)"),
     );
   });
 });

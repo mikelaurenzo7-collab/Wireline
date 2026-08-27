@@ -78,8 +78,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     res.status(410).json({
       code: "NATIVE_PHONE_REQUIRED",
-      error:
-        "Phone lines are provisioned through native Twilio and xAI. Use Phone setup to search and provision a number.",
+      error: "Use BotBound Phone setup to search for and provision a number.",
     });
   },
 );
@@ -129,8 +128,9 @@ router.post(
         const quotaHit =
           typeof result.error === "string" &&
           (/includes \d+ dedicated/i.test(result.error) || /upgrade to add/i.test(result.error));
-        return res.status(quotaHit ? 403 : 503).json({
-          code: "ERROR",
+        const environmentBlocked = result.code === "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED";
+        return res.status(quotaHit || environmentBlocked ? 403 : 503).json({
+          code: result.code || "ERROR",
           ok: false,
           error: result.error ?? "Could not provision a phone number.",
         });

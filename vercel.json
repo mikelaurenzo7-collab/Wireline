@@ -1,9 +1,7 @@
 {
   "version": 2,
   "buildCommand": "node scripts/vercel-deploy.mjs",
-  "regions": [
-    "cle1"
-  ],
+  "regions": ["cle1"],
   "build": {
     "env": {
       "NODE_VERSION": "22"
@@ -42,7 +40,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'sha256-rYWQCFq+3047ZWkDO1YafD8wzUpLv9aVQVarfGpJ1y4=' 'sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc=' https://plausible.io https://connect.facebook.net; style-src-elem 'self' 'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw=' 'sha256-pjBMouHaxzAZFuesw6ZdkjqrWeDPx0aK6XjL/EpYcbk='; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.x.ai wss://api.x.ai https://api.openai.com https://api.vapi.ai wss://api.vapi.ai https://*.daily.co wss://*.daily.co https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://login.microsoftonline.com https://graph.microsoft.com https://api.stripe.com https://plausible.io https://connect.facebook.net https://www.facebook.com; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' 'sha256-rYWQCFq+3047ZWkDO1YafD8wzUpLv9aVQVarfGpJ1y4=' 'sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc=' https://plausible.io https://connect.facebook.net; style-src-elem 'self' 'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw=' 'sha256-pjBMouHaxzAZFuesw6ZdkjqrWeDPx0aK6XjL/EpYcbk='; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.vapi.ai wss://api.vapi.ai https://*.daily.co wss://*.daily.co https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://login.microsoftonline.com https://graph.microsoft.com https://api.stripe.com https://plausible.io https://connect.facebook.net https://www.facebook.com; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
         },
         {
           "key": "Strict-Transport-Security",
@@ -89,7 +87,7 @@
       "includeFiles": "dist/public-health-api.cjs"
     },
     "api/mcp.ts": {
-      "maxDuration": 60,
+      "maxDuration": 360,
       "includeFiles": "dist/chatgpt-mcp-api.cjs"
     }
   },
@@ -146,7 +144,7 @@
   "crons": [
     {
       "path": "/api/jobs/sweep",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/daily-brief/schedule",

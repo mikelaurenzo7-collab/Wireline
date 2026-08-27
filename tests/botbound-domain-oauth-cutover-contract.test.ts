@@ -35,6 +35,30 @@ const MICROSOFT_GRAPH_CALLBACKS = [
 ] as const;
 
 describe("BotBound domain and OAuth cutover boundary", () => {
+  it("defers host-wide legacy redirects until signed provider callbacks are reconciled", () => {
+    const vercel = JSON.parse(read("vercel.json")) as {
+      redirects?: Array<{
+        source?: string;
+        destination?: string;
+        permanent?: boolean;
+        has?: Array<{ type?: string; value?: string }>;
+      }>;
+    };
+    const redirects = vercel.redirects ?? [];
+
+    for (const host of ["trywireline.com", "www.trywireline.com"]) {
+      const hostWideRedirect = redirects.find(
+        (candidate) =>
+          candidate.source === "/:path*" &&
+          candidate.has?.some((condition) => condition.type === "host" && condition.value === host),
+      );
+      expect(
+        hostWideRedirect,
+        `${host} must keep signed callback URLs stable until provider inventory is certified`,
+      ).toBeUndefined();
+    }
+  });
+
   it("keeps brand identity separate from the stable technical namespace", () => {
     const brand = read("src/lib/brand.ts");
     expect(brand).toContain('name: "BotBound"');
@@ -108,5 +132,6 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     }
     expect(inventory).toContain("process.env.APP_URL");
     expect(inventory).toContain("BotBound");
+    expect(inventory).not.toContain("VITE_PUBLIC_SITE_URL");
   });
 });

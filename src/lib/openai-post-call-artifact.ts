@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { recordUsage } from "./ai-audit";
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 import { BOTBOUND_BRAND_NAME } from "./brand";
 import {
   uploadArtifactToConnectedStorage,
@@ -55,7 +56,10 @@ export interface GeneratedPostCallArtifact extends ConnectedArtifactUpload {
 const NULL_BYTE = String.fromCharCode(0);
 
 function bounded(value: string | null | undefined, max: number): string {
-  const text = String(value || "").split(NULL_BYTE).join("").trim();
+  const text = String(value || "")
+    .split(NULL_BYTE)
+    .join("")
+    .trim();
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
@@ -177,6 +181,7 @@ export async function generateAndStorePostCallArtifact(
 
   const artifactModel =
     process.env.WIRELINE_OPENAI_ARTIFACT_MODEL?.trim() || OPENAI_STRUCTURED_PRIMARY_MODEL;
+  const safetyIdentifier = currentProviderSafetyIdentifier();
   const startedAt = Date.now();
   const response = await fetchWithTimeout(
     "https://api.openai.com/v1/responses",
@@ -185,6 +190,8 @@ export async function generateAndStorePostCallArtifact(
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: artifactModel,
+        store: false,
+        ...(safetyIdentifier ? { safety_identifier: safetyIdentifier } : {}),
         tools: [{ type: "code_interpreter", container: { type: "auto", memory_limit: "1g" } }],
         tool_choice: "required",
         max_output_tokens: 8_000,

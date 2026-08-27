@@ -3,7 +3,7 @@
  * appointments, email + SMS inboxes). Used by POST /api/admin/seed-demo-account
  * and scripts/seed-demo-account.mts.
  */
-import { sql, eq, and, inArray, like, desc } from "drizzle-orm";
+import { sql, eq, and, inArray, like, desc, isNull } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { invalidateDashboard } from "./dashboard-cache";
 import * as schema from "../db/schema";
@@ -47,25 +47,33 @@ export const TARGET = {
 const DEMO_PIPELINE_STAGES = ["cold", "contacted", "qualified", "demo", "won", "lost"] as const;
 
 export const SAMPLE_CUSTOMERS = [
-  { name: "Alex Rivera", phone: "+14155551011", email: "alex.rivera@northstarmfg.com" },
-  { name: "Jordan Park", phone: "+12125551042", email: "jordan.park@apexrealty.io" },
-  { name: "Priya Shah", phone: "+16175552031", email: "priya@shaadvisory.com" },
-  { name: "Marcus Lee", phone: "+13105551108", email: "marcus.lee@beaconconsult.com" },
-  { name: "Hana Tanaka", phone: "+12065552287", email: "hana.tanaka@meridianlab.io" },
-  { name: "Diego Morales", phone: "+13125552233", email: "diego@morales-fit.com" },
-  { name: "Sofia Romano", phone: "+19173145555", email: "sofia.romano@cypress-cap.com" },
-  { name: "Ethan Wright", phone: "+14025558810", email: "ethan@wrightoptical.com" },
-  { name: "Naomi Klein", phone: "+12063339090", email: "naomi.k@klein-builds.com" },
-  { name: "Wes Park", phone: "+15103445454", email: "wes.park@apex-pivot.io" },
-  { name: "Carmen Diaz", phone: "+17029990606", email: "carmen@diazdental.com" },
-  { name: "Trevor Hill", phone: "+19035552031", email: "trevor.hill@altitudefit.io" },
+  { name: "Alex Rivera", phone: "+12025550100", email: "alex.rivera@example.com" },
+  { name: "Jordan Park", phone: "+12025550101", email: "jordan.park@example.com" },
+  { name: "Priya Shah", phone: "+12025550102", email: "priya.shah@example.com" },
+  { name: "Marcus Lee", phone: "+12025550103", email: "marcus.lee@example.com" },
+  { name: "Hana Tanaka", phone: "+12025550104", email: "hana.tanaka@example.com" },
+  { name: "Diego Morales", phone: "+12025550105", email: "diego.morales@example.com" },
+  { name: "Sofia Romano", phone: "+12025550106", email: "sofia.romano@example.com" },
+  { name: "Ethan Wright", phone: "+12025550107", email: "ethan.wright@example.com" },
+  { name: "Naomi Klein", phone: "+12025550108", email: "naomi.klein@example.com" },
+  { name: "Wes Park", phone: "+12025550109", email: "wes.park@example.com" },
+  { name: "Carmen Diaz", phone: "+12025550110", email: "carmen.diaz@example.com" },
+  { name: "Trevor Hill", phone: "+12025550111", email: "trevor.hill@example.com" },
 ];
 
-/** Fictional SMS numbers reserved for demo seed (avoid clashing with call-log sample phones). */
+/** NANP-reserved 555-01xx fixtures; carriers must never route these to a real person. */
 export const DEMO_SMS_NUMBERS = Array.from(
+  { length: TARGET.smsThreads },
+  (_, i) => `+120255501${String(i + 20).slice(-2)}`,
+);
+
+/** Retired malformed demo numbers, retained only so a re-seed removes old rows. */
+export const LEGACY_DEMO_SMS_NUMBERS = Array.from(
   { length: TARGET.smsThreads },
   (_, i) => `+1555010${String(i + 1).padStart(4, "0")}`,
 );
+
+export const ALL_DEMO_SMS_NUMBERS = [...DEMO_SMS_NUMBERS, ...LEGACY_DEMO_SMS_NUMBERS];
 
 const SAMPLE_SUMMARIES = [
   "Qualified inbound lead, asked about pricing for 5-seat plan. Booked Maya for demo Thursday 2pm.",
@@ -159,7 +167,23 @@ export async function resolveDemoUserId(email: string): Promise<string | null> {
 export async function ensureDemoProSubscription(userId: string): Promise<void> {
   const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   await drizzle.transaction(async (tx) => {
-    await tx
+    const [eligibleSettings] = await tx
+      .update(schema.settings)
+      .set({
+        subscriptionStatus: "active",
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(schema.settings.userId, userId), eq(schema.settings.accountEnvironment, "demo")),
+      )
+      .returning({ userId: schema.settings.userId });
+    if (!eligibleSettings) {
+      throw new Error(
+        "Demo seed refused: classify the exact account as demo through the audited operator command first.",
+      );
+    }
+
+    const activated = await tx
       .insert(subscriptions)
       .values({
         userId,
@@ -181,24 +205,16 @@ export async function ensureDemoProSubscription(userId: string): Promise<void> {
           cancelAtPeriodEnd: false,
           updatedAt: new Date(),
         },
-      });
-
-    await tx
-      .insert(schema.settings)
-      .values({
-        id: userId,
-        userId,
-        accountEnvironment: "demo",
-        subscriptionStatus: "active",
+        setWhere: and(
+          isNull(subscriptions.stripeCustomerId),
+          isNull(subscriptions.stripeSubscriptionId),
+          isNull(subscriptions.stripePriceId),
+        ),
       })
-      .onConflictDoUpdate({
-        target: schema.settings.userId,
-        set: {
-          accountEnvironment: "demo",
-          subscriptionStatus: "active",
-          updatedAt: new Date(),
-        },
-      });
+      .returning({ userId: subscriptions.userId });
+    if (!activated[0]) {
+      throw new Error("Demo seed refused: Stripe-bound accounts cannot receive demo entitlement.");
+    }
   });
 }
 
@@ -306,6 +322,25 @@ async function countSeedSmsThreads(userId: string, tx: DemoSeedDb = drizzle): Pr
   return Number(row?.c ?? 0);
 }
 
+async function pruneLegacyDemoSmsThreads(userId: string, tx: DemoSeedDb): Promise<number> {
+  const rows = await tx
+    .select({ id: smsThreads.id })
+    .from(smsThreads)
+    .where(
+      and(
+        eq(smsThreads.userId, userId),
+        inArray(smsThreads.customerNumber, LEGACY_DEMO_SMS_NUMBERS),
+      ),
+    );
+  if (rows.length === 0) return 0;
+  const threadIds = rows.map((row) => row.id);
+  await tx.delete(smsMessages).where(inArray(smsMessages.threadId, threadIds));
+  await tx
+    .delete(smsThreads)
+    .where(and(eq(smsThreads.userId, userId), inArray(smsThreads.id, threadIds)));
+  return rows.length;
+}
+
 /** Re-apply varied copy when demo rows already exist (idempotent re-seed / bulk-SQL repair). */
 async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<void> {
   await pruneDuplicateDemoLeads(userId, tx);
@@ -321,6 +356,7 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
     await tx
       .update(callLogs)
       .set({
+        customerNumber: SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length].phone,
         summary: SAMPLE_SUMMARIES[idx],
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
         sentiment: SAMPLE_SENTIMENTS[idx % SAMPLE_SENTIMENTS.length],
@@ -338,12 +374,38 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
     await tx
       .update(emailThreads)
       .set({
+        customerEmail: SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length].email,
         summary: SAMPLE_SUMMARIES[idx],
         subject: SAMPLE_EMAIL_SUBJECTS[i % SAMPLE_EMAIL_SUBJECTS.length],
         intentLabel: SAMPLE_INTENTS[idx % SAMPLE_INTENTS.length],
         read: true,
       })
       .where(eq(emailThreads.id, seedEmails[i].id));
+  }
+
+  const seededAppointments = await tx
+    .select({ id: appointments.id })
+    .from(appointments)
+    .where(and(eq(appointments.userId, userId), eq(appointments.demo, true)))
+    .orderBy(appointments.id);
+  for (let i = 0; i < seededAppointments.length; i++) {
+    const customer = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
+    await tx
+      .update(appointments)
+      .set({ customerName: customer.name, phoneNumber: customer.phone })
+      .where(eq(appointments.id, seededAppointments[i].id));
+  }
+
+  const seededDncRows = await tx
+    .select({ id: dncList.id })
+    .from(dncList)
+    .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)))
+    .orderBy(dncList.id);
+  for (let i = 0; i < seededDncRows.length; i++) {
+    await tx
+      .update(dncList)
+      .set({ phone: SAMPLE_CUSTOMERS[(i + 7) % SAMPLE_CUSTOMERS.length].phone })
+      .where(eq(dncList.id, seededDncRows[i].id));
   }
 
   for (let i = 0; i < DEMO_SMS_NUMBERS.length; i++) {
@@ -432,6 +494,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
   if (!agentId) {
     throw new Error("Demo user has no agents. Create at least one agent before seeding.");
   }
+  await ensureDemoProSubscription(userId);
 
   const report: SeedReport[] = [];
   const userPrefix = userId.slice(0, 8);
@@ -632,6 +695,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
     }
 
     {
+      const prunedLegacy = await pruneLegacyDemoSmsThreads(userId, tx);
       const before = await countSeedSmsThreads(userId, tx);
       const need = Math.max(0, TARGET.smsThreads - before);
       let inserted = 0;
@@ -690,13 +754,15 @@ export async function seedDemoAccountData(userId: string): Promise<{
           inserted++;
         }
       }
+      if (prunedLegacy > 0) {
+        log.info("Pruned legacy demo SMS fixtures", { userId, pruned: prunedLegacy });
+      }
       report.push({ table: "wireline_sms_threads", before, inserted, after: before + inserted });
     }
 
     await refreshDemoShowcaseCopy(userId, tx);
   });
 
-  await ensureDemoProSubscription(userId);
   invalidateDashboard(userId);
   log.info("Demo account seeded", { userId, report });
   return { agentId, report };

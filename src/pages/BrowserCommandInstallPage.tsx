@@ -5,6 +5,7 @@ import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { BotBoundWordmark } from "../components/brand/BotBoundBrand";
+import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const DOWNLOADS = [
@@ -35,7 +36,8 @@ const DOWNLOADS = [
 export default function BrowserCommandInstallPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
+        <SettingsTabs />
         <div className="mb-4">
           <Button asChild variant="link" className="px-0 text-sm text-muted-foreground">
             <Link to="/settings/apps">
@@ -60,8 +62,8 @@ export default function BrowserCommandInstallPage() {
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Send the active tab (title, URL, selection, tel: links) into Studio as reference
-                  context. <BotBoundWordmark inline /> still owns dialing, texts, Knowledge, billing,
-                  and launch.
+                  context. <BotBoundWordmark inline /> still owns dialing, texts, Knowledge,
+                  billing, and launch.
                 </p>
               </div>
             </div>

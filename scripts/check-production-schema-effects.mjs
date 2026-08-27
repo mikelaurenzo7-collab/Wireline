@@ -100,6 +100,54 @@ function sameStringSet(actual, expectedValues) {
   return actual.every((value, index) => value === expectedSorted[index]);
 }
 
+function normalizeTextDefault(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/::(?:text|character varying)$/u, "")
+    .replace(/^\((.*)\)$/u, "$1");
+}
+
+function hasPinnedEmptySearchPath(value) {
+  const settings = Array.isArray(value) ? value.map(String) : [];
+  return settings.some((setting) => /^search_path=(?:""|)$/u.test(setting.trim()));
+}
+
+function hasPinnedPublicTemporarySearchPath(value) {
+  const settings = Array.isArray(value) ? value.map(String) : [];
+  return settings.some((setting) => /^search_path=public,\s*pg_temp$/iu.test(setting.trim()));
+}
+
+function hasXAITenantPolicyBoundary(value) {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .replace(/[()\s"]/gu, "");
+  return (
+    normalized.includes("wireline_current_user_id") &&
+    normalized.includes("user_idisdistinctfromid")
+  );
+}
+
+function hasRetiredXAIOwnerConstraint(value) {
+  const definition = String(value ?? "").toLowerCase();
+  return (
+    /user_id\s*=\s*id/u.test(definition) &&
+    /agent_id\s*=\s*\(?\s*'retired:'/u.test(definition) &&
+    /status[\s\S]*'retired'/u.test(definition) &&
+    /status[\s\S]*'error'/u.test(definition) &&
+    /user_id\s*<>\s*id/u.test(definition) &&
+    /agent_id\s*<>\s*\(?\s*'retired:'/u.test(definition) &&
+    /status\s*<>\s*'retired'/u.test(definition)
+  );
+}
+
+function isPendingOnlyCarrierConstraint(value) {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .replace(/[()\s"]/gu, "");
+  return normalized === "checkstatus='pending'" || normalized === "checkstatus='pending'::text";
+}
+
 try {
   const tables = expected.map(({ table }) => table);
   const indexes = expected.map(({ index }) => index.name);
@@ -279,6 +327,15 @@ try {
     authIndexResult,
     orphanResult,
     retentionFunctionResult,
+    runtimeCohesionResult,
+    auditSystemReceiptResult,
+    auditCascadeResult,
+    subscriptionCascadeResult,
+    resolvedCarrierOrphanResult,
+    xaiBindingIdentityResult,
+    xaiPolicyResult,
+    xaiFunctionSecurityResult,
+    accountEnvironmentPromotionResult,
   ] = await Promise.all([
     pool.query(`
         SELECT
@@ -351,6 +408,7 @@ try {
           (SELECT count(*) FROM public.wireline_director_conversation_messages t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS director_message_orphans,
           (SELECT count(*) FROM public.wireline_dnc_list t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS dnc_orphans,
           (SELECT count(*) FROM public.wireline_audit_log t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS audit_orphans,
+          (SELECT count(*) FROM public.wireline_subscriptions t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS subscription_orphans,
           (SELECT count(*) FROM public.wireline_training_backup_20260609 t LEFT JOIN public.wireline_users u ON u.id = t.user_id WHERE t.user_id IS NOT NULL AND u.id IS NULL) AS training_backup_orphans
       `),
     pool.query(`
@@ -358,6 +416,322 @@ try {
                p.proconfig
           FROM pg_proc p
          WHERE p.oid = to_regprocedure('public.wireline_purge_old_data(uuid,integer)')
+      `),
+    pool.query(`
+        SELECT
+          (SELECT column_default
+             FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'wireline_settings'
+              AND column_name = 'voice_llm_provider') AS provider_default,
+          (SELECT column_default
+             FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'wireline_settings'
+              AND column_name = 'voice_llm_model') AS model_default,
+          (SELECT count(*)
+             FROM public.wireline_settings
+            WHERE lower(coalesce(voice_llm_provider, '')) = 'xai'
+              AND lower(coalesce(voice_llm_model, '')) = 'grok-4.6') AS invalid_runtime_pairs
+      `),
+    pool.query(`
+        SELECT
+          c.is_nullable,
+          audit_table.relrowsecurity AS rls_enabled,
+          (
+            SELECT index_state.indisunique
+              FROM pg_index index_state
+              JOIN pg_class index_class ON index_class.oid = index_state.indexrelid
+              JOIN pg_namespace index_namespace ON index_namespace.oid = index_class.relnamespace
+             WHERE index_namespace.nspname = 'public'
+               AND index_class.relname = 'uq_audit_account_deletion_receipt'
+               AND index_state.indrelid = audit_table.oid
+          ) AS deletion_receipt_index_unique,
+          (
+            SELECT index_state.indisvalid
+              FROM pg_index index_state
+              JOIN pg_class index_class ON index_class.oid = index_state.indexrelid
+              JOIN pg_namespace index_namespace ON index_namespace.oid = index_class.relnamespace
+             WHERE index_namespace.nspname = 'public'
+               AND index_class.relname = 'uq_audit_account_deletion_receipt'
+               AND index_state.indrelid = audit_table.oid
+          ) AS deletion_receipt_index_valid,
+          (
+            SELECT pg_get_indexdef(index_class.oid)
+              FROM pg_index index_state
+              JOIN pg_class index_class ON index_class.oid = index_state.indexrelid
+              JOIN pg_namespace index_namespace ON index_namespace.oid = index_class.relnamespace
+             WHERE index_namespace.nspname = 'public'
+               AND index_class.relname = 'uq_audit_account_deletion_receipt'
+               AND index_state.indrelid = audit_table.oid
+          ) AS deletion_receipt_index_definition,
+          (
+            SELECT pg_get_expr(index_state.indpred, index_state.indrelid)
+              FROM pg_index index_state
+              JOIN pg_class index_class ON index_class.oid = index_state.indexrelid
+              JOIN pg_namespace index_namespace ON index_namespace.oid = index_class.relnamespace
+             WHERE index_namespace.nspname = 'public'
+               AND index_class.relname = 'uq_audit_account_deletion_receipt'
+               AND index_state.indrelid = audit_table.oid
+          ) AS deletion_receipt_index_predicate,
+          EXISTS (
+            SELECT 1
+              FROM pg_policies p
+             WHERE p.schemaname = 'public'
+               AND p.tablename = 'wireline_audit_log'
+               AND p.policyname = 'server_audit_insert'
+               AND upper(p.cmd) = 'INSERT'
+               AND p.roles = ARRAY['wireline_server']::name[]
+               AND lower(regexp_replace(coalesce(p.with_check, ''), '[()\\s]', '', 'g')) = 'true'
+          ) AS server_insert_policy
+          FROM information_schema.columns c
+          JOIN pg_namespace audit_namespace ON audit_namespace.nspname = c.table_schema
+          JOIN pg_class audit_table
+            ON audit_table.relnamespace = audit_namespace.oid
+           AND audit_table.relname = c.table_name
+         WHERE c.table_schema = 'public'
+           AND c.table_name = 'wireline_audit_log'
+           AND c.column_name = 'user_id'
+      `),
+    pool.query(`
+        SELECT
+          constraint_row.convalidated,
+          constraint_row.confdeltype,
+          child_table.relname AS child_table,
+          parent_table.relname AS parent_table,
+          ARRAY(
+            SELECT child_column.attname
+              FROM unnest(constraint_row.conkey) WITH ORDINALITY
+                   AS child_key(attnum, position)
+              JOIN pg_attribute child_column
+                ON child_column.attrelid = constraint_row.conrelid
+               AND child_column.attnum = child_key.attnum
+             ORDER BY child_key.position
+          ) AS child_columns,
+          ARRAY(
+            SELECT parent_column.attname
+              FROM unnest(constraint_row.confkey) WITH ORDINALITY
+                   AS parent_key(attnum, position)
+              JOIN pg_attribute parent_column
+                ON parent_column.attrelid = constraint_row.confrelid
+               AND parent_column.attnum = parent_key.attnum
+             ORDER BY parent_key.position
+          ) AS parent_columns
+          FROM pg_constraint constraint_row
+          JOIN pg_namespace constraint_namespace
+            ON constraint_namespace.oid = constraint_row.connamespace
+          JOIN pg_class child_table ON child_table.oid = constraint_row.conrelid
+          JOIN pg_class parent_table ON parent_table.oid = constraint_row.confrelid
+         WHERE constraint_namespace.nspname = 'public'
+           AND constraint_row.conname =
+               'wireline_audit_log_user_id_wireline_users_id_fk'
+           AND constraint_row.contype = 'f'
+           AND constraint_row.conrelid = 'public.wireline_audit_log'::regclass
+      `),
+    pool.query(`
+        SELECT
+          constraint_row.convalidated,
+          constraint_row.confdeltype,
+          child_table.relname AS child_table,
+          parent_table.relname AS parent_table,
+          ARRAY(
+            SELECT child_column.attname
+              FROM unnest(constraint_row.conkey) WITH ORDINALITY
+                   AS child_key(attnum, position)
+              JOIN pg_attribute child_column
+                ON child_column.attrelid = constraint_row.conrelid
+               AND child_column.attnum = child_key.attnum
+             ORDER BY child_key.position
+          ) AS child_columns,
+          ARRAY(
+            SELECT parent_column.attname
+              FROM unnest(constraint_row.confkey) WITH ORDINALITY
+                   AS parent_key(attnum, position)
+              JOIN pg_attribute parent_column
+                ON parent_column.attrelid = constraint_row.confrelid
+               AND parent_column.attnum = parent_key.attnum
+             ORDER BY parent_key.position
+          ) AS parent_columns,
+          (
+            SELECT count(*)
+              FROM pg_constraint AS competing_constraint
+             WHERE competing_constraint.conrelid =
+                   'public.wireline_subscriptions'::regclass
+               AND competing_constraint.contype = 'f'
+               AND competing_constraint.confrelid = 'public.wireline_users'::regclass
+               AND competing_constraint.conname <>
+                   'wireline_subscriptions_user_id_wireline_users_id_fk'
+               AND competing_constraint.conkey = ARRAY[(
+                 SELECT attnum
+                   FROM pg_attribute
+                  WHERE attrelid = 'public.wireline_subscriptions'::regclass
+                    AND attname = 'user_id'
+               )]::smallint[]
+          ) AS competing_user_fks
+          FROM pg_constraint constraint_row
+          JOIN pg_namespace constraint_namespace
+            ON constraint_namespace.oid = constraint_row.connamespace
+          JOIN pg_class child_table ON child_table.oid = constraint_row.conrelid
+          JOIN pg_class parent_table ON parent_table.oid = constraint_row.confrelid
+         WHERE constraint_namespace.nspname = 'public'
+           AND constraint_row.conname =
+               'wireline_subscriptions_user_id_wireline_users_id_fk'
+           AND constraint_row.contype = 'f'
+           AND constraint_row.conrelid = 'public.wireline_subscriptions'::regclass
+      `),
+    pool.query(`
+        SELECT
+          (SELECT count(*)
+             FROM public.wireline_orphan_carrier_resources
+            WHERE status = 'resolved') AS retained_resolved_rows,
+          (SELECT count(*)
+             FROM public.wireline_orphan_carrier_resources
+            WHERE status IS DISTINCT FROM 'pending') AS non_pending_rows,
+          ARRAY(
+            SELECT pg_get_constraintdef(constraint_row.oid, true)
+              FROM pg_constraint constraint_row
+             WHERE constraint_row.conrelid =
+                   'public.wireline_orphan_carrier_resources'::regclass
+               AND constraint_row.contype = 'c'
+               AND constraint_row.convalidated
+             ORDER BY constraint_row.conname
+          ) AS validated_check_definitions
+      `),
+    pool.query(`
+        SELECT
+          count(*) FILTER (
+            WHERE binding.status = 'retired'
+              AND NOT (
+                binding.user_id = binding.id
+                AND binding.agent_id = 'retired:' || binding.id::text
+              )
+          ) AS attributable_retired_rows,
+          count(*) FILTER (
+            WHERE NOT (
+                binding.user_id = binding.id
+                AND binding.agent_id = 'retired:' || binding.id::text
+              )
+              AND (live_user.id IS NULL OR live_agent.id IS NULL)
+          ) AS attributable_dangling_owner_rows,
+          EXISTS (
+            SELECT 1
+              FROM pg_constraint constraint_row
+             WHERE constraint_row.conrelid =
+                   'public.wireline_xai_phone_bindings'::regclass
+               AND constraint_row.conname = 'wireline_xai_binding_owner_identity'
+               AND constraint_row.convalidated
+          ) AS owner_identity_constraint,
+          (
+            SELECT pg_get_constraintdef(constraint_row.oid, true)
+              FROM pg_constraint constraint_row
+             WHERE constraint_row.conrelid =
+                   'public.wireline_xai_phone_bindings'::regclass
+               AND constraint_row.conname = 'wireline_xai_binding_owner_identity'
+          ) AS owner_identity_constraint_definition
+        FROM public.wireline_xai_phone_bindings AS binding
+        LEFT JOIN public.wireline_users AS live_user ON live_user.id = binding.user_id
+        LEFT JOIN public.wireline_agents AS live_agent
+          ON live_agent.id = binding.agent_id
+         AND live_agent.user_id = binding.user_id
+      `),
+    pool.query(`
+        SELECT permissive, roles, cmd, qual, with_check
+          FROM pg_policies
+         WHERE schemaname = 'public'
+           AND tablename = 'wireline_xai_phone_bindings'
+           AND policyname = 'tenant_isolation'
+      `),
+    pool.query(`
+        SELECT
+          procedure_row.proname AS function_name,
+          pg_get_function_identity_arguments(procedure_row.oid) AS identity_arguments,
+          pg_get_functiondef(procedure_row.oid) AS function_definition,
+          procedure_row.prosecdef AS security_definer,
+          procedure_row.proconfig,
+          (owner_role.rolsuper OR owner_role.rolbypassrls) AS trusted_owner,
+          has_function_privilege(
+            'wireline_server', procedure_row.oid, 'EXECUTE'
+          ) AS server_execute,
+          has_function_privilege(
+            'anon', procedure_row.oid, 'EXECUTE'
+          ) AS anon_execute,
+          has_function_privilege(
+            'authenticated', procedure_row.oid, 'EXECUTE'
+          ) AS authenticated_execute,
+          has_function_privilege(
+            'service_role', procedure_row.oid, 'EXECUTE'
+          ) AS service_execute,
+          NOT EXISTS (
+            SELECT 1
+              FROM aclexplode(
+                COALESCE(
+                  procedure_row.proacl,
+                  acldefault('f', procedure_row.proowner)
+                )
+              ) AS function_acl
+             WHERE function_acl.grantee = 0
+               AND function_acl.privilege_type = 'EXECUTE'
+          ) AS public_execute_revoked
+          FROM pg_proc procedure_row
+          JOIN pg_namespace procedure_namespace
+            ON procedure_namespace.oid = procedure_row.pronamespace
+          JOIN pg_roles owner_role ON owner_role.oid = procedure_row.proowner
+         WHERE procedure_namespace.nspname = 'public'
+           AND procedure_row.oid = ANY(
+             ARRAY[
+               to_regprocedure(
+                 'public.wireline_retire_xai_phone_binding(uuid,text,uuid,text)'
+               ),
+               to_regprocedure(
+                 'public.wireline_scrub_xai_phone_bindings_for_purge(uuid)'
+               )
+             ]::oid[]
+           )
+      `),
+    pool.query(`
+        SELECT
+          procedure_row.proname AS function_name,
+          pg_get_function_identity_arguments(procedure_row.oid) AS identity_arguments,
+          pg_get_function_result(procedure_row.oid) AS function_result,
+          pg_get_functiondef(procedure_row.oid) AS function_definition,
+          procedure_row.prosecdef AS security_definer,
+          procedure_row.proconfig,
+          (owner_role.rolsuper OR owner_role.rolbypassrls) AS trusted_owner,
+          has_function_privilege(
+            'anon', procedure_row.oid, 'EXECUTE'
+          ) AS anon_execute,
+          has_function_privilege(
+            'authenticated', procedure_row.oid, 'EXECUTE'
+          ) AS authenticated_execute,
+          has_function_privilege(
+            'service_role', procedure_row.oid, 'EXECUTE'
+          ) AS service_execute,
+          NOT EXISTS (
+            SELECT 1
+              FROM aclexplode(
+                COALESCE(
+                  procedure_row.proacl,
+                  acldefault('f', procedure_row.proowner)
+                )
+              ) AS function_acl
+             WHERE function_acl.grantee = 0
+               AND function_acl.privilege_type = 'EXECUTE'
+          ) AS public_execute_revoked
+          FROM pg_proc procedure_row
+          JOIN pg_namespace procedure_namespace
+            ON procedure_namespace.oid = procedure_row.pronamespace
+          JOIN pg_roles owner_role ON owner_role.oid = procedure_row.proowner
+         WHERE procedure_namespace.nspname = 'public'
+           AND procedure_row.oid = ANY(
+             ARRAY[
+               to_regprocedure(
+                 'public.wireline_account_environment_promotion_preflight(uuid)'
+               ),
+               to_regprocedure(
+                 'public.wireline_set_account_environment(text,text,text,text)'
+               )
+             ]::oid[]
+           )
       `),
   ]);
 
@@ -464,12 +838,316 @@ try {
     }
   }
 
+  // Migration 0156 restores a coherent rollback-only Vapi provider/model pair.
+  // Certify its live effects after migration replay instead of trusting only
+  // the journal, which can lag when a repeat-safe correction landed manually.
+  const runtimeCohesion = runtimeCohesionResult.rows[0] ?? {};
+  if (normalizeTextDefault(runtimeCohesion.provider_default) !== "'openai'") {
+    failures.push("runtime_cohesion:wrong_voice_llm_provider_default");
+  }
+  if (normalizeTextDefault(runtimeCohesion.model_default) !== "'gpt-4o'") {
+    failures.push("runtime_cohesion:wrong_voice_llm_model_default");
+  }
+  if (Number(runtimeCohesion.invalid_runtime_pairs || 0) !== 0) {
+    failures.push(
+      `runtime_cohesion:invalid_xai_grok_46_pairs:${runtimeCohesion.invalid_runtime_pairs}`,
+    );
+  }
+
+  const auditSystemReceipt = auditSystemReceiptResult.rows[0];
+  if (!auditSystemReceipt) {
+    failures.push("audit_receipt:missing_user_id_column");
+  } else {
+    if (auditSystemReceipt.is_nullable !== "YES") {
+      failures.push("audit_receipt:user_id_not_nullable");
+    }
+    if (auditSystemReceipt.server_insert_policy !== true) {
+      failures.push("audit_receipt:missing_server_insert_policy");
+    }
+    if (auditSystemReceipt.rls_enabled !== true) {
+      failures.push("audit_receipt:rls_disabled");
+    }
+    const receiptIndexDefinition = String(
+      auditSystemReceipt.deletion_receipt_index_definition || "",
+    );
+    const receiptIndexPredicate = String(auditSystemReceipt.deletion_receipt_index_predicate || "");
+    if (
+      auditSystemReceipt.deletion_receipt_index_unique !== true ||
+      auditSystemReceipt.deletion_receipt_index_valid !== true ||
+      !/ON\s+public\.wireline_audit_log\s+USING\s+btree\s*\(\s*event_type\s*,\s*resource_type\s*,\s*resource_id\s*\)/iu.test(
+        receiptIndexDefinition,
+      ) ||
+      !/event_type\s*=\s*'account\.deletion\.completed'/iu.test(receiptIndexPredicate) ||
+      !/resource_type\s*=\s*'account_deletion_receipt'/iu.test(receiptIndexPredicate) ||
+      !/resource_id\s+IS\s+NOT\s+NULL/iu.test(receiptIndexPredicate)
+    ) {
+      failures.push("audit_receipt:missing_deletion_receipt_unique_index");
+    }
+  }
+
+  const auditCascade = auditCascadeResult.rows[0];
+  if (!auditCascade) {
+    failures.push("audit_receipt:missing_user_fk");
+  } else if (
+    auditCascade.child_table !== "wireline_audit_log" ||
+    auditCascade.parent_table !== "wireline_users" ||
+    !sameStringSet((auditCascade.child_columns || []).map(String).sort(), ["user_id"]) ||
+    !sameStringSet((auditCascade.parent_columns || []).map(String).sort(), ["id"]) ||
+    auditCascade.confdeltype !== "c" ||
+    auditCascade.convalidated !== true
+  ) {
+    failures.push("audit_receipt:wrong_user_fk_definition");
+  }
+
+  const subscriptionCascade = subscriptionCascadeResult.rows[0];
+  if (!subscriptionCascade) {
+    failures.push("subscription_erasure:missing_user_fk");
+  } else if (
+    subscriptionCascade.child_table !== "wireline_subscriptions" ||
+    subscriptionCascade.parent_table !== "wireline_users" ||
+    !sameStringSet((subscriptionCascade.child_columns || []).map(String).sort(), ["user_id"]) ||
+    !sameStringSet((subscriptionCascade.parent_columns || []).map(String).sort(), ["id"]) ||
+    subscriptionCascade.confdeltype !== "c" ||
+    subscriptionCascade.convalidated !== true ||
+    Number(subscriptionCascade.competing_user_fks || 0) !== 0
+  ) {
+    failures.push("subscription_erasure:wrong_user_fk_definition");
+  }
+
+  const resolvedCarrierOrphans = resolvedCarrierOrphanResult.rows[0] ?? {};
+  if (Number(resolvedCarrierOrphans.retained_resolved_rows || 0) !== 0) {
+    failures.push(
+      `carrier_orphan:resolved_pii_retained:${resolvedCarrierOrphans.retained_resolved_rows}`,
+    );
+  }
+  if (Number(resolvedCarrierOrphans.non_pending_rows || 0) !== 0) {
+    failures.push(
+      `carrier_orphan:non_pending_status_retained:${resolvedCarrierOrphans.non_pending_rows}`,
+    );
+  }
+  const carrierCheckDefinitions = Array.isArray(resolvedCarrierOrphans.validated_check_definitions)
+    ? resolvedCarrierOrphans.validated_check_definitions
+    : [];
+  if (!carrierCheckDefinitions.some(isPendingOnlyCarrierConstraint)) {
+    failures.push("carrier_orphan:missing_pending_only_constraint");
+  }
+
+  const xaiBindingIdentity = xaiBindingIdentityResult.rows[0] ?? {};
+  if (Number(xaiBindingIdentity.attributable_retired_rows || 0) !== 0) {
+    failures.push(
+      `xai_binding:retired_owner_pii_retained:${xaiBindingIdentity.attributable_retired_rows}`,
+    );
+  }
+  if (Number(xaiBindingIdentity.attributable_dangling_owner_rows || 0) !== 0) {
+    failures.push(
+      `xai_binding:dangling_owner_pii_retained:${xaiBindingIdentity.attributable_dangling_owner_rows}`,
+    );
+  }
+  if (
+    xaiBindingIdentity.owner_identity_constraint !== true ||
+    !hasRetiredXAIOwnerConstraint(xaiBindingIdentity.owner_identity_constraint_definition)
+  ) {
+    failures.push("xai_binding:wrong_owner_identity_constraint");
+  }
+
+  const xaiPolicy = xaiPolicyResult.rows[0];
+  if (!xaiPolicy) {
+    failures.push("xai_binding:missing_tenant_policy");
+  } else if (
+    String(xaiPolicy.permissive).toUpperCase() !== "PERMISSIVE" ||
+    String(xaiPolicy.cmd).toUpperCase() !== "ALL" ||
+    !sameStringSet(normalizeRoles(xaiPolicy.roles), ["public"]) ||
+    !hasXAITenantPolicyBoundary(xaiPolicy.qual) ||
+    !hasXAITenantPolicyBoundary(xaiPolicy.with_check)
+  ) {
+    failures.push("xai_binding:wrong_tenant_policy_definition");
+  }
+
+  const xaiFunctions = new Map(
+    xaiFunctionSecurityResult.rows.map((row) => [row.function_name, row]),
+  );
+  const expectedXAIFunctions = [
+    {
+      name: "wireline_retire_xai_phone_binding",
+      arguments: "p_user_id uuid, p_phone_number text, p_claim_token uuid, p_last_error text",
+      bodyChecks: [
+        ["tenant_binding", /wireline_current_user_id\(\)\s+IS\s+DISTINCT\s+FROM\s+p_user_id/iu],
+        ["phone_lock", /pg_advisory_xact_lock\s*\(\s*hashtext\s*\([\s\S]*?xai-phone:/iu],
+        ["row_lock", /FOR\s+UPDATE/iu],
+        ["lease_binding", /provisioning_token\s+IS\s+DISTINCT\s+FROM\s+p_claim_token/iu],
+        ["sentinel_user", /SET\s+user_id\s*=\s*id/iu],
+        ["sentinel_agent", /agent_id\s*=\s*['"]retired:/iu],
+        ["retired_status", /status\s*=\s*['"]retired['"]/iu],
+      ],
+    },
+    {
+      name: "wireline_scrub_xai_phone_bindings_for_purge",
+      arguments: "p_user_id uuid",
+      bodyChecks: [
+        ["account_lock", /pg_advisory_xact_lock\s*\(\s*hashtext\s*\([\s\S]*?account-deletion:/iu],
+        ["purging_gate", /queue\.status\s*=\s*['"]purging['"]/iu],
+        [
+          "ordered_phone_locks",
+          /ORDER\s+BY\s+phone_number[\s\S]*?pg_advisory_xact_lock\s*\(\s*hashtext\s*\([\s\S]*?xai-phone:/iu,
+        ],
+        ["sentinel_user", /SET\s+user_id\s*=\s*binding\.id/iu],
+        ["sentinel_agent", /agent_id\s*=\s*['"]retired:/iu],
+      ],
+    },
+  ];
+
+  for (const expectedFunction of expectedXAIFunctions) {
+    const liveFunction = xaiFunctions.get(expectedFunction.name);
+    if (!liveFunction) {
+      failures.push(`xai_binding:missing_function:${expectedFunction.name}`);
+      continue;
+    }
+    if (String(liveFunction.identity_arguments) !== expectedFunction.arguments) {
+      failures.push(`xai_binding:wrong_function_signature:${expectedFunction.name}`);
+    }
+    if (liveFunction.security_definer !== true) {
+      failures.push(`xai_binding:function_not_security_definer:${expectedFunction.name}`);
+    }
+    if (!hasPinnedEmptySearchPath(liveFunction.proconfig)) {
+      failures.push(`xai_binding:function_search_path_not_pinned:${expectedFunction.name}`);
+    }
+    if (liveFunction.trusted_owner !== true) {
+      failures.push(`xai_binding:function_owner_not_trusted:${expectedFunction.name}`);
+    }
+    if (
+      liveFunction.server_execute !== true ||
+      liveFunction.anon_execute !== false ||
+      liveFunction.authenticated_execute !== false ||
+      liveFunction.service_execute !== false ||
+      liveFunction.public_execute_revoked !== true
+    ) {
+      failures.push(`xai_binding:wrong_function_acl:${expectedFunction.name}`);
+    }
+    const functionDefinition = String(liveFunction.function_definition || "");
+    for (const [checkName, pattern] of expectedFunction.bodyChecks) {
+      if (!pattern.test(functionDefinition)) {
+        failures.push(`xai_binding:function_body_missing_${checkName}:${expectedFunction.name}`);
+      }
+    }
+  }
+
+  const accountEnvironmentFunctions = new Map(
+    accountEnvironmentPromotionResult.rows.map((row) => [row.function_name, row]),
+  );
+  const promotionPreflight = accountEnvironmentFunctions.get(
+    "wireline_account_environment_promotion_preflight",
+  );
+  const environmentMutation = accountEnvironmentFunctions.get("wireline_set_account_environment");
+
+  for (const [name, routine] of [
+    ["wireline_account_environment_promotion_preflight", promotionPreflight],
+    ["wireline_set_account_environment", environmentMutation],
+  ]) {
+    if (!routine) {
+      failures.push(`account_environment:missing_function:${name}`);
+      continue;
+    }
+    if (routine.security_definer !== true) {
+      failures.push(`account_environment:function_not_security_definer:${name}`);
+    }
+    if (!hasPinnedPublicTemporarySearchPath(routine.proconfig)) {
+      failures.push(`account_environment:function_search_path_not_pinned:${name}`);
+    }
+    if (routine.trusted_owner !== true) {
+      failures.push(`account_environment:function_owner_not_trusted:${name}`);
+    }
+    if (
+      routine.anon_execute !== false ||
+      routine.authenticated_execute !== false ||
+      routine.service_execute !== true ||
+      routine.public_execute_revoked !== true
+    ) {
+      failures.push(`account_environment:wrong_function_acl:${name}`);
+    }
+  }
+
+  if (promotionPreflight) {
+    const definition = String(promotionPreflight.function_definition || "");
+    if (String(promotionPreflight.identity_arguments) !== "p_user_id uuid") {
+      failures.push("account_environment:wrong_preflight_signature");
+    }
+    if (String(promotionPreflight.function_result).toLowerCase() !== "jsonb") {
+      failures.push("account_environment:wrong_preflight_result");
+    }
+    for (const blockerCode of [
+      "ACCOUNT_NOT_FOUND",
+      "DEMO_ENTITLEMENT",
+      "DEMO_MARKED_ROWS",
+      "DEMO_SEED_IDENTIFIERS",
+      "RESERVED_DEMO_CONTACTS",
+      "BILLING_PROVIDER_BINDING",
+      "VOICE_OR_CARRIER_PROVIDER_RESOURCE",
+      "EXTERNAL_CONNECTION",
+      "LIVE_AUTOMATION_ENABLED",
+      "PENDING_RISKY_STATE",
+      "ACCOUNT_DELETION_PENDING",
+    ]) {
+      if (!definition.includes(blockerCode)) {
+        failures.push(`account_environment:preflight_missing_blocker:${blockerCode}`);
+      }
+    }
+    for (const [checkName, fragment] of [
+      ["general_nanp_555_01xx", "1?[2-9][0-9]{2}55501[0-9]{2}"],
+      ["example_domain_families", "example(\\.(com|net|org))?"],
+      ["trimmed_example_domains", "btrim(coalesce"],
+      ["lead_dossier_contacts", "wireline_lead_dossiers"],
+      ["consent_ledger_contacts", "wireline_consent_log"],
+    ]) {
+      if (!definition.includes(fragment)) {
+        failures.push(`account_environment:preflight_missing_${checkName}`);
+      }
+    }
+    if (/\b(?:DELETE|UPDATE|INSERT|TRUNCATE)\b/iu.test(definition)) {
+      failures.push("account_environment:preflight_is_mutating");
+    }
+  }
+
+  if (environmentMutation) {
+    const definition = String(environmentMutation.function_definition || "");
+    if (
+      String(environmentMutation.identity_arguments) !==
+      "p_account_email text, p_environment text, p_reason text, p_actor_email text"
+    ) {
+      failures.push("account_environment:wrong_mutation_signature");
+    }
+    for (const [checkName, pattern] of [
+      [
+        "production_transition_gate",
+        /v_environment\s*=\s*['"]production['"][\s\S]*?v_previous_environment\s*<>\s*['"]production['"]/iu,
+      ],
+      [
+        "promotion_preflight",
+        /wireline_account_environment_promotion_preflight\s*\(\s*v_user_id\s*\)/iu,
+      ],
+      [
+        "serializable_boundary",
+        /current_setting\s*\(\s*['"]transaction_isolation['"]\s*\)\s*<>\s*['"]serializable['"]/iu,
+      ],
+      ["account_lock", /pg_advisory_xact_lock\s*\(\s*hashtext\s*\([\s\S]*?account-deletion:/iu],
+      ["blocked_detail", /DETAIL\s*=\s*v_promotion_preflight::text/iu],
+      ["audit_proof", /['"]promotion_preflight['"]\s*,\s*v_promotion_preflight/iu],
+      [
+        "historical_evidence_preservation",
+        /IF\s+NOT\s+\(v_environment\s*=\s*['"]production['"][\s\S]*?v_previous_environment\s*<>\s*['"]production['"]\)\s+THEN[\s\S]*?UPDATE\s+public\.wireline_audit_log/iu,
+      ],
+    ]) {
+      if (!pattern.test(definition)) {
+        failures.push(`account_environment:mutation_missing_${checkName}`);
+      }
+    }
+  }
+
   if (failures.length > 0) {
     console.error("Production schema effects are incomplete:", failures.join(", "));
     process.exitCode = 1;
   } else {
     console.log(
-      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, deleted-user reconciliation, and retention configuration safety are ready.",
+      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, deleted-user reconciliation, subscription and audit erasure, carrier cleanup, retention configuration safety, runtime-cohesion defaults, de-identified retained xAI bindings, and guarded account-environment promotion are ready.",
     );
   }
 } catch (error) {

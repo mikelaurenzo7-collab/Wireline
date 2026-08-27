@@ -4,6 +4,7 @@ import { AppError } from "./api-error";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
 import {
   commitPlatformCostReservation,
+  markPlatformCostReservationAmbiguous,
   platformCostReserveUsd,
   releasePlatformCostReservation,
   reservePlatformCostRecord,
@@ -12,6 +13,7 @@ import {
 import { releaseSimulationMinuteQuota } from "../middleware/api-rate-limits";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { shouldRetainRealtimeReservation } from "./realtime-provider-outcome";
 
 export async function reserveRealtimeSessionSpend(
   req: Request,
@@ -68,7 +70,10 @@ export async function releaseRealtimeSessionSpendAfterFailure(
   reservation: PlatformCostReservation,
   error: unknown,
 ): Promise<void> {
-  if (error instanceof AppError && error.status === 502) return;
+  if (shouldRetainRealtimeReservation(error)) {
+    await markPlatformCostReservationAmbiguous(reservation);
+    return;
+  }
 
   const [costRelease, quotaRelease] = await Promise.allSettled([
     releasePlatformCostReservation(reservation),

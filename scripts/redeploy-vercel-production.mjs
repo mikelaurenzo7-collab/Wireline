@@ -1,15 +1,33 @@
 #!/usr/bin/env node
-/**
- * Redeploy latest READY main deployment so production picks up fresh env vars.
- * Usage: VERCEL_TOKEN=... node scripts/redeploy-vercel-production.mjs
- */
-import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
+/** Redeploy one exact main production deployment after an environment-only change. */
+import {
+  assertProductionDeploymentProvenance,
+  assertRedeploySource,
+  normalizeDeploymentId,
+  normalizeExactCommitSha,
+} from "./lib/vercel-deployment-policy.mjs";
+import { TEAM_ID, PROJECT_ID, requireVercelToken } from "./lib/vercel-project.mjs";
 
-const token = process.env.VERCEL_TOKEN?.trim();
-if (!token) {
-  console.error("Set VERCEL_TOKEN");
+const usage =
+  "Usage: VERCEL_TOKEN=... node scripts/redeploy-vercel-production.mjs <sourceDeploymentId> <exactCommitSha>";
+const [sourceDeploymentIdInput, expectedCommitShaInput, ...unexpectedArguments] =
+  process.argv.slice(2);
+if (!sourceDeploymentIdInput || !expectedCommitShaInput || unexpectedArguments.length) {
+  console.error(usage);
   process.exit(1);
 }
+
+let sourceDeploymentId;
+let expectedCommitSha;
+try {
+  sourceDeploymentId = normalizeDeploymentId(sourceDeploymentIdInput);
+  expectedCommitSha = normalizeExactCommitSha(expectedCommitShaInput);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  console.error(usage);
+  process.exit(1);
+}
+const token = requireVercelToken(usage);
 
 function vercelUrl(path) {
   const sep = path.includes("?") ? "&" : "?";
@@ -36,23 +54,17 @@ async function vercelFetch(path, opts = {}) {
   return body;
 }
 
-async function latestMainDeploymentId() {
-  const data = await vercelFetch(
-    `/v6/deployments?projectId=${encodeURIComponent(PROJECT_ID)}&limit=30`,
-    { method: "GET" },
-  );
-  for (const d of data.deployments || []) {
-    const ref = d.meta?.githubCommitRef;
-    const state = d.state || d.readyState;
-    const id = d.uid || d.id;
-    if (ref === "main" && state === "READY" && id) return id;
-  }
-  throw new Error("No READY deployment from main found");
-}
-
 async function main() {
-  const sourceId = await latestMainDeploymentId();
-  console.log("Redeploying from source deployment:", sourceId);
+  const source = await vercelFetch(`/v13/deployments/${encodeURIComponent(sourceDeploymentId)}`, {
+    method: "GET",
+  });
+  const sourceIdentity = assertRedeploySource(source, {
+    expectedCommitSha,
+    projectId: PROJECT_ID,
+  });
+  console.log(
+    JSON.stringify({ action: "redeploy_preflight_passed", source: sourceIdentity }, null, 2),
+  );
 
   const result = await vercelFetch("/v13/deployments", {
     method: "POST",
@@ -60,14 +72,32 @@ async function main() {
       name: "wireline",
       project: PROJECT_ID,
       target: "production",
-      deploymentId: sourceId,
+      deploymentId: sourceDeploymentId,
     }),
   });
 
-  const id = result.id || result.uid;
-  console.log("New production deployment:", id);
-  console.log("URL:", result.url || result.alias?.[0] || "(pending)");
-  console.log("Inspect: https://vercel.com/revaluate/wireline/deployments");
+  const newDeploymentId = normalizeDeploymentId(result.id || result.uid);
+  const created = await vercelFetch(`/v13/deployments/${encodeURIComponent(newDeploymentId)}`, {
+    method: "GET",
+  });
+  const createdIdentity = assertProductionDeploymentProvenance(created, {
+    expectedCommitSha,
+    projectId: PROJECT_ID,
+  });
+  console.log(
+    JSON.stringify(
+      {
+        action: "redeploy_created_not_certified",
+        sourceDeploymentId,
+        newDeploymentId,
+        expectedCommitSha,
+        state: createdIdentity.state,
+        next: `npm run vercel:wait-deployment -- ${newDeploymentId} ${expectedCommitSha} --production`,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 main().catch((e) => {

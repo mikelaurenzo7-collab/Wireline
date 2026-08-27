@@ -401,7 +401,7 @@ function TemplateCard({
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success wl-text-success"
                 title={
-                  deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`
+                  deployedCount === 1 ? "Already in your Bots" : `${deployedCount} in your Bots`
                 }
               >
                 <Check aria-hidden="true" className="w-2.5 h-2.5" />
@@ -488,7 +488,7 @@ function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
         <Sparkles aria-hidden="true" className="w-5 h-5 text-primary" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
+        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Bot</h3>
         <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
           Start from a blank Bot in Studio and set the job, greeting, and voice yourself.
         </p>
@@ -592,7 +592,7 @@ export default function AgentTemplates() {
         setDeploying(null);
         return;
       }
-      toastSuccess("Agent deployed", values.name);
+      toastSuccess("Bot created", values.name);
       setModalTemplate(null);
       setDeploying(null);
       await refetchAgents();

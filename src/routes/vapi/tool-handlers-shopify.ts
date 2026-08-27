@@ -9,8 +9,20 @@ import {
   startReturn as shopifyStartReturn,
   updateOrderShippingAddress as shopifyUpdateAddress,
 } from "../../lib/shopify-service";
+import { assertLiveExternalActionAllowed } from "../../lib/account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+const LIVE_SHOPIFY_TOOLS = new Set([
+  "shopify_lookup_order",
+  "shopify_check_inventory",
+  "shopify_lookup_customer",
+  "shopify_start_return",
+  "shopify_cancel_order",
+  "shopify_update_address",
+  "shopify_create_draft_order",
+  "shopify_add_order_note",
+]);
 
 export async function handleShopifyToolCall(
   fn: string,
@@ -18,6 +30,24 @@ export async function handleShopifyToolCall(
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
   const { agent, message, payload, toolCallId } = context;
+
+  if (LIVE_SHOPIFY_TOOLS.has(fn)) {
+    if (!agent?.user_id) {
+      return {
+        toolCallId,
+        result: "That store action isn't available on this line right now.",
+      };
+    }
+    try {
+      await assertLiveExternalActionAllowed(agent.user_id, `vapi_${fn}`);
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "That store action is disabled in this workspace. Do not claim it ran; offer a manual follow-up.",
+      };
+    }
+  }
 
   // ──────────────────────────────────────────────────────────────
   //  Shopify e-commerce handlers — order/inventory/customer

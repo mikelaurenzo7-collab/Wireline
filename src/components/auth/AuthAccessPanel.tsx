@@ -19,6 +19,7 @@ import {
   captureSignupIntentFromLocation,
   persistSignupIntent,
   sanitizeSignupIntent,
+  signupTemplateLabel,
   syncSignupIntent,
   type SignupIntent,
   type SignupPlanId,
@@ -43,6 +44,7 @@ import { Checkbox } from "../ui/shadcn/Checkbox";
 import { WirelineLockup } from "../brand/WirelineBrand";
 
 type AuthMode = "signin" | "signup" | "reset";
+type AuthField = "email" | "password";
 type OAuthProvider = "google" | "microsoft" | "yahoo";
 type OAuthProviderAvailability = Record<OAuthProvider, boolean>;
 
@@ -120,10 +122,13 @@ function signupPlanLabel(
 }
 
 function signupIntentLabel(intent: SignupIntent | null): string | null {
-  if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
+  if (!intent?.preferredPlanId && !intent?.preferredTemplateId && !intent?.signupWedge) return null;
   const parts: string[] = [];
   if (intent.preferredPlanId) {
     parts.push(signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval));
+  }
+  if (intent.preferredTemplateId) {
+    parts.push(signupTemplateLabel(intent.preferredTemplateId));
   }
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
   return parts.join(" · ");
@@ -216,6 +221,9 @@ export default function AuthAccessPanel({
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<AuthField | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const termsRef = useRef<HTMLInputElement>(null);
   const [signupIntent, setSignupIntent] = useState<SignupIntent | null>(() =>
     captureSignupIntentFromLocation(),
@@ -231,6 +239,10 @@ export default function AuthAccessPanel({
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
   const legacyBrowserHandoffUrl =
     typeof window === "undefined" ? null : canonicalLegacyBrowserHandoff(window.location);
 
@@ -293,6 +305,7 @@ export default function AuthAccessPanel({
     setMode(next);
     setError(null);
     setMessage(null);
+    setInvalidField(null);
     if (next === "signup") {
       setSignupIntent((current) => defaultFreeIntent(current));
     }
@@ -305,12 +318,14 @@ export default function AuthAccessPanel({
   const startOAuth = async (provider: OAuthProvider) => {
     if (loading || oauthPending) return;
     if (isSignUp && !agreedToTerms) {
+      setInvalidField(null);
       setError(TERMS_CONSENT_ERROR);
       termsRef.current?.focus();
       return;
     }
     setOauthPending(provider);
     setError(null);
+    setInvalidField(null);
     try {
       const response = await fetch(`/api/auth/${provider}/url`, {
         headers: {
@@ -349,20 +364,43 @@ export default function AuthAccessPanel({
     }
   };
 
+  const showEmailError = (message: string) => {
+    setInvalidField("email");
+    setError(message);
+    emailRef.current?.focus();
+  };
+
+  const showPasswordError = (message: string) => {
+    setInvalidField("password");
+    setError(message);
+    passwordRef.current?.focus();
+  };
+
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
     if (loading) return;
     setError(null);
     setMessage(null);
+    setInvalidField(null);
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail) return setError("Email is required.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      return setError("Enter a valid email address.");
+    if (!trimmedEmail) {
+      showEmailError("Email is required.");
+      return;
     }
-    if (!isReset && !password) return setError("Password is required.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      showEmailError("Enter a valid email address.");
+      return;
+    }
+    if (!isReset && !password) {
+      showPasswordError("Password is required.");
+      return;
+    }
     const passwordPolicyError = isSignUp ? getPasswordPolicyError(password) : null;
-    if (passwordPolicyError) return setError(passwordPolicyError);
+    if (passwordPolicyError) {
+      showPasswordError(passwordPolicyError);
+      return;
+    }
     if (isSignUp && !agreedToTerms) {
       setError(TERMS_CONSENT_ERROR);
       termsRef.current?.focus();
@@ -469,6 +507,18 @@ export default function AuthAccessPanel({
   const termsId = embedded ? "landing-auth-terms" : "auth-terms";
   const termsLabelId = `${termsId}-label`;
   const termsErrorId = `${termsId}-error`;
+  const emailErrorId = embedded ? "landing-auth-email-error" : "auth-email-error";
+  const passwordErrorId = embedded ? "landing-auth-password-error" : "auth-password-error";
+  const emailInputId = embedded ? "landing-auth-email" : "auth-email";
+  const passwordInputId = embedded ? "landing-auth-password" : "auth-password";
+  const errorId =
+    error === TERMS_CONSENT_ERROR
+      ? termsErrorId
+      : invalidField === "email"
+        ? emailErrorId
+        : invalidField === "password"
+          ? passwordErrorId
+          : undefined;
 
   if (legacyBrowserHandoffUrl) {
     return (
@@ -507,21 +557,11 @@ export default function AuthAccessPanel({
         </header>
 
         {!isReset ? (
-          <div className="wl-access-panel__tabs" role="tablist" aria-label="Account access">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={!isSignUp}
-              onClick={() => changeMode("signin")}
-            >
+          <div className="wl-access-panel__tabs" role="group" aria-label="Account access mode">
+            <button type="button" aria-pressed={!isSignUp} onClick={() => changeMode("signin")}>
               Sign In
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={isSignUp}
-              onClick={() => changeMode("signup")}
-            >
+            <button type="button" aria-pressed={isSignUp} onClick={() => changeMode("signup")}>
               Create Account
             </button>
           </div>
@@ -532,7 +572,9 @@ export default function AuthAccessPanel({
             <Checkbox
               ref={termsRef}
               id={termsId}
+              name="termsAccepted"
               checked={agreedToTerms}
+              required
               aria-labelledby={termsLabelId}
               aria-invalid={error === TERMS_CONSENT_ERROR}
               aria-describedby={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}
@@ -556,7 +598,7 @@ export default function AuthAccessPanel({
         ) : null}
 
         {!isReset && oauthProviders.length > 0 ? (
-          <div className="wl-access-panel__oauth" aria-label="Continue with provider">
+          <div className="wl-access-panel__oauth" role="group" aria-label="Single sign-on options">
             {oauthProviders.map((provider) => (
               <button
                 key={provider.id}
@@ -582,50 +624,59 @@ export default function AuthAccessPanel({
           </div>
         ) : null}
 
-        <form className="wl-access-panel__form" onSubmit={handleAuth}>
-          <label>
-            <span>Email</span>
+        <form className="wl-access-panel__form" onSubmit={handleAuth} noValidate>
+          <div className="wl-access-panel__field-group">
+            <label htmlFor={emailInputId}>Email</label>
             <div className="wl-access-panel__field">
               <Mail aria-hidden="true" />
               <input
+                id={emailInputId}
+                ref={emailRef}
+                name="email"
                 type="email"
+                required
                 autoComplete="email"
                 spellCheck={false}
-                autoFocus={!embedded}
                 disabled={loading}
+                aria-invalid={invalidField === "email"}
+                aria-describedby={invalidField === "email" ? emailErrorId : undefined}
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (invalidField === "email") {
+                    setInvalidField(null);
+                    setError(null);
+                  }
+                }}
                 placeholder="you@company.com"
               />
             </div>
-          </label>
+          </div>
 
           {!isReset ? (
-            <label>
-              <span className="wl-access-panel__label-row">
-                <span>Password</span>
-                {!isSignUp ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode("reset");
-                      setError(null);
-                      setMessage(null);
-                    }}
-                  >
-                    Forgot?
-                  </button>
-                ) : null}
-              </span>
+            <div className="wl-access-panel__field-group">
+              <label htmlFor={passwordInputId}>Password</label>
               <div className="wl-access-panel__field">
                 <Lock aria-hidden="true" />
                 <input
+                  id={passwordInputId}
+                  ref={passwordRef}
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  required
                   autoComplete={isSignUp ? "new-password" : "current-password"}
                   minLength={isSignUp ? 8 : undefined}
                   disabled={loading}
+                  aria-invalid={invalidField === "password"}
+                  aria-describedby={invalidField === "password" ? passwordErrorId : undefined}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (invalidField === "password") {
+                      setInvalidField(null);
+                      setError(null);
+                    }
+                  }}
                   placeholder={isSignUp ? "Create a password" : "Password"}
                 />
                 <button
@@ -637,16 +688,34 @@ export default function AuthAccessPanel({
                   {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                 </button>
               </div>
+              {!isSignUp ? (
+                <button
+                  type="button"
+                  className="wl-access-panel__forgot"
+                  onClick={() => {
+                    setMode("reset");
+                    setError(null);
+                    setMessage(null);
+                    setInvalidField(null);
+                  }}
+                >
+                  Forgot?
+                </button>
+              ) : null}
               {isSignUp && password ? (
                 <ul className="wl-access-panel__password-rules" aria-label="Password requirements">
-                  {PASSWORD_RULES.map((rule) => (
-                    <li key={rule.label} data-met={rule.test(password) ? "true" : "false"}>
-                      {rule.label}
-                    </li>
-                  ))}
+                  {PASSWORD_RULES.map((rule) => {
+                    const met = rule.test(password);
+                    return (
+                      <li key={rule.label} data-met={met ? "true" : "false"}>
+                        {rule.label}
+                        <span className="sr-only"> ({met ? "met" : "not met"})</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : null}
-            </label>
+            </div>
           ) : null}
 
           {isReset ? (
@@ -657,6 +726,7 @@ export default function AuthAccessPanel({
                 setMode("signin");
                 setError(null);
                 setMessage(null);
+                setInvalidField(null);
               }}
             >
               <ArrowLeft aria-hidden="true" /> Back to sign in
@@ -664,11 +734,7 @@ export default function AuthAccessPanel({
           ) : null}
 
           {error ? (
-            <StatusNotice
-              id={error === TERMS_CONSENT_ERROR ? termsErrorId : undefined}
-              tone="destructive"
-              title={error}
-            >
+            <StatusNotice id={errorId} tone="destructive" title={error}>
               {isSignUp && /already exists/i.test(error) ? (
                 <button type="button" onClick={() => changeMode("signin")}>
                   Sign in instead
@@ -698,7 +764,7 @@ export default function AuthAccessPanel({
         <nav className="wl-access-panel__links" aria-label="Public links">
           <Link to="/">Home</Link>
           <Link to="/pricing">Pricing</Link>
-          <Link to="/status">Status</Link>
+          <Link to="/support">Support</Link>
         </nav>
       ) : null}
     </section>

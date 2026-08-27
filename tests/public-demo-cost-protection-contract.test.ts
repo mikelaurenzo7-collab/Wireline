@@ -15,12 +15,14 @@ describe("public browser demo cost protection", () => {
   const server = read("server.ts");
 
   it("keeps platform authorization and assistant construction on the server", () => {
-    expect(routes).toContain('"/api/public/demo-xai-session"');
-    expect(routes).toContain("createPublicXAILiveDemoSession");
-    expect(routes).toContain("publicXAIDemoConfigured");
+    expect(routes).toContain('"/api/public/demo-call"');
+    expect(routes).toContain("createPublicOpenAILiveDemoCall");
+    expect(routes).toContain("publicOpenAIDemoConfigured");
     expect(routes).not.toContain('fetch("https://api.vapi.ai/call/web"');
     expect(hook).toContain('fetch("/api/public/demo-session"');
-    expect(hook).toContain("new WebSocket(session.websocketUrl");
+    expect(hook).toContain("new RTCPeerConnection()");
+    expect(hook).toContain("connection.setRemoteDescription");
+    expect(hook).not.toContain("new WebSocket(");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
     expect(widget).not.toContain("/api/public/assistant/");
@@ -42,10 +44,10 @@ describe("public browser demo cost protection", () => {
     const sessionRequest = hook.indexOf('fetch("/api/public/demo-session"');
     const permissionRequest = hook.indexOf("navigator.mediaDevices.getUserMedia");
     const sessionRouteStart = routes.indexOf('"/api/public/demo-session"');
-    const sessionRouteEnd = routes.indexOf('"/api/public/demo-xai-session"', sessionRouteStart);
+    const sessionRouteEnd = routes.indexOf('"/api/public/demo-call"', sessionRouteStart);
     const sessionRoute = routes.slice(sessionRouteStart, sessionRouteEnd);
     const providerReadiness = sessionRoute.indexOf(
-      "!publicDemoTicketingReady() || !publicXAIDemoConfigured()",
+      "!publicDemoTicketingReady() || !publicOpenAIDemoConfigured()",
     );
     const ticketIssue = sessionRoute.indexOf("issuePublicDemoTicket({");
 
@@ -58,19 +60,17 @@ describe("public browser demo cost protection", () => {
   it("fences canceled and stalled starts before they can reclaim provider ownership", () => {
     expect(hook).toContain("PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS = 15_000");
     expect(hook).toContain("PUBLIC_DEMO_CONNECTION_TIMEOUT_MS = 20_000");
+    expect(hook).toContain("PUBLIC_DEMO_PROVIDER_SESSION_REQUEST_TIMEOUT_MS = 40_000");
     expect(hook).toContain("const attemptRef = useRef(0)");
     expect(hook).toContain("const sessionAbortRef = useRef<AbortController | null>(null)");
     expect(hook).toContain("signal: controller.signal");
     expect(hook).toContain("if (attempt !== attemptRef.current) return");
     expect(hook).toContain("attemptRef.current += 1");
     expect(hook).toContain("The live connection took too long");
-    expect(hook).toContain("socket.current?.close(1000, \"BotBound protected demo ended\")");
-    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
-      "voice bridge error:",
-    );
-    expect(hook, "provider exceptions must not be dumped raw").not.toContain(
-      "call start failed:",
-    );
+    expect(hook).toContain("activePeer?.close()");
+    expect(hook).toContain("microphone.current?.getTracks().forEach((track) => track.stop())");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain("voice bridge error:");
+    expect(hook, "provider exceptions must not be dumped raw").not.toContain("call start failed:");
   });
 
   it("keeps cancellation reachable while a private session is connecting", () => {
@@ -95,11 +95,14 @@ describe("public browser demo cost protection", () => {
 
   it("caps duration, disables retained artifacts, and exposes no real tools", () => {
     const policy = read("src/lib/public-browser-demo.ts");
-    const demoSession = read("src/lib/voice/xai-public-demo-session.ts");
+    const demoSession = read("src/lib/voice/openai-public-demo-session.ts");
     expect(policy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
     expect(routes).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
     expect(demoSession).toContain("tools: []");
     expect(demoSession).toContain('tool_choice: "none"');
+    expect(demoSession).toContain("createServerManagedOpenAIRealtimeCall");
+    expect(demoSession).toContain("hangupOpenAIRealtimeCall");
+    expect(hook).not.toContain("api.openai.com");
     expect(policy).toContain("recordingEnabled: false");
     expect(policy).toContain("videoRecordingEnabled: false");
     expect(policy).toContain("pcapEnabled: false");
@@ -127,7 +130,7 @@ describe("public browser demo cost protection", () => {
     expect(showcase).toContain("<BrowserCallWidget");
     expect(showcase).toContain('id="demo-lines"');
     expect(showcase).toContain("CALL A DEMO LINE");
-    expect(showcase).toContain('href={`tel:${agent.tel}`}');
+    expect(showcase).toContain("href={`tel:${agent.tel}`}");
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");

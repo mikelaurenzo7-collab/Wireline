@@ -13,19 +13,11 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(tabs).not.toContain("bg-primary text-primary-foreground");
   });
 
-  it("keeps the technical integration inventory behind progressive disclosure", () => {
+  it("keeps the technical integration inventory out of customer Connections", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
-    expect(connections).toContain(
-      '<Accordion type="single" collapsible data-wireline-integration-map>',
-    );
-    const advancedInventory = connections.slice(
-      connections.indexOf("data-wireline-integration-map"),
-    );
-    expect(advancedInventory).toMatch(
-      /<AccordionTrigger[^>]*>[\s\S]*?Advanced[\s\S]*?<\/AccordionTrigger>/,
-    );
-    expect(advancedInventory).toContain("<AccordionContent");
-    expect(connections).toContain("<IntegrationOperatingMap />");
+    expect(connections).toContain("MailboxConnectionCard");
+    expect(connections).toContain("CrmConnectionCard");
+    expect(connections).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
   });
 
   it("keeps insights range selection visually secondary to the data", () => {
@@ -37,7 +29,8 @@ describe("authenticated seeded-state visual QA contract", () => {
     const css = read("src/styles/authenticated-visual-qa.css");
     expect(css).toContain(".wl-workspace-shell .wl-rail-link kbd");
     expect(css).toContain(":has(h1.sr-only)::after");
-    expect(css).toContain(":has(> section:first-child .wl-empty-state)");
+    expect(css).toContain('.wl-channel-inbox-grid[data-empty="true"]');
+    expect(css).not.toContain(".wl-channel-inbox-grid:has(");
     expect(css).not.toContain("article:nth-of-type(n + 4)");
     expect(css).not.toContain(":nth-child(n + 7):not(:last-child)");
   });
@@ -56,6 +49,20 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(chrome).toContain('aria-label="Switch Bot"');
     expect(chrome).toContain("/inbox?agent=");
     expect(chrome).toContain("/phone?agent=");
+    expect(chrome.match(/hidden size-9 px-0 lg:inline-flex/g)).toHaveLength(2);
+  });
+
+  it("uses navigation semantics only for links and pressed-state semantics for in-page tabs", () => {
+    const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
+    const linkBranch = tabs.slice(
+      tabs.indexOf("if (tab.href)"),
+      tabs.indexOf("return (", tabs.indexOf("if (tab.href)") + 30),
+    );
+    const buttonBranch = tabs.slice(tabs.lastIndexOf("<button"), tabs.lastIndexOf("</button>") + 9);
+
+    expect(linkBranch).toContain('aria-current={active ? "page" : undefined}');
+    expect(buttonBranch).toContain("aria-pressed={active}");
+    expect(buttonBranch).not.toContain("aria-current");
   });
 
   it("removes decorative ledger treatment from authenticated task surfaces", () => {

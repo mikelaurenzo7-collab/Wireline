@@ -1,13 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
-import { xaiPhoneBindings } from "../../db/xai-voice-schema";
 import { AppError } from "../api-error";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { releaseTenantNumber as releaseLegacyTenantNumber } from "../phone-provisioning";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { deactivateNativeXAIPhoneLine } from "./xai-phone-activation-service";
 
@@ -18,7 +18,7 @@ function twilioStatus(error: unknown): number | null {
 
 async function releaseTwilioLine(sid: string): Promise<void> {
   const client = getTwilioClient();
-  if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!client) throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
   try {
     await client.incomingPhoneNumbers(sid).remove();
   } catch (error) {
@@ -28,24 +28,18 @@ async function releaseTwilioLine(sid: string): Promise<void> {
 }
 
 async function retireBinding(userId: string, phoneNumber: string): Promise<void> {
-  await drizzle
-    .update(xaiPhoneBindings)
-    .set({
-      status: "retired",
-      provisioningToken: null,
-      provisioningClaimedAt: null,
-      lastError: null,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(xaiPhoneBindings.userId, userId),
-        eq(xaiPhoneBindings.phoneNumber, phoneNumber),
-      ),
-    );
+  await drizzle.execute(sql`
+    SELECT binding_id
+    FROM public.wireline_retire_xai_phone_binding(
+      ${userId}::uuid,
+      ${phoneNumber},
+      NULL::uuid,
+      NULL::text
+    )
+  `);
 }
 
-export async function releaseNativeTenantNumber(
+async function releaseNativeTenantNumberUnfenced(
   userId: string,
   phoneNumber: string,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -98,21 +92,6 @@ export async function releaseNativeTenantNumber(
   try {
     await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
       await tx
-        .update(xaiPhoneBindings)
-        .set({
-          status: "retired",
-          provisioningToken: null,
-          provisioningClaimedAt: null,
-          lastError: null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(xaiPhoneBindings.userId, userId),
-            eq(xaiPhoneBindings.phoneNumber, phoneNumber),
-          ),
-        );
-      await tx
         .delete(schema.phoneNumbers)
         .where(and(eq(schema.phoneNumbers.id, row.id), eq(schema.phoneNumbers.userId, userId)));
 
@@ -148,4 +127,26 @@ export async function releaseNativeTenantNumber(
         "The carrier released the number, but BotBound could not finish local cleanup. Retry release to reconcile the workspace.",
     };
   }
+}
+
+export async function releaseNativeTenantNumber(
+  userId: string,
+  phoneNumber: string,
+  options: { terminalCleanup?: boolean } = {},
+): Promise<{ ok: boolean; error?: string }> {
+  if (options.terminalCleanup) {
+    return releaseNativeTenantNumberUnfenced(userId, phoneNumber);
+  }
+  const outcome = await runTenantProviderWorkWithDeletionFence({
+    userId,
+    operation: "native_phone_release",
+    ttlMs: 20 * 60_000,
+    perform: () => releaseNativeTenantNumberUnfenced(userId, phoneNumber),
+  });
+  return outcome.performed
+    ? outcome.result
+    : {
+        ok: false,
+        error: "Number release is unavailable while terminal account deletion is in progress.",
+      };
 }

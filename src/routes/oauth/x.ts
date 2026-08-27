@@ -21,6 +21,7 @@ import {
   fetchXUserProfile,
   disconnectX,
 } from "../../lib/x-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ router.get(
   "/api/oauth/x/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!xOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -46,6 +47,7 @@ router.get(
     const redirectUri = `${baseUrl}/api/oauth/x/callback`;
     const uid = req.user?.id;
     if (!uid) throw AppError.fromHttpStatus(401, "Unauthorized");
+    await assertOAuthProviderConnectAllowed(uid, "X");
     const { verifier, challenge } = generatePkcePair();
     const authUrl = getXAuthUrl(
       redirectUri,
@@ -82,6 +84,14 @@ router.get(
       return res.status(400).send("Missing PKCE verifier. Please restart the sign-in flow.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "X");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
@@ -89,13 +99,6 @@ router.get(
       const redirectUri = `${baseUrl}/api/oauth/x/callback`;
 
       const tokens = await exchangeXCode(code, redirectUri, vs.pkceVerifier);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const profile = await fetchXUserProfile(tokens.access_token);
       const username = profile?.username || "";

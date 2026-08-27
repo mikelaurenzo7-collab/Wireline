@@ -32,6 +32,16 @@ describe("signin timing-oracle equalization", () => {
     expect(eqChunk).toContain("sendPasswordResetEmail");
   });
 
+  it("never writes a raw password-reset address to production logs", () => {
+    const forgot = source.slice(
+      source.indexOf('"/api/auth/forgot-password"'),
+      source.indexOf('"/api/auth/reset-password"'),
+    );
+    expect(source).toContain('import { emailMaskForLog } from "../lib/twilio-webhook-privacy";');
+    expect(forgot.match(/email: emailMaskForLog\(email\)/g)).toHaveLength(2);
+    expect(forgot).not.toMatch(/\n\s+email,\n/);
+  });
+
   it("equalizedDuration takes an explicit floor and pads rejections via allSettled", () => {
     expect(source).toContain(
       "async function equalizedDuration<T>(promise: Promise<T>, minMs: number): Promise<T>",

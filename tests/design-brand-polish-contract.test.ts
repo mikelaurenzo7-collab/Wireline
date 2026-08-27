@@ -37,7 +37,10 @@ describe("E2E design and BotBound brand polish", () => {
   it("keeps authenticated hierarchy task-first and separates Bot selection from status", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const refinement = read("src/styles/system-aesthetic-refinement.css");
-    const selectedRule = withoutComments(refinement).match(/\.wl-rail-agent-link\[aria-current="page"\]\s*\{[\s\S]*?\}/)?.[0] ?? "";
+    const selectedRule =
+      withoutComments(refinement).match(
+        /\.wl-rail-agent-link\[aria-current="page"\]\s*\{[\s\S]*?\}/,
+      )?.[0] ?? "";
     expect(shell).toContain("wl-task-header");
     expect(shell).toContain("md:grid-cols-[minmax(0,1fr)_auto]");
     expect(shell).toContain("items-start text-left");
@@ -57,11 +60,17 @@ describe("E2E design and BotBound brand polish", () => {
     const polish = read("src/styles/e2e-design-polish.css");
     const executablePolish = withoutComments(polish);
     expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
-    const bodyRule = executablePolish.match(/\.marketing-surface :is\(p, li, \.wl-public-copy, \.wl-route-copy, \.wl-page-copy\)\s*\{[^}]*\}/)?.[0] ?? "";
+    const bodyRule =
+      executablePolish.match(
+        /\.marketing-surface :is\(p, li, \.wl-public-copy, \.wl-route-copy, \.wl-page-copy\)\s*\{[^}]*\}/,
+      )?.[0] ?? "";
     expect(bodyRule).not.toBe("");
     expect(bodyRule).toContain("text-transform: none");
     expect(bodyRule).toContain("letter-spacing: normal");
-    const dressers = globSync("src/styles/**/*.css", { cwd: root }).map((file) => file.replaceAll("\\", "/")).filter((file) => withoutComments(source(file)).includes("marketing-hero__description")).sort();
+    const dressers = globSync("src/styles/**/*.css", { cwd: root })
+      .map((file) => file.replaceAll("\\", "/"))
+      .filter((file) => withoutComments(source(file)).includes("marketing-hero__description"))
+      .sort();
     expect(dressers).toEqual([]);
     expect(polish).toContain(".wl-preserve-case");
     expect(hero).not.toContain("uppercase tracking-[.1em]");
@@ -135,7 +144,21 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("Runtime Balance");
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
     expect(prestige).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)");
-    expect(prestige).toMatch(/@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*100dvh/);
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+    );
+    expect(prestige).toMatch(
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+    );
+    expect(prestige).not.toMatch(
+      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
+    );
     expect(auth).toContain("grid-template-columns: repeat(3");
   });
 
@@ -163,9 +186,14 @@ describe("E2E design and BotBound brand polish", () => {
     const files = globSync("src/**/*.tsx", { cwd: root });
     const offenders = files.filter((file) => {
       const text = source(file);
-      return /role="dialog"|aria-modal="true"/.test(text) && !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text);
+      return (
+        /role="dialog"|aria-modal="true"/.test(text) &&
+        !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text)
+      );
     });
-    expect(offenders, `dialogs need an accessible name contract:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `dialogs need an accessible name contract:\n${offenders.join("\n")}`).toEqual(
+      [],
+    );
   });
 
   it("uppercases field captions without shouting field values", () => {

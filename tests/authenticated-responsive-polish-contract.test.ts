@@ -63,14 +63,25 @@ describe("authenticated responsive polish contract", () => {
     expect(css).toContain("padding-inline-start: 2.75rem");
   });
 
-  it("reserves enough desktop width for the compliance action rail", () => {
+  it("keeps the narrow settings compliance surface in one readable column", () => {
     const compliance = read("src/components/ComplianceCenter.tsx");
     const dnc = read("src/components/DncManager.tsx");
 
-    expect(compliance).toContain("minmax(448px,.9fr)");
-    expect(compliance).not.toContain("minmax(320px,.9fr)");
+    expect(compliance).toContain('<div className="grid gap-4">');
+    expect(compliance).not.toContain("minmax(448px,.9fr)");
+    expect(compliance).not.toContain('className="grid gap-4 xl:grid-cols-[');
     expect(dnc).toContain("grid shrink-0 grid-cols-2 gap-2");
     expect(dnc).not.toContain("sm:grid-cols-4");
+  });
+
+  it("keeps the account rail separator outside the active-link border", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const settingsStart = shell.indexOf('to="/settings"');
+    const settingsBlock = shell.slice(settingsStart - 120, settingsStart + 1_200);
+
+    expect(settingsBlock).toContain('className="shrink-0 border-t border-border/70 pt-3"');
+    expect(settingsBlock).toContain("wl-rail-link min-h-[44px]");
+    expect(settingsBlock).not.toContain("wl-rail-link min-h-[44px] shrink-0 border-t");
   });
 
   it("lets a selected BotBound line wrap before its number gets squeezed", () => {
@@ -152,8 +163,8 @@ describe("authenticated responsive polish contract", () => {
     const account = read("src/pages/SettingsPage.tsx");
     const team = read("src/pages/TeamSettings.tsx");
 
-    expect(account).toContain('<WorkspacePageFrame mode="standard">');
-    expect(team).toContain('<WorkspacePageFrame mode="standard">');
+    expect(account).toContain('<WorkspacePageFrame mode="narrow">');
+    expect(team).toContain('<WorkspacePageFrame mode="narrow">');
   });
 
   it("shows an actionable carrier state instead of a false empty inventory", () => {

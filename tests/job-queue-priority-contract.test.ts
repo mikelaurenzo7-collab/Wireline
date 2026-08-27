@@ -6,14 +6,12 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("job queue claim priority", () => {
-  it("keeps daily retention fan-out behind all other due work", () => {
+  it("keeps due Realtime hangups first and daily retention fan-out last", () => {
     const queue = read("src/lib/job-queue.ts");
 
-    expect(queue).toContain(
-      "case when ${schema.jobs.type} = 'purge_old_data' then 1 else 0 end",
-    );
-    expect(queue).toContain(
-      ".orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)",
-    );
+    expect(queue).toContain("when ${schema.jobs.type} = 'openai_realtime_hangup' then 0");
+    expect(queue).toContain("when ${schema.jobs.type} = 'purge_old_data' then 2");
+    expect(queue).toContain("else 1");
+    expect(queue).toContain(".orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)");
   });
 });

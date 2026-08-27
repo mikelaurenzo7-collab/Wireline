@@ -3,7 +3,7 @@ import { and, desc, eq, ilike, inArray, not, or } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../../lib/ai-supervisor";
 import * as schema from "../../db/schema";
-import { auditLogger } from "../../lib/server-context";
+import { auditLogger, log as serverLog } from "../../lib/server-context";
 import { normalizeDncPhone } from "../../lib/compliance";
 import {
   CONSENT_RULE_VERSION,
@@ -17,6 +17,11 @@ import { handleSendPaymentLink, handleSendSignupLink } from "../../lib/vapi-tool
 
 import type { ToolCallContext, ToolCallResult } from "./types";
 import { phoneSuffixForLog } from "../../lib/twilio-webhook-privacy";
+import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+  type ExternalEntityTarget,
+} from "../../lib/account-environment-policy";
 
 // ─── Knowledge search helpers ────────────────────────────────────────────────
 const MAX_KB_RESULTS = 8;
@@ -202,6 +207,35 @@ async function recordCommsFollowUpTask(
   }
 }
 
+async function tenantVapiExternalActionBlock(
+  userId: string | null | undefined,
+  action: string,
+  target?: ExternalEntityTarget,
+): Promise<string | null> {
+  if (!userId) return "The workspace could not be verified, so no live action was taken.";
+  try {
+    const environmentPolicy = await liveExternalActionPolicyForUser(userId);
+    if (!environmentPolicy.allowed) {
+      return environmentPolicy.message;
+    }
+    if (target) {
+      const entityPolicy = await externalEntityActionPolicyForUser(userId, target);
+      if (!entityPolicy.allowed) return entityPolicy.message;
+    }
+    return null;
+  } catch (error) {
+    contextSafeLog(action, error);
+    return "Live actions are temporarily unavailable, so nothing was sent.";
+  }
+}
+
+function contextSafeLog(action: string, error: unknown): void {
+  serverLog.warn("Vapi tenant external-action policy failed closed", {
+    action,
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
+
 export async function handleCoreToolCall(
   fn: string,
   args: any,
@@ -361,6 +395,10 @@ export async function handleCoreToolCall(
   if (fn === "send_email") {
     const { to_email, subject, body } = args || {};
     try {
+      const blocked = await tenantVapiExternalActionBlock(agent?.user_id, "vapi_email_send", {
+        email: to_email,
+      });
+      if (blocked) return { toolCallId, result: blocked };
       // Throws ClientCommunicationBlockedError on a block — there is no
       // approved:false return, so a blocked send falls through to the catch,
       // which records a real task instead of fabricating a follow-up.
@@ -415,18 +453,21 @@ export async function handleCoreToolCall(
     }
   }
 
-  // Platform-Resend signup-link tool — the showcase + demo agents
-  // (Sarah, Liam, Marcus, etc.) call this when a caller asks for a
-  // Wireline trial signup link. Distinct from `send_email` above,
-  // which routes through the TENANT'S connected Google/Microsoft
-  // OAuth account — showcase agents have no tenant so they need a
-  // platform-level transport. Closes the "agent promised an email
-  // but never sent it" gap Mike caught on the demo line.
+  // Tenant signup-link tool. Public showcase traffic is dispatched through
+  // showcase-handlers.ts with an explicit system identity and never enters
+  // this branch; keeping that split prevents a demo tenant from inheriting the
+  // platform Resend transport.
   //
   // Core branch logic lives in src/lib/vapi-tool-handlers.ts so it
   // can be unit-tested with mocked transports — the route stays a
   // thin adapter (look up the agent name, inject deps).
   if (fn === "send_signup_link") {
+    const blocked = await tenantVapiExternalActionBlock(
+      agent?.user_id,
+      "vapi_tenant_signup_link_email",
+      { email: args?.to_email },
+    );
+    if (blocked) return { toolCallId, result: `DELIVERY_FAILED: ${blocked}` };
     const { sendSignupLinkEmail } = await import("../../lib/email-service");
     const agentNameRow = await drizzle
       .select({ name: schema.agents.name })
@@ -444,6 +485,12 @@ export async function handleCoreToolCall(
   // send_payment_link — emails the caller a checkout link for a
   // specific plan so they can pay + activate without friction.
   if (fn === "send_payment_link") {
+    const blocked = await tenantVapiExternalActionBlock(
+      agent?.user_id,
+      "vapi_tenant_payment_link_email",
+      { email: args?.to_email },
+    );
+    if (blocked) return { toolCallId, result: `DELIVERY_FAILED: ${blocked}` };
     const { sendPaymentLinkEmail } = await import("../../lib/email-service");
     const { result } = await handleSendPaymentLink(args || {}, {
       sendPaymentLinkEmail,
@@ -475,6 +522,13 @@ export async function handleCoreToolCall(
             "I wasn't able to send that text because I couldn't verify the account. Please reach out to us directly.",
         };
       }
+
+      const blocked = await tenantVapiExternalActionBlock(
+        agent.user_id,
+        "vapi_tenant_message_send",
+        { phone: targetNumber },
+      );
+      if (blocked) return { toolCallId, result: blocked };
 
       // Mid-call SMS must clear the shared outbound gate. The live-session
       // exemptions (skip quiet hours + 24h duplicate, supply consent) are only
@@ -645,6 +699,13 @@ export async function handleCoreToolCall(
           result: "No phone number was available to validate.",
         };
       }
+
+      const blocked = await tenantVapiExternalActionBlock(
+        agent?.user_id,
+        "vapi_tenant_phone_lookup",
+        { phone: targetNumber },
+      );
+      if (blocked) return { toolCallId, result: blocked };
 
       const lookup = await lookupTenantPhoneNumber(agent?.user_id, targetNumber);
       return {

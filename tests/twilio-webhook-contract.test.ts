@@ -8,12 +8,12 @@ import { assertBotBoundJinglePrompt, jingleFingerprint } from "../scripts/genera
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Twilio webhook XML contract", () => {
-  it("degrades the Vapi failover route to voicemail when the database fails", () => {
-    // The failover route exists for the moment things are already broken. A
-    // thrown tenant/settings lookup previously became a 500, leaving callers
-    // with Twilio's own error announcement instead of the professional close.
+  it("hangs up before media when the failover tenant cannot be classified", () => {
+    // A signed callback can outlive a tenant's production classification. A
+    // lookup failure must never make a reclassified line speak, dial, or record.
     const route = read("src/routes/twilio-webhook-base.ts");
-    expect(route).toContain("Failover tenant lookup failed; degrading to voicemail");
+    expect(route).toContain("Signed Twilio inbound tenant lookup failed closed");
+    expect(route).toContain("if (!tenantUserId) return res.status(200).send(twimlHangup())");
   });
 
   it("ships the committed sound assets the TwiML references", () => {

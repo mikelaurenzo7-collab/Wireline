@@ -13,6 +13,7 @@ import {
 } from "./webhook-delivery-status";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 export type WebhookEvent =
   | "call.completed"
@@ -96,6 +97,31 @@ type DeliveryAttemptOutcome = {
   deliveredAt: Date | null;
   lastError: string | null;
 };
+
+type TenantWebhookExternalActionPolicy =
+  { allowed: true } | { allowed: false; code: string; environment: string | null };
+
+export async function tenantWebhookExternalActionsAllowed(
+  userId: string,
+  policyForUser: typeof liveExternalActionPolicyForUser = liveExternalActionPolicyForUser,
+): Promise<TenantWebhookExternalActionPolicy> {
+  try {
+    const policy = await policyForUser(userId);
+    return policy.allowed
+      ? { allowed: true }
+      : { allowed: false, code: policy.code, environment: policy.environment };
+  } catch (error) {
+    log.error("Tenant webhook account-environment lookup failed closed", {
+      userId,
+      error: getErrorMessage(error),
+    });
+    return {
+      allowed: false,
+      code: "ACCOUNT_ENVIRONMENT_UNAVAILABLE",
+      environment: null,
+    };
+  }
+}
 
 /**
  * Keep delivery history and the endpoint summary synchronized in one commit,
@@ -216,6 +242,29 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
 
   if (!deliveryWithHook) {
     log.error("Webhook delivery fetch failed after lease", { deliveryId });
+    return;
+  }
+
+  const externalActionPolicy = await tenantWebhookExternalActionsAllowed(deliveryWithHook.userId);
+  if (!externalActionPolicy.allowed) {
+    // Keep the local delivery receipt, but make the suppression terminal so a
+    // historical demo/test payload cannot escape after a later promotion.
+    await persistDeliveryOutcome({
+      deliveryId: deliveryIdBig,
+      webhookId: deliveryWithHook.webhookId,
+      status: WEBHOOK_DELIVERY_FAILED,
+      statusCode: null,
+      attempts: nextAttempts,
+      nextAttemptAt: null,
+      deliveredAt: null,
+      lastError: `blocked_${externalActionPolicy.code.toLowerCase()}`,
+    });
+    log.warn("Tenant webhook delivery blocked by account environment", {
+      userId: deliveryWithHook.userId,
+      deliveryId: deliveryIdBig.toString(),
+      accountEnvironment: externalActionPolicy.environment ?? "missing",
+      code: externalActionPolicy.code,
+    });
     return;
   }
 
@@ -381,6 +430,16 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
 
 export async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   try {
+    const externalActionPolicy = await tenantWebhookExternalActionsAllowed(userId);
+    if (!externalActionPolicy.allowed) {
+      log.info("Tenant webhook dispatch suppressed by account environment", {
+        userId,
+        event,
+        accountEnvironment: externalActionPolicy.environment ?? "missing",
+        code: externalActionPolicy.code,
+      });
+      return;
+    }
     const hooks = await drizzle
       .select({ id: schema.webhooks.id, events: schema.webhooks.events })
       .from(schema.webhooks)

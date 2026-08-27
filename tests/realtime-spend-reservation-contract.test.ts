@@ -38,9 +38,7 @@ describe("realtime spend reservation contract", () => {
     expect(actual).toContain("Actual accounting is unconditional");
     expect(reserve).toContain("this.getProfile(userId, true)");
     expect(reserve).toContain("setWhere:");
-    expect(reserve).toContain(
-      "${schema.quotaUsage.used} + ${BigInt(units)} <= ${BigInt(limit)}",
-    );
+    expect(reserve).toContain("${schema.quotaUsage.used} + ${BigInt(units)} <= ${BigInt(limit)}");
     expect(reserve).toContain("if (limit <= 0 || units > limit)");
     expect(reserve).toContain("if (units === 0)");
     expect(reserve).toContain("allowed: current < limit");
@@ -55,7 +53,8 @@ describe("realtime spend reservation contract", () => {
     const quota = read("src/lib/tenant-quotas.ts");
     const limiter = read("src/middleware/api-rate-limits.ts");
 
-    expect(helper).toContain("error instanceof AppError && error.status === 502");
+    expect(helper).toContain("shouldRetainRealtimeReservation(error)");
+    expect(helper).toContain("markPlatformCostReservationAmbiguous(reservation)");
     expect(helper).toContain("Promise.allSettled");
     expect(helper).toContain("releasePlatformCostReservation(reservation)");
     expect(helper).toContain("releaseSimulationMinuteQuota(req)");
@@ -98,10 +97,10 @@ describe("realtime spend reservation contract", () => {
     }
   });
 
-  it("reserves ChatGPT MCP simulation spend before minting and refunds definitive failures", () => {
+  it("reserves ChatGPT MCP simulation spend before calling and refunds definitive failures", () => {
     const route = read("src/routes/chatgpt-mcp-account-routes.ts");
     const reserve = route.indexOf("reservePlatformCostRecord({");
-    const provider = route.indexOf("createOpenAIRealtimeClientSecret({");
+    const provider = route.indexOf("createOpenAIRealtimeSimulationCall({");
 
     expect(reserve).toBeGreaterThan(-1);
     expect(reserve).toBeLessThan(provider);
@@ -109,5 +108,16 @@ describe("realtime spend reservation contract", () => {
     expect(route).toContain("releasePlatformCostReservation(spendDecision.reservation)");
     expect(route).toContain("quota.period_key");
     expect(route).toContain("commitPlatformCostReservation(spendDecision.reservation)");
+    expect(route).toContain("markPlatformCostReservationAmbiguous(spendDecision.reservation)");
+  });
+
+  it("labels committed and ambiguous reservations without refunding unknown spend", () => {
+    const accounting = read("src/middleware/audit-middleware.ts");
+    expect(accounting).toContain('accountingState: "committed" | "provider_outcome_ambiguous"');
+    expect(accounting).toContain('setPlatformCostReservationState(reservation, "committed")');
+    expect(accounting).toContain(
+      'setPlatformCostReservationState(reservation, "provider_outcome_ambiguous")',
+    );
+    expect(accounting).toContain("Platform cost reservation state update failed");
   });
 });

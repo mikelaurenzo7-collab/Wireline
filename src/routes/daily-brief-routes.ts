@@ -10,6 +10,7 @@ import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { withAudit, persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { createAuditContext, runInAuditContext } from "../lib/ai-audit";
+import { runWithProviderIdentity } from "../lib/provider-identity-context";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
@@ -306,16 +307,18 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
       try {
         // Keep the context directly instead of withAuditCapture: if model work
         // succeeds but Gmail fails, the paid model records still need flushing.
-        await runInAuditContext(auditContext, async () => {
-          const result = await sendDailyBriefEmail(uid, {
-            force: false,
-            onProviderSendAttempt: () => {
-              providerSendAttempted = true;
-            },
-          });
-          providerSendAccepted = true;
-          return result;
-        });
+        await runWithProviderIdentity(uid, () =>
+          runInAuditContext(auditContext, async () => {
+            const result = await sendDailyBriefEmail(uid, {
+              force: false,
+              onProviderSendAttempt: () => {
+                providerSendAttempted = true;
+              },
+            });
+            providerSendAccepted = true;
+            return result;
+          }),
+        );
 
         await drizzle
           .update(schema.settings)

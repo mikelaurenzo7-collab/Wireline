@@ -8,7 +8,19 @@ import {
   listXMentions,
 } from "../../lib/x-service";
 import { getXAdCampaignStats, listXAdCampaigns } from "../../lib/x-ads-service";
+import { assertLiveExternalActionAllowed } from "../../lib/account-environment-policy";
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+const LIVE_X_TOOLS = new Set([
+  "post_x_tweet",
+  "reply_to_x_tweet",
+  "like_x_tweet",
+  "repost_x_tweet",
+  "send_x_dm",
+  "list_x_mentions",
+  "list_x_ad_campaigns",
+  "get_x_ad_campaign_stats",
+]);
 
 function xUnavailable(toolCallId: string): ToolCallResult {
   return {
@@ -24,6 +36,19 @@ export async function handleXToolCall(
 ): Promise<ToolCallResult | null> {
   const { agent, toolCallId } = context;
   const userId = agent?.user_id;
+
+  if (LIVE_X_TOOLS.has(fn)) {
+    if (!userId) return xUnavailable(toolCallId);
+    try {
+      await assertLiveExternalActionAllowed(userId, `vapi_${fn}`);
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "That social action is disabled in this workspace. Do not claim it ran; help the caller another way.",
+      };
+    }
+  }
 
   if (fn === "post_x_tweet") {
     if (!userId) return xUnavailable(toolCallId);

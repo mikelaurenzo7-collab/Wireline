@@ -20,7 +20,7 @@ This is an operator runbook. Response-time language below is prioritization guid
 
 The deployed Vercel schedule currently runs:
 
-- `/api/jobs/sweep` every **5 minutes** for durable background work.
+- `/api/jobs/sweep` every **minute** for durable background work.
 - `/api/daily-brief/schedule` every **15 minutes** for due daily-brief dispatch.
 - The demo-line canary is queued separately on its **nightly** schedule. It validates the public-line control-plane/assignment posture and recent reliability evidence; it is **not** a paid synthetic call every 15 minutes.
 
@@ -29,7 +29,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 ### Request-driven / operator health
 
 - `GET /api/health` — application/database health.
-- `GET /api/health/public` — cached, distributed public provider posture used by `/status`.
+- `GET /api/health/public` — cached, distributed runtime posture used by backstage release and incident checks.
 - `GET /api/health/voice-status` — recent voice reliability surface.
 - Authenticated/operator health routes expose deeper provider, SLO, queue, and integration diagnostics.
 - The incident-response target on the operator SLO surface requires both a protected monitor credential and an owner contact. A configured target is not evidence that an external monitor is polling it or that an alert destination has been tested.
@@ -46,12 +46,12 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 ### P0 — critical
 
-1. **Confirm the blast radius.** Check public health, voice status, deployment state, runtime errors/logs, database health, and provider status.
+1. **Confirm the blast radius.** Check runtime health, voice status, deployment state, runtime errors/logs, database health, and provider status.
 2. **Protect integrity before availability.** If billing, tenant isolation, webhook authenticity, or data correctness is uncertain, fail closed on the risky mutation path.
 3. **Identify the failing layer.** Separate Wireline deployment/configuration from database, Twilio + xAI Direct SIP telephony, optional Vapi rollback, model provider, email, payments, and rate-limit/cache dependencies.
 4. **Mitigate using an already-tested path.** Prefer provider fallback, bounded degraded mode, feature pause, or rollback over an improvised production change.
 5. **Verify recovery.** Re-run the exact health surface that detected the issue and verify representative end-to-end behavior before declaring resolution.
-6. **Communicate material customer impact.** Use the public status/support channel appropriate to the incident; do not publish an unverified root cause.
+6. **Communicate material customer impact.** Use BotBound product messaging and the appropriate support channel; do not publish an unverified root cause.
 
 ### P1 — major degradation
 

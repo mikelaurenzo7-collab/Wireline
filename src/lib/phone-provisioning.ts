@@ -36,6 +36,7 @@ import {
   vapiAccountHeadroom,
 } from "./vapi-phone-numbers";
 import { getCanonicalAppUrl } from "./app-url";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 /**
  * What a tenant is told when number provisioning fails for a reason that is
@@ -79,6 +80,7 @@ interface ProvisionOpts {
 
 export interface ProvisionResult {
   ok: boolean;
+  code?: string;
   phoneNumber?: string;
   vapiNumberId?: string;
   reused?: boolean;
@@ -376,6 +378,16 @@ export async function provisionTenantNumber(
   userId: string,
   opts: ProvisionOpts = {},
 ): Promise<ProvisionResult> {
+  const environmentPolicy = await liveExternalActionPolicyForUser(userId);
+  if (!environmentPolicy.allowed) {
+    log.warn("Number provisioning blocked by account environment", {
+      userId,
+      accountEnvironment: environmentPolicy.environment ?? "missing",
+      code: environmentPolicy.code,
+    });
+    return { ok: false, code: environmentPolicy.code, error: environmentPolicy.message };
+  }
+
   // Platform-configuration failures are OURS. The customer sees a line they
   // can act on; the env var name, the provider name, and the switch that is off
   // go to the operator log where they are useful and where they are not an

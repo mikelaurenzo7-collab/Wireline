@@ -4,15 +4,13 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { ToolCallContext } from "../../routes/vapi/types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
+import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
 import {
-  complianceFirstMessagePrefix,
-  formatCallbackNumberForSpeech,
-} from "../agent-runtime";
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../account-environment-policy";
 import { notifyInboundCall } from "../mobile-push";
-import {
-  isMarketingCallPurpose,
-  type OutboundCallPurpose,
-} from "../outbound-call-purpose";
+import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest } from "../post-call-digest";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
@@ -315,15 +313,34 @@ async function xaiCallControl(
     },
     PROVIDER_REQUEST_TIMEOUT_MS,
   );
-  if (!response.ok) throw new Error(`xAI ${action} returned HTTP ${response.status}.`);
+  if (!response.ok) {
+    // Hangup is a desired-state operation. A provider-side missing or already
+    // terminal call is equivalent to success, which keeps deletion cleanup and
+    // watchdog retries idempotent. REFER remains strict for the same statuses.
+    if (action === "hangup" && (response.status === 404 || response.status === 409)) return;
+    throw new Error(`xAI ${action} returned HTTP ${response.status}.`);
+  }
 }
 
-export async function referXAISipCall(callId: string, destination: string): Promise<void> {
+export async function referXAISipCall(
+  userId: string,
+  callId: string,
+  destination: string,
+): Promise<void> {
   const phone = normalizeXAIPhoneNumber(destination);
   const targetUri = phone ? `tel:${phone}` : destination.trim();
   if (!targetUri || (!targetUri.startsWith("tel:") && !targetUri.startsWith("sip:"))) {
     throw new Error("A valid PSTN or SIP transfer destination is required.");
   }
+
+  // A call may outlive an operator's environment reclassification. Re-check
+  // the tenant at the irreversible provider boundary, after all local work and
+  // immediately before REFER. Hangup deliberately remains available for safe
+  // cleanup in every environment.
+  await assertExternalEntityActionAllowed(userId, "xai_sip_call_refer", {
+    phone: phone || undefined,
+  });
+  await assertLiveExternalActionAllowed(userId, "xai_sip_call_refer");
   await xaiCallControl(callId, "refer", { target_uri: targetUri });
 }
 
@@ -680,11 +697,7 @@ async function runRealtimeSession(
   const requestToolContinuationWhenReady = () => {
     if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
     if (awaitingExactOpeningPlayback || hangupAfterOpening) return;
-    if (
-      !toolContinuationPending ||
-      endedReason === "transferred" ||
-      endedReason === "caller-dnc"
-    ) {
+    if (!toolContinuationPending || endedReason === "transferred" || endedReason === "caller-dnc") {
       return;
     }
     toolContinuationPending = false;
@@ -725,7 +738,8 @@ async function runRealtimeSession(
     // example a stop-calling request and a follow-up send from the same turn).
     for (const call of calls) {
       const admissionMode = inboundAdmissionMode(input);
-      const allowedTakeMessage = admissionMode !== "take_message" || call.name === "create_followup_task";
+      const allowedTakeMessage =
+        admissionMode !== "take_message" || call.name === "create_followup_task";
       if (admissionMode === "suspended" || !allowedTakeMessage) {
         toolCallsFailed += 1;
         sendJson(ws, {
@@ -776,7 +790,7 @@ async function runRealtimeSession(
             });
             try {
               if (result.destination?.number && endedReason !== "caller-dnc") {
-                await referXAISipCall(input.callId, result.destination.number);
+                await referXAISipCall(input.userId, input.callId, result.destination.number);
                 if (call.name === "escalate_to_human") escalationSucceeded = true;
                 notifyTransferred();
               }
@@ -845,7 +859,7 @@ async function runRealtimeSession(
       try {
         let transferCompleted = false;
         if (outcome.result.destination?.number) {
-          await referXAISipCall(input.callId, outcome.result.destination.number);
+          await referXAISipCall(input.userId, input.callId, outcome.result.destination.number);
           if (call.name === "escalate_to_human") escalationSucceeded = true;
           transferCompleted = true;
         }
@@ -911,10 +925,7 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
-    if (
-      type === "input_audio_buffer.speech_started" ||
-      type === "input_audio_buffer.committed"
-    ) {
+    if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
       if (!hangupAfterOpening) awaitingExactOpeningPlayback = false;
       return;
     }

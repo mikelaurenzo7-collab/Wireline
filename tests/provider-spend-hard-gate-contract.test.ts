@@ -26,11 +26,22 @@ describe("provider spend launch kill switch", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
     const liveVoice = read("src/routes/grok-voice-routes.ts");
     const managedVoices = read("src/routes/voices-routes.ts");
+    const publicDemo = read("src/routes/marketing-runtime-routes.ts");
 
     expectMiddlewareBeforeHandler(
       openai,
       '"/api/voice/openai/session"',
       "async (req: AuthenticatedRequest, res: Response)",
+    );
+    expectMiddlewareBeforeHandler(
+      publicDemo,
+      '"/api/public/demo-session"',
+      "asyncHandler(async (req, res)",
+    );
+    expectMiddlewareBeforeHandler(
+      publicDemo,
+      '"/api/public/demo-call"',
+      "asyncHandler(async (req, res)",
     );
     expectMiddlewareBeforeHandler(
       liveVoice,
@@ -76,7 +87,7 @@ describe("provider spend launch kill switch", () => {
     const chatgpt = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(chatgpt).toContain("if (isLaunchHardBlocked())");
     expect(chatgpt.indexOf("if (isLaunchHardBlocked())")).toBeLessThan(
-      chatgpt.indexOf("createOpenAIRealtimeClientSecret({"),
+      chatgpt.indexOf("createOpenAIRealtimeSimulationCall({"),
     );
     expect(worker).toContain("isLaunchHardBlocked()");
     expect(worker.indexOf("isLaunchHardBlocked()")).toBeLessThan(
@@ -95,7 +106,6 @@ describe("provider spend launch kill switch", () => {
       "proactive_lead_enrichment",
       "autonomous_prospecting",
       "knowledge_from_url",
-      "vapi_webhook",
       "campaign_dial",
       "cadence_tick",
       "callback_tick",
@@ -112,6 +122,7 @@ describe("provider spend launch kill switch", () => {
       "sweep_orphan_supervisor_subs",
       "reclaim_canceled_numbers",
       "demo_line_canary",
+      "vapi_webhook",
     ]) {
       expect(isPausableProviderSpendJobType(type), type).toBe(false);
     }

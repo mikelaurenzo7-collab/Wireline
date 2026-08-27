@@ -113,16 +113,30 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       "desktop hero must retain editorial scale",
     ],
     [
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero,[\s\S]*\.landing-prestige__desktop-only[\s\S]*display:\s*none;/,
-      "mobile landing must hide long-form marketing",
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto;/,
+      "mobile entrance must remain in document flow",
     ],
     [
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth[\s\S]*min-height:\s*100dvh;/,
-      "mobile landing must dedicate viewport to account access",
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid;/,
+      "mobile landing must retain the BotBound product story",
+    ],
+    [
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block;/,
+      "mobile landing must retain long-form BotBound proof",
+    ],
+    [
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto;/,
+      "mobile account access must remain in the public document flow",
     ],
     [/\.landing-prestige__role-grid/, "desktop landing must provide role grid"],
   ])
     mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
+  mustExclude(
+    "src/styles/landing-prestige.css",
+    landingPrestigeCss,
+    /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none;/,
+    "mobile landing must not hide the BotBound product story",
+  );
   mustInclude(
     "src/styles/auth-access-panel.css",
     authAccessCss,

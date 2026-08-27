@@ -16,16 +16,16 @@ ElevenLabs voices through Vapi, the managed structured-reasoning chain in
 
 ## Implemented controls
 
-| Area              | Current control                                                                                                                  | Evidence source                                                                               |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Access control    | Role-based API middleware gates sensitive routes and fails closed when role lookup fails.                                        | `src/middleware/require-role.ts`                                                              |
-| Authentication    | Passwords are hashed with scrypt; OAuth sign-in supports Google, Microsoft, and Yahoo; JWTs are signed by `INTERNAL_JWT_SECRET`. | `src/lib/auth-service.ts`, `src/routes/auth-oauth-routes.ts`                                  |
-| Audit logging     | Billing, security, access, and settings changes are written to an append-only audit log.                                         | `src/lib/audit-logger.ts`, `src/routes/soc2-routes.ts`                                        |
-| Webhook integrity | Vapi, Stripe, Twilio, and Meta webhooks use shared-secret or signature verification.                                             | `src/routes/*webhook*`, `src/routes/vapi-routes.ts`                                           |
-| Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                       | `src/lib/secret-vault.ts`                                                                     |
-| Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                      | `src/lib/account-deletion.ts`                                                                 |
-| Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                               | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                            |
-| Public trust      | `/status`, `/security`, `/changelog`, `security.txt`, and `humans.txt` publish operational posture without requiring sign-in.    | `src/components/Status.tsx`, `src/components/Security.tsx`, `public/.well-known/security.txt` |
+| Area              | Current control                                                                                                                  | Evidence source                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Access control    | Role-based API middleware gates sensitive routes and fails closed when role lookup fails.                                        | `src/middleware/require-role.ts`                                                                       |
+| Authentication    | Passwords are hashed with scrypt; OAuth sign-in supports Google, Microsoft, and Yahoo; JWTs are signed by `INTERNAL_JWT_SECRET`. | `src/lib/auth-service.ts`, `src/routes/auth-oauth-routes.ts`                                           |
+| Audit logging     | Billing, security, access, and settings changes are written to an append-only audit log.                                         | `src/lib/audit-logger.ts`, `src/routes/soc2-routes.ts`                                                 |
+| Webhook integrity | Vapi, Stripe, Twilio, and Meta webhooks use shared-secret or signature verification.                                             | `src/routes/*webhook*`, `src/routes/vapi-routes.ts`                                                    |
+| Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                       | `src/lib/secret-vault.ts`                                                                              |
+| Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                      | `src/lib/account-deletion.ts`                                                                          |
+| Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                               | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                                     |
+| Public trust      | `/security`, `/trust`, `/changelog`, `security.txt`, and `humans.txt` publish BotBound's posture without requiring sign-in.      | `src/components/Security.tsx`, `src/components/PublicChangelog.tsx`, `public/.well-known/security.txt` |
 
 ## Supabase posture
 
@@ -53,13 +53,13 @@ Remediation should follow Supabase's own linter guidance:
 
 ## Observation window
 
-| Attribute | Value |
-| --- | --- |
-| Start date | 2026-06-01 |
-| End date | 2026-11-30 |
-| Duration | 6 months |
-| Auditor | TBD (engagement letter in progress) |
-| Target attestation | Q1 2027 |
+| Attribute          | Value                               |
+| ------------------ | ----------------------------------- |
+| Start date         | 2026-06-01                          |
+| End date           | 2026-11-30                          |
+| Duration           | 6 months                            |
+| Auditor            | TBD (engagement letter in progress) |
+| Target attestation | Q1 2027                             |
 
 **What's being monitored:**
 

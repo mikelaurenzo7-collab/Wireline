@@ -1,8 +1,8 @@
-# Wireline Database Operations
+# BotBound Database Operations
 
 Status: **Canonical production runbook**
 
-Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction pooler. The connected database is shared production infrastructure, not a disposable development database.
+BotBound uses Supabase-hosted PostgreSQL through Drizzle and the transaction pooler. The connected database is shared production infrastructure, not a disposable development database.
 
 ## Non-negotiable rules
 
@@ -19,7 +19,7 @@ Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 
 `npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. Production runs exactly that, from `scripts/vercel-build.mjs`.
 
-The two are not the same set. 159 `.sql` files are committed; 54 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. The backlog is fixed at 105: every migration authored since has been journalled properly, so the gap is historical rather than growing. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
+The two are not the same set. 167 `.sql` files are committed; 62 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. The backlog is fixed at 105: every migration authored since has been journalled properly, so the gap is historical rather than growing. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
 
 Two consequences to work from, not around:
 
@@ -121,6 +121,28 @@ At minimum verify:
 - account deletion covers the new table.
 
 Supabase advisor output is evidence, not the only source of truth. Confirm the underlying `pg_policies`, privilege, trigger, constraint, and table definitions when an advisor result is stale or ambiguous.
+
+## Account-environment classification
+
+Account environment is an authorization boundary, not a display label. Only the audited operator command may classify an account as `production`, `test`, or `demo`:
+
+```bash
+npx ts-node scripts/set-account-environment.ts \
+  --email target@example.org \
+  --environment demo \
+  --reason "Dedicated visual QA account" \
+  --actor-email operator@example.org \
+  --confirm-email target@example.org \
+  --apply
+```
+
+Promoting `demo` or `test` to `production` additionally requires `--confirm-production-promotion`. Migration `0163_guard_account_environment_promotion` then runs a second, database-owned preflight under the account-deletion/provider lock. It refuses promotion while any of these remain:
+
+- demo entitlement provenance, explicit demo markers, deterministic seed identifiers, or reserved fixture contacts (RFC example roots/subdomains and any NANP 555-0100–0199 number, with or without a leading country code);
+- Stripe, voice, carrier, presenter, OAuth, push, webhook, or intake-key provider bindings;
+- live automation, provider/billing leases, queued jobs/deliveries/cadences/outbound work, active calls, or an account-deletion request.
+
+The preflight is intentionally non-destructive. It returns only blocker codes, counts, and remediation guidance; it never prints provider identifiers or customer contacts. Resolve each category through its supported cleanup or reconciliation path and rerun the command. Do not make the account look clean by rewriting entitlement provenance, clearing identifiers before provider release, or relabeling fixture rows.
 
 ## Read-only pool contamination recovery
 

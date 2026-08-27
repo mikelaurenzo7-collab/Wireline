@@ -80,12 +80,11 @@ CUTOVER ORDER
   1. Add and verify botbound.me in the existing Vercel project.
   2. Add every applicable botbound.me callback in provider consoles while retaining trywireline.com callbacks.
   3. Set APP_URL=${CANONICAL_ORIGIN} in the target production environment.
-  4. Set VITE_PUBLIC_SITE_URL=${CANONICAL_ORIGIN} in the same environment.
-  5. Set CORS_ORIGINS to include ${CANONICAL_ORIGIN} and ${LEGACY_ORIGIN} during the transition.
-  6. Redeploy and complete sign-in + integration connect/disconnect smoke tests on botbound.me.
-  7. Update external webhooks, email sender domains, public app URLs, privacy/terms URLs, and crawler properties.
-  8. Keep trywireline.com live until all old-host callbacks/webhooks have zero required traffic.
-  9. Only then redirect the retired public host and remove retired provider callback registrations.
+  4. Set CORS_ORIGINS to include ${CANONICAL_ORIGIN} and ${LEGACY_ORIGIN} during the transition.
+  5. Redeploy and complete sign-in + integration connect/disconnect smoke tests on botbound.me.
+  6. Update external webhooks, email sender domains, public app URLs, privacy/terms URLs, and crawler properties.
+  7. Keep trywireline.com live until all old-host callbacks/webhooks have zero required traffic.
+  8. Only then redirect the retired public host and remove retired provider callback registrations.
 
 Provider credentials remain the existing environment variables. This script
 prints callback contracts only and never reads or displays client secrets.

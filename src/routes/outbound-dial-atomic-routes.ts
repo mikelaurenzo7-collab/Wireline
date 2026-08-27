@@ -11,9 +11,11 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -128,14 +130,22 @@ router.post(
       consentSource,
       consentLeadId,
     } = req.body;
-    const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+    const claimedExpressConsent = normalizedExpressConsent({
+      callPurpose,
+      hasExpressWrittenConsent,
+    });
+    const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+      consentSource,
+      consentLeadId,
+    });
+    const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
     const marketing = isMarketingCallPurpose(callPurpose);
 
-    if (marketing && expressConsent && !consentSource && !consentLeadId) {
+    if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
       return res.status(400).json({
         code: "CONSENT_ARTIFACT_REQUIRED",
         error:
-          "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+          "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
       });
     }
 
@@ -188,6 +198,7 @@ router.post(
         userId: req.user.id,
         phone: phoneE164,
         isMarketingCall: marketing,
+        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -210,7 +221,7 @@ router.post(
         leadMetadata: {
           ...outboundConsentMetadata({
             callPurpose,
-            hasExpressWrittenConsent,
+            hasExpressWrittenConsent: expressConsent,
             source: "web",
             consentSource,
             consentLeadId,

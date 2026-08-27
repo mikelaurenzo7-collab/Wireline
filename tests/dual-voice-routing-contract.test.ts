@@ -57,7 +57,7 @@ describe("ChatGPT private voice simulation routing", () => {
   it("starts the private voice simulation on OpenAI Realtime, not Grok", () => {
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(accountRoutes).toContain(
-      'import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";',
+      'import { createOpenAIRealtimeSimulationCall } from "../lib/voice/openai-realtime-service";',
     );
     expect(accountRoutes).not.toContain("createGrokVoiceClientSession");
 
@@ -65,7 +65,8 @@ describe("ChatGPT private voice simulation routing", () => {
       accountRoutes.indexOf('if (name === "start_private_voice_simulation")'),
       accountRoutes.indexOf('if (name === "list_wireline_agents")'),
     );
-    expect(simulationHandler).toContain("createOpenAIRealtimeClientSecret({");
+    expect(simulationHandler).toContain("createOpenAIRealtimeSimulationCall({");
+    expect(simulationHandler).toContain("sdp: text(args.offer_sdp, 60_000)");
     expect(simulationHandler).toContain("instructions: draft.runtimeInstructions");
     expect(simulationHandler).toContain("agentName: draft.view.name");
     expect(simulationHandler).toContain("tools: []");
@@ -73,18 +74,23 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(simulationHandler).toContain('apiKeyPurpose: "chatgpt_demo"');
   });
 
-  it("keeps createOpenAIRealtimeClientSecret draft-ready for ChatGPT spend isolation", () => {
+  it("keeps server-managed Realtime calls draft-ready and spend-isolated", () => {
     const openaiService = read("src/lib/voice/openai-realtime-service.ts");
+    const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
+    const keyring = read("src/lib/voice/openai-realtime-keyring.ts");
     expect(openaiService).toContain("instructions?: string | null");
     expect(openaiService).toContain("agentName?: string | null");
     expect(openaiService).toContain("tools?: OpenAIRealtimeToolDefinition[]");
     expect(openaiService).toContain('toolChoice?: "auto" | "none"');
     expect(openaiService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
-    expect(openaiService).toContain("OPENAI_API_KEY_CHATKIT");
-    expect(openaiService).toContain(
-      'purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT',
-    );
-    expect(openaiService).toContain('endpoint: "https://api.openai.com/v1/realtime/calls"');
+    expect(keyring).toContain("OPENAI_API_KEY_CHATKIT");
+    expect(keyring).toContain('source === "chatgpt_demo"');
+    expect(callControl).toContain("expectedKeyFingerprint");
+    expect(callControl).toContain("keySource: key.source");
+    expect(openaiService).toContain("createServerManagedOpenAIRealtimeCall");
+    expect(openaiService).toContain("OPENAI_REALTIME_SIMULATION_MAX_SECONDS = 300");
+    expect(openaiService).toContain("hangupOpenAIRealtimeCall");
+    expect(openaiService).not.toContain("client_secret");
     expect(openaiService).toContain("rate: 24000");
     expect(openaiService).toContain('mode: "ga"');
     expect(openaiService).not.toContain('mode: "beta"');
@@ -121,18 +127,22 @@ describe("ChatGPT private voice simulation routing", () => {
     );
   });
 
-  it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {
+  it("signals account MCP WebRTC through the authenticated server", () => {
     const widget = read("src/lib/chatgpt-mcp-account.ts");
     const widgetMeta = read("src/lib/mcp-app-metadata.ts");
 
     expect(widget).toContain("new RTCPeerConnection()");
-    expect(widget).toContain("https://api.openai.com/v1/realtime/calls");
-    expect(widget).toContain('Content-Type": "application/sdp"');
+    expect(widget).toContain("offer_sdp: localSdp");
+    expect(widget).toContain("session.sdp");
+    expect(widget).toContain("session.maxDurationSeconds");
+    expect(widget).not.toContain("https://api.openai.com/v1/realtime/calls");
+    expect(widget).not.toContain('Authorization: "Bearer "');
     expect(widget).not.toContain("xai-client-secret.");
     expect(widget).not.toContain("api.x.ai");
     expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(widgetMeta).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(widgetMeta).toContain("connectDomains: []");
+    expect(widgetMeta).toContain("connect_domains: []");
     expect(widgetMeta).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
   });
 });

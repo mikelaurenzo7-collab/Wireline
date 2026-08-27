@@ -97,7 +97,7 @@ const SECTIONS = [
     items: [
       "High-risk authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
       "Database migrations are versioned, reviewed, and applied through the deployment pipeline.",
-      "Public health probe at /status reports service posture without exposing private provider credentials.",
+      "BotBound monitors calling, messaging, and reasoning health behind the scenes; customer-impacting issues surface through product messaging and support.",
       "Runtime usage and reliability events record provider, model, token, cost, and latency data where the provider returns it.",
     ],
   },
@@ -301,8 +301,8 @@ export default function Security() {
                 Trust Center (sales-ready overview)
               </Link>
               {" · "}
-              <Link to="/status" className="text-brand hover:underline">
-                Live system status
+              <Link to="/support" className="text-brand hover:underline">
+                BotBound support
               </Link>
             </p>
           </div>

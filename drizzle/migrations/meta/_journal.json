@@ -386,6 +386,55 @@
       "when": 1787256000000,
       "tag": "0156_openai_runtime_cohesion",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1787767200000,
+      "tag": "0157_audit_log_system_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1787770800000,
+      "tag": "0158_scrub_resolved_orphan_carrier_resources",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1787774400000,
+      "tag": "0159_deidentify_retired_xai_bindings",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1787778000000,
+      "tag": "0160_cascade_tenant_audit_erasure",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1787781600000,
+      "tag": "0161_account_operation_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1787785200000,
+      "tag": "0162_cascade_subscription_user_erasure",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1787788800000,
+      "tag": "0163_guard_account_environment_promotion",
+      "breakpoints": true
     }
   ]
 }

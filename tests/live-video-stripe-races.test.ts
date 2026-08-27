@@ -28,6 +28,7 @@ beforeEach(() => {
     "../src/lib/credit-wallet",
     "../src/lib/stripe-helpers",
     "../src/lib/stripe-live-video-addon",
+    "../src/lib/stripe-owner-liveness",
     "../src/middleware/auth",
     "../src/middleware/launch-hard-gate",
   ]) {
@@ -137,6 +138,9 @@ describe("Live Video fulfillment projects the authoritative state", () => {
         enabled: false,
         subscription: subscription({ id: "sub_canceled", status: "canceled" }),
       }),
+    }));
+    vi.doMock("../src/lib/stripe-owner-liveness", () => ({
+      stripeOwnerUserExists: vi.fn().mockResolvedValue(true),
     }));
     const { fulfillStripeCheckoutSession } = await import("../src/lib/stripe-checkout-fulfillment");
 

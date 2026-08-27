@@ -12,8 +12,29 @@ import { getErrorMessage } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { runInBackground } from "../lib/background-work";
+import {
+  ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+  assertLiveExternalActionAllowed,
+} from "../lib/account-environment-policy";
 
 const router = Router();
+
+async function assertMailboxSyncAllowed(userId: string): Promise<void> {
+  try {
+    await assertLiveExternalActionAllowed(userId, "mailbox_inbox_sync");
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    log.warn("Mailbox sync account environment could not be verified", {
+      userId,
+      error: getErrorMessage(err),
+    });
+    throw new AppError(
+      503,
+      ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+      "Inbox refresh is temporarily unavailable until this workspace can be verified.",
+    );
+  }
+}
 
 /**
  * The outcome center needs a truthful refresh: this route is mounted before the
@@ -27,6 +48,8 @@ router.post(
   validateBody(emailInboxSyncSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const { limit, sinceIso } = req.body ?? {};
+    await assertMailboxSyncAllowed(req.user.id);
+
     try {
       // Manual sync must use the same canonical mailbox source as
       // IntegrationService. A calendar-only OAuth row cannot provide the
@@ -41,8 +64,7 @@ router.post(
         return res.status(400).json({
           ok: false,
           code: "EMAIL_ACCOUNT_NOT_CONNECTED",
-          error:
-            "No email account is connected. Connect Gmail, Outlook, iCloud, or AgentMail in Integrations to refresh this inbox.",
+          error: "No mailbox is connected. Connect one in BotBound, then refresh your inbox.",
         });
       }
 
@@ -60,7 +82,7 @@ router.post(
           code: "EMAIL_MAILBOX_UNREACHABLE",
           failed_providers: Array.from(new Set(failures.map((failure) => failure.provider))),
           error:
-            "Your connected mailbox could not be reached. Reconnect it in Integrations, then refresh again.",
+            "BotBound could not reach your connected mailbox. Reconnect it, then refresh again.",
         });
       }
 
@@ -94,7 +116,7 @@ router.post(
         providers: Array.from(new Set(messages.map((message) => message.provider))),
         ...(failedProviders.length > 0 ? { failed_providers: failedProviders } : {}),
         message: failedProviders.length
-          ? `Inbox partially refreshed. Reconnect ${failedProviders.join(", ")} in Integrations to sync the rest.`
+          ? "Inbox partially refreshed. Reconnect your mailbox in BotBound to sync the rest."
           : messages.length
             ? "Inbox refreshed."
             : "No new inbox messages found.",

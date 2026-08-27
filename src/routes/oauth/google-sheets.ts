@@ -21,6 +21,7 @@ import {
   exchangeGoogleSheetsCode,
   disconnectGoogleSheets,
 } from "../../lib/google-sheets-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get(
   "/api/oauth/google_sheets/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!googleSheetsConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -37,6 +38,7 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Google Sheets");
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
       `${req.protocol}://${req.get("host")}`;
@@ -64,21 +66,22 @@ router.get(
       return res.status(400).send("No code provided by Google.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send(
+          `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google Sheets again.`,
+        );
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Google Sheets");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/google_sheets/callback`;
       const tokens = await exchangeGoogleSheetsCode(code, redirectUri);
-
-      const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send(
-            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google Sheets again.`,
-          );
-      }
 
       const oauth2Client = await getGoogleOAuthClient(req as express.Request);
       oauth2Client.setCredentials({

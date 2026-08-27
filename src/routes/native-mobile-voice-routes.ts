@@ -9,13 +9,19 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../lib/account-environment-policy";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { drizzle, log } from "../lib/server-context";
@@ -41,10 +47,7 @@ const mobileDialSchema = z.object({
   customerNumber: z
     .string()
     .min(1, "customerNumber is required")
-    .regex(
-      /^\+?[1-9]\d{6,14}$/,
-      "Invalid phone number format, expected E.164 (e.g. +15551234567)",
-    ),
+    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format, expected E.164 (e.g. +15551234567)"),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
@@ -54,7 +57,10 @@ const mobileDialSchema = z.object({
 });
 
 const handoffSchema = z.object({
-  to: z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)").optional(),
+  to: z
+    .string()
+    .regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)")
+    .optional(),
 });
 
 async function markReservation(
@@ -100,21 +106,27 @@ router.post(
       consentSource,
       consentLeadId,
     } = req.body;
-    const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+    const claimedExpressConsent = normalizedExpressConsent({
+      callPurpose,
+      hasExpressWrittenConsent,
+    });
+    const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+      consentSource,
+      consentLeadId,
+    });
+    const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
     const marketing = isMarketingCallPurpose(callPurpose);
 
-    if (marketing && expressConsent && !consentSource && !consentLeadId) {
+    if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
       return res.status(400).json({
         code: "CONSENT_ARTIFACT_REQUIRED",
         error:
-          "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+          "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
       });
     }
 
     const normalized = normalizeOutboundNumber(customerNumber);
-    const phoneE164 = normalized.startsWith("+")
-      ? normalized
-      : `+${normalized.replace(/\D/g, "")}`;
+    const phoneE164 = normalized.startsWith("+") ? normalized : `+${normalized.replace(/\D/g, "")}`;
     if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
       return res.status(400).json({
         code: "VALIDATION_ERROR",
@@ -126,6 +138,7 @@ router.post(
       userId: req.user.id,
       phone: phoneE164,
       isMarketingCall: marketing,
+      requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
       hasExpressWrittenConsent: expressConsent,
       metadata: { has_express_written_consent: expressConsent },
     });
@@ -154,8 +167,7 @@ router.post(
       if (gate.reason === "outside_permitted_calling_hours") {
         return res.status(403).json({
           code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-          error:
-            "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
+          error: "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
           reason: gate.reason,
           calling_hours: gate.metadataPatch?.calling_hours,
         });
@@ -214,7 +226,7 @@ router.post(
         leadMetadata: {
           ...outboundConsentMetadata({
             callPurpose,
-            hasExpressWrittenConsent,
+            hasExpressWrittenConsent: expressConsent,
             source: "mobile",
             consentSource,
             consentLeadId,
@@ -231,7 +243,9 @@ router.post(
           (result.ok && !result.callId);
         await markReservation(operationKey, {
           status: uncertain ? "dialing" : "failed",
-          failureCode: uncertain ? "provider_outcome_ambiguous" : `provider_${result.status || 500}`,
+          failureCode: uncertain
+            ? "provider_outcome_ambiguous"
+            : `provider_${result.status || 500}`,
         });
         return res.status(uncertain ? 202 : result.status || 500).json({
           success: false,
@@ -311,6 +325,11 @@ router.post(
   mobileSensitiveRateLimiter,
   validate({ body: handoffSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
+    // Never claim presence for a provider transfer after a tenant has been
+    // reclassified. The shared REFER helper performs a second last-moment
+    // check to close the race between this preflight and provider control.
+    await assertLiveExternalActionAllowed(req.user.id, "native_mobile_call_handoff");
+
     const [presence] = await drizzle
       .select({
         controlUrl: schema.signalPresence.controlUrl,
@@ -351,11 +370,15 @@ router.post(
       });
     }
 
+    await assertExternalEntityActionAllowed(req.user.id, "native_mobile_call_handoff", {
+      phone: normalizedDestination,
+    });
+
     const callId = xaiCallId(presence.controlUrl);
     if (!callId) {
       return res.status(409).json({
         code: "HANDOFF_UNAVAILABLE",
-        error: "This call is not controlled by the native xAI runtime.",
+        error: "This call cannot be transferred from its current session.",
       });
     }
 
@@ -378,7 +401,7 @@ router.post(
     }
 
     try {
-      await referXAISipCall(callId, normalizedDestination);
+      await referXAISipCall(req.user.id, callId, normalizedDestination);
       notifyXAISipCallTransferred(callId);
       await drizzle
         .update(schema.signalPresence)

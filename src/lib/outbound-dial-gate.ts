@@ -57,6 +57,11 @@ export async function evaluateOutboundDialGate(opts: {
   metadata?: Record<string, unknown>;
   /** Marketing/campaign/intake default to true; direct service calls pass false. */
   isMarketingCall?: boolean;
+  /**
+   * Require a configured Federal DNC provider and block listed numbers even
+   * when an untrusted direct-dial client labels the call non-marketing.
+   */
+  requireFederalDncScreening?: boolean;
   /** Explicit consent override; falls back to metadata.has_express_written_consent. */
   hasExpressWrittenConsent?: boolean;
   /**
@@ -75,13 +80,14 @@ export async function evaluateOutboundDialGate(opts: {
   const isLiveSessionFollowUp = opts.isLiveSessionFollowUp === true;
   const isRequestedCallback = opts.isRequestedCallback === true || isLiveSessionFollowUp;
   const isMarketingCall = isRequestedCallback ? false : opts.isMarketingCall !== false;
+  const requiresFederalDncScreening = isMarketingCall || opts.requireFederalDncScreening === true;
   const metadata = opts.metadata || {};
   const hasExpressWrittenConsent =
     opts.hasExpressWrittenConsent === true ||
     metadata.has_express_written_consent === true ||
     isRequestedCallback;
 
-  if (isMarketingCall) {
+  if (requiresFederalDncScreening) {
     const federalGate = assertFederalDncForMarketing();
     if (!federalGate.allowed) {
       return {
@@ -172,7 +178,7 @@ export async function evaluateOutboundDialGate(opts: {
 
   // Requested callbacks are non-marketing for express-consent purposes, but a
   // configured federal provider's listed/error result still blocks explicitly.
-  if (isRequestedCallback && isFederalDnc) {
+  if ((requiresFederalDncScreening || isRequestedCallback) && isFederalDnc) {
     return {
       allowed: false,
       status: LEAD_STATUS.BLOCKED_TCPA,

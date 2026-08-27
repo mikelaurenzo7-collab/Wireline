@@ -26,7 +26,7 @@ export function getStudioLiveVoiceStatus() {
     fallbackProvider: null,
     provider: "openai",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
-    sessionMode: "authenticated_browser_webrtc_ephemeral_token",
+    sessionMode: "authenticated_server_mediated_webrtc",
     transcriptionEnabled: true,
     phoneRuntimeProvider: "xai_sip",
   } as const;

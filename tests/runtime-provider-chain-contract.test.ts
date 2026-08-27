@@ -95,7 +95,10 @@ describe("structured runtime transport", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
     expect(client).toContain("gatewayModels: models");
-    expect(client).toContain("providerOptions: { gateway: { models: args.gatewayModels } }");
+    expect(client).toContain("providerOptions:");
+    expect(client).toContain("gateway:");
+    expect(client).toContain("models: args.gatewayModels");
+    expect(client).toContain("disallowPromptTraining: true");
     expect(client).toContain('provider: { name: "AI Gateway", call: callGateway');
     expect(models).toContain('GROK_4_6: "grok-4.6"');
   });
@@ -131,7 +134,7 @@ describe("structured runtime transport", () => {
     expect(models).toContain(
       "process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA",
     );
-    expect(realtime).toContain('OPENAI_REALTIME_MODEL || "gpt-realtime-2.1"');
+    expect(realtime).toContain("OPENAI_REALTIME_PRICING_MODEL");
     expect(realtime).toContain('OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe"');
   });
 

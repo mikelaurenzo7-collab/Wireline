@@ -3,7 +3,11 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { handleJob as handleBaseJob } from "./job-worker-base";
 import { createAuditContext, runInAuditContext } from "./ai-audit";
-import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import {
+  persistRuntimeAuditRecords,
+  persistRuntimeAuditRecordsForJob,
+  type AiSpendAccountingJobPayload,
+} from "../middleware/audit-middleware";
 import { isLaunchHardBlocked } from "./launch-readiness";
 import {
   ARTIFACT_RUNTIME_RESERVE_USD,
@@ -32,18 +36,32 @@ import {
   writeTransactionConfig,
 } from "./job-queue";
 import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
+import { processIntakeAutoDialJob, type IntakeAutoDialJobPayload } from "./intake-auto-dial";
 import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./account-deletion-fence";
+import {
+  hangupOpenAIRealtimeCall,
+  type OpenAIRealtimeKeyPurpose,
+  type OpenAIRealtimeKeySource,
+} from "./voice/openai-realtime-call-control";
 import {
   isPausableProviderSpendJobType,
   ProviderSpendPausedError,
   runtimeReservationReferenceForJob,
 } from "./provider-spend-job-pause";
+import { assertProviderSpendJobEnvironmentAllowed } from "./provider-spend-job-environment";
+import { runWithProviderIdentity } from "./provider-identity-context";
+import { stopRenewalForDeletion } from "./account-deletion-billing";
+import {
+  ACCOUNT_DELETION_BILLING_RECONCILIATION_MS,
+  schedulePendingDeletionBillingReconciliation,
+} from "./account-deletion-request";
 
 export * from "./job-worker-base";
 
 const ARTIFACT_FORMATS = new Set<RuntimeArtifactFormat>(["pdf", "docx", "pptx", "xlsx"]);
 const ARTIFACT_DESTINATIONS = new Set(["google_drive", "onedrive"]);
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+const OPENAI_REALTIME_HANGUP_LATE_WARNING_MS = 90_000;
 
 /**
  * `post_call_digest` already holds this fence around every local/provider
@@ -53,6 +71,8 @@ const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "post_call_digest",
   "purge_deleted_account",
+  "openai_realtime_hangup",
+  "account_deletion_billing_reconciliation",
 ]);
 
 /** Carrier acceptance predates deletion, so finish its accounting/history
@@ -75,6 +95,30 @@ function maxAttemptNumber(job: JobRow): number {
 function jobOwnerId(job: JobRow): string {
   const shaped = job as unknown as { userId?: string; user_id?: string };
   return String(shaped.userId || shaped.user_id || "");
+}
+
+function jobScheduledAt(job: JobRow): Date | null {
+  const shaped = job as unknown as {
+    runAt?: Date | string | null;
+    run_at?: Date | string | null;
+  };
+  const raw = shaped.runAt ?? shaped.run_at;
+  if (!raw) return null;
+  const scheduledAt = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(scheduledAt.getTime()) ? null : scheduledAt;
+}
+
+function realtimeHangupExecution(job: JobRow, startedAt: Date) {
+  const scheduledAt = jobScheduledAt(job);
+  return {
+    job_id: job.id,
+    job_type: job.type,
+    scheduled_at: scheduledAt?.toISOString() ?? null,
+    execution_started_at: startedAt.toISOString(),
+    lateness_ms: scheduledAt ? Math.max(0, startedAt.getTime() - scheduledAt.getTime()) : null,
+    attempt: attemptNumber(job),
+    max_attempts: maxAttemptNumber(job),
+  };
 }
 
 function assertLaunchProviderSpendAllowed(job: JobRow): void {
@@ -293,7 +337,132 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
 }
 
 /** Global durable-job dispatcher including launch reporting extensions. */
-async function dispatchJob(job: JobRow): Promise<void> {
+async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
+  if (job.type === "account_deletion_billing_reconciliation") {
+    const userId = jobOwnerId(job);
+    const [pending] = await drizzle
+      .select({ id: schema.deletionQueue.id })
+      .from(schema.deletionQueue)
+      .where(
+        and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")),
+      )
+      .limit(1);
+    if (!pending) {
+      await persistJobResult(job.id, { skipped: true, reason: "deletion_not_pending" });
+      return;
+    }
+    const closure = await stopRenewalForDeletion(userId);
+    await schedulePendingDeletionBillingReconciliation({
+      userId,
+      runAt: new Date(Date.now() + ACCOUNT_DELETION_BILLING_RECONCILIATION_MS),
+    });
+    if (!closure.confirmed) {
+      log.error("pending account deletion billing closure remains unconfirmed", {
+        userId,
+        jobId: job.id,
+      });
+    }
+    await persistJobResult(job.id, {
+      checkout_sessions_expired: closure.checkoutSessionsExpired ?? 0,
+      renewal_stopped: closure.confirmed,
+      next_reconciliation_scheduled: true,
+    });
+    return;
+  }
+  if (job.type === "ai_spend_accounting") {
+    const payload = job.payload as Partial<AiSpendAccountingJobPayload>;
+    const ownerId = jobOwnerId(job);
+    if (
+      !ownerId ||
+      payload.userId !== ownerId ||
+      typeof payload.action !== "string" ||
+      !Array.isArray(payload.records)
+    ) {
+      throw new Error("AI spend accounting job contains an invalid tenant payload.");
+    }
+    await persistRuntimeAuditRecordsForJob({
+      userId: ownerId,
+      action: payload.action,
+      records: payload.records,
+      ...(payload.requestMeta ? { requestMeta: payload.requestMeta } : {}),
+      jobId: job.id,
+      attempt: attemptNumber(job),
+    });
+    return;
+  }
+  if (job.type === "openai_realtime_hangup") {
+    const startedAt = new Date();
+    const execution = realtimeHangupExecution(job, startedAt);
+    const payload =
+      job.payload && typeof job.payload === "object"
+        ? (job.payload as Record<string, unknown>)
+        : {};
+    const callId = typeof payload.callId === "string" ? payload.callId : "";
+    const keyPurpose: OpenAIRealtimeKeyPurpose =
+      payload.keyPurpose === "chatgpt_demo" ? "chatgpt_demo" : "runtime";
+    const keySource: OpenAIRealtimeKeySource | undefined =
+      payload.keySource === "chatgpt_demo" || payload.keySource === "runtime"
+        ? payload.keySource
+        : undefined;
+    const expectedKeyFingerprint =
+      typeof payload.keyFingerprint === "string" && /^[a-f0-9]{24}$/.test(payload.keyFingerprint)
+        ? payload.keyFingerprint
+        : undefined;
+
+    if (
+      typeof execution.lateness_ms === "number" &&
+      execution.lateness_ms > OPENAI_REALTIME_HANGUP_LATE_WARNING_MS
+    ) {
+      log.warn("OpenAI Realtime durable hangup started late", {
+        ...execution,
+        outcome: "started_late",
+      });
+    } else {
+      log.info("OpenAI Realtime durable hangup started", {
+        ...execution,
+        outcome: "started",
+      });
+    }
+
+    try {
+      await hangupOpenAIRealtimeCall({
+        callId,
+        keyPurpose,
+        keySource,
+        expectedKeyFingerprint,
+      });
+      const completedAt = new Date();
+      const result = {
+        ...execution,
+        outcome: "provider_hangup_confirmed_or_already_closed",
+        execution_completed_at: completedAt.toISOString(),
+        execution_duration_ms: Math.max(0, completedAt.getTime() - startedAt.getTime()),
+      };
+      await persistJobResult(job.id, result);
+      log.info("OpenAI Realtime durable hangup completed", result);
+    } catch (error) {
+      const failedAt = new Date();
+      log.error("OpenAI Realtime durable hangup failed", {
+        ...execution,
+        outcome: "failed_retryable",
+        execution_completed_at: failedAt.toISOString(),
+        execution_duration_ms: Math.max(0, failedAt.getTime() - startedAt.getTime()),
+        error: getErrorMessage(error),
+      });
+      throw error;
+    }
+    return;
+  }
+  // Auto-dial intentionally sits after server-owned hangup: provider-spend
+  // gates may pause new calls, but they must never delay teardown of an
+  // already-open Realtime session.
+  if (job.type === "intake_auto_dial") {
+    assertLaunchProviderSpendAllowed(job);
+    if (await hasPersistedResult(job.id)) return;
+    const result = await processIntakeAutoDialJob(job.payload as IntakeAutoDialJobPayload);
+    await persistJobResult(job.id, result);
+    return;
+  }
   if (job.type === "twilio_message_reconciliation") {
     await handleTwilioMessageReconciliationJob(job);
     return;
@@ -328,6 +497,16 @@ async function dispatchJob(job: JobRow): Promise<void> {
   // the policy set, so the kill switch cannot block accounting or cost relief.
   assertLaunchProviderSpendAllowed(job);
   await handleBaseJob(job as never);
+}
+
+async function dispatchJob(job: JobRow): Promise<void> {
+  const userId = jobOwnerId(job).trim();
+  await assertProviderSpendJobEnvironmentAllowed({ type: job.type, userId });
+  if (!userId || userId === SYSTEM_USER_ID) {
+    await dispatchJobInProviderContext(job);
+    return;
+  }
+  await runWithProviderIdentity(userId, () => dispatchJobInProviderContext(job));
 }
 
 /**

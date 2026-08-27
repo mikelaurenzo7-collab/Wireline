@@ -23,6 +23,27 @@ export function normalizedExpressConsent(input: {
   return isMarketingCallPurpose(input.callPurpose) && input.hasExpressWrittenConsent === true;
 }
 
+/**
+ * Client-supplied labels and lead identifiers are not written-consent evidence.
+ * Direct-dial marketing therefore fails closed until a route resolves a
+ * tenant-owned, immutable consent record (signer, phone number, disclosure,
+ * timestamp, and source) on the server.
+ */
+export function hasAuditableExpressConsentArtifact(_input: {
+  consentSource?: string;
+  consentLeadId?: string;
+}): boolean {
+  return false;
+}
+
+/**
+ * A direct-dial classification originates at an untrusted client boundary, so
+ * its Federal DNC obligation is invariant rather than purpose-dependent.
+ */
+export function requiresFederalDncScreeningForDirectDial(): true {
+  return true;
+}
+
 export function outboundConsentMetadata(input: {
   callPurpose: OutboundCallPurpose;
   hasExpressWrittenConsent?: boolean;

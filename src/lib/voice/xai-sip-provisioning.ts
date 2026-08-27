@@ -292,10 +292,13 @@ async function failClaim(input: {
   }
 }
 
-async function resolveTwilioPhoneSid(phoneNumber: string, candidate?: string | null): Promise<string> {
+async function resolveTwilioPhoneSid(
+  phoneNumber: string,
+  candidate?: string | null,
+): Promise<string> {
   if (isTwilioPhoneNumberSid(candidate)) return candidate;
   const client = getTwilioClient() as any;
-  if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!client) throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
 
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 2 });
   const matches = rows.filter(
@@ -314,7 +317,7 @@ async function resolveTwilioPhoneSid(phoneNumber: string, candidate?: string | n
 
 async function ensureTwilioTrunk(): Promise<string> {
   const client = getTwilioClient() as any;
-  if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!client) throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
 
   const configuredSid = String(process.env.TWILIO_XAI_SIP_TRUNK_SID || "").trim();
   let trunk: any = null;
@@ -410,7 +413,7 @@ async function ensureTwilioTrunk(): Promise<string> {
 
 async function attachPhoneToTrunk(trunkSid: string, phoneNumberSid: string): Promise<void> {
   const client = getTwilioClient() as any;
-  if (!client) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!client) throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
   const attached = await client.trunking.v1.trunks(trunkSid).phoneNumbers.list({ limit: 1_000 });
   if (
     attached.some(
@@ -503,7 +506,9 @@ export async function provisionNativeXAIPhone(input: {
   if (!String(process.env.XAI_API_KEY || "").trim()) {
     throw AppError.serviceUnavailable("Realtime voice is not configured.");
   }
-  if (!getTwilioClient()) throw AppError.serviceUnavailable("Twilio voice is not configured.");
+  if (!getTwilioClient()) {
+    throw AppError.serviceUnavailable("BotBound calling is temporarily unavailable.");
+  }
   resolveXAISipAllowedAddresses();
 
   const [agent] = await drizzle

@@ -32,21 +32,21 @@ Cursor Agent
 
 cursor.directory auto-detects Open Plugins paths from the public GitHub repository:
 
-| Component | Path |
-| --- | --- |
-| Plugin manifest | `plugin.json` |
-| Open Plugins MCP | `mcp.json` (`type: streamable-http`) |
-| Directory MCP | `.mcp.json` (`url` only, no secrets) |
-| Skill | `skills/wireline-voice-agent/SKILL.md` |
-| Rule | `rules/wireline-mcp.mdc` |
-| Agent | `agents/wireline.md` |
+| Component        | Path                                   |
+| ---------------- | -------------------------------------- |
+| Plugin manifest  | `plugin.json`                          |
+| Open Plugins MCP | `mcp.json` (`type: streamable-http`)   |
+| Directory MCP    | `.mcp.json` (`url` only, no secrets)   |
+| Skill            | `skills/wireline-voice-agent/SKILL.md` |
+| Rule             | `rules/wireline-mcp.mdc`               |
+| Agent            | `agents/wireline.md`                   |
 
 Submit the public GitHub repository at [cursor.directory/plugins/new](https://cursor.directory/plugins/new). Follow [CURSOR_PLUGIN_SUBMISSION.md](./CURSOR_PLUGIN_SUBMISSION.md). Do not put API keys, `headers`, or `auth` client secrets in the plugin files. Cursor handles OAuth.
 
 One-click install:
 
 ```text
-cursor://anysphere.cursor-deeplink/mcp/install?name=wireline&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9
+cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9
 ```
 
 Public documentation: `https://botbound.me/cursor-plugin.html`.
@@ -55,18 +55,18 @@ Public documentation: `https://botbound.me/cursor-plugin.html`.
 
 Same tools as ChatGPT and Claude:
 
-| Tool | Scope | Effect |
-| --- | --- | --- |
-| `create_agent_draft` | `agents.write` | Confirmed private unlaunched draft. First-agent conversion. |
-| `get_agent_draft` | `agents.read` | Reads a private draft. |
-| `update_agent_draft` | `agents.write` | Confirmed private draft update. |
-| `start_private_voice_simulation` | `demo.voice` | Tool-free private voice rehearsal. |
-| `list_wireline_agents` | `agents.read` | Lists the connected user's agents. |
-| `get_wireline_workspace_summary` | `agents.read` | Aggregate counts only. |
-| `get_wireline_agent_status` | `agents.read` | Next step and BotBound links. No phone numbers or customer content. |
-| `run_private_agent_turn` | `demo.voice` | Confirmed private text rehearsal. Not a live call. |
-| `get_agent_coaching_brief` | `agents.read` | Owner-authored Training facts and rules. |
-| `train_wireline_agent` | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
+| Tool                             | Scope          | Effect                                                               |
+| -------------------------------- | -------------- | -------------------------------------------------------------------- |
+| `create_agent_draft`             | `agents.write` | Confirmed private unlaunched draft. First-agent conversion.          |
+| `get_agent_draft`                | `agents.read`  | Reads a private draft.                                               |
+| `update_agent_draft`             | `agents.write` | Confirmed private draft update.                                      |
+| `start_private_voice_simulation` | `demo.voice`   | Tool-free private voice rehearsal.                                   |
+| `list_wireline_agents`           | `agents.read`  | Lists the connected user's agents.                                   |
+| `get_wireline_workspace_summary` | `agents.read`  | Aggregate counts only.                                               |
+| `get_wireline_agent_status`      | `agents.read`  | Next step and BotBound links. No phone numbers or customer content.  |
+| `run_private_agent_turn`         | `demo.voice`   | Confirmed private text rehearsal. Not a live call.                   |
+| `get_agent_coaching_brief`       | `agents.read`  | Owner-authored Training facts and rules.                             |
+| `train_wireline_agent`           | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
 
 ### Non-goals
 

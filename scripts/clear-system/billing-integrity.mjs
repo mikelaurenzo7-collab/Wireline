@@ -11,6 +11,9 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const dbSchema = read("src/db/schema.ts");
   const creditWallet = read("src/lib/credit-wallet.ts");
   const billingRoutes = read("src/routes/billing-routes.ts");
+  const stripeRuntimeAllowanceRetry = read(
+    "src/middleware/stripe-runtime-allowance-retry.ts",
+  );
   const checkoutFulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
   const balanceMigration = read("drizzle/migrations/0074_harden_conversation_balance_ledger.sql");
   const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
@@ -126,10 +129,10 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "Stripe refund webhook must write durable Runtime Balance metadata",
   );
   mustInclude(
-    "src/routes/billing-routes.ts",
-    billingRoutes,
-    /entryKind:\s*"reversal"[\s\S]*customerReason:\s*"Runtime Balance dispute reversal"/,
-    "Stripe dispute webhook must write durable Runtime Balance metadata",
+    "src/middleware/stripe-runtime-allowance-retry.ts",
+    stripeRuntimeAllowanceRetry,
+    /entryKind:\s*"reversal"[\s\S]*providerEventId[\s\S]*providerObjectId[\s\S]*customerReason:\s*"Runtime Balance dispute reversal"/,
+    "Stripe dispute preflight must write durable Runtime Balance metadata",
   );
   mustInclude(
     "drizzle/migrations/0074_harden_conversation_balance_ledger.sql",

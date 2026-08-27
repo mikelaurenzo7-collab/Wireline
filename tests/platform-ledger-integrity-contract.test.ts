@@ -45,7 +45,11 @@ describe("platform ledger migration delivery", () => {
 
   it("keeps failed carrier releases durable and retry-idempotent", () => {
     const migration = read("drizzle/migrations/0116_orphan_carrier_resources.sql");
+    const resolvedScrub = read(
+      "drizzle/migrations/0158_scrub_resolved_orphan_carrier_resources.sql",
+    );
     const deletion = read("src/lib/account-deletion.ts");
+    const retry = read("src/lib/orphan-carrier-retry.ts");
 
     expect(migration).toContain("wireline_orphan_carrier_resources");
     expect(migration).toContain("uq_orphan_carrier_resources_open");
@@ -59,6 +63,9 @@ describe("platform ledger migration delivery", () => {
     );
     expect(deletion).toContain("orphan carrier handoff failed, deferring account purge");
     expect(deletion).toContain("throw ledgerErr");
+    expect(resolvedScrub).toContain("WHERE status = 'resolved'");
+    expect(retry.match(/DELETE FROM public\.wireline_orphan_carrier_resources/g)).toHaveLength(2);
+    expect(retry).not.toContain("SET status = 'resolved'");
 
     // Pin the untouched deletion engine and grace-window exports. This prevents
     // a future focused edit from accidentally truncating the lower half of the

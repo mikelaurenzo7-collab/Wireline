@@ -41,7 +41,11 @@ describe("canonical Phone routes", () => {
 
     expect(routes).toContain('path="/call-logs"');
     expect(routes).toContain('path="/logs"');
-    expect(routes).toContain('to="/phone?tab=logs"');
+    expect(
+      routes.match(/<PreservingRedirect to="\/phone" searchParams=\{\{ tab: "logs" \}\} \/>/g),
+    ).toHaveLength(2);
+    expect(routes).toContain("new URLSearchParams(location.search)");
+    expect(routes).toContain("${location.hash}");
     expect(routes).not.toContain('path="/triage"');
     expect(routes).not.toContain('path="/outbound"');
   });

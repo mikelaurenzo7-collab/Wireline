@@ -15,10 +15,7 @@ describe("SMS opt-in cannot clear manual/legal DNC rows", () => {
     // on an EXACT keyword body ("yes please" now reaches the inbound store
     // instead), but either can be the one that runs, so the base delete must
     // carry the same scope as the interceptor's.
-    const optInBlock = base.slice(
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS"),
-      base.indexOf("matchesCarrierKeyword(trimmed, HELP_KEYWORDS"),
-    );
+    const optInBlock = base.slice(base.indexOf("if (isOptIn)"), base.indexOf("if (isHelp)"));
     expect(optInBlock).toContain('eq(schema.dncList.reason, "opt-out")');
     expect(optInBlock).toContain('eq(schema.dncList.source, "twilio_advanced_opt_out")');
     expect(optInBlock).toContain('eq(schema.dncList.source, "sms_opt_out")');
@@ -29,10 +26,7 @@ describe("SMS opt-in cannot clear manual/legal DNC rows", () => {
     expect(base).toContain("We couldn't process your unsubscribe request just now.");
     expect(base).toContain("We couldn't process your resubscribe request just now.");
     // STOP persistence failure pages ops instead of vanishing into a log line.
-    const optOutBlock = base.slice(
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS"),
-      base.indexOf("matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS"),
-    );
+    const optOutBlock = base.slice(base.indexOf("if (isOptOut)"), base.indexOf("if (isOptIn)"));
     expect(optOutBlock).toContain("reportError(");
     const interceptor = read("src/routes/twilio-webhook.ts");
     expect(interceptor).toContain("We couldn't process your resubscribe request just now.");

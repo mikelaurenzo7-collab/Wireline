@@ -21,6 +21,7 @@ import {
   subscribePageToLeadgen,
   disconnectMeta,
 } from "../../lib/meta-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get(
   "/api/oauth/meta/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!metaOAuthConfigured()) {
       return res
         .status(503)
@@ -39,6 +40,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Meta");
     const authUrl = getMetaAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -68,19 +70,21 @@ router.get(
     if (!code || typeof code !== "string") {
       return res.status(400).send("No code provided by Meta.");
     }
+
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Meta");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
       const tokens = await exchangeMetaCode(code, redirectUri);
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const info = await getMetaUserInfo(tokens.access_token);
       const accessTokenM = encryptSecret(tokens.access_token);

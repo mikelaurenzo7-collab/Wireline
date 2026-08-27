@@ -28,6 +28,18 @@ import type { AuthenticatedRequest } from "../types/auth";
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAILY_CRON_WINDOW_MINUTES = 15;
 
+type JobWithPrivateError = {
+  type?: string | null;
+  error?: string | null;
+};
+
+function publicJobFailureMessage(job: JobWithPrivateError | null | undefined): string | null {
+  if (!job?.error) return null;
+  return job.type === "post_call_artifact"
+    ? "BotBound could not create this file. Try again shortly."
+    : "BotBound could not complete this job. Try again shortly.";
+}
+
 function isWithinUtcWindow(now: Date, hour: number, startMinute: number): boolean {
   if (now.getUTCHours() !== hour) return false;
   const minute = now.getUTCMinutes();
@@ -152,7 +164,7 @@ router.get(
         .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, req.user.id)))
         .limit(1);
       if (!row) throw AppError.fromHttpStatus(404, "Job not found");
-      res.json({ job: row });
+      res.json({ job: { ...row, error: publicJobFailureMessage(row) } });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("GET /api/jobs/:id failed", { error: getErrorMessage(err) });
@@ -180,7 +192,11 @@ router.post(
       }
       if (row.status === "running") return res.json({ ok: true, status: "running" });
       if (row.status !== "pending" && row.status !== "failed") {
-        return res.json({ ok: true, status: row.status, error: row.error });
+        return res.json({
+          ok: true,
+          status: row.status,
+          error: publicJobFailureMessage(row),
+        });
       }
 
       const claimed = await claimJobById(drizzle, jobId, req.user.id);
@@ -193,7 +209,7 @@ router.post(
         if (runErr instanceof AppError) throw runErr;
         const settlement = await settleClaimedJobError(drizzle, claimed, runErr);
         const [failed] = await drizzle
-          .select({ status: schema.jobs.status, error: schema.jobs.error })
+          .select({ type: schema.jobs.type, status: schema.jobs.status, error: schema.jobs.error })
           .from(schema.jobs)
           .where(eq(schema.jobs.id, jobId))
           .limit(1);
@@ -204,12 +220,17 @@ router.post(
           code: settlement === "deferred" ? PROVIDER_SPEND_PAUSED_CODE : "INTERNAL_ERROR",
           ok: false,
           status: failed?.status ?? "failed",
-          error: failed?.error ?? getErrorMessage(runErr),
+          error:
+            publicJobFailureMessage(failed) ||
+            (claimed.type === "post_call_artifact"
+              ? "BotBound could not create this file. Try again shortly."
+              : "BotBound could not complete this job. Try again shortly."),
         });
       }
 
       const [done] = await drizzle
         .select({
+          type: schema.jobs.type,
           status: schema.jobs.status,
           result: schema.jobs.result,
           error: schema.jobs.error,
@@ -217,7 +238,12 @@ router.post(
         .from(schema.jobs)
         .where(eq(schema.jobs.id, jobId))
         .limit(1);
-      res.json({ ok: true, status: done?.status, result: done?.result, error: done?.error });
+      res.json({
+        ok: true,
+        status: done?.status,
+        result: done?.result,
+        error: publicJobFailureMessage(done),
+      });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("POST /api/jobs/:id/run failed", { error: getErrorMessage(err) });

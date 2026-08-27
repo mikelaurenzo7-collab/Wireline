@@ -148,16 +148,16 @@ function SpendBudgetCard() {
       : BRAND.colors.primary;
   const period = status?.period || "N/A";
   const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
-  const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Provider spend guard";
+  const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Live usage guard";
   const capReachedCopy = isSimulationAllowance
     ? "Simulation allowance reached. Private simulation is paused"
-    : "Provider spend limit reached. New provider work is paused";
+    : "Live usage limit reached. New paid work is paused";
   const maximumHelper = isSimulationAllowance
     ? `Up to $${safeFixed(maximumLimit, 2)} for private setup, training, and simulation. Activate a paid plan to go live.`
-    : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the provider-cost envelope funded by the plan.`;
+    : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the usage allowance funded by the plan.`;
   const hardCapHelper = isSimulationAllowance
-    ? "Private simulation pauses at the monthly allowance. Live provider work requires a paid plan."
-    : "New provider-funded work pauses at the limit. Completed in-flight work still settles.";
+    ? "Private simulation pauses at the monthly allowance. Live work requires a paid plan."
+    : "New paid work pauses at the limit. Completed in-flight work still settles.";
 
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>

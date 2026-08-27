@@ -19,6 +19,10 @@ import { randomUUID } from "node:crypto";
 import { eq, and, or, ne, sql, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../lib/account-environment-policy";
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -35,9 +39,11 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { outboundDialReservations } from "../db/security-schema";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { transferLiveCall } from "../lib/vapi-client";
@@ -692,14 +698,22 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const claimedExpressConsent = normalizedExpressConsent({
+        callPurpose,
+        hasExpressWrittenConsent,
+      });
+      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+        consentSource,
+        consentLeadId,
+      });
+      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
       const marketing = isMarketingCallPurpose(callPurpose);
 
-      if (marketing && expressConsent && !consentSource && !consentLeadId) {
+      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
           code: "CONSENT_ARTIFACT_REQUIRED",
           error:
-            "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+            "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
         });
       }
 
@@ -707,6 +721,7 @@ router.post(
         userId: req.user.id,
         phone: customerNumber,
         isMarketingCall: marketing,
+        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -840,7 +855,7 @@ router.post(
         metadata: {
           ...outboundConsentMetadata({
             callPurpose,
-            hasExpressWrittenConsent,
+            hasExpressWrittenConsent: expressConsent,
             source: "mobile",
             consentSource,
             consentLeadId,
@@ -986,6 +1001,11 @@ router.post(
   validate({ body: handoffSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      // A live call can straddle an operator reclassification. Fail closed
+      // before reading/claiming call-control state and re-check again inside
+      // the shared REFER boundary.
+      await assertLiveExternalActionAllowed(req.user.id, "mobile_call_handoff");
+
       const [presence] = await drizzle
         .select({ controlUrl: schema.signalPresence.controlUrl })
         .from(schema.signalPresence)
@@ -1023,13 +1043,17 @@ router.post(
         });
       }
 
-      const result = await transferLiveCall(presence.controlUrl, destination);
+      await assertExternalEntityActionAllowed(req.user.id, "mobile_call_handoff", {
+        phone: destination,
+      });
+      const result = await transferLiveCall(req.user.id, presence.controlUrl, destination);
       if (!result.ok) {
         return res.status(result.status).json({ code: "ERROR", error: result.error });
       }
       res.json({ success: true });
     } catch (err) {
       log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });
+      if (err instanceof AppError) throw err;
       throw AppError.fromHttpStatus(500, "Failed to take the call.");
     }
   },

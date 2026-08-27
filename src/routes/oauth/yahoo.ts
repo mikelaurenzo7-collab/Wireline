@@ -18,6 +18,7 @@ import {
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { createYahooOidcNonce, verifyYahooIdToken } from "../../lib/yahoo-openid";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -48,7 +49,7 @@ router.get(
   "/api/oauth/yahoo/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     setOAuthNoStoreHeaders(res);
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
       throw AppError.fromHttpStatus(503, "Yahoo mailbox integration is finishing setup.");
@@ -58,6 +59,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/yahoo/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Yahoo");
     const nonce = createYahooOidcNonce();
     const params = new URLSearchParams({
       client_id: process.env.YAHOO_CLIENT_ID,
@@ -94,6 +96,15 @@ router.get(
     if (!code || typeof code !== "string") {
       return res.status(400).send("No code provided by Yahoo.");
     }
+
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send("Complete this connection in the same browser and BotBound account that started it.");
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Yahoo");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
@@ -130,13 +141,6 @@ router.get(
         clientId: process.env.YAHOO_CLIENT_ID!,
         nonce: vs.pkceVerifier,
       });
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send("Complete this connection in the same browser and BotBound account that started it.");
-      }
 
       const accessTokenY = encryptSecret(tokens.access_token);
       const refreshTokenY = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;

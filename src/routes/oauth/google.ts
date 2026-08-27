@@ -19,6 +19,7 @@ import {
   resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -35,6 +36,7 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Google");
     const oauth2Client = await getGoogleOAuthClient(req);
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
@@ -63,6 +65,16 @@ router.get(
       return res.status(400).send("No code provided by Google.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send(
+          `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google again from Settings.`,
+        );
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Google");
+
     try {
       const oauth2Client = await getGoogleOAuthClient(req);
       const { tokens } = await oauth2Client.getToken(code);
@@ -74,15 +86,6 @@ router.get(
       const emailAddress = userInfo.data.email?.trim().toLowerCase();
 
       if (!emailAddress) throw new Error("Could not fetch user email.");
-
-      const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send(
-            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Google again from Settings.`,
-          );
-      }
 
       const scopeStr =
         typeof (tokens as any).scope === "string"

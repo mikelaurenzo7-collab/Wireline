@@ -69,7 +69,7 @@ describe("code review hardening contracts", () => {
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
     const twilio = read("src/routes/twilio-webhook-base.ts");
-    expect(twilio).toContain("twilioSid: messageSid || null");
+    expect(twilio).toContain("twilioSid: input.messageSid || null");
     expect(twilio).toContain(".onConflictDoNothing()");
     expect(twilio).toContain("if (!insertedMessage) return;");
     expect(twilio).toContain("tenantStore.run(tenantUserId");
@@ -83,9 +83,10 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain('eq(schema.dncList.source, "sms_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.reason, "opt-out")');
     expect(twilio).toContain("if (!legacy) return res.status(200).send(emptyTwiml());");
-    expect(twilio).toContain(
-      '.send(control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml());',
-    );
+    expect(twilio).toContain("const confirmation =");
+    expect(twilio).toContain('control === "stop"');
+    expect(twilio).toContain("helpConfirmationTwiml()");
+    expect(twilio).toContain(".send(productionReply(confirmation))");
   });
 
   it("purges every credential and tenant-data surface found in the live schema audit", () => {
@@ -275,23 +276,24 @@ describe("code review hardening contracts", () => {
     const auth = read("src/components/AuthPortal.tsx");
     const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const marketingCss = read("src/styles/public-marketing-polish.css");
+    const safeAreaCss = read("src/styles/safe-area-ownership.css");
 
     expect(pricing).toContain("within 30 days of your first paid invoice");
     expect(pricing).not.toContain("within 14 days of a first paid charge");
     expect(terms).toContain("30-day money-back guarantee");
-    expect(auth).toContain(
-      '<AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />',
-    );
-    expect(authAccess).toContain(
-      'const termsId = embedded ? "landing-auth-terms" : "auth-terms";',
-    );
+    expect(auth).toContain('<AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />');
+    expect(authAccess).toContain('const termsId = embedded ? "landing-auth-terms" : "auth-terms";');
     expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");
     expect(authAccess).toContain("aria-labelledby={termsLabelId}");
     expect(authAccess).toContain("<span id={termsLabelId}>");
     expect(authAccess).toContain("if (isSignUp && !agreedToTerms)");
     expect(authAccess).toContain("TERMS_CONSENT_ERROR");
-    expect(auth).toContain("min-h-[100dvh]");
+    expect(auth).toContain("min-h-full");
     expect(auth).toContain("overflow-y-auto");
+    expect(safeAreaCss).toContain(".wl-stitch-auth-shell .wl-auth-form-panel");
+    expect(safeAreaCss).toContain("min-height: 100% !important");
+    expect(safeAreaCss).toContain(".wl-ui-caps.wl-ui-caps--document > .wl-stitch-auth-shell");
+    expect(safeAreaCss).toContain("min-height: 100dvh");
     expect(marketingCss).toContain(".marketing-footer-above-sticky");
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });

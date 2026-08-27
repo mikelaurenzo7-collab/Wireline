@@ -3,16 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 import {
   boundedTwilioMessageValidityPeriod,
   createTwilioMessageWithRateLimitRetry,
+  shouldApplyTwilioMessageStatusTransition,
   twilioMessageStatusCallbackUrl,
   twilioRateLimitBackoffMs,
   withTwilioMessageReliability,
 } from "../src/lib/twilio-message-reliability";
 
+const MESSAGE_STATUS_CONNECTION_OVERRIDES = "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
+
 describe("Twilio message reliability", () => {
   it("attaches the canonical signed callback target and a bounded validity period", () => {
     vi.stubEnv("APP_URL", "https://botbound.me/");
     expect(twilioMessageStatusCallbackUrl()).toBe(
-      "https://botbound.me/api/twilio-webhook/message-status",
+      `https://botbound.me/api/twilio-webhook/message-status${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
     );
     vi.unstubAllEnvs();
 
@@ -26,21 +29,26 @@ describe("Twilio message reliability", () => {
     ).toEqual({
       to: "+15555550100",
       body: "Operational alert",
-      statusCallback: "https://trywireline.com/api/twilio-webhook/message-status",
+      statusCallback: `https://trywireline.com/api/twilio-webhook/message-status${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
       validityPeriod: 60,
     });
     expect(twilioMessageStatusCallbackUrl("https://trywireline.com///")).toBe(
-      "https://trywireline.com/api/twilio-webhook/message-status",
+      `https://trywireline.com/api/twilio-webhook/message-status${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
     );
     expect(twilioMessageStatusCallbackUrl("https://trywireline.com", "operational")).toBe(
-      "https://trywireline.com/api/twilio-webhook/message-status?scope=operational",
+      `https://trywireline.com/api/twilio-webhook/message-status?scope=operational${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
+    );
+    expect(twilioMessageStatusCallbackUrl("https://trywireline.com", "operational-system")).toBe(
+      `https://trywireline.com/api/twilio-webhook/message-status?scope=operational-system${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
     );
     expect(
       withTwilioMessageReliability(
         { to: "+15555550100", body: "Operational alert" },
         { appUrl: "https://trywireline.com", scope: "operational" },
       ).statusCallback,
-    ).toBe("https://trywireline.com/api/twilio-webhook/message-status?scope=operational");
+    ).toBe(
+      `https://trywireline.com/api/twilio-webhook/message-status?scope=operational${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
+    );
     expect(boundedTwilioMessageValidityPeriod(50_000)).toBe(36_000);
     expect(boundedTwilioMessageValidityPeriod("not-a-number")).toBe(3_600);
   });
@@ -106,5 +114,27 @@ describe("Twilio message reliability", () => {
     ).rejects.toBe(failure);
     expect(create).toHaveBeenCalledTimes(3);
     expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts only monotonic delivery transitions and pins terminal truth", () => {
+    expect(shouldApplyTwilioMessageStatusTransition(null, "accepted")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("accepted", "scheduled")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("scheduled", "queued")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("queued", "sending")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("sending", "sent")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "scheduled")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "sent")).toBe(false);
+
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "delivered")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("delivered", "read")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("delivered", "failed")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("read", "undelivered")).toBe(false);
+
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "failed")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("sent", "canceled")).toBe(true);
+    expect(shouldApplyTwilioMessageStatusTransition("failed", "delivered")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("canceled", "delivered")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("undelivered", "read")).toBe(false);
+    expect(shouldApplyTwilioMessageStatusTransition("queued", "mystery")).toBe(false);
   });
 });

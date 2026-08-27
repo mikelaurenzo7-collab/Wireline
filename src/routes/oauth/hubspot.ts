@@ -20,6 +20,7 @@ import {
   exchangeHubSpotCode,
   disconnectHubSpot,
 } from "../../lib/hubspot-service";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.get(
   "/api/oauth/hubspot/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -40,6 +41,7 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/hubspot/callback`;
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "HubSpot");
     const authUrl = getHubSpotAuthUrl(
       redirectUri,
       generateOAuthState(uid ? { userId: uid } : undefined),
@@ -71,21 +73,22 @@ router.get(
       return res.status(400).send("No code provided by HubSpot.");
     }
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send(
+          `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it.`,
+        );
+    }
+    await assertOAuthProviderConnectAllowed(userId, "HubSpot");
+
     try {
       const baseUrl =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
         `${req.protocol}://${req.get("host")}`;
       const redirectUri = `${baseUrl}/api/oauth/hubspot/callback`;
       const tokens = await exchangeHubSpotCode(code, redirectUri);
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-
-      if (!userId) {
-        return res
-          .status(401)
-          .send(
-            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it.`,
-          );
-      }
 
       const infoRes = await fetch("https://api.hubapi.com/account-info/v3/details", {
         headers: { Authorization: `Bearer ${tokens.access_token}` },

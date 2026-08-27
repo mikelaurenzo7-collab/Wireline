@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
@@ -94,7 +95,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "ACTIVATION_REQUIRED":
       return {
         title: "Activate live work",
-        body: "Create and train stay free. Choose a live plan to add a production number and paid provider actions.",
+        body: "Create and train stay free. Choose a live plan when your Bot is ready for a live number and customer conversations.",
       };
     case "EMAIL_UNVERIFIED":
       return {
@@ -117,7 +118,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "SUBSCRIPTION_REQUIRED":
       return {
         title: "Subscription paused",
-        body: "Your subscription is past due. Open Stripe billing to update your payment method and restore live work.",
+        body: "Your subscription is past due. Open BotBound Billing to update your payment method and restore live work.",
       };
     default:
       return { title: "Capacity required", body: detail.error };
@@ -305,7 +306,7 @@ export default function TrialGateModal() {
       } | null;
       const portalUrl = data?.url;
       if (!response.ok || !portalUrl) {
-        setError(data?.error || "Stripe billing could not be opened. Try again shortly.");
+        setError(data?.error || "Billing could not be opened. Try again shortly.");
         setPending(null);
         return;
       }
@@ -313,9 +314,7 @@ export default function TrialGateModal() {
     } catch (portalError: unknown) {
       if (controller.signal.aborted) return;
       setError(
-        portalError instanceof Error
-          ? portalError.message
-          : "Network error opening Stripe billing.",
+        portalError instanceof Error ? portalError.message : "Network error opening billing.",
       );
       setPending(null);
     } finally {
@@ -461,12 +460,12 @@ export default function TrialGateModal() {
                     {pending === "billing-portal" ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Opening Stripe billing
+                        Opening billing
                       </>
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4" />
-                        Update payment in Stripe
+                        Update payment
                       </>
                     )}
                   </ShadButton>
@@ -567,16 +566,13 @@ export default function TrialGateModal() {
 
               {showPlanCheckout && (
                 <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                  <span>Secure checkout in Stripe</span>
+                  <span>Secure checkout</span>
                   <span>&middot;</span>
                   <span>Cancel anytime</span>
                   <span>&middot;</span>
-                  <a
-                    href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
-                    className="text-brand transition-colors hover:text-brand/80"
-                  >
+                  <Link to="/contact" className="text-brand transition-colors hover:text-brand/80">
                     Need Enterprise?
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

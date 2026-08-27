@@ -58,7 +58,7 @@ export default function ComplianceCenter() {
       const disposition = response.headers.get("Content-Disposition");
       const filename =
         disposition?.match(/filename="([^"]+)"/)?.[1] ||
-        `wireline-account-export-${Date.now()}.json`;
+        `botbound-account-export-${Date.now()}.json`;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -166,58 +166,60 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(448px,.9fr)]">
-        <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Recent disclosure and consent events (rule version{" "}
-                {summary?.consent_rule_version || "N/A"}).
-              </p>
-            </div>
-            <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {recentEvents.length} shown
-            </span>
-          </div>
-          <div className="mt-3 grid max-h-[360px] gap-2 overflow-y-auto pr-1">
-            {recentEvents.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-3.5 text-sm leading-6 text-muted-foreground">
-                <p>No consent events logged yet.</p>
-                <p className="mt-1">
-                  Events appear after customer calls or messages record a disclosure, consent, or
-                  opt-out.{" "}
-                  <Link
-                    to="/settings/phone"
-                    className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
-                  >
-                    Review phone setup
-                  </Link>
-                  .
+      <div className="grid gap-4">
+        {summary ? (
+          <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Recent disclosure and consent events (rule version{" "}
+                  {summary.consent_rule_version || "N/A"}).
                 </p>
               </div>
-            ) : (
-              recentEvents.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-medium">{entry.event}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
-                    </span>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {entry.customer_number || "Unknown number"}
-                    {entry.state ? ` · ${entry.state}` : ""}
-                    {entry.call_id ? ` · call ${entry.call_id}` : ""}
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                {recentEvents.length} shown
+              </span>
+            </div>
+            <div className="mt-3 grid max-h-[360px] gap-2 overflow-y-auto pr-1">
+              {recentEvents.length === 0 ? (
+                <div className="rounded-xl border border-border bg-card p-3.5 text-sm leading-6 text-muted-foreground">
+                  <p>No consent events logged yet.</p>
+                  <p className="mt-1">
+                    Events appear after customer calls or messages record a disclosure, consent, or
+                    opt-out.{" "}
+                    <Link
+                      to="/phone?tab=setup"
+                      className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      Review phone setup
+                    </Link>
+                    .
                   </p>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
+              ) : (
+                recentEvents.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">{entry.event}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {entry.customer_number || "Unknown number"}
+                      {entry.state ? ` · ${entry.state}` : ""}
+                      {entry.call_id ? ` · call ${entry.call_id}` : ""}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <section className="wl-paper wl-paper-elevated p-4">
           <DncManager />

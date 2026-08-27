@@ -542,7 +542,7 @@ export async function sendPlatformOperationalAlert(
 
   const payload = withTwilioMessageReliability(
     { to, from, body: messageBody },
-    { scope: "operational" },
+    { scope: userId ? "operational" : "operational-system" },
   );
   try {
     const message = await createTwilioMessageWithRateLimitRetry(

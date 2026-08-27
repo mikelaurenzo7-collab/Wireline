@@ -9,16 +9,9 @@
   --wl-app-rail: 88rem;
 }
 
-@media (min-width: 1024px) {
-  .wl-workspace-shell > .grid {
-    grid-template-columns: 224px minmax(0, 1fr);
-  }
-
-  .wl-workspace-shell aside[aria-label="Workspace navigation"] {
-    width: 224px;
-    padding-inline: 0.75rem;
-  }
-}
+/* WorkspaceShell's auto grid track and WorkspaceResizablePanel's inline width
+ * jointly own the desktop rail. A fixed track or nested aside width here would
+ * leave a blank 156px gutter when collapsed and clip widths above 224px. */
 
 .wl-ui-caps .wl-workspace-content-inner,
 .wl-ui-caps .wl-route-content,
@@ -87,15 +80,33 @@
   background: var(--wireline-color-canvas-default);
 }
 
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full > div:first-child > div:first-child > .text-center {
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  > div:first-child
+  > div:first-child
+  > .text-center {
   text-align: left;
 }
 
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full > div:first-child > div:first-child > .text-center p {
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  > div:first-child
+  > div:first-child
+  > .text-center
+  p {
   justify-content: flex-start;
 }
 
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center {
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  .scroll-viewport
+  > .flex.flex-col.items-center.justify-center {
   align-items: flex-start;
   justify-content: flex-start;
   max-width: 38rem;
@@ -103,19 +114,36 @@
   text-align: left;
 }
 
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > p,
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > h3 {
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  .scroll-viewport
+  > .flex.flex-col.items-center.justify-center
+  > p,
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  .scroll-viewport
+  > .flex.flex-col.items-center.justify-center
+  > h3 {
   text-align: left;
 }
 
-[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > div {
+[data-wireline-route="/studio"]
+  .wl-workspace-content-inner
+  > div
+  > .flex.flex-col.h-full
+  .scroll-viewport
+  > .flex.flex-col.items-center.justify-center
+  > div {
   justify-content: flex-start;
 }
 
 [data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full textarea {
   min-height: 0;
 }
-
 
 [data-wireline-route="/connections"] aside .studio-card p {
   display: none;
@@ -163,7 +191,12 @@
     align-items: flex-start;
   }
 
-  [data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center {
+  [data-wireline-route="/studio"]
+    .wl-workspace-content-inner
+    > div
+    > .flex.flex-col.h-full
+    .scroll-viewport
+    > .flex.flex-col.items-center.justify-center {
     padding-inline: 0.25rem;
   }
 }
@@ -171,12 +204,19 @@
 /* Professional, sharp, purposeful authenticated workspace polish */
 .wl-ui-caps .wl-workspace-main .studio-card,
 .wl-ui-caps .wl-workspace-main .wl-card-action {
-  transition: border-color .12s ease, box-shadow .12s ease, transform .08s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
 }
 
 .wl-ui-caps .wl-workspace-main .studio-card:hover,
 .wl-ui-caps .wl-workspace-main .wl-card-action:hover {
-  border-color: color-mix(in srgb, var(--wireline-color-border-default) 55%, var(--wireline-color-action-primary-container));
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-border-default) 55%,
+    var(--wireline-color-action-primary-container)
+  );
 }
 
 .wl-ui-caps .wl-workspace-main h1,
@@ -185,12 +225,11 @@
 }
 
 .wl-ui-caps .wl-workspace-main .studio-kicker {
-  letter-spacing: .085em;
-  opacity: .75;
+  letter-spacing: 0.085em;
+  opacity: 0.75;
 }
 
 /* Crisp rail + header details */
 .wl-ui-caps .wl-workspace-main > div:first-child {
   /* header area already styled inline for precision */
 }
-

@@ -22,16 +22,16 @@ describe("Free Builder spend UI truth", () => {
       "Funds private setup, training, and simulation. Activate a paid plan to go live.",
     );
     expect(source).toContain(
-      "Private simulation pauses at the monthly allowance. Live provider work requires a paid plan.",
+      "Private simulation pauses at the monthly allowance. Live work requires a paid plan.",
     );
     expect(source).not.toContain(
       "Private setup, training, and simulation pause at the monthly allowance.",
     );
   });
 
-  it("keeps paid-plan provider spend language intact", () => {
-    expect(source).toContain('"Provider spend guard"');
-    expect(source).toContain("provider-cost envelope funded by the plan");
+  it("keeps paid-plan usage language product-owned", () => {
+    expect(source).toContain('"Live usage guard"');
+    expect(source).toContain("usage allowance funded by the plan");
     expect(source).toContain("Completed in-flight work still settles.");
   });
 });

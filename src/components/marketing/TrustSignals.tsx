@@ -57,7 +57,7 @@ export default function TrustSignals() {
           {[
             ["/trust", "Trust Center"],
             ["/security", "Security"],
-            ["/status", "System Status"],
+            ["/support", "Support"],
           ].map(([to, label]) => (
             <Link
               key={to}

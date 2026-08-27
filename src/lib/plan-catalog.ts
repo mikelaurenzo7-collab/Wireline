@@ -166,7 +166,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "1 private draft Bot",
       "Bot setup, configuration, knowledge, and private simulation",
       "Includes $1.50 of private AI simulation each month",
-      "No production number or paid provider action until activation",
+      "No live number or customer conversations until activation",
     ],
   },
   {

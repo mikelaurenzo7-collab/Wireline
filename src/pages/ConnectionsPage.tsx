@@ -1,6 +1,5 @@
 import CrmConnectionCard from "../components/CrmConnectionCard";
 import MailboxConnectionCard from "../components/MailboxConnectionCard";
-import IntegrationOperatingMap from "../components/integrations/IntegrationOperatingMap";
 import {
   Accordion,
   AccordionContent,
@@ -25,17 +24,6 @@ export default function ConnectionsPage() {
             </AccordionTrigger>
             <AccordionContent className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
               <CrmConnectionCard />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
-        <Accordion type="single" collapsible data-wireline-integration-map>
-          <AccordionItem value="integration-capabilities" className="rounded-xl border border-border bg-card">
-            <AccordionTrigger className="min-h-14 px-4 py-0 text-sm font-semibold text-muted-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
-              Advanced
-            </AccordionTrigger>
-            <AccordionContent className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
-              <IntegrationOperatingMap />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

@@ -12,9 +12,16 @@ describe("mobile outbound consent parity", () => {
 
     expect(web).toContain("CONSENT_ARTIFACT_REQUIRED");
     expect(mobile).toContain("CONSENT_ARTIFACT_REQUIRED");
-    expect(mobile).toContain('consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"])');
+    expect(mobile).toContain(
+      'consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"])',
+    );
     expect(mobile).toContain("consentLeadId");
-    expect(mobile).toContain("expressConsent && !consentSource && !consentLeadId");
+    for (const surface of [web, mobile]) {
+      expect(surface).toContain("hasAuditableExpressConsentArtifact({");
+      expect(surface).toContain(
+        "marketing && claimedExpressConsent && !hasAuditableConsentArtifact",
+      );
+    }
   });
 });
 

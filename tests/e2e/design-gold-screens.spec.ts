@@ -4,7 +4,11 @@ const email = process.env.WIRELINE_E2E_EMAIL?.trim();
 const password = process.env.WIRELINE_E2E_PASSWORD;
 
 const GOLD_ROUTES = [
-  { path: "/overview", eyebrow: /Overview|Good/i, marker: ".wl-overview-greeting" },
+  {
+    path: "/studio",
+    eyebrow: /Bot Studio|Start With One Job|Studio/i,
+    marker: '#studio-brief, #studio-workroom-message, [aria-label="Loading Studio workspace"]',
+  },
   { path: "/phone?tab=logs", eyebrow: /Place outbound call/i, marker: ".wl-operate-surface" },
   {
     path: "/studio?create=1",

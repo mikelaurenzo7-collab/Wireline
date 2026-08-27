@@ -55,7 +55,8 @@ describe("daily brief scheduler launch contract", () => {
     expect(routes).toContain("dailyBriefDispatchClaimedAt: claimAt");
     expect(routes).toContain("dailyBriefLastAttemptAt: claimAt");
     expect(routes).toContain("lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore)");
-    expect(routes).toContain("await runInAuditContext(auditContext");
+    expect(routes).toContain("await runWithProviderIdentity(uid, () =>");
+    expect(routes).toContain("runInAuditContext(auditContext, async () => {");
     expect(brief).toContain("await oauth2Client.getAccessToken()");
     expect(brief).toContain("opts?.onProviderSendAttempt?.()");
     expect(brief.indexOf("await oauth2Client.getAccessToken()")).toBeLessThan(

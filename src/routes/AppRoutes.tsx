@@ -25,6 +25,20 @@ const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"
 
 const loading = <RouteFallback />;
 
+function PreservingRedirect({
+  to,
+  searchParams,
+}: {
+  to: string;
+  searchParams?: Record<string, string>;
+}) {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  for (const [key, value] of Object.entries(searchParams ?? {})) search.set(key, value);
+  const query = search.toString();
+  return <Navigate to={`${to}${query ? `?${query}` : ""}${location.hash}`} replace />;
+}
+
 function ToStudioRedirect() {
   const location = useLocation();
   return <Navigate to={`/studio${location.search}${location.hash}`} replace />;
@@ -34,6 +48,21 @@ function ToStudioRedirect() {
 function EmailToInboxRedirect() {
   const location = useLocation();
   return <Navigate to={`/inbox${location.search}${location.hash}`} replace />;
+}
+
+/** Keep retired settings deep links useful without dropping anchors or filters. */
+function PhoneSettingsRedirect() {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  search.set("tab", "setup");
+  return <Navigate to={`/phone?${search.toString()}${location.hash}`} replace />;
+}
+
+/** Apps lives under Settings; preserve old bookmarks without maintaining two chromes. */
+function AppsToSettingsRedirect({ command = false }: { command?: boolean }) {
+  const location = useLocation();
+  const suffix = command ? "/command" : "";
+  return <Navigate to={`/settings/apps${suffix}${location.search}${location.hash}`} replace />;
 }
 
 function AuthNotFound() {
@@ -73,29 +102,36 @@ export default function AppRoutes() {
 
         <Route path="/connections" element={<ConnectionsPage />} />
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
-        <Route path="/connections/*" element={<ConnectionsPage />} />
-        <Route path="/call-logs" element={<Navigate to="/phone?tab=logs" replace />} />
-        <Route path="/logs" element={<Navigate to="/phone?tab=logs" replace />} />
+        <Route
+          path="/call-logs"
+          element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
+        />
+        <Route
+          path="/logs"
+          element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
+        />
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<EmailToInboxRedirect />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
-        <Route path="/apps" element={<ClientAppsPage />} />
-        <Route path="/apps/command" element={<BrowserCommandInstallPage />} />
+        <Route path="/apps" element={<AppsToSettingsRedirect />} />
+        <Route path="/apps/command" element={<AppsToSettingsRedirect command />} />
         <Route path="/settings/apps/command" element={<BrowserCommandInstallPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
         {/* Phone lines are operational work; keep old settings links compatible. */}
-        <Route path="/settings/phone" element={<Navigate to="/phone?tab=setup" replace />} />
+        <Route path="/settings/phone" element={<PhoneSettingsRedirect />} />
         <Route path="/settings/team" element={<TeamSettings />} />
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />
         <Route path="/settings/apps" element={<ClientAppsPage />} />
-        <Route path="/settings/*" element={<SettingsPage />} />
-        <Route path="/dnc" element={<Navigate to="/settings/compliance" replace />} />
-        <Route path="/audit" element={<Navigate to="/admin?tab=activity" replace />} />
+        <Route path="/dnc" element={<PreservingRedirect to="/settings/compliance" />} />
+        <Route
+          path="/audit"
+          element={<PreservingRedirect to="/admin" searchParams={{ tab: "activity" }} />}
+        />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
 

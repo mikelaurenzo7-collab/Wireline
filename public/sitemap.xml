@@ -62,12 +62,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://botbound.me/status</loc>
-    <lastmod>2026-08-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
     <loc>https://botbound.me/security</loc>
     <lastmod>2026-08-19</lastmod>
     <changefreq>monthly</changefreq>

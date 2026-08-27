@@ -1,10 +1,10 @@
-# Wireline Deployment
+# BotBound Deployment
 
 This root path is retained for legacy links, development-tool discovery, and deployment regression contracts. The canonical maintained runbook is [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md).
 
 ## Required operating posture
 
-- Only `revaluate/wireline` may be linked to this repository and own `trywireline.com`.
+- Only `revaluate/wireline` may be linked to this repository and own the canonical `botbound.me` production domain. `trywireline.com` is a temporary compatibility origin for registered callback drains only.
 - The historical duplicate project produced a red **Vercel – workspace** status; do not copy production secrets into another project to silence it.
 - Production deploys come from reviewed squash merges to `main`; verify the exact merge SHA, migrations, aliases, health, and runtime errors.
 - Preview credentials must be sandbox-only or unset, and previews must not migrate the shared production database.
@@ -21,6 +21,6 @@ Self-serve checkout is authorized only on the audited canonical `main` productio
 
 `WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` is retired legacy configuration and no longer authorizes checkout. Safe production redeploys do **not** require per-commit environment-variable rotation. Preview and non-`main` deployments remain fail-closed, and every canonical production artifact still must pass the mandatory comprehensive release audit, live Stripe verification, migrations/schema checks, build, and smoke tests before it can become READY.
 
-The complete certification prerequisites, opening procedure, and verified rollback procedure live in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control).
+The complete certification prerequisites, opening procedure, and rollback procedure live in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md#self-serve-billing-release-control). Treat rollback as prepared, not proven, until an exact-SHA rollback drill has been executed and recorded.
 
 Use the canonical runbook for the complete release, environment, provider-verification, and rollback procedure.

@@ -39,7 +39,6 @@ describe("design consolidation contracts", () => {
       "src/pages/SettingsPage.tsx",
       "src/pages/ClientAppsPage.tsx",
       "src/components/KnowledgeBaseClaude.tsx",
-      "src/components/integrations/IntegrationOperatingMap.tsx",
       "src/components/EmailInbox.tsx",
       "src/pages/BillingSettings.tsx",
     ];

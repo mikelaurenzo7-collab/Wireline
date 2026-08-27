@@ -30,13 +30,8 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
-    // Optional xAI hosts retained for curated server-proxied previews.
-    // Customer Studio tests use Vapi web (Daily); OpenAI Realtime is backup.
-    "https://api.x.ai",
-    "wss://api.x.ai",
-    // OpenAI Realtime: Studio + ChatGPT private voice mint ephemeral secrets
-    // server-side; the browser posts the WebRTC SDP offer to api.openai.com.
-    "https://api.openai.com",
+    // Realtime browser sessions exchange SDP through same-origin BotBound
+    // routes. Provider API keys and signaling endpoints stay server-side.
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
     "https://*.daily.co",

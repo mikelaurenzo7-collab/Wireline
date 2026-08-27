@@ -7,10 +7,11 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  * occurs through the OAuth-protected tool so every resulting draft belongs to
  * the connected BotBound workspace.
  *
- * Private voice in this hosted widget uses OpenAI Realtime WebRTC because
- * ChatGPT iframes may only connect to `https://api.openai.com`. That is not
- * the PSTN brain. Studio uses the same OpenAI Realtime WebRTC posture; phone
- * calls remain on xAI Speech-to-Speech (`grok-voice-think-fast-2.0`).
+ * Private voice in this hosted widget uses server-mediated OpenAI Realtime
+ * WebRTC. The iframe sends its SDP offer through the authenticated MCP tool
+ * and receives only an SDP answer, never a provider credential. That is not
+ * the PSTN brain: phone calls remain on xAI Speech-to-Speech
+ * (`grok-voice-think-fast-2.0`).
  *
  * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
  * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling
@@ -37,6 +38,7 @@ export function buildAccountBoundWidgetHtml(): string {
     channel: null,
     stream: null,
     remoteAudio: null,
+    endTimer: null,
   };
   const $ = (id) => document.getElementById(id);
   const status = (text) => { $("status").textContent = text || ""; };
@@ -59,6 +61,7 @@ export function buildAccountBoundWidgetHtml(): string {
   }
 
   function stopVoice() {
+    if (state.endTimer) clearTimeout(state.endTimer);
     if (state.channel) {
       try { state.channel.close(); } catch (_) {}
     }
@@ -77,6 +80,7 @@ export function buildAccountBoundWidgetHtml(): string {
     state.channel = null;
     state.stream = null;
     state.remoteAudio = null;
+    state.endTimer = null;
     $("voice").textContent = "Try private voice";
     $("live").classList.remove("show");
   }
@@ -145,7 +149,7 @@ export function buildAccountBoundWidgetHtml(): string {
       const timer = setTimeout(() => {
         state.pending.delete(id);
         reject(new Error("The request timed out."));
-      }, 30000);
+      }, 45000);
       state.pending.set(id, { resolve, reject, timer });
       window.parent.postMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } }, "*");
     });
@@ -268,18 +272,6 @@ export function buildAccountBoundWidgetHtml(): string {
     $("voice").disabled = true;
     status("Preparing a private voice simulation…");
     try {
-      const sessionResult = await callTool("start_private_voice_simulation", {
-        agent_id: state.agentId,
-        confirmed: true,
-      });
-      const parsed = readResult(sessionResult);
-      const session =
-        parsed.meta.realtime_session ||
-        (parsed.result && parsed.result._meta && parsed.result._meta.realtime_session);
-      const token = session && (session.token || session.value || session.client_secret);
-      const endpoint = (session && session.endpoint) || "https://api.openai.com/v1/realtime/calls";
-      if (!token) throw new Error("Private voice simulation is not available right now.");
-
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -314,19 +306,38 @@ export function buildAccountBoundWidgetHtml(): string {
       await peer.setLocalDescription(offer);
       await waitForIce(peer);
       const localSdp = peer.localDescription && peer.localDescription.sdp ? peer.localDescription.sdp : offer.sdp;
-      const sdpResponse = await fetch(String(endpoint), {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/sdp",
-        },
-        body: localSdp,
+      if (!localSdp || !String(localSdp).startsWith("v=")) {
+        throw new Error("Private voice simulation could not prepare a secure connection.");
+      }
+
+      const sessionResult = await callTool("start_private_voice_simulation", {
+        agent_id: state.agentId,
+        offer_sdp: localSdp,
+        confirmed: true,
       });
-      const answer = await sdpResponse.text();
-      if (!sdpResponse.ok || !String(answer).startsWith("v=")) {
+      const parsed = readResult(sessionResult);
+      const session =
+        parsed.meta.realtime_session ||
+        (parsed.result && parsed.result._meta && parsed.result._meta.realtime_session);
+      const answer = session && session.sdp;
+      if (!answer || !String(answer).startsWith("v=")) {
         throw new Error("Private voice simulation could not start.");
       }
-      await peer.setRemoteDescription({ type: "answer", sdp: answer });
+      await peer.setRemoteDescription({ type: "answer", sdp: String(answer) });
+
+      const declaredSeconds = Number(session.maxDurationSeconds);
+      const boundedSeconds = Number.isFinite(declaredSeconds)
+        ? Math.max(1, Math.min(300, Math.floor(declaredSeconds)))
+        : 300;
+      const declaredDeadline = Date.parse(String(session.endsAt || ""));
+      const remainingMs = Number.isFinite(declaredDeadline)
+        ? declaredDeadline - Date.now()
+        : boundedSeconds * 1000;
+      state.endTimer = setTimeout(() => {
+        if (state.peer !== peer) return;
+        stopVoice();
+        status("Private voice simulation ended at its five-minute safety limit.");
+      }, Math.max(0, Math.min(boundedSeconds * 1000, remainingMs)));
 
       const greeting = session.greeting && String(session.greeting).trim();
       if (greeting) {
@@ -343,7 +354,7 @@ export function buildAccountBoundWidgetHtml(): string {
 
       $("voice").textContent = "End private voice";
       $("live").classList.add("show");
-      status("Private simulation is on. Speak to your Bot.");
+      status("Private simulation is on. Speak to your Bot; it ends automatically within five minutes.");
     } catch (error) {
       stopVoice();
       status(

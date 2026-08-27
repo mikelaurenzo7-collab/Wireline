@@ -52,25 +52,28 @@ export default function StudioContextChrome() {
                 />
               </span>
               {agents.length > 1 ? (
-                <label className="relative min-w-0 max-w-[13rem] flex-1 sm:max-w-[18rem] sm:flex-none">
-                  <span className="sr-only">Active Bot</span>
-                  <select
-                    value={activeAgent.id}
-                    onChange={(event) => selectAgent(event.target.value)}
-                    aria-label="Switch Bot"
-                    className="wl-preserve-case h-9 w-full appearance-none truncate rounded-lg border border-transparent bg-transparent pl-2 pr-8 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted/55 focus:border-border focus:bg-card"
-                  >
-                    {agents.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </label>
+                <>
+                  <h1 className="sr-only">{activeAgent.name}</h1>
+                  <label className="relative min-w-0 max-w-[13rem] flex-1 sm:max-w-[18rem] sm:flex-none">
+                    <span className="sr-only">Active Bot</span>
+                    <select
+                      value={activeAgent.id}
+                      onChange={(event) => selectAgent(event.target.value)}
+                      aria-label="Switch Bot"
+                      className="wl-preserve-case h-9 w-full appearance-none truncate rounded-lg border border-transparent bg-transparent pl-2 pr-8 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted/55 focus:border-border focus:bg-card"
+                    >
+                      {agents.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </label>
+                </>
               ) : (
                 <h1 className="wl-preserve-case min-w-0 flex-1 truncate !whitespace-nowrap text-sm font-semibold text-foreground sm:max-w-[18rem] sm:flex-none">
                   {activeAgent.name}
@@ -89,7 +92,7 @@ export default function StudioContextChrome() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="size-9 px-0"
+                className="hidden size-9 px-0 lg:inline-flex"
                 aria-label={`Open ${activeAgent.name} Inbox`}
               >
                 <Link to={`/inbox?agent=${encodeURIComponent(activeAgent.id)}`}>
@@ -100,7 +103,7 @@ export default function StudioContextChrome() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="size-9 px-0"
+                className="hidden size-9 px-0 lg:inline-flex"
                 aria-label={`Open ${activeAgent.name} calls`}
               >
                 <Link to={`/phone?agent=${encodeURIComponent(activeAgent.id)}`}>

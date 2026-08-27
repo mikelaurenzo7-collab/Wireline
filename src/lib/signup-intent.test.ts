@@ -4,6 +4,7 @@ import {
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
+  signupTemplateLabel,
 } from "./signup-intent";
 
 describe("signup-intent", () => {
@@ -44,6 +45,14 @@ describe("signup-intent", () => {
 
   it("defaults unqualified signup traffic to Free Builder", () => {
     expect(recommendedPlanFromIntent(null)).toBe("personal");
+  });
+
+  it("preserves only a known role starter and renders its BotBound label", () => {
+    expect(parseSignupIntent("?plan=free&template=front-desk")?.preferredTemplateId).toBe(
+      "front-desk",
+    );
+    expect(signupTemplateLabel("front-desk")).toBe("Front Desk");
+    expect(parseSignupIntent("?template=not-a-real-role")).toBeNull();
   });
 
   it("drops unknown plan ids instead of preserving stale pricing walls", () => {

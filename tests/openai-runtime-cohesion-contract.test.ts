@@ -60,15 +60,17 @@ describe("OpenAI-first runtime cohesion across agent postures", () => {
     expect(architecture).toContain(
       "Primary: direct OpenAI Responses API using GPT-5.6 Terra by default",
     );
-    expect(architecture).toContain(
-      "Every Bot and call direction shares this same managed chain",
-    );
+    expect(architecture).toContain("Every Bot and call direction shares this same managed chain");
     expect(architecture).toContain("xAI Direct SIP");
     expect(grokDoc).toContain("it is not a Vapi live-call model id");
     expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
     expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
     expect(grokDoc).toContain("xAI rate limits are per team and per model");
-    expect(grokDoc).toContain("ChatGPT Apps iframes may only connect");
+    expect(grokDoc).toContain(
+      "Hosted MCP private voice simulation: server-mediated OpenAI Realtime WebRTC",
+    );
+    expect(grokDoc).toContain("the widget needs no direct provider CSP permission");
+    expect(grokDoc).not.toContain("ChatGPT Apps iframes may only connect");
     expect(grokDoc).toContain("Studio fails closed when `OPENAI_API_KEY`");
     expect(grokDoc).toContain("PSTN independently fails closed");
     expect(vendor).toContain(

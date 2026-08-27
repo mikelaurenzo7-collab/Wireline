@@ -29,14 +29,34 @@ describe("legacy browser account-entry handoff", () => {
     expect(canonicalLegacyBrowserHandoff({ origin, pathname: "/signup", search: "" })).toBeNull();
   });
 
-  it("never carries a fragment through the handoff", () => {
+  it("preserves a browser-only fragment through the handoff", () => {
     const location = {
       origin: "https://trywireline.com",
-      pathname: "/signup",
-      search: "?plan=starter",
-      hash: "#access-token",
+      pathname: "/reset-password",
+      search: "",
+      hash: "#token=reset-token",
     };
 
-    expect(canonicalLegacyBrowserHandoff(location)).toBe("https://botbound.me/signup?plan=starter");
+    expect(canonicalLegacyBrowserHandoff(location)).toBe(
+      "https://botbound.me/reset-password#token=reset-token",
+    );
+  });
+
+  it.each([
+    "/auth/oauth-complete",
+    "/auth/oauth-complete/",
+    "/oauth-complete",
+    "/oauth-complete/",
+    "/api/auth/google/callback",
+    "/api/oauth/google/callback",
+  ])("keeps host-bound route %s on the legacy origin", (pathname) => {
+    expect(
+      canonicalLegacyBrowserHandoff({
+        origin: "https://trywireline.com",
+        pathname,
+        search: "?code=provider-code",
+        hash: "#code=bridge-code",
+      }),
+    ).toBeNull();
   });
 });

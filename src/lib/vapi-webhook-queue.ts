@@ -29,6 +29,7 @@ import { eq } from "drizzle-orm";
 import { handleEndOfCallReport } from "./vapi-handlers";
 import { getErrorMessage } from "./server-utils";
 import { SENTIMENT_ANGRY_SIGNALS } from "./vapi-helpers";
+import { runVapiExternalEffectsIfAllowed } from "./vapi-external-effect-policy";
 
 export interface VapiWebhookPayload {
   message?: {
@@ -170,30 +171,36 @@ async function processConversationUpdateAsync(
   const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter((w) => combined.includes(w)).length;
   if (negativeHits < 1) return;
 
-  const { analyzeLiveSentiment } = await import("./gemini-brain");
-  const result = await analyzeLiveSentiment(combined);
+  await runVapiExternalEffectsIfAllowed({
+    userId,
+    action: "vapi_conversation_update_external_effects",
+    perform: async () => {
+      const { analyzeLiveSentiment } = await import("./gemini-brain");
+      const result = await analyzeLiveSentiment(combined);
 
-  if (result.escalate) {
-    await drizzle
-      .update(schema.signalPresence)
-      .set({
-        label: `🚨 Escalation Risk: ${result.reason}`,
-      })
-      .where(eq(schema.signalPresence.id, callId));
+      if (result.escalate) {
+        await drizzle
+          .update(schema.signalPresence)
+          .set({
+            label: `🚨 Escalation Risk: ${result.reason}`,
+          })
+          .where(eq(schema.signalPresence.id, callId));
 
-    const { NotificationService } = await import("./notifications");
-    const notifier = new NotificationService(userId, agentId);
-    await notifier.sendUrgentAlert({
-      title: "High Escalation Risk Detected",
-      message: `Live monitoring detected a high-stress situation: ${result.reason}`,
-      callId: callId,
-      metadata: { urgency: result.urgency },
-    });
+        const { NotificationService } = await import("./notifications");
+        const notifier = new NotificationService(userId, agentId);
+        await notifier.sendUrgentAlert({
+          title: "High Escalation Risk Detected",
+          message: `Live monitoring detected a high-stress situation: ${result.reason}`,
+          callId: callId,
+          metadata: { urgency: result.urgency },
+        });
 
-    log.warn("Circuit Breaker Tripped (async)", {
-      callId,
-      reason: result.reason,
-      urgency: result.urgency,
-    });
-  }
+        log.warn("Circuit Breaker Tripped (async)", {
+          callId,
+          reason: result.reason,
+          urgency: result.urgency,
+        });
+      }
+    },
+  });
 }

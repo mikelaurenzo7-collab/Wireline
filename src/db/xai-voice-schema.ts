@@ -1,4 +1,5 @@
-import { index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Durable platform binding between a Wireline/Twilio number and xAI Direct SIP.
@@ -55,6 +56,10 @@ export const xaiPhoneBindings = pgTable(
     ),
     xaiPhoneUnique: uniqueIndex("uq_xai_phone_bindings_xai_phone").on(table.xaiPhoneNumberId),
     xaiWebhookUnique: uniqueIndex("uq_xai_phone_bindings_xai_webhook").on(table.xaiWebhookId),
+    retiredOwnerIdentity: check(
+      "wireline_xai_binding_owner_identity",
+      sql`((${table.userId} = ${table.id} AND ${table.agentId} = ('retired:' || ${table.id}::text) AND ${table.status} IN ('retired', 'error')) OR (${table.userId} <> ${table.id} AND ${table.agentId} <> ('retired:' || ${table.id}::text) AND ${table.status} <> 'retired'))`,
+    ),
   }),
 ).enableRLS();
 

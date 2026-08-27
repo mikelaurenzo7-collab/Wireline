@@ -6,7 +6,7 @@ import { runTenantScopedPoolQuery, scopePgClientToTenant } from "./tenant-pool-t
 
 export { log, IS_PROD };
 
-import { AsyncLocalStorage } from "node:async_hooks";
+import { tenantStore } from "./tenant-context-store";
 import pkg from "pg";
 const { Pool } = pkg;
 import { eq } from "drizzle-orm";
@@ -117,7 +117,7 @@ const pool = databaseConnection
     })
   : createUnavailablePool();
 
-export const tenantStore = new AsyncLocalStorage<string>();
+export { tenantStore };
 
 type AwaitedTuple<T extends readonly unknown[]> = {
   -readonly [K in keyof T]: Awaited<T[K]>;

@@ -5,6 +5,7 @@ import { sendManagerAlert, sendDirectAlert } from "./twilio-service";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 /**
  * Unified notification service for manager alerts.
@@ -49,6 +50,14 @@ export class NotificationService {
     caller?: string;
     outcome?: string;
   }): Promise<void> {
+    const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+    if (!environmentPolicy.allowed) {
+      log.info("Win notification skipped for non-production workspace", {
+        userId: this.userId,
+        accountEnvironment: environmentPolicy.environment ?? "missing",
+      });
+      return;
+    }
     log.info("Sending win alert", { userId: this.userId, ...params });
     try {
       const { postAgentNotification } = await import("./slack-service");
@@ -74,6 +83,14 @@ export class NotificationService {
     callId?: string;
     metadata?: Record<string, any>;
   }): Promise<void> {
+    const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+    if (!environmentPolicy.allowed) {
+      log.info("Urgent customer notification skipped for non-production workspace", {
+        userId: this.userId,
+        accountEnvironment: environmentPolicy.environment ?? "missing",
+      });
+      return;
+    }
     log.info("Sending urgent alert", { userId: this.userId, agentId: this.agentId, ...params });
 
     // Resolve per-agent escalation overrides (escalation_phone +
@@ -220,6 +237,7 @@ export class NotificationService {
     try {
       const { sendUrgentEscalationEmail } = await import("./email-service");
       const result = await sendUrgentEscalationEmail({
+        userId: this.userId,
         to: emailOverride,
         title: params.title,
         message: params.message,

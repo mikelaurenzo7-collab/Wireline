@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { CheckCircle2, Loader2, Mail, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Mail, RefreshCw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
-import {
-  ConversationActivity,
-  ConversationMessage,
-  SearchField,
-  StatusNotice,
-} from "./molecules";
+import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 
 type OutcomeStatus = "open" | "waiting" | "escalated" | "booked" | "resolved";
 
@@ -120,6 +115,19 @@ function InboxLoadingState({ frameClass }: { frameClass: string }) {
   );
 }
 
+function EmailBackButton({ onBack }: { onBack: () => void }) {
+  return (
+    <button
+      type="button"
+      className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold text-primary lg:hidden"
+      onClick={onBack}
+    >
+      <ArrowLeft className="size-4" aria-hidden="true" />
+      Email
+    </button>
+  );
+}
+
 export default function EmailInbox({
   embedded = false,
   agentId,
@@ -203,6 +211,10 @@ export default function EmailInbox({
       setDetailError(null);
       return;
     }
+    // Never carry one conversation's detail into another selection. Without
+    // this reset, a failed second request can leave the previous sender and
+    // messages rendered under the newly selected list row.
+    setDetail(null);
     const controller = new AbortController();
     void loadThreadDetail(selectedId, controller.signal);
     return () => controller.abort();
@@ -242,9 +254,7 @@ export default function EmailInbox({
     if (!response.ok || !body?.thread)
       throw new Error(body?.error || "Could not update this conversation.");
     const updated = normalizeThread(body.thread);
-    setThreads((current) =>
-      current.map((thread) => (thread.id === updated.id ? updated : thread)),
-    );
+    setThreads((current) => current.map((thread) => (thread.id === updated.id ? updated : thread)));
     setDetail((current) => (current ? { ...current, thread: updated } : current));
   };
 
@@ -255,7 +265,9 @@ export default function EmailInbox({
     try {
       await persistOutcome(status);
     } catch (cause) {
-      setDetailError(cause instanceof Error ? cause.message : "Could not update this conversation.");
+      setDetailError(
+        cause instanceof Error ? cause.message : "Could not update this conversation.",
+      );
     } finally {
       setOutcomeBusy(null);
     }
@@ -275,9 +287,7 @@ export default function EmailInbox({
       } | null;
       if (!response.ok || !body?.handoff)
         throw new Error(body?.error || "Could not request a handoff.");
-      setDetail((current) =>
-        current ? { ...current, handoff: body.handoff || null } : current,
-      );
+      setDetail((current) => (current ? { ...current, handoff: body.handoff || null } : current));
       // Handoff creation and thread status are two durable writes. Do not route
       // the second through updateOutcome(): its user-action busy guard is
       // intentionally active while this handoff request is in flight.
@@ -301,9 +311,60 @@ export default function EmailInbox({
   }, [query, threads]);
 
   const selected = detail?.thread ?? threads.find((thread) => thread.id === selectedId) ?? null;
+  const hasSearch = query.trim().length > 0;
+  const listOwnsOnlyState = visibleThreads.length === 0;
   const frameClass = embedded
     ? "flex min-h-0 flex-1 flex-col overflow-hidden"
     : "wl-paper flex min-h-[620px] flex-1 flex-col overflow-hidden";
+
+  const outcomePanel = selected ? (
+    <>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <ConversationActivity
+          state="complete"
+          title="Last activity"
+          detail={formatTimestamp(selected.lastMessageAt)}
+        />
+        <ConversationActivity
+          state={activityState(selected.status)}
+          title="Status"
+          detail={OUTCOME_META[selected.status].label}
+        />
+        {detail?.handoff ? (
+          <ConversationActivity state="active" title="Handoff" detail={detail.handoff.status} />
+        ) : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(["waiting", "booked", "resolved"] as OutcomeStatus[]).map((status) => (
+          <Button
+            key={status}
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={Boolean(outcomeBusy) || selected.status === status}
+            onClick={() => void updateOutcome(status)}
+          >
+            {outcomeBusy === status ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="size-3.5" />
+            )}
+            {OUTCOME_META[status].label}
+          </Button>
+        ))}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={Boolean(outcomeBusy) || Boolean(detail?.handoff)}
+          onClick={() => void requestHandoff()}
+        >
+          {outcomeBusy === "handoff" ? <Loader2 className="size-3.5 animate-spin" /> : null}
+          Handoff
+        </Button>
+      </div>
+    </>
+  ) : null;
 
   if (loading && !threads.length) return <InboxLoadingState frameClass={frameClass} />;
 
@@ -326,9 +387,9 @@ export default function EmailInbox({
           disabled={syncing}
         >
           {syncing ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : (
-            <RefreshCw className="size-4" />
+            <RefreshCw className="size-4" aria-hidden="true" />
           )}
           <span className="hidden sm:inline">Refresh</span>
         </Button>
@@ -345,28 +406,45 @@ export default function EmailInbox({
         </StatusNotice>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]">
+      <div
+        className="wl-channel-inbox-grid grid min-h-0 flex-1 lg:grid-cols-[minmax(17rem,0.74fr)_minmax(0,1.26fr)]"
+        data-empty={listOwnsOnlyState ? "true" : undefined}
+      >
         <div
-          className={`min-h-0 overflow-y-auto ${selectedId ? "hidden lg:block" : "block"} border-r border-border`}
+          className={`min-h-0 overflow-y-auto ${listOwnsOnlyState ? "block" : selectedId ? "hidden lg:block" : "block"} border-r border-border`}
         >
           {error && !threads.length ? (
             <EmptyState
-              icon={<Mail className="size-5" />}
+              icon={<Mail className="size-5" aria-hidden="true" />}
               title="Inbox unavailable"
               description={error}
               density="compact"
               action={
-                <Button type="button" variant="secondary" size="sm" onClick={() => void loadThreads()}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void loadThreads()}
+                >
                   Retry
                 </Button>
               }
             />
+          ) : hasSearch && !visibleThreads.length ? (
+            <EmptyState
+              icon={<Mail className="size-5" aria-hidden="true" />}
+              title="No matching email"
+              description="Try a different sender, subject, status, or keyword."
+              density="compact"
+            />
           ) : !visibleThreads.length ? (
             <EmptyState
-              icon={<Mail className="size-5" />}
+              icon={<Mail className="size-5" aria-hidden="true" />}
               title={agentId ? "No email for this Bot" : "No email yet"}
               description={
-                agentId || accountId ? undefined : "Connected mailbox conversations will appear here."
+                agentId || accountId
+                  ? undefined
+                  : "Connected mailbox conversations will appear here."
               }
               density="compact"
               action={
@@ -385,7 +463,11 @@ export default function EmailInbox({
                   <li key={thread.id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedId(thread.id)}
+                      onClick={() => {
+                        setDetail(null);
+                        setDetailError(null);
+                        setSelectedId(thread.id);
+                      }}
                       aria-pressed={active}
                       className={`w-full px-4 py-3 text-left transition-colors ${
                         active ? "bg-primary/7" : "hover:bg-muted/45"
@@ -417,33 +499,54 @@ export default function EmailInbox({
           )}
         </div>
 
-        <div className={`min-h-0 ${selectedId ? "block" : "hidden lg:block"}`}>
+        <div
+          className={`min-h-0 ${listOwnsOnlyState ? "hidden" : selectedId ? "block" : "hidden lg:block"}`}
+        >
           {!selectedId ? (
             <EmptyState
-              icon={<Mail className="size-5" />}
+              icon={<Mail className="size-5" aria-hidden="true" />}
               title="Select a conversation"
               density="compact"
             />
           ) : detailLoading ? (
-            <div className="grid h-full place-items-center text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="size-4 animate-spin" /> Loading…
-              </span>
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="mx-4 mt-3">
+                <EmailBackButton onBack={() => setSelectedId(null)} />
+              </div>
+              <div className="grid min-h-0 flex-1 place-items-center text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading…
+                </span>
+              </div>
             </div>
-          ) : detailError ? (
-            <StatusNotice tone="destructive" title="Conversation unavailable" className="m-4">
-              {detailError}
-            </StatusNotice>
+          ) : detailError && !detail ? (
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="mx-4 mt-3">
+                <EmailBackButton onBack={() => setSelectedId(null)} />
+              </div>
+              <EmptyState
+                icon={<Mail className="size-5" aria-hidden="true" />}
+                title="Conversation unavailable"
+                description={detailError}
+                density="compact"
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void loadThreadDetail(selectedId)}
+                  >
+                    Retry
+                  </Button>
+                }
+              />
+            </div>
           ) : selected ? (
             <div className="flex h-full min-h-0 flex-col">
               <header className="border-b border-border px-4 py-3 sm:px-5">
-                <button
-                  type="button"
-                  className="mb-2 text-xs font-semibold text-primary lg:hidden"
-                  onClick={() => setSelectedId(null)}
-                >
-                  Back
-                </button>
+                <div className="mb-2 lg:hidden">
+                  <EmailBackButton onBack={() => setSelectedId(null)} />
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="wl-preserve-case truncate text-base font-semibold text-foreground">
@@ -458,6 +561,16 @@ export default function EmailInbox({
                   </Badge>
                 </div>
               </header>
+
+              {detailError ? (
+                <StatusNotice
+                  tone="destructive"
+                  title="Conversation needs attention"
+                  className="m-3 sm:m-4"
+                >
+                  {detailError}
+                </StatusNotice>
+              ) : null}
 
               <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
                 {detail?.messages.length ? (
@@ -478,63 +591,27 @@ export default function EmailInbox({
                     })}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No message body is available yet.
-                  </p>
+                  <p className="text-sm text-muted-foreground">No message body is available yet.</p>
                 )}
               </div>
 
-              <footer className="border-t border-border p-3 sm:p-4">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <ConversationActivity
-                    state="complete"
-                    title="Last activity"
-                    detail={formatTimestamp(selected.lastMessageAt)}
-                  />
-                  <ConversationActivity
-                    state={activityState(selected.status)}
-                    title="Status"
-                    detail={OUTCOME_META[selected.status].label}
-                  />
-                  {detail?.handoff ? (
-                    <ConversationActivity
-                      state="active"
-                      title="Handoff"
-                      detail={detail.handoff.status}
-                    />
-                  ) : null}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(["waiting", "booked", "resolved"] as OutcomeStatus[]).map((status) => (
-                    <Button
-                      key={status}
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={Boolean(outcomeBusy) || selected.status === status}
-                      onClick={() => void updateOutcome(status)}
-                    >
-                      {outcomeBusy === status ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="size-3.5" />
-                      )}
-                      {OUTCOME_META[status].label}
-                    </Button>
-                  ))}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={Boolean(outcomeBusy) || Boolean(detail?.handoff)}
-                    onClick={() => void requestHandoff()}
-                  >
-                    {outcomeBusy === "handoff" ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : null}
-                    Handoff
-                  </Button>
-                </div>
+              <footer className="shrink-0 border-t border-border bg-card/35">
+                <details className="group sm:hidden">
+                  <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground">
+                    <span>Outcome</span>
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span className="max-w-28 truncate font-normal">
+                        {OUTCOME_META[selected.status].label}
+                      </span>
+                      <ChevronDown
+                        className="size-3.5 transition-transform group-open:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </summary>
+                  <div className="border-t border-border p-3">{outcomePanel}</div>
+                </details>
+                <div className="hidden p-4 sm:block">{outcomePanel}</div>
               </footer>
             </div>
           ) : null}

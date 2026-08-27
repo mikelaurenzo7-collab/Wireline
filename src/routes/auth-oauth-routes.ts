@@ -80,7 +80,7 @@ export function getOAuthProviderAvailability(): OAuthProviderAvailability {
 }
 
 router.get("/api/auth/providers", (_req: Request, res: Response) => {
-  res.set("Cache-Control", "no-store, max-age=0");
+  res.set("Cache-Control", "private, no-store, max-age=0");
   return res.json({ providers: getOAuthProviderAvailability() });
 });
 

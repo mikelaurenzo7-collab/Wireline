@@ -1,16 +1,23 @@
-type McpDraftSource = "chatgpt_mcp" | "claude_mcp" | "cursor_mcp";
+type SafeRealtimeSession = {
+  sdp: string;
+  maxDurationSeconds: number;
+  endsAt: string;
+  wireline?: Record<string, unknown>;
+};
 
 export function mcpVoiceSimulationMeta(input: {
-  draftSource: McpDraftSource;
-  session: Record<string, unknown>;
+  session: SafeRealtimeSession;
   agentId: string;
   greeting: string;
-}): { realtime_session?: Record<string, unknown>; agent_id: string } {
-  if (input.draftSource === "chatgpt_mcp") {
-    return {
-      realtime_session: { ...input.session, greeting: input.greeting },
-      agent_id: input.agentId,
-    };
-  }
-  return { agent_id: input.agentId };
+}): { realtime_session: Record<string, unknown>; agent_id: string } {
+  return {
+    realtime_session: {
+      sdp: input.session.sdp,
+      maxDurationSeconds: input.session.maxDurationSeconds,
+      endsAt: input.session.endsAt,
+      ...(input.session.wireline ? { wireline: input.session.wireline } : {}),
+      greeting: input.greeting,
+    },
+    agent_id: input.agentId,
+  };
 }

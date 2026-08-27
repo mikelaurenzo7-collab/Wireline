@@ -184,7 +184,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(withdrawn).toBeGreaterThan(created);
     expect(reinstated).toBeGreaterThan(withdrawn);
     expect(middleware).toContain("dispute_financial_movement: false");
-    expect(middleware).toContain('expand: ["balance_transactions"]');
+    expect(middleware).not.toContain('expand: ["balance_transactions"]');
     expect(middleware).not.toContain('eventType === "charge.dispute.closed"');
   });
 
@@ -256,12 +256,14 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     ).toThrow(/inconsistent settlement currencies/);
   });
 
-  it("scales allowance by both movement share and base-plan share", () => {
-    expect(subscriptionDisputeAllowancePortion(2_500, 10_000, 0.8)).toBeCloseTo(0.2);
+  it("uses base-plan share for eligibility without double-discounting mixed invoices", () => {
+    expect(subscriptionDisputeAllowancePortion(2_500, 10_000, 0.8)).toBeCloseTo(0.25);
     expect(subscriptionDisputeAllowancePortion(5_000, 10_000, 1)).toBeCloseTo(0.5);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 1)).toBe(1);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 0)).toBe(0);
-    expect(subscriptionDisputeAllowancePortion(12_000, 10_000, 0.75)).toBe(0.75);
+    expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 0.75)).toBe(1);
+    expect(subscriptionDisputeAllowancePortion(12_000, 10_000, 0.75)).toBe(1);
+    expect(subscriptionDisputeAllowancePortion(500, 0, 0.75)).toBe(1);
     expect(subscriptionDisputeAllowancePortion(-1, 10_000, 1)).toBe(0);
   });
 
@@ -354,9 +356,19 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(failureBlock).not.toContain("res.json");
   });
 
-  it("claims events before acknowledging movements", () => {
+  it("claims events before acknowledging movements and reclaims stale work once", () => {
     expect(middleware).toContain("claimStripeEventForPreflight");
     expect(middleware).toContain("markStripeEventProcessed");
     expect(middleware).toContain("releaseStripeEventClaim");
+
+    const claimStart = middleware.indexOf("async function claimStripeEventForPreflight");
+    const claimEnd = middleware.indexOf("async function markStripeEventProcessed", claimStart);
+    const claim = middleware.slice(claimStart, claimEnd);
+    expect(claimStart).toBeGreaterThan(-1);
+    expect(claimEnd).toBeGreaterThan(claimStart);
+    expect(claim).toContain("lt(schema.stripeEvents.processedAt, cutoff)");
+    expect(claim).toContain(".returning({ eventId: schema.stripeEvents.eventId })");
+    expect(claim).toContain('return "in_flight"');
+    expect(claim).not.toContain("releaseStripeEventClaim(event.id)");
   });
 });

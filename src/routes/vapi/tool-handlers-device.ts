@@ -11,7 +11,10 @@
  * never gains control of someone's phone.
  */
 import { notifyDeviceAction } from "../../lib/mobile-push";
+import { assertLiveExternalActionAllowed } from "../../lib/account-environment-policy";
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+const LIVE_DEVICE_TOOLS = new Set(["navigate_to", "add_reminder", "play_music"]);
 
 export async function handleDeviceToolCall(
   fn: string,
@@ -24,6 +27,19 @@ export async function handleDeviceToolCall(
     toolCallId,
     result: "I can't reach your phone right now, try again in a moment.",
   });
+
+  if (LIVE_DEVICE_TOOLS.has(fn)) {
+    if (!agent?.user_id) return unavailable();
+    try {
+      await assertLiveExternalActionAllowed(agent.user_id, `vapi_${fn}`);
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "That phone action is disabled in this workspace. Do not claim it ran; continue without it.",
+      };
+    }
+  }
 
   if (fn === "navigate_to") {
     const destination = String(args?.destination || "").trim();

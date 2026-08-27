@@ -12,6 +12,18 @@ describe("production Vapi v2 webhook contracts", () => {
     expect(webhook).toContain('router.post("/api/vapi-webhook"');
   });
 
+  it("bounds unauthenticated provider traffic before signature work", () => {
+    const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
+    const authStart = webhook.indexOf("evaluateVapiWebhookAuth(req)", routeStart);
+    const admission = webhook.slice(routeStart, authStart);
+
+    expect(webhook).toContain('bucket: "provider:vapi-webhook"');
+    expect(webhook).toContain("const vapiWebhookRateLimiter = createIpRateLimiter({");
+    expect(routeStart).toBeGreaterThan(-1);
+    expect(authStart).toBeGreaterThan(routeStart);
+    expect(admission).toContain("vapiWebhookRateLimiter");
+  });
+
   it("ports showcase, billing, tools, and presence from legacy v1", () => {
     expect(webhook).toContain("findShowcaseAgentByPayload");
     expect(webhook).toContain("dispatchAgentToolCall");

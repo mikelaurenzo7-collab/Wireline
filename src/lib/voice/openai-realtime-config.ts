@@ -1,5 +1,8 @@
-export const OPENAI_REALTIME_DEFAULT_MODEL =
-  process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1";
+import { OPENAI_REALTIME_PRICING_MODEL } from "./openai-realtime-pricing";
+
+// Pricing/admission is certified for this model. An environment override may
+// not silently move sessions onto a differently priced model.
+export const OPENAI_REALTIME_DEFAULT_MODEL = OPENAI_REALTIME_PRICING_MODEL;
 export const OPENAI_REALTIME_DEFAULT_VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
 export const OPENAI_REALTIME_DEFAULT_TRANSCRIBER =
   process.env.OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe";

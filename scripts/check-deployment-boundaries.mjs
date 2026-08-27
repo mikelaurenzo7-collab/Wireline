@@ -47,6 +47,8 @@ if (isProduction) {
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
   requireValue("TWILIO_AUTH_TOKEN", "Twilio callbacks cannot be verified");
+  requireValue("AGENTMAIL_API_KEY", "paid Bot managed-email provisioning is missing");
+  requireValue("AGENTMAIL_DEFAULT_DOMAIN", "BotBound managed-email domain is missing");
   requireValue("PLATFORM_SMS_FROM", "platform SMS escalation routing is missing");
   requireValue("STRIPE_SECRET_KEY", "production billing is missing");
   requireValue("STRIPE_WEBHOOK_SECRET", "Stripe callbacks cannot be verified");
@@ -56,11 +58,37 @@ if (isProduction) {
   requireValue("UPSTASH_REDIS_REST_TOKEN", "distributed rate limiting cannot authenticate");
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   canonicalProductionUrl("APP_URL", true);
-  canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", false);
+  canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true);
+  const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
+  if (
+    managedEmailDomain &&
+    managedEmailDomain !== "botbound.me" &&
+    !managedEmailDomain.endsWith(".botbound.me")
+  ) {
+    failures.push(
+      "AGENTMAIL_DEFAULT_DOMAIN: production managed mailboxes must use botbound.me or a BotBound subdomain",
+    );
+  }
+  if (value("WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD")) {
+    const realtimeReserveUsd = Number(value("WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD"));
+    if (!Number.isFinite(realtimeReserveUsd) || realtimeReserveUsd < 1) {
+      failures.push(
+        "WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: production must be a finite USD amount of at least 1.00 per five-minute gpt-realtime-2.1 session",
+      );
+    }
+  }
+  if (
+    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER") &&
+    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER").toLowerCase() !== "openai"
+  ) {
+    failures.push(
+      "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai; other providers are continuity lanes only",
+    );
+  }
 
   if (value("VITE_VAPI_PUBLIC_KEY")) {
     failures.push(
-      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use Wireline tickets and native xAI ephemeral sessions",
+      "VITE_VAPI_PUBLIC_KEY: retired browser credential must be removed before production; public previews use one-use BotBound tickets and server-mediated OpenAI WebRTC",
     );
   }
 
@@ -99,6 +127,7 @@ if (isProduction) {
 }
 
 const productionOnlyPreviewKeys = [
+  "AGENTMAIL_DEFAULT_DOMAIN",
   "APOLLO_CLIENT_ID",
   "APP_URL",
   "CORS_ORIGINS",
@@ -119,10 +148,12 @@ const productionOnlyPreviewKeys = [
   "SLACK_CLIENT_ID",
   "SQUARE_APPLICATION_ID",
   "TWILIO_ACCOUNT_SID",
+  "TWILIO_WEBHOOK_BASE_URL",
   "UPSTASH_REDIS_REST_URL",
   "VITE_STRIPE_PUBLIC_KEY",
   "VITE_VAPI_PUBLIC_KEY",
   "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA",
+  "WIRELINE_RECONCILE_STRIPE_PORTAL",
   "X_CLIENT_ID",
   "YAHOO_CLIENT_ID",
   "ZOOM_CLIENT_ID",
@@ -143,17 +174,11 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  *   may use; when configured it must be a dedicated budget-capped preview key.
  *
  * xAI:
- * - XAI_API_KEY may be present on Preview when it is a dedicated sandbox key
- *   provisioned by the operator. Preview runtime uses that same env var for
- *   structured chat, TTS, and ephemeral browser sessions.
- * - Native PSTN still requires Twilio production-only credentials, so preview
- *   xAI spend cannot place carrier calls.
+ * - XAI_API_KEY is the live production credential and is never accepted by a
+ *   Preview build. A future sandbox must use a separately named variable and
+ *   receive its own explicit reviewed policy before it can cross this boundary.
  */
-const reviewedPreviewCredentialKeys = new Set([
-  "PERPLEXITY_API_KEY",
-  "PERPLEXITY_PREVIEW_API_KEY",
-  "XAI_API_KEY",
-]);
+const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);

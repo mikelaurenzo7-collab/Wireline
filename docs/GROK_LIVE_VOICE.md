@@ -6,10 +6,10 @@ Production PSTN uses BotBound-owned Twilio plus xAI Direct SIP Speech-to-Speech 
 
 Do not collapse these into one "Grok voice" id.
 
-| Surface | What xAI actually is | Model / id |
-| --- | --- | --- |
-| Structured continuity | xAI Responses API (`https://api.x.ai/v1/responses`) | `grok-4.6` — optional text/image-in continuity after OpenAI and the governed Gateway |
-| Live PSTN | Native Speech-to-Speech over Twilio SIP | `grok-voice-think-fast-2.0`. **`grok-4.6` is not a live-call model.** |
+| Surface                       | What xAI actually is                                 | Model / id                                                                                                                      |
+| ----------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Structured continuity         | xAI Responses API (`https://api.x.ai/v1/responses`)  | `grok-4.6` — optional text/image-in continuity after OpenAI and the governed Gateway                                            |
+| Live PSTN                     | Native Speech-to-Speech over Twilio SIP              | `grok-voice-think-fast-2.0`. **`grok-4.6` is not a live-call model.**                                                           |
 | Direct Speech-to-Speech alias | `wss://api.x.ai/v1/realtime?model=grok-voice-latest` | `grok-voice-latest` aliases `grok-voice-think-fast-2.0`. BotBound pins the versioned id; this browser experiment is not Studio. |
 
 Official Speech-to-Speech page: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech
@@ -18,8 +18,8 @@ Official Speech-to-Speech page: https://docs.x.ai/developers/model-capabilities/
 
 - Structured reasoning: direct OpenAI Responses API using GPT-5.6 Terra by default, then Vercel AI Gateway, direct xAI Grok 4.6, and Gemini continuity. Direct xAI continuity can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false` without disabling PSTN.
 - Browser and mobile live tests: OpenAI Realtime `gpt-realtime-2.1` over authenticated WebRTC. The server loads tenant-owned Training context, mints a short-lived secret, exchanges SDP, and returns only the answer to the browser.
-- Public/guest voice previews: native xAI browser demo with one-use tickets. Public PSTN demo numbers may still land on the rollback Vapi webhook until those lines are re-registered on xAI SIP.
-- ChatGPT private voice simulation: OpenAI Realtime WebRTC via ephemeral client secrets (`OPENAI_API_KEY_CHATKIT` when set). It shares Studio's browser provider while remaining an isolated account-bound widget. ChatGPT Apps iframes may only connect to explicitly allowed domains, including `https://api.openai.com` for this flow.
+- Public/guest browser previews: server-mediated, tool-free OpenAI Realtime WebRTC with short abuse limits and an authoritative call deadline. Public PSTN demo numbers are a separate lane and may still land on the rollback Vapi webhook until those lines are re-registered on xAI SIP.
+- Hosted MCP private voice simulation: server-mediated OpenAI Realtime WebRTC (`OPENAI_API_KEY_CHATKIT` when set). The widget sends its SDP offer through the OAuth-protected tool and receives only the bound SDP answer. Provider credentials stay server-side, the call is durably scheduled to end within five minutes, and the widget needs no direct provider CSP permission.
 - Production PSTN: Twilio carrier + xAI Direct SIP. Inbound webhooks at `/api/webhooks/xai/voice`. Outbound: Twilio customer leg, then signed `<Sip>` bridge to the tenant's registered xAI number. Grok 4.6 is the xAI Responses API text model for structured work; it is not a Vapi live-call model id.
 - Custom phone voices: Vapi-supported streaming voice-library workflow only after consent, rights, latency, fallback, and telephony verification, and only on the rollback path. Native SIP uses the xAI Eve/Ara/Rex/Sal/Leo roster. Live Video is retired. Audio-file tools are marketing/demo asset generators, not live PSTN runtime engines.
 - There is no work-companion API and no Grok Bot companion runtime. Users talk to one agent on phone, email, and text. Do not call Grok Bot from Express or Vapi.
@@ -32,19 +32,18 @@ xAI Console API keys are Bearer tokens on `https://api.x.ai`. One key can authen
 
 Grok 4.6 (chat) and `grok-voice-think-fast-2.0` (Speech-to-Speech) are different models. That does not mean they need different API keys. xAI rate limits are per team and per model (text RPS/TPM; Voice concurrent sessions). Two Wireline keys do not isolate those budgets, do not give chat and voice separate GPUs, and do not reduce latency. Latency is per model and endpoint, not per API key. A second production env var only adds rotation, Vercel drift, and split-brain outages (voice down while chat is up).
 
-| Work | Credential | Notes |
-| --- | --- | --- |
-| Structured continuity (`grok-4.6`) | `XAI_API_KEY` | Optional direct Responses API lane after OpenAI and the Gateway |
-| Browser preview TTS (`/v1/tts`) | `XAI_API_KEY` | Same key; grant the voice endpoint ACL |
-| Live PSTN native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` plus `XAI_SIP_ALLOWED_ADDRESSES` | SIP sessions authenticate with the API key. Studio does not use this credential. |
-| Isolated xAI experiments | `XAI_API_KEY_CHATKIT` | Optional. Not required to split chat from voice. |
-| Vercel Preview sandbox | `XAI_API_KEY` | Dedicated sandbox key only. Reviewed at `scripts/check-deployment-boundaries.mjs`. Native PSTN stays fail-closed without Twilio Preview credentials. |
-| Imagine photos and video | none | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key. |
-| Vapi rollback | `VAPI_PRIVATE_KEY` | Optional. Not a production launch requirement. |
+| Work                                                                     | Credential                                     | Notes                                                                                                                                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Structured continuity (`grok-4.6`)                                       | `XAI_API_KEY`                                  | Optional direct Responses API lane after OpenAI and the Gateway                                                                                      |
+| Server-managed TTS (`/v1/tts`)                                           | `XAI_API_KEY`                                  | Same production-only key; grant the voice endpoint ACL                                                                                               |
+| Live PSTN native S2S (`grok-voice-think-fast-2.0` + Eve/Ara/Rex/Sal/Leo) | `XAI_API_KEY` plus `XAI_SIP_ALLOWED_ADDRESSES` | SIP sessions authenticate with the API key. Studio does not use this credential.                                                                     |
+| Isolated xAI experiments                                                 | `XAI_API_KEY_CHATKIT`                          | Optional. Not required to split chat from voice.                                                                                                     |
+| Imagine photos and video                                                 | none                                           | Not offered. Images and videos are watermarked with no official off switch. Omit image/video ACLs on the production key.                             |
+| Vapi rollback                                                            | `VAPI_PRIVATE_KEY`                             | Optional. Not a production launch requirement.                                                                                                       |
 
-Do not add `XAI_API_KEY_VOICE`. Optional Grok continuity, preview TTS, and native PSTN share `XAI_API_KEY`; Studio uses `OPENAI_API_KEY`.
+Do not add `XAI_API_KEY_VOICE`. Optional Grok continuity, server-managed TTS, and native PSTN share the Production-only `XAI_API_KEY`; Studio uses `OPENAI_API_KEY`.
 
-## Speech-to-Speech (Wireline production PSTN)
+## Speech-to-Speech (BotBound production PSTN)
 
 Source: https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech and linked pages (ephemeral tokens, SIP, custom voices, pricing, REST voice reference).
 
@@ -85,11 +84,11 @@ Studio is a private browser rehearsal surface, not an automatic PSTN failover or
 
 "Realtime" is a protocol name, not permission to collapse independent browser and PSTN release lanes.
 
-| Surface | Brain | Why |
-| --- | --- | --- |
-| Production PSTN | `grok-voice-think-fast-2.0` over Twilio SIP | The agent you ship |
-| Studio / mobile live test | OpenAI Realtime (`gpt-realtime-2.1`) WebRTC | Authenticated private rehearsal with tenant-owned Training context; cannot place calls |
-| ChatGPT App private simulation | OpenAI Realtime (`gpt-realtime-2.1`) WebRTC | Account-bound OpenAI-hosted widget; cannot place calls |
+| Surface                        | Brain                                       | Why                                                                                    |
+| ------------------------------ | ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Production PSTN                | `grok-voice-think-fast-2.0` over Twilio SIP | The agent you ship                                                                     |
+| Studio / mobile live test      | OpenAI Realtime (`gpt-realtime-2.1`) WebRTC | Authenticated private rehearsal with tenant-owned Training context; cannot place calls |
+| ChatGPT App private simulation | OpenAI Realtime (`gpt-realtime-2.1`) WebRTC | Account-bound OpenAI-hosted widget; cannot place calls                                 |
 
 xAI Speech-to-Speech speaks an OpenAI-compatible event protocol (`session.update`, `response.output_audio.delta`), but protocol shape does not make it OpenAI. PSTN transport remains `api.x.ai` with Think Fast; Studio transport remains OpenAI Realtime. Do not treat Grok 4.6 as a live-call model.
 

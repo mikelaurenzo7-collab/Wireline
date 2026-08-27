@@ -91,7 +91,7 @@ function DangerZone() {
       setRenewalStopNeedsAttention(renewalNeedsAttention);
       setDeletionScheduled(true);
       const renewalDetail = renewalNeedsAttention
-        ? " We could not confirm that subscription renewal stopped. Contact support@trywireline.com now so we can resolve billing without delaying deletion."
+        ? " We could not confirm that subscription renewal stopped. Contact BotBound Support now so we can resolve billing without delaying deletion."
         : " Future subscription renewal is stopped. Paid access may remain available through the current billing period.";
       setMessage(
         data?.already_pending
@@ -291,7 +291,7 @@ export default function SettingsPage() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Account" titleHidden />
 

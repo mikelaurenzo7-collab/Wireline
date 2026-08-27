@@ -1,9 +1,10 @@
 import express, { type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
+import { acquireAccountDeletionFence } from "../lib/account-deletion-fence";
 import {
   SELF_SERVE_BILLING_BLOCK,
   selfServeBillingBlockResponse,
@@ -24,8 +25,29 @@ import { auditLogger, drizzle, log } from "../lib/server-context";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
+import {
+  FairKeyedConcurrencyGate,
+  FairKeyedConcurrencyGateAdmissionError,
+  type FairKeyedConcurrencyPermit,
+} from "../lib/fair-keyed-concurrency-gate";
 
 const router = express.Router();
+
+// Every process owns a five-connection pool. Extra-agent mutations hold one
+// connection across Stripe settlement so they can preserve the exact capacity
+// and deletion locks. Admit at most two, leaving three connections for auth,
+// webhooks, deletion, and ordinary product traffic. Cross-instance correctness
+// remains owned by the database advisory locks inside the transaction.
+const EXTRA_AGENT_BILLING_CONCURRENCY = 2;
+const EXTRA_AGENT_BILLING_MAX_QUEUE = 8;
+const EXTRA_AGENT_BILLING_WAIT_MS = 5_000;
+const EXTRA_AGENT_BILLING_RETRY_AFTER_SECONDS = 5;
+const extraAgentBillingGate = new FairKeyedConcurrencyGate(
+  EXTRA_AGENT_BILLING_CONCURRENCY,
+  EXTRA_AGENT_BILLING_MAX_QUEUE,
+  EXTRA_AGENT_BILLING_WAIT_MS,
+);
 
 type RouteOutcome = {
   status: number;
@@ -46,6 +68,32 @@ function paymentRequiredOutcome(): RouteOutcome {
         "We couldn't collect payment for the additional agents. Update your payment method and try again.",
     },
   };
+}
+
+function billingBusyResponse(res: Response) {
+  return res.set("Retry-After", String(EXTRA_AGENT_BILLING_RETRY_AFTER_SECONDS)).status(429).json({
+    code: "BILLING_BUSY",
+    error: "Another billing change is still settling. Try again in a few seconds.",
+  });
+}
+
+/** Match only PostgreSQL's lock-timeout shape, never generic DB failures. */
+function isPostgresLockTimeout(error: unknown): boolean {
+  let current = error as { code?: unknown; message?: unknown; cause?: unknown } | null;
+  for (let depth = 0; current && depth < 3; depth += 1) {
+    if (
+      current.code === "55P03" &&
+      typeof current.message === "string" &&
+      /lock timeout/i.test(current.message)
+    ) {
+      return true;
+    }
+    current =
+      current.cause && typeof current.cause === "object"
+        ? (current.cause as { code?: unknown; message?: unknown; cause?: unknown })
+        : null;
+  }
+  return false;
 }
 
 async function validateFounderCatalogPriceId(priceId: string): Promise<string | null> {
@@ -85,9 +133,61 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
     throw AppError.fromHttpStatus(400, "count must be an integer 0-100");
   }
 
+  const environmentPolicy = await liveExternalActionPolicyForUser(req.user.id);
+  if (!environmentPolicy.allowed) {
+    return res.status(environmentPolicy.status).json({
+      code: environmentPolicy.code,
+      error: environmentPolicy.message,
+    });
+  }
+
+  // Stop queued work when the caller disappears. Once a permit is granted the
+  // exact transaction must run to a definitive commit/rollback; canceling a
+  // Stripe mutation halfway through would make its provider outcome ambiguous.
+  const queueAbort = new AbortController();
+  const abortQueuedRequest = () => queueAbort.abort();
+  req.once("aborted", abortQueuedRequest);
+  res.once("close", abortQueuedRequest);
+  if (req.aborted) queueAbort.abort();
+
+  let billingPermit: FairKeyedConcurrencyPermit;
   try {
+    billingPermit = await extraAgentBillingGate.acquire({
+      key: req.user.id,
+      signal: queueAbort.signal,
+    });
+  } catch (error) {
+    if (error instanceof FairKeyedConcurrencyGateAdmissionError) {
+      if (error.reason === "aborted") return;
+      return billingBusyResponse(res);
+    }
+    throw error;
+  } finally {
+    req.off("aborted", abortQueuedRequest);
+    res.off("close", abortQueuedRequest);
+  }
+
+  try {
+    if (queueAbort.signal.aborted) return;
     const outcome = await drizzle.transaction(async (tx): Promise<RouteOutcome> => {
+      // Bound both advisory-lock acquisition and any row-lock wait. Only the
+      // exact 55P03 lock-timeout shape maps to BILLING_BUSY below; connection,
+      // statement, serialization, and provider failures retain their existing
+      // error posture.
+      await tx.execute(sql`SET LOCAL lock_timeout = '5s'`);
+      await acquireAccountDeletionFence(tx, req.user.id);
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+
+      const [deletion] = await tx
+        .select({ id: schema.deletionQueue.id })
+        .from(schema.deletionQueue)
+        .where(
+          and(
+            eq(schema.deletionQueue.userId, req.user.id),
+            inArray(schema.deletionQueue.status, ["pending", "purging"]),
+          ),
+        )
+        .limit(1);
 
       const [row] = await tx
         .select({
@@ -139,7 +239,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
             status: 503,
             body: {
               code: "SERVICE_UNAVAILABLE",
-              error: "Stripe is not configured, so extra-agent entitlement changes are paused.",
+              error: "Billing is temporarily unavailable, so Bot-capacity changes are paused.",
             },
           };
         }
@@ -205,6 +305,16 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       const existing = matchingItems[0];
       const currentStripeQuantity = extraAgentQuantity(matchingItems);
       const isIncrease = target > currentStripeQuantity;
+
+      if (deletion && isIncrease) {
+        return {
+          status: 409,
+          body: {
+            code: "ACCOUNT_DELETION_PENDING",
+            error: "Cancel the pending account deletion before purchasing more Bot capacity.",
+          },
+        };
+      }
 
       // Release control blocks only provider-authoritative increases. Existing
       // customers can still decrease, cancel, and reconcile while launch is closed.
@@ -310,7 +420,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           status: 502,
           body: {
             code: "BAD_GATEWAY",
-            error: "Stripe could not update agent capacity. No local entitlement was changed.",
+            error: "Billing could not update Bot capacity. No local entitlement was changed.",
           },
         };
       }
@@ -338,7 +448,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           body: {
             code: "BILLING_RECONCILIATION_REQUIRED",
             error:
-              "Stripe did not confirm the requested capacity. No local entitlement was changed.",
+              "Billing did not confirm the requested capacity. No local entitlement was changed.",
           },
         };
       }
@@ -364,6 +474,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
 
     return res.status(outcome.status).json(outcome.body);
   } catch (error) {
+    if (isPostgresLockTimeout(error)) return billingBusyResponse(res);
     if (error instanceof AppError) throw error;
     log.error("Atomic Extra Agent billing route failed", {
       userId: req.user.id,
@@ -371,6 +482,8 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       error: getErrorMessage(error),
     });
     throw AppError.fromHttpStatus(500, "Failed to update extra agents");
+  } finally {
+    billingPermit.release();
   }
 });
 

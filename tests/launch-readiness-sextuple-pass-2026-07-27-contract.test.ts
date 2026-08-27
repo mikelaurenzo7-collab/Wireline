@@ -29,7 +29,7 @@ describe("launch readiness cross-surface contract", () => {
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });
 
-  it("keeps public launch voice on Bots and provider errors truthful", () => {
+  it("keeps public launch voice and customer errors owned by BotBound", () => {
     const blog = read("src/pages/Blog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
@@ -38,8 +38,8 @@ describe("launch readiness cross-surface contract", () => {
     expect(blog).not.toContain("Wireline");
     expect(pricing).toMatch(/Bot/i);
     expect(pricing).not.toContain("AI conversation workforce");
-    expect(aiErrors).toContain("OpenAI, Gemini, or AI Gateway");
-    expect(aiErrors).not.toContain("xAI, OpenAI, Gemini, or AI Gateway");
+    expect(aiErrors).toContain("BotBound AI is temporarily unavailable. Try again shortly.");
+    expect(aiErrors).not.toContain("Configure a reachable AI provider");
   });
 
   it("keeps transport fallbacks and executable marketing surfaces free of retired hero mandates", () => {

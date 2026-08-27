@@ -8,6 +8,7 @@ function installSendMocks(options: {
   failAdjustment?: boolean;
   failPersistence?: boolean;
   failRefund?: boolean;
+  accountEnvironment?: "production" | "test" | "demo";
 }) {
   const createMessage = vi.fn(async () => {
     if (options.provider.kind === "rejected") {
@@ -106,6 +107,20 @@ function installSendMocks(options: {
     dncPhoneCandidates: () => ["14155550123"],
   }));
   vi.doMock("../src/lib/launch-readiness", () => ({ isLaunchHardBlocked: () => false }));
+  vi.doMock("../src/lib/account-environment-policy", () => ({
+    liveExternalActionPolicyForUser: vi.fn(async () =>
+      options.accountEnvironment && options.accountEnvironment !== "production"
+        ? {
+            allowed: false,
+            environment: options.accountEnvironment,
+            status: 403,
+            code: "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED",
+            message: "Live external actions are disabled in this demo or test workspace.",
+          }
+        : { allowed: true, environment: "production" },
+    ),
+    externalEntityActionPolicyForUser: vi.fn(async () => ({ allowed: true })),
+  }));
   vi.doMock("../src/lib/trial-gate", () => ({
     assertLiveWorkEntitlementForUser: vi.fn(async () => ({ ok: true })),
   }));
@@ -125,6 +140,28 @@ describe("Twilio accepted-message reliability", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+  });
+
+  it("refuses demo-account SMS before reserving balance or calling Twilio", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      accountEnvironment: "demo",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+12025550100",
+      body: "This must remain inside visual QA.",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      enabled: false,
+      code: "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED",
+    });
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.createMessage).not.toHaveBeenCalled();
   });
 
   it("returns carrier acceptance and queues failed local bookkeeping without a second send", async () => {

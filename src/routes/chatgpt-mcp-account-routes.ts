@@ -35,13 +35,14 @@ import {
 import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
 import {
   commitPlatformCostReservation,
+  markPlatformCostReservationAmbiguous,
   platformCostReserveUsd,
   releasePlatformCostReservation,
   reservePlatformCostRecord,
 } from "../middleware/audit-middleware";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { rateLimit } from "../lib/rate-limit";
-import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
+import { createOpenAIRealtimeSimulationCall } from "../lib/voice/openai-realtime-service";
 import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import { isRuntimeAvailable } from "../lib/ai-client";
 import { addAgentTrainingItem, getAgentCoachingBrief } from "../lib/mcp-agent-coaching";
@@ -49,6 +50,8 @@ import { readMcpCoachingWritesEnabled } from "../lib/mcp-coaching-preferences";
 import { mcpVoiceSimulationMeta } from "../lib/mcp-voice-simulation-meta";
 import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
 import { isHardSpendCapExceeded } from "../lib/spend-guards";
+import { shouldRetainRealtimeReservation } from "../lib/realtime-provider-outcome";
+import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -503,18 +506,24 @@ function toolDefinitions() {
       name: "start_private_voice_simulation",
       title: "Start a private voice simulation",
       description:
-        "Creates a short-lived, tool-free voice simulation for one connected user’s BotBound draft. Before calling, obtain explicit confirmation. The simulation cannot make calls, send messages, access connected systems, or complete an external action. Cursor and Claude receive a ready status only; the ChatGPT widget receives the short-lived session in client metadata.",
+        "App-only signaling for a server-bounded, tool-free voice simulation of one connected user’s BotBound draft. The widget supplies a WebRTC offer after explicit confirmation and receives an SDP answer without a provider credential. The simulation cannot make calls, send messages, access connected systems, or complete an external action.",
       inputSchema: {
         type: "object",
         properties: {
           agent_id: { type: "string" },
+          offer_sdp: {
+            type: "string",
+            minLength: 100,
+            maxLength: 60000,
+            description: "The ChatGPT widget's WebRTC SDP offer for this confirmed simulation.",
+          },
           confirmed: {
             type: "boolean",
             description:
               "True only after the user explicitly asks to start this private voice simulation.",
           },
         },
-        required: ["agent_id", "confirmed"],
+        required: ["agent_id", "offer_sdp", "confirmed"],
         additionalProperties: false,
       },
       outputSchema: {
@@ -881,6 +890,7 @@ router.post("/mcp", async (req, res) => {
       const authed = requireScope(principal, "demo.voice");
       assertRehearsalConfirmation(args.confirmed);
       const draft = await getAgentDraft(authed, text(args.agent_id, 256));
+      await assertLiveExternalActionAllowed(authed.userId, "chatgpt_private_voice_simulation");
       if (isLaunchHardBlocked()) {
         throw new AppError(
           503,
@@ -898,11 +908,11 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from BotBound.",
         );
-      // Every mint charges a vendor-metered realtime secret on the platform
-      // key, so this tool must draw from the same daily simulation-minute
+      // Every server-managed call charges vendor-metered realtime audio on the
+      // platform key, so this tool must draw from the same daily simulation-minute
       // quota the web sandbox charges — the hourly limiter alone allowed 8
-      // mints/hour all day, 64× the web path's daily ceiling. Fail closed on
-      // tracker outage for the same reason the web mint does.
+      // calls/hour all day, 64× the web path's daily ceiling. Fail closed on
+      // tracker outage for the same reason the web path does.
       // Tenant-scoped like this file's other tenant writes: the quota-usage
       // insert is RLS-protected, and the WITH CHECK backstop should hold here
       // exactly as it does on the web path (authenticateUser scopes it there).
@@ -911,7 +921,7 @@ router.post("/mcp", async (req, res) => {
           quotaTracker.checkAndIncrement(authed.userId, "simulation_minutes_daily", 5),
         )
         .catch((err: unknown) => {
-          log.error("chatgpt simulation quota tracker unavailable, refusing mint", {
+          log.error("chatgpt simulation quota tracker unavailable, refusing call", {
             userId: authed.userId,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -926,8 +936,8 @@ router.post("/mcp", async (req, res) => {
         );
       if (!quota.persisted) {
         // Read-only fallback decision: the increment was not durably
-        // recorded, so an allowance here would be an unmetered vendor mint.
-        log.error("chatgpt simulation quota increment not durable, refusing mint", {
+        // recorded, so an allowance here would be an unmetered vendor call.
+        log.error("chatgpt simulation quota increment not durable, refusing call", {
           userId: authed.userId,
         });
         throw AppError.fromHttpStatus(
@@ -936,7 +946,7 @@ router.post("/mcp", async (req, res) => {
         );
       }
       // Reserve against a freshly locked tenant budget before the provider.
-      // The prior post-hoc insert let concurrent MCP mints cross the hard cap
+      // The prior post-hoc insert let concurrent MCP calls cross the hard cap
       // and made accounting outages invisible until after OpenAI had charged.
       const spendDecision = await tenantStore.run(authed.userId, () =>
         reservePlatformCostRecord({
@@ -983,10 +993,11 @@ router.post("/mcp", async (req, res) => {
         );
       }
 
-      let session: Awaited<ReturnType<typeof createOpenAIRealtimeClientSecret>>;
+      let session: Awaited<ReturnType<typeof createOpenAIRealtimeSimulationCall>>;
       try {
-        session = await createOpenAIRealtimeClientSecret({
+        session = await createOpenAIRealtimeSimulationCall({
           userId: authed.userId,
+          sdp: text(args.offer_sdp, 60_000),
           agentName: draft.view.name,
           instructions: draft.runtimeInstructions,
           tools: [],
@@ -994,10 +1005,12 @@ router.post("/mcp", async (req, res) => {
           apiKeyPurpose: "chatgpt_demo",
         });
       } catch (error) {
-        // A 502 is an ambiguous network/provider outcome: a usable secret may
-        // exist, so retain both conservative reserves. Explicit/local failures
-        // prove no session was handed out and can safely return the allowance.
-        if (!(error instanceof AppError && error.status === 502)) {
+        // Retain both conservative reserves only when a provider call may
+        // exist. Definitive pre-call failures and confirmed emergency hangups
+        // can safely return the allowance.
+        if (shouldRetainRealtimeReservation(error)) {
+          await markPlatformCostReservationAmbiguous(spendDecision.reservation);
+        } else {
           await tenantStore.run(authed.userId, async () => {
             const cleanup = await Promise.allSettled([
               releasePlatformCostReservation(spendDecision.reservation),
@@ -1023,8 +1036,7 @@ router.post("/mcp", async (req, res) => {
         content: [{ type: "text", text: "Private voice simulation ready." }],
         structuredContent: { status: "ready", agent_id: draft.view.id },
         _meta: mcpVoiceSimulationMeta({
-          draftSource: authed.draftSource,
-          session: session as Record<string, unknown>,
+          session,
           agentId: draft.view.id,
           greeting,
         }),
@@ -1121,7 +1133,7 @@ router.post("/mcp", async (req, res) => {
           texting_configured: row?.texting_configured === true,
           email_connected: row?.email_connected === true,
           latest_activity_at: isoDateOrEmpty(row?.latest_activity_at),
-          open_in_wireline_url: `${issuer(req)}/overview`,
+          open_in_wireline_url: `${issuer(req)}/studio`,
         };
       });
       const recentTotal =

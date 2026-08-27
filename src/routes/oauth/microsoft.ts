@@ -18,6 +18,7 @@ import {
   resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get(
   "/api/oauth/microsoft/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
       return res
         .status(500)
@@ -33,6 +34,7 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
+    await assertOAuthProviderConnectAllowed(uid, "Microsoft");
     const redirectUri = getMicrosoftRedirectUri(req);
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID!,
@@ -68,6 +70,16 @@ router.get(
     }
     if (!code || typeof code !== "string") return res.status(400).send("No code provided.");
 
+    const userId = await resolveLinkedOAuthUserId(req, vs);
+    if (!userId) {
+      return res
+        .status(401)
+        .send(
+          `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Microsoft again from Settings.`,
+        );
+    }
+    await assertOAuthProviderConnectAllowed(userId, "Microsoft");
+
     try {
       const redirectUri = getMicrosoftRedirectUri(req);
       const tokenParams = new URLSearchParams({
@@ -90,22 +102,14 @@ router.get(
       const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
-      if (!profileRes.ok) throw new Error(`Microsoft profile request failed (${profileRes.status}).`);
+      if (!profileRes.ok)
+        throw new Error(`Microsoft profile request failed (${profileRes.status}).`);
       const profile = (await profileRes.json()) as any;
       const emailAddress = String(profile.mail || profile.userPrincipalName || "")
         .trim()
         .toLowerCase();
       if (!emailAddress)
         throw new Error("Could not retrieve email address from Microsoft account.");
-
-      const userId = await resolveLinkedOAuthUserId(req, vs);
-      if (!userId) {
-        return res
-          .status(401)
-          .send(
-            `Complete this connection in the same browser and ${BOTBOUND_BRAND_NAME} account that started it. Sign in, then connect Microsoft again from Settings.`,
-          );
-      }
 
       const scopeStr = typeof tokens.scope === "string" ? tokens.scope : "";
       const accessTokenMs = encryptSecret(tokens.access_token);

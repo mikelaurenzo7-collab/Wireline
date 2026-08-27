@@ -11,7 +11,11 @@ import {
   listAgentMailWebhooks,
   verifyAgentMailCredentials,
 } from "./agentmail-mail";
-import { EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE, upsertOwnedEmailAccount } from "./owned-email-account";
+import {
+  EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+  upsertOwnedEmailAccount,
+} from "./owned-email-account";
+import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { planById } from "./plan-catalog";
 import { provisionTenantNumber, releaseTenantNumber } from "./phone-provisioning";
 import { drizzle, log } from "./server-context";
@@ -40,11 +44,18 @@ function normalizedManagedDomain(): string | null {
   if (!/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(value) || !value.includes(".")) {
     throw new Error("AGENTMAIL_DEFAULT_DOMAIN is invalid.");
   }
+  if (value !== "botbound.me" && !value.endsWith(".botbound.me")) {
+    throw new Error("AGENTMAIL_DEFAULT_DOMAIN must be botbound.me or a BotBound subdomain.");
+  }
   return value;
 }
 
 function managedMailboxUsername(agentName: string, agentId: string): string {
-  const suffix = agentId.replace(/[^a-z0-9]/gi, "").toLowerCase().slice(-8) || "bot";
+  const suffix =
+    agentId
+      .replace(/[^a-z0-9]/gi, "")
+      .toLowerCase()
+      .slice(-8) || "bot";
   const base =
     agentName
       .trim()
@@ -56,7 +67,9 @@ function managedMailboxUsername(agentName: string, agentId: string): string {
   return `${base.slice(0, maxBaseLength).replace(/-+$/g, "")}-${suffix}`.slice(0, 63);
 }
 
-async function paidPlanForUser(userId: string): Promise<{ eligible: boolean; planId: string | null }> {
+async function paidPlanForUser(
+  userId: string,
+): Promise<{ eligible: boolean; planId: string | null }> {
   const [row] = await drizzle
     .select({ planId: schema.subscriptions.plan, status: schema.subscriptions.status })
     .from(schema.subscriptions)
@@ -219,16 +232,23 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
     )
     .limit(1);
 
-  if (!isVaultConfigured()) throw new Error("Credential vault is not configured for managed email.");
+  if (!isVaultConfigured())
+    throw new Error("Credential vault is not configured for managed email.");
   const apiKey = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is required for managed Bot email.");
 
   if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
+    const domain = normalizedManagedDomain();
+    if (!domain || !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
+      throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
+    }
     const inbox = (await listAgentMailInboxes(apiKey)).find(
       (candidate) => candidate.email.toLowerCase() === existing.emailAddress.toLowerCase(),
     );
     if (!inbox) {
-      throw new Error("Managed AgentMail inbox is missing from the configured AgentMail organization.");
+      throw new Error(
+        "Managed AgentMail inbox is missing from the configured AgentMail organization.",
+      );
     }
     await verifyAgentMailCredentials(inbox.email, apiKey);
     await ensureManagedDeliveryWebhook({
@@ -300,6 +320,8 @@ export async function ensurePaidBotIdentity(input: {
       emailReused: false,
     };
   }
+
+  await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
 
   const phone = await ensurePaidBotPhone(input.userId, input.agentId);
   const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");

@@ -35,10 +35,12 @@ describe("industry-leader audit hardening contracts", () => {
 
   it("persists failover voicemail recordings instead of log-only", () => {
     const webhook = read("src/routes/twilio-webhook-base.ts");
-    expect(webhook).toContain("Voicemail left during voice failover");
+    expect(webhook).toContain("Voicemail left during BotBound call failover");
+    expect(webhook).not.toContain("Voicemail left during voice failover (Vapi unavailable)");
     expect(webhook).toContain("schema.callLogs");
     expect(webhook).toContain("recordingUrl");
-    expect(webhook).toContain("sendEmail");
+    expect(webhook).toContain("sendTenantEmail");
+    expect(webhook).toContain('action: "voicemail_failover_owner_notification"');
     // tenantStore is AsyncLocalStorage<string> — must pass userId string, not an object.
     expect(webhook).toMatch(/tenantStore\.run\(tenantUserId,\s*async\s*\(\)\s*=>/);
     expect(webhook).not.toContain("tenantStore.run({ userId:");
@@ -110,13 +112,13 @@ describe("industry-leader audit hardening contracts", () => {
     expect(changelog).not.toContain("Recaps · Triage · Activity · Cockpit");
   });
 
-  it("keeps Twilio WhatsApp out of platform capability chips until private beta is live", () => {
-    const catalog = read("src/lib/workspace-integration-catalog.ts");
-    const twilioBlock = catalog.slice(
-      catalog.indexOf('id: "twilio"'),
-      catalog.indexOf('id: "hubspot"'),
+  it("keeps WhatsApp out of live platform claims until private beta is operational", () => {
+    const registry = read("src/lib/runtime-integrations-registry.ts");
+    const twilioBlock = registry.slice(
+      registry.indexOf('"twilio"'),
+      registry.indexOf('"deepgram-flux"'),
     );
-    expect(twilioBlock).not.toMatch(/capabilities:\s*\[[^\]]*WhatsApp/);
-    expect(twilioBlock).toContain("private beta");
+
+    expect(twilioBlock).toContain("WhatsApp remains private beta");
   });
 });

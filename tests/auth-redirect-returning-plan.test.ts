@@ -59,9 +59,7 @@ describe("post-auth destination", () => {
   it("rejects external and protocol-relative return targets", () => {
     expect(readRedirectFromSearch("?redirect=https%3A%2F%2Fevil.example")).toBeNull();
     expect(readRedirectFromSearch("?redirect=%2F%2Fevil.example")).toBeNull();
-    expect(resolvePostAuthDestination("business", "?redirect=%2F%2Fevil.example")).toBe(
-      "/overview",
-    );
+    expect(resolvePostAuthDestination("business", "?redirect=%2F%2Fevil.example")).toBe("/studio");
   });
 
   it("sends every fresh signup into the same one-workspace Bot Studio", () => {
@@ -132,10 +130,10 @@ describe("post-auth destination", () => {
 
     persistOAuthReturnFromSearch("");
 
-    expect(resolvePostAuthDestination("business", "")).toBe("/overview");
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
   });
 
-  it("sends returning users without a safe target to Overview", () => {
-    expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
+  it("sends returning users without a safe target to Bot Studio", () => {
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
 });

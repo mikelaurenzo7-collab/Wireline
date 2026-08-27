@@ -102,9 +102,8 @@ describe("authenticated Bot flow", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
     const mailboxes = read("src/components/MailboxConnectionCard.tsx");
     expect(connections).toContain("MailboxConnectionCard");
-    expect(connections.indexOf("<MailboxConnectionCard")).toBeLessThan(
-      connections.indexOf("<IntegrationOperatingMap"),
-    );
+    expect(connections).toContain("CrmConnectionCard");
+    expect(connections).not.toContain("IntegrationOperatingMap");
     expect(mailboxes).toContain("/api/oauth/${provider}/url");
     expect(mailboxes).toContain("/api/emails/accounts");
     expect(mailboxes).toContain("OAUTH_AUTH_SUCCESS");

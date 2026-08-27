@@ -25,7 +25,7 @@ export default function AuthPortal() {
       <div className="wl-stitch-auth-shell">
         <main
           id="main-content"
-          className="wl-auth-form-panel flex min-h-[100dvh] items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10"
+          className="wl-auth-form-panel flex min-h-full items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10"
           tabIndex={-1}
         >
           <div className="w-full max-w-[520px]">

@@ -8,42 +8,42 @@
 
 ## Public routes
 
-| URL | Component | Shared layout |
-| --- | --- | --- |
-| / | src/pages/LandingPage.tsx | MarketingPageFrame |
-| /features | src/pages/Features.tsx | MarketingPageFrame |
-| /pricing | src/pages/Pricing.tsx | MarketingPageFrame |
-| /showcase | src/pages/Showcase.tsx | MarketingPageFrame |
-| /compare | src/pages/Compare.tsx | MarketingPageFrame |
-| /solutions/:wedge | src/pages/SolutionsPage.tsx | MarketingPageFrame |
-| /for/:vertical | src/pages/VerticalLanding.tsx | MarketingPageFrame |
-| /about, /blog, /developers | matching src/pages files | MarketingPageFrame |
-| /security, /trust, /trust/:vertical | Security or TrustPackPage | MarketingChrome/PageFrame |
-| /status, /support, /contact | src/components public pages | MarketingPageFrame |
-| /privacy, /terms | legal page components | MarketingPageFrame |
-| /signin/*, /signup/*, /get-started, /auth | AuthPortalRoute | precision auth surface |
-| /reset-password, /accept-invite, /auth/oauth-complete | matching auth page | focused auth surface |
+| URL                                                   | Component                     | Shared layout             |
+| ----------------------------------------------------- | ----------------------------- | ------------------------- |
+| /                                                     | src/pages/LandingPage.tsx     | MarketingPageFrame        |
+| /features                                             | src/pages/Features.tsx        | MarketingPageFrame        |
+| /pricing                                              | src/pages/Pricing.tsx         | MarketingPageFrame        |
+| /showcase                                             | src/pages/Showcase.tsx        | MarketingPageFrame        |
+| /compare                                              | src/pages/Compare.tsx         | MarketingPageFrame        |
+| /solutions/:wedge                                     | src/pages/SolutionsPage.tsx   | MarketingPageFrame        |
+| /for/:vertical                                        | src/pages/VerticalLanding.tsx | MarketingPageFrame        |
+| /about, /blog, /developers                            | matching src/pages files      | MarketingPageFrame        |
+| /security, /trust, /trust/:vertical                   | Security or TrustPackPage     | MarketingChrome/PageFrame |
+| /support, /contact                                    | src/components public pages   | MarketingPageFrame        |
+| /privacy, /terms                                      | legal page components         | MarketingPageFrame        |
+| /signin/_, /signup/_, /get-started, /auth             | AuthPortalRoute               | precision auth surface    |
+| /reset-password, /accept-invite, /auth/oauth-complete | matching auth page            | focused auth surface      |
 
 ## Authenticated routes
 
-| URL | Component | Shared layout |
-| --- | --- | --- |
-| /overview | src/pages/OverviewPage.tsx | AppShell + WorkspacePageFrame |
-| /studio/* | src/pages/AgentStudioHome.tsx | AppShell + StudioPageShell |
-| /templates | src/pages/TemplatesPage.tsx | AppShell + WorkspacePageFrame |
-| /knowledge | src/pages/KnowledgePage.tsx | AppShell + WorkspacePageFrame |
+| URL            | Component                        | Shared layout                 |
+| -------------- | -------------------------------- | ----------------------------- |
+| /overview      | src/pages/OverviewPage.tsx       | AppShell + WorkspacePageFrame |
+| /studio/*      | src/pages/AgentStudioHome.tsx    | AppShell + StudioPageShell    |
+| /templates     | src/pages/TemplatesPage.tsx      | AppShell + WorkspacePageFrame |
+| /knowledge     | src/pages/KnowledgePage.tsx      | AppShell + WorkspacePageFrame |
 | /connections/* | ConnectionsPage or provider page | AppShell + WorkspacePageFrame |
-| /phone | src/pages/PhonePage.tsx | AppShell + WorkspacePageFrame |
-| /insights | src/pages/InsightsPage.tsx | AppShell + WorkspacePageFrame |
-| /inbox | src/pages/EmailPage.tsx | AppShell + WorkspacePageFrame |
-| /approvals | src/pages/ApprovalsPage.tsx | AppShell + WorkspacePageFrame |
-| /apps | src/pages/ClientAppsPage.tsx | AppShell + WorkspacePageFrame |
-| /settings/* | focused settings pages | AppShell + WorkspacePageFrame |
-| /admin/* | src/pages/AdminWorkspace.tsx | AppShell + AdminHubViewport |
+| /phone         | src/pages/PhonePage.tsx          | AppShell + WorkspacePageFrame |
+| /insights      | src/pages/InsightsPage.tsx       | AppShell + WorkspacePageFrame |
+| /inbox         | src/pages/EmailPage.tsx          | AppShell + WorkspacePageFrame |
+| /approvals     | src/pages/ApprovalsPage.tsx      | AppShell + WorkspacePageFrame |
+| /apps          | src/pages/ClientAppsPage.tsx     | AppShell + WorkspacePageFrame |
+| /settings/*    | focused settings pages           | AppShell + WorkspacePageFrame |
+| /admin/*       | src/pages/AdminWorkspace.tsx     | AppShell + AdminHubViewport   |
 
 ## Complete public router source
 
-~~~tsx
+```tsx
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -69,7 +69,6 @@ const About = lazy(() => import("./pages/About"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Security = lazy(() => import("./components/Security"));
 const TrustPackPage = lazy(() => import("./components/TrustPackPage"));
-const Status = lazy(() => import("./components/Status"));
 const SupportPage = lazy(() =>
   import("./components/SupportPage").then((module) => ({ default: module.SupportPage })),
 );
@@ -139,7 +138,6 @@ function AppRouter() {
         <Route path="/security" element={<Security />} />
         <Route path="/trust" element={<Security />} />
         <Route path="/trust/:vertical" element={<TrustPackPage />} />
-        <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -188,11 +186,11 @@ export default function App() {
     </div>
   );
 }
-~~~
+```
 
 ## Complete authenticated router source
 
-~~~tsx
+```tsx
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import RouteFallback from "../components/layout/RouteFallback";
@@ -298,4 +296,4 @@ export default function AppRoutes() {
     </Suspense>
   );
 }
-~~~
+```

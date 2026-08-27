@@ -43,7 +43,6 @@ const RESOURCE_LINKS = [
 /** Always visible in the bar itself — the four a visitor reaches for by name. */
 const BAR_LINKS = [
   { to: "/trust", label: "Trust" },
-  { to: "/status", label: "Status" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
 ] as const;
@@ -133,7 +132,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((value) => !value)}
-            className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="ml-auto inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Sitemap
             <ChevronUp

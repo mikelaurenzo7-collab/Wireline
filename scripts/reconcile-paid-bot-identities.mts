@@ -28,10 +28,12 @@ async function candidates(): Promise<Candidate[]> {
     })
     .from(schema.agents)
     .innerJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.agents.userId))
+    .innerJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
     .where(
       and(
         inArray(schema.subscriptions.plan, [...PAID_PLANS]),
         inArray(schema.subscriptions.status, [...ACTIVE_STATUSES]),
+        eq(schema.settings.accountEnvironment, "production"),
       ),
     )
     .orderBy(asc(schema.agents.userId), asc(schema.agents.createdAt));
@@ -131,10 +133,14 @@ async function main() {
   }
 
   if (!process.env.AGENTMAIL_DEFAULT_DOMAIN?.trim()) {
-    throw new Error("AGENTMAIL_DEFAULT_DOMAIN must be set before applying paid Bot identity reconciliation.");
+    throw new Error(
+      "AGENTMAIL_DEFAULT_DOMAIN must be set before applying paid Bot identity reconciliation.",
+    );
   }
   if (!process.env.AGENTMAIL_API_KEY?.trim()) {
-    throw new Error("AGENTMAIL_API_KEY must be set before applying paid Bot identity reconciliation.");
+    throw new Error(
+      "AGENTMAIL_API_KEY must be set before applying paid Bot identity reconciliation.",
+    );
   }
 
   let repaired = 0;

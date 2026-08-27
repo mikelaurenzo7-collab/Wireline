@@ -130,8 +130,8 @@ export function SupportPage() {
             </div>
           ) : (
             <form onSubmit={onSubmit} className="mt-7 space-y-5">
-              <div>
-                <label className="block wl-stitch-label mb-2">What is this about?</label>
+              <fieldset>
+                <legend className="block wl-stitch-label mb-2">What is this about?</legend>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {ISSUE_TYPES.map((item) => (
                     <button
@@ -145,7 +145,7 @@ export function SupportPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Your email
                 <Input

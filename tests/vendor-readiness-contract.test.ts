@@ -42,8 +42,8 @@ describe("vendor readiness contract", () => {
   it("blocks invalid funding or core inventory and keeps optional channels separate", () => {
     expect(probe).toContain("stripeAvailable >= 0");
     expect(probe).toContain("Twilio credentials missing or rejected");
-    expect(probe).toContain("twilioBalanceUsd >= 0");
-    expect(probe).toContain("balance_non_negative: twilioFunded");
+    expect(probe).toContain("twilioBalanceUsd > 0");
+    expect(probe).toContain("balance_positive: twilioFunded");
     expect(probe).toContain("voiceCapableNumbers.length > 0");
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
     expect(probe).toContain('overage_policy: "none_retired"');

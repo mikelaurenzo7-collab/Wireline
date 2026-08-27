@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 
 /**
  * Zoom Integration Service — OAuth 2.0 authorization_code flow.
@@ -191,6 +192,23 @@ export async function createMeeting(
     duration?: number;
   },
 ): Promise<ZoomMeeting | null> {
+  try {
+    const policy = await liveExternalActionPolicyForUser(userId);
+    if (!policy.allowed) {
+      log.warn("Zoom meeting creation blocked by account environment", {
+        userId,
+        accountEnvironment: policy.environment ?? "missing",
+        code: policy.code,
+      });
+      return null;
+    }
+  } catch (error) {
+    log.error("Zoom account-environment lookup failed, failing closed", {
+      userId,
+      error: getErrorMessage(error),
+    });
+    return null;
+  }
   const token = await getValidToken(userId);
   if (!token) {
     log.warn("Zoom not connected, skipping meeting creation");

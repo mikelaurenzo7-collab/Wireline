@@ -22,7 +22,7 @@ test("direct account-entry routes recognize an existing session", async ({ page 
   });
 
   await page.goto("/signin");
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/studio$/);
 });
 
 test("settings sign-out followed by direct personal signup always enters Fast Start", async ({

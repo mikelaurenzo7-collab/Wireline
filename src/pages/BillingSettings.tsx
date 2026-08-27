@@ -139,10 +139,10 @@ export default function BillingSettings() {
                 title: "Payment processing",
                 message:
                   returnFlow === "runtime_balance"
-                    ? "Your Runtime Balance will update automatically after Stripe confirms the funds."
+                    ? "Your Runtime Balance will update automatically after payment is confirmed."
                     : returnFlow === "live_video"
                       ? "This legacy checkout is still processing. Live video remains retired and no new activation will be granted."
-                      : "Your plan will activate automatically after Stripe confirms the funds.",
+                      : "Your plan will activate automatically after payment is confirmed.",
               });
             } else if (checkoutOutcome === "invalid") {
               setCheckoutReturnNotice({
@@ -266,7 +266,7 @@ export default function BillingSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard">
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Billing" titleHidden />
 

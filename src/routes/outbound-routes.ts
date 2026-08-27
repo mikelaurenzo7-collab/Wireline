@@ -12,9 +12,11 @@ import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  hasAuditableExpressConsentArtifact,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -142,14 +144,22 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const claimedExpressConsent = normalizedExpressConsent({
+        callPurpose,
+        hasExpressWrittenConsent,
+      });
+      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
+        consentSource,
+        consentLeadId,
+      });
+      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
       const marketing = isMarketingCallPurpose(callPurpose);
 
-      if (marketing && expressConsent && !consentSource && !consentLeadId) {
+      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
           code: "CONSENT_ARTIFACT_REQUIRED",
           error:
-            "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+            "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
         });
       }
 
@@ -157,6 +167,7 @@ router.post(
         userId: req.user.id,
         phone: customerNumber,
         isMarketingCall: marketing,
+        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -212,7 +223,7 @@ router.post(
 
       const consentMetadata = outboundConsentMetadata({
         callPurpose,
-        hasExpressWrittenConsent,
+        hasExpressWrittenConsent: expressConsent,
         source: "web",
         consentSource,
         consentLeadId,
@@ -228,9 +239,7 @@ router.post(
       });
       if (!result.ok) {
         return res.status(result.status).json({
-          code: result.providerOutcomeAmbiguous
-            ? "OUTBOUND_CALL_OUTCOME_UNCERTAIN"
-            : "ERROR",
+          code: result.providerOutcomeAmbiguous ? "OUTBOUND_CALL_OUTCOME_UNCERTAIN" : "ERROR",
           error: result.error,
           doNotRetry: result.doNotRetry === true,
           leadId: result.leadId ?? null,
@@ -284,6 +293,17 @@ router.post(
         });
       }
       const { leads, campaign_id, has_express_written_consent } = validation.data!;
+
+      // A request boolean is not auditable, per-recipient written-consent proof.
+      // Until bulk imports resolve immutable server-owned artifacts, import the
+      // leads as unconsented so the campaign dial gate fails closed.
+      if (has_express_written_consent) {
+        return res.status(400).json({
+          code: "CONSENT_ARTIFACT_REQUIRED",
+          error:
+            "Bulk consent attestation is not accepted as proof. Attach a verified consent artifact to each recipient before marketing calls.",
+        });
+      }
 
       const [userSettings] = await drizzle
         .select({ subscriptionStatus: schema.settings.subscriptionStatus })
@@ -339,7 +359,7 @@ router.post(
           ...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {}),
           ...outboundConsentMetadata({
             callPurpose: "marketing_or_sales",
-            hasExpressWrittenConsent: !!has_express_written_consent,
+            hasExpressWrittenConsent: false,
             source: "bulk",
           }),
         },
@@ -372,15 +392,6 @@ router.post(
             campaign_id: campaign_id ?? null,
           },
         });
-        if (has_express_written_consent) {
-          emitServerProductEventOnce({
-            event: "consent_source_captured",
-            userId: req.user.id,
-            agentId: agent?.id,
-            audience: "sales",
-            metadata: { consent_source: "lead_import", campaign_id: campaign_id ?? null },
-          });
-        }
       }
 
       res.json({ success: true, inserted: insertedLeads.length });

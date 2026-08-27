@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isTwilioPhoneNumberSid } from "../lib/agent-phone-lines";
 import { AppError, asyncHandler } from "../lib/api-error";
+import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 import {
   phoneNumberPatchSchema,
   phoneNumberProvisionSchema,
@@ -14,6 +15,7 @@ import { drizzle } from "../lib/server-context";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
 import { listNativeAvailableLocalNumbers } from "../lib/voice/native-phone-carrier";
+import { resolveNonProductionPhoneNumberPickerInventory } from "../lib/voice/phone-number-picker-inventory";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
@@ -51,13 +53,23 @@ async function capacityAvailable(userId: string): Promise<boolean> {
 router.get(
   "/api/phone-numbers/available",
   authenticateUser,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response, next) => {
+    const policy = await liveExternalActionPolicyForUser(req.user.id);
+    const fixture = resolveNonProductionPhoneNumberPickerInventory(policy);
+    if (!fixture) {
+      next();
+      return;
+    }
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json(fixture);
+  }),
   phoneNumberRateLimiter,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     if (!(await capacityAvailable(req.user.id))) {
       res.json({ available: [] });
       return;
     }
-    const rows = await listNativeAvailableLocalNumbers(undefined, 8);
+    const rows = await listNativeAvailableLocalNumbers(req.user.id, undefined, 8);
     res.setHeader("Cache-Control", "private, no-store");
     res.json({
       available: rows.map((row) => ({
@@ -89,7 +101,7 @@ router.post(
       );
     }
 
-    const rows = await listNativeAvailableLocalNumbers(areaCode, 8);
+    const rows = await listNativeAvailableLocalNumbers(req.user.id, areaCode, 8);
     if (!rows.length) {
       throw new AppError(
         404,

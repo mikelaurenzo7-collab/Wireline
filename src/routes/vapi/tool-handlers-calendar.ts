@@ -13,6 +13,10 @@ import {
 import { dispatchWebhook } from "../../lib/webhook-helpers";
 import { IntegrationService } from "../../lib/integrations";
 import { postAgentNotification as slackPostAgentNotification } from "../../lib/slack-service";
+import {
+  assertExternalEntityActionAllowed,
+  assertLiveExternalActionAllowed,
+} from "../../lib/account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
 
@@ -183,6 +187,10 @@ export async function handleCalendarToolCall(
   if (fn === "send_contract") {
     try {
       const { recipient_name, recipient_email, template_id } = args || {};
+      await assertLiveExternalActionAllowed(agent.user_id, "vapi_docusign_contract_send");
+      await assertExternalEntityActionAllowed(agent.user_id, "vapi_docusign_contract_send", {
+        email: recipient_email,
+      });
       const { sendContract } = await import("../../lib/docusign-service");
       const result = await sendContract({
         recipientName: recipient_name,

@@ -25,7 +25,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
       domain,
       permissions: ["microphone"],
       csp: {
-        connectDomains: ["https://api.openai.com"],
+        connectDomains: [],
         resourceDomains: ["https://assets.claude.ai"],
       },
     },
@@ -33,7 +33,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     "openai/widgetDescription":
       "Shows the first BotBound Bot draft created from this chat, a private voice simulation, and a secure path to continue in BotBound.",
     "openai/widgetCSP": {
-      connect_domains: ["https://api.openai.com"],
+      connect_domains: [],
       resource_domains: [],
       redirect_domains: ["https://botbound.me"],
     },

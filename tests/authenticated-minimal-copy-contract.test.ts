@@ -16,17 +16,17 @@ const AUTHENTICATED_PAGE_INTROS = [
 ] as const;
 
 describe("authenticated minimal copy contract", () => {
-  it("keeps Connections page chrome on a single WorkspacePageIntro plus the integration map", () => {
+  it("keeps Connections focused on customer connection actions", () => {
     const connectionsPage = read("src/pages/ConnectionsPage.tsx");
     const introTags = workspacePageIntroTags(connectionsPage);
-    const map = read("src/components/integrations/IntegrationOperatingMap.tsx");
 
-    expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
+    expect(connectionsPage).toContain("MailboxConnectionCard");
+    expect(connectionsPage).toContain("CrmConnectionCard");
+    expect(connectionsPage).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
     expect(introTags).toHaveLength(1);
     expect(introTags[0]).toContain('title="Connections"');
     expect(introTags[0]).not.toMatch(/\bdescription=/);
     expect(introTags[0]).not.toMatch(/\beyebrow=/);
-    expect(map).toMatch(/Integration map/);
   });
 
   it("keeps workspace page intros title-first without coaching copy", () => {

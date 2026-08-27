@@ -10,6 +10,8 @@ import {
 import { resolveVercelToken } from "../scripts/lib/vercel-project.mjs";
 
 const promotionSource = readFileSync("scripts/promote-vercel-production.mjs", "utf8");
+const redeploySource = readFileSync("scripts/redeploy-vercel-production.mjs", "utf8");
+const waitSource = readFileSync("scripts/wait-vercel-deployment.mjs", "utf8");
 const buildSource = readFileSync("scripts/vercel-build.mjs", "utf8");
 
 describe("production promotion safety", () => {
@@ -33,6 +35,49 @@ describe("production promotion safety", () => {
     expect(promotionSource).toContain(
       "commitSha.toLowerCase() !== expectedCommitSha.toLowerCase()",
     );
+  });
+
+  it("redeploys only an explicit exact-SHA production source", () => {
+    expect(redeploySource).not.toContain("latestMainDeploymentId");
+    expect(redeploySource).toContain("sourceDeploymentIdInput");
+    expect(redeploySource).toContain("expectedCommitShaInput");
+    expect(redeploySource).toContain("assertRedeploySource");
+    expect(redeploySource).toContain("deploymentId: sourceDeploymentId");
+    expect(redeploySource).toContain("redeploy_created_not_certified");
+
+    const sourcePreflight = redeploySource.indexOf("assertRedeploySource(source");
+    const redeployMutation = redeploySource.indexOf('vercelFetch("/v13/deployments"');
+    expect(sourcePreflight).toBeGreaterThan(-1);
+    expect(redeployMutation).toBeGreaterThan(sourcePreflight);
+  });
+
+  it("certifies the exact production target, canonical alias, and served source header", () => {
+    expect(waitSource).toContain('mode !== "--production"');
+    expect(waitSource).toContain("assertProductionDeploymentProvenance");
+    expect(waitSource).toContain("assertReadyProductionDeployment");
+    expect(waitSource).toContain("CANONICAL_PRODUCTION_URL");
+    expect(waitSource).toContain("verifyRemoteSourceCommit");
+    expect(waitSource).toContain("production_deployment_certified");
+  });
+
+  it("fails usage before any Vercel request when exact redeploy identity is absent", () => {
+    for (const invocation of [
+      ["scripts/redeploy-vercel-production.mjs"],
+      ["scripts/wait-vercel-deployment.mjs", "dpl_candidate", "a".repeat(40)],
+    ]) {
+      const result = spawnSync(process.execPath, invocation, {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          VERCEL_TOKEN: "",
+          VERCEL_ACCESS_TOKEN: "",
+          VERCEL_OIDC_TOKEN: "",
+        },
+        encoding: "utf8",
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Usage:");
+    }
   });
 
   it("uses the documented Vercel token without alias drift", () => {
@@ -95,9 +140,7 @@ describe("production promotion safety", () => {
 
   it("probes readiness only on the canonical customer-facing origin", () => {
     expect(resolveCanonicalProductionUrl("")).toBe(CANONICAL_PRODUCTION_URL);
-    expect(resolveCanonicalProductionUrl("https://botbound.me/")).toBe(
-      CANONICAL_PRODUCTION_URL,
-    );
+    expect(resolveCanonicalProductionUrl("https://botbound.me/")).toBe(CANONICAL_PRODUCTION_URL);
     expect(() => resolveCanonicalProductionUrl("https://healthy-copy.example.com")).toThrow(
       /noncanonical production origin/,
     );
