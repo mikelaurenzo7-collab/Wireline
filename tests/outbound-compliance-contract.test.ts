@@ -14,7 +14,9 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
-      expect(source).toContain("isMarketingCallPurpose(callPurpose)");
+      expect(source).toContain("classifyUntrustedDirectDial({ callPurpose })");
+      expect(source).toContain("callPurpose: effectiveCallPurpose");
+      expect(source).toContain("requestedCallPurpose: callPurpose");
       expect(source).toContain("evaluateOutboundDialGate({");
       expect(source).toContain("outboundConsentMetadata({");
       expect(source).toContain("tcpaBlocked: true");
@@ -41,7 +43,7 @@ describe("outbound compliance contract", () => {
     expect(federal).toContain('code: "FEDERAL_DNC_NOT_CONFIGURED"');
     expect(federal).toContain("allowed: false");
     expect(federal).toContain('source: "unconfigured"');
-    expect(federal).toContain("return { listed: false, source: \"unconfigured\", checked_at }");
+    expect(federal).toContain('return { listed: false, source: "unconfigured", checked_at }');
     expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
     expect(gate).toContain('reason: "federal_dnc_unconfigured"');
     expect(gate).toContain("isFederalDncListed(opts.phone)");
@@ -58,6 +60,7 @@ describe("outbound compliance contract", () => {
 
     expect(purpose).toContain('OUTBOUND_CONSENT_VERSION = "tcpa-v1"');
     expect(purpose).toContain("call_purpose: input.callPurpose");
+    expect(purpose).toContain("client_requested_call_purpose");
     expect(purpose).toContain("consent_version: OUTBOUND_CONSENT_VERSION");
     expect(purpose).toContain("has_express_written_consent: normalizedExpressConsent(input)");
     expect(purpose).toContain("source: input.source");
@@ -97,6 +100,7 @@ describe("outbound compliance contract", () => {
     expect(openapi).toContain('"/api/outbound/dial"');
     expect(openapi).toContain('"/api/mobile/calls/outbound"');
     expect(openapi).toContain("DNC or TCPA consent gate blocked the call.");
-    expect(openapi).toContain("Siri and CarPlay callbacks use non-marketing purposes");
+    expect(openapi).toContain("audit context only");
+    expect(openapi).toContain("cannot mint a non-marketing or consent exemption");
   });
 });

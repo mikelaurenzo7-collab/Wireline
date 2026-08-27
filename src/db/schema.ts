@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0163_guard_account_environment_promotion.sql`.
+ * Latest committed migration: `drizzle/migrations/0164_stripe_event_claim_fencing.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
  *

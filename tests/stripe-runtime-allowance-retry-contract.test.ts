@@ -16,6 +16,7 @@ const read = (path: string) =>
 
 describe("Stripe Runtime Balance movements fail closed", () => {
   const middleware = read("src/middleware/stripe-runtime-allowance-retry.ts");
+  const claims = read("src/lib/stripe-event-claim.ts");
   const registry = read("src/server/register-api-routes.ts");
   const alignment = read("scripts/align-stripe-webhook-events.mjs");
 
@@ -357,18 +358,13 @@ describe("Stripe Runtime Balance movements fail closed", () => {
   });
 
   it("claims events before acknowledging movements and reclaims stale work once", () => {
-    expect(middleware).toContain("claimStripeEventForPreflight");
-    expect(middleware).toContain("markStripeEventProcessed");
+    expect(middleware).toContain("claimStripeEvent(event.id, event.type)");
+    expect(middleware).toContain("completeStripeEventClaim(claim)");
     expect(middleware).toContain("releaseStripeEventClaim");
-
-    const claimStart = middleware.indexOf("async function claimStripeEventForPreflight");
-    const claimEnd = middleware.indexOf("async function markStripeEventProcessed", claimStart);
-    const claim = middleware.slice(claimStart, claimEnd);
-    expect(claimStart).toBeGreaterThan(-1);
-    expect(claimEnd).toBeGreaterThan(claimStart);
-    expect(claim).toContain("lt(schema.stripeEvents.processedAt, cutoff)");
-    expect(claim).toContain(".returning({ eventId: schema.stripeEvents.eventId })");
-    expect(claim).toContain('return "in_flight"');
-    expect(claim).not.toContain("releaseStripeEventClaim(event.id)");
+    expect(middleware).not.toContain("async function claimStripeEventForPreflight");
+    expect(claims).toContain("claimToken: randomUUID()");
+    expect(claims).toContain("STRIPE_EVENT_CLAIM_LEASE_MS = 15 * 60 * 1000");
+    expect(claims).toContain("eq(schema.stripeEvents.claimToken, claim.claimToken)");
+    expect(claims).toContain('return { kind: "in_flight" }');
   });
 });

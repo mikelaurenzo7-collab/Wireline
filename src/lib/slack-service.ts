@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 /**
  * Slack Integration Service — real OAuth 2.0 flow.
@@ -232,16 +233,44 @@ export async function postMessage(
   blocks?: any[],
 ): Promise<boolean> {
   if (!(await tenantSlackAllowed(userId, "slack_message_send"))) return false;
+
+  const fenced = await runTenantProviderWorkWithDeletionFence({
+    userId,
+    operation: "slack_message_send",
+    retainOnSuccess: (outcome) => outcome.providerAccepted || outcome.providerOutcomeAmbiguous,
+    perform: () => postMessageAfterDeletionFence(userId, channel, text, blocks),
+  });
+  if (!fenced.performed) {
+    log.warn("Slack message blocked by terminal account deletion", { userId, channel });
+    return false;
+  }
+  return fenced.result.sent;
+}
+
+type SlackPostOutcome = {
+  sent: boolean;
+  providerAccepted: boolean;
+  providerOutcomeAmbiguous: boolean;
+};
+
+async function postMessageAfterDeletionFence(
+  userId: string,
+  channel: string,
+  text: string,
+  blocks?: any[],
+): Promise<SlackPostOutcome> {
   const token = await getToken(userId);
   if (!token) {
     log.warn("Slack not connected, skipping message");
-    return false;
+    return { sent: false, providerAccepted: false, providerOutcomeAmbiguous: false };
   }
 
+  let providerRequestStarted = false;
   try {
     const body: any = { channel, text };
     if (blocks) body.blocks = blocks;
 
+    providerRequestStarted = true;
     const r = await fetchWithTimeout(
       `${SLACK_API}/chat.postMessage`,
       {
@@ -257,7 +286,7 @@ export async function postMessage(
     const data = (await r.json()) as any;
     if (!data.ok) {
       log.warn("Slack postMessage failed", { error: data.error, channel });
-      return false;
+      return { sent: false, providerAccepted: false, providerOutcomeAmbiguous: false };
     }
     try {
       const { dispatchWebhook } = await import("./webhook-helpers");
@@ -269,10 +298,14 @@ export async function postMessage(
     } catch {
       /* non-fatal */
     }
-    return true;
+    return { sent: true, providerAccepted: true, providerOutcomeAmbiguous: false };
   } catch (err) {
     log.error("Slack postMessage error", { error: getErrorMessage(err) });
-    return false;
+    return {
+      sent: false,
+      providerAccepted: false,
+      providerOutcomeAmbiguous: providerRequestStarted,
+    };
   }
 }
 

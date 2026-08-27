@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  classifyUntrustedDirectDial,
   hasAuditableExpressConsentArtifact,
   requiresFederalDncScreeningForDirectDial,
 } from "../src/lib/outbound-call-purpose";
@@ -10,6 +11,15 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("direct-dial compliance contract", () => {
+  it("does not trust a client-selected service or callback label as a non-marketing artifact", () => {
+    for (const callPurpose of ["service_or_requested", "callback"] as const) {
+      expect(classifyUntrustedDirectDial({ callPurpose })).toMatchObject({
+        effectiveCallPurpose: "marketing_or_sales",
+        isMarketingCall: true,
+      });
+    }
+  });
+
   it("rejects client-supplied consent descriptions until the server verifies an artifact", () => {
     expect(hasAuditableExpressConsentArtifact({ consentSource: "manual_attestation" })).toBe(false);
     expect(
@@ -49,6 +59,11 @@ describe("direct-dial compliance contract", () => {
     for (const route of directDialRoutes) {
       const source = read(route);
       expect(source).toContain("hasAuditableExpressConsentArtifact({");
+      expect(source).toContain("classifyUntrustedDirectDial({ callPurpose })");
+      expect(source).toContain("callPurpose: effectiveCallPurpose");
+      expect(source).toContain("requestedCallPurpose: callPurpose");
+      expect(source).toContain("const marketing = purpose.isMarketingCall");
+      expect(source).not.toContain("isMarketingCallPurpose(callPurpose)");
       expect(source).toContain("claimedExpressConsent && hasAuditableConsentArtifact");
       expect(source).toContain(
         "requireFederalDncScreening: requiresFederalDncScreeningForDirectDial()",

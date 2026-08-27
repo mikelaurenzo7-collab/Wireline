@@ -8,6 +8,7 @@ const read = (path: string) =>
 describe("Stripe subscription allowance reversal retry defense", () => {
   const billing = read("src/routes/billing-routes.ts");
   const strictPreflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
+  const claims = read("src/lib/stripe-event-claim.ts");
   const allowance = read("src/lib/subscription-welcome-credit.ts");
 
   it("propagates any dormant legacy reversal failure to the outer webhook rollback", () => {
@@ -20,26 +21,33 @@ describe("Stripe subscription allowance reversal retry defense", () => {
     expect(helper).not.toContain("Never fail the webhook on this path");
 
     const outerFailure = billing.slice(billing.indexOf('log.error("Stripe webhook handler error"'));
-    expect(outerFailure).toContain(".delete(schema.stripeEvents)");
+    expect(outerFailure).toContain("releaseStripeEventClaim(claim)");
+    expect(claims).toContain("eq(schema.stripeEvents.claimToken, claim.claimToken)");
     expect(outerFailure).toContain('throw AppError.fromHttpStatus(500, "Webhook handler failed")');
   });
 
   it("keeps the active strict preflight fail-closed before the legacy router", () => {
-    expect(strictPreflight).toContain("claimStripeEventForPreflight");
-    expect(strictPreflight).toContain("releaseStripeEventClaim(event.id)");
-    expect(strictPreflight).toContain('next(AppError.fromHttpStatus(500, "Webhook handler failed"))');
+    expect(strictPreflight).toContain("claimOrRespondDuplicate");
+    expect(strictPreflight).toContain("releaseStripeEventClaim(claim)");
+    expect(strictPreflight).toContain(
+      'next(AppError.fromHttpStatus(500, "Webhook handler failed"))',
+    );
   });
 
   it("records Stripe event and object provenance on subscription reversals", () => {
     expect(allowance).toContain("providerEventId?: string");
     expect(allowance).toContain("providerObjectId?: string");
     expect(allowance).toContain("providerEventId: provenance?.providerEventId");
-    expect(allowance).toContain("providerObjectId: provenance?.providerObjectId ?? reversalReference");
+    expect(allowance).toContain(
+      "providerObjectId: provenance?.providerObjectId ?? reversalReference",
+    );
 
     expect(strictPreflight).toContain("{ providerEventId, providerObjectId: reference }");
     expect(strictPreflight).toContain("{ providerEventId, providerObjectId: refund.id }");
     expect(strictPreflight).toContain("undefined,\n          undefined,\n          event.id,");
-    expect(strictPreflight).toContain("dispute.id,\n                  movementCents,\n                  event.id,");
+    expect(strictPreflight).toContain(
+      "dispute.id,\n                  movementCents,\n                  event.id,",
+    );
   });
 });
 
@@ -56,7 +64,9 @@ describe("Stripe reversal reconciliation query", () => {
     expect(query).toContain("charge.refunded");
     expect(query).toContain("charge.dispute.funds_withdrawn");
     expect(query).toContain("charge.dispute.funds_reinstated");
-    expect(query).not.toMatch(/\b(?:insert|update|delete|alter|drop|truncate)\s+(?:into\s+)?wireline_/i);
+    expect(query).not.toMatch(
+      /\b(?:insert|update|delete|alter|drop|truncate)\s+(?:into\s+)?wireline_/i,
+    );
   });
 
   it("requires human Stripe verification before any correction", () => {

@@ -60,7 +60,7 @@ describe("BotBound managed Bot identity", () => {
   it("protects platform-managed mailboxes from the legacy AgentMail disconnect path", () => {
     const routes = read("src/routes/agentmail-routes.ts");
     expect(routes).toContain("const legacyAccounts = accounts.filter(");
-    expect(routes).toContain("!account.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)");
+    expect(routes).toContain("!hasExactAgentMailManagedScope(account.oauthGrantedScopes)");
   });
 
   it("hides AgentMail from the customer connection catalog while retaining customer-owned mail providers", () => {

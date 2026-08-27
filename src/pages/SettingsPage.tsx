@@ -115,19 +115,16 @@ function DangerZone() {
       const response = await authFetch("/api/account/cancel-deletion", { method: "POST" });
       const data = (await response.json().catch(() => null)) as {
         error?: string;
-        renewal_resumed?: boolean;
+        billing_reactivation_required?: boolean;
       } | null;
       if (!response.ok) {
         throw new Error(data?.error || `Couldn't cancel deletion (${response.status}).`);
       }
       setDeletionScheduled(false);
       setConfirmation("");
-      const renewalNeedsAttention = data?.renewal_resumed === false;
-      setRenewalStopNeedsAttention(renewalNeedsAttention);
+      setRenewalStopNeedsAttention(data?.billing_reactivation_required !== false);
       setMessage(
-        renewalNeedsAttention
-          ? "Deletion canceled. We could not confirm that subscription renewal resumed; review Billing before the current period ends."
-          : "Deletion canceled. Your account remains active and subscription renewal is restored when applicable.",
+        "Deletion canceled. BotBound did not restart billing automatically. If renewal was stopped, review Billing and reactivate it explicitly when you are ready.",
       );
     } catch (err) {
       setError(

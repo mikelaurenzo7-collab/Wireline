@@ -57,7 +57,8 @@ describe("mobile TCPA consent contract", () => {
     expect(mobile).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
     expect(mobile).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
     expect(mobile).not.toContain('default("marketing_or_sales")');
-    expect(mobile).toContain("isMarketingCallPurpose");
+    expect(mobile).toContain("classifyUntrustedDirectDial");
+    expect(mobile).toContain("callPurpose: effectiveCallPurpose");
     expect(mobile).toContain("outboundConsentMetadata");
     expect(mobile).toContain("evaluateOutboundDialGate");
   });

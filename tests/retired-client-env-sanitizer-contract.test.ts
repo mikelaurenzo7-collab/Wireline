@@ -1,11 +1,13 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8").replace(/\r\n/g, "\n");
 const sanitizerPath = resolve(root, "scripts/sanitize-retired-client-env.mjs");
+const sanitizerUrl = pathToFileURL(sanitizerPath).href;
 
 function canonicalProjectId(): string {
   const source = read("scripts/lib/vercel-project.mjs");
@@ -39,7 +41,9 @@ describe("retired client environment sanitizer", () => {
       deployment.indexOf(sanitizerContract),
     );
     expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
-    expect(deployment).toContain('run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);');
+    expect(deployment).toContain(
+      'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
+    );
     expect(envExample).toContain("Browser Vapi credentials are retired");
     expect(envExample).not.toContain("\nVITE_VAPI_PUBLIC_KEY=");
   });
@@ -49,7 +53,7 @@ describe("retired client environment sanitizer", () => {
       process.execPath,
       [
         "--import",
-        sanitizerPath,
+        sanitizerUrl,
         "-e",
         "process.stdout.write(process.env.VITE_VAPI_PUBLIC_KEY || 'clean')",
       ],
@@ -79,7 +83,7 @@ describe("retired client environment sanitizer", () => {
         process.execPath,
         [
           "--import",
-          sanitizerPath,
+          sanitizerUrl,
           "-e",
           "process.stdout.write(process.env.VITE_VAPI_PUBLIC_KEY || 'clean')",
         ],

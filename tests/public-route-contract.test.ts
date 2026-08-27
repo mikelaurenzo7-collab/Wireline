@@ -8,6 +8,24 @@ const root = resolve(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("public route fallbacks", () => {
+  it("redirects the retired status alias at the edge and captures its canonical destination", () => {
+    const vercel = JSON.parse(read("vercel.json")) as {
+      redirects?: Array<{ source?: string; destination?: string; permanent?: boolean }>;
+    };
+    expect(vercel.redirects).toContainEqual({
+      source: "/status",
+      destination: "/trust",
+      permanent: true,
+    });
+
+    const app = read("src/App.tsx");
+    expect(app).not.toContain('path="/status"');
+
+    const productionVisualQaContract = read("scripts/lib/production-visual-qa-contract.mjs");
+    expect(productionVisualQaContract).toContain('visualExpectation("/status"');
+    expect(productionVisualQaContract).toContain('["/status", "/trust"]');
+  });
+
   it("wires the changelog and both explicit public 404 aliases", () => {
     const app = read("src/App.tsx");
 
@@ -76,7 +94,10 @@ describe("public route fallbacks", () => {
   });
 
   it("captures the live solution routes rather than the retired personal alias", () => {
-    for (const path of ["scripts/capture-prod-visual-qa.mjs", "tests/e2e/public-routes.spec.ts"]) {
+    for (const path of [
+      "scripts/lib/production-visual-qa-contract.mjs",
+      "tests/e2e/public-routes.spec.ts",
+    ]) {
       const source = read(path);
       expect(source, path).toContain('"/solutions/support"');
       expect(source, path).toContain('"/solutions/sales"');

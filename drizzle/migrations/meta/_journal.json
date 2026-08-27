@@ -435,6 +435,13 @@
       "when": 1787788800000,
       "tag": "0163_guard_account_environment_promotion",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787801744757,
+      "tag": "0164_stripe_event_claim_fencing",
+      "breakpoints": true
     }
   ]
 }

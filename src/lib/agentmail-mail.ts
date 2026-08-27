@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 
 import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
+import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
 export const AGENTMAIL_API_BASE = "https://api.agentmail.to/v0";
@@ -16,6 +17,7 @@ const AGENTMAIL_MAIL_SCOPE = "imap smtp api-key webhook";
 const WIRELINE_INBOX_CLIENT_ID = "wireline-mailbox";
 export const AGENTMAIL_WEBHOOK_CLIENT_ID = "wireline-mailbox-webhook";
 export const AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1";
+export const AGENTMAIL_MANAGED_SCOPE_MARKER = "managed-botbound";
 export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
   "message.received",
   "message.sent",
@@ -37,6 +39,16 @@ export class AgentMailConnectError extends Error {
 }
 
 export type AgentMailInbox = { inboxId: string; email: string };
+export type AgentMailAccountForManagedErasure = {
+  provider: string | null;
+  emailAddress: string;
+  accessToken: string | null;
+  oauthGrantedScopes: string | null;
+};
+export type AgentMailManagedErasureSummary = {
+  managedAccountsReconciled: number;
+  inboxesDeleted: number;
+};
 export type AgentMailInboxMessage = {
   messageId: string;
   threadId?: string;
@@ -63,7 +75,8 @@ function resolveAgentMailCredential(value: string): string {
   const supplied = String(value || "").replace(/\s+/g, "");
   if (supplied !== AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL) return supplied;
   const managed = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
-  if (!managed) throw new AgentMailConnectError("BotBound managed email is temporarily unavailable.");
+  if (!managed)
+    throw new AgentMailConnectError("BotBound managed email is temporarily unavailable.");
   return managed;
 }
 
@@ -83,7 +96,11 @@ function createImapClient(email: string, credential: string) {
 function formatAddressList(list: Array<{ name?: string; address?: string }> | undefined): string {
   return (list || [])
     .map((entry) =>
-      entry.name ? (entry.address ? `${entry.name} <${entry.address}>` : entry.name) : (entry.address ?? ""),
+      entry.name
+        ? entry.address
+          ? `${entry.name} <${entry.address}>`
+          : entry.name
+        : (entry.address ?? ""),
     )
     .filter(Boolean)
     .join(", ");
@@ -93,7 +110,9 @@ export function normalizeAgentMailInbox(raw: unknown): AgentMailInbox | null {
   const row = asRecord(raw);
   if (!row) return null;
   const inboxId = String(row.inbox_id ?? row.inboxId ?? "").trim();
-  const email = String(row.email ?? inboxId).trim().toLowerCase();
+  const email = String(row.email ?? inboxId)
+    .trim()
+    .toLowerCase();
   if (!inboxId && !email) return null;
   return { inboxId: inboxId || email, email: email || inboxId.toLowerCase() };
 }
@@ -101,6 +120,10 @@ export function normalizeAgentMailInbox(raw: unknown): AgentMailInbox | null {
 export function inboxMatchesAddress(inbox: AgentMailInbox, emailAddress: string): boolean {
   const wanted = emailAddress.trim().toLowerCase();
   return inbox.email === wanted || inbox.inboxId.trim().toLowerCase() === wanted;
+}
+
+export function hasExactAgentMailManagedScope(scopes: string | null | undefined): boolean {
+  return typeof scopes === "string" && scopes.split(/\s+/).includes(AGENTMAIL_MANAGED_SCOPE_MARKER);
 }
 
 export function agentmailLocalPart(emailAddress: string): string | null {
@@ -141,6 +164,8 @@ async function agentMailJson(
   return { status: response.status, body };
 }
 
+type AgentMailJsonRequester = typeof agentMailJson;
+
 function assertAgentMailStatus(status: number, message: string): void {
   if (status === 401 || status === 403) {
     throw new AgentMailConnectError("That AgentMail API key was rejected.");
@@ -148,24 +173,257 @@ function assertAgentMailStatus(status: number, message: string): void {
   if (status < 200 || status >= 300) throw new AgentMailConnectError(message);
 }
 
-export async function listAgentMailInboxes(credential: string): Promise<AgentMailInbox[]> {
+export async function listAgentMailInboxes(
+  credential: string,
+  request: AgentMailJsonRequester = agentMailJson,
+): Promise<AgentMailInbox[]> {
   const inboxes: AgentMailInbox[] = [];
   let pageToken: string | undefined;
-  for (let page = 0; page < 10; page += 1) {
+  const seenPageTokens = new Set<string>();
+  while (true) {
+    if (pageToken) {
+      if (seenPageTokens.has(pageToken)) {
+        throw new AgentMailConnectError(
+          "AgentMail returned a repeated inbox page token; mailbox inventory is incomplete.",
+        );
+      }
+      seenPageTokens.add(pageToken);
+    }
     const query = new URLSearchParams({ limit: "100" });
     if (pageToken) query.set("page_token", pageToken);
-    const { status, body } = await agentMailJson(credential, `/inboxes?${query}`);
+    const { status, body } = await request(credential, `/inboxes?${query}`);
     assertAgentMailStatus(status, "Could not list AgentMail inboxes with that API key.");
     const payload = asRecord(body);
-    for (const row of Array.isArray(payload?.inboxes) ? payload.inboxes : []) {
-      const inbox = normalizeAgentMailInbox(row);
-      if (inbox) inboxes.push(inbox);
+    if (!payload || !Array.isArray(payload.inboxes)) {
+      throw new AgentMailConnectError(
+        "AgentMail returned an invalid inbox inventory; mailbox cleanup was deferred.",
+      );
     }
-    const next = String(payload?.next_page_token ?? payload?.nextPageToken ?? "").trim();
+    for (const row of payload.inboxes) {
+      const inbox = normalizeAgentMailInbox(row);
+      if (!inbox) {
+        throw new AgentMailConnectError(
+          "AgentMail returned an invalid inbox entry; mailbox cleanup was deferred.",
+        );
+      }
+      inboxes.push(inbox);
+    }
+    const rawNext = payload.next_page_token ?? payload.nextPageToken;
+    if (rawNext != null && typeof rawNext !== "string") {
+      throw new AgentMailConnectError(
+        "AgentMail returned an invalid inbox page token; mailbox cleanup was deferred.",
+      );
+    }
+    const next = String(rawNext ?? "").trim();
     if (!next) break;
     pageToken = next;
   }
   return inboxes;
+}
+
+export async function deleteAgentMailInbox(
+  credential: string,
+  inboxId: string,
+  request: AgentMailJsonRequester = agentMailJson,
+): Promise<"deleted" | "already_absent"> {
+  const { status } = await request(credential, `/inboxes/${encodeURIComponent(inboxId)}`, {
+    method: "DELETE",
+  });
+  if (status === 404) return "already_absent";
+  assertAgentMailStatus(status, "Could not delete the managed AgentMail inbox.");
+  return "deleted";
+}
+
+type ManagedAgentMailErasureDeps = {
+  decryptAccessToken: (encrypted: string) => string;
+  verifyManagedDomain: (credential: string) => Promise<void>;
+  listInboxes: (credential: string) => Promise<AgentMailInbox[]>;
+  deleteInbox: (credential: string, inboxId: string) => Promise<"deleted" | "already_absent">;
+};
+
+function configuredManagedAgentMailDomain(): string {
+  const domain = String(process.env.AGENTMAIL_DEFAULT_DOMAIN || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "");
+  const syntacticallyValid =
+    domain.includes(".") &&
+    /^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(domain) &&
+    (domain === "botbound.me" || domain.endsWith(".botbound.me"));
+  if (!syntacticallyValid) {
+    throw new AgentMailConnectError(
+      "The BotBound managed AgentMail domain is missing or invalid; mailbox cleanup was deferred.",
+    );
+  }
+  return domain;
+}
+
+/**
+ * Prove that the currently configured managed API key still belongs to the
+ * organization that owns BotBound's exact verified sending domain. A valid,
+ * empty inbox list from a different AgentMail organization is not evidence
+ * that the old organization's mailbox has been erased.
+ */
+export async function verifyManagedAgentMailDomainIdentity(
+  credential: string,
+  request: AgentMailJsonRequester = agentMailJson,
+): Promise<void> {
+  const configuredDomain = configuredManagedAgentMailDomain();
+  const seenPageTokens = new Set<string>();
+  let pageToken: string | undefined;
+  let matchedDomainId: string | null = null;
+
+  while (true) {
+    if (pageToken) {
+      if (seenPageTokens.has(pageToken)) {
+        throw new AgentMailConnectError(
+          "AgentMail returned a repeated domain page token; mailbox cleanup was deferred.",
+        );
+      }
+      seenPageTokens.add(pageToken);
+    }
+    const query = new URLSearchParams({ limit: "100" });
+    if (pageToken) query.set("page_token", pageToken);
+    const { status, body } = await request(credential, `/domains?${query}`);
+    assertAgentMailStatus(status, "Could not verify the managed AgentMail organization.");
+    const payload = asRecord(body);
+    if (!payload || !Array.isArray(payload.domains)) {
+      throw new AgentMailConnectError(
+        "AgentMail returned an invalid domain inventory; mailbox cleanup was deferred.",
+      );
+    }
+    for (const rawDomain of payload.domains) {
+      const domain = asRecord(rawDomain);
+      const domainId = String(domain?.domain_id ?? domain?.domainId ?? "").trim();
+      const domainName = String(domain?.domain ?? "")
+        .trim()
+        .toLowerCase();
+      if (!domainId || !domainName) {
+        throw new AgentMailConnectError(
+          "AgentMail returned an invalid domain entry; mailbox cleanup was deferred.",
+        );
+      }
+      if (domainName === configuredDomain) matchedDomainId = domainId;
+    }
+    const rawNext = payload.next_page_token ?? payload.nextPageToken;
+    if (rawNext != null && typeof rawNext !== "string") {
+      throw new AgentMailConnectError(
+        "AgentMail returned an invalid domain page token; mailbox cleanup was deferred.",
+      );
+    }
+    const next = String(rawNext ?? "").trim();
+    if (!next) break;
+    pageToken = next;
+  }
+
+  if (!matchedDomainId) {
+    throw new AgentMailConnectError(
+      "The active AgentMail organization does not own BotBound's managed domain; mailbox cleanup was deferred.",
+    );
+  }
+
+  const { status, body } = await request(
+    credential,
+    `/domains/${encodeURIComponent(matchedDomainId)}`,
+  );
+  assertAgentMailStatus(status, "Could not verify the managed AgentMail domain.");
+  const detail = asRecord(body);
+  const detailId = String(detail?.domain_id ?? detail?.domainId ?? "").trim();
+  const detailDomain = String(detail?.domain ?? "")
+    .trim()
+    .toLowerCase();
+  const detailStatus = String(detail?.status ?? "")
+    .trim()
+    .toUpperCase();
+  if (
+    detailId !== matchedDomainId ||
+    detailDomain !== configuredDomain ||
+    detailStatus !== "VERIFIED"
+  ) {
+    throw new AgentMailConnectError(
+      "BotBound's managed AgentMail domain is not verified under the active organization; mailbox cleanup was deferred.",
+    );
+  }
+}
+
+/**
+ * Permanently remove only BotBound-owned AgentMail inboxes before local
+ * account erasure destroys their cleanup pointers. Tenant-owned/legacy
+ * AgentMail connections never carry the exact managed scope marker and are
+ * deliberately ignored.
+ */
+export async function eraseManagedAgentMailInboxesForPurge(
+  accounts: readonly AgentMailAccountForManagedErasure[],
+  overrides: Partial<ManagedAgentMailErasureDeps> = {},
+): Promise<AgentMailManagedErasureSummary> {
+  const managedAccounts = accounts.filter(
+    (account) =>
+      account.provider === "agentmail" && hasExactAgentMailManagedScope(account.oauthGrantedScopes),
+  );
+  if (managedAccounts.length === 0) {
+    return { managedAccountsReconciled: 0, inboxesDeleted: 0 };
+  }
+
+  const decryptAccessToken = overrides.decryptAccessToken ?? decryptSecret;
+  const verifyManagedDomain = overrides.verifyManagedDomain ?? verifyManagedAgentMailDomainIdentity;
+  const listInboxes = overrides.listInboxes ?? listAgentMailInboxes;
+  const deleteInbox = overrides.deleteInbox ?? deleteAgentMailInbox;
+  const wantedAddresses: string[] = [];
+
+  // Validate every local ownership pointer before touching the provider. A
+  // marker/sentinel contradiction is configuration corruption, not a BYO
+  // account, and must block local erasure so an operator can repair it.
+  for (const account of managedAccounts) {
+    if (!account.accessToken) {
+      throw new AgentMailConnectError(
+        "A managed AgentMail inbox is missing its BotBound credential sentinel.",
+      );
+    }
+    let credentialMarker: string;
+    try {
+      credentialMarker = decryptAccessToken(account.accessToken);
+    } catch {
+      throw new AgentMailConnectError(
+        "A managed AgentMail inbox credential could not be decrypted; mailbox cleanup was deferred.",
+      );
+    }
+    if (credentialMarker !== AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL) {
+      throw new AgentMailConnectError(
+        "A managed AgentMail inbox does not use the BotBound credential sentinel.",
+      );
+    }
+    const address = account.emailAddress.trim().toLowerCase();
+    if (!address) {
+      throw new AgentMailConnectError(
+        "A managed AgentMail inbox is missing its email address; mailbox cleanup was deferred.",
+      );
+    }
+    wantedAddresses.push(address);
+  }
+
+  // Prove the active key still belongs to the exact organization/domain before
+  // treating even a valid empty inbox inventory as authoritative.
+  await verifyManagedDomain(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL);
+
+  // One complete, identity-proven organization inventory is authoritative for
+  // every managed pointer. listAgentMailInboxes follows all pages and fails
+  // closed on a malformed or cyclic cursor sequence.
+  const providerInboxes = await listInboxes(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL);
+  let inboxesDeleted = 0;
+  for (const address of wantedAddresses) {
+    const matches = providerInboxes.filter((inbox) => inbox.email === address);
+    for (const inbox of matches) {
+      // A concurrent/retried deletion can turn an inventoried inbox into 404;
+      // deleteAgentMailInbox treats that as idempotent success.
+      await deleteInbox(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL, inbox.inboxId);
+      inboxesDeleted += 1;
+    }
+  }
+
+  return {
+    managedAccountsReconciled: managedAccounts.length,
+    inboxesDeleted,
+  };
 }
 
 export async function createAgentMailInbox(
@@ -191,7 +449,8 @@ export async function createAgentMailInbox(
       : "Could not create that AgentMail inbox. Check the username and org capacity.",
   );
   const created = normalizeAgentMailInbox(body) ?? normalizeAgentMailInbox(asRecord(body)?.inbox);
-  if (!created) throw new AgentMailConnectError("AgentMail created an inbox but did not return its address.");
+  if (!created)
+    throw new AgentMailConnectError("AgentMail created an inbox but did not return its address.");
   return created;
 }
 
@@ -254,7 +513,9 @@ export async function fetchAgentMailInbox(
           provider: "agentmail",
         });
       }
-      return messages.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime()).slice(0, limit);
+      return messages
+        .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime())
+        .slice(0, limit);
     } finally {
       lock.release();
     }
@@ -337,7 +598,11 @@ function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
   };
 }
 
-function webhookOwnedByAccount(webhook: AgentMailWebhook, accountId: string, url: string | null): boolean {
+function webhookOwnedByAccount(
+  webhook: AgentMailWebhook,
+  accountId: string,
+  url: string | null,
+): boolean {
   if (url && webhook.url === url) return true;
   if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
   return webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID && Boolean(url) && webhook.url === url;
@@ -413,8 +678,10 @@ export async function ensureAgentMailWebhook(input: {
     }),
   });
   assertAgentMailStatus(status, "Could not register the AgentMail inbound webhook for this inbox.");
-  const created = normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
-  if (!created) throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
+  const created =
+    normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
+  if (!created)
+    throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
   return { webhookId: created.webhookId, secret: created.secret };
 }
 

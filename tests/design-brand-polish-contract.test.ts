@@ -132,6 +132,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toMatch(/<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/);
     expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
     expect(landing).toContain("BotBoundLockup");
+    expect(landing).toContain('className="landing-prestige__hero-lockup"');
     expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
@@ -144,6 +145,9 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("Runtime Balance");
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
     expect(prestige).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)");
+    expect(prestige).toContain("--bb-lockup-wordmark-size: clamp(3.25rem, 4.8vw, 4.25rem)");
+    expect(prestige).toContain("--bb-lockup-mark: clamp(5.75rem, 7.5vw, 6.75rem)");
+    expect(prestige).toContain("--bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem)");
     expect(prestige).toMatch(
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
     );

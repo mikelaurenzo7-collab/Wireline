@@ -72,7 +72,11 @@ export default function WireAgentLanding() {
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
           <div className="landing-prestige__hero" aria-label="BotBound Phone Bot">
             <div className="landing-prestige__hero-brand">
-              <BotBoundLockup size="display" surface="tile" />
+              <BotBoundLockup
+                size="display"
+                surface="bare"
+                className="landing-prestige__hero-lockup"
+              />
             </div>
             <div className="landing-prestige__hero-copy">
               <h1 id="landing-prestige-title">

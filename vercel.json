@@ -91,6 +91,13 @@
       "includeFiles": "dist/chatgpt-mcp-api.cjs"
     }
   },
+  "redirects": [
+    {
+      "source": "/status",
+      "destination": "/trust",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/mcp",

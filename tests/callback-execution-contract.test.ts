@@ -64,15 +64,15 @@ describe("caller-requested callbacks execute end-to-end", () => {
 
     // Only a live call writes the marker.
     expect(handler).toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
-    // ...and intake metadata is stored verbatim, so it must be stripped there
-    // or the account holder could assert it over HTTP.
-    expect(intake).toContain("keyName !== CALLBACK_REQUEST_MARKER");
-    // The bulk lead import stores account-holder metadata verbatim too — the
+    // ...and intake preserves ordinary caller metadata, so the shared sanitizer
+    // must remove this internal marker before persistence.
+    expect(intake).toContain("sanitizeUntrustedOutboundMetadata");
+    // The bulk lead import also preserves ordinary account-holder metadata — the
     // same trust boundary, one route over. An imported cold list carrying the
     // marker would dial as consented callbacks after any writer of
     // callback_scheduled_at touched the rows.
     const bulk = read("src/routes/outbound-routes.ts");
-    expect(bulk).toContain("stripCallbackRequestMarker((lead.metadata as Record<string, unknown>)");
+    expect(bulk).toContain("sanitizeUntrustedOutboundMetadata(");
 
     // Without the marker the dial stays marketing-classed, which is what keeps
     // the opt-out announcement on (vapi-client isMarketingCallPurpose).

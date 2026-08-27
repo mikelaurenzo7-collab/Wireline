@@ -14,6 +14,10 @@ import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import {
+  classifyUntrustedDirectDial,
+  sanitizeUntrustedOutboundMetadata,
+} from "./outbound-call-purpose";
 import { searchLeads } from "./apollo-service";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
@@ -52,20 +56,6 @@ async function insertFollowUpTask(values: typeof schema.followUpTasks.$inferInse
     }),
   );
 }
-
-/**
- * Roles whose auto SMS is treated as non-marketing (service / ops).
- * Everything else — including unknown roles and missing agentId — fails
- * closed as marketing so federal DNC + express consent apply.
- */
-const NON_MARKETING_SMS_ROLES = new Set([
-  "customer_service",
-  "technical_support",
-  "receptionist",
-  "scheduler",
-  "personal_assistant",
-  "ecommerce",
-]);
 
 /** Action-engine names are not identical to live catalog names. */
 const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
@@ -442,19 +432,13 @@ async function handleSendTextMessage(
   const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
   if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
 
-  // Match cadence-engine: every auto-sent SMS clears the shared TCPA / DNC /
-  // quiet-hours / duplicate gate. Non-service roles are marketing (federal
-  // DNC + express written consent via outbound-lead metadata when present).
-  let isMarketingCall = true;
-  if (action.agentId) {
-    const [agent] = await drizzle
-      .select({ role: schema.agents.role })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
-      .limit(1);
-    const role = String(agent?.role || "").toLowerCase();
-    isMarketingCall = !NON_MARKETING_SMS_ROLES.has(role);
-  }
+  // An agent role is tenant-configurable and cannot prove that the consumer
+  // requested this message. Autonomous direct SMS therefore enters the shared
+  // gate as untrusted marketing unless a future server-owned artifact is
+  // resolved here explicitly.
+  const purpose = classifyUntrustedDirectDial({
+    callPurpose: "service_or_requested",
+  });
 
   const [lead] = await drizzle
     .select({
@@ -474,8 +458,12 @@ async function handleSendTextMessage(
       phone,
       leadId: lead?.id,
       lastCalledAt: lead?.lastCalledAt,
-      metadata: (lead?.metadata as Record<string, unknown> | null) || {},
-      isMarketingCall,
+      metadata: sanitizeUntrustedOutboundMetadata(
+        (lead?.metadata as Record<string, unknown> | null) || {},
+      ),
+      isMarketingCall: purpose.isMarketingCall,
+      requireFederalDncScreening: true,
+      hasExpressWrittenConsent: false,
     });
     if (!gate.allowed) {
       return {

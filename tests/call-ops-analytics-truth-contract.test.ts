@@ -50,7 +50,8 @@ describe("Call Ops analytics truth", () => {
     expect(overview).toContain("<CallOpsAnalytics />");
     expect(phonePage).toContain('import CallOpsOverview from "../components/CallOpsOverview";');
     expect(phonePage).toContain('{ id: "analytics", label: "Analytics" }');
-    expect(phonePage).toContain('primaryTab === "analytics" && <CallOpsOverview />');
+    expect(phonePage).toContain('data-visual-qa-state="primary-analytics"');
+    expect(phonePage).toContain("<CallOpsOverview />");
     expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");
     expect(callOps).toContain("offset: String(calls.length)");
     expect(callOps).toContain("Load more calls");

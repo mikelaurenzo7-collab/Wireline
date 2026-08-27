@@ -21,8 +21,13 @@ import {
   gatewayModelId,
   isAIGatewayConfigured,
 } from "./ai-gateway";
-import { normalizeResponsesUsage } from "./ai-usage";
+import {
+  normalizeResponsesUsage,
+  normalizeUsageTokenCount,
+  saturatingUsageTokenSum,
+} from "./ai-usage";
 import { recordAmbiguousProviderAttempt } from "./ai-audit";
+import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
@@ -59,6 +64,10 @@ export type RuntimeMessage = {
   type: "message";
   role: "assistant";
   model: string;
+  /** Actual inference provider when the transport reports it separately from the model creator. */
+  inference_provider?: string;
+  /** Authoritative per-request Gateway charge, when returned by Vercel. */
+  actual_cost_usd?: number;
   content: RuntimeContentBlock[];
   stop_reason: RuntimeStopReason;
   stop_sequence: null;
@@ -83,7 +92,7 @@ export type RuntimeClient = {
   };
 };
 
-type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
+export type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
 
 /**
  * An explicit provider HTTP 4xx means the request was rejected rather than
@@ -176,6 +185,8 @@ function parseStructuredJson(text: string): unknown {
 
 function message(args: {
   model: string;
+  inferenceProvider?: string;
+  actualCostUsd?: number;
   content: RuntimeContentBlock[];
   stopReason: RuntimeStopReason;
   inputTokens: number;
@@ -188,6 +199,8 @@ function message(args: {
     type: "message",
     role: "assistant",
     model: args.model,
+    ...(args.inferenceProvider ? { inference_provider: args.inferenceProvider } : {}),
+    ...(typeof args.actualCostUsd === "number" ? { actual_cost_usd: args.actualCostUsd } : {}),
     content: args.content,
     stop_reason: args.stopReason,
     stop_sequence: null,
@@ -218,6 +231,113 @@ function extractResponsesText(payload: Record<string, unknown>): string {
     }
   }
   return chunks.join("\n").trim();
+}
+
+export type ResponsesEvidence = {
+  model: string;
+  inferenceProvider: string;
+  actualCostUsd?: number;
+};
+
+function validResponseModel(value: unknown, fallback: string): string {
+  const candidate = typeof value === "string" ? value.trim() : "";
+  return /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/.test(candidate) ? candidate : fallback;
+}
+
+export function resolveResponsesEvidence(
+  payload: Record<string, unknown>,
+  requestedModel: string,
+  transport: RuntimeProviderName,
+): ResponsesEvidence {
+  const topLevelModel = validResponseModel(payload.model, requestedModel);
+  if (transport !== "AI Gateway") {
+    return {
+      model: topLevelModel,
+      inferenceProvider:
+        transport === "OpenAI" ? "openai" : transport === "xAI" ? "xai" : "gateway",
+    };
+  }
+
+  const baseFallback: ResponsesEvidence = { model: topLevelModel, inferenceProvider: "gateway" };
+  const providerMetadata = payload.provider_metadata;
+  const gateway =
+    providerMetadata && typeof providerMetadata === "object"
+      ? (providerMetadata as Record<string, unknown>).gateway
+      : undefined;
+  if (!gateway || typeof gateway !== "object") return baseFallback;
+
+  // gateway.cost is the authoritative charge for this response and does not
+  // depend on routing metadata being complete enough to attribute a specific
+  // model/provider pair. Keep truthful cost accounting even when attribution
+  // must conservatively fall back to the top-level model and `gateway`.
+  const actualCostUsd = normalizeProviderReportedCostUsd((gateway as Record<string, unknown>).cost);
+  const fallback: ResponsesEvidence = {
+    ...baseFallback,
+    ...(actualCostUsd !== undefined ? { actualCostUsd } : {}),
+  };
+
+  const routing = (gateway as Record<string, unknown>).routing;
+  if (!routing || typeof routing !== "object") return fallback;
+
+  const routingRecord = routing as Record<string, unknown>;
+  const finalProviderCandidate =
+    typeof routingRecord.finalProvider === "string"
+      ? routingRecord.finalProvider.trim().toLowerCase()
+      : "";
+  if (!/^[a-z0-9][a-z0-9._:/-]{0,99}$/.test(finalProviderCandidate)) return fallback;
+
+  const attempts = Array.isArray(routingRecord.modelAttempts) ? routingRecord.modelAttempts : [];
+  const successfulModelAttempts = attempts.filter(
+    (attempt) =>
+      attempt &&
+      typeof attempt === "object" &&
+      (attempt as Record<string, unknown>).success === true,
+  );
+  if (successfulModelAttempts.length !== 1) return fallback;
+
+  const successfulAttempt = successfulModelAttempts[0] as Record<string, unknown>;
+  const providerAttempts = Array.isArray(successfulAttempt.providerAttempts)
+    ? successfulAttempt.providerAttempts
+    : [];
+  const successfulProviderAttempts = providerAttempts.filter(
+    (providerAttempt) =>
+      providerAttempt &&
+      typeof providerAttempt === "object" &&
+      (providerAttempt as Record<string, unknown>).success === true,
+  );
+  if (successfulProviderAttempts.length !== 1) return fallback;
+
+  // A provider attempt marked successful under a failed model attempt makes
+  // the metadata self-contradictory. Reject the entire tuple instead of
+  // accidentally pairing that provider with the one successful model.
+  const allSuccessfulProviderAttempts = attempts.flatMap((attempt) => {
+    if (!attempt || typeof attempt !== "object") return [];
+    const nestedProviderAttempts = (attempt as Record<string, unknown>).providerAttempts;
+    if (!Array.isArray(nestedProviderAttempts)) return [];
+    return nestedProviderAttempts.filter(
+      (providerAttempt) =>
+        providerAttempt &&
+        typeof providerAttempt === "object" &&
+        (providerAttempt as Record<string, unknown>).success === true,
+    );
+  });
+  if (allSuccessfulProviderAttempts.length !== 1) return fallback;
+
+  const successfulProviderAttempt = successfulProviderAttempts[0] as Record<string, unknown>;
+  const provider =
+    typeof successfulProviderAttempt.provider === "string"
+      ? successfulProviderAttempt.provider.trim().toLowerCase()
+      : "";
+  if (provider !== finalProviderCandidate) return fallback;
+
+  const model = validResponseModel(successfulAttempt.canonicalSlug, "");
+  if (!model) return fallback;
+
+  return {
+    model,
+    inferenceProvider: provider,
+    ...(actualCostUsd !== undefined ? { actualCostUsd } : {}),
+  };
 }
 
 function isAbortError(error: unknown, signal?: AbortSignal): boolean {
@@ -385,16 +505,22 @@ async function callResponsesEndpoint(args: {
   // both details out so the audit layer can apply their actual vendor rates.
   const { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } =
     normalizeResponsesUsage(usage);
+  // Gateway model fallbacks are resolved inside one HTTP request. Attribute
+  // usage and pricing to the model the provider says actually completed it.
+  const evidence = resolveResponsesEvidence(payload, args.model, args.provider);
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
-    model: args.model,
+    inferenceProvider: evidence.inferenceProvider,
+    model: evidence.model,
     latencyMs: Date.now() - started,
     structured: !!tool,
   });
 
   return tool
     ? message({
-        model: args.model,
+        model: evidence.model,
+        inferenceProvider: evidence.inferenceProvider,
+        actualCostUsd: evidence.actualCostUsd,
         content: [
           {
             type: "tool_use",
@@ -411,7 +537,9 @@ async function callResponsesEndpoint(args: {
         cacheWriteTokens,
       })
     : message({
-        model: args.model,
+        model: evidence.model,
+        inferenceProvider: evidence.inferenceProvider,
+        actualCostUsd: evidence.actualCostUsd,
         content: [{ type: "text", text, citations: null }],
         stopReason: "end_turn",
         inputTokens,
@@ -558,11 +686,16 @@ async function callGemini(
   // the output rate but excluded from candidatesTokenCount; context-cache reads
   // sit inside promptTokenCount at the cache-read rate. Fold both in or every
   // Gemini fallback call is under-metered by its full reasoning budget.
-  const cacheReadTokens = Math.max(0, usageMetadata?.cachedContentTokenCount ?? 0);
-  const inputTokens = Math.max(0, (usageMetadata?.promptTokenCount || 0) - cacheReadTokens);
-  const outputTokens =
-    (usageMetadata?.candidatesTokenCount || 0) +
-    Math.max(0, usageMetadata?.thoughtsTokenCount ?? 0);
+  const promptTokens = normalizeUsageTokenCount(usageMetadata?.promptTokenCount);
+  const cacheReadTokens = Math.min(
+    promptTokens,
+    normalizeUsageTokenCount(usageMetadata?.cachedContentTokenCount),
+  );
+  const inputTokens = promptTokens - cacheReadTokens;
+  const outputTokens = saturatingUsageTokenSum(
+    usageMetadata?.candidatesTokenCount,
+    usageMetadata?.thoughtsTokenCount,
+  );
   return tool
     ? message({
         model: modelId,

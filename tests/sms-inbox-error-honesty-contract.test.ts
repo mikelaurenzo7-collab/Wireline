@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { customerSafeSmsFailureReason } from "../src/lib/sms-customer-errors";
+import {
+  evaluateSmsThreadReplyGate,
+  isRecentInboundSmsArtifact,
+  SMS_LIVE_FOLLOW_UP_WINDOW_MS,
+} from "../src/lib/sms-reply-compliance";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -16,12 +21,70 @@ describe("sms inbox error honesty", () => {
     expect(source).toContain(
       'throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")',
     );
-    expect(source).toContain("evaluateOutboundDialGate");
-    expect(source).toContain("isLiveSessionFollowUp: true");
+    expect(source).toContain("evaluateSmsThreadReplyGate");
     expect(source).not.toContain("res.json({ threads: [] })");
     expect(source).not.toContain("res.json({ messages: [] })");
     expect(source).not.toContain("res.json({ ok: false })");
     expect(source).not.toContain("migration may be pending");
+  });
+
+  it.each([
+    ["an outbound-only thread", null],
+    ["a stale inbound message", { createdAt: new Date(Date.parse("2026-08-26T10:59:59.999Z")) }],
+    ["a future inbound timestamp", { createdAt: new Date("2026-08-26T12:00:00.001Z") }],
+    ["an invalid inbound timestamp", { createdAt: new Date(Number.NaN) }],
+  ])("fails %s closed through the untrusted marketing gate", async (_label, artifact) => {
+    const nowMs = Date.parse("2026-08-26T12:00:00.000Z");
+    const loadLatestInboundArtifact = vi.fn(async () => artifact);
+    const evaluateGate = vi.fn(async () => ({
+      allowed: false as const,
+      status: "AutoDialFailed",
+      reason: "blocked_tcpa" as const,
+    }));
+
+    await evaluateSmsThreadReplyGate(
+      { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123" },
+      { loadLatestInboundArtifact, evaluateGate, now: () => nowMs },
+    );
+
+    expect(loadLatestInboundArtifact).toHaveBeenCalledWith({
+      userId: "tenant-1",
+      threadId: "thread-1",
+      direction: "in",
+    });
+    expect(evaluateGate).toHaveBeenCalledWith({
+      userId: "tenant-1",
+      phone: "+14155550123",
+      isMarketingCall: true,
+      isLiveSessionFollowUp: false,
+      requireFederalDncScreening: true,
+      hasExpressWrittenConsent: false,
+    });
+  });
+
+  it("allows the exact 60-minute boundary only as a live inbound follow-up", async () => {
+    const nowMs = Date.parse("2026-08-26T12:00:00.000Z");
+    const createdAt = new Date(nowMs - SMS_LIVE_FOLLOW_UP_WINDOW_MS);
+    const loadLatestInboundArtifact = vi.fn(async () => ({ createdAt }));
+    const evaluateGate = vi.fn(async () => ({
+      allowed: false as const,
+      status: "AutoDialFailed",
+      reason: "blocked_internal_dnc" as const,
+    }));
+
+    expect(SMS_LIVE_FOLLOW_UP_WINDOW_MS).toBe(60 * 60 * 1000);
+    expect(isRecentInboundSmsArtifact(createdAt, nowMs)).toBe(true);
+    await evaluateSmsThreadReplyGate(
+      { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123" },
+      { loadLatestInboundArtifact, evaluateGate, now: () => nowMs },
+    );
+
+    expect(evaluateGate).toHaveBeenCalledWith({
+      userId: "tenant-1",
+      phone: "+14155550123",
+      isMarketingCall: false,
+      isLiveSessionFollowUp: true,
+    });
   });
 
   it("keeps provider internals server-side while preserving customer recovery", () => {
@@ -58,7 +121,10 @@ describe("sms inbox error honesty", () => {
       component.indexOf("activeThreadFetchRef.current?.abort()"),
       component.indexOf("}, [activeId, fetchMessages]);"),
     );
-    const clearAt = selectionEffect.indexOf("setMessages([])", selectionEffect.indexOf("if (!activeId)"));
+    const clearAt = selectionEffect.indexOf(
+      "setMessages([])",
+      selectionEffect.indexOf("if (!activeId)"),
+    );
     const fetchAt = selectionEffect.indexOf("fetchMessages(activeId");
 
     expect(clearAt).toBeGreaterThan(-1);

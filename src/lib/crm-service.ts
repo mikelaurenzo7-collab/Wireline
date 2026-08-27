@@ -6,6 +6,7 @@ import { getErrorMessage } from "./server-utils";
 import * as salesforce from "./salesforce-service";
 import * as hubspot from "./hubspot-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 function normalizePhone(value: string | null | undefined): string {
   return (value || "").replace(/\D/g, "");
@@ -41,6 +42,37 @@ async function getActiveCrm(userId: string): Promise<"salesforce" | "hubspot" | 
 export class CRMService {
   constructor(private userId: string) {}
 
+  private async runProviderMutation<T>(
+    operation: string,
+    fallback: T,
+    perform: (providerStarted: () => void) => Promise<T>,
+  ): Promise<T> {
+    let providerWorkStarted = false;
+    try {
+      const outcome = await runTenantProviderWorkWithDeletionFence({
+        userId: this.userId,
+        operation,
+        retainOnSuccess: () => providerWorkStarted,
+        perform: () => perform(() => (providerWorkStarted = true)),
+      });
+      if (!outcome.performed) {
+        log.warn("CRM mutation blocked by terminal account deletion", {
+          userId: this.userId,
+          operation,
+        });
+        return fallback;
+      }
+      return outcome.result;
+    } catch (error) {
+      log.error("CRM mutation failed", {
+        userId: this.userId,
+        operation,
+        error: getErrorMessage(error),
+      });
+      return fallback;
+    }
+  }
+
   async createContact(params: {
     crmType: "salesforce" | "hubspot" | "auto";
     first_name: string;
@@ -49,22 +81,25 @@ export class CRMService {
     phone?: string;
     company?: string;
   }): Promise<string | null> {
-    const resolved = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
-    if (resolved === "hubspot") {
-      try {
-        const id = await hubspot.createContact(params, this.userId);
-        return id;
-      } catch (err) {
-        log.error("hubspot create contact failed", { error: err });
+    return this.runProviderMutation("crm_contact_create", null, async (providerStarted) => {
+      const resolved = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
+      if (resolved === "hubspot") {
+        try {
+          providerStarted();
+          return await hubspot.createContact(params, this.userId);
+        } catch (err) {
+          log.error("hubspot create contact failed", { error: err });
+        }
+      } else if (resolved === "salesforce") {
+        try {
+          providerStarted();
+          return await salesforce.createContact(params, this.userId);
+        } catch (err) {
+          log.error("salesforce create contact failed", { error: err });
+        }
       }
-    } else if (resolved === "salesforce") {
-      try {
-        return await salesforce.createContact(params, this.userId);
-      } catch (err) {
-        log.error("salesforce create contact failed", { error: err });
-      }
-    }
-    return null;
+      return null;
+    });
   }
 
   async updateLead(params: {
@@ -73,21 +108,24 @@ export class CRMService {
     status: string;
     notes?: string;
   }): Promise<boolean> {
-    try {
-      log.info(`Updating ${params.crmType} lead`, {
-        userId: this.userId,
-        phone: params.customerNumber,
-      });
+    return this.runProviderMutation("crm_lead_update", false, async (providerStarted) => {
+      try {
+        log.info(`Updating ${params.crmType} lead`, {
+          userId: this.userId,
+          phone: params.customerNumber,
+        });
 
-      if (params.crmType === "salesforce") {
-        return await this.updateSalesforce(params);
-      } else {
-        return await this.updateHubspot(params);
+        providerStarted();
+        if (params.crmType === "salesforce") {
+          return await this.updateSalesforce(params);
+        } else {
+          return await this.updateHubspot(params);
+        }
+      } catch (err) {
+        log.error(`${params.crmType} update failed`, { error: getErrorMessage(err) });
+        return false;
       }
-    } catch (err) {
-      log.error(`${params.crmType} update failed`, { error: getErrorMessage(err) });
-      return false;
-    }
+    });
   }
 
   async searchContacts(query: string, crmType: "salesforce" | "hubspot" | "auto" = "auto") {
@@ -117,22 +155,24 @@ export class CRMService {
     duration_minutes?: number;
     outcome?: string;
   }): Promise<string | null> {
-    const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
-    const contactId = params.contact_id || (await this.resolveContactId(crm, params.to_number));
+    return this.runProviderMutation("crm_call_log", null, async (providerStarted) => {
+      const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
+      if (!crm) return null;
+      providerStarted();
+      const contactId = params.contact_id || (await this.resolveContactId(crm, params.to_number));
 
-    if (crm === "salesforce") {
-      return salesforce.logCall(
-        {
-          subject: params.subject,
-          description: params.description,
-          contact_id: contactId,
-          duration_minutes: params.duration_minutes,
-          outcome: params.outcome,
-        },
-        this.userId,
-      );
-    }
-    if (crm === "hubspot") {
+      if (crm === "salesforce") {
+        return salesforce.logCall(
+          {
+            subject: params.subject,
+            description: params.description,
+            contact_id: contactId,
+            duration_minutes: params.duration_minutes,
+            outcome: params.outcome,
+          },
+          this.userId,
+        );
+      }
       return hubspot.logCall(
         {
           to_number: params.to_number,
@@ -143,8 +183,7 @@ export class CRMService {
         },
         this.userId,
       );
-    }
-    return null;
+    });
   }
 
   async updateDealStage(params: {
@@ -152,23 +191,27 @@ export class CRMService {
     deal_id: string;
     stage: string;
   }): Promise<boolean> {
-    const resolved = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
-    if (resolved === "hubspot") {
-      try {
-        return await hubspot.updateDealStage(params.deal_id, params.stage, this.userId);
-      } catch (err) {
-        log.error("hubspot update deal stage failed", { error: err });
-        return false;
+    return this.runProviderMutation("crm_deal_stage_update", false, async (providerStarted) => {
+      const resolved = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
+      if (resolved === "hubspot") {
+        try {
+          providerStarted();
+          return await hubspot.updateDealStage(params.deal_id, params.stage, this.userId);
+        } catch (err) {
+          log.error("hubspot update deal stage failed", { error: err });
+          return false;
+        }
+      } else if (resolved === "salesforce") {
+        try {
+          providerStarted();
+          return await salesforce.updateOpportunityStage(params.deal_id, params.stage, this.userId);
+        } catch (err) {
+          log.error("salesforce update deal stage failed", { error: err });
+          return false;
+        }
       }
-    } else if (resolved === "salesforce") {
-      try {
-        return await salesforce.updateOpportunityStage(params.deal_id, params.stage, this.userId);
-      } catch (err) {
-        log.error("salesforce update opportunity stage failed", { error: err });
-        return false;
-      }
-    }
-    return false;
+      return false;
+    });
   }
 
   async createOpportunity(params: {
@@ -178,42 +221,46 @@ export class CRMService {
     stage?: string;
     amount?: number;
   }): Promise<string | null> {
-    const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
+    return this.runProviderMutation("crm_opportunity_create", null, async (providerStarted) => {
+      const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
 
-    let createdId: string | null = null;
-    if (crm === "salesforce") {
-      createdId = await salesforce.createOpportunity(
-        {
-          name: params.name,
-          contact_id: params.contact_id,
-          stage: params.stage,
-          amount: params.amount,
-        },
-        this.userId,
-      );
-    } else if (crm === "hubspot") {
-      createdId = await hubspot.createDeal(
-        {
-          name: params.name,
-          contact_id: params.contact_id,
-          stage: params.stage,
-          amount: params.amount,
-        },
-        this.userId,
-      );
-    }
-    if (createdId) {
-      const ch = await getDefaultChannel(this.userId);
-      if (ch) {
-        const amt = params.amount != null ? `, $${params.amount}` : "";
-        void slackPostMessage(
+      let createdId: string | null = null;
+      if (crm === "salesforce") {
+        providerStarted();
+        createdId = await salesforce.createOpportunity(
+          {
+            name: params.name,
+            contact_id: params.contact_id,
+            stage: params.stage,
+            amount: params.amount,
+          },
           this.userId,
-          ch,
-          `🎯 *Deal / opportunity created*\n${params.name}${amt}`,
+        );
+      } else if (crm === "hubspot") {
+        providerStarted();
+        createdId = await hubspot.createDeal(
+          {
+            name: params.name,
+            contact_id: params.contact_id,
+            stage: params.stage,
+            amount: params.amount,
+          },
+          this.userId,
         );
       }
-    }
-    return createdId;
+      if (createdId) {
+        const ch = await getDefaultChannel(this.userId);
+        if (ch) {
+          const amt = params.amount != null ? `, $${params.amount}` : "";
+          void slackPostMessage(
+            this.userId,
+            ch,
+            `🎯 *Deal / opportunity created*\n${params.name}${amt}`,
+          );
+        }
+      }
+      return createdId;
+    });
   }
 
   private async updateSalesforce(params: {
@@ -254,6 +301,20 @@ export class CRMService {
   }
 
   async syncEnrichedLead(params: {
+    customerNumber: string;
+    fullName?: string | null;
+    jobTitle?: string | null;
+    company?: string | null;
+    linkedInUrl?: string | null;
+    leadScore?: number | null;
+  }): Promise<boolean> {
+    return this.runProviderMutation("crm_enriched_lead_sync", false, async (providerStarted) => {
+      providerStarted();
+      return this.syncEnrichedLeadUnfenced(params);
+    });
+  }
+
+  private async syncEnrichedLeadUnfenced(params: {
     customerNumber: string;
     fullName?: string | null;
     jobTitle?: string | null;

@@ -287,10 +287,12 @@ describe("migration journal integrity contract", () => {
   });
 
   it("journals the account-environment promotion guard with a data-only snapshot", () => {
-    expect(journal.entries.at(-1)).toMatchObject({
-      idx: 61,
-      tag: "0163_guard_account_environment_promotion",
-    });
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 61,
+        tag: "0163_guard_account_environment_promotion",
+      }),
+    );
     const materializer = readFileSync(
       resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
       "utf8",

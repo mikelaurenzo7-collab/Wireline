@@ -13,6 +13,7 @@ function selectChain(rows: unknown[]) {
   const chain: any = {};
   chain.from = vi.fn(() => chain);
   chain.where = vi.fn(() => chain);
+  chain.orderBy = vi.fn(() => chain);
   chain.limit = vi.fn(async () => rows);
   return chain;
 }

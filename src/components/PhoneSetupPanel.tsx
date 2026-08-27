@@ -5,13 +5,7 @@ import { Link, useLocation } from "react-router";
 import { Button, EmptyState } from "./atoms";
 import { StatusNotice } from "./molecules";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/shadcn/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 
@@ -73,7 +67,9 @@ export default function PhoneSetupPanel() {
   useEffect(() => {
     if (location.hash !== "#company-identity") return;
     const id = window.setTimeout(() => {
-      document.getElementById("company-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("company-identity")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 0);
     return () => window.clearTimeout(id);
   }, [location.hash]);
@@ -191,7 +187,12 @@ export default function PhoneSetupPanel() {
           <p className="mt-0.5 text-xs text-muted-foreground">{numbers.length} active</p>
         </div>
         {numbers.length > 0 ? (
-          <Button type="button" size="sm" variant="secondary" onClick={() => setAddingLine((value) => !value)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setAddingLine((value) => !value)}
+          >
             <Plus className="size-4" aria-hidden="true" />
             Add line
           </Button>
@@ -216,7 +217,9 @@ export default function PhoneSetupPanel() {
       {message ? <StatusNotice tone="success">{message}</StatusNotice> : null}
 
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">Loading lines…</div>
+        <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
+          Loading lines…
+        </div>
       ) : numbers.length === 0 && !addingLine ? (
         <EmptyState
           framed
@@ -234,12 +237,17 @@ export default function PhoneSetupPanel() {
       ) : null}
 
       {addingLine ? (
-        <section className="rounded-xl border border-border bg-card p-4 sm:p-5" aria-label="Add phone line">
+        <section
+          className="rounded-xl border border-border bg-card p-4 sm:p-5"
+          aria-label="Add phone line"
+        >
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold text-foreground">Bot</span>
               {agentsLoading ? (
-                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">Loading…</div>
+                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
+                  Loading…
+                </div>
               ) : agents.length ? (
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger className="h-10" aria-label="Bot for this line">
@@ -247,26 +255,37 @@ export default function PhoneSetupPanel() {
                   </SelectTrigger>
                   <SelectContent>
                     {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : agentsDegraded ? (
-                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">Bots unavailable.</div>
+                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
+                  Bots unavailable.
+                </div>
               ) : (
-                <Button asChild variant="secondary"><Link to="/studio?create=1">Create Bot</Link></Button>
+                <Button asChild variant="secondary">
+                  <Link to="/studio?create=1">Create Bot</Link>
+                </Button>
               )}
             </label>
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold text-foreground">Area code</span>
               <span className="relative block">
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <MapPin
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <input
                   type="text"
                   inputMode="numeric"
                   maxLength={3}
                   value={normalizedAreaCode}
-                  onChange={(event) => setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))}
+                  onChange={(event) =>
+                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
+                  }
                   placeholder="312"
                   className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary/50"
                 />
@@ -274,11 +293,18 @@ export default function PhoneSetupPanel() {
             </label>
           </div>
           <div className="mt-4 flex gap-2">
-            <Button type="button" size="sm" onClick={() => void provisionNumber()} disabled={working || agentsLoading || !selectedAgentId}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void provisionNumber()}
+              disabled={working || agentsLoading || !selectedAgentId}
+            >
               {working ? "Activating…" : "Activate"}
             </Button>
             {numbers.length ? (
-              <Button type="button" size="sm" variant="ghost" onClick={() => setAddingLine(false)}>Cancel</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setAddingLine(false)}>
+                Cancel
+              </Button>
             ) : null}
           </div>
         </section>
@@ -298,24 +324,40 @@ export default function PhoneSetupPanel() {
                   className={`flex w-full items-center justify-between gap-3 border-b border-border px-3 py-3 text-left last:border-b-0 ${selected ? "bg-primary/7" : "hover:bg-muted/45"}`}
                 >
                   <span className="min-w-0">
-                    <strong className="block truncate text-sm font-semibold text-foreground">{formatPhone(number.phone_number)}</strong>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{bot?.name || "Unassigned"}</span>
+                    <strong className="block truncate text-sm font-semibold text-foreground">
+                      {formatPhone(number.phone_number)}
+                    </strong>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {bot?.name || "Unassigned"}
+                    </span>
                   </span>
-                  {selected ? <Check className="size-4 shrink-0 text-primary" aria-hidden="true" /> : null}
+                  {selected ? (
+                    <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  ) : null}
                 </button>
               );
             })}
           </div>
 
           {activeNumber ? (
-            <section className="rounded-xl border border-border bg-card p-4 sm:p-5" aria-label="Selected line">
+            <section
+              className="rounded-xl border border-border bg-card p-4 sm:p-5"
+              aria-label="Selected line"
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-foreground">{formatPhone(activeNumber.phone_number)}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">Active · {formatProvisionedDate(activeNumber.created_at)}</p>
+                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                    {formatPhone(activeNumber.phone_number)}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Active · {formatProvisionedDate(activeNumber.created_at)}
+                  </p>
                 </div>
                 <Button asChild size="sm" variant="secondary">
-                  <a href={`tel:${activeNumber.phone_number}`}><Phone className="size-4" aria-hidden="true" />Call</a>
+                  <a href={`tel:${activeNumber.phone_number}`}>
+                    <Phone className="size-4" aria-hidden="true" />
+                    Call
+                  </a>
                 </Button>
               </div>
 
@@ -323,7 +365,9 @@ export default function PhoneSetupPanel() {
                 <span className="text-xs font-semibold text-foreground">Assigned Bot</span>
                 <Select
                   value={activeNumber.agent_id || PHONE_AGENT_UNSET}
-                  onValueChange={(value) => void attachAgent(value === PHONE_AGENT_UNSET ? null : value)}
+                  onValueChange={(value) =>
+                    void attachAgent(value === PHONE_AGENT_UNSET ? null : value)
+                  }
                   disabled={attaching || agentsLoading}
                 >
                   <SelectTrigger className="h-10" aria-label="Assigned Bot">
@@ -332,14 +376,18 @@ export default function PhoneSetupPanel() {
                   <SelectContent>
                     <SelectItem value={PHONE_AGENT_UNSET}>Unassigned</SelectItem>
                     {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </label>
               {attachedAgent ? (
                 <Button asChild variant="link" size="sm" className="mt-2 px-0">
-                  <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>Open {attachedAgent.name}</Link>
+                  <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
+                    Open {attachedAgent.name}
+                  </Link>
                 </Button>
               ) : null}
             </section>
@@ -347,9 +395,19 @@ export default function PhoneSetupPanel() {
         </div>
       ) : null}
 
-      <details id="company-identity" className="rounded-xl border border-border bg-card">
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">Caller identity</summary>
-        <div className="border-t border-border p-4"><CompanyIdentityPack /></div>
+      <details
+        id="company-identity"
+        className="rounded-xl border border-border bg-card"
+        data-visual-qa-state={
+          location.hash === "#company-identity" ? "company-identity" : undefined
+        }
+      >
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
+          Caller identity
+        </summary>
+        <div className="border-t border-border p-4">
+          <CompanyIdentityPack />
+        </div>
       </details>
     </div>
   );

@@ -43,6 +43,8 @@ import {
 } from "../lib/knowledge-asset-limits";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { runStructured } from "../lib/ai-structured";
+import { resolveResponsesEvidence } from "../lib/ai-client";
+import { normalizeResponsesUsage } from "../lib/ai-usage";
 import {
   AGENT_CREATE_DEFAULT_ROLE_ID,
   canonicalizeAgentRoleForCreate,
@@ -257,13 +259,29 @@ export async function extractImageAsset(
   });
   if (!response.ok) throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
   const payload = (await response.json()) as Record<string, unknown>;
+  const evidence = resolveResponsesEvidence(payload, visionModel, "AI Gateway");
+  const usage = normalizeResponsesUsage(
+    payload.usage && typeof payload.usage === "object"
+      ? (payload.usage as Record<string, unknown>)
+      : {},
+  );
   // This multimodal path calls Gateway directly rather than the text-only
   // structured adapter, so record its measured usage explicitly.
   // Without this the vision spend is invisible to the audit ledger and the
   // route's withAudit wrapper captures nothing.
   recordUsage(
-    String(payload.model || visionModel),
-    payload as { model?: string; usage?: unknown },
+    evidence.model,
+    {
+      model: evidence.model,
+      inference_provider: evidence.inferenceProvider,
+      actual_cost_usd: evidence.actualCostUsd,
+      usage: {
+        input_tokens: usage.inputTokens,
+        output_tokens: usage.outputTokens,
+        cache_read_input_tokens: usage.cacheReadTokens,
+        cache_creation_input_tokens: usage.cacheWriteTokens,
+      },
+    },
     Date.now() - startedAt,
   );
   const output = responseText(payload);

@@ -71,7 +71,17 @@ describe("certified launch media", () => {
     const outside = join(repoRoot, "outside.webm");
     await writeFile(outside, bytes);
     await rm(mediaPath);
-    await symlink(outside, mediaPath);
+    try {
+      await symlink(outside, mediaPath);
+    } catch (error) {
+      const code = error instanceof Error && "code" in error ? String(error.code) : "";
+      if (process.platform === "win32" && ["EPERM", "EACCES"].includes(code)) {
+        // Windows requires Developer Mode or elevated symlink privileges. The
+        // traversal and extension controls above still run on every platform.
+        return;
+      }
+      throw error;
+    }
     await expect(verifyCertifiedMediaRecord(record(), { repoRoot, marketingRoot })).rejects.toThrow(
       "regular file",
     );

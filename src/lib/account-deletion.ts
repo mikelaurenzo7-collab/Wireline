@@ -344,6 +344,10 @@ export interface ExternalReleaseSummary {
   oauthAttempted: number;
   /** Cloned voice models deleted at the provider (erasure evidence). */
   clonedVoicesDeleted: number;
+  /** Managed AgentMail ownership pointers reconciled before local erasure. */
+  managedAgentMailAccountsReconciled: number;
+  /** BotBound-owned AgentMail inboxes deleted or already absent. */
+  managedAgentMailInboxesDeleted: number;
 }
 
 /**
@@ -409,6 +413,8 @@ async function releaseExternalResourcesOutsideTenantContext(
   let oauthRevoked = 0;
   let oauthAttempted = 0;
   let clonedVoicesDeleted = 0;
+  let managedAgentMailAccountsReconciled = 0;
+  let managedAgentMailInboxesDeleted = 0;
 
   // 1. Cancel every active Stripe subscription on the customer — the plan row
   //    AND any add-on that shares the customer (e.g. the live-video add-on is a
@@ -733,6 +739,37 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
+  // 2.9 Permanently erase BotBound-owned AgentMail inboxes while the local
+  //      managed marker, encrypted sentinel, and exact address still exist.
+  //      Provider inventory/delete failures are blocking: deleting the local
+  //      pointer first would strand messages and attachments in AgentMail.
+  //      BYO/legacy tenant-owned AgentMail accounts do not carry the exact
+  //      managed marker and are intentionally excluded.
+  const agentMailAccounts = await db
+    .select({
+      provider: schema.emailAccounts.provider,
+      emailAddress: schema.emailAccounts.emailAddress,
+      accessToken: schema.emailAccounts.accessToken,
+      oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes,
+    })
+    .from(schema.emailAccounts)
+    .where(eq(schema.emailAccounts.userId, userId));
+
+  if (agentMailAccounts.length) {
+    const { eraseManagedAgentMailInboxesForPurge } = await import("./agentmail-mail");
+    try {
+      const erased = await eraseManagedAgentMailInboxesForPurge(agentMailAccounts);
+      managedAgentMailAccountsReconciled = erased.managedAccountsReconciled;
+      managedAgentMailInboxesDeleted = erased.inboxesDeleted;
+    } catch (err) {
+      log.error("managed AgentMail inbox deletion failed, deferring account purge", {
+        userId,
+        error: getErrorMessage(err),
+      });
+      throw err;
+    }
+  }
+
   // 3. Best-effort revoke of provider OAuth grants while encrypted tokens still
   //    exist. Never throws — a provider outage must not block GDPR erasure.
   try {
@@ -768,6 +805,8 @@ async function releaseExternalResourcesOutsideTenantContext(
     oauthRevoked,
     oauthAttempted,
     clonedVoicesDeleted,
+    managedAgentMailAccountsReconciled,
+    managedAgentMailInboxesDeleted,
   };
 }
 

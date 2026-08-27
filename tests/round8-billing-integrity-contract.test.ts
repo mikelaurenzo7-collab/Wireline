@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("round-8 billing integrity", () => {
   const billing = read("src/routes/billing-routes.ts");
+  const claims = read("src/lib/stripe-event-claim.ts");
   const extraAgentBilling = read("src/routes/extra-agent-billing-atomic-routes.ts");
 
   it("invoices an extra-agent increase instead of granting capacity a cycle early", () => {
@@ -48,18 +49,20 @@ describe("round-8 billing integrity", () => {
     // rollback, so a bare claim made a redelivery indistinguishable from a
     // genuine duplicate and the event was dropped — for a credit top-up that
     // means the customer paid and the balance never moved.
-    expect(billing).toContain('status: "processing"');
-    expect(billing).toContain('.set({ status: "processed", processedAt: new Date() })');
+    expect(claims).toContain('status: "processing"');
+    expect(claims).toContain('status: "processed"');
+    expect(claims).toContain("eq(schema.stripeEvents.claimToken, claim.claimToken)");
   });
 
   it("releases an abandoned claim so Stripe redelivers", () => {
-    expect(billing).toContain('prior?.status === "processing"');
-    expect(billing).toContain("abandonedAfterMs");
+    expect(claims).toContain('prior?.status !== "processing"');
+    expect(claims).toContain("STRIPE_EVENT_CLAIM_LEASE_MS = 15 * 60 * 1000");
+    expect(claims).toContain("releaseStripeEventClaim(claim");
     expect(billing).toContain("Prior delivery did not complete. Retry.");
   });
 
   it("carries the claim status on the schema and in a migration", () => {
-    expect(read("src/db/schema.ts")).toContain(
+    expect(read("src/db/schema-base.ts")).toContain(
       'status: text("status").notNull().default("processed")',
     );
     const migration = read("drizzle/migrations/0112_stripe_event_claim_status.sql");

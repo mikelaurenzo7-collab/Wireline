@@ -14,37 +14,98 @@ import { isWorkspaceRoute, usesWorkspaceViewport } from "./lib/workspace-route-s
 
 import ToastStack from "./components/Toast";
 import CookieConsent from "./components/CookieConsent";
+import { withVisualQaPage } from "./components/VisualQaMarker";
 
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-const Features = lazy(() => import("./pages/Features"));
-const Pricing = lazy(() => import("./pages/Pricing"));
-const Showcase = lazy(() => import("./pages/Showcase"));
-const Compare = lazy(() => import("./pages/Compare"));
-const About = lazy(() => import("./pages/About"));
-const Blog = lazy(() => import("./pages/Blog"));
-const Security = lazy(() => import("./components/Security"));
-const TrustPackPage = lazy(() => import("./components/TrustPackPage"));
+const LandingPage = lazy(() =>
+  import("./pages/LandingPage").then((module) => withVisualQaPage(module, "home")),
+);
+const Features = lazy(() =>
+  import("./pages/Features").then((module) => withVisualQaPage(module, "features")),
+);
+const Pricing = lazy(() =>
+  import("./pages/Pricing").then((module) => withVisualQaPage(module, "pricing")),
+);
+const Showcase = lazy(() =>
+  import("./pages/Showcase").then((module) => withVisualQaPage(module, "showcase")),
+);
+const Compare = lazy(() =>
+  import("./pages/Compare").then((module) => withVisualQaPage(module, "compare")),
+);
+const About = lazy(() =>
+  import("./pages/About").then((module) => withVisualQaPage(module, "about")),
+);
+const Blog = lazy(() => import("./pages/Blog").then((module) => withVisualQaPage(module, "blog")));
+const Security = lazy(() =>
+  import("./components/Security").then((module) =>
+    withVisualQaPage(module, "trust-center", (location) =>
+      location.pathname === "/security" ? "security" : "trust",
+    ),
+  ),
+);
+const TrustPackPage = lazy(() =>
+  import("./components/TrustPackPage").then((module) =>
+    withVisualQaPage(module, "trust-pack", (location) =>
+      location.pathname.split("/").filter(Boolean).at(-1),
+    ),
+  ),
+);
 const SupportPage = lazy(() =>
-  import("./components/SupportPage").then((module) => ({ default: module.SupportPage })),
+  import("./components/SupportPage").then((module) =>
+    withVisualQaPage({ default: module.SupportPage }, "support"),
+  ),
 );
 const ContactPage = lazy(() =>
-  import("./components/ContactPage").then((module) => ({ default: module.ContactPage })),
+  import("./components/ContactPage").then((module) =>
+    withVisualQaPage({ default: module.ContactPage }, "contact"),
+  ),
 );
-const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicyPage"));
+const PrivacyPolicy = lazy(() =>
+  import("./components/PrivacyPolicyPage").then((module) => withVisualQaPage(module, "privacy")),
+);
 const TermsOfService = lazy(() =>
-  import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })),
+  import("./components/LegalPage").then((module) =>
+    withVisualQaPage({ default: module.TermsOfService }, "terms"),
+  ),
 );
 const AppShell = lazy(() => import("./components/layout/AppShell"));
-const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
+const AuthPortalRoute = lazy(() =>
+  import("./AuthPortalRoute").then((module) =>
+    withVisualQaPage(
+      module,
+      "auth-portal",
+      (location) => location.pathname.split("/").filter(Boolean)[0] || "signin",
+    ),
+  ),
+);
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
-const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
-const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
+const SolutionsPage = lazy(() =>
+  import("./pages/SolutionsPage").then((module) =>
+    withVisualQaPage(module, "solutions", (location) =>
+      location.pathname.split("/").filter(Boolean).at(-1),
+    ),
+  ),
+);
+const VerticalLanding = lazy(() =>
+  import("./pages/VerticalLanding").then((module) =>
+    withVisualQaPage(module, "vertical", (_location, props) => props.slug),
+  ),
+);
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
-const Developers = lazy(() => import("./pages/Developers"));
-const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
-const PublicNotFound = lazy(() => import("./pages/PublicNotFound"));
+const Developers = lazy(() =>
+  import("./pages/Developers").then((module) => withVisualQaPage(module, "developers")),
+);
+const PublicChangelog = lazy(() =>
+  import("./components/PublicChangelog").then((module) => withVisualQaPage(module, "changelog")),
+);
+const PublicNotFound = lazy(() =>
+  import("./pages/PublicNotFound").then((module) =>
+    withVisualQaPage(module, "public-not-found", (location) =>
+      location.pathname === "/404" ? "404" : "not-found",
+    ),
+  ),
+);
 
 function RouteLoading() {
   return (

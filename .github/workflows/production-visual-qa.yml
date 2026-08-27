@@ -13,6 +13,7 @@ on:
       - vercel.json
       - scripts/capture-prod-visual-qa.mjs
       - scripts/check-visual-qa-manifest.mjs
+      - scripts/lib/production-visual-qa-contract.mjs
       - scripts/lib/production-url.mjs
       - scripts/lib/release-source-verification.mjs
       - .github/workflows/production-visual-qa.yml
@@ -23,9 +24,11 @@ permissions:
 
 jobs:
   capture:
-    name: Capture desktop and laptop production QA
+    name: Capture responsive production QA
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    # Includes dependency/browser setup, up to 10 minutes waiting for the exact
+    # production SHA, and 340 sequential semantic captures / 680 screenshots.
+    timeout-minutes: 60
     env:
       CI: "true"
       WIRELINE_VISUAL_BASE_URL: https://botbound.me
@@ -33,6 +36,7 @@ jobs:
       WIRELINE_VISUAL_EXPECTED_EMAIL: wireline.demo@trywireline.com
       WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}
       WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}
+      WIRELINE_VISUAL_EXPECTED_COMMIT: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -53,7 +57,7 @@ jobs:
         run: node scripts/capture-prod-visual-qa.mjs
 
       - name: Enforce production visual QA gate
-        run: node scripts/check-visual-qa-manifest.mjs artifacts/visual-qa-prod/latest-manifest.json
+        run: node scripts/check-visual-qa-manifest.mjs --production artifacts/visual-qa-prod/latest-manifest.json
 
       - name: Upload visual QA artifact
         if: always()
@@ -61,6 +65,11 @@ jobs:
         continue-on-error: true
         with:
           name: botbound-production-visual-qa
-          path: artifacts/visual-qa-prod
+          # The gate evaluates authenticated screenshots inside the ephemeral
+          # runner, but they may contain demo-account identity fields. Persist
+          # only public screenshots and the cryptographic evidence manifests.
+          path: |
+            artifacts/visual-qa-prod
+            !artifacts/visual-qa-prod/**/*-authenticated-*.png
           if-no-files-found: warn
           retention-days: 14

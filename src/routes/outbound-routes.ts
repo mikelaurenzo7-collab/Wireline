@@ -7,16 +7,16 @@ import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
-import { stripCallbackRequestMarker } from "../lib/callback-engine";
 import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  classifyUntrustedDirectDial,
   hasAuditableExpressConsentArtifact,
-  isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
   requiresFederalDncScreeningForDirectDial,
+  sanitizeUntrustedOutboundMetadata,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -144,8 +144,10 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
+      const purpose = classifyUntrustedDirectDial({ callPurpose });
+      const effectiveCallPurpose = purpose.effectiveCallPurpose;
       const claimedExpressConsent = normalizedExpressConsent({
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
         hasExpressWrittenConsent,
       });
       const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
@@ -153,7 +155,7 @@ router.post(
         consentLeadId,
       });
       const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-      const marketing = isMarketingCallPurpose(callPurpose);
+      const marketing = purpose.isMarketingCall;
 
       if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
@@ -222,7 +224,8 @@ router.post(
       }
 
       const consentMetadata = outboundConsentMetadata({
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
+        requestedCallPurpose: callPurpose,
         hasExpressWrittenConsent: expressConsent,
         source: "web",
         consentSource,
@@ -234,7 +237,7 @@ router.post(
         customerName,
         customerNumber,
         context,
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
         leadMetadata: consentMetadata,
       });
       if (!result.ok) {
@@ -252,7 +255,7 @@ router.post(
         userId: req.user.id,
         agentId,
         audience: "sales",
-        metadata: { source: "manual_dial", call_purpose: callPurpose },
+        metadata: { source: "manual_dial", call_purpose: effectiveCallPurpose },
       });
       if (consentSource) {
         emitServerProductEventOnce({
@@ -356,7 +359,7 @@ router.post(
         campaignId: campaign_id || null,
         status: campaign_id ? "Queued" : "Pending",
         metadata: {
-          ...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {}),
+          ...sanitizeUntrustedOutboundMetadata((lead.metadata as Record<string, unknown>) || {}),
           ...outboundConsentMetadata({
             callPurpose: "marketing_or_sales",
             hasExpressWrittenConsent: false,

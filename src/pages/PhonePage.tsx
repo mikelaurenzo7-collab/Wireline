@@ -135,14 +135,33 @@ export default function PhonePage() {
           }
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-          {primaryTab === "logs" && <PhoneCallHistoryPanel agentId={activeAgentId || null} />}
-          {primaryTab === "analytics" && <CallOpsOverview />}
-          {primaryTab === "outbound" && (
-            <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
+          {primaryTab === "logs" && (
+            <div className="contents" data-visual-qa-state="primary-logs">
+              <PhoneCallHistoryPanel agentId={activeAgentId || null} />
+            </div>
           )}
-          {primaryTab === "appointments" && <AppointmentsPanel />}
+          {primaryTab === "analytics" && (
+            <div className="contents" data-visual-qa-state="primary-analytics">
+              <CallOpsOverview />
+            </div>
+          )}
+          {primaryTab === "outbound" && (
+            <div className="contents" data-visual-qa-state="primary-outbound">
+              <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
+                <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
+              </div>
+            </div>
+          )}
+          {primaryTab === "appointments" && (
+            <div className="contents" data-visual-qa-state="primary-appointments">
+              <AppointmentsPanel />
+            </div>
+          )}
           {primaryTab === "setup" && (
-            <div className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <div
+              className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
+              data-visual-qa-state="primary-setup"
+            >
               <PhoneSetupPanel />
             </div>
           )}

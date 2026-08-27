@@ -107,20 +107,20 @@ function promiseAllBlocks(source: string): string[] {
 describe("double-pass launch honesty", () => {
   it("never 2xx unfinished Stripe webhook claims", () => {
     const source = read("src/routes/billing-routes.ts");
-    expect(source).toContain('prior?.status === "processing"');
-    expect(source).toContain('prior?.status === "processed"');
+    expect(source).toContain('result.kind === "already_processed"');
+    expect(source).toContain('result.kind === "in_flight"');
     expect(source).toContain(
       'throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.")',
     );
-    const acksUnknownPriorAsDuplicate =
-      /priorStatus: prior\?\.status \?\? "unknown",\s*\}\);\s*return res\.json\(\{ received: true, duplicate: true \}\)/;
-    const regressedSource = [
-      '        priorStatus: prior?.status ?? "unknown",',
-      "      });",
-      "      return res.json({ received: true, duplicate: true });",
-    ].join("\n");
-    expect(regressedSource).toMatch(acksUnknownPriorAsDuplicate);
-    expect(source).not.toMatch(acksUnknownPriorAsDuplicate);
+    expect(source).toMatch(
+      /if \(result\.kind === "already_processed"\)[\s\S]{0,350}return res\.json\(\{ received: true, duplicate: true \}\)/,
+    );
+    expect(source).toMatch(
+      /if \(result\.kind === "in_flight"\)[\s\S]{0,350}throw AppError\.fromHttpStatus\(503/,
+    );
+    expect(source).toMatch(
+      /claim = result\.claim;[\s\S]{0,450}if \(!claim\) \{\s*throw AppError\.fromHttpStatus\(503, "Webhook claim ownership unavailable\. Retry later\."\)/,
+    );
   });
 
   it("does not swallow Runtime Allowance grant failures after subscription sync", () => {
@@ -162,7 +162,7 @@ describe("double-pass launch honesty", () => {
 
   it("gates manual SMS replies and fails mark-read honestly", () => {
     const source = read("src/routes/sms-routes.ts");
-    expect(source).toContain("evaluateOutboundDialGate");
+    expect(source).toContain("evaluateSmsThreadReplyGate");
     expect(source).toContain(
       'throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")',
     );

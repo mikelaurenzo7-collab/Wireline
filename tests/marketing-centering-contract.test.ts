@@ -82,7 +82,7 @@ describe("marketing centering contract", () => {
     const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
     expect(mark).toContain("<img");
-    expect(mark).toContain('src="/brand/botbound-app-icon.png"');
+    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
     expect(mark).not.toContain("viewBox=");

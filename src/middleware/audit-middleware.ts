@@ -8,30 +8,17 @@ import { getErrorMessage } from "../lib/server-utils";
 import { dailyPeriodKey } from "../lib/tenant-quotas";
 import {
   createAuditContext,
-  estimateCost,
+  resolveRuntimeCallCost,
   runInAuditContext,
   type RuntimeCallMeta,
 } from "../lib/ai-audit";
 import { clearBudgetCache, recordDailySpend, evaluateSpend } from "../lib/spend-guards";
+import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "../lib/ai-usage";
 import {
   OPENAI_REALTIME_RESERVE_ENV,
   OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
   resolveOpenAIRealtimeSessionReserveUsd,
 } from "../lib/voice/openai-realtime-pricing";
-
-function estimateAuditRecordCost(record: RuntimeCallMeta): number {
-  // estimateCost normalizes gateway-prefixed ids ("xai/grok-4.5") to their bare
-  // model for pricing, so every provider shares one price table.
-  return estimateCost(
-    {
-      input_tokens: record.input_tokens,
-      output_tokens: record.output_tokens,
-      cache_read_input_tokens: record.cache_read_tokens,
-      cache_creation_input_tokens: record.cache_create_tokens,
-    },
-    record.model,
-  );
-}
 
 export type AiSpendAccountingJobPayload = {
   userId: string;
@@ -44,26 +31,39 @@ const AI_SPEND_ACCOUNTING_RECEIPT = "ai_spend_accounting_persisted";
 const AI_TOKEN_DIMENSION = "claude_tokens_daily";
 
 function runtimeAuditRows(opts: AiSpendAccountingJobPayload) {
-  return opts.records.map((record) => ({
-    userId: opts.userId,
-    action: opts.action,
-    provider: record.provider,
-    model: record.model,
-    inputTokens: record.input_tokens,
-    outputTokens: record.output_tokens,
-    cacheReadTokens: record.cache_read_tokens,
-    cacheCreateTokens: record.cache_create_tokens,
-    costUsd: String(estimateAuditRecordCost(record)),
-    latencyMs: record.latency_ms,
-    metadata: { ...(opts.requestMeta || {}) },
-  }));
+  return opts.records.map((record) => {
+    const cost = resolveRuntimeCallCost(record);
+    return {
+      userId: opts.userId,
+      action: opts.action,
+      provider: record.provider,
+      model: record.model,
+      inputTokens: normalizeUsageTokenCount(record.input_tokens),
+      outputTokens: normalizeUsageTokenCount(record.output_tokens),
+      cacheReadTokens: normalizeUsageTokenCount(record.cache_read_tokens),
+      cacheCreateTokens: normalizeUsageTokenCount(record.cache_create_tokens),
+      costUsd: String(cost.costUsd),
+      latencyMs: normalizeUsageTokenCount(record.latency_ms),
+      metadata: {
+        ...(opts.requestMeta || {}),
+        cost_basis: cost.costBasis,
+      },
+    };
+  });
 }
 
 async function applyRuntimeAuditCounters(opts: AiSpendAccountingJobPayload): Promise<void> {
   const rows = runtimeAuditRows(opts);
   const deltaUsd = rows.reduce((sum: number, row: any) => sum + Number(row.costUsd || 0), 0);
-  const tokenDelta = opts.records.reduce(
-    (sum, record) => sum + record.input_tokens + record.output_tokens,
+  const tokenDelta = rows.reduce(
+    (sum, row) =>
+      saturatingUsageTokenSum(
+        sum,
+        row.inputTokens,
+        row.outputTokens,
+        row.cacheReadTokens,
+        row.cacheCreateTokens,
+      ),
     0,
   );
   if (tokenDelta > 0) {
@@ -93,7 +93,17 @@ async function applyRuntimeAuditCounters(opts: AiSpendAccountingJobPayload): Pro
 }
 
 function runtimeTokenDelta(opts: AiSpendAccountingJobPayload): number {
-  return opts.records.reduce((sum, record) => sum + record.input_tokens + record.output_tokens, 0);
+  return opts.records.reduce(
+    (sum, record) =>
+      saturatingUsageTokenSum(
+        sum,
+        record.input_tokens,
+        record.output_tokens,
+        record.cache_read_tokens,
+        record.cache_create_tokens,
+      ),
+    0,
+  );
 }
 
 async function publishRuntimeAuditTelemetry(opts: AiSpendAccountingJobPayload): Promise<void> {

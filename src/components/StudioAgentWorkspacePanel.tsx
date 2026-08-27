@@ -207,12 +207,18 @@ export default function StudioAgentWorkspacePanel({
           <h2
             className={
               compact
-                ? "text-lg font-semibold leading-tight tracking-tight text-foreground"
-                : "text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+                ? "wl-preserve-case text-lg font-semibold leading-tight tracking-tight text-foreground"
+                : "wl-preserve-case text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
+            Define the role. {agentName} owns the outcome.
           </h2>
+          <p
+            className={`${compact ? "mt-1.5 text-xs leading-5" : "mt-2 max-w-2xl text-sm leading-6"} wl-preserve-case text-muted-foreground`}
+          >
+            Set the standards, knowledge, and guardrails. Then let {agentName} handle the work end
+            to end.
+          </p>
         </header>
 
         <section className={sectionClass} aria-labelledby="essentials-heading">

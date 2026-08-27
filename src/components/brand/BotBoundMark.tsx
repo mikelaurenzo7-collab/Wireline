@@ -8,14 +8,14 @@ type BotBoundMarkProps = {
 /**
  * Canonical BotBound mark: the Bot visibly grips a violet telephone receiver.
  *
- * The production artwork is shared by the web, billing, browser, iOS, and
- * Android surfaces. Keeping one real source asset prevents the tiny geometric
- * variants that previously made the receiver read like a broken headset.
+ * The transparent UI artwork keeps the Bot and telephone silhouette legible
+ * without trapping the identity inside a generic app tile. Platform app icons
+ * retain their own square-safe source and mask treatment.
  */
 export default function BotBoundMark({ className = "", label, signal = true }: BotBoundMarkProps) {
   return (
     <img
-      src="/brand/botbound-app-icon.png"
+      src="/brand/botbound-operator-polished.png"
       alt={label ?? ""}
       role={label ? "img" : undefined}
       aria-hidden={label ? undefined : true}

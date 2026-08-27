@@ -11,8 +11,8 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
+  classifyUntrustedDirectDial,
   hasAuditableExpressConsentArtifact,
-  isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
   requiresFederalDncScreeningForDirectDial,
@@ -130,8 +130,10 @@ router.post(
       consentSource,
       consentLeadId,
     } = req.body;
+    const purpose = classifyUntrustedDirectDial({ callPurpose });
+    const effectiveCallPurpose = purpose.effectiveCallPurpose;
     const claimedExpressConsent = normalizedExpressConsent({
-      callPurpose,
+      callPurpose: effectiveCallPurpose,
       hasExpressWrittenConsent,
     });
     const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
@@ -139,7 +141,7 @@ router.post(
       consentLeadId,
     });
     const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-    const marketing = isMarketingCallPurpose(callPurpose);
+    const marketing = purpose.isMarketingCall;
 
     if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
       return res.status(400).json({
@@ -217,10 +219,11 @@ router.post(
         customerName,
         customerNumber: phoneE164,
         context,
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
         leadMetadata: {
           ...outboundConsentMetadata({
-            callPurpose,
+            callPurpose: effectiveCallPurpose,
+            requestedCallPurpose: callPurpose,
             hasExpressWrittenConsent: expressConsent,
             source: "web",
             consentSource,
@@ -269,7 +272,7 @@ router.post(
         userId: req.user.id,
         agentId,
         audience: "sales",
-        metadata: { source: "manual_dial", call_purpose: callPurpose },
+        metadata: { source: "manual_dial", call_purpose: effectiveCallPurpose },
       });
       if (consentSource) {
         emitServerProductEventOnce({

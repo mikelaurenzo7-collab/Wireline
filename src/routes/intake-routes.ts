@@ -7,8 +7,8 @@ import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { createIntakeKeySchema, updateIntakeKeySchema, validateBody } from "../lib/api-validation";
 import { runInBackground } from "../lib/background-work";
-import { CALLBACK_REQUEST_MARKER } from "../lib/callback-engine";
 import { enqueueIntakeAutoDial, intakeAutoDialJobExists } from "../lib/intake-auto-dial";
+import { sanitizeUntrustedOutboundMetadata } from "../lib/outbound-call-purpose";
 import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
 import { auditLogger, drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
@@ -215,9 +215,9 @@ async function processIntakeLead(
   const context = (input.context || input.message || "").toString().slice(0, 4000);
   let metadata: Record<string, unknown> | null = null;
   if (input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)) {
-    const entries = Object.entries(input.metadata as Record<string, unknown>)
-      .filter(([keyName]) => keyName !== CALLBACK_REQUEST_MARKER)
-      .slice(0, 50);
+    const entries = Object.entries(
+      sanitizeUntrustedOutboundMetadata(input.metadata as Record<string, unknown>),
+    ).slice(0, 50);
     metadata = Object.fromEntries(
       entries.map(([keyName, value]) => [String(keyName).slice(0, 100), value]),
     );

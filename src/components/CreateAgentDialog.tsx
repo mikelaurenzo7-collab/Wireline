@@ -299,6 +299,7 @@ export default function CreateAgentDialog({
     >
       <form
         ref={dialogRef}
+        data-visual-qa-state="create-dialog"
         onSubmit={create}
         onKeyDown={onKeyDown}
         className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden p-0 shadow-2xl"

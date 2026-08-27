@@ -14,6 +14,7 @@ import {
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 export type WebhookEvent =
   | "call.completed"
@@ -96,6 +97,16 @@ type DeliveryAttemptOutcome = {
   nextAttemptAt: Date | null;
   deliveredAt: Date | null;
   lastError: string | null;
+};
+
+type WebhookProviderOutcome = {
+  providerAccepted: boolean;
+  providerOutcomeAmbiguous: boolean;
+};
+
+const NO_WEBHOOK_PROVIDER_OUTCOME: WebhookProviderOutcome = {
+  providerAccepted: false,
+  providerOutcomeAmbiguous: false,
 };
 
 type TenantWebhookExternalActionPolicy =
@@ -197,6 +208,15 @@ async function claimWebhookDelivery(deliveryId: bigint): Promise<number | null> 
   return claimed?.attempts ?? null;
 }
 
+async function lookupWebhookDeliveryOwner(deliveryId: bigint): Promise<string | null> {
+  const [delivery] = await drizzle
+    .select({ userId: schema.webhookDeliveries.userId })
+    .from(schema.webhookDeliveries)
+    .where(eq(schema.webhookDeliveries.id, deliveryId))
+    .limit(1);
+  return delivery?.userId ?? null;
+}
+
 function blockedDeliveryReason(reason: WebhookBlockReason): string {
   if (reason === "private_destination") return "blocked_private_destination";
   if (reason === "unsupported_protocol") return "unsupported_protocol";
@@ -228,10 +248,24 @@ function blockIsPermanent(reason: WebhookBlockReason): boolean {
   return reason !== "dns_resolution_failed";
 }
 
-export async function attemptWebhookDelivery(deliveryId: string | number) {
-  const deliveryIdBig = BigInt(deliveryId);
+async function attemptWebhookDeliveryAfterDeletionFence(
+  deliveryIdBig: bigint,
+  expectedUserId: string,
+): Promise<WebhookProviderOutcome> {
+  // The first lookup routes lease admission. Repeat it after admission so the
+  // authoritative owner check, delivery claim, external POST, and evidence
+  // write all live inside one terminal-deletion fence.
+  const confirmedUserId = await lookupWebhookDeliveryOwner(deliveryIdBig);
+  if (confirmedUserId !== expectedUserId) {
+    log.error("Webhook delivery owner changed after deletion-fence admission", {
+      deliveryId: deliveryIdBig.toString(),
+      expectedUserId,
+    });
+    return NO_WEBHOOK_PROVIDER_OUTCOME;
+  }
+
   const nextAttempts = await claimWebhookDelivery(deliveryIdBig);
-  if (nextAttempts === null) return;
+  if (nextAttempts === null) return NO_WEBHOOK_PROVIDER_OUTCOME;
 
   const deliveryWithHook = await drizzle.query.webhookDeliveries.findFirst({
     where: eq(schema.webhookDeliveries.id, deliveryIdBig),
@@ -241,9 +275,12 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   });
 
   if (!deliveryWithHook) {
-    log.error("Webhook delivery fetch failed after lease", { deliveryId });
-    return;
+    log.error("Webhook delivery fetch failed after lease", {
+      deliveryId: deliveryIdBig.toString(),
+    });
+    return NO_WEBHOOK_PROVIDER_OUTCOME;
   }
+  if (deliveryWithHook.userId !== confirmedUserId) return NO_WEBHOOK_PROVIDER_OUTCOME;
 
   const externalActionPolicy = await tenantWebhookExternalActionsAllowed(deliveryWithHook.userId);
   if (!externalActionPolicy.allowed) {
@@ -265,7 +302,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       accountEnvironment: externalActionPolicy.environment ?? "missing",
       code: externalActionPolicy.code,
     });
-    return;
+    return NO_WEBHOOK_PROVIDER_OUTCOME;
   }
 
   type DeliveryHook = {
@@ -292,7 +329,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       deliveredAt: null,
       lastError: "webhook_missing",
     });
-    return;
+    return NO_WEBHOOK_PROVIDER_OUTCOME;
   }
 
   let signingSecret: string | null = hook.secret;
@@ -301,7 +338,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       signingSecret = decryptSecret(hook.secretEncrypted);
     } catch (err: unknown) {
       log.error("Webhook delivery blocked, secret decryption failed", {
-        deliveryId: String(deliveryId),
+        deliveryId: deliveryIdBig.toString(),
         webhookId: hook.id,
         error: getErrorMessage(err),
       });
@@ -315,7 +352,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
         deliveredAt: null,
         lastError: "secret_decrypt_failed",
       });
-      return;
+      return NO_WEBHOOK_PROVIDER_OUTCOME;
     }
   }
 
@@ -345,12 +382,14 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   let statusCode: number | null = null;
   let success = false;
   let lastError: string | null = null;
+  let providerAccepted = false;
+  let providerOutcomeAmbiguous = false;
   try {
     const response = await postWebhookSafely(hook.url, headers, body, 10_000);
     if (response.status === "blocked") {
       lastError = blockedDeliveryReason(response.reason);
       log.warn("Webhook delivery blocked, destination guard", {
-        deliveryId: String(deliveryId),
+        deliveryId: deliveryIdBig.toString(),
         webhookId: hook.id,
         reason: lastError,
         retryable: !blockIsPermanent(response.reason),
@@ -366,17 +405,22 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
           deliveredAt: null,
           lastError,
         });
-        return;
+        return NO_WEBHOOK_PROVIDER_OUTCOME;
       }
       // Retryable block (DNS): fall through to the shared attempt ladder below
       // so it backs off, counts attempts, and dead-letters like any other
       // transient failure. `success` stays false and `statusCode` stays null.
     } else {
+      // Any response proves the request crossed the tenant/provider boundary.
+      // A 2xx is accepted; non-2xx and redirects are externally observable but
+      // ambiguous with respect to recipient-side effects.
+      providerAccepted = response.ok;
+      providerOutcomeAmbiguous = !response.ok;
       statusCode = response.statusCode;
       if (response.redirect) {
         lastError = "redirect_blocked";
         log.warn("Webhook delivery blocked, endpoint attempted a redirect", {
-          deliveryId: String(deliveryId),
+          deliveryId: deliveryIdBig.toString(),
           webhookId: hook.id,
           statusCode,
         });
@@ -386,8 +430,14 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       }
     }
   } catch (err: unknown) {
+    // The pinned request can fail after bytes leave the process. Preserve the
+    // deletion lease through its crash horizon when acknowledgement is unknown.
+    providerOutcomeAmbiguous = true;
     lastError = "request_failed";
-    log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });
+    log.warn("Webhook delivery attempt failed", {
+      deliveryId: deliveryIdBig.toString(),
+      error: getErrorMessage(err),
+    });
   }
 
   const maxAttempts = deliveryWithHook.maxAttempts || 5;
@@ -416,7 +466,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       deliveryId: deliveryIdBig.toString(),
       attempt: nextAttempts,
     });
-    return;
+    return { providerAccepted, providerOutcomeAmbiguous };
   }
 
   if (reachedDead) {
@@ -426,45 +476,77 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       status_code: statusCode || undefined,
     });
   }
+
+  return { providerAccepted, providerOutcomeAmbiguous };
+}
+
+export async function attemptWebhookDelivery(deliveryId: string | number) {
+  const deliveryIdBig = BigInt(deliveryId);
+  const userId = await lookupWebhookDeliveryOwner(deliveryIdBig);
+  if (!userId) return;
+
+  const fenced = await runTenantProviderWorkWithDeletionFence({
+    userId,
+    operation: "tenant_webhook_delivery",
+    retainOnSuccess: (outcome) => outcome.providerAccepted || outcome.providerOutcomeAmbiguous,
+    perform: () => attemptWebhookDeliveryAfterDeletionFence(deliveryIdBig, userId),
+  });
+  if (!fenced.performed) {
+    log.info("Webhook delivery suppressed by terminal account deletion", {
+      userId,
+      deliveryId: deliveryIdBig.toString(),
+    });
+  }
+}
+
+async function dispatchWebhookAfterDeletionFence(userId: string, event: WebhookEvent, data: any) {
+  const externalActionPolicy = await tenantWebhookExternalActionsAllowed(userId);
+  if (!externalActionPolicy.allowed) {
+    log.info("Tenant webhook dispatch suppressed by account environment", {
+      userId,
+      event,
+      accountEnvironment: externalActionPolicy.environment ?? "missing",
+      code: externalActionPolicy.code,
+    });
+    return;
+  }
+  const hooks = await drizzle
+    .select({ id: schema.webhooks.id, events: schema.webhooks.events })
+    .from(schema.webhooks)
+    .where(and(eq(schema.webhooks.userId, userId), eq(schema.webhooks.active, true)));
+
+  const targetIds = (hooks || [])
+    .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
+    .map((h: any) => h.id);
+
+  if (!targetIds.length) return;
+
+  const payload = { event, timestamp: new Date().toISOString(), data };
+  const values = targetIds.map((webhookId: string) => ({
+    userId,
+    webhookId,
+    event,
+    payload,
+  }));
+
+  const inserted = await drizzle
+    .insert(schema.webhookDeliveries)
+    .values(values)
+    .returning({ id: schema.webhookDeliveries.id });
+
+  await Promise.all((inserted || []).map((delivery: any) => attemptWebhookDelivery(delivery.id)));
 }
 
 export async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   try {
-    const externalActionPolicy = await tenantWebhookExternalActionsAllowed(userId);
-    if (!externalActionPolicy.allowed) {
-      log.info("Tenant webhook dispatch suppressed by account environment", {
-        userId,
-        event,
-        accountEnvironment: externalActionPolicy.environment ?? "missing",
-        code: externalActionPolicy.code,
-      });
-      return;
-    }
-    const hooks = await drizzle
-      .select({ id: schema.webhooks.id, events: schema.webhooks.events })
-      .from(schema.webhooks)
-      .where(and(eq(schema.webhooks.userId, userId), eq(schema.webhooks.active, true)));
-
-    const targetIds = (hooks || [])
-      .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
-      .map((h: any) => h.id);
-
-    if (!targetIds.length) return;
-
-    const payload = { event, timestamp: new Date().toISOString(), data };
-    const values = targetIds.map((webhookId: string) => ({
+    const fenced = await runTenantProviderWorkWithDeletionFence({
       userId,
-      webhookId,
-      event,
-      payload,
-    }));
-
-    const inserted = await drizzle
-      .insert(schema.webhookDeliveries)
-      .values(values)
-      .returning({ id: schema.webhookDeliveries.id });
-
-    await Promise.all((inserted || []).map((delivery: any) => attemptWebhookDelivery(delivery.id)));
+      operation: "tenant_webhook_dispatch",
+      perform: () => dispatchWebhookAfterDeletionFence(userId, event, data),
+    });
+    if (!fenced.performed) {
+      log.info("Webhook dispatch suppressed by terminal account deletion", { userId, event });
+    }
   } catch (err: any) {
     log.error("Webhook dispatch failed", { error: getErrorMessage(err) });
   }

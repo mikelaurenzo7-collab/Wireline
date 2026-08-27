@@ -16,7 +16,7 @@ import { authenticateUser } from "../middleware/auth";
 import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { evaluateSmsThreadReplyGate } from "../lib/sms-reply-compliance";
 import {
   ACCOUNT_ENVIRONMENT_UNAVAILABLE,
   assertExternalEntityActionAllowed,
@@ -133,11 +133,10 @@ router.post(
 
       await assertSmsReplyExternalActionAllowed(req.user.id, thread.customerNumber!);
 
-      const gate = await evaluateOutboundDialGate({
+      const gate = await evaluateSmsThreadReplyGate({
         userId: req.user.id,
+        threadId,
         phone: thread.customerNumber!,
-        isMarketingCall: false,
-        isLiveSessionFollowUp: true,
       });
       if (!gate.allowed) {
         if (gate.reason === "federal_dnc_unconfigured") {

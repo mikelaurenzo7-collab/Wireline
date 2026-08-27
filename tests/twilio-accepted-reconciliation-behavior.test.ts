@@ -9,6 +9,7 @@ function installSendMocks(options: {
   failPersistence?: boolean;
   failRefund?: boolean;
   accountEnvironment?: "production" | "test" | "demo";
+  fenceDenied?: boolean;
 }) {
   const createMessage = vi.fn(async () => {
     if (options.provider.kind === "rejected") {
@@ -79,6 +80,26 @@ function installSendMocks(options: {
     exit: vi.fn(<T>(callback: () => T) => callback()),
     run: vi.fn(<T>(_userId: string, callback: () => T) => callback()),
   };
+  let fenceRetained = false;
+  const runTenantProviderWorkWithDeletionFence = vi.fn(
+    async (input: {
+      perform: () => Promise<any>;
+      retainOnSuccess?: boolean | ((result: any) => boolean);
+    }) => {
+      if (options.fenceDenied) {
+        return {
+          performed: false as const,
+          reason: "account_erased_or_terminal_deletion" as const,
+        };
+      }
+      const result = await input.perform();
+      fenceRetained =
+        typeof input.retainOnSuccess === "function"
+          ? input.retainOnSuccess(result)
+          : Boolean(input.retainOnSuccess);
+      return { performed: true as const, result };
+    },
+  );
 
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: { select, update, insert },
@@ -124,6 +145,9 @@ function installSendMocks(options: {
   vi.doMock("../src/lib/trial-gate", () => ({
     assertLiveWorkEntitlementForUser: vi.fn(async () => ({ ok: true })),
   }));
+  vi.doMock("../src/lib/tenant-provider-deletion-fence", () => ({
+    runTenantProviderWorkWithDeletionFence,
+  }));
 
   return {
     createMessage,
@@ -133,6 +157,8 @@ function installSendMocks(options: {
     updateWhere,
     insertValues,
     log,
+    runTenantProviderWorkWithDeletionFence,
+    fenceRetained: () => fenceRetained,
   };
 }
 
@@ -162,6 +188,32 @@ describe("Twilio accepted-message reliability", () => {
     });
     expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
     expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.runTenantProviderWorkWithDeletionFence).not.toHaveBeenCalled();
+  });
+
+  it("does not reserve balance or reach Twilio when terminal deletion wins lease admission", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      fenceDenied: true,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Must not cross the deletion fence",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      enabled: false,
+      code: "ACCOUNT_DELETION_IN_PROGRESS",
+    });
+    expect(mocks.runTenantProviderWorkWithDeletionFence).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-1", operation: "twilio_message_send" }),
+    );
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.createMessage).not.toHaveBeenCalled();
   });
 
   it("returns carrier acceptance and queues failed local bookkeeping without a second send", async () => {
@@ -185,6 +237,7 @@ describe("Twilio accepted-message reliability", () => {
       reconciliationPending: true,
     });
     expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.fenceRetained()).toBe(true);
     expect(mocks.enqueue).toHaveBeenCalledTimes(1);
     expect(mocks.enqueue.mock.calls[0]?.[1]).toMatchObject({
       type: "twilio_message_reconciliation",
@@ -245,6 +298,7 @@ describe("Twilio accepted-message reliability", () => {
     expect(result).toMatchObject({ ok: false });
     expect(result.code).not.toBe("SMS_PROVIDER_OUTCOME_AMBIGUOUS");
     expect(result.providerOutcomeAmbiguous).not.toBe(true);
+    expect(mocks.fenceRetained()).toBe(false);
     expect(mocks.refundRuntimeUsage).toHaveBeenCalledTimes(1);
     expect(
       mocks.insertValues.mock.calls.some(
@@ -276,6 +330,7 @@ describe("Twilio accepted-message reliability", () => {
       });
       expect(result.reason).toMatch(/may have been accepted/i);
       expect(result.reason).toMatch(/do not resend/i);
+      expect(mocks.fenceRetained()).toBe(true);
       expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
 
       const incident = mocks.insertValues.mock.calls

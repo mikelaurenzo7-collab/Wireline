@@ -51,17 +51,20 @@ describe("launch readiness deep pass 2026-07-27", () => {
 
   it("claims stripe_events before acknowledging allowance reversals", () => {
     const middleware = read("src/middleware/stripe-runtime-allowance-retry.ts");
-    expect(middleware).toContain("claimStripeEventForPreflight");
-    expect(middleware).toContain("markStripeEventProcessed");
+    const claims = read("src/lib/stripe-event-claim.ts");
+    expect(middleware).toContain("claimOrRespondDuplicate");
+    expect(middleware).toContain("completeStripeEventClaim");
     expect(middleware).toContain("releaseStripeEventClaim");
+    expect(claims).toContain("claimToken: randomUUID()");
+    expect(claims).toContain("eq(schema.stripeEvents.claimToken, claim.claimToken)");
     const refund = middleware.slice(
       middleware.indexOf('if (event.type === "charge.refunded")'),
       middleware.indexOf('if (event.type === "charge.dispute.created")'),
     );
-    expect(refund.indexOf("claimStripeEventForPreflight")).toBeLessThan(
+    expect(refund.indexOf("claimOrRespondDuplicate")).toBeLessThan(
       refund.indexOf("reverseSubscriptionRuntimeAllowanceForChargeStrict"),
     );
-    expect(refund.indexOf("markStripeEventProcessed")).toBeGreaterThan(
+    expect(refund.indexOf("completeStripeEventClaim")).toBeGreaterThan(
       refund.indexOf("reverseSubscriptionRuntimeAllowanceForChargeStrict"),
     );
   });

@@ -161,6 +161,23 @@ describe("durable provider deletion leases", () => {
     expect(exported).toContain("doNotRetry: true");
   });
 
+  it("places every shared tenant message send behind the same durable lease", () => {
+    const source = read("src/lib/twilio-service.ts");
+    const exported = source.slice(source.indexOf("export async function sendTenantMessage"));
+    const environmentGuard = exported.indexOf("liveExternalActionPolicyForUser(userId)");
+    const lease = exported.indexOf("runTenantProviderWorkWithDeletionFence");
+    const lookup = exported.indexOf("lookupTenantPhoneNumber(userId, phone)");
+    const carrier = exported.indexOf("client.messages.create");
+
+    expect(environmentGuard).toBeGreaterThan(-1);
+    expect(lease).toBeGreaterThan(environmentGuard);
+    expect(lookup).toBeGreaterThan(lease);
+    expect(carrier).toBeGreaterThan(lease);
+    expect(exported).toContain('operation: "twilio_message_send"');
+    expect(exported).toContain("result.ok || result.providerOutcomeAmbiguous === true");
+    expect(exported).toContain('code: "ACCOUNT_DELETION_IN_PROGRESS"');
+  });
+
   it("blocks demo/test external actions before lease admission or provider work", async () => {
     environmentMocks.assertAllowed.mockRejectedValueOnce(
       new Error("Live external actions are disabled in this demo or test workspace."),

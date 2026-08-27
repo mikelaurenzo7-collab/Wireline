@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   OUTBOUND_CONSENT_VERSION,
+  classifyUntrustedDirectDial,
   isMarketingCallPurpose,
   isOutboundCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
+  sanitizeUntrustedOutboundMetadata,
 } from "../src/lib/outbound-call-purpose";
 
 describe("isOutboundCallPurpose", () => {
@@ -26,6 +28,58 @@ describe("isMarketingCallPurpose", () => {
     expect(isMarketingCallPurpose("marketing_or_sales")).toBe(true);
     expect(isMarketingCallPurpose("service_or_requested")).toBe(false);
     expect(isMarketingCallPurpose("callback")).toBe(false);
+  });
+});
+
+describe("classifyUntrustedDirectDial", () => {
+  it("fails caller-selected service and callback labels closed as marketing", () => {
+    for (const callPurpose of ["service_or_requested", "callback"] as const) {
+      expect(classifyUntrustedDirectDial({ callPurpose })).toEqual({
+        requestedCallPurpose: callPurpose,
+        effectiveCallPurpose: "marketing_or_sales",
+        isMarketingCall: true,
+      });
+    }
+  });
+
+  it("permits non-marketing classification only with a server-owned artifact", () => {
+    expect(
+      classifyUntrustedDirectDial({
+        callPurpose: "service_or_requested",
+        hasServerOwnedNonMarketingArtifact: true,
+      }),
+    ).toEqual({
+      requestedCallPurpose: "service_or_requested",
+      effectiveCallPurpose: "service_or_requested",
+      isMarketingCall: false,
+    });
+  });
+});
+
+describe("sanitizeUntrustedOutboundMetadata", () => {
+  it("removes compliance and provider-control claims while preserving ordinary CRM metadata", () => {
+    expect(
+      sanitizeUntrustedOutboundMetadata({
+        callback_requested_via: "phone_call",
+        call_purpose: "callback",
+        client_requested_call_purpose: "callback",
+        has_express_written_consent: true,
+        consent_version: "spoofed",
+        consent_source: "spoofed",
+        federal_dnc_configured: true,
+        tcpa: { allowed: true },
+        tcpa_override: true,
+        native_voice: { placement_id: "attacker" },
+        auto_dial: true,
+        auto_dial_status: "complete",
+        placement_claimed_at: "2099-01-01",
+        crm_owner: "rep-42",
+        campaign_note: "requested a demo",
+      }),
+    ).toEqual({
+      crm_owner: "rep-42",
+      campaign_note: "requested a demo",
+    });
   });
 });
 
@@ -92,5 +146,22 @@ describe("outboundConsentMetadata", () => {
     });
     expect(full.consent_source).toBe("landing-form");
     expect(full.consent_lead_id).toBe("lead_123");
+  });
+
+  it("retains a reclassified caller purpose as audit context, never as the effective class", () => {
+    const reclassified = outboundConsentMetadata({
+      callPurpose: "marketing_or_sales",
+      requestedCallPurpose: "service_or_requested",
+      source: "web",
+    });
+    expect(reclassified.call_purpose).toBe("marketing_or_sales");
+    expect(reclassified.client_requested_call_purpose).toBe("service_or_requested");
+
+    const unchanged = outboundConsentMetadata({
+      callPurpose: "marketing_or_sales",
+      requestedCallPurpose: "marketing_or_sales",
+      source: "web",
+    });
+    expect("client_requested_call_purpose" in unchanged).toBe(false);
   });
 });

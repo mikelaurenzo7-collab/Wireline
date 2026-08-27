@@ -99,6 +99,9 @@ describe("launch completeness contracts", () => {
     const marketingMeta = source("src/lib/marketing-route-meta.ts");
     const publicRoutes = source("src/lib/public-routes.ts");
     const apiRoutes = source("src/server/register-api-routes.ts");
+    const vercel = JSON.parse(source("vercel.json")) as {
+      redirects?: Array<{ source: string; destination: string; permanent: boolean }>;
+    };
     const sitemap = source("public/sitemap.xml");
     const publicSurfaces = [
       "src/components/marketing/MarketingChromeBar.tsx",
@@ -116,6 +119,11 @@ describe("launch completeness contracts", () => {
     expect(marketingMeta).not.toContain('"/status":');
     expect(publicRoutes).not.toContain('"/status"');
     expect(sitemap).not.toContain("botbound.me/status");
+    expect(vercel.redirects).toContainEqual({
+      source: "/status",
+      destination: "/trust",
+      permanent: true,
+    });
     for (const surface of publicSurfaces) {
       expect(source(surface)).not.toContain('"/status"');
     }

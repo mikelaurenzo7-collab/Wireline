@@ -125,10 +125,8 @@ const executableHome = executable(home);
 for (const [needle, description] of [
   ["marketing-surface", "home must keep the public marketing surface"],
   ["landing-prestige__entrance", "home must keep the prestige entrance"],
-  [
-    '<BotBoundLockup size="display" surface="tile" />',
-    "home must lead with the canonical display lockup",
-  ],
+  ["landing-prestige__hero-lockup", "home must lead with the canonical display lockup"],
+  ['surface="bare"', "home must render the hero mascot as a transparent cutout"],
   ['<AuthAccessPanel embedded initialMode="signin" />', "home must keep direct account access"],
   ["landing-prestige__demo-link", "home must keep a clear live-demo path"],
   ['id="solutions"', "home must include solutions"],

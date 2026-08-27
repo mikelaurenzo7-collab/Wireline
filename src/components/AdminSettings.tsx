@@ -481,6 +481,7 @@ export default function AdminSettings() {
                       key="accounts"
                       role="tabpanel"
                       id="admin-panel-accounts"
+                      data-visual-qa-state="panel-accounts"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
@@ -493,6 +494,7 @@ export default function AdminSettings() {
                       key="branding"
                       role="tabpanel"
                       id="admin-panel-branding"
+                      data-visual-qa-state="panel-branding"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full space-y-4"
@@ -522,6 +524,7 @@ export default function AdminSettings() {
                       key="carrier"
                       role="tabpanel"
                       id="admin-panel-carrier"
+                      data-visual-qa-state="panel-carrier"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
@@ -548,6 +551,7 @@ export default function AdminSettings() {
                       key="subscription"
                       role="tabpanel"
                       id="admin-panel-subscription"
+                      data-visual-qa-state="panel-subscription"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
@@ -561,6 +565,7 @@ export default function AdminSettings() {
                       key="team"
                       role="tabpanel"
                       id="admin-panel-team"
+                      data-visual-qa-state="panel-team"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
@@ -578,6 +583,7 @@ export default function AdminSettings() {
                       key="flywheel"
                       role="tabpanel"
                       id="admin-panel-flywheel"
+                      data-visual-qa-state="panel-flywheel"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
@@ -596,6 +602,7 @@ export default function AdminSettings() {
                       key="activity"
                       role="tabpanel"
                       id="admin-panel-activity"
+                      data-visual-qa-state="panel-activity"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"

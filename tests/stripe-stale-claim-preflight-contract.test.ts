@@ -5,14 +5,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
-const migrationPath =
-  "drizzle/migrations/0132_reclaim_abandoned_stripe_event_claims.sql";
+const migrationPath = "drizzle/migrations/0164_stripe_event_claim_fencing.sql";
 
 describe("Stripe abandoned claim recovery", () => {
   it("owns recovery at the table INSERT boundary without a second HTTP preflight", () => {
     const migration = read(migrationPath);
     const parsers = read("src/lib/body-parsers.ts");
     const billing = read("src/routes/billing-routes.ts");
+    const claims = read("src/lib/stripe-event-claim.ts");
 
     expect(migration).toContain(
       "CREATE TRIGGER wireline_reclaim_abandoned_stripe_event_claim_before_insert",
@@ -23,9 +23,9 @@ describe("Stripe abandoned claim recovery", () => {
     );
     expect(parsers).not.toContain("stripe-webhook-claim-preflight");
     expect(parsers).not.toContain("reclaimAbandonedStripeWebhookClaim");
-    expect(billing).toContain(
-      '.values({ eventId: idempotencyKey, eventType: event.type, status: "processing" })',
-    );
+    expect(billing).toContain("claimStripeEvent(idempotencyKey, event.type)");
+    expect(claims).toContain('status: "processing"');
+    expect(claims).toContain("claimToken: randomUUID()");
   });
 
   it("reclaims only the exact abandoned processing lease", () => {
@@ -35,9 +35,8 @@ describe("Stripe abandoned claim recovery", () => {
     expect(migration).toContain("WHERE event_id = NEW.event_id");
     expect(migration).toContain("AND status = 'processing'");
     expect(migration).toContain("processed_at IS NULL");
-    expect(migration).toContain(
-      "processed_at < clock_timestamp() - INTERVAL '5 minutes'",
-    );
+    expect(migration).toContain("processed_at < clock_timestamp() - INTERVAL '15 minutes'");
+    expect(migration).toContain("ADD COLUMN IF NOT EXISTS claim_token uuid");
     expect(migration).not.toMatch(/DELETE FROM public\.wireline_stripe_events\s*;/);
   });
 
@@ -46,12 +45,10 @@ describe("Stripe abandoned claim recovery", () => {
     const accountClassification = read(
       "drizzle/migrations/0130_classify_nonproduction_traffic.sql",
     );
-    const accountOperator = read(
-      "drizzle/migrations/0131_manage_account_environment.sql",
-    );
-    const journal = JSON.parse(
-      read("drizzle/migrations/meta/_journal.json"),
-    ) as { entries: Array<{ tag: string }> };
+    const accountOperator = read("drizzle/migrations/0131_manage_account_environment.sql");
+    const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json")) as {
+      entries: Array<{ tag: string }>;
+    };
 
     expect(migration).toContain(
       "CREATE OR REPLACE FUNCTION public.wireline_reclaim_abandoned_stripe_event_claim()",
@@ -74,6 +71,9 @@ describe("Stripe abandoned claim recovery", () => {
     expect(sequenceStart).toBeGreaterThanOrEqual(0);
     expect(tags.slice(sequenceStart, sequenceStart + expectedSequence.length)).toEqual(
       expectedSequence,
+    );
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({ tag: "0164_stripe_event_claim_fencing" }),
     );
   });
 });

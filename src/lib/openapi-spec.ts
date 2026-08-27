@@ -805,7 +805,7 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Place a tenant-scoped outbound call",
       description:
-        "Authenticated manual dial. `callPurpose` is required so requested service calls, callbacks, and marketing/sales calls keep distinct consent semantics. Marketing/sales calls require express written consent and all calls pass DNC/TCPA gates before dispatch.",
+        "Authenticated manual dial. `callPurpose` records the caller's requested context but is not consent evidence. Until BotBound resolves a server-owned consumer-request or non-marketing artifact, direct calls fail closed to the marketing class and require verified written consent. All calls pass DNC/TCPA gates before dispatch.",
       operationId: "postOutboundDial",
       tags: ["Outbound"],
       security: auth.bearer,
@@ -830,7 +830,7 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Place an outbound call from a native client",
       description:
-        "Native equivalent of `/api/outbound/dial`. The mobile client must send an explicit `callPurpose`; Siri and CarPlay callbacks use non-marketing purposes and cannot assert marketing consent.",
+        "Native equivalent of `/api/outbound/dial`. The mobile client must send an explicit `callPurpose`, but that label is audit context only and cannot mint a non-marketing or consent exemption.",
       operationId: "postMobileOutboundCall",
       tags: ["Outbound"],
       security: auth.bearer,

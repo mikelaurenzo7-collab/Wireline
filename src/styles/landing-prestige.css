@@ -63,6 +63,22 @@
   align-self: start;
 }
 
+.landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+  --bb-lockup-mark: clamp(5.75rem, 7.5vw, 6.75rem);
+  --bb-lockup-wordmark-size: clamp(3.25rem, 4.8vw, 4.25rem);
+  --bb-lockup-gap: clamp(0.12rem, 0.25vw, 0.22rem);
+  --bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem);
+}
+
+.landing-prestige__hero-lockup .bb-lockup__mark {
+  filter: drop-shadow(0 0.8rem 1.5rem rgba(0, 0, 0, 0.3))
+    drop-shadow(0 0 2.1rem color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent));
+}
+
+.landing-prestige__hero-lockup .bb-mark-image {
+  filter: saturate(1.04) contrast(1.025);
+}
+
 .landing-prestige__hero-copy {
   align-self: center;
   max-width: 48rem;
@@ -532,6 +548,13 @@
 }
 
 @media (max-width: 1100px) {
+  .landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+    --bb-lockup-mark: 4.75rem;
+    --bb-lockup-wordmark-size: 2.75rem;
+    --bb-lockup-gap: 0.14rem;
+    --bb-lockup-overlap: 0.32rem;
+  }
+
   .landing-prestige__hero-copy h1 {
     font-size: clamp(3.5rem, 7vw, 5.5rem);
   }
@@ -562,6 +585,13 @@
     padding: max(2rem, env(safe-area-inset-top)) 1.25rem 2.5rem;
     border-right: 0;
     border-bottom: 1px solid var(--wireline-color-border-default);
+  }
+
+  .landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+    --bb-lockup-mark: clamp(4.25rem, 20vw, 5.25rem);
+    --bb-lockup-wordmark-size: clamp(2.45rem, 10.8vw, 3.1rem);
+    --bb-lockup-gap: clamp(0.1rem, 0.6vw, 0.16rem);
+    --bb-lockup-overlap: clamp(0.25rem, 1.4vw, 0.36rem);
   }
 
   .landing-prestige__hero-copy h1 {

@@ -3,10 +3,12 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import {
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
+  AGENTMAIL_MANAGED_SCOPE_MARKER,
   agentmailGrantedScopes,
   createAgentMailInbox,
   deleteAgentMailWebhook,
   ensureAgentMailWebhook,
+  hasExactAgentMailManagedScope,
   listAgentMailInboxes,
   listAgentMailWebhooks,
   verifyAgentMailCredentials,
@@ -21,10 +23,10 @@ import { provisionTenantNumber, releaseTenantNumber } from "./phone-provisioning
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { encryptSecret, isVaultConfigured } from "./secret-vault";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { getTwilioClient } from "./twilio-service";
 
 const PAID_IDENTITY_STATUSES = new Set(["active", "trialing"]);
-const MANAGED_SCOPE_MARKER = "managed-botbound";
 
 export type PaidBotIdentityResult = {
   eligible: boolean;
@@ -132,6 +134,7 @@ async function resolveManagedInbox(input: {
   apiKey: string;
   agentId: string;
   agentName: string;
+  emailAddress: string;
 }): Promise<{ inboxId: string; email: string; reused: boolean }> {
   const domain = normalizedManagedDomain();
   if (!domain) {
@@ -140,8 +143,14 @@ async function resolveManagedInbox(input: {
     );
   }
 
-  const username = managedMailboxUsername(input.agentName, input.agentId);
-  const desiredEmail = `${username}@${domain}`;
+  const desiredEmail = input.emailAddress.trim().toLowerCase();
+  if (!desiredEmail.endsWith(`@${domain}`)) {
+    throw new Error("Reserved managed mailbox is not on the configured BotBound domain.");
+  }
+  const username = desiredEmail.slice(0, -(domain.length + 1));
+  if (!username || desiredEmail !== `${username}@${domain}`) {
+    throw new Error("Reserved managed mailbox address is invalid.");
+  }
   const existing = (await listAgentMailInboxes(input.apiKey)).find(
     (inbox) => inbox.email.toLowerCase() === desiredEmail,
   );
@@ -156,6 +165,9 @@ async function resolveManagedInbox(input: {
       managed: true,
     },
   });
+  if (inbox.email.toLowerCase() !== desiredEmail) {
+    throw new Error("AgentMail did not create the exact reserved BotBound mailbox address.");
+  }
   return { ...inbox, reused: false };
 }
 
@@ -215,7 +227,7 @@ async function ensureManagedDeliveryWebhook(input: {
 }
 
 async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: string) {
-  const [existing] = await drizzle
+  const existingAccounts = await drizzle
     .select({
       id: schema.emailAccounts.id,
       emailAddress: schema.emailAccounts.emailAddress,
@@ -229,27 +241,27 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
         eq(schema.emailAccounts.agentId, agentId),
         eq(schema.emailAccounts.provider, "agentmail"),
       ),
-    )
-    .limit(1);
+    );
+  const existing = existingAccounts.find((account) =>
+    hasExactAgentMailManagedScope(account.oauthGrantedScopes),
+  );
 
   if (!isVaultConfigured())
     throw new Error("Credential vault is not configured for managed email.");
   const apiKey = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is required for managed Bot email.");
 
-  if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
+  if (existing) {
     const domain = normalizedManagedDomain();
     if (!domain || !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
       throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
     }
-    const inbox = (await listAgentMailInboxes(apiKey)).find(
-      (candidate) => candidate.email.toLowerCase() === existing.emailAddress.toLowerCase(),
-    );
-    if (!inbox) {
-      throw new Error(
-        "Managed AgentMail inbox is missing from the configured AgentMail organization.",
-      );
-    }
+    const inbox = await resolveManagedInbox({
+      apiKey,
+      agentId,
+      agentName,
+      emailAddress: existing.emailAddress,
+    });
     await verifyAgentMailCredentials(inbox.email, apiKey);
     await ensureManagedDeliveryWebhook({
       apiKey,
@@ -261,19 +273,35 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
     return { email: existing.emailAddress, reused: true };
   }
 
-  const inbox = await resolveManagedInbox({ apiKey, agentId, agentName });
-  await verifyAgentMailCredentials(inbox.email, apiKey);
+  const domain = normalizedManagedDomain();
+  if (!domain) {
+    throw new Error(
+      "AGENTMAIL_DEFAULT_DOMAIN is required before paid Bot managed-email provisioning can run.",
+    );
+  }
+  const reservedEmailAddress = `${managedMailboxUsername(agentName, agentId)}@${domain}`;
+  // Persist the deterministic BotBound-managed address before calling the
+  // provider. If AgentMail accepts creation and the process crashes, terminal
+  // erasure and the next retry still have an authoritative local pointer.
   const connected = await upsertOwnedEmailAccount({
     userId,
     agentId,
-    emailAddress: inbox.email,
+    emailAddress: reservedEmailAddress,
     provider: "agentmail",
     accessToken: encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL),
     refreshToken: null,
     expiresAt: null,
-    oauthGrantedScopes: `${agentmailGrantedScopes()} ${MANAGED_SCOPE_MARKER}`,
+    oauthGrantedScopes: `${agentmailGrantedScopes()} ${AGENTMAIL_MANAGED_SCOPE_MARKER}`,
   });
   if (!connected) throw new Error(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+
+  const inbox = await resolveManagedInbox({
+    apiKey,
+    agentId,
+    agentName,
+    emailAddress: reservedEmailAddress,
+  });
+  await verifyAgentMailCredentials(inbox.email, apiKey);
 
   await ensureManagedDeliveryWebhook({
     apiKey,
@@ -283,7 +311,7 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
     hasStoredSecret: false,
   });
 
-  return { email: inbox.email, reused: inbox.reused };
+  return { email: reservedEmailAddress, reused: inbox.reused };
 }
 
 /**
@@ -321,17 +349,29 @@ export async function ensurePaidBotIdentity(input: {
     };
   }
 
-  await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
+  const fenced = await runTenantProviderWorkWithDeletionFence({
+    userId: input.userId,
+    operation: "paid_bot_identity_reconcile",
+    perform: async () => {
+      await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
 
-  const phone = await ensurePaidBotPhone(input.userId, input.agentId);
-  const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
+      const phone = await ensurePaidBotPhone(input.userId, input.agentId);
+      const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
 
-  return {
-    eligible: true,
-    planId: plan.planId,
-    phone: phone.phoneNumber,
-    email: email.email,
-    phoneReused: phone.reused,
-    emailReused: email.reused,
-  };
+      return {
+        eligible: true,
+        planId: plan.planId,
+        phone: phone.phoneNumber,
+        email: email.email,
+        phoneReused: phone.reused,
+        emailReused: email.reused,
+      };
+    },
+  });
+  if (!fenced.performed) {
+    throw new Error(
+      "Paid Bot identity provisioning is unavailable because account deletion is in progress.",
+    );
+  }
+  return fenced.result;
 }

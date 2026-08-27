@@ -20,7 +20,9 @@ function argumentValue(name) {
 }
 
 const outputRoot = resolve(argumentValue("--output-root") || resolve(extensionRoot, "dist"));
-const publishRoot = resolve(argumentValue("--publish-dir") || resolve(repoRoot, "public/downloads"));
+const publishRoot = resolve(
+  argumentValue("--publish-dir") || resolve(repoRoot, "public/downloads"),
+);
 
 function mergeManifest(base, overlay) {
   const output = { ...base };
@@ -56,7 +58,9 @@ function assertExtensionPolicy(manifest, target) {
     throw new Error(`${target}: broad all-URLs access is prohibited.`);
   }
   if (hostPermissions.length) {
-    throw new Error(`${target}: no persistent host permissions are permitted in the command baseline.`);
+    throw new Error(
+      `${target}: no persistent host permissions are permitted in the command baseline.`,
+    );
   }
   if (permissions.has("tabs")) {
     throw new Error(`${target}: tabs permission is prohibited — use activeTab only.`);
@@ -87,7 +91,12 @@ async function renderIcons(outputDirectory) {
 function zipTarget(target, outputDirectory) {
   const zipName = `wireline-command-${target}.zip`;
   const zipPath = resolve(outputRoot, zipName);
-  const result = spawnSync("zip", ["-r", "-q", zipPath, "."], {
+  const command = process.platform === "win32" ? "tar.exe" : "zip";
+  const commandArgs =
+    process.platform === "win32"
+      ? ["-a", "-c", "-f", zipPath, "background", "icons", "manifest.json", "panel"]
+      : ["-r", "-q", zipPath, "."];
+  const result = spawnSync(command, commandArgs, {
     cwd: outputDirectory,
     encoding: "utf8",
   });
@@ -120,7 +129,10 @@ async function buildTarget(target) {
     cp(resolve(extensionRoot, "panel"), resolve(outputDirectory, "panel"), { recursive: true }),
     renderIcons(outputDirectory),
   ]);
-  await writeFile(resolve(outputDirectory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(
+    resolve(outputDirectory, "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   const zipPath = zipTarget(target, outputDirectory);
   await publishDownload(zipPath, target);
 }

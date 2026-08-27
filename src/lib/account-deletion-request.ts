@@ -13,6 +13,11 @@ export type PendingAccountDeletionResult = {
   renewal: RenewalChangeResult;
 };
 
+export type CancelPendingAccountDeletionResult =
+  | { state: "cancelled"; rowsCancelled: number; scheduledPurgeAt: Date | null }
+  | { state: "not_found" }
+  | { state: "terminal"; scheduledPurgeAt: Date | null };
+
 export const ACCOUNT_DELETION_BILLING_RECONCILIATION_MS = 60 * 60_000;
 
 /** Schedule exactly one future billing reconciliation while deletion is pending. */
@@ -154,4 +159,67 @@ export async function ensurePendingAccountDeletion(input: {
   }, writeTransactionConfig());
   const renewal = await stopRenewalForDeletion(input.userId);
   return { ...marker, renewal };
+}
+
+/**
+ * Cancel every pending deletion marker under the same advisory fence used by
+ * new requests and terminal purge. This only changes the deletion decision;
+ * it never performs an inverse Stripe mutation or silently resumes renewal.
+ */
+export async function cancelPendingAccountDeletion(input: {
+  userId: string;
+  cancelledAt?: Date;
+}): Promise<CancelPendingAccountDeletionResult> {
+  const cancelledAt = input.cancelledAt ?? new Date();
+  return drizzle.transaction(async (tx) => {
+    await acquireAccountDeletionFence(tx, input.userId);
+    const activeRows = await tx
+      .select({
+        id: schema.deletionQueue.id,
+        status: schema.deletionQueue.status,
+        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+      })
+      .from(schema.deletionQueue)
+      .where(
+        and(
+          eq(schema.deletionQueue.userId, input.userId),
+          inArray(schema.deletionQueue.status, ["pending", "purging"]),
+        ),
+      )
+      .orderBy(schema.deletionQueue.scheduledPurgeAt);
+
+    if (activeRows.length === 0) return { state: "not_found" };
+    const terminal = activeRows.find(
+      (row) =>
+        row.status === "purging" ||
+        !row.scheduledPurgeAt ||
+        row.scheduledPurgeAt.getTime() <= cancelledAt.getTime(),
+    );
+    if (terminal) {
+      return { state: "terminal", scheduledPurgeAt: terminal.scheduledPurgeAt ?? null };
+    }
+
+    const cancelled = await tx
+      .update(schema.deletionQueue)
+      .set({ status: "cancelled", cancelledAt })
+      .where(
+        and(
+          eq(schema.deletionQueue.userId, input.userId),
+          eq(schema.deletionQueue.status, "pending"),
+          gt(schema.deletionQueue.scheduledPurgeAt, cancelledAt),
+        ),
+      )
+      .returning({ id: schema.deletionQueue.id });
+    if (cancelled.length === 0) {
+      return {
+        state: "terminal",
+        scheduledPurgeAt: activeRows[0]?.scheduledPurgeAt ?? null,
+      };
+    }
+    return {
+      state: "cancelled",
+      rowsCancelled: cancelled.length,
+      scheduledPurgeAt: activeRows[0]?.scheduledPurgeAt ?? null,
+    };
+  }, writeTransactionConfig());
 }
