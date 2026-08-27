@@ -66,8 +66,13 @@ requirePattern(
 );
 requirePattern(
   "src/routes/billing-routes.ts",
-  /insert\(schema\.stripeEvents\)/,
+  /claimStripeEvent\(idempotencyKey, event\.type\)/,
   "Stripe events must claim a durable idempotency key before processing.",
+);
+requirePattern(
+  "src/lib/stripe-event-claim.ts",
+  /insert\(schema\.stripeEvents\)[\s\S]*claimToken:\s*claim\.claimToken/,
+  "Stripe event claims must persist per-attempt ownership before processing.",
 );
 requirePattern(
   "src/routes/billing-routes.ts",
@@ -76,8 +81,13 @@ requirePattern(
 );
 requirePattern(
   "src/routes/billing-routes.ts",
-  /delete\(schema\.stripeEvents\)/,
+  /releaseStripeEventClaim\(claim\)/,
   "Failed Stripe processing must release the claim so Stripe can retry.",
+);
+requirePattern(
+  "src/lib/stripe-event-claim.ts",
+  /delete\(schema\.stripeEvents\)[\s\S]*eq\(schema\.stripeEvents\.claimToken, claim\.claimToken\)/,
+  "Stripe event release must be fenced to the attempt that still owns the claim.",
 );
 requirePattern(
   "src/lib/stripe-helpers.ts",
