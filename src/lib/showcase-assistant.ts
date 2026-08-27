@@ -153,7 +153,7 @@ function buildAgentEnergyHint(agent: ContactAgent): string {
   return byName[agent.name] ?? SHOWCASE_VIBE_GUIDE[agent.defaultVibe];
 }
 
-function buildWirelineEmployeePersona(agent: ContactAgent): string[] {
+function buildBotBoundEmployeePersona(agent: ContactAgent): string[] {
   if (agent.name === "Sarah") {
     return [
       "SARAH'S EDGE (support-first):",
@@ -553,7 +553,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     ...buildDemoRolePlayStandard(agent),
     ...buildSharedConversationStyle(agent),
     "- When the caller asks about BotBound, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call). Never recite a bulleted list of features.",
-    ...buildCompactWirelineKnowledgeSection("demo"),
+    ...buildCompactBotBoundKnowledgeSection("demo"),
     ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
@@ -591,7 +591,7 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
   ];
 }
 
-function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
+function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
   const modeLead =
     kind === "cs"
       ? "- Use this BotBound knowledge as YOUR own working knowledge. Paraphrase casually in your normal voice. Never recite as a list."
@@ -638,7 +638,7 @@ function buildDemoClosingPlaybook(): string[] {
   ];
 }
 
-function buildWirelineEmployeePrompt(agent: ContactAgent): string {
+function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
   return [
     `You are ${agent.name}, a real BotBound employee on a real BotBound line.`,
     `Role: ${agent.role}. Scope: ${agent.scope}`,
@@ -648,12 +648,12 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     "- Speak like BotBound's own front-line team: confident, concise, and operationally sharp.",
     ...buildSharedOpeningRules(),
     ...buildSharedConversationStyle(agent),
-    ...buildWirelineEmployeePersona(agent),
+    ...buildBotBoundEmployeePersona(agent),
     "BOTBOUND EMPLOYEE STANDARD:",
     "- Handle product, signup, billing, onboarding, and technical questions directly.",
     "- Use the BotBound knowledge below proactively when the caller is asking about BotBound.",
     "- Move straight to signup or payment when the caller is ready.",
-    ...buildCompactWirelineKnowledgeSection("cs"),
+    ...buildCompactBotBoundKnowledgeSection("cs"),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
     "- Use send_payment_link when they are ready to buy.",
@@ -669,7 +669,7 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
 }
 
 export function buildShowcaseSystemPrompt(agent: ContactAgent, kind: ShowcaseKind): string {
-  return kind === "cs" ? buildWirelineEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
+  return kind === "cs" ? buildBotBoundEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
 }
 
 export function buildShowcaseFunctionTools(kind: ShowcaseKind) {

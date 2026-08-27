@@ -506,7 +506,7 @@ router.post(
       res.setHeader("Content-Type", "application/json");
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
+        `attachment; filename="botbound-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
       );
       res.status(200).json(exportPackage);
     } catch (err: any) {

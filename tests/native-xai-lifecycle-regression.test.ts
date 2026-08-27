@@ -8,7 +8,10 @@ describe("native xAI carrier and transfer lifecycle regressions", () => {
   it("never reclassifies or double-meters a Twilio leg after xAI SIP bridging", () => {
     const source = read("src/routes/xai-outbound-routes.ts");
     const neverBridgedStart = source.indexOf("function neverBridgedNativeVoice");
-    const neverBridgedEnd = source.indexOf("async function loadCampaignMaxAttempts", neverBridgedStart);
+    const neverBridgedEnd = source.indexOf(
+      "async function loadCampaignMaxAttempts",
+      neverBridgedStart,
+    );
     const neverBridged = source.slice(neverBridgedStart, neverBridgedEnd);
 
     expect(neverBridged).toContain("!nativeVoice.xai_call_id");
@@ -28,9 +31,7 @@ describe("native xAI carrier and transfer lifecycle regressions", () => {
     const bridgeGuard = terminalBranch.indexOf(
       "lead.status === LEAD_STATUS.CONNECTED || !neverBridgedNativeVoice(nativeVoice)",
     );
-    const retryMutation = terminalBranch.indexOf(
-      "patch.status = resolveRetryableLeadStatus",
-    );
+    const retryMutation = terminalBranch.indexOf("patch.status = resolveRetryableLeadStatus");
     const unansweredMeter = terminalBranch.indexOf("meterUnanswered = true");
 
     expect(terminalStart).toBeGreaterThan(-1);
@@ -50,14 +51,11 @@ describe("native xAI carrier and transfer lifecycle regressions", () => {
     expect(notifier).toContain('endedReason = "transferred"');
     expect(notifier).toContain("clearTimeout(maxDurationTimer)");
     expect(notifier).toContain("maxDurationTimer = null");
-    expect(notifier).toContain('ws.close(1000, "Wireline transferred")');
+    expect(notifier).toContain('ws.close(1000, "BotBound transferred")');
     expect(notifier).not.toContain("hangupXAISipCall");
 
     const completedToolStart = source.indexOf("let transferCompleted = false;");
-    const completedToolEnd = source.indexOf(
-      'if (call.name === "add_to_dnc")',
-      completedToolStart,
-    );
+    const completedToolEnd = source.indexOf('if (call.name === "add_to_dnc")', completedToolStart);
     const completedTool = source.slice(completedToolStart, completedToolEnd);
     const refer = completedTool.indexOf("await referXAISipCall");
     const output = completedTool.indexOf('type: "function_call_output"');

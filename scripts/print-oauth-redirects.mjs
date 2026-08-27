@@ -37,7 +37,6 @@ const integrationCallbacks = [
   ["Google", "/api/oauth/google/callback"],
   ["Google Sheets", "/api/oauth/google_sheets/callback"],
   ["Microsoft", "/api/oauth/microsoft/callback"],
-  ["Yahoo", "/api/oauth/yahoo/callback"],
   ["Salesforce", "/api/oauth/salesforce/callback"],
   ["HubSpot", "/api/oauth/hubspot/callback"],
   ["Apollo", "/api/oauth/apollo/callback"],
@@ -74,6 +73,9 @@ existing /api/auth/* or provider callback paths during the brand/domain cutover.
 
 printGroup("ACCOUNT SIGN-IN CALLBACKS", signInCallbacks);
 printGroup("CONNECTED-INTEGRATION CALLBACKS", integrationCallbacks);
+console.log(
+  "\nDEFERRED: Yahoo Mail connection is not registered until XOAUTH2 read/send execution ships. Yahoo sign-in remains active.\n",
+);
 
 console.log(`
 CUTOVER ORDER

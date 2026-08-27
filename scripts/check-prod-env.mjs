@@ -63,7 +63,7 @@ const required = [
   ],
   [
     "INTERNAL_JWT_SECRET",
-    "Session JWT signing - canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
+    "Session JWT signing - canonical BotBound session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
   ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
@@ -188,14 +188,14 @@ const recommended = [
 
   // Canonical Founder Early Access catalog. These keys mirror
   // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
-  ["STRIPE_STARTER_9_PRICE_ID", "Wireline Starter monthly price"],
-  ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "Wireline Starter annual price"],
-  ["STRIPE_STARTER_PRICE_ID", "Wireline Starter Plus monthly price"],
-  ["STRIPE_STARTER_ANNUAL_PRICE_ID", "Wireline Starter Plus annual price"],
-  ["STRIPE_TEAM_PRICE_ID", "Wireline Pro monthly price"],
-  ["STRIPE_TEAM_ANNUAL_PRICE_ID", "Wireline Pro annual price"],
-  ["STRIPE_BUSINESS_PRICE_ID", "Wireline Business monthly price"],
-  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Wireline Business annual price"],
+  ["STRIPE_STARTER_9_PRICE_ID", "BotBound Starter monthly price"],
+  ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "BotBound Starter annual price"],
+  ["STRIPE_STARTER_PRICE_ID", "BotBound Starter Plus monthly price"],
+  ["STRIPE_STARTER_ANNUAL_PRICE_ID", "BotBound Starter Plus annual price"],
+  ["STRIPE_TEAM_PRICE_ID", "BotBound Pro monthly price"],
+  ["STRIPE_TEAM_ANNUAL_PRICE_ID", "BotBound Pro annual price"],
+  ["STRIPE_BUSINESS_PRICE_ID", "BotBound Business monthly price"],
+  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "BotBound Business annual price"],
   ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
   ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Retired Live Video SKU for leftover webhook matching"],
 ];
@@ -334,7 +334,7 @@ const invalidRecommended = invalid(recommended);
 
 const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;
 
-console.log(banner("Wireline - production env check"));
+console.log(banner("BotBound - production env check"));
 
 if (
   missingRequired.length === 0 &&

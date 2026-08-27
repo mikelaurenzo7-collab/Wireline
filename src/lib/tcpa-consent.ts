@@ -545,7 +545,7 @@ export function evaluateOutboundConsent(input: ConsentInputs): ConsentDecision {
   }
 
   const { rule, state } = getConsentRuleForPhone(input.phone, input.default_rule ?? "two_party");
-  const mustDisclose = true; // Wireline policy: always disclose recording.
+  const mustDisclose = true; // BotBound policy: always disclose recording.
   const mustOffer = rule === "two_party";
   return {
     allowed: true,

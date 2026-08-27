@@ -239,7 +239,7 @@ export async function postCallAnalysis(input: PostCallInput): Promise<PostCallAn
         role: input.role,
       });
   }
-  const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
+  const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the BotBound platform. Be evidence-driven and concise:
 - score lead intent honestly (0 to 100); if there's no signal, score low.
 - extract ONE specific tactical lesson (or empty string if nothing worth promoting).
 - list every concrete follow-up the agent promised or the customer asked for.
@@ -355,7 +355,7 @@ export async function extractActions(params: {
 }): Promise<ExtractedBusinessAction[]> {
   const result = await runStructured<{ actions: ExtractedBusinessAction[] }>({
     system:
-      "You are the Wireline Action Engine. Extract only actions explicitly promised or requested. For calendar actions, emit schedule_calendar only when exact YYYY-MM-DD date, 24-hour HH:mm time, and a full IANA timezone are all supported by the call. Otherwise create an internal follow-up task. Never infer a recipient, destination, authorization, or material commitment.",
+      "You are the BotBound Action Engine. Extract only actions explicitly promised or requested. For calendar actions, emit schedule_calendar only when exact YYYY-MM-DD date, 24-hour HH:mm time, and a full IANA timezone are all supported by the call. Otherwise create an internal follow-up task. Never infer a recipient, destination, authorization, or material commitment.",
     user: `Transcript: ${params.transcript}\nSummary: ${params.summary}\nCustomer: ${params.customerNumber || "Unknown"}`,
     tool: BUSINESS_ACTIONS_TOOL,
     cacheSystem: true,
@@ -371,7 +371,7 @@ export async function synthesizeLesson(params: {
 }): Promise<string> {
   const { text } = await runCompletion({
     system:
-      "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. ≤30 words.",
+      "You are the BotBound Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. ≤30 words.",
     user: `Score: ${params.score}\nBreakdown: ${JSON.stringify(params.breakdown)}\nTranscript: ${params.transcript}`,
     cacheSystem: true,
     complexity: "medium",

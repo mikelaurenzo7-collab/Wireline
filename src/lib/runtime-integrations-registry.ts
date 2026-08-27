@@ -142,7 +142,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "google-workspace",
     "Google Workspace",
-    "Gmail, Calendar, Contacts, Drive, and Sheets.",
+    "Gmail, Calendar, Drive, and Sheets.",
     "oauth",
     false,
     ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
@@ -150,15 +150,19 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "microsoft-365",
     "Microsoft 365",
-    "Outlook, Calendar, Teams, Excel, OneDrive, and PowerPoint.",
+    "Outlook, Calendar, Teams, Excel, and OneDrive.",
     "oauth",
     false,
     ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
   ),
-  item("yahoo", "Yahoo Mail", "Yahoo mailbox connection.", "oauth", false, [
-    "YAHOO_CLIENT_ID",
-    "YAHOO_CLIENT_SECRET",
-  ]),
+  item(
+    "yahoo",
+    "Yahoo",
+    "Yahoo sign-in is supported. Yahoo Mail read and send actions are not yet available.",
+    "oauth",
+    false,
+    ["YAHOO_CLIENT_ID", "YAHOO_CLIENT_SECRET"],
+  ),
   item("icloud", "iCloud Mail", "Personal iCloud mailbox connection.", "oauth", false, [
     "ICLOUD_APPLE_ID",
     "ICLOUD_APP_PASSWORD",

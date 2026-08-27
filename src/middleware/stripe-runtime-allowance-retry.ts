@@ -146,7 +146,7 @@ async function resolveSubscriptionAllowanceContext(
   }
   if (!owner?.userId) {
     throw new Error(
-      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its Wireline owner is unresolved.`,
+      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its BotBound owner is unresolved.`,
     );
   }
 
@@ -286,7 +286,7 @@ async function reverseTopUpDisputeStrict(
   const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
   if (!userId || !(purchasedCreditUsd > 0)) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
     );
   }
 
@@ -381,7 +381,7 @@ async function restoreTopUpDisputeStrict(
   const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
   if (!userId || !(purchasedCreditUsd > 0)) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
     );
   }
 

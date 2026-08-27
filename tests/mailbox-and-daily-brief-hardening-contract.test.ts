@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { agentMailSuppressionReason, parseAgentMailWebhookEvent } from "../src/lib/agentmail-webhook";
+import {
+  agentMailSuppressionReason,
+  parseAgentMailWebhookEvent,
+} from "../src/lib/agentmail-webhook";
 
 const ownedMailbox = readFileSync("src/lib/owned-email-account.ts", "utf8");
 const mailboxIdentity = readFileSync("src/lib/mailbox-identity.ts", "utf8");
@@ -23,6 +26,14 @@ const androidAsk = readFileSync(
 const mailboxRoutes = [google, microsoft, yahoo, icloud, agentmail];
 
 describe("mailbox ownership hardening", () => {
+  it("keeps unfinished Yahoo Mail transport fail-closed without weakening Yahoo sign-in", () => {
+    expect(yahoo).toContain("YAHOO_MAIL_CONNECTION_AVAILABLE = false");
+    expect(yahoo).toContain("Yahoo sign-in is available");
+    expect(integrations).toContain(
+      "Yahoo Mail send refused because XOAUTH2 transport is not implemented",
+    );
+  });
+
   it("uses an atomic conflict predicate and never updates mailbox ownership", () => {
     expect(ownedMailbox).toContain("setWhere: eq(emailAccounts.userId, input.userId)");
     expect(ownedMailbox).toContain("emailAddress.trim().toLowerCase()");
@@ -78,9 +89,7 @@ describe("mailbox ownership hardening", () => {
     expect(mailboxPersistence).toContain(
       "Mailbox persistence rejected a stale or unowned account source.",
     );
-    expect(mailboxPersistence).toContain(
-      "${schema.emailThreads.accountId} = excluded.account_id",
-    );
+    expect(mailboxPersistence).toContain("${schema.emailThreads.accountId} = excluded.account_id");
   });
 
   it("preserves legacy rows with no provable account/provider provenance", () => {
@@ -96,7 +105,9 @@ describe("mailbox ownership hardening", () => {
     const fetchSection = integrations.match(/async fetchInboxMessages[\s\S]*?async sendEmail/)?.[0];
     expect(fetchSection).toBeTruthy();
     expect(fetchSection).not.toContain('getAccounts("calendar")');
-    expect(integrations.match(/accountId: String\(account\.id\)/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(integrations.match(/accountId: String\(account\.id\)/g)?.length).toBeGreaterThanOrEqual(
+      4,
+    );
     expect(agentmailWebhook).toContain('provider: "agentmail"');
     expect(agentmailWebhookRoutes).toContain(
       "processVerifiedAgentMailWebhook(account.userId, account.id, req.body as Buffer)",
@@ -143,10 +154,7 @@ describe("AgentMail delivery payload hardening", () => {
     });
 
     expect(event.messageId).toBe("msg_bounce");
-    expect(event.suppressionRecipients).toEqual([
-      "invalid@example.com",
-      "second@example.com",
-    ]);
+    expect(event.suppressionRecipients).toEqual(["invalid@example.com", "second@example.com"]);
     expect(agentMailSuppressionReason(event.eventType)).toBe("agentmail_bounced");
   });
 

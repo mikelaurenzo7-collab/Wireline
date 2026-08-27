@@ -53,6 +53,69 @@ const isPositiveNumber = (value: string) => Number.isFinite(Number(value)) && Nu
 const isCommaSeparatedEmails = (value: string) =>
   !value || value.split(",").every((entry) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.trim()));
 
+export const OAUTH_CREDENTIAL_PAIRS = [
+  {
+    provider: "Google",
+    identifierEnv: "GOOGLE_CLIENT_ID",
+    secretEnv: "GOOGLE_CLIENT_SECRET",
+  },
+  {
+    provider: "Microsoft",
+    identifierEnv: "MICROSOFT_CLIENT_ID",
+    secretEnv: "MICROSOFT_CLIENT_SECRET",
+  },
+  {
+    provider: "Yahoo",
+    identifierEnv: "YAHOO_CLIENT_ID",
+    secretEnv: "YAHOO_CLIENT_SECRET",
+  },
+  {
+    provider: "Salesforce",
+    identifierEnv: "SALESFORCE_CLIENT_ID",
+    secretEnv: "SALESFORCE_CLIENT_SECRET",
+  },
+  {
+    provider: "HubSpot",
+    identifierEnv: "HUBSPOT_CLIENT_ID",
+    secretEnv: "HUBSPOT_CLIENT_SECRET",
+  },
+  {
+    provider: "Slack",
+    identifierEnv: "SLACK_CLIENT_ID",
+    secretEnv: "SLACK_CLIENT_SECRET",
+  },
+  {
+    provider: "Apollo",
+    identifierEnv: "APOLLO_CLIENT_ID",
+    secretEnv: "APOLLO_CLIENT_SECRET",
+  },
+  {
+    provider: "Meta",
+    identifierEnv: "META_APP_ID",
+    secretEnv: "META_APP_SECRET",
+  },
+  {
+    provider: "Shopify",
+    identifierEnv: "SHOPIFY_CLIENT_ID",
+    secretEnv: "SHOPIFY_CLIENT_SECRET",
+  },
+  {
+    provider: "Square",
+    identifierEnv: "SQUARE_APPLICATION_ID",
+    secretEnv: "SQUARE_APPLICATION_SECRET",
+  },
+  {
+    provider: "X",
+    identifierEnv: "X_CLIENT_ID",
+    secretEnv: "X_CLIENT_SECRET",
+  },
+  {
+    provider: "Zoom",
+    identifierEnv: "ZOOM_CLIENT_ID",
+    secretEnv: "ZOOM_CLIENT_SECRET",
+  },
+] as const;
+
 export const ENV_REGISTRY: EnvVarConfig[] = [
   {
     name: "POSTGRES_URL",
@@ -203,7 +266,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "PERPLEXITY_API_KEY",
     group: "ai",
     required: false,
-    description: "Perplexity-first live public research for Wireline CEO agents",
+    description: "Perplexity-first live public research for BotBound agents",
     validate: nonEmpty,
   },
   {
@@ -292,24 +355,175 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "oauth",
     required: false,
     description: "Google Workspace OAuth client ID",
+    validate: nonEmpty,
   },
   {
     name: "GOOGLE_CLIENT_SECRET",
     group: "oauth",
     required: false,
     description: "Google Workspace OAuth client secret",
+    validate: nonEmpty,
   },
   {
     name: "MICROSOFT_CLIENT_ID",
     group: "oauth",
     required: false,
     description: "Microsoft 365 OAuth client ID",
+    validate: nonEmpty,
   },
   {
     name: "MICROSOFT_CLIENT_SECRET",
     group: "oauth",
     required: false,
     description: "Microsoft 365 OAuth client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "YAHOO_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Yahoo account sign-in OAuth client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "YAHOO_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Yahoo account sign-in OAuth client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "SALESFORCE_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Salesforce connected-app OAuth consumer key",
+    validate: nonEmpty,
+  },
+  {
+    name: "SALESFORCE_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Salesforce connected-app OAuth consumer secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "HUBSPOT_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "HubSpot OAuth app client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "HUBSPOT_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "HubSpot OAuth app client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "SLACK_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Slack OAuth app client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "SLACK_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Slack OAuth app client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "APOLLO_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Apollo per-tenant OAuth client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "APOLLO_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Apollo per-tenant OAuth client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "META_APP_ID",
+    group: "oauth",
+    required: false,
+    description: "Meta OAuth application ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "META_APP_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Meta OAuth application secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "SHOPIFY_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Shopify OAuth app client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "SHOPIFY_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Shopify OAuth app client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "SQUARE_APPLICATION_ID",
+    group: "oauth",
+    required: false,
+    description: "Square OAuth application ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "SQUARE_APPLICATION_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Square OAuth application secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "X_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "X OAuth 2.0 client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "X_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "X OAuth 2.0 client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "ZOOM_CLIENT_ID",
+    group: "oauth",
+    required: false,
+    description: "Zoom OAuth app client ID",
+    validate: nonEmpty,
+  },
+  {
+    name: "ZOOM_CLIENT_SECRET",
+    group: "oauth",
+    required: false,
+    description: "Zoom OAuth app client secret",
+    validate: nonEmpty,
+  },
+  {
+    name: "APOLLO_API_KEY",
+    group: "action_engine",
+    required: false,
+    description: "Apollo platform API-key fallback, separate from per-tenant OAuth",
+    validate: nonEmpty,
   },
   {
     name: "STRIPE_SECRET_KEY",
@@ -384,6 +598,13 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     requiredInProd: true,
     description: "OAuth state signing secret",
+  },
+  {
+    name: "OAUTH_BRIDGE_SECRET",
+    group: "security",
+    required: false,
+    description: "Dedicated signing secret for browser-bound OAuth sign-in completion codes",
+    validate: nonEmpty,
   },
   {
     name: "WIRELINE_DATA_KEY",
@@ -536,6 +757,23 @@ export function validateEnv(): EnvValidationResult {
     }
   }
 
+  for (const { provider, identifierEnv, secretEnv } of OAUTH_CREDENTIAL_PAIRS) {
+    const identifierConfigured = Boolean(process.env[identifierEnv]?.trim());
+    const secretConfigured = Boolean(process.env[secretEnv]?.trim());
+    if (identifierConfigured === secretConfigured) continue;
+
+    const missingEnv = identifierConfigured ? secretEnv : identifierEnv;
+    const message = `${provider} OAuth credentials are incomplete; configure ${identifierEnv} and ${secretEnv} together`;
+    if (isProd) {
+      result.valid = false;
+      byGroup.oauth.valid--;
+      byGroup.oauth.invalid++;
+      result.errors.push({ var: missingEnv, group: "oauth", message });
+    } else {
+      result.warnings.push({ var: missingEnv, group: "oauth", message });
+    }
+  }
+
   // This credential used to be intentionally browser-exposed. Public voice
   // now uses server-minted one-use tickets and server-mediated OpenAI WebRTC, so
   // accepting the retired key here would contradict the deployment boundary
@@ -586,7 +824,7 @@ export function logEnvValidation(verbose = false) {
 export function generateSetupChecklist(): string[] {
   const result = validateEnv();
   return [
-    "# Wireline Environment Setup Checklist",
+    "# BotBound Environment Setup Checklist",
     "",
     ...result.errors.map(
       (error) =>

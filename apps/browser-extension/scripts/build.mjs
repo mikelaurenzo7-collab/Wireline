@@ -89,7 +89,7 @@ async function renderIcons(outputDirectory) {
 }
 
 function zipTarget(target, outputDirectory) {
-  const zipName = `wireline-command-${target}.zip`;
+  const zipName = `botbound-command-${target}.zip`;
   const zipPath = resolve(outputRoot, zipName);
   const command = process.platform === "win32" ? "tar.exe" : "zip";
   const commandArgs =
@@ -109,6 +109,9 @@ function zipTarget(target, outputDirectory) {
 async function publishDownload(zipPath, target) {
   if (noPublish) return;
   await mkdir(publishRoot, { recursive: true });
+  await cp(zipPath, resolve(publishRoot, `botbound-command-${target}.zip`));
+  // Keep the published legacy URL as a byte-identical migration alias until
+  // old installation links have aged out.
   await cp(zipPath, resolve(publishRoot, `wireline-command-${target}.zip`));
 }
 
@@ -145,8 +148,8 @@ if (!isCheck) {
 await Promise.all([buildTarget("chromium"), buildTarget("firefox")]);
 console.log(
   isCheck
-    ? "Wireline browser-extension policy checks passed."
+    ? "BotBound browser-extension policy checks passed."
     : noPublish
-      ? `Wireline browser-extension test packages created in ${outputRoot}.`
-      : `Wireline browser-extension builds created in ${outputRoot} and published to ${publishRoot}.`,
+      ? `BotBound browser-extension test packages created in ${outputRoot}.`
+      : `BotBound browser-extension builds created in ${outputRoot} and published to ${publishRoot}.`,
 );

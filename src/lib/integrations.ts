@@ -561,10 +561,16 @@ export class IntegrationService {
               providerWorkStarted = true;
               return sendAgentMail(email, apiKey, sendParams);
             }
+            if (account.provider === "yahoo") {
+              log.warn("Yahoo Mail send refused because XOAUTH2 transport is not implemented", {
+                userId: this.userId,
+              });
+              return false;
+            }
           }
 
           // A tenant cadence must leave from the tenant's own mailbox. Sending a
-          // customer's marketing campaign through Wireline's transactional Resend
+          // customer's marketing campaign through BotBound's transactional Resend
           // identity would misidentify the commercial sender and blur opt-out scope.
           if (params.marketing) {
             log.warn("Marketing email skipped, connect a tenant mailbox before sending cadences", {

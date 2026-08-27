@@ -506,7 +506,7 @@ export default function CrmConnectionCard() {
                             : platformReady
                               ? `${group} · Platform configured`
                               : // Customers do not have a mental model for "this deployment", and
-                                // reading it on a catalog card makes an integration Wireline has
+                                // reading it on a catalog card makes an integration BotBound has
                                 // not switched on yet look like something that broke. State the
                                 // fact in the customer's terms and keep the `category · state`
                                 // shape the other branches use.

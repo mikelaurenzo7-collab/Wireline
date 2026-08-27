@@ -101,11 +101,11 @@ export async function listVapiNumbers(): Promise<VapiPhoneNumber[]> {
  *
  * Throws on Vapi-side rejection (out of inventory, cap exceeded, etc.).
  */
-/** Import a number already owned on Wireline's Twilio account into Vapi for voice. */
+/** Import a number already owned on BotBound's Twilio account into Vapi for voice. */
 export async function importTwilioNumberToVapi(opts: {
   number: string;
   name?: string;
-  /** When false, Wireline keeps Twilio SMS webhooks (TCPA opt-out on /api/twilio-webhook/sms). */
+  /** When false, BotBound keeps Twilio SMS webhooks (TCPA opt-out on /api/twilio-webhook/sms). */
   smsEnabled?: boolean;
   assistantId?: string;
 }): Promise<VapiPhoneNumber> {
@@ -122,7 +122,7 @@ export async function importTwilioNumberToVapi(opts: {
     number: opts.number,
     twilioAccountSid: accountSid,
     twilioAuthToken: authToken,
-    name: opts.name || "Wireline-managed",
+    name: opts.name || "BotBound-managed",
     smsEnabled: opts.smsEnabled === true,
   };
   if (opts.assistantId) {
@@ -155,7 +155,7 @@ export async function provisionVapiNumber(opts: {
 }): Promise<VapiPhoneNumber> {
   const payload: Record<string, any> = {
     provider: "vapi",
-    name: opts.name || "Wireline-managed",
+    name: opts.name || "BotBound-managed",
   };
   if (opts.areaCode && /^\d{3}$/.test(opts.areaCode)) {
     payload.numberDesiredAreaCode = opts.areaCode;
@@ -276,7 +276,7 @@ export const POPULAR_AREA_CODES: ReadonlyArray<{
   { code: "702", city: "Las Vegas", state: "NV" },
   { code: "303", city: "Denver", state: "CO" },
   { code: "602", city: "Phoenix", state: "AZ" },
-  // Wireline's neighborhood
+  // BotBound's launch neighborhood
   { code: "630", city: "Chicago Suburbs", state: "IL" },
   { code: "847", city: "Chicago Suburbs", state: "IL" },
 ];

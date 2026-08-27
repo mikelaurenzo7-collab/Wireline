@@ -328,8 +328,8 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("historical plan is not mapped");
   });
 
-  it("fails closed when a subscription-funded charge has no resolvable Wireline owner", () => {
-    expect(middleware).toContain("funded Runtime Allowance but its Wireline owner is unresolved");
+  it("fails closed when a subscription-funded charge has no resolvable BotBound owner", () => {
+    expect(middleware).toContain("funded Runtime Allowance but its BotBound owner is unresolved");
   });
 
   // The invariant is unchanged — both owners must be parsed, so an event

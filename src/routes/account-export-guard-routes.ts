@@ -142,7 +142,7 @@ router.use(
     res.setHeader("Content-Type", "application/json");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="wireline-account-export-${userId.substring(0, 8)}-${exportedAt.getTime()}.json"`,
+      `attachment; filename="botbound-account-export-${userId.substring(0, 8)}-${exportedAt.getTime()}.json"`,
     );
     res.status(200);
 

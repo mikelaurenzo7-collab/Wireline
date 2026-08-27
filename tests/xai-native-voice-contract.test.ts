@@ -56,10 +56,10 @@ describe("native Twilio + xAI voice contracts", () => {
 
     expect(body).toEqual({
       origin: "byo_trunk",
-      name: "Wireline · +13125550123",
+      name: "BotBound · +13125550123",
       phone_number: "+13125550123",
       webhook: {
-        name: "Wireline voice · +13125550123",
+        name: "BotBound voice · +13125550123",
         url: "https://trywireline.com/api/webhooks/xai/voice",
       },
       sip_auth: {
@@ -83,7 +83,9 @@ describe("native Twilio + xAI voice contracts", () => {
       expect(isValidXAISipAllowedAddress(value), value).toBe(false);
     }
     expect(
-      resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.0/23,54.172.60.0/23 54.244.51.0/24" }),
+      resolveXAISipAllowedAddresses({
+        XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.0/23,54.172.60.0/23 54.244.51.0/24",
+      }),
     ).toEqual(["54.172.60.0/23", "54.244.51.0/24"]);
     expect(() =>
       resolveXAISipAllowedAddresses({ XAI_SIP_ALLOWED_ADDRESSES: "54.172.60.999/23" }),
@@ -109,9 +111,7 @@ describe("native Twilio + xAI voice contracts", () => {
   });
 
   it("joins SIP realtime by call id without a model query parameter", () => {
-    expect(buildXAISipRealtimeUrl("call_123")).toBe(
-      "wss://api.x.ai/v1/realtime?call_id=call_123",
-    );
+    expect(buildXAISipRealtimeUrl("call_123")).toBe("wss://api.x.ai/v1/realtime?call_id=call_123");
     expect(buildXAISipRealtimeUrl("  call-prod:01  ")).toBe(
       "wss://api.x.ai/v1/realtime?call_id=call-prod%3A01",
     );
@@ -187,7 +187,7 @@ describe("native Twilio + xAI voice contracts", () => {
     expect(route).toContain("businessName: agentContext.businessName");
     expect(route).toContain("complianceMode: agentContext.complianceMode");
     expect(route).toContain("resolveNativeInboundAdmission");
-    expect(session).toContain("transcriptLines.push({ role: \"Agent\", text: opening })");
+    expect(session).toContain('transcriptLines.push({ role: "Agent", text: opening })');
     expect(session).toContain("applyInboundAdmission");
     expect(session).toContain("awaitingExactOpeningPlayback = true");
     expect(session).toContain("finishExactOpeningIfNeeded");

@@ -276,7 +276,7 @@ async function handlePostCallArtifact(job: JobRow): Promise<void> {
     const artifact = await generateAndStorePostCallArtifact({ ...payload, format, destination });
     // The durable checkpoint belongs to the paid operation. If it cannot be
     // written after provider success, refund this attempt before the queue
-    // retries instead of charging for a result Wireline cannot safely resume.
+    // retries instead of charging for a result BotBound cannot safely resume.
     await persistJobResult(job.id, {
       provider: artifact.provider,
       external_id: artifact.externalId,

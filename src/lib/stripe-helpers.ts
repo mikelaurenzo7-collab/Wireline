@@ -357,7 +357,7 @@ const CURRENT_PLAN_SUBSCRIPTION_STATUSES = new Set<string>([
 /** Stripe subscription statuses that are finished for good. */
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set<string>(["canceled", "incomplete_expired"]);
 
-function isWirelinePlanSubscription(sub: Stripe.Subscription): boolean {
+function isBotBoundPlanSubscription(sub: Stripe.Subscription): boolean {
   if (sub.metadata?.purpose === "live_video_addon") return false;
   return sub.items?.data?.some((item) => !!basePlanByStripePrice(item.price)) ?? false;
 }
@@ -368,7 +368,7 @@ function isWirelinePlanSubscription(sub: Stripe.Subscription): boolean {
  * Webhook event delivery order is explicitly not guaranteed. Therefore an event
  * payload is evidence that something happened, not an ordering oracle for the
  * current one-row entitlement mirror. On every configured Stripe sync we list
- * the customer's subscriptions and select the single authoritative Wireline
+ * the customer's subscriptions and select the single authoritative BotBound
  * plan object in its current state. This also fixes same-subscription reordering:
  * a delayed `updated(active)` payload cannot restore service after Stripe already
  * reports that same subscription as canceled.
@@ -386,14 +386,14 @@ async function currentPlanSubscriptionForCustomer(
     status: "all",
     limit: 100,
   })) {
-    if (isWirelinePlanSubscription(candidate)) candidates.push(candidate);
+    if (isBotBoundPlanSubscription(candidate)) candidates.push(candidate);
   }
 
   const current = candidates.filter((candidate) =>
     CURRENT_PLAN_SUBSCRIPTION_STATUSES.has(candidate.status),
   );
   if (current.length > 1) {
-    log.error("Stripe sync: multiple current Wireline plan subscriptions for one customer", {
+    log.error("Stripe sync: multiple current BotBound plan subscriptions for one customer", {
       customerId,
       subscriptionIds: current.map((candidate) => candidate.id),
       statuses: current.map((candidate) => candidate.status),
@@ -404,7 +404,7 @@ async function currentPlanSubscriptionForCustomer(
 
   const incomplete = candidates.filter((candidate) => candidate.status === "incomplete");
   if (incomplete.length > 1) {
-    log.error("Stripe sync: multiple incomplete Wireline plan subscriptions for one customer", {
+    log.error("Stripe sync: multiple incomplete BotBound plan subscriptions for one customer", {
       customerId,
       subscriptionIds: incomplete.map((candidate) => candidate.id),
     });
@@ -419,13 +419,13 @@ async function currentPlanSubscriptionForCustomer(
 }
 
 /**
- * A Live Video subscription is economically dependent on the base Wireline
+ * A Live Video subscription is economically dependent on the base BotBound
  * plan. When the base plan is scheduled to end, becomes unpaid/paused, or
  * reaches a terminal state, schedule any active standalone Live Video add-on to end too
  * so a customer cannot become blocked in-product while continuing to receive
  * future $19 renewals. We preserve the already-paid add-on period rather than
  * performing an immediate cancellation/refund mutation. A cascade marker lets
- * us safely undo only Wireline-triggered add-on cancellations if the base plan
+ * us safely undo only BotBound-triggered add-on cancellations if the base plan
  * recovers or a replacement paid base plan becomes active before the add-on ends.
  */
 async function reconcileLiveVideoAddonWithBasePlan(opts: {
@@ -668,7 +668,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         ),
       },
     );
-    throw new Error("Stripe subscription price is not mapped to a Wireline plan catalog entry");
+    throw new Error("Stripe subscription price is not mapped to a BotBound plan catalog entry");
   }
 
   const baseMaxAgents = plan?.max_agents ?? 1;

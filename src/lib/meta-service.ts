@@ -7,13 +7,10 @@ import { getErrorMessage } from "./server-utils";
 /**
  * Meta (Facebook + Instagram) OAuth helpers.
  *
- * Currently scoped to **connection establishment only** — we surface
- * a "Connect with Meta" button in Integrations and store the token,
- * but the Lead Ads webhook ingest + CAPI conversion export are
- * future work. Customers who connect today get nothing actionable
- * back; the button is here so the integrations strip shows the
- * tile and the OAuth flow is ready to plug data calls into when
- * we ship the next phase.
+ * The connection flow stores the account token, discovers managed pages,
+ * and subscribes eligible pages to Lead Ads delivery. Lead webhook ingest
+ * is handled by `meta-webhook-routes.ts`; optional conversion export uses
+ * the platform-wide CAPI configuration below.
  *
  * Auth model: Facebook Login for Business — same OAuth dialog used
  * by anyone who wants Lead Ads / Conversions API access. Requires

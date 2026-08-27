@@ -16,12 +16,16 @@ describe("call recording access contract", () => {
     expect(route).toContain("/mono-recording");
     expect(route).toContain("VAPI_PRIVATE_KEY");
     expect(route).toContain("TWILIO_AUTH_TOKEN");
+    expect(route).toContain('redirect: "manual"');
+    expect(route).toContain('trustedTwilioMediaUrl(upstream.headers.get("location"), currentUrl)');
+    expect(route).toContain("TWILIO_RECORDING_MAX_REDIRECTS");
+    expect(route).not.toContain('redirect: "follow"');
   });
 
-  it("returns Wireline recording routes instead of persistent vendor URLs", () => {
+  it("returns BotBound recording routes instead of persistent vendor URLs", () => {
     expect(dashboard).toContain("`/api/calls/${String(call.id)}/recording`");
     expect(mobile).toContain("`/api/calls/${String(call.id)}/recording`");
-    // The failover voicemail email must carry the tenant-gated Wireline
+    // The failover voicemail email must carry the tenant-gated BotBound
     // recording route, never the persistent Twilio media URL.
     expect(twilioWebhook).toContain(
       "recordingUrl: publicAssetUrl(`/api/calls/${String(voicemail.id)}/recording`)",

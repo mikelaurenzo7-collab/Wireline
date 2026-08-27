@@ -67,27 +67,7 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
     return /LEGACY_(?:EXCEL_FILE_NAME|WIRELINE_NAME)/.test(line);
   }
   if (path === "src/lib/voice/xai-sip-config.ts") {
-    return /XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
-  }
-  if (path === "src/lib/voice/xai-sip-provisioning.ts") {
-    return /name:\s*`Wireline(?: voice)? · \$\{input\.phoneNumber\}`/.test(line);
-  }
-  if (path === "src/lib/voice/native-phone-carrier.ts") {
-    return /friendlyName\s*=\s*`Wireline native /.test(line);
-  }
-  if (path === "src/lib/phone-provisioning.ts") {
-    return (
-      /friendlyName:\s*`Wireline · tenant /.test(line) ||
-      /name:\s*`Wireline · \$\{userId\.slice/.test(line)
-    );
-  }
-  if (path === "src/lib/vapi-phone-numbers.ts") {
-    return /name:\s*opts\.name \|\| "Wireline-managed"/.test(line);
-  }
-  if (path === "src/lib/voice/xai-sip-session.ts") {
-    return /ws\.close\(1000, "Wireline (?:transferred|line suspended|caller DNC|maximum duration reached)"\)/.test(
-      line,
-    );
+    return /LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
   }
   if (path === "android/app/src/main/res/values/themes.xml") {
     return /Theme\.Wireline/.test(line);
@@ -95,41 +75,6 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   if (path === "src/lib/studio-canvas-contract.ts") {
     return /pattern:\s*\/Wireline/.test(line);
   }
-  if (path === "src/lib/soc2-controls.ts") {
-    return /Wireline encrypted key prefix/.test(line);
-  }
-  if (path === "src/lib/internal-jwt-secret.ts") {
-    return /canonical Wireline session secret/.test(line);
-  }
-  if (path === "src/lib/tcpa-consent.ts") {
-    return /\/\/ Wireline policy: always disclose recording\./.test(line);
-  }
-  if (path === "src/lib/stripe-helpers.ts") {
-    return (
-      /(?:log\.error|throw new Error)\([^\n]*Wireline plan/.test(line) ||
-      /multiple (?:current|incomplete) Wireline plan subscriptions/.test(line)
-    );
-  }
-  if (path === "src/lib/ai-brains.ts") {
-    return /You are (?:a senior call analyst|the Wireline Action Engine|the Wireline Agent Coach)/.test(
-      line,
-    );
-  }
-  if (path === "src/lib/env-validator.ts") {
-    return /(?:Perplexity-first live public research for Wireline CEO agents|Wireline Environment Setup Checklist)/.test(
-      line,
-    );
-  }
-  if (path === "src/lib/launch-readiness.ts") {
-    return /Launch hard gate is on and Wireline is not launch-ready/.test(line);
-  }
-  if (path === "src/lib/perplexity-platform.ts") {
-    return /You are Wireline's live public-research tool/.test(line);
-  }
-  if (path === "src/routes/agent-routes-v2.ts") {
-    return /You are the Wireline Configuration Engine/.test(line);
-  }
-  if (path === "src/lib/showcase-assistant.ts") return true;
   return false;
 }
 
@@ -202,7 +147,10 @@ describe("BotBound visible-brand sweep", () => {
     expect(brand).toContain('legacyName: "Wireline"');
     expect(openapi).toContain('name: "X-Wireline-Key"');
     expect(nativeSip).toContain('XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token"');
-    expect(nativeSip).toContain('XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP"');
+    expect(nativeSip).toContain('XAI_TWILIO_TRUNK_FRIENDLY_NAME = "BotBound · xAI Direct SIP"');
+    expect(nativeSip).toContain(
+      'LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP"',
+    );
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "BotBound Starter"');

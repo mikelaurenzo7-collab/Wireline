@@ -680,7 +680,7 @@ router.get(
         throw AppError.fromHttpStatus(404, "Unknown export type.");
       }
 
-      const filename = `wireline-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+      const filename = `botbound-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 

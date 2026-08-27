@@ -159,6 +159,9 @@ describe("AI cost-protection contract", () => {
     );
     expect(call).toContain("recordUsage(");
     expect(call).toContain("artifactModel");
+    expect(artifact).toContain('response.headers.get("x-request-id")');
+    expect(artifact).toContain('log.warn("OpenAI artifact request rejected"');
+    expect(artifact).not.toContain("payload.error?.message");
 
     const worker = read("src/lib/job-worker.ts");
     const reservation = worker.slice(

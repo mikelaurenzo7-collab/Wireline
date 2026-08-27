@@ -10,7 +10,7 @@ import {
   type ConnectedArtifactDestination,
   type ConnectedArtifactUpload,
 } from "./connected-artifact-storage";
-import { drizzle, fetchWithTimeout } from "./server-context";
+import { drizzle, fetchWithTimeout, log } from "./server-context";
 
 export type PostCallArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
 export type BusinessArtifactPurpose = "call_report" | "operating_report";
@@ -163,6 +163,13 @@ function citations(value: unknown, output: ContainerFileCitation[] = []): Contai
   return output;
 }
 
+function openAIRequestId(response: Response): string | undefined {
+  const requestId = String(response.headers.get("x-request-id") || "")
+    .trim()
+    .slice(0, 128);
+  return requestId || undefined;
+}
+
 export async function generateAndStorePostCallArtifact(
   input: PostCallArtifactInput,
 ): Promise<GeneratedPostCallArtifact> {
@@ -209,11 +216,22 @@ export async function generateAndStorePostCallArtifact(
     payload as { model?: string; usage?: unknown },
     Date.now() - startedAt,
   );
+  const requestId = openAIRequestId(response);
   if (!response.ok) {
-    throw new Error(
-      payload.error?.message || `OpenAI artifact request failed (${response.status})`,
-    );
+    // Provider error messages can echo customer content. Keep only bounded
+    // request metadata in logs and let the queue surface a generic failure.
+    log.warn("OpenAI artifact request rejected", {
+      status: response.status,
+      model: artifactModel,
+      ...(requestId ? { requestId } : {}),
+    });
+    throw new Error(`OpenAI artifact request failed (${response.status})`);
   }
+  log.info("OpenAI artifact request completed", {
+    model: artifactModel,
+    latencyMs: Date.now() - startedAt,
+    ...(requestId ? { requestId } : {}),
+  });
 
   const generatedFiles = citations(payload);
   const suffix = `.${input.format}`;
@@ -227,7 +245,14 @@ export async function generateAndStorePostCallArtifact(
     { headers: { Authorization: `Bearer ${apiKey}` } },
     30_000,
   );
-  if (!download.ok) throw new Error(`OpenAI file download failed (${download.status})`);
+  if (!download.ok) {
+    const downloadRequestId = openAIRequestId(download);
+    log.warn("OpenAI artifact file download rejected", {
+      status: download.status,
+      ...(downloadRequestId ? { requestId: downloadRequestId } : {}),
+    });
+    throw new Error(`OpenAI file download failed (${download.status})`);
+  }
   const bytes = new Uint8Array(await download.arrayBuffer());
   if (!bytes.byteLength) throw new Error("OpenAI returned an empty artifact file.");
 

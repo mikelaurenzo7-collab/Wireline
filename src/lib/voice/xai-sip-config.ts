@@ -4,8 +4,8 @@ export const XAI_PHONE_NUMBERS_URL = "https://api.x.ai/v2/phone-numbers";
 export const XAI_REALTIME_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
 export const XAI_REALTIME_WEBSOCKET_URL = "wss://api.x.ai/v1/realtime";
 export const XAI_SIP_HOST = "sip.voice.x.ai";
-/** Stable provider-side resource identity. Customer-visible identity remains BotBound. */
-export const XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP";
+export const XAI_TWILIO_TRUNK_FRIENDLY_NAME = "BotBound · xAI Direct SIP";
+export const LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP";
 export const XAI_TWILIO_ORIGINATION_FRIENDLY_NAME = "xAI realtime primary";
 export const XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token";
 
