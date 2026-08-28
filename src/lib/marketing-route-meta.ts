@@ -81,7 +81,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/support": {
     title: "Support | BotBound",
-    description: "Get help building, training, launching, or running a BotBound Bot.",
+    description: "Contact BotBound support.",
   },
   "/contact": {
     title: "Contact BotBound",
