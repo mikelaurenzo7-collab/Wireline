@@ -5,13 +5,7 @@
 
 .landing-prestige {
   min-height: 100dvh;
-  background:
-    radial-gradient(
-      circle at 18% 18%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 9%, transparent),
-      transparent 28rem
-    ),
-    var(--wireline-color-canvas-default);
+  background: var(--wireline-color-canvas-default);
 }
 
 .landing-prestige__main {
@@ -45,13 +39,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 58% 40% at 30% 52%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
-      transparent 72%
-    ),
-    linear-gradient(135deg, color-mix(in srgb, white 2%, transparent), transparent 32%);
+  background: none;
 }
 
 .landing-prestige__hero > * {
@@ -86,15 +74,19 @@
 
 .landing-prestige__hero-copy h1 {
   display: grid;
-  gap: 0.02em;
+  gap: 0.04em;
   margin: 0;
   color: var(--wireline-color-text-primary);
   font-family: var(--wireline-font-family-display);
-  font-size: clamp(4.25rem, 7.15vw, 8.4rem);
+  font-size: clamp(3.25rem, 5vw, 6.2rem);
   font-weight: 700;
-  letter-spacing: -0.075em;
-  line-height: 0.82;
-  text-wrap: balance;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+  word-spacing: 0.04em;
+}
+
+.landing-prestige__hero-copy h1 span {
+  white-space: nowrap;
 }
 
 .landing-prestige__hero-copy h1 span:last-child {
@@ -556,7 +548,7 @@
   }
 
   .landing-prestige__hero-copy h1 {
-    font-size: clamp(3.5rem, 7vw, 5.5rem);
+    font-size: clamp(2.8rem, 5.25vw, 4rem);
   }
 
   .landing-prestige__role-grid {
@@ -595,7 +587,7 @@
   }
 
   .landing-prestige__hero-copy h1 {
-    font-size: clamp(2.9rem, 14.5vw, 4.6rem);
+    font-size: clamp(2.2rem, 10.25vw, 3.1rem);
   }
 
   .landing-prestige__desktop-only {

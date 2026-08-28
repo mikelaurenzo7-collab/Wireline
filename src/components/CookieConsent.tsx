@@ -146,7 +146,7 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[420px] sm:max-w-[calc(100vw-2rem)]",
+            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[448px] sm:max-w-[calc(100vw-2rem)]",
             clearMarketingSticky
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
               : hasSession
@@ -160,7 +160,7 @@ export default function CookieConsent() {
         >
           <div
             className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 lg:items-center lg:px-4 lg:py-2.5",
+              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5",
               hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
             )}
           >
@@ -168,7 +168,7 @@ export default function CookieConsent() {
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-2 lg:flex lg:items-center lg:gap-4 lg:space-y-0">
+            <div className="flex-1 min-w-0 space-y-3">
               <p
                 className={cn(
                   "leading-relaxed text-foreground/80 lg:flex-1",
@@ -177,8 +177,8 @@ export default function CookieConsent() {
                     : "text-[length:var(--wireline-typography-caption-size)]",
                 )}
               >
-                Essential storage keeps <WirelineWordmark inline /> working. Optional ad measurement
-                stays off unless you allow it.{" "}
+                Essential storage keeps <WirelineWordmark inline /> working. Optional measurement
+                stays off until you allow it.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
@@ -186,28 +186,21 @@ export default function CookieConsent() {
                 >
                   Privacy
                 </Link>
-                {" · "}
-                <Link
-                  to="/terms"
-                  className="text-brand hover:text-brand/80 underline"
-                  onClick={dismiss}
-                >
-                  Terms
-                </Link>
               </p>
 
               {privacySignalEnabled ? (
                 <p className="text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
-                  Your browser privacy signal is active, so advertising measurement remains off.
+                  Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2 lg:flex-nowrap lg:shrink-0">
+                <div className="grid grid-cols-2 gap-2">
                   <ShadButton
                     type="button"
                     variant="outline"
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
+                    className="min-w-0"
                   >
                     Essential only
                   </ShadButton>
@@ -216,6 +209,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
+                    className="min-w-0"
                   >
                     Allow measurement
                   </ShadButton>

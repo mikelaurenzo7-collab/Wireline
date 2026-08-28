@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { Phone, Mail, MessageSquare, Send, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Phone, Mail, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
@@ -75,21 +75,12 @@ export function SupportPage() {
     <MarketingPageFrame longform>
       <PageMeta
         title="Support | BotBound"
-        description="Get help building, training, launching, or running a BotBound Bot."
+        description="Contact BotBound support."
         path="/support"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <Link
-          to="/"
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back home
-        </Link>
-        <div className="mx-auto mt-8 max-w-3xl text-center">
-          <h1 className="wl-stitch-marketing-hero text-balance">
-            Help with your Bot, without the runaround
-          </h1>
+        <div className="mx-auto max-w-3xl text-center">
+          <h1 className="wl-stitch-marketing-hero text-balance">Support</h1>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -98,7 +89,7 @@ export function SupportPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Call BotBound</h2>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Call</h2>
             <p className="mt-2 text-sm text-muted-foreground">{supportAgent.display}</p>
           </a>
           <a
@@ -106,32 +97,32 @@ export function SupportPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Email</h2>
             <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
           </a>
           <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Studio</h2>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
-            Open a ticket
+            Send a request
           </h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Ticket received</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">Request received</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                You will hear from us within one business day at{" "}
+                We will reply within one business day at{" "}
                 <strong className="text-foreground">{email}</strong>.
               </p>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="mt-7 space-y-5">
               <fieldset>
-                <legend className="block wl-stitch-label mb-2">What is this about?</legend>
+                <legend className="block wl-stitch-label mb-2">Topic</legend>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {ISSUE_TYPES.map((item) => (
                     <button
@@ -201,17 +192,17 @@ export function SupportPage() {
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                {submitting ? "Sending…" : "Send ticket"}
+                {submitting ? "Sending…" : "Send"}
               </button>
             </form>
           )}
         </section>
         <p className="mt-7 text-center text-sm leading-6 text-muted-foreground">
-          Tickets are handled according to the{" "}
+          Handled under the{" "}
           <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">
             Privacy Policy
           </Link>
-          . You can request deletion at any time through account settings.
+          . Delete account data in Settings.
         </p>
       </section>
     </MarketingPageFrame>
